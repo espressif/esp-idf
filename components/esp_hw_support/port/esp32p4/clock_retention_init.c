@@ -25,4 +25,6 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
+
+    #undef N_REGS_PCR
 }

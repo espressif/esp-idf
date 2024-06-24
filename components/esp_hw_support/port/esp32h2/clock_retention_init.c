@@ -24,6 +24,8 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
+
+    #undef N_REGS_PCR
 }
 
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
@@ -41,5 +43,8 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (SYSCON) retention, 1 level priority");
     ESP_LOGI(TAG, "Modem Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
+
+    #undef N_REGS_LPCON
+    #undef N_REGS_SYSCON
 }
 #endif

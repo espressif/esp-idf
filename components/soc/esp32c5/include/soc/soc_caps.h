@@ -60,9 +60,9 @@
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1
-// #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
+#define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
+#define SOC_LP_AON_SUPPORTED            1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
 #define SOC_ULP_LP_UART_SUPPORTED       1
@@ -463,10 +463,11 @@
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
-// #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 // #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 // #define SOC_TWAI_CONTROLLER_NUM         2
@@ -504,17 +505,18 @@
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C5 has 3 UARTs (2 HP UART, and 1 LP UART)
-#define SOC_UART_NUM                    (3)
-#define SOC_UART_HP_NUM                 (2)
-#define SOC_UART_LP_NUM                 (1U)
-#define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
-#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
-#define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
-#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
-#define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
-#define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
-#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
-#define SOC_UART_HAS_LP_UART            (1)         /*!< Support LP UART */
+#define SOC_UART_NUM                       (3)
+#define SOC_UART_HP_NUM                    (2)
+#define SOC_UART_LP_NUM                    (1U)
+#define SOC_UART_FIFO_LEN                  (128)       /*!< The UART hardware FIFO length */
+#define SOC_LP_UART_FIFO_LEN               (16)        /*!< The LP UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX               (5000000)   /*!< Max bit rate supported by UART */
+#define SOC_UART_SUPPORT_PLL_F80M_CLK      (1)         /*!< Support PLL_F80M as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK           (1)         /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK          (1)         /*!< Support XTAL clock as the clock source */
+#define SOC_UART_SUPPORT_WAKEUP_INT        (1)         /*!< Support UART wakeup interrupt */
+#define SOC_UART_HAS_LP_UART               (1)         /*!< Support LP UART */
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
@@ -556,7 +558,7 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
-// #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
 // #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
 
 #define SOC_PM_PAU_LINK_NUM                 (4)

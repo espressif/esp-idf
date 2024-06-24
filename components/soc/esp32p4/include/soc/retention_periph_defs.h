@@ -58,19 +58,18 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_ALL = (uint32_t)-1
 } periph_retention_module_bitmap_t;
 
-#define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM \
-                                    | SLEEP_RETENTION_MODULE_BM_SYS_PERIPH \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_WDT    \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_WDT    \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER  \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER  \
-                                    | SLEEP_RETENTION_MODULE_BM_UART0      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART1      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART2      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART3      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART4      \
-                                    | SLEEP_RETENTION_MODULE_BM_RMT0       \
-                                   )
+#define TOP_DOMAIN_PERIPHERALS_BM ( SLEEP_RETENTION_MODULE_BM_SYS_PERIPH \
+                                  | SLEEP_RETENTION_MODULE_BM_TG0_WDT    \
+                                  | SLEEP_RETENTION_MODULE_BM_TG1_WDT    \
+                                  | SLEEP_RETENTION_MODULE_BM_TG0_TIMER  \
+                                  | SLEEP_RETENTION_MODULE_BM_TG1_TIMER  \
+                                  | SLEEP_RETENTION_MODULE_BM_UART0      \
+                                  | SLEEP_RETENTION_MODULE_BM_UART1      \
+                                  | SLEEP_RETENTION_MODULE_BM_UART2      \
+                                  | SLEEP_RETENTION_MODULE_BM_UART3      \
+                                  | SLEEP_RETENTION_MODULE_BM_UART4      \
+                                  | SLEEP_RETENTION_MODULE_BM_RMT0       \
+                                  )
 
 #ifdef __cplusplus
 }

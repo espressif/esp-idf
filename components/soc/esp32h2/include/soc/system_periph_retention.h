@@ -48,16 +48,6 @@ extern const regdma_entries_config_t tee_apm_regs_retention[TEE_APM_RETENTION_LI
 extern const regdma_entries_config_t tee_apm_highpri_regs_retention[TEE_APM_HIGH_PRI_RETENTION_LINK_LEN];
 
 /**
- * @brief Provide access to timer group configuration registers retention
- * context definition.
- *
- * This is an internal function of the sleep retention driver, and is not
- * useful for external use.
- */
-#define TIMG_RETENTION_LINK_LEN     8
-extern const regdma_entries_config_t tg_regs_retention[TIMG_RETENTION_LINK_LEN];
-
-/**
  * @brief Provide access to IOMUX configuration registers retention
  * context definition.
  *

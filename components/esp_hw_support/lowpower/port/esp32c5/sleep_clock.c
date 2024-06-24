@@ -7,29 +7,28 @@
 #include "esp_private/sleep_clock.h"
 #include "soc/pcr_reg.h"
 #include "modem/modem_syscon_reg.h"
+#include "modem/modem_lpcon_reg.h"
+#include "soc/i2c_ana_mst_reg.h"
 
 static const char *TAG = "sleep_clock";
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
-    #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
-
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */
+        [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, 74, 0, 0, 0xffffffff, 0xffffffff, 0x7f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
     };
-
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
+#endif
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
-
-    #undef N_REGS_PCR
 }
 
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
-    #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
+    #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
 
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
@@ -89,6 +88,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
+        .depends   = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_MODEM, &init_param);
