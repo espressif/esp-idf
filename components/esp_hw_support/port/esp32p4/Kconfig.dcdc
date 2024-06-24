@@ -1,0 +1,30 @@
+menu "DCDC Regulator Configurations"
+    depends on SOC_GP_LDO_SUPPORTED
+
+    config ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+        bool "Keep DC-DC power always on during light-sleep"
+        default y
+        help
+            ESP32P4 will switch the power supply to LDO before sleeping, and switch to DCDC after waking up.
+            These two processes take a long time and may bring some risks for some short duration
+            light sleep. (DCDC -> LDO: 2.5ms (max), LDO -> DCDC: 1.2 ms)
+            Enabling this option will make chip powered by DCDC during light sleep to reduce some power switch
+            risks, this will also increase the power consumption during the light sleep.
+
+            DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+    config ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP
+        int "DCDC voltage parameter during sleep"
+        default 14
+        range 0 31
+        depends on ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+        help
+            This value determines the voltage of the DCDC chip during sleep. The same parameter value may
+            correspond to different voltage values on different models of DCDC chips. Please update this
+            value according to the model of external DCDC selected in your hardware solution.
+
+            For the DCDC chip model recommended by ESP, the recommended configuration
+            values are listed below:
+
+            - TI-TLV62569/TLV62569P: 14
+endmenu

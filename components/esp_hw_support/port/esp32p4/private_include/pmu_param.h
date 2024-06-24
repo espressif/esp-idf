@@ -105,7 +105,7 @@ const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mo
 typedef union {
     struct {
         uint32_t reserved0    : 21;
-	uint32_t dcdc_switch_pd_en: 1;
+        uint32_t dcdc_switch_pd_en: 1;
         uint32_t mem_dslp     : 1;
         uint32_t mem_pd_en    : 1;
         uint32_t reserved1    : 6;
@@ -153,7 +153,9 @@ typedef union {
 
 typedef struct {
     struct {
-        uint32_t reserved0 : 25;
+        uint32_t reserved0 : 18;
+        uint32_t dcm_vset  : 5;
+        uint32_t dcm_mode  : 2;
         uint32_t xpd_bias  : 1;
         uint32_t dbg_atten : 4;
         uint32_t pd_cur    : 1;
