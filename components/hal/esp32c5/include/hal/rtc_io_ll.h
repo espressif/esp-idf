@@ -16,8 +16,10 @@
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/pcr_struct.h"
-// #include "soc/lp_io_struct.h"
-// #include "soc/lp_aon_struct.h"
+#include "soc/lp_iomux_struct.h"
+#include "soc/lp_aon_struct.h"
+#include "soc/lp_gpio_struct.h"
+#include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
@@ -26,7 +28,7 @@
 extern "C" {
 #endif
 
-#define RTCIO_LL_PIN_FUNC       0
+#define RTCIO_LL_PIN_FUNC       1
 
 typedef enum {
     RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
@@ -40,11 +42,6 @@ typedef enum {
 } rtcio_ll_wake_type_t;
 
 typedef enum {
-    RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
-    RTCIO_LL_OUTPUT_OD = 0x1,      /*!< RTCIO output mode is open-drain. */
-} rtcio_ll_out_mode_t;
-
-typedef enum {
     RTCIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
     RTCIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
     RTCIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
@@ -52,6 +49,11 @@ typedef enum {
     RTCIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
     RTCIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
 } rtcio_ll_intr_type_t;
+
+typedef enum {
+    RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
+    RTCIO_LL_OUTPUT_OD = 0x1,      /*!< RTCIO output mode is open-drain. */
+} rtcio_ll_out_mode_t;
 
 /**
  * @brief Select a RTC IOMUX function for the RTC IO
@@ -61,10 +63,23 @@ typedef enum {
  */
 static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].mcu_sel = func;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_sel = func;
 }
+
+/**
+ * @brief Enable/Disable LP_GPIO peripheral clock.
+ *
+ * @param enable true to enable the clock / false to disable the clock
+ */
+static inline void _rtcio_ll_enable_io_clock(bool enable)
+{
+    LPPERI.clk_en.lp_io_ck_en = enable;
+    while (LPPERI.clk_en.lp_io_ck_en != enable) {
+        ;
+    }
+}
+
+#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
 
 /**
  * @brief Select the rtcio function.
@@ -78,21 +93,19 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
  */
 static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // if (func == RTCIO_LL_FUNC_RTC) {
-    //     // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
-    //     uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
-    //     sel_mask |= BIT(rtcio_num);
-    //     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
-    //     //0:RTC FUNCTION 1,2,3:Reserved
-    //     rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
-    // } else if (func == RTCIO_LL_FUNC_DIGITAL) {
-    //     // Clear the bit to use digital GPIO module
-    //     uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
-    //     sel_mask &= ~BIT(rtcio_num);
-    //     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
-    // }
-    abort();
+    if (func == RTCIO_LL_FUNC_RTC) {
+        // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
+        uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
+        sel_mask |= BIT(rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
+        // LP_GPIO is FUNC 1
+        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
+    } else if (func == RTCIO_LL_FUNC_DIGITAL) {
+        // Clear the bit to use digital GPIO module
+        uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
+        sel_mask &= ~BIT(rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
+    }
 }
 
 /**
@@ -102,9 +115,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_enable_w1ts, enable_w1ts, BIT(rtcio_num));
-    abort();
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1ts, enable_w1ts, BIT(rtcio_num));
 }
 
 /**
@@ -114,9 +125,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_enable_w1tc, enable_w1tc, BIT(rtcio_num));
-    abort();
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1tc, enable_w1tc, BIT(rtcio_num));
 }
 
 /**
@@ -127,13 +136,11 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
  */
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // if (level) {
-    //     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_data_w1ts, BIT(rtcio_num));
-    // } else {
-    //     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_data_w1tc, BIT(rtcio_num));
-    // }
-    abort();
+    if (level) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1ts, out_w1ts, BIT(rtcio_num));
+    } else {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1tc, out_w1tc, BIT(rtcio_num));
+    }
 }
 
 /**
@@ -143,9 +150,7 @@ static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
  */
 static inline void rtcio_ll_input_enable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].fun_ie = 1;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_ie = 1;
 }
 
 /**
@@ -155,9 +160,7 @@ static inline void rtcio_ll_input_enable(int rtcio_num)
  */
 static inline void rtcio_ll_input_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].fun_ie = 0;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_ie = 0;
 }
 
 /**
@@ -168,10 +171,7 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
  */
 static inline uint32_t rtcio_ll_get_level(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // return (uint32_t)(HAL_FORCE_READ_U32_REG_FIELD(LP_IO.in, in_data_next) >> rtcio_num) & 0x1;
-    abort();
-    return (uint32_t)0;
+    return (uint32_t)(HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.in, in_data_next) >> rtcio_num) & 0x1;
 }
 
 /**
@@ -182,9 +182,7 @@ static inline uint32_t rtcio_ll_get_level(int rtcio_num)
  */
 static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strength)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].fun_drv = strength;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_drv = strength;
 }
 
 /**
@@ -195,10 +193,7 @@ static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strengt
  */
 static inline uint32_t rtcio_ll_get_drive_capability(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // return LP_IO.gpio[rtcio_num].fun_drv;
-    abort();
-    return (uint32_t)0;
+    return LP_IO_MUX.gpion[rtcio_num].gpion_fun_drv;
 }
 
 /**
@@ -209,9 +204,7 @@ static inline uint32_t rtcio_ll_get_drive_capability(int rtcio_num)
  */
 static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t mode)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.pin[rtcio_num].pad_driver = mode;
-    abort();
+    LP_GPIO.pinn[rtcio_num].pinn_pad_driver = mode;
 }
 
 /**
@@ -221,10 +214,8 @@ static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t m
  */
 static inline void rtcio_ll_pullup_enable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // /* Enable internal weak pull-up */
-    // LP_IO.gpio[rtcio_num].fun_wpu = 1;
-    abort();
+    /* Enable internal weak pull-up */
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpu = 1;
 }
 
 /**
@@ -234,10 +225,8 @@ static inline void rtcio_ll_pullup_enable(int rtcio_num)
  */
 static inline void rtcio_ll_pullup_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // /* Disable internal weak pull-up */
-    // LP_IO.gpio[rtcio_num].fun_wpu = 0;
-    abort();
+    /* Disable internal weak pull-up */
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpu = 0;
 }
 
 /**
@@ -247,10 +236,8 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
  */
 static inline void rtcio_ll_pulldown_enable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // /* Enable internal weak pull-down */
-    // LP_IO.gpio[rtcio_num].fun_wpd = 1;
-    abort();
+    /* Enable internal weak pull-down */
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpd = 1;
 }
 
 /**
@@ -260,10 +247,8 @@ static inline void rtcio_ll_pulldown_enable(int rtcio_num)
  */
 static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // /* Enable internal weak pull-down */
-    // LP_IO.gpio[rtcio_num].fun_wpd = 0;
-    abort();
+    /* Enable internal weak pull-down */
+    LP_IO_MUX.gpion[rtcio_num].gpion_fun_wpd = 0;
 }
 
 /**
@@ -278,9 +263,7 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_AON.gpio_hold0.gpio_hold0 |= BIT(rtcio_num);
-    abort();
+    LP_AON.gpio_hold0.gpio_hold0 |= BIT(rtcio_num);
 }
 
 /**
@@ -291,9 +274,7 @@ static inline void rtcio_ll_force_hold_enable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_AON.gpio_hold0.gpio_hold0 &= ~BIT(rtcio_num);
-    abort();
+    LP_AON.gpio_hold0.gpio_hold0 &= ~BIT(rtcio_num);
 }
 
 /**
@@ -306,9 +287,7 @@ static inline void rtcio_ll_force_hold_disable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_all(void)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
-    abort();
+    PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
 }
 
 /**
@@ -318,9 +297,7 @@ static inline void rtcio_ll_force_hold_all(void)
  */
 static inline void rtcio_ll_force_unhold_all(void)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
-    abort();
+    PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
 }
 
 /**
@@ -331,10 +308,8 @@ static inline void rtcio_ll_force_unhold_all(void)
  */
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.pin[rtcio_num].wakeup_enable = 1;
-    // LP_IO.pin[rtcio_num].int_type = type;
-    abort();
+    LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable = 1;
+    LP_GPIO.pinn[rtcio_num].pinn_int_type = type;
 }
 
 /**
@@ -344,10 +319,26 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
  */
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.pin[rtcio_num].wakeup_enable = 0;
-    // LP_IO.pin[rtcio_num].int_type = RTCIO_LL_WAKEUP_DISABLE;
-    abort();
+    LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable = 0;
+    LP_GPIO.pinn[rtcio_num].pinn_int_type = RTCIO_LL_WAKEUP_DISABLE;
+}
+
+/**
+ * Enable interrupt function and set interrupt type
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param type  Interrupt type on high level or low level.
+ */
+
+static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
+{
+    LP_GPIO.pinn[rtcio_num].pinn_int_type = type;
+
+    /* Work around for HW issue,
+       need to also enable this clk, so that LP_GPIO.status.status_interrupt can get updated,
+       and trigger the interrupt on the LP Core
+    */
+    LP_GPIO.clock_gate.clk_en = 1;
 }
 
 /**
@@ -357,9 +348,7 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
  */
 static inline void rtcio_ll_enable_output_in_sleep(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].mcu_oe = 1;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_oe = 1;
 }
 
 /**
@@ -369,9 +358,7 @@ static inline void rtcio_ll_enable_output_in_sleep(int rtcio_num)
  */
 static inline void rtcio_ll_disable_output_in_sleep(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].mcu_oe = 0;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_oe = 0;
 }
 
 /**
@@ -381,9 +368,7 @@ static inline void rtcio_ll_disable_output_in_sleep(int rtcio_num)
  */
 static inline void rtcio_ll_enable_input_in_sleep(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].mcu_ie = 1;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_ie = 1;
 }
 
 /**
@@ -393,9 +378,7 @@ static inline void rtcio_ll_enable_input_in_sleep(int rtcio_num)
  */
 static inline void rtcio_ll_disable_input_in_sleep(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].mcu_ie = 0;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_ie = 0;
 }
 
 /**
@@ -405,9 +388,7 @@ static inline void rtcio_ll_disable_input_in_sleep(int rtcio_num)
  */
 static inline void rtcio_ll_enable_sleep_setting(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].slp_sel = 1;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_slp_sel = 1;
 }
 
 /**
@@ -417,9 +398,7 @@ static inline void rtcio_ll_enable_sleep_setting(int rtcio_num)
  */
 static inline void rtcio_ll_disable_sleep_setting(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // LP_IO.gpio[rtcio_num].slp_sel = 0;
-    abort();
+    LP_IO_MUX.gpion[rtcio_num].gpion_slp_sel = 0;
 }
 
 /**
@@ -430,11 +409,8 @@ static inline void rtcio_ll_disable_sleep_setting(int rtcio_num)
  */
 static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // HAL_ASSERT(rtcio_num >= 0 && rtcio_num < SOC_RTCIO_PIN_COUNT && "io does not support deep sleep wake-up function");
-    // return LP_IO.pin[rtcio_num].wakeup_enable;
-    abort();
-    return (bool)0;
+    HAL_ASSERT(rtcio_num >= 0 && rtcio_num < SOC_RTCIO_PIN_COUNT && "io does not support deep sleep wake-up function");
+    return LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable;
 }
 
 /**
@@ -444,10 +420,7 @@ static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
  */
 static inline  uint32_t rtcio_ll_get_interrupt_status(void)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // return (uint32_t)HAL_FORCE_READ_U32_REG_FIELD(LP_IO.status, status_interrupt);
-    abort();
-    return (uint32_t)0;
+    return (uint32_t)HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.status, status_interrupt);
 }
 
 /**
@@ -455,21 +428,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    // TODO: [ESP32C5] IDF-8719
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_w1tc, 0xff);
-    abort();
-}
-
-/**
- * Enable interrupt function and set interrupt type
- *
- * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
- * @param type  Interrupt type on high level or low level.
- */
-static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
-{
-    // TODO: [ESP32C5] IDF-8719
-    //LP_GPIO.pin[rtcio_num].int_type = type;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.status_w1tc, status_w1tc, 0xff);
 }
 
 #ifdef __cplusplus

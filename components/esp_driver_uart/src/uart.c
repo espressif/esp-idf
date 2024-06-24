@@ -23,14 +23,17 @@
 #include "soc/uart_periph.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
-#include "driver/rtc_io.h"
 #include "driver/uart_select.h"
-#include "driver/lp_io.h"
 #include "esp_private/gpio.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#if (SOC_UART_LP_NUM >= 1)
+#include "driver/rtc_io.h"
+#include "hal/rtc_io_ll.h"
+#include "driver/lp_io.h"
+#endif
 #include "clk_ctrl_os.h"
 #include "esp_pm.h"
 #include "esp_private/sleep_retention.h"
@@ -744,7 +747,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         else {
             rtc_gpio_set_direction(tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(tx_io_num);
-            rtc_gpio_iomux_func_sel(tx_io_num, 1);
+            rtc_gpio_iomux_func_sel(tx_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
         }

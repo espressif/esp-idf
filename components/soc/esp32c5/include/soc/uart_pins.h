@@ -40,7 +40,7 @@
 #define U1RTS_MUX_FUNC  (-1)
 #define U1CTS_MUX_FUNC  (-1)
 
-#define LP_U0TXD_MUX_FUNC  (1)
-#define LP_U0RXD_MUX_FUNC  (1)
-#define LP_U0RTS_MUX_FUNC  (1)
-#define LP_U0CTS_MUX_FUNC  (1)
+#define LP_U0TXD_MUX_FUNC  (0)
+#define LP_U0RXD_MUX_FUNC  (0)
+#define LP_U0RTS_MUX_FUNC  (0)
+#define LP_U0CTS_MUX_FUNC  (0)
