@@ -510,10 +510,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** touch_nn_disupdate_baseline_en : R/W; bitpos: [0]; default: 0;
+        /** touch_nn_disupdate_benchmark_en : R/W; bitpos: [0]; default: 0;
          *  Reserved
          */
-        uint32_t touch_nn_disupdate_baseline_en:1;
+        uint32_t touch_nn_disupdate_benchmark_en:1;
         /** touch_hysteresis : R/W; bitpos: [2:1]; default: 0;
          *  need_des
          */
@@ -585,14 +585,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** touch_baseline_sw : R/W; bitpos: [15:0]; default: 0;
+        /** touch_benchmark_sw : R/W; bitpos: [15:0]; default: 0;
          *  need_des
          */
-        uint32_t touch_baseline_sw:16;
-        /** touch_update_baseline_sw : WT; bitpos: [16]; default: 0;
+        uint32_t touch_benchmark_sw:16;
+        /** touch_update_benchmark_sw : WT; bitpos: [16]; default: 0;
          *  need_des
          */
-        uint32_t touch_update_baseline_sw:1;
+        uint32_t touch_update_benchmark_sw:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
@@ -750,7 +750,7 @@ typedef union {
         /** touch_data_sel : R/W; bitpos: [9:8]; default: 0;
          *  The type of the output data for debugging
          *  0/1: raw data
-         *  2: baseline
+         *  2: benchmark
          *  3: smooth data
          */
         uint32_t touch_data_sel:2;
