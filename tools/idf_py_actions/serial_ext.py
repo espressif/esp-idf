@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Tuple
 
 import click
+from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import get_default_serial_port
@@ -117,12 +118,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         if project_desc['target'] != 'linux':
             if no_reset and args.port is None:
-                msg = (
-                    'WARNING: --no-reset is ignored. '
+                raise FatalError(
+                    'Error: --no-reset is only supported when used with a port.'
                     'Please specify the port with the --port argument in order to use this option.'
                 )
-                yellow_print(msg)
-                no_reset = False
 
             args.port = args.port or get_default_serial_port()
             monitor_args += ['-p', args.port]
@@ -927,7 +926,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'help': (
                             'Disable reset on monitor startup. '
                             'IDF Monitor will not reset the MCU target by toggling DTR/RTS lines on startup '
-                            'if this option is set.'
+                            'if this option is set. '
+                            'This option only works if --port argument is specified.'
                         ),
                     },
                     {
