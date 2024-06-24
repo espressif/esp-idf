@@ -625,6 +625,14 @@ Kconfig 选项
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 将在 cache 被禁用时控制默认的 ISR 处理程序正常工作，详情请参阅 `IRAM 安全 <#iram-safe>`__。
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` 可启用调试日志，但会增加固件二进制文件大小。
 
+应用示例
+--------
+
+.. list::
+
+    - :example:`peripherals/i2c/i2c_eeprom` 通过读取和写入 I2C 连接的 EEPROM 展示了 I2C 驱动程序的使用方法。
+    - :example:`peripherals/i2c/i2c_tools` 基于 ESP32 控制台组件实现了一些 I2C 工具的基本功能。
+
 API 参考
 --------
 
