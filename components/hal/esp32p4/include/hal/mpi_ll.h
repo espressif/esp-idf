@@ -56,11 +56,11 @@ static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 }
 
 // No need to initialize Power Control Registers in case of ESP32-P4
-static inline void mpi_ll_clear_power_control_bit(void)
+static inline void mpi_ll_power_up(void)
 {
 }
 
-static inline void mpi_ll_set_power_control_bit(void)
+static inline void mpi_ll_power_down(void)
 {
 }
 

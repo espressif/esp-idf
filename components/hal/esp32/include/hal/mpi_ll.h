@@ -61,12 +61,12 @@ static inline size_t mpi_ll_calculate_hardware_words(size_t words)
     return (words + 0xF) & ~0xF;
 }
 
-static inline void mpi_ll_clear_power_control_bit(void)
+static inline void mpi_ll_power_up(void)
 {
     DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 }
 
-static inline void mpi_ll_set_power_control_bit(void)
+static inline void mpi_ll_power_down(void)
 {
     DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 }
