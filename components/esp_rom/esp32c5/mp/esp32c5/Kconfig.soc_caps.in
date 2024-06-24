@@ -82,7 +82,3 @@ config ESP_ROM_HAS_VERSION
 config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
     bool
     default y
-
-config ESP_ROM_CLIC_INT_THRESH_PATCH
-    bool
-    default y
