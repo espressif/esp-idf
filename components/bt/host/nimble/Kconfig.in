@@ -883,6 +883,12 @@ menu "GAP Service"
             Peripheral Preferred Connection Parameter: Supervision Timeout
             Timeout = Value * 10 ms
 
+    config BT_NIMBLE_SVC_GAP_GATT_SECURITY_LEVEL
+        bool "LE GATT Security Level Characteristic"
+        default n
+        help
+            Enable the LE GATT Security Level Characteristic
+
 endmenu
 
 menu "BLE Services"
