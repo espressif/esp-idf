@@ -1,8 +1,7 @@
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
-from utils import hex_str_to_bytes, str_to_bytes
+from utils import str_to_bytes
 
 from .transport import Transport
 
@@ -16,4 +15,4 @@ class Transport_Console(Transport):
         except Exception as err:
             print('error:', err)
             return None
-        return hex_str_to_bytes(resp)
+        return bytearray.fromhex(resp).decode('latin-1')
