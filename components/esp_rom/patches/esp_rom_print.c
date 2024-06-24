@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <sys/param.h>
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 #include "rom/ets_sys.h"
@@ -54,7 +55,7 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
         islong, islonglong;
     long long val = 0;
     int res = 0, length = 0;
-
+    // %[flags][left_prec][.right_prec][sub_type]type
     while ((c = *fmt++) != '\0') {
         if (c == '%') {
             c = *fmt++;
@@ -75,13 +76,11 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
             }
             if (c == '.') {
                 c = *fmt++;
-                zero_fill++;
+                zero_fill = false;
                 while (is_digit(c)) {
                     right_prec = (right_prec * 10) + (c - '0');
                     c = *fmt++;
                 }
-            } else {
-                right_prec = left_prec;
             }
             sign = '\0';
             if (c == 'l') {
@@ -168,10 +167,14 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
             case 'S':
                 cp = va_arg(ap, char *);
                 if (cp == NULL)  {
-                    cp = (char *)"<null000>";
+                    cp = (char *)"<null>";
                 }
                 length = 0;
                 while (cp[length] != '\0') length++;
+                if (right_prec) {
+                    length = MIN(right_prec, length);
+                    right_prec = 0;
+                }
                 break;
             case 'c':
             case 'C':
@@ -206,6 +209,10 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
                 res += 2;
             }
             pad = left_prec - length;
+            right_prec = right_prec - length;
+            if (right_prec > 0) {
+                pad -= right_prec;
+            }
             if (sign != '\0') {
                 pad--;
             }
@@ -227,6 +234,10 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
             }
             if (sign != '\0') {
                 (*putc)(sign);
+                res++;
+            }
+            while (right_prec-- > 0) {
+                (*putc)('0');
                 res++;
             }
             while (length-- > 0) {
