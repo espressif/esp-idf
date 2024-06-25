@@ -539,7 +539,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  * before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
  *
  * For example, if you only use Bluetooth for setting the Wi-Fi configuration, and do not use Bluetooth in the rest of the product operation,
- * In such cases, after receiving the WiFi configuration, you can disable/de-init Bluetooth and release its memory.
+ *  after receiving the Wi-Fi configuration, you can disable/de-init Bluetooth and release its memory.
  * Below is the sequence of APIs to be called for such scenarios:
  *
  *       esp_bluedroid_disable();
