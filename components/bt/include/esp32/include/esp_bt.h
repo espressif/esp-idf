@@ -68,7 +68,7 @@ typedef enum {
 } esp_bt_mode_t;
 
 /**
- * @brief BLE sleep clock accuracy(SCA)
+ * @brief BLE sleep clock accuracy (SCA)
  *
  * @note Currently only ESP_BLE_SCA_500PPM and ESP_BLE_SCA_250PPM are supported.
  */
@@ -217,31 +217,40 @@ the adv packet will be discarded until the memory is restored. */
 
 /**
  * @brief Bluetooth Controller config options
+ * @note
+ *      1. For parameters configurable in menuconfig, please refer to menuconfig for details on range and default values.
+ *      2. It is not recommended to modify the default values of `controller_task_stack_size`, `controller_task_prio`.
  */
 typedef struct {
     uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size in bytes */
     uint8_t controller_task_prio;           /*!< Bluetooth Controller task priority */
-    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface */
-    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface */
-    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode */
-    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type */
-    uint16_t normal_adv_size;               /*!< Scan duplicate filtering list size with normal ADV */
-    uint16_t mesh_adv_size;                 /*!< Scan duplicate filtering list size with mesh ADV */
-    uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value*/
-    uint32_t  controller_debug_flag;        /*!< Controller debug log flag */
-    uint8_t mode;                           /*!< Controller mode: BLE mode (1), Classic Bluetooth mode (2) or Dual mode (3) */
-    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections */
-    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections */
-    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
-    bool auto_latency;                      /*!< BLE auto latency, used to enhance Classic Bluetooth performance */
-    bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
-    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Effective in menuconfig */
-    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
-    uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
-    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
-    bool hli;                               /*!< Using high level interrupt or not */
-    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period */
-    bool ble_scan_backoff;                  /*!< BLE scan backoff */
+    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
+    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
+    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig. */
+    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig. */
+    uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig. */
+    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig. */
+    uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
+    uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
+    uint8_t mode;                           /*!< Controller mode:
+                                                1: BLE mode
+                                                2: Classic Bluetooth mode
+                                                3: Dual mode
+                                                Others: Invalid
+                                                Configurable in menuconfig.
+                                                */
+    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig. */
+    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig. */
+    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig. */
+    bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig.*/
+    bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to  protect from BIAS attack; false otherwise. Configurable in menuconfig. */
+    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig. */
+    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig. */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig.*/
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig. */
+    bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig. */
+    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig.*/
+    bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig.*/
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -285,21 +294,21 @@ typedef enum {
  */
 typedef enum {
     ESP_PWR_LVL_N12 = 0,                /*!< Corresponding to -12 dBm */
-    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to  -9 dBm */
-    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to  -6 dBm */
-    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to  -3 dBm */
-    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to   0 dBm */
-    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to  +3 dBm */
-    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to  +6 dBm */
-    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to  +9 dBm */
+    ESP_PWR_LVL_N9  = 1,                /*!< Corresponding to -9 dBm */
+    ESP_PWR_LVL_N6  = 2,                /*!< Corresponding to -6 dBm */
+    ESP_PWR_LVL_N3  = 3,                /*!< Corresponding to -3 dBm */
+    ESP_PWR_LVL_N0  = 4,                /*!< Corresponding to 0 dBm */
+    ESP_PWR_LVL_P3  = 5,                /*!< Corresponding to +3 dBm */
+    ESP_PWR_LVL_P6  = 6,                /*!< Corresponding to +6 dBm */
+    ESP_PWR_LVL_P9  = 7,                /*!< Corresponding to +9 dBm */
     ESP_PWR_LVL_N14 = ESP_PWR_LVL_N12,  /*!< Backward compatibility! Setting to -14 dBm will actually result in -12 dBm */
-    ESP_PWR_LVL_N11 = ESP_PWR_LVL_N9,   /*!< Backward compatibility! Setting to -11 dBm will actually result in  -9 dBm */
-    ESP_PWR_LVL_N8  = ESP_PWR_LVL_N6,   /*!< Backward compatibility! Setting to  -8 dBm will actually result in  -6 dBm */
-    ESP_PWR_LVL_N5  = ESP_PWR_LVL_N3,   /*!< Backward compatibility! Setting to  -5 dBm will actually result in  -3 dBm */
-    ESP_PWR_LVL_N2  = ESP_PWR_LVL_N0,   /*!< Backward compatibility! Setting to  -2 dBm will actually result in   0 dBm */
-    ESP_PWR_LVL_P1  = ESP_PWR_LVL_P3,   /*!< Backward compatibility! Setting to  +1 dBm will actually result in  +3 dBm */
-    ESP_PWR_LVL_P4  = ESP_PWR_LVL_P6,   /*!< Backward compatibility! Setting to  +4 dBm will actually result in  +6 dBm */
-    ESP_PWR_LVL_P7  = ESP_PWR_LVL_P9,   /*!< Backward compatibility! Setting to  +7 dBm will actually result in  +9 dBm */
+    ESP_PWR_LVL_N11 = ESP_PWR_LVL_N9,   /*!< Backward compatibility! Setting to -11 dBm will actually result in -9 dBm */
+    ESP_PWR_LVL_N8  = ESP_PWR_LVL_N6,   /*!< Backward compatibility! Setting to  -8 dBm will actually result in -6 dBm */
+    ESP_PWR_LVL_N5  = ESP_PWR_LVL_N3,   /*!< Backward compatibility! Setting to  -5 dBm will actually result in -3 dBm */
+    ESP_PWR_LVL_N2  = ESP_PWR_LVL_N0,   /*!< Backward compatibility! Setting to  -2 dBm will actually result in 0 dBm */
+    ESP_PWR_LVL_P1  = ESP_PWR_LVL_P3,   /*!< Backward compatibility! Setting to  +1 dBm will actually result in +3 dBm */
+    ESP_PWR_LVL_P4  = ESP_PWR_LVL_P6,   /*!< Backward compatibility! Setting to  +4 dBm will actually result in +6 dBm */
+    ESP_PWR_LVL_P7  = ESP_PWR_LVL_P9,   /*!< Backward compatibility! Setting to  +7 dBm will actually result in +9 dBm */
 } esp_power_level_t;
 
 /**
@@ -348,10 +357,9 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *          such as performing discovery, profile initialization, and so on.
  *      2. For BR/EDR to use the new TX power for inquiry, call this function before starting an inquiry.
  *          If BR/EDR is already inquiring, restart the inquiry after calling this function.
- *      3. The default minimum power level is `ESP_PWR_LVL_N0`, and the maximum power level is `ESP_PWR_LVL_P3`.
  *
- * @param[in]  min_power_level The minimum power level. The default value is `ESP_PWR_LVL_N0` 
- * @param[in]  max_power_level The maximum power level
+ * @param[in]  min_power_level The minimum power level. The default value is `ESP_PWR_LVL_N0`.
+ * @param[in]  max_power_level The maximum power level. The default value is `ESP_PWR_LVL_P3`.
  *
  * @return
  *      - ESP_OK: Success
@@ -604,13 +612,17 @@ esp_err_t esp_bt_sleep_disable(void);
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 /**
- * @brief bt Wi-Fi power domain power on
- */
+ * @brief Power on Bluetooth Wi-Fi power domain
+ *
+ * @note This function is not recommended to use due to potential risk.
+*/
 void esp_wifi_bt_power_domain_on(void);
 
 /**
- * @brief bt Wi-Fi power domain power off
- */
+ * @brief Power off Bluetooth Wi-Fi power domain
+ *
+ * @note This function is not recommended to use due to potential risk.
+*/
 void esp_wifi_bt_power_domain_off(void);
 
 #ifdef __cplusplus
