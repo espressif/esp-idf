@@ -382,6 +382,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
     - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION` 设置为 ``Optimize for size (-Os)``。在某些情况下，相较于默认设置， ``Optimize for size (-Os)`` 也可以减小二进制文件的大小。请注意，若代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本不存在的错误。
     - 通过降低应用程序的 :ref:`CONFIG_LOG_DEFAULT_LEVEL` ，可以减少编译时的日志输出。如果改变 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 的默认选项，则可以控制二进制文件的大小。减少编译时的日志输出可以减少二进制文件中的字符串数量，并减小调用日志函数的代码大小。
+    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
     - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。
     - 除 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。请注意，即使将 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
     - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 会移除针对 ESP-IDF 内部错误检查宏的特定错误消息。错误消息移除后，通过阅读日志输出来调试某些错误条件可能变得更加困难。
