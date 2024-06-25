@@ -141,3 +141,4 @@ X: This feature is currently not supported.
 - ESP32 does not support the use of main XTAL in light sleep mode, so an external 32kHz crystal is required.
 - ESP32C2 support XTAL frequency of 26MHz and 40MHz, the XTAL frequency is set to 26MHz in default.
 - ESP32C2 support external 32kHz crystal by connecting the crystal to the chip through pin0
+- ESP32C6 REQUIRES CONFIG_ESP_PHY_MAC_BB_PD to be set for light sleep to run properly

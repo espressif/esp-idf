@@ -65,7 +65,7 @@ struct os_mbuf_pool {
 
 
 /**
- * A packet header structure that preceeds the mbuf packet headers.
+ * A packet header structure that proceeds the mbuf packet headers.
  */
 struct os_mbuf_pkthdr {
     /**
@@ -89,7 +89,7 @@ struct os_mbuf {
      */
     uint8_t *om_data;
     /**
-     * Flags associated with this buffer, see OS_MBUF_F_* defintions
+     * Flags associated with this buffer, see OS_MBUF_F_* definitions
      */
     uint8_t om_flags;
     /**
