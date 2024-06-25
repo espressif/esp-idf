@@ -161,7 +161,7 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
     .. note::
 
-        当观察步进和观察点同时被触发时，只会产生一次中断事件。
+        当观察步进和观察点同时被触发时，回调函数只会被调用一次。
         步进间隔必须是 :cpp:member:`pcnt_unit_config_t::low_limit` 或 :cpp:member:`pcnt_unit_config_t::high_limit` 的因数。
 
     .. code:: c
@@ -186,18 +186,10 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
 可通过 ``user_ctx`` 将函数上下文保存到 :cpp:func:`pcnt_unit_register_event_callbacks` 中，这些数据会直接传递给回调函数。
 
-.. only:: SOC_PCNT_SUPPORT_STEP_NOTIFY
+驱动程序会将特定事件的数据写入回调函数中，例如，观察点事件或观察步进事件数据被声明为 :cpp:type:`pcnt_watch_event_data_t`：
 
-    驱动程序会将特定事件的数据写入回调函数中，例如，观察点事件或观察步进事件数据被声明为 :cpp:type:`pcnt_watch_event_data_t`：
-
-.. only:: not SOC_PCNT_SUPPORT_STEP_NOTIFY
-
-    驱动程序会将特定事件的数据写入回调函数中，例如，观察点事件数据被声明为 :cpp:type:`pcnt_watch_event_data_t`：
-
-.. list::
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` 用于保存触发该事件的观察点或观察步进的数值。
-    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` 用于保存触发该事件的观察点数值。
-    -  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` 用于保存上一次 PCNT 单元的过零模式，:cpp:type:`pcnt_unit_zero_cross_mode_t` 中列出了所有可能的过零模式。通常，不同的过零模式意味着不同的 **计数方向** 和 **计数步长**。
+-  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` 用于保存触发事件时计数器的数值。
+-  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` 用于保存上一次 PCNT 单元的过零模式，:cpp:type:`pcnt_unit_zero_cross_mode_t` 中列出了所有可能的过零模式。通常，不同的过零模式意味着不同的 **计数方向** 和 **计数步长**。
 
 注册回调函数会导致中断服务延迟安装，因此回调函数只能在 PCNT 单元被 :cpp:func:`pcnt_unit_enable` 使能之前调用。否则，回调函数会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
@@ -320,16 +312,16 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清零。如果你想补偿该计数值的溢出损失，以期进一步拓宽计数器的实际位宽，你可以：
 
+.. list::
+
     1. 在安装 PCNT 计数单元的时候使能 :cpp:member:`pcnt_unit_config_t::accum_count` 选项。
-    2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points` 或添加观察步进 :ref:`pcnt-step-notify`
+    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`。
     3. 现在，:cpp:func:`pcnt_unit_get_count` 函数返回的计数值就会包含硬件计数器当前的计数值，累加上计数器溢出造成的损失。
 
 .. note::
 
-    .. list::
-
-        - :cpp:func:`pcnt_unit_clear_count` 会复位该软件累加器。
-        :SOC_PCNT_SUPPORT_STEP_NOTIFY: - 设置观察步进后，同时也会启用软件累加器。
+    :cpp:func:`pcnt_unit_clear_count` 会复位该软件累加器。
 
 .. _pcnt-power-management:
 

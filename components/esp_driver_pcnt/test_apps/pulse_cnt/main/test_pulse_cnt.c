@@ -629,7 +629,7 @@ TEST_CASE("pcnt_step_notify_event", "[pcnt]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, 20));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, -120));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, -30));
-    TEST_ESP_OK(pcnt_unit_add_watch_step(unit, -50));
+    TEST_ESP_OK(pcnt_unit_add_watch_step(unit, -25));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_step(unit, -100));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, -100));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 0));
@@ -654,11 +654,14 @@ TEST_CASE("pcnt_step_notify_event", "[pcnt]")
         printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
     }
     TEST_ASSERT_EQUAL(-150, count_value);
-    TEST_ASSERT_EQUAL(4, user_data.index);
-    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[0]);
-    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[1]);
-    TEST_ASSERT_EQUAL(-0, user_data.triggered_watch_values[2]);
-    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[3]);
+    TEST_ASSERT_EQUAL(7, user_data.index);
+    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[0]);
+    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[1]);
+    TEST_ASSERT_EQUAL(-75, user_data.triggered_watch_values[2]);
+    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[3]);
+    TEST_ASSERT_EQUAL(-0, user_data.triggered_watch_values[4]);
+    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[5]);
+    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[6]);
 
     printf("add a new step interval\r\n");
     TEST_ESP_OK(pcnt_unit_remove_watch_step(unit));

@@ -893,35 +893,69 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
     if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit_id)) {
         pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
 
-        // points watcher event
+        // watcher event
         uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
+
+        // use flags to avoid multiple callbacks in one point
+        bool is_limit_event __attribute__((unused)) = false;
+        bool is_step_event = false;
+
         // iter on each event_id
         while (event_status) {
-            int event_id = __builtin_ffs(event_status) - 1;
-            event_status &= (event_status - 1); // clear the right most bit
-
-            portENTER_CRITICAL_ISR(&unit->spinlock);
-            if (unit->flags.accum_count) {
-                if (event_id == PCNT_LL_WATCH_EVENT_LOW_LIMIT) {
+            int watch_value = pcnt_ll_get_count(group->hal.dev, unit_id);
+            if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT));
+                is_limit_event = true;
+                if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
                     unit->accum_value += unit->low_limit;
-                } else if (event_id == PCNT_LL_WATCH_EVENT_HIGH_LIMIT) {
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+                }
+                watch_value = unit->low_limit;
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT));
+                is_limit_event = true;
+                if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
                     unit->accum_value += unit->high_limit;
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
                 }
-#if SOC_PCNT_SUPPORT_STEP_NOTIFY
-                // zero cross event priority is higher than step limit event, ensure to accumulate the value when the zero cross is caused by step limit
-                if ((event_id == PCNT_LL_WATCH_EVENT_ZERO_CROSS) && (event_status & 1 << PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
-                    unit->accum_value += unit->step_limit;
-                } else if (event_id == PCNT_LL_STEP_EVENT_REACH_LIMIT) {
-                    unit->accum_value += unit->step_limit;
-                }
-#endif
+                watch_value = unit->high_limit;
             }
-            portEXIT_CRITICAL_ISR(&unit->spinlock);
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+            else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT));
+                if (is_limit_event) {
+                    continue;
+                } else if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
+                    unit->accum_value += unit->step_limit;
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+                }
+                watch_value = unit->step_limit;
+            } else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
+                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL));
+                is_step_event = true;
+            }
+#endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
+            else if (event_status & BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS));
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES0)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES0));
+                if (is_step_event) {
+                    continue;
+                }
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES1)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES1));
+                if (is_step_event) {
+                    continue;
+                }
+            }
 
             // invoked user registered callback
             if (on_reach) {
                 pcnt_watch_event_data_t edata = {
-                    .watch_point_value = event_id < PCNT_LL_WATCH_EVENT_MAX ? unit->watchers[event_id].watch_point_value : pcnt_ll_get_count(group->hal.dev, unit_id),
+                    .watch_point_value = watch_value,
                     .zero_cross_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id),
                 };
                 if (on_reach(unit, &edata, unit->user_data)) {
@@ -929,10 +963,6 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
                     need_yield = true;
                 }
             }
-#if SOC_PCNT_SUPPORT_STEP_NOTIFY
-            // The priority of step and step limit event is lowest. Clear the step and step limit event to ensure that in a particular point, event can only be triggered once
-            event_status &= ~(1 << PCNT_LL_STEP_EVENT_REACH_INTERVAL | 1 << PCNT_LL_STEP_EVENT_REACH_LIMIT);
-#endif
         }
     }
     if (need_yield) {

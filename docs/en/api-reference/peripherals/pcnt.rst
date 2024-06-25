@@ -153,7 +153,7 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
     Watch Step
     ^^^^^^^^^^^
 
-    PCNT unit can be configured to watch a specific value increment(can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
+    PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
 
     The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. You can not add multiple watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`。
 
@@ -161,7 +161,7 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
 
     .. note::
 
-        When a watch step and a watch point are triggered at the same time, only one interrupt event will be generated.
+        When a watch step and a watch point are triggered at the same time (i.e. at the same absolute point), the callback function only gets called by once.
         The step interval must be a divisor of :cpp:member:`pcnt_unit_config_t::low_limit` or :cpp:member:`pcnt_unit_config_t::high_limit`.
 
     .. code:: c
@@ -186,18 +186,10 @@ When PCNT unit reaches any enabled watch point, specific event will be generated
 
 You can save their own context to :cpp:func:`pcnt_unit_register_event_callbacks` as well, via the parameter ``user_ctx``. This user data will be directly passed to the callback functions.
 
-.. only:: SOC_PCNT_SUPPORT_STEP_NOTIFY
+In the callback function, the driver will fill in the event data of specific event. For example, the watch point event or watch step event data is declared as :cpp:type:`pcnt_watch_event_data_t`:
 
-    In the callback function, the driver will fill in the event data of specific event. For example, the watch point event or watch step event data is declared as :cpp:type:`pcnt_watch_event_data_t`:
-
-.. only:: not SOC_PCNT_SUPPORT_STEP_NOTIFY
-
-    In the callback function, the driver will fill in the event data of specific event. For example, the watch point event data is declared as :cpp:type:`pcnt_watch_event_data_t`:
-
-.. list::
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the watch point value or watch step value that triggers the event.
-    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the watch point value that triggers the event.
-    -  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` saves how the PCNT unit crosses the zero point in the latest time. The possible zero cross modes are listed in the :cpp:type:`pcnt_unit_zero_cross_mode_t`. Usually different zero cross mode means different **counting direction** and **counting step size**.
+-  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the count value when the event triggered.
+-  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` saves how the PCNT unit crosses the zero point in the latest time. The possible zero cross modes are listed in the :cpp:type:`pcnt_unit_zero_cross_mode_t`. Usually different zero cross mode means different **counting direction** and **counting step size**.
 
 Registering callback function results in lazy installation of interrupt service, thus this function should only be called before the unit is enabled by :cpp:func:`pcnt_unit_enable`. Otherwise, it can return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
@@ -320,16 +312,16 @@ Compensate Overflow Loss
 
 The internal hardware counter will be cleared to zero automatically when it reaches high or low limit. If you want to compensate for that count loss and extend the counter's bit-width, you can:
 
+.. list::
+
     1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
-    2. Add the high/low limit as the :ref:`pcnt-watch-points`.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points` or add watch step as the :ref:`pcnt-step-notify`.
+    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points`.
     3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
 
 .. note::
 
-    .. list::
-
-        - :cpp:func:`pcnt_unit_clear_count` resets the accumulated count value as well.
-        :SOC_PCNT_SUPPORT_STEP_NOTIFY: - setting the watch step will also enable the accumulator.
+    :cpp:func:`pcnt_unit_clear_count` resets the accumulated count value as well.
 
 .. _pcnt-power-management:
 
