@@ -47,6 +47,9 @@ rtc_io_dev_t *rtc_io_dev = &RTCIO;
 /* Read/Write timeout (number of iterations)*/
 #define ULP_RISCV_I2C_RW_TIMEOUT            CONFIG_ULP_RISCV_I2C_RW_TIMEOUT
 
+/* RTC I2C lock */
+static portMUX_TYPE rtc_i2c_lock = portMUX_INITIALIZER_UNLOCKED;
+
 static esp_err_t i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_io_num)
 {
     /* Verify that the SDA and SCL GPIOs are valid RTC I2C io pins */
@@ -348,6 +351,8 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     SET_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
 
+    portENTER_CRITICAL(&rtc_i2c_lock);
+
     for (i = 0; i < size; i++) {
         /* Poll for RTC I2C Rx Data interrupt bit to be set */
         ret = ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT);
@@ -368,14 +373,16 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
             /* Clear the Rx data interrupt bit */
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_RX_DATA_INT_CLR);
         } else {
-            ESP_LOGE(RTCI2C_TAG, "Read Failed!");
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Read Failed!");
             uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
-            ESP_LOGE(RTCI2C_TAG, "RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
-            ESP_LOGE(RTCI2C_TAG, "RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
             break;
         }
     }
+
+    portEXIT_CRITICAL(&rtc_i2c_lock);
 
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
@@ -422,6 +429,8 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
     /* Configure the RTC I2C controller in write mode */
     SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0x1, 1, 27);
 
+    portENTER_CRITICAL(&rtc_i2c_lock);
+
     for (i = 0; i < size; i++) {
         /* Write the data to be transmitted */
         CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_MASTER_TX_DATA_MASK);
@@ -440,14 +449,16 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
             /* Clear the Tx data interrupt bit */
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);
         } else {
-            ESP_LOGE(RTCI2C_TAG, "Write Failed!");
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: Write Failed!");
             uint32_t status = READ_PERI_REG(RTC_I2C_INT_RAW_REG);
-            ESP_LOGE(RTCI2C_TAG, "RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
-            ESP_LOGE(RTCI2C_TAG, "RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Interrupt Raw Reg 0x%"PRIx32"", status);
+            ESP_EARLY_LOGE(RTCI2C_TAG, "ulp_riscv_i2c: RTC I2C Status Reg 0x%"PRIx32"", READ_PERI_REG(RTC_I2C_STATUS_REG));
             SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, status);
             break;
         }
     }
+
+    portEXIT_CRITICAL(&rtc_i2c_lock);
 
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
@@ -505,7 +516,7 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
     i2c_dev->i2c_ctrl.i2c_i2c_ctrl_clk_gate_en = 1;
 #endif // CONFIG_IDF_TARGET_ESP32S2
 
-    /* Configure RTC I2C timing paramters */
+    /* Configure RTC I2C timing parameters */
     ESP_RETURN_ON_ERROR(i2c_set_timing(cfg), RTCI2C_TAG, "Failed to configure RTC I2C timing");
 
     /* Enable RTC I2C interrupts */
