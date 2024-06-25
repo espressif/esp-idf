@@ -19,6 +19,10 @@
 #include "hub.h"
 #include "usb/usb_helpers.h"
 
+#if ENABLE_USB_HUBS
+#include "ext_hub.h"
+#endif // ENABLE_USB_HUBS
+
 /*
 Implementation of the HUB driver that only supports the Root Hub with a single port. Therefore, we currently don't
 implement the bare minimum to control the root HCD port.
@@ -35,12 +39,20 @@ implement the bare minimum to control the root HCD port.
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_BALANCED
 #endif
 
-// Hub driver action flags. LISTED IN THE ORDER THEY SHOULD BE HANDLED IN within hub_process(). Some actions are mutually exclusive
-#define HUB_DRIVER_FLAG_ACTION_ROOT_EVENT           0x01
-#define HUB_DRIVER_FLAG_ACTION_PORT_REQ             0x02
-
 #define PORT_REQ_DISABLE                            0x01
 #define PORT_REQ_RECOVER                            0x02
+
+/**
+ * @brief Hub driver action flags
+ */
+typedef enum {
+    HUB_DRIVER_ACTION_ROOT_EVENT          = (1 << 0),
+    HUB_DRIVER_ACTION_ROOT_REQ            = (1 << 1),
+#if ENABLE_USB_HUBS
+    HUB_DRIVER_ACTION_EXT_HUB             = (1 << 6),
+    HUB_DRIVER_ACTION_EXT_PORT            = (1 << 7)
+#endif // ENABLE_USB_HUBS
+} hub_flag_action_t;
 
 /**
  * @brief Root port states
@@ -57,7 +69,6 @@ typedef enum {
  * @brief Hub device tree node
  *
  * Object type of a node in the USB device tree that is maintained by the Hub driver
- *
  */
 struct dev_tree_node_s {
     TAILQ_ENTRY(dev_tree_node_s) tailq_entry;   /**< Entry for the device tree node object tailq */
@@ -72,11 +83,11 @@ typedef struct {
     struct {
         union {
             struct {
-                uint32_t actions: 8;
-                uint32_t reserved24: 24;
+                hub_flag_action_t actions: 8;       /**< Hub actions */
+                uint32_t reserved24: 24;            /**< Reserved */
             };
-            uint32_t val;                           /**< Root port flag value */
-        } flags;                                    /**< Root port flags */
+            uint32_t val;                           /**< Hub flag action value */
+        } flags;                                    /**< Hub flags */
         root_port_state_t root_port_state;          /**< Root port state */
         unsigned int port_reqs;                     /**< Root port request flag */
     } dynamic;                                      /**< Dynamic members. Require a critical section */
@@ -145,7 +156,7 @@ static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port
  */
 static esp_err_t new_dev_tree_node(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, usb_speed_t speed)
 {
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t ret;
     unsigned int node_uid = p_hub_driver_obj->single_thread.next_uid;
 
     dev_tree_node_t *dev_tree_node = heap_caps_calloc(1, sizeof(dev_tree_node_t), MALLOC_CAP_DEFAULT);
@@ -165,6 +176,8 @@ static esp_err_t new_dev_tree_node(usb_device_handle_t parent_dev_hdl, uint8_t p
 
     ret = usbh_devs_add(&params);
     if (ret != ESP_OK) {
+        // USBH devs add could failed due to lack of free hcd channels
+        // TODO: IDF-10044 Hub should recover after running out of hcd channels
         goto fail;
     }
 
@@ -293,11 +306,21 @@ static esp_err_t dev_tree_node_remove_by_parent(usb_device_handle_t parent_dev_h
 static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port_event, void *user_arg, bool in_isr)
 {
     HUB_DRIVER_ENTER_CRITICAL_SAFE();
-    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ROOT_EVENT;
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_ROOT_EVENT;
     HUB_DRIVER_EXIT_CRITICAL_SAFE();
     assert(in_isr); // Currently, this callback should only ever be called from an ISR context
     return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
+
+#ifdef ENABLE_USB_HUBS
+static bool ext_hub_callback(bool in_isr, void *user_arg)
+{
+    HUB_DRIVER_ENTER_CRITICAL_SAFE();
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_EXT_HUB;
+    HUB_DRIVER_EXIT_CRITICAL_SAFE();
+    return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);
+}
+#endif // ENABLE_USB_HUBS
 
 // ---------------------- Handlers -------------------------
 static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
@@ -344,7 +367,7 @@ reset_err:
         case ROOT_PORT_STATE_DISABLED: // This occurred after the device has already been disabled
             // Therefore, there's no device object to clean up, and we can go straight to port recovery
             p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
-            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
+            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_ROOT_REQ;
             break;
         case ROOT_PORT_STATE_ENABLED:
             // There is an enabled (active) device. We need to indicate to USBH that the device is gone
@@ -409,7 +432,7 @@ static esp_err_t root_port_recycle(void)
         abort();    // Should never occur
         break;
     }
-    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_ROOT_REQ;
     HUB_DRIVER_EXIT_CRITICAL();
 
     ESP_ERROR_CHECK(dev_tree_node_remove_by_parent(NULL, 0));
@@ -434,7 +457,20 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
         return ESP_ERR_NO_MEM;
     }
 
+#if ENABLE_USB_HUBS
+    // Install External HUB driver
+    ext_hub_config_t ext_hub_config = {
+        .proc_req_cb = ext_hub_callback,
+        .port_driver = NULL,
+    };
+    ret = ext_hub_install(&ext_hub_config);
+    if (ret != ESP_OK) {
+        goto err_ext_hub;
+    }
+    *client_ret = ext_hub_get_client();
+#else
     *client_ret = NULL;
+#endif // ENABLE_USB_HUBS
 
     // Install HCD port
     hcd_port_config_t port_config = {
@@ -474,6 +510,10 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
 assign_err:
     ESP_ERROR_CHECK(hcd_port_deinit(root_port_hdl));
 err:
+#if ENABLE_USB_HUBS
+    ext_hub_uninstall();
+err_ext_hub:
+#endif // ENABLE_USB_HUBS
     heap_caps_free(hub_driver_obj);
     return ret;
 }
@@ -486,6 +526,10 @@ esp_err_t hub_uninstall(void)
     hub_driver_t *hub_driver_obj = p_hub_driver_obj;
     p_hub_driver_obj = NULL;
     HUB_DRIVER_EXIT_CRITICAL();
+
+#if ENABLE_USB_HUBS
+    ESP_ERROR_CHECK(ext_hub_uninstall());
+#endif // ENABLE_USB_HUBS
 
     ESP_ERROR_CHECK(hcd_port_deinit(hub_driver_obj->constant.root_port_hdl));
     // Free Hub driver resources
@@ -531,14 +575,19 @@ esp_err_t hub_port_recycle(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
-
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t ret;
 
     if (parent_port_num == 0) {
         ret = root_port_recycle();
     } else {
-        ESP_LOGW(HUB_DRIVER_TAG, "Recycling External Port has not been implemented yet");
-        return ESP_ERR_NOT_SUPPORTED;
+#if ENABLE_USB_HUBS
+        ext_hub_handle_t ext_hub_hdl = NULL;
+        ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
+        ret = ext_hub_port_recycle(ext_hub_hdl, parent_port_num);
+#else
+        ESP_LOGW(HUB_DRIVER_TAG, "Recycling External Port is not available (External Hub support disabled)");
+        ret = ESP_ERR_NOT_SUPPORTED;
+#endif // ENABLE_USB_HUBS
     }
 
     return ret;
@@ -549,8 +598,7 @@ esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
-
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t ret;
 
     if (parent_port_num == 0) {
         ret = hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_RESET);
@@ -559,12 +607,67 @@ esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port
         }
         ret = dev_tree_node_reset_completed(NULL, 0);
     } else {
-        ESP_LOGW(HUB_DRIVER_TAG, "Reset External Port has not been implemented yet");
-        return ESP_ERR_NOT_SUPPORTED;
+#if ENABLE_USB_HUBS
+        ext_hub_handle_t ext_hub_hdl = NULL;
+        ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
+        ret = ext_hub_port_reset(ext_hub_hdl, parent_port_num);
+#else
+        ESP_LOGW(HUB_DRIVER_TAG, "Resetting External Port is not available (External Hub support disabled)");
+        ret = ESP_ERR_NOT_SUPPORTED;
+#endif // ENABLE_USB_HUBS
     }
-
     return ret;
 }
+
+esp_err_t hub_port_active(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num)
+{
+    esp_err_t ret;
+
+    if (parent_port_num == 0) {
+        // Root port no need to be activated
+        ret = ESP_OK;
+    } else {
+#if ENABLE_USB_HUBS
+        // External Hub port
+        ext_hub_handle_t ext_hub_hdl = NULL;
+        ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
+        ret = ext_hub_port_active(ext_hub_hdl, parent_port_num);
+#else
+        ESP_LOGW(HUB_DRIVER_TAG, "Activating External Port is not available (External Hub support disabled)");
+        ret = ESP_ERR_NOT_SUPPORTED;
+#endif // ENABLE_USB_HUBS
+    }
+    return ret;
+}
+
+#if ENABLE_USB_HUBS
+esp_err_t hub_notify_new_dev(uint8_t dev_addr)
+{
+    HUB_DRIVER_ENTER_CRITICAL();
+    HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    return ext_hub_new_dev(dev_addr);
+}
+
+esp_err_t hub_notify_dev_gone(uint8_t dev_addr)
+{
+    HUB_DRIVER_ENTER_CRITICAL();
+    HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    return ext_hub_dev_gone(dev_addr);
+}
+
+esp_err_t hub_notify_all_free(void)
+{
+    HUB_DRIVER_ENTER_CRITICAL();
+    HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    return ext_hub_all_free();
+}
+#endif // ENABLE_USB_HUBS
 
 esp_err_t hub_process(void)
 {
@@ -574,10 +677,21 @@ esp_err_t hub_process(void)
     HUB_DRIVER_EXIT_CRITICAL();
 
     while (action_flags) {
-        if (action_flags & HUB_DRIVER_FLAG_ACTION_ROOT_EVENT) {
+#if ENABLE_USB_HUBS
+        if (action_flags & HUB_DRIVER_ACTION_EXT_PORT) {
+            ESP_LOGW(HUB_DRIVER_TAG, "ext_port_process() has not been implemented yet");
+            /*
+            ESP_ERROR_CHECK(ext_port_process());
+            */
+        }
+        if (action_flags & HUB_DRIVER_ACTION_EXT_HUB) {
+            ESP_ERROR_CHECK(ext_hub_process());
+        }
+#endif // ENABLE_USB_HUBS
+        if (action_flags & HUB_DRIVER_ACTION_ROOT_EVENT) {
             root_port_handle_events(p_hub_driver_obj->constant.root_port_hdl);
         }
-        if (action_flags & HUB_DRIVER_FLAG_ACTION_PORT_REQ) {
+        if (action_flags & HUB_DRIVER_ACTION_ROOT_REQ) {
             root_port_req(p_hub_driver_obj->constant.root_port_hdl);
         }
 
@@ -586,5 +700,6 @@ esp_err_t hub_process(void)
         p_hub_driver_obj->dynamic.flags.actions = 0;
         HUB_DRIVER_EXIT_CRITICAL();
     }
+
     return ESP_OK;
 }
