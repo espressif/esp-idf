@@ -461,15 +461,33 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 void bootloader_utility_load_boot_image_from_deep_sleep(void)
 {
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP) {
+#if SOC_RTC_FAST_MEM_SUPPORTED
         esp_partition_pos_t *partition = bootloader_common_get_rtc_retain_mem_partition();
-        if (partition != NULL) {
+        esp_image_metadata_t image_data;
+        if (partition != NULL && bootloader_load_image_no_verify(partition, &image_data) == ESP_OK) {
+            ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%"PRIx32, partition->offset);
+            bootloader_common_update_rtc_retain_mem(NULL, true);
+            load_image(&image_data);
+        }
+#else // !SOC_RTC_FAST_MEM_SUPPORTED
+        bootloader_state_t bs = {0};
+        if (bootloader_utility_load_partition_table(&bs)) {
+            int index_of_last_loaded_app = FACTORY_INDEX;
+            esp_ota_select_entry_t otadata[2];
+            if (bs.ota_info.size && bootloader_common_read_otadata(&bs.ota_info, otadata) == ESP_OK) {
+                int active_otadata = bootloader_common_get_active_otadata(otadata);
+                if (active_otadata != -1) {
+                    index_of_last_loaded_app = (otadata[active_otadata].ota_seq - 1) % bs.app_count;
+                }
+            }
+            esp_partition_pos_t partition = index_to_partition(&bs, index_of_last_loaded_app);
             esp_image_metadata_t image_data;
-            if (bootloader_load_image_no_verify(partition, &image_data) == ESP_OK) {
-                ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%"PRIx32, partition->offset);
-                bootloader_common_update_rtc_retain_mem(NULL, true);
+            if (partition.size && bootloader_load_image_no_verify(&partition, &image_data) == ESP_OK) {
+                ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%"PRIx32, partition.offset);
                 load_image(&image_data);
             }
         }
+#endif // !SOC_RTC_FAST_MEM_SUPPORTED
         ESP_LOGE(TAG, "Fast booting is not successful");
         ESP_LOGI(TAG, "Try to load an app as usual with all validations");
     }
