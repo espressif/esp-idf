@@ -7,7 +7,7 @@ ULP LP-Core（低功耗内核）协处理器是 {IDF_TARGET_NAME} 中 ULP 的一
 
 ULP LP-Core 协处理器具有以下功能：
 
-* 利用基于 RISC-V ISA 的 32 位处理器，包括标准扩展整数 (I)、乘法/除法 (M)、原子 (A) 和压缩 (C)。
+* RV32I 处理器（32 位 RISC-V ISA），支持乘法/除法 (M)、原子 (A) 和压缩 (C) 扩展。
 * 中断控制器。
 * 包含一个调试模块，支持通过 JTAG 进行外部调试。
 * 当整个系统处于 active 模式时，可以访问所有的高功耗 (HP) SRAM 和外设。
@@ -21,6 +21,8 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 1. 将用 C 语言或汇编语言编写的 ULP LP-Core 代码（带有 ``.S`` 扩展名）放在组件目录下的专用目录中，例如 ``ulp/``。
 
 2. 在 CMakeLists.txt 文件中注册组件后，调用 ``ulp_embed_binary`` 函数。例如：
+
+.. code-block:: cmake
 
     idf_component_register()
 
@@ -83,7 +85,9 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 注意，所有的符号（变量、数组、函数）都被声明为 ``uint32_t`` 类型。对于函数和数组，获取符号的地址并将其转换为合适的类型。
 
-生成的链接器脚本文件定义了 LP_MEM 中符号的位置::
+生成的链接器脚本文件定义了 LP_MEM 中符号的位置：
+
+.. code-block:: none
 
     PROVIDE ( ulp_measurement_count = 0x50000060 );
 
@@ -178,13 +182,49 @@ ULP LP-Core 支持的外设
     在任何情况下，这些函数都存在于 LP-ROM 中，因此在程序中使用这些函数可以减少 ULP 应用程序的 RAM 占用。
 
 
+ULP LP-Core 中断
+----------------
+
+配置 LP-Core 协处理器，可以处理各种类型的中断，例如 LP IO 低/高电平中断或是 LP 定时器中断。只需重写 IDF 提供的任何一个弱处理函数，就可以注册一个中断处理程序。所有处理程序可见 :component_file:`ulp_lp_core_interrupts.h <ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h>`。有关特定目标可使用的中断的详细信息，请参阅 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#ulp>`__]。
+
+例如，要重写 LP IO 中断的处理程序，可以在 ULP LP-Core 代码中定义以下函数：
+
+.. code-block:: c
+
+    void LP_CORE_ISR_ATTR ulp_lp_core_lp_io_intr_handler(void)
+    {
+        // 处理中断，清除中断源
+    }
+
+:c:macro:`LP_CORE_ISR_ATTR` 宏用于定义中断处理函数，可确保调用中断处理程序时妥善保存并恢复寄存器。
+
+除了为需要处理的中断源配置相关的中断寄存器外，还要调用 :cpp:func:`ulp_lp_core_intr_enable` 函数，在 LP-Core 中断控制器中使能全局中断。
+
+调试 ULP LP-Core 应用程序
+-------------------------
+
+在编程 LP-Core 时，有时很难弄清楚程序未按预期运行的原因。请参考以下策略，调试 LP-Core 程序：
+
+* 使用 LP-UART 打印：LP-Core 可以访问 LP-UART 外设，在主 CPU 处于睡眠状态时独立打印信息。有关使用此驱动程序的示例，请参阅 :example:`system/ulp/lp_core/lp_uart/lp_uart_print`。
+
+* 通过共享变量共享程序状态：如 :ref:`ulp-lp-core-access-variables` 所述，主 CPU 和 ULP 内核都可以轻松访问 RTC 内存中的全局变量。若想了解 ULP 内核的运行状态，可以将状态信息从 ULP 写入变量中，并通过主 CPU 读取信息。这种方法的缺点在于它需要主 CPU 一直处于唤醒状态，而这通常很难实现。另外，若主 CPU 一直处于唤醒状态，可能会掩盖某些问题，因为部分问题只会在特定电源域断电时发生。
+
+* 紧急处理程序：当检测到异常时，LP-Core 的紧急处理程序会把 LP-Core 寄存器的状态通过 LP-UART 发送出去。将 :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` 选项设置为 ``y``，可以启用紧急处理程序。禁用此选项将减少 LP-Core 应用程序的 LP-RAM 使用量。若想从紧急转储中解析栈回溯，可以使用 esp-idf-monitor_，例如：
+
+    .. code-block:: bash
+
+        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+
+
 应用示例
---------------------
+--------
 
 * 在示例 :example:`system/ulp/lp_core/gpio` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时轮询 GPIO。
 * 在示例 :example:`system/ulp/lp_core/lp_i2c` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时读取外部 I2C 环境光传感器 (BH1750)，并在达到阈值时唤醒主 CPU。
 * 在示例 :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` 中，低功耗内核上运行的 LP UART 驱动程序读取并回显写入串行控制台的数据。
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` 展示了如何在低功耗内核上使用串口打印功能。
+* :example:`system/ulp/lp_core/interrupt` 展示了如何在 LP 内核上注册中断处理程序，接收由主 CPU 触发的中断。
+* :example:`system/ulp/lp_core/gpio_intr_pulse_counter` 展示了如何在主 CPU 处于 Deep-sleep 模式时，使用 GPIO 中断为脉冲计数。
 
 API 参考
 -------------
@@ -204,3 +244,6 @@ LP 内核 API 参考
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
 .. include-build-file:: inc/ulp_lp_core_uart.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
+.. include-build-file:: inc/ulp_lp_core_interrupts.inc
+
+.. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
