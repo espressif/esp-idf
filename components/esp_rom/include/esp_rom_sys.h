@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+  * @brief Software Reset digital core include RTC.
+  *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
+  */
+void esp_rom_software_reset_system(void);
 
 /**
  * @brief Print formated string to console device
