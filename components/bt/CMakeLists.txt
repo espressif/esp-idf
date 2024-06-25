@@ -482,12 +482,11 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "porting/npl/freertos/src/npl_os_freertos.c"
-                    "porting/nimble/src/os_msys_init.c"
+                    "porting/mem/os_msys_init.c"
             )
 
             list(APPEND include_dirs
                     porting/include
-                    porting/nimble/include
                     porting/npl/freertos/include
                     porting/transport/include
             )
@@ -526,6 +525,7 @@ if(CONFIG_BT_ENABLED)
         list(APPEND include_dirs
 
                     host/nimble/nimble/nimble/host/include
+                    host/nimble/nimble/nimble/include
                     host/nimble/nimble/nimble/host/services/ans/include
                     host/nimble/nimble/nimble/host/services/bas/include
                     host/nimble/nimble/nimble/host/services/dis/include
@@ -606,7 +606,6 @@ if(CONFIG_BT_ENABLED)
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
             )
             list(APPEND include_dirs
-                porting/include
                 host/nimble/nimble/porting/nimble/include
                 host/nimble/port/include
             )
@@ -621,9 +620,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
                     )
             list(APPEND include_dirs
+                    porting/include
                     host/nimble/nimble/porting/npl/freertos/include
-                    host/nimble/nimble/porting/nimble/include
-                    host/nimble/nimble/nimble/include
             )
         endif()
 

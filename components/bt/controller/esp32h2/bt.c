@@ -14,7 +14,10 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
+
 #include "nimble/nimble_port_freertos.h"
 
 #ifdef ESP_PLATFORM
@@ -26,7 +29,7 @@
 #endif
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
@@ -69,12 +72,11 @@
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 /* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
 #define ACL_DATA_MBUF_LEADINGSPCAE    4
-#endif
+#endif // CONFIG_BT_BLUEDROID_ENABLED
 
 /* Types definition
  ************************************************************************
  */
-
 struct osi_coex_funcs_t {
     uint32_t _magic;
     uint32_t _version;
@@ -186,9 +188,8 @@ static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTR
 static bool s_ble_active = false;
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
-
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
-#endif /* #ifdef CONFIG_PM_ENABLE */
+#endif // CONFIG_PM_ENABLE
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 #define BLE_RTC_DELAY_US                    (1100)
@@ -256,17 +257,17 @@ static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
 {
 #if CONFIG_SW_COEXIST_ENABLE
     coex_schm_status_bit_set(type, status);
-#endif
+#endif // CONFIG_SW_COEXIST_ENABLE
 }
 
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 {
 #if CONFIG_SW_COEXIST_ENABLE
     coex_schm_status_bit_clear(type, status);
-#endif
+#endif // CONFIG_SW_COEXIST_ENABLE
 }
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
 bool esp_vhci_host_check_send_available(void)
 {
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
@@ -319,6 +320,7 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     if (*(data) == DATA_TYPE_COMMAND) {
         struct ble_hci_cmd *cmd = NULL;
         cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
+        assert(cmd);
         memcpy((uint8_t *)cmd, data + 1, len - 1);
         ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
     }
@@ -329,7 +331,6 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
         assert(os_mbuf_append(om, &data[1], len - 1) == 0);
         ble_hci_trans_hs_acl_tx(om);
     }
-
 }
 
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
@@ -342,8 +343,7 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
 
     return ESP_OK;
 }
-
-#endif
+#endif // CONFIG_BT_BLUEDROID_ENABLED
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
     return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
@@ -601,7 +601,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
-
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_ERR_INVALID_STATE;
@@ -805,7 +804,6 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     }
     return ret;
 }
-
 
 typedef struct {
     intptr_t start;
