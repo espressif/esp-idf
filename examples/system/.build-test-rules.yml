@@ -281,7 +281,7 @@ examples/system/ulp/lp_core/gpio:
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1)
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
   depends_components:
     - ulp
 
@@ -303,13 +303,13 @@ examples/system/ulp/lp_core/lp_i2c:
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
   disable:
-    - if: SOC_ULP_LP_UART_SUPPORTED != 1
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_print:
   disable:
-    - if: SOC_ULP_LP_UART_SUPPORTED != 1
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   depends_components:
     - ulp
 
