@@ -3,13 +3,6 @@ Install Pre-commit Hook for ESP-IDF Project
 
 :link_to_translation:`zh_CN:[中文]`
 
-Required Dependency
--------------------
-
-Python 3.8.* or above. This is our recommended Python version for ESP-IDF developers.
-
-If you still have Python versions not compatible, update your Python versions before installing the pre-commit hook.
-
 Install ``pre-commit``
 ----------------------
 

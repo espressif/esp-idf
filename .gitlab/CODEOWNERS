@@ -170,6 +170,7 @@
 /docs/**/api-reference/system/              @esp-idf-codeowners/system
 /docs/**/security/                          @esp-idf-codeowners/security
 /docs/**/migration-guides/                  @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
+/docs/**/contribute/install-pre-commit-hook.rst @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /examples/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
