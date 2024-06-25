@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,7 +104,11 @@ int console_fcntl(int fd, int cmd, int arg)
 
 int console_fsync(int fd)
 {
-    return get_vfs_for_index(primary_vfs_index)->vfs.fsync(vfs_console.fd_primary);
+    const int ret_val = get_vfs_for_index(primary_vfs_index)->vfs.fsync(vfs_console.fd_primary);
+#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+    (void)get_vfs_for_index(secondary_vfs_index)->vfs.fsync(vfs_console.fd_secondary);
+#endif
+    return ret_val;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
