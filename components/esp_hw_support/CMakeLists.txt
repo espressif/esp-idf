@@ -163,10 +163,6 @@ idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 add_subdirectory(lowpower)
 
-if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10229
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
-endif()
-
 if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
 endif()
