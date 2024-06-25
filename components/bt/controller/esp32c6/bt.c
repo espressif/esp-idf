@@ -15,7 +15,9 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port_freertos.h"
 #include "esp_private/esp_modem_clock.h"
 
@@ -28,7 +30,7 @@
 #endif // CONFIG_SW_COEXIST_ENABLE
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
@@ -577,6 +579,9 @@ esp_err_t controller_sleep_init(void)
         goto error;
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
+#error "CONFIG_MAC_BB_PD required for BLE light sleep to run properly"
+#endif // CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
     /* Create a new regdma link for BLE related register restoration */
     rc = sleep_modem_ble_mac_modem_state_init(1);
     assert(rc == 0);
@@ -1453,4 +1458,3 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
-

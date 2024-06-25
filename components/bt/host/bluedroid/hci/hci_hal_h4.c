@@ -36,7 +36,7 @@
 #include "stack/hcimsgs.h"
 
 #if ((BT_CONTROLLER_INCLUDED == TRUE) && SOC_ESP_NIMBLE_CONTROLLER)
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #endif
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
