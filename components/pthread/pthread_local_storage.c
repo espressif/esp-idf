@@ -147,7 +147,9 @@ static void pthread_cleanup_thread_specific_data_callback(int index, void *v_tls
     free(tls);
 }
 
-/* this function called from pthread_task_func for "early" cleanup of TLS in a pthread */
+/* this function called from pthread_task_func for "early" cleanup of TLS in a pthread
+   and from pthread_join/pthread_detach for cleanup of TLS after pthread exit
+*/
 void pthread_internal_local_storage_destructor_callback(TaskHandle_t handle)
 {
     void *tls = pvTaskGetThreadLocalStoragePointer(handle, PTHREAD_TLS_INDEX);
@@ -157,9 +159,9 @@ void pthread_internal_local_storage_destructor_callback(TaskHandle_t handle)
            calling it again...
         */
 #if !defined(CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS)
-        vTaskSetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX, NULL);
+        vTaskSetThreadLocalStoragePointer(handle, PTHREAD_TLS_INDEX, NULL);
 #else
-        vTaskSetThreadLocalStoragePointerAndDelCallback(NULL,
+        vTaskSetThreadLocalStoragePointerAndDelCallback(handle,
                                                         PTHREAD_TLS_INDEX,
                                                         NULL,
                                                         NULL);
