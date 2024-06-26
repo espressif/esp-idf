@@ -347,6 +347,10 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 bool pmu_sleep_finish(bool dslp)
 {
     (void)dslp;
+
+    // Wait eFuse memory update done.
+    while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
+
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 
