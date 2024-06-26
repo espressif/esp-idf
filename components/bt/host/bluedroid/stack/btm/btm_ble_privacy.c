@@ -330,7 +330,7 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
     if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
-        BTM_TRACE_ERROR("%s no pending resolving list operation", __func__);
+        BTM_TRACE_DEBUG("%s no pending resolving list operation", __func__);
         return;
     }
 
@@ -1146,6 +1146,9 @@ void btm_ble_add_default_entry_to_resolving_list(void)
      */
     BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
     BT_OCTET16 peer_irk = {0x0};
+
+    // Remove the existing entry in resolving list When resetting the device identity
+    btsnd_hcic_ble_rm_device_resolving_list(BLE_ADDR_PUBLIC, peer_addr);
 
     btsnd_hcic_ble_add_device_resolving_list (BLE_ADDR_PUBLIC, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
 }
