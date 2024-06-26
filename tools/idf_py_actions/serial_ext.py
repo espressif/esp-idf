@@ -9,7 +9,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import click
 from idf_py_actions.errors import FatalError
@@ -404,7 +403,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if version:
             generate_signing_key_args += ['--version', version]
         if scheme:
-            generate_signing_key_args += ['--scheme', '2']
+            generate_signing_key_args += ['--scheme', scheme]
         if extra_args['keyfile']:
             generate_signing_key_args += [extra_args['keyfile']]
         RunTool('espsecure', generate_signing_key_args, args.build_dir)()
@@ -439,10 +438,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
     def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
         efuse_args = []
-        efuse_args += ['-p', args.port or get_default_serial_port()]
-        if args.baud:
-            efuse_args += ['-b', str(args.baud)]
+        if args.port:
+            efuse_args += ['-p', args.port]
+        elif not args.port and not extra_args['virt']:  # if --virt, no port will be found and it would cause error
+            efuse_args += ['-p', get_default_serial_port()]
         efuse_args += ['--chip', _get_project_desc(ctx, args)['target']]
+        if extra_args['virt']:
+            efuse_args += ['--virt']
         if extra_args['before']:
             efuse_args += ['--before', extra_args['before'].replace('-', '_')]
         if extra_args['debug']:
@@ -469,8 +471,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             burn_key_args += ['--force-write-always']
         if extra_args['show_sensitive_info']:
             burn_key_args += ['--show-sensitive-info']
-        if extra_args['image']:
-            burn_key_args.append(extra_args['image'])
+        if extra_args['efuse_positional_args']:
+            burn_key_args += extra_args['efuse_positional_args']
         RunTool('espefuse.py', burn_key_args, args.project_dir, build_dir=args.build_dir)()
 
     def efuse_dump(action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: Dict) -> None:
@@ -489,14 +491,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             read_protect_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', read_protect_args, args.build_dir)()
 
-    def efuse_summary(action: str, ctx: click.core.Context, args: PropertyDict, format: str, **extra_args: Tuple) -> None:
+    def efuse_summary(action: str, ctx: click.core.Context, args: PropertyDict, format: str, **extra_args: Dict) -> None:
         ensure_build_directory(args, ctx.info_name)
         summary_args = [PYTHON, '-m' 'espefuse', 'summary']
         summary_args += _parse_efuse_args(ctx, args, extra_args)
         if format:
-            summary_args += ['--format', format.replace('-', '_')]
-        if extra_args['efuses']:
-            summary_args += extra_args['efuse_name']
+            summary_args += [f'--format={format.replace("-", "_")}']
+        if extra_args['efuse_name']:
+            summary_args += [str(extra_args['efuse_name'])]
         RunTool('espefuse', summary_args, args.build_dir)()
 
     def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
@@ -523,7 +525,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         }
     ]
 
-    EFUSE_OPTS = BAUD_AND_PORT + [
+    EFUSE_OPTS = [PORT] + [
+        {
+            'names': ['--virt'],
+            'is_flag': True,
+            'hidden': True,
+            'help': 'For host tests, the tool will work in the virtual mode (without connecting to a chip).',
+        },
         {
             'names': ['--before'],
             'help': 'What to do before connecting to the chip.',
@@ -801,6 +809,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'options': EFUSE_OPTS + [
                     {
                         'names': ['--no-protect-key'],
+                        'is_flag': True,
                         'help': (
                             'Disable default read- and write-protecting of the key.'
                             'If this option is not set, once the key is flashed it cannot be read back or changed.'
@@ -808,6 +817,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--force-write-always'],
+                        'is_flag': True,
                         'help': (
                             "Write the eFuse even if it looks like it's already been written, or is write protected."
                             "Note that this option can't disable write protection, or clear any bit which has already been set."
@@ -815,6 +825,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                     {
                         'names': ['--show-sensitive-info'],
+                        'is_flag': True,
                         'help': (
                             'Show data to be burned (may expose sensitive data). Enabled if --debug is used.'
                         ),
@@ -822,8 +833,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 ],
                 'arguments': [
                     {
-                        'names': ['image'],
-                        'nargs': 1,
+                        'names': ['efuse-positional-args'],
+                        'nargs': -1,
                     },
                 ],
             },
@@ -865,6 +876,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['efuse-name'],
                         'nargs': 1,
+                        'required': False,
                     },
                 ],
             },
