@@ -973,7 +973,6 @@ r_ble_lll_adv_coex_dpc_update_on_event_scheduled = 0x40001418;
 r_ble_lll_adv_done = 0x4000141c;
 r_ble_lll_adv_event_done = 0x40001424;
 r_ble_lll_adv_event_rmvd_from_sched = 0x40001428;
-r_ble_lll_adv_ext_estimate_data_itvl = 0x4000142c;
 r_ble_lll_adv_get_sec_pdu_len = 0x40001430;
 r_ble_lll_adv_make_done = 0x40001438;
 r_ble_lll_adv_periodic_done = 0x4000143c;
