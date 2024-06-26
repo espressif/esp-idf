@@ -41,7 +41,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 static const char *TAG = "clk";
 
-void esp_rtc_init(void)
+void IRAM_ATTR esp_rtc_init(void)
 {
 #if SOC_PMU_SUPPORTED
     pmu_init();
