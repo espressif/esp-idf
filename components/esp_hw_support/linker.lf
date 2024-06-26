@@ -21,6 +21,9 @@ entries:
     rtc_time (noflash_text)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
+    if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
+        pmu_init (noflash)
+        pmu_param (noflash)
     if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
