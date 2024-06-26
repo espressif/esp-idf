@@ -662,20 +662,54 @@ typedef struct {
 } esp_ble_local_oob_data_t;
 
 /**
+* @brief Definition of the authentication failed reason
+*/
+typedef enum {
+    // Failure reason defined in Bluetooth Core Spec 5.0 Vol3, Part H, 3.5.5
+    ESP_AUTH_SMP_PASSKEY_FAIL = 78,         /*!< The user input of passkey failed */
+    ESP_AUTH_SMP_OOB_FAIL,                  /*!< The OOB data is not available */
+    ESP_AUTH_SMP_PAIR_AUTH_FAIL,            /*!< The authentication requirements cannot be met */
+    ESP_AUTH_SMP_CONFIRM_VALUE_FAIL,        /*!< The confirm value does not match the calculated comparison value */
+    ESP_AUTH_SMP_PAIR_NOT_SUPPORT,          /*!< Pairing is not supported by the device */
+    ESP_AUTH_SMP_ENC_KEY_SIZE,              /*!< The resultant encryption key size is not long enough */
+    ESP_AUTH_SMP_INVALID_CMD,               /*!< The SMP command received is not supported by this device */
+    ESP_AUTH_SMP_UNKNOWN_ERR,               /*!< Pairing failed due to an unspecified reason */
+    ESP_AUTH_SMP_REPEATED_ATTEMPT,          /*!< Pairing or authentication procedure is disallowed */
+    ESP_AUTH_SMP_INVALID_PARAMETERS,        /*!< The command length is invalid or that a parameter is outside the specified range */
+    ESP_AUTH_SMP_DHKEY_CHK_FAIL,            /*!< The DHKey Check value received doesn’t match the one calculated by the local device */
+    ESP_AUTH_SMP_NUM_COMP_FAIL,             /*!< The confirm values in the numeric comparison protocol do not match */
+    ESP_AUTH_SMP_BR_PARING_IN_PROGR,        /*!< Pairing Request sent over the BR/EDR transport is in progress */
+    ESP_AUTH_SMP_XTRANS_DERIVE_NOT_ALLOW,   /*!< The BR/EDR Link Key or BLE LTK cannot be used to derive */
+
+    // Failure reason defined in Bluedroid Host
+    ESP_AUTH_SMP_INTERNAL_ERR,              /*!< Internal error in pairing procedure */
+    ESP_AUTH_SMP_UNKNOWN_IO,                /*!< Unknown IO capability, unable to decide association model */
+    ESP_AUTH_SMP_INIT_FAIL,                 /*!< SMP pairing initiation failed */
+    ESP_AUTH_SMP_CONFIRM_FAIL,              /*!< The confirm value does not match */
+    ESP_AUTH_SMP_BUSY,                      /*!< Pending security request on going */
+    ESP_AUTH_SMP_ENC_FAIL,                  /*!< The Controller failed to start encryption */
+    ESP_AUTH_SMP_STARTED,                   /*!< SMP pairing process started */
+    ESP_AUTH_SMP_RSP_TIMEOUT,               /*!< Security Manager timeout due to no SMP command being received */
+    ESP_AUTH_SMP_DIV_NOT_AVAIL,             /*!< Encrypted Diversifier value not available */
+    ESP_AUTH_SMP_UNSPEC_ERR,                /*!< Unspecified failed reason */
+    ESP_AUTH_SMP_CONN_TOUT,                 /*!< Pairing process failed due to connection timeout */
+} esp_ble_auth_fail_rsn_t;
+
+/**
   * @brief Structure associated with ESP_AUTH_CMPL_EVT
   */
 typedef struct
 {
-    esp_bd_addr_t         bd_addr;               /*!< BD address peer device. */
-    bool                  key_present;           /*!< Valid link key value in key element */
-    esp_link_key          key;                   /*!< Link key associated with peer device. */
-    uint8_t               key_type;              /*!< The type of Link Key */
-    bool                  success;               /*!< TRUE of authentication succeeded, FALSE if failed. */
-    uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
-    esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
-    esp_bt_dev_type_t     dev_type;              /*!< Device type */
-    esp_ble_auth_req_t    auth_mode;             /*!< authentication mode */
-} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complete cb type */
+    esp_bd_addr_t             bd_addr;               /*!< BD address of peer device */
+    bool                      key_present;           /*!< True if the link key value is valid; false otherwise */
+    esp_link_key              key;                   /*!< Link key associated with peer device */
+    uint8_t                   key_type;              /*!< The type of link key */
+    bool                      success;               /*!< True if authentication succeeded; false otherwise */
+    esp_ble_auth_fail_rsn_t   fail_reason;           /*!< The HCI reason/error code for failure when success is false */
+    esp_ble_addr_type_t       addr_type;             /*!< Peer device address type */
+    esp_bt_dev_type_t         dev_type;              /*!< Device type */
+    esp_ble_auth_req_t        auth_mode;             /*!< Authentication mode */
+} esp_ble_auth_cmpl_t;                               /*!< The ble authentication complete cb type */
 
 /**
   * @brief union associated with ble security
