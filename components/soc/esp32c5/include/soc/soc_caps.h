@@ -539,7 +539,7 @@
 #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
-// #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 // #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
@@ -552,7 +552,7 @@
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 #define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
-// #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
+#define SOC_PM_SUPPORT_MAC_BB_PD        (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
 
 // #define SOC_PM_SUPPORT_PMU_MODEM_STATE  (1)

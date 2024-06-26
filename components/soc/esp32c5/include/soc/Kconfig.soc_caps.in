@@ -1251,6 +1251,10 @@ config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     bool
     default y
 
+config SOC_PM_SUPPORT_WIFI_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
@@ -1280,6 +1284,10 @@ config SOC_PM_SUPPORT_TOP_PD
     default y
 
 config SOC_PM_SUPPORT_HP_AON_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_MAC_BB_PD
     bool
     default y
 
