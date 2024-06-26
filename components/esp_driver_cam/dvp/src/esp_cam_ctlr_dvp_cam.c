@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include "hal/gpio_ll.h"
 #include "hal/cam_ll.h"
+#include "hal/color_hal.h"
 #include "driver/gpio.h"
 #include "esp_cache.h"
 #include "esp_private/periph_ctrl.h"
@@ -238,23 +239,15 @@ static esp_err_t esp_cam_ctlr_dvp_cam_get_frame_size(const esp_cam_ctlr_dvp_conf
     if (config->pic_format_jpeg) {
         *p_size = config->h_res * config->v_res;
     } else {
-        switch (config->input_data_color_type) {
-        case CAM_CTLR_COLOR_RGB565:
-            *p_size = config->h_res * config->v_res * 2;
-            break;
-        case CAM_CTLR_COLOR_YUV422:
-            *p_size = config->h_res * config->v_res * 2;
-            break;
-        case CAM_CTLR_COLOR_YUV420:
-            *p_size = (config->h_res * config->v_res / 2) * 3;
-            break;
-        case CAM_CTLR_COLOR_RGB888:
-            *p_size = config->h_res * config->v_res * 3;
-            break;
-        default:
-            ret = ESP_ERR_INVALID_ARG;
-            break;
+        color_space_pixel_format_t pixel_format = {
+            .color_type_id = config->input_data_color_type
+        };
+        uint32_t depth = color_hal_pixel_format_get_bit_depth(pixel_format);
+        if (!depth) {
+            return ESP_ERR_INVALID_ARG;
         }
+
+        *p_size = config->h_res * config->v_res * depth / 8;
     }
 
     return ret;
@@ -317,12 +310,17 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
         DVP_CAM_CONFIG_INPUT_PIN(pin->data_io[i], cam_periph_signals.buses[ctlr_id].data_sigs[i], false);
     }
 
-    ret = gpio_set_direction(pin->xclk_io, GPIO_MODE_OUTPUT);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to configure pin=%d", pin->xclk_io);
-        return ret;
+    /* If using external XTAL, don't initialize xclock pin */
+
+    if (pin->xclk_io != GPIO_NUM_NC) {
+        gpio_func_sel(pin->xclk_io, PIN_FUNC_GPIO);
+        ret = gpio_set_direction(pin->xclk_io, GPIO_MODE_OUTPUT);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to configure pin=%d", pin->xclk_io);
+            return ret;
+        }
+        esp_rom_gpio_connect_out_signal(pin->xclk_io, cam_periph_signals.buses[ctlr_id].clk_sig, false, false);
     }
-    esp_rom_gpio_connect_out_signal(pin->xclk_io, cam_periph_signals.buses[ctlr_id].clk_sig, false, false);
 
     PERIPH_RCC_ACQUIRE_ATOMIC(cam_periph_signals.buses[ctlr_id].module, ref_count) {
         if (ref_count == 0) {
