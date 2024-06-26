@@ -27,6 +27,7 @@ For information about storage security, please refer to :doc:`Storage Security <
     fatfsgen
     mass_mfg.rst
     nvs_flash
+    nvs_bootloader
     nvs_encryption
     nvs_partition_gen.rst
     nvs_partition_parse.rst
@@ -52,6 +53,8 @@ Examples
       - Shows the use of the C-style API to read and write integer data types in NVS flash.
     * - :example:`nvs_rw_value_cxx <storage/nvs_rw_value_cxx>`
       - Shows the use of the C++-style API to read and write integer data types in NVS flash.
+    * - :example:`nvs_bootloader <storage/nvs_bootloader>`
+      - Shows the use of the API available to the bootloader code to read NVS data.
     * - :example:`nvsgen <storage/nvsgen>`
       - Demonstrates how to use the Python-based NVS image generation tool to create an NVS partition image from the contents of a CSV file.
 

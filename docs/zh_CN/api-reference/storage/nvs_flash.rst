@@ -37,6 +37,13 @@ NVS 支持至多存储数万个键，且 NVS 分区的大小也可以达到几�
     启用 SPIRAM 且将 :ref:`CONFIG_SPIRAM_USE` 设为 ``CONFIG_SPIRAM_USE_CAPS_ALLOC`` 后，即可在 menuconfig 菜单的 nvs_flash 组件中启用 :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` 选项。
     .. note:: 使用带有 SPI 连接的 PSRAM 会导致 NVS API 的整数操作速度减慢约 2.5 倍。
 
+.. _nvs_bootloader:
+
+在引导加载程序代码中使用 NVS
+---------------------------------
+
+运行中的应用程序可使用本指南中描述的标准 NVS API。也可以在自定义引导加载程序代码中从 NVS 读取数据。更多信息请参阅 :doc:`nvs_bootloader` 指南。
+
 键值对
 ^^^^^^^^^^^^^^^
 

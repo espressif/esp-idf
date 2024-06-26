@@ -15,3 +15,11 @@ components/nvs_flash/test_apps:
     - esp_partition
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
+
+components/nvs_flash/test_apps_bootloader:
+  depends_components:
+    - spi_flash
+    - nvs_flash
+    - esp_partition
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]

@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Check patterns-build_components including all components files except 'test*/'
 """
-
 import glob
 import os
 import subprocess
 from functools import lru_cache
-from typing import List, Set
+from typing import List
+from typing import Set
 
 import yaml
 from idf_ci_utils import IDF_PATH
@@ -56,6 +55,7 @@ def get_components_test_files() -> Set[str]:
         'components/fatfs/test_fatfsgen/**/*',
         'components/heap/test_multi_heap_host/**/*',
         'components/nvs_flash/test_nvs_host/**/*',
+        'components/nvs_flash/test_apps_bootloader/**/*',
         'components/partition_table/test_gen_esp32part_host/**/*',
         'components/spiffs/test_spiffsgen/**/*',
     ]
