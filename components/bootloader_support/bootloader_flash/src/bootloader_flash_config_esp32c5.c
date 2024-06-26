@@ -28,7 +28,6 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#include "hal/clk_tree_ll.h"
 
 void bootloader_flash_update_id()
 {
@@ -204,11 +203,6 @@ static void bootloader_spi_flash_resume(void)
 
 esp_err_t bootloader_init_spi_flash(void)
 {
-    // On ESP32C5, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration
-    // Therefore, before switching SOC_ROOT_CLK to HS, we need to set MSPI source clock HS divider to make it run at
-    // 80MHz after the switch. PLL = 480MHz, so divider is 6.
-    clk_ll_mspi_fast_set_hs_divider(6);
-
     bootloader_init_flash_configure();
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();

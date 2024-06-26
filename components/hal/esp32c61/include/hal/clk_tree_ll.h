@@ -808,7 +808,7 @@ Set the frequency division factor of ref_tick
 */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-    PCR.ctrl_32k_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, REG_FOSC_TICK_NUM); // divider = (REG_FOSC_TICK_NUM + 1) = 256
 }
 
 

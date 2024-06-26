@@ -125,6 +125,9 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
+    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+        clk_ll_rc_fast_tick_conf();
+    }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
@@ -137,6 +140,9 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     } else if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_8M_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
+        if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
+            expected_freq = expected_freq >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+        }
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
@@ -160,7 +166,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
               calibration. */
             if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
                 if (cal_clk == RTC_CAL_RC_FAST) {
-                    cal_val = cal_val >> 5;
+                    cal_val = cal_val >> CLK_LL_RC_FAST_TICK_DIV_BITS;
                     CLEAR_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
                 }
             }
@@ -221,7 +227,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
       avoid excessive calibration time.*/
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
         if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> 5;
+            slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_TICK_DIV_BITS;
             SET_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
         }
     }

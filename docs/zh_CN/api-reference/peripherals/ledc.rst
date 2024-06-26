@@ -166,7 +166,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - ~ 17.5 MHz
          - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
-         - 48/40 MHz
+         - 48 MHz
          - 支持动态调频 (DFS) 功能
 
 .. only:: esp32c6

@@ -288,10 +288,7 @@ menu "Hardware Settings"
     # Invisible bringup bypass options for esp_hw_support component
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
         bool
-        # TODO: [ESP32C5] IDF-8642 IDF_TARGET_ESP32C5 is added because clock
-        # is required when bringup on C5 beta3, remove it when clock tree is
-        # supported
-        default y if !SOC_CLK_TREE_SUPPORTED && !IDF_TARGET_ESP32C5
+        default y if !SOC_CLK_TREE_SUPPORTED
         default n
         help
             This option is only used for new chip bringup, when

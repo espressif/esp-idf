@@ -166,7 +166,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - ~ 17.5 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
-         - 48/40 MHz
+         - 48 MHz
          - Dynamic Frequency Scaling compatible
 
 .. only:: esp32c6
