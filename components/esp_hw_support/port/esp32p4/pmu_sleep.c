@@ -333,6 +333,9 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
         pmu_sleep_shutdown_ldo();
     }
 
+    // Wait eFuse memory update done.
+    while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
+
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
