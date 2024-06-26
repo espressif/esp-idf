@@ -58,6 +58,7 @@ typedef struct {
     SemaphoreHandle_t transmit_mutex;
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv);
+    esp_err_t (*stack_input_info)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv, void *info);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*customized_read_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value);
@@ -102,9 +103,28 @@ static esp_err_t eth_stack_input(esp_eth_mediator_t *eth, uint8_t *buffer, uint3
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
     if (eth_driver->stack_input) {
         return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv);
+    // try to pass traffic using extended `stack_input_info`. It's for compatibility reasons since older MAC drivers may
+    // still use `stack_input` but higher level API registered extended version.
+    } else if (eth_driver->stack_input_info) {
+        return eth_driver->stack_input_info((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv, NULL);
     }
     // No stack input path has been installed, just drop the incoming packets
-    free(buffer);
+    free(buffer); // IDF-11444
+    return ESP_OK;
+}
+
+static esp_err_t eth_stack_input_info(esp_eth_mediator_t *eth, uint8_t *buffer, uint32_t length, void *info)
+{
+    esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
+    if (eth_driver->stack_input_info) {
+        return eth_driver->stack_input_info((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv, info);
+    // try using simple `stack_input`. It's for compatibility reasons since higher level API may still register original `stack_input`.
+    // Additional frame info is silently lost of course.
+    } else if (eth_driver->stack_input) {
+        return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv);
+    }
+    // No stack input path has been installed, just drop the incoming packets
+    free(buffer); // IDF-11444
     return ESP_OK;
 }
 
@@ -209,6 +229,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->duplex = ETH_DUPLEX_HALF;
     eth_driver->speed = ETH_SPEED_10M;
     eth_driver->stack_input = config->stack_input;
+    eth_driver->stack_input_info = config->stack_input_info;
     eth_driver->on_lowlevel_init_done = config->on_lowlevel_init_done;
     eth_driver->on_lowlevel_deinit_done = config->on_lowlevel_deinit_done;
     eth_driver->check_link_period_ms = config->check_link_period_ms;
@@ -217,6 +238,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->mediator.phy_reg_read = eth_phy_reg_read;
     eth_driver->mediator.phy_reg_write = eth_phy_reg_write;
     eth_driver->mediator.stack_input = eth_stack_input;
+    eth_driver->mediator.stack_input_info = eth_stack_input_info;
     eth_driver->mediator.on_state_changed = eth_on_state_changed;
     // set mediator for both mac and phy object, so that mac and phy are connected to each other via mediator
     mac->set_mediator(mac, &eth_driver->mediator);
@@ -331,7 +353,23 @@ esp_err_t esp_eth_update_input_path(
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     eth_driver->priv = priv;
+    eth_driver->stack_input_info = NULL;
     eth_driver->stack_input = stack_input;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_update_input_path_info(
+    esp_eth_handle_t hdl,
+    esp_err_t (*stack_input_info)(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv, void *info),
+    void *priv)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
+    eth_driver->priv = priv;
+    eth_driver->stack_input = NULL;
+    eth_driver->stack_input_info = stack_input_info;
 err:
     return ret;
 }
@@ -365,7 +403,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
+esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
@@ -384,7 +422,7 @@ esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
     }
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
     va_start(args, argc);
-    ret = mac->transmit_vargs(mac, argc, args);
+    ret = mac->transmit_ctrl_vargs(mac, ctrl, argc, args);
 #if CONFIG_ETH_TRANSMIT_MUTEX
     xSemaphoreGive(eth_driver->transmit_mutex);
 #endif // CONFIG_ETH_TRANSMIT_MUTEX

@@ -1999,7 +1999,7 @@ config SOC_ASYNCHRONOUS_BUS_ERROR_MODE
     bool
     default y
 
-config SOC_EMAC_IEEE_1588_SUPPORT
+config SOC_EMAC_IEEE1588V2_SUPPORTED
     bool
     default y
 

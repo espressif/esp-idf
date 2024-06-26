@@ -29,11 +29,11 @@ struct esp_eth_netif_glue_t {
     esp_event_handler_instance_t get_ip_ctx_handler;
 };
 
-static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
+static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv, void *info)
 {
 #if CONFIG_ESP_NETIF_L2_TAP
     esp_err_t ret = ESP_OK;
-    ret = esp_vfs_l2tap_eth_filter(eth_handle, buffer, (size_t *)&length);
+    ret = esp_vfs_l2tap_eth_filter_frame(eth_handle, buffer, (size_t *)&length, info);
     if (length == 0) {
         return ret;
     }
@@ -52,7 +52,7 @@ static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
     esp_eth_netif_glue_t *netif_glue = (esp_eth_netif_glue_t *)args;
     netif_glue->base.netif = esp_netif;
 
-    esp_eth_update_input_path(netif_glue->eth_driver, eth_input_to_netif, esp_netif);
+    esp_eth_update_input_path_info(netif_glue->eth_driver, eth_input_to_netif, esp_netif);
 
     // set driver related config to esp-netif
     esp_netif_driver_ifconfig_t driver_ifconfig = {
