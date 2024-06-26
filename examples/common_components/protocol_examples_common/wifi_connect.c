@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -26,38 +26,6 @@ static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
 static SemaphoreHandle_t s_semph_get_ip6_addrs = NULL;
 #endif
 
-#if CONFIG_EXAMPLE_WIFI_SCAN_METHOD_FAST
-#define EXAMPLE_WIFI_SCAN_METHOD WIFI_FAST_SCAN
-#elif CONFIG_EXAMPLE_WIFI_SCAN_METHOD_ALL_CHANNEL
-#define EXAMPLE_WIFI_SCAN_METHOD WIFI_ALL_CHANNEL_SCAN
-#endif
-
-#if CONFIG_EXAMPLE_WIFI_CONNECT_AP_BY_SIGNAL
-#define EXAMPLE_WIFI_CONNECT_AP_SORT_METHOD WIFI_CONNECT_AP_BY_SIGNAL
-#elif CONFIG_EXAMPLE_WIFI_CONNECT_AP_BY_SECURITY
-#define EXAMPLE_WIFI_CONNECT_AP_SORT_METHOD WIFI_CONNECT_AP_BY_SECURITY
-#endif
-
-#if CONFIG_EXAMPLE_WIFI_AUTH_OPEN
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WEP
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA2_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA_WPA2_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA2_ENTERPRISE
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_ENTERPRISE
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA3_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WPA2_WPA3_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
-#elif CONFIG_EXAMPLE_WIFI_AUTH_WAPI_PSK
-#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
-#endif
-
 static int s_retry_num = 0;
 
 static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base,
@@ -75,6 +43,7 @@ static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event
             xSemaphoreGive(s_semph_get_ip6_addrs);
         }
 #endif
+        example_wifi_sta_do_disconnect();
         return;
     }
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
