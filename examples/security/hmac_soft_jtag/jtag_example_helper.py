@@ -6,15 +6,27 @@ import hashlib
 import hmac
 import os
 import subprocess
+from typing import Optional
 
 
-def generate_token_data(hmac_key_file: str) -> None:
+def generate_token_data(hmac_key_file: str, output_file: Optional[str] = None) -> None:
     with open(hmac_key_file, 'rb') as file:
         key_data = file.read()
         data = bytes([0] * 32)
         token_data = hmac.HMAC(key_data, data, hashlib.sha256).digest()
         token_hex = binascii.hexlify(token_data).decode('utf-8')
-        print(token_hex)
+
+        if output_file:
+            if output_file.endswith('.bin'):
+                with open(output_file, 'wb') as out_file:
+                    out_file.write(token_data)
+            elif output_file.endswith('.hex'):
+                with open(output_file, 'w') as out_file:
+                    out_file.write(token_hex)
+            else:
+                print(f'Unsupported file format for output file: {output_file}')
+        else:
+            print(token_hex)
 
 
 def generate_hmac_key(hmac_key_file: str) -> None:
@@ -69,6 +81,7 @@ def main() -> None:
 
     token_generator_parser = subparsers.add_parser('generate_token')
     token_generator_parser.add_argument('hmac_key_file', help='File containing the HMAC key')
+    token_generator_parser.add_argument('output_file', nargs='?', help='File to store the generated token (optional)')
 
     args = parser.parse_args()
 
@@ -77,7 +90,7 @@ def main() -> None:
     elif args.command == 'generate_hmac_key':
         generate_hmac_key(args.hmac_key_file)
     elif args.command == 'generate_token':
-        generate_token_data(args.hmac_key_file)
+        generate_token_data(args.hmac_key_file, args.output_file)
     else:
         parser.print_help()
 
