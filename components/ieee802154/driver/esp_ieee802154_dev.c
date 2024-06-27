@@ -343,10 +343,8 @@ static void enable_rx(void)
 {
     set_next_rx_buffer();
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX);
-
-    ieee802154_set_cmd(IEEE802154_CMD_RX_START);
-
     ieee802154_set_state(IEEE802154_STATE_RX);
+    ieee802154_set_cmd(IEEE802154_CMD_RX_START);
 }
 
 static IRAM_ATTR void next_operation(void)
@@ -477,7 +475,7 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
     case IEEE802154_RX_ABORT_BY_ED_STOP:
         // do nothing
-        break;
+        return;
     case IEEE802154_RX_ABORT_BY_SFD_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_CRC_ERROR:
     case IEEE802154_RX_ABORT_BY_INVALID_LEN:
@@ -601,8 +599,7 @@ static void ieee802154_isr(void *arg)
 
     if (events & IEEE802154_EVENT_RX_SFD_DONE) {
         // IEEE802154_STATE_TX && IEEE802154_STATE_TX_CCA && IEEE802154_STATE_TX_ENH_ACK for isr processing delay
-        IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX || s_ieee802154_state == IEEE802154_STATE_RX_ACK || s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
-
+        IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX || s_ieee802154_state == IEEE802154_STATE_RX_ACK || s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ACK);
         s_rx_frame_info[s_rx_index].timestamp = esp_timer_get_time();
         esp_ieee802154_receive_sfd_done();
 
@@ -803,11 +800,11 @@ static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool 
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX);
 
     if (cca) {
-        ieee802154_set_cmd(IEEE802154_CMD_CCA_TX_START);
         ieee802154_set_state(IEEE802154_STATE_TX_CCA);
+        ieee802154_set_cmd(IEEE802154_CMD_CCA_TX_START);
     } else {
-        ieee802154_set_cmd(IEEE802154_CMD_TX_START);
         ieee802154_set_state(IEEE802154_STATE_TX);
+        ieee802154_set_cmd(IEEE802154_CMD_TX_START);
     }
 
     ieee802154_exit_critical();
