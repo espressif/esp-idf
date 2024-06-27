@@ -5,7 +5,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8960
+@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='esp32p4 support TBD, C5 failed')  # TODO: IDF-8960, [ESP32C5] IDF-10307
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

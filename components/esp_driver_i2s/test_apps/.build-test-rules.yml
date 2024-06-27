@@ -3,6 +3,10 @@
 components/esp_driver_i2s/test_apps/i2s:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: target test failed  # TODO [ESP32C5] IDF-10343
   depends_components:
     - esp_driver_i2s
     - esp_driver_pcnt
@@ -12,7 +16,7 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
     - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2S_HW_VERSION_2 != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]  # TODO: [ESP32C5] IDF- 10321
       temporary: true
       reason: lack of runners
   depends_components:

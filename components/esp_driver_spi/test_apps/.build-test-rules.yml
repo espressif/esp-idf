@@ -12,7 +12,7 @@ components/esp_driver_spi/test_apps/master:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported # TODO: IDF-8942
+      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:
@@ -21,7 +21,7 @@ components/esp_driver_spi/test_apps/param:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported # TODO: IDF-8942
+      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave:
@@ -30,7 +30,7 @@ components/esp_driver_spi/test_apps/slave:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported # TODO: IDF-8942
+      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave_hd:

@@ -4,4 +4,4 @@ components/app_update/test_apps:
   disable:
     - if: IDF_TARGET in ["esp32c5"]
       temporary: true
-      reason: target esp32c5 is not supported yet # TODO: [ESP32C5] IDF-8638
+      reason: target esp32c5 is not supported yet  # TODO: [ESP32C5] IDF-8640, IDF-10317

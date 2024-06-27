@@ -19,7 +19,7 @@ components/spi_flash/test_apps/esp_flash_stress:
   disable:
     - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8715
+      reason: not support yet # TODO: [ESP32C5] IDF-8715, IDF-10313
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
