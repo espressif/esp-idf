@@ -44,6 +44,7 @@ menu "Example Configuration"
             range 7 14 if IDF_TARGET_ESP32H2
             range 0 21 if IDF_TARGET_ESP32S2
             range 0 21 if IDF_TARGET_ESP32S3
+            range 0 15 if IDF_TARGET_ESP32P4
 
         choice EXAMPLE_EXT1_WAKEUP_PIN_1_SEL
             prompt "Enable wakeup from PIN_1"
@@ -118,6 +119,7 @@ menu "Example Configuration"
             range 7 14 if IDF_TARGET_ESP32H2
             range 0 21 if IDF_TARGET_ESP32S2
             range 0 21 if IDF_TARGET_ESP32S3
+            range 0 15 if IDF_TARGET_ESP32P4
 
         choice EXAMPLE_EXT1_WAKEUP_PIN_2_SEL
             prompt "Enable wakeup from PIN_2"
@@ -247,7 +249,7 @@ menu "Example Configuration"
                 if we turn off the RTC_PERIPH domain or if certain chips lack the RTC_PERIPH domain,
                 we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.
                 but if we turn on the RTC_PERIPH domain, we don not need to use HOLD feature and this will
-                increase some power comsumption.
+                increase some power consumption.
 
                 EXT0 wakeup source resides in the same power domain as RTCIO (RTC Periph), so internal
                 pull-up/downs are always available. There's no need to explicitly force it on for EXT0.
@@ -259,7 +261,7 @@ menu "Example Configuration"
         depends on SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
         help
             This option enables wake up from GPIO. Be aware that if you use low level to trigger wakeup, we strongly
-            recommand you to connect external pull-up resistance.
+            recommend you to connect external pull-up resistance.
 
     menu "GPIO wakeup configuration"
         visible if EXAMPLE_GPIO_WAKEUP
@@ -268,6 +270,7 @@ menu "Example Configuration"
             int "Enable wakeup from GPIO"
             default 0
             range 0 7 if IDF_TARGET_ESP32C6
+            range 0 15 if IDF_TARGET_ESP32P4
             range 0 5 if !IDF_TARGET_ESP32C6
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
