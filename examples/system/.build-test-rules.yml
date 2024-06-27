@@ -386,7 +386,7 @@ examples/system/unit_test/:
 
 examples/system/xip_from_psram:
   enable:
-    - if: SOC_SPIRAM_SUPPORTED == 1
+    - if: SOC_SPIRAM_SUPPORTED == 1 and SOC_SPIRAM_XIP_SUPPORTED == 1
       reason: this feature is supported on chips that have PSRAM
   disable:
     - if: IDF_TARGET == "esp32"

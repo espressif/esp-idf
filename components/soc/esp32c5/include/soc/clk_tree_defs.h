@@ -502,7 +502,7 @@ typedef enum {
 /**
  * @brief MSPI digital controller clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8649
+typedef enum {
     MSPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MSPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     MSPI_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,           /*!< Select SPLL as the source clock */
