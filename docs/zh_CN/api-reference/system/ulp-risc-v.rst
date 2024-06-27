@@ -120,7 +120,9 @@ ULP 中的所有硬件指令都不支持互斥，所以 Lock API 需通过一种
 
 要运行 ULP RISC-V 程序，主程序需要调用 :cpp:func:`ulp_riscv_load_binary` 函数，将 ULP 程序加载到 RTC 内存中，然后调用 :cpp:func:`ulp_riscv_run` 函数，启动 ULP RISC-V 程序。
 
-注意，必须在 menuconfig 中启用 ``CONFIG_ULP_COPROC_ENABLED`` 和 ``CONFIG_ULP_COPROC_TYPE_RISCV`` 选项，以便正常运行 ULP RISC-V 程序。``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
+注意，必须在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE_RISCV` 选项，以便正常运行 ULP RISC-V 程序。``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
+
+如须减少程序体积，可启用 :ref:`CONFIG_ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS` 。此选项会开启GCC的 ``-msave-restore`` 功能，并可能些微影响程序性能。
 
 每个 ULP RISC-V 程序均以二进制 BLOB 的形式嵌入到 ESP-IDF 应用程序中。应用程序可以引用此 BLOB，并以下面的方式加载此 BLOB（假设 ULP_APP_NAME 已被定义为 ``ulp_app_name``）：
 

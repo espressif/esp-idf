@@ -72,6 +72,20 @@ menu "Ultra Low Power (ULP) Co-processor"
                 is invoked on.
     endmenu
 
+    config ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS
+        depends on ULP_COPROC_TYPE_LP_CORE || ULP_COPROC_TYPE_RISCV
+        bool
+        prompt "Enable -msave-restore flag to reduce code size for ULP RISC-V / LP Core"
+        default COMPILER_SAVE_RESTORE_LIBCALLS
+        help
+            Adds -msave-restore to C/C++ compilation flags.
+
+            When this flag is enabled, compiler will call library functions to
+            save/restore registers in function prologues/epilogues. This results
+            in lower overall code size, at the expense of slightly reduced performance.
+
+            This option can be enabled for LP Core or ULP RISC-V only.
+
     config ULP_SHARED_MEM
         depends on ULP_COPROC_TYPE_LP_CORE
         hex
