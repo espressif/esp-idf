@@ -43,8 +43,6 @@
 //  \#define SOC_SUPPORT_COEXISTENCE         1
 //  \#define SOC_MPI_SUPPORTED               1
 //  \#define SOC_SHA_SUPPORTED               1    //TODO: [ESP32C61] IDF-9234
-//  \#define SOC_HMAC_SUPPORTED              1    //TODO: [ESP32C61] IDF-9323
-//  \#define SOC_DIG_SIGN_SUPPORTED          1    //TODO: [ESP32C61] IDF-9325
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1
@@ -153,18 +151,6 @@
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 #define SOC_CPU_PMP_REGION_GRANULARITY  128 // TODO IDF-9580 check when doing PMP bringup
 
-
-/*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
-//TODO: [ESP32C61] IDF-9325 (Copy from esp32c6, need check)
-/** The maximum length of a Digital Signature in bits. */
-#define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
-
-/** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
-#define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
-
-/** Maximum wait time for DS parameter decryption key. If overdue, then key error.
-    See TRM DS chapter for more details */
-#define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 //TODO: [ESP32C61] IDF-9310
 /*-------------------------- GDMA CAPS -------------------------------------*/

@@ -171,18 +171,6 @@ config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 128
 
-config SOC_DS_SIGNATURE_MAX_BIT_LEN
-    int
-    default 3072
-
-config SOC_DS_KEY_PARAM_MD_IV_LENGTH
-    int
-    default 16
-
-config SOC_DS_KEY_CHECK_MAX_WAIT_US
-    int
-    default 1100
-
 config SOC_ETM_GROUPS
     int
     default 1

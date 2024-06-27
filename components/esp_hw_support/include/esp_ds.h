@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "esp_err.h"
 #include "esp_ds_err.h"
 #include "soc/soc_caps.h"
+
+#ifdef SOC_DIG_SIGN_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +63,7 @@ typedef struct esp_digital_signature_data {
      * alter the DS peripheral results this way, it will just truncate or
      * extend the message and the resulting signature in software.)
      *
-     * @note In IDF, the enum type length is the same as of type unsigned, so they can be used interchangably.
+     * @note In IDF, the enum type length is the same as of type unsigned, so they can be used interchangeably.
      *       See the ROM code for the original declaration of struct \c ets_ds_data_t.
      */
     esp_digital_signature_length_t rsa_length;
@@ -186,7 +188,7 @@ bool esp_ds_is_busy(void);
  *
  * @param signature the destination of the signature, should be (data->rsa_length + 1)*4 bytes long,
           the resultant signature bytes shall be written in little endian format.
- * @param esp_ds_ctx the context object retreived by \c esp_ds_start_sign()
+ * @param esp_ds_ctx the context object retrieved by \c esp_ds_start_sign()
  *
  * @return
  *      - ESP_OK if successful, the ds operation has been finished and the result is written to signature.
@@ -231,4 +233,6 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
