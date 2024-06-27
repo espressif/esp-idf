@@ -33,5 +33,6 @@
    spiffs
    vfs
    wear-levelling
+   storage-security.rst
 
 此部分 API 代码示例存放在 ESP-IDF 示例项目的 :example:`storage` 目录下。
