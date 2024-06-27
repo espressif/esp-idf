@@ -164,6 +164,7 @@ ULP LP-Core 支持的外设
     * LP IO
     * LP I2C
     * LP UART
+    :SOC_LP_SPI_SUPPORTED: * LP SPI
 
 .. only:: CONFIG_ESP_ROM_HAS_LP_ROM
 
@@ -236,6 +237,10 @@ API 参考
 .. include-build-file:: inc/lp_core_i2c.inc
 .. include-build-file:: inc/lp_core_uart.inc
 
+.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+
+    .. include-build-file:: inc/lp_core_spi.inc
+
 LP 内核 API 参考
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -245,5 +250,9 @@ LP 内核 API 参考
 .. include-build-file:: inc/ulp_lp_core_uart.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
+
+.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+
+    .. include-build-file:: inc/ulp_lp_core_spi.inc
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
