@@ -19,6 +19,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
+#include "esp_private/i2c_platform.h"
 #include "esp_rom_gpio.h"
 #include "esp_log.h"
 #include "test_utils.h"
@@ -343,5 +344,21 @@ TEST_CASE("I2C master transaction receive check nack return value", "[i2c]")
 
     _test_i2c_new_bus_device(&bus_handle, &dev_handle);
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_receive(dev_handle, data_rd, DATA_LENGTH, -1));
+    _test_i2c_del_bus_device(bus_handle, dev_handle);
+}
+
+TEST_CASE("Test get handle with known port", "[i2c]")
+{
+    i2c_master_bus_handle_t handle;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, i2c_master_get_bus_handle(10, &handle));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_get_bus_handle(0, &handle));
+
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_dev_handle_t dev_handle;
+    _test_i2c_new_bus_device(&bus_handle, &dev_handle);
+    TEST_ESP_OK(i2c_master_get_bus_handle(0, &handle));
+
+    // Check the handle retrieved is as same as original handle
+    TEST_ASSERT((uint32_t)bus_handle == (uint32_t)handle);
     _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
