@@ -1,6 +1,6 @@
 /* mbedTLS bignum (MPI) self-tests as unit tests
  *
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,12 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "test_utils.h"
+
+#ifdef SOC_MPI_SUPPORTED
+#define RSA_MAX_BIT_LEN SOC_RSA_MAX_BIT_LEN
+#else
+#define RSA_MAX_BIT_LEN 3072
+#endif
 
 #define MBEDTLS_OK 0
 
@@ -54,7 +60,7 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
     TEST_ASSERT_FALSE(mbedtls_mpi_read_string(&A, 16, a_str));
     TEST_ASSERT_FALSE(mbedtls_mpi_read_string(&B, 16, b_str));
 
-    /* calulate X = A * B variant */
+    /* calculate X = A * B variant */
     TEST_ASSERT_FALSE(mbedtls_mpi_read_string(&E, 16, e_str));
     if (res_operands_overlap == 0) {
         TEST_ASSERT_FALSE(mbedtls_mpi_mul_mpi(&X, &A, &B));
@@ -72,7 +78,7 @@ static void test_bignum_mult_variant(const char *a_str, const char *b_str, const
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
     mbedtls_mpi M;
     /* if mod_bits arg is set, also do a esp_mpi_mul_mod() call */
-    if (mod_bits > 0 && mod_bits <= SOC_RSA_MAX_BIT_LEN) {
+    if (mod_bits > 0 && mod_bits <= RSA_MAX_BIT_LEN) {
         mbedtls_mpi_init(&M);
         for(int i = 0; i < mod_bits; i++) {
             mbedtls_mpi_set_bit(&M, i, 1);
@@ -106,7 +112,7 @@ TEST_CASE("test MPI multiplication", "[bignum]")
     /* Run some trivial numbers tests w/ various high modulo bit counts,
      should make no difference to the result
     */
-    for(int i = 512; i <= SOC_RSA_MAX_BIT_LEN; i+= 512) {
+    for(int i = 512; i <= RSA_MAX_BIT_LEN; i+= 512) {
         test_bignum_mult("10", "100", "1000",
                          i);
     }

@@ -41,7 +41,6 @@
 //  \#define SOC_I2C_SUPPORTED               1    //TODO: [ESP32C61] IDF-9296, IDF-9297
 #define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32C61] IDF-9307, IDF-9308
 //  \#define SOC_SUPPORT_COEXISTENCE         1
-//  \#define SOC_MPI_SUPPORTED               1
 //  \#define SOC_SHA_SUPPORTED               1    //TODO: [ESP32C61] IDF-9234
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
@@ -64,7 +63,6 @@
 //  \#define SOC_TWAI_SUPPORTED              0    //TODO: [ESP32C61] IDF-9336
 //  \#define SOC_ETM_SUPPORTED               0
 //  \#define SOC_LP_CORE_SUPPORTED           0    //TODO: [ESP32C61] IDF-9331
-//  \#define SOC_AES_SUPPORTED               0    //TODO: [ESP32C61] IDF-9328
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
 //  \#define SOC_PAU_SUPPORTED               0
 //  \#define SOC_LP_I2C_SUPPORTED            0    //TODO: [ESP32C61] IDF-9330, IDF-9337
@@ -72,15 +70,6 @@
 #define SOC_ECDSA_SUPPORTED             1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
-
-/*-------------------------- AES CAPS -----------------------------------------*/
-#define SOC_AES_SUPPORT_DMA     (1)
-
-/* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GDMA            (1)
-
-#define SOC_AES_SUPPORT_AES_128 (1)
-#define SOC_AES_SUPPORT_AES_256 (1)
 
 //TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
 /*-------------------------- ADC CAPS -------------------------------*/
@@ -278,14 +267,6 @@
 
 /*------------------------ USB SERIAL JTAG CAPS ------------------------------*/
 //  \#define SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP     (1)     /*!< Support to maintain minimum usb communication during light sleep */ // TODO: IDF-6395
-
-/*--------------------------- MPI CAPS ---------------------------------------*/
-#define SOC_MPI_MEM_BLOCKS_NUM (4)
-#define SOC_MPI_OPERATIONS_NUM (3)
-
-/*--------------------------- RSA CAPS ---------------------------------------*/
-//TODO: [ESP32C61] IDF-9326
-#define SOC_RSA_MAX_BIT_LEN    (3072)
 
 // TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
