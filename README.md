@@ -65,8 +65,12 @@ See the Getting Started guide links above for a detailed setup guide. This is a 
 (See the Getting Started guide listed above for a full list of required steps with more details.)
 
 * Install host build dependencies mentioned in the Getting Started guide.
-* Run the install script to set up the build environment. The options include `install.bat` or `install.ps1` for Windows, and `install.sh` or `install.fish` for Unix shells.
-* Run the export script on Windows (`export.bat`) or source it on Unix (`source export.sh`) in every shell environment before using ESP-IDF.
+* Run the install script to set up the build environment:
+  * for Windows: `install.bat` or `install.ps1`
+  * for Unix: `install.sh` or `install.fish`
+* Run the export script in every shell environment before using ESP-IDF:
+  * for Windows: `export.bat` or `export.ps1`
+  * for Unix: `source export.sh`, `source export.fish` or `source-env export.nu`
 
 ## Configuring the Project
 
