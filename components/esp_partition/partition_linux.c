@@ -231,6 +231,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_END) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -244,6 +245,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                          (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size,
                          (int) (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -251,6 +253,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_SET) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -667,7 +670,7 @@ static bool esp_partition_hook_erase(const void *dstAddr, size_t *size)
         }
     }
 
-    // update statistcs for all sectors until power down cycle
+    // update statistics for all sectors until power down cycle
     for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
         ++s_esp_partition_stat_erase_ops;
         s_esp_partition_stat_sector_erase_count[sector_index]++;
