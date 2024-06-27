@@ -29,6 +29,8 @@
 #include <string.h>
 #include "sdkconfig.h"
 
+#include "esp_vfs_minified.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,20 +64,11 @@ extern "C" {
  */
 #define ESP_VFS_FLAG_READONLY_FS (1 << 2)
 
-/*
- * @brief VFS identificator used for esp_vfs_register_with_id()
- */
-typedef int esp_vfs_id_t;
-
 /**
- * @brief VFS semaphore type for select()
- *
+ * Flag which indicates that VFS structure should be freed upon unregistering.
+ * @note Free if false, do not free if true
  */
-typedef struct
-{
-    bool is_sem_local;      /*!< type of "sem" is SemaphoreHandle_t when true, defined by socket driver otherwise */
-    void *sem;              /*!< semaphore instance */
-} esp_vfs_select_sem_t;
+#define ESP_VFS_FLAG_STATIC (1 << 3)
 
 /**
  * @brief VFS definition structure
@@ -259,6 +252,8 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
 } esp_vfs_t;
 
+
+
 /**
  * Register a virtual filesystem for given path prefix.
  *
@@ -283,7 +278,6 @@ typedef struct
  *          registered.
  */
 esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx);
-
 
 /**
  * Special case function for registering a VFS that uses a method other than
