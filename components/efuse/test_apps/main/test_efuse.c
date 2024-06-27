@@ -487,8 +487,11 @@ void check_efuse_table_test(int cycle)
         size_t field_size = esp_efuse_get_field_size(field);
         int arr_size = esp_efuse_utility_get_number_of_items(field_size, 8);
         uint8_t *arr_w = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_w);
         uint8_t *arr_r = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_r);
         uint8_t *arr_temp = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_temp);
         ESP_LOGI(TAG, "Test#%d", num_test);
         for (int c = 1; c <= cycle; ++c) {
             ESP_LOGI(TAG, "Cycle#%d/%d", c, cycle);

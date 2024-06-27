@@ -94,10 +94,3 @@ set(EFUSE_TEST_TABLE_CSV_PATH "${COMPONENT_DIR}/test/esp_efuse_test_table.csv")
 add_custom_target(efuse_test_table COMMAND "${python}"
                   "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py"
                   ${EFUSE_TEST_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG})
-
-###################
-# GNU analyzer excludes
-if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10086
-    set_source_files_properties(src/esp_efuse_utility.c
-                                PROPERTIES COMPILE_FLAGS "-fno-analyzer")
-endif()

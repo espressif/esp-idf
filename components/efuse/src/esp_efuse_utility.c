@@ -28,10 +28,7 @@ uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 extern const esp_efuse_range_addr_t range_read_addr_blocks[];
 extern const esp_efuse_range_addr_t range_write_addr_blocks[];
 
-static int get_reg_num(int bit_start, int bit_count, int i_reg);
-static int get_starting_bit_num_in_reg(int bit_start, int i_reg);
 static uint32_t get_mask(unsigned int bit_count, unsigned int shift);
-static int get_count_bits_in_reg(int bit_start, int bit_count, int i_reg);
 static void write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t value);
 static uint32_t fill_reg(int bit_start_in_reg, int bit_count_in_reg, uint8_t* blob, int* filled_bits_blob);
 static uint32_t set_cnt_in_reg(int bit_start_in_reg, int bit_count_used_in_reg, uint32_t reg_masked, size_t* cnt);
@@ -47,29 +44,36 @@ esp_err_t esp_efuse_utility_process(const esp_efuse_desc_t* field[], void* ptr, 
     int field_len = esp_efuse_get_field_size(field);
     int req_size = (ptr_size_bits == 0) ? field_len : MIN(ptr_size_bits, field_len);
 
-    int i = 0;
     unsigned count_before = s_burn_counter;
-    while (err == ESP_OK && req_size > bits_counter && field[i] != NULL) {
-        if (check_range_of_bits(field[i]->efuse_block, field[i]->bit_start, field[i]->bit_count) == false) {
+    for (const esp_efuse_desc_t* f = field[0]; (err == ESP_OK && req_size > bits_counter && f != NULL); ++f) {
+        if (check_range_of_bits(f->efuse_block, f->bit_start, f->bit_count) == false) {
             ESP_EARLY_LOGE(TAG, "Range of data does not match the coding scheme");
             err = ESP_ERR_CODING;
+            break;
         }
-        int i_reg = 0;
-        int num_reg;
-        while (err == ESP_OK && req_size > bits_counter &&
-                (num_reg = get_reg_num(field[i]->bit_start, field[i]->bit_count, i_reg)) != -1) {
 
-            int start_bit = get_starting_bit_num_in_reg(field[i]->bit_start, i_reg);
-            int num_bits = get_count_bits_in_reg(field[i]->bit_start, field[i]->bit_count, i_reg);
-            if ((bits_counter + num_bits) > req_size) { // Limits the length of the field.
-                num_bits = req_size - bits_counter;
+        int end_bit_in_block = (f->bit_start + f->bit_count - 1);
+        int first_reg = f->bit_start / 32;
+        int last_reg = end_bit_in_block / 32;
+        int start_bit_in_reg = f->bit_start % 32;
+
+        for (int num_reg = first_reg; num_reg <= last_reg; ++num_reg) {
+            int first_bit_in_reg = (num_reg == first_reg) ? start_bit_in_reg % 32 : 0;
+            int last_bit_in_reg = (num_reg == last_reg) ? end_bit_in_block % 32 : 31;
+            int use_bit_in_reg = (last_bit_in_reg - first_bit_in_reg) + 1;
+            if ((bits_counter + use_bit_in_reg) > req_size) { // Limits the length of the field.
+                use_bit_in_reg = req_size - bits_counter;
             }
-            ESP_EARLY_LOGD(TAG, "In EFUSE_BLK%d__DATA%d_REG is used %d bits starting with %d bit",
-                    (int)field[i]->efuse_block, num_reg, num_bits, start_bit);
-            err = func_proc(num_reg, field[i]->efuse_block, start_bit, num_bits, ptr, &bits_counter);
-            ++i_reg;
+            int end_bit_in_reg = start_bit_in_reg + use_bit_in_reg - 1;
+            ESP_EARLY_LOGD(TAG, "BLK%d REG%d [%d-%d], len=%d bits", (int)f->efuse_block, num_reg, start_bit_in_reg, end_bit_in_reg, use_bit_in_reg);
+
+            err = func_proc(num_reg, f->efuse_block, start_bit_in_reg, use_bit_in_reg, ptr, &bits_counter);
+            start_bit_in_reg = 0;
+
+            if (err != ESP_OK || req_size <= bits_counter) {
+                break;
+            }
         }
-        i++;
     }
     unsigned count_after = s_burn_counter;
     if (err == ESP_OK &&
@@ -309,41 +313,6 @@ static uint32_t get_mask(unsigned int bit_count, unsigned int shift)
     return mask << shift;
 }
 
-// return the register number in the array. return -1 if all registers for field was selected.
-static int get_reg_num(int bit_start, int bit_count, int i_reg)
-{
-    int num_reg = i_reg + bit_start / 32;
-
-    if (num_reg > (bit_start + bit_count - 1) / 32) {
-        return -1;
-    }
-
-    return num_reg;
-}
-
-// returns the starting bit number in the register.
-static int get_starting_bit_num_in_reg(int bit_start, int i_reg)
-{
-    return (i_reg == 0) ? bit_start % 32 : 0;
-}
-
-// Returns the number of bits in the register.
-static int get_count_bits_in_reg(int bit_start, int bit_count, int i_reg)
-{
-    int ret_count = 0;
-    int num_reg = 0;
-    int last_used_bit = (bit_start + bit_count - 1);
-    for (int num_bit = bit_start; num_bit <= last_used_bit; ++num_bit) {
-        ++ret_count;
-        if ((((num_bit + 1) % 32) == 0) || (num_bit == last_used_bit)) {
-            if (i_reg == num_reg++) {
-                return ret_count;
-            }
-            ret_count = 0;
-        }
-    }
-    return 0;
-}
 
 // fill efuse register from array.
 static uint32_t fill_reg(int bit_start_in_reg, int bit_count_in_reg, uint8_t* blob, int* filled_bits_blob)
