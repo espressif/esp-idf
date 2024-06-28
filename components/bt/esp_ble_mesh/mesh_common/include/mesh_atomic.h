@@ -159,19 +159,19 @@ extern bt_mesh_atomic_val_t bt_mesh_atomic_and(bt_mesh_atomic_t *target, bt_mesh
  *
  * @param target Address of atomic variable.
  * @param excepted Value of excepted.
- * @param new_val Write value if compare sunncess.
+ * @param new_val Write if target value is equal to expected one.
  *
  * @return
- *         - true: write operation succeeded.
- *         - false: write operation failed.
+ *         - true: Target value updated.
+ *         - false: Target value not updated.
  */
 #ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline bool bt_mesh_atomic_campare_and_set(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
+static inline bool bt_mesh_atomic_cas(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
 {
     return __atomic_compare_exchange_n(target, &excepted, &new_val, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 #else
-extern bool bt_mesh_atomic_campare_and_set(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val);
+extern bool bt_mesh_atomic_cas(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val);
 #endif
 
 /**
