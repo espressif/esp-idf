@@ -123,7 +123,8 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
-        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c")
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c"
+        "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c")
 
         set(target_folder ${IDF_TARGET})
 

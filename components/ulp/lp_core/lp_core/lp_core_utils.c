@@ -27,6 +27,8 @@
 #include "hal/lp_timer_ll.h"
 #endif
 
+#include "esp_cpu.h"
+
 /* LP_FAST_CLK is not very accurate, for now use a rough estimate */
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000 // For P4 TRM says 20 MHz by default, but we tune it closer to 16 MHz
 
@@ -137,6 +139,16 @@ void ulp_lp_core_stop_lp_core(void)
 }
 
 void __attribute__((noreturn)) abort(void)
+{
+    // By calling abort users expect some panic message to be printed,
+    // so cause an exception like it is done in HP core's version of abort().
+    // If CONFIG_ULP_PANIC_OUTPUT_ENABLE is YES then panic handler will print smth
+    // If debugger is attached it will stop here and user can inspect the backtrace.
+    esp_cpu_dbgr_break();
+    while (1); // to make compiler happy about noreturn attr
+}
+
+void __attribute__((noreturn)) ulp_lp_core_abort(void)
 {
     /* Stop the LP Core */
     ulp_lp_core_stop_lp_core();

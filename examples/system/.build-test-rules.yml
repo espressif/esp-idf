@@ -285,6 +285,12 @@ examples/system/ulp/lp_core/build_system:
   depends_components:
     - ulp
 
+examples/system/ulp/lp_core/debugging:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/lp_core/gpio:
   disable:
     - if: SOC_DEEP_SLEEP_SUPPORTED != 1

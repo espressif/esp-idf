@@ -125,6 +125,16 @@ menu "Ultra Low Power (ULP) Co-processor"
 
                 Due to these limitations it is only recommended to use this option for easy debugging.
                 For more serious use-cases you should use the LP-UART.
+
+        config ULP_NORESET_UNDER_DEBUG
+            bool "Avoid resetting LP core when debugger is attached"
+            depends on ULP_COPROC_TYPE_LP_CORE
+            default "y"
+            help
+                Enable this feature to avoid resetting LP core in sleep mode when debugger is attached,
+                otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed.
+                This is a workaround until it will be fixed in HW.
+
     endmenu
 
 endmenu  # Ultra Low Power (ULP) Co-processor

@@ -279,6 +279,77 @@ When programming the LP-Core, it can sometimes be challenging to figure out why 
 
         python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
 
+Debugging ULP LP-Core Applications with GDB and OpenOCD
+-------------------------------------------------------
+
+It is also possible to debug code running on LP core using GDB and OpenOCD as you usually do for HP cores, but it has some specifics and limitations.
+
+Debugging Session
+~~~~~~~~~~~~~~~~~
+
+Run OpenOCD with special config file for LP core debugging support. And then run GDB with special ``gdbinit`` file.
+
+.. code-block:: bash
+
+    openocd -f board/{IDF_TARGET_PATH_NAME}-lpcore-builtin.cfg
+    riscv32-esp-elf-gdb -x gdbinit <path to main program ELF>
+
+``gdbinit`` file contents with inline comments is below. For more details see the next section.
+
+.. code-block:: bash
+
+    # connect to target
+    target extended-remote :3333
+    # reset chip
+    mon reset halt
+    maintenance flush register-cache
+    # add symbols and debugging info for ULP program
+    add-symbol <path to ULP program ELF>
+    # temporary HW breakpoint to setup breakpoints
+    # if you need more than HW supports
+    thb main
+    commands
+    # set breakpoints here
+    # At this moment ULP program is loaded into RAM and when there are
+    # no free HW breakpoints slots available GDB will set SW ones
+    b func1
+    b func2
+    b func3
+    # resume execution
+    c
+    end
+    # start main program after reset
+    c
+
+LP Core Debugging Specifics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list::
+
+    #. For convenient debugging you may need to add `-O0` compile option for ULP app in its CMakeLists.txt. See :example:`system/ulp/lp_core/debugging/` how to do this.
+    :not esp32p4: #. LP core supports limited set of HW exceptions, so, for example, writing at address `0x0` will not cause a panic as it would be for the code running on HP core. This can be overcome to some extent by enabling undefined behavior sanitizer for LP core application, so `ubsan` can help to catch some errors. But note that it will increase code size significantly and it can happen that application won't fit into RTC RAM. To enable `ubsan` for ULP app add `-fsanitize=undefined -fno-sanitize=shift-base` compile option to its CMakeLists.txt. See :example:`system/ulp/lp_core/debugging/` how to do this.
+    #. To be able to debug program running on LP core debug info and symbols need to be loaded to GDB. It can be done via GDB command line or in ``gdbinit`` file. See section above.
+    #. Upon startup LP core application is loaded into RAM, so all SW breakpoints set before that moment will get overwritten. The best moment to set breakpoints for LP core application is to do this when LP core program reaches `main` function.
+    #. When using IDEs it can be that it does not support breakpoint actions/commands configuration shown in ``gdbinit`` above, so in this case you have to preset all breakpoints before debug session start and disable all of them except for ``main``. When program is stopped at ``main`` manually enable remaining breakpoints and resume execution.
+
+Limitations
+~~~~~~~~~~~
+
+#. Currently debugging is not supported when either HP or LP core enters any sleep mode. So it limits available debugging scenarios.
+#. FreeRTOS support in OpenOCD is disabled when debugging LP core, so you won't be able to see tasks running in the system. Instead there will be several threads representing HP and LP cores:
+
+.. code-block:: bash
+
+    (gdb) info thread
+        Id   Target Id                                                          Frame
+        1    Thread 1 "{IDF_TARGET_PATH_NAME}.cpu0" (Name: {IDF_TARGET_PATH_NAME}.cpu0, state: debug-request) 0x40803772 in esp_cpu_wait_for_intr ()
+            at /home/user/projects/esp/esp-idf/components/esp_hw_support/cpu.c:64
+      * 2    Thread 2 "{IDF_TARGET_PATH_NAME}.cpu1" (Name: {IDF_TARGET_PATH_NAME}.cpu1, state: breakpoint)    do_things (max=1000000000)
+            at /home/user/projects/esp/esp-idf/examples/system/ulp/lp_core/debugging/main/lp_core/main.c:21
+
+#. When setting HW breakpoint in GDB it is set on both cores, so the number of available HW breakpoints is limited to the number of them supported by LP core ({IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} for {IDF_TARGET_NAME}).
+#. OpenOCD flash support is disabled. It does not matter for LP core application because it is run completely from RAM and GDB can use SW breakpoints for it. But if you want to set a breakpoint on function from flash used by the code running on HP core (e.g. `app_main`) you should request to set HW breakpoint explicitly via ``hb`` / ``thb`` GDB commands.
+#. Since main and ULP programs are linked as separate binaries it is possible for them to have global symbols (functions, variables) with the same name. When you set breakpoint for such a functions using its name GDB will set breakpoints for all of them. It could lead to the problems when one of the function is located in the flash because currently flash support is disabled in OpenOCD when debugging LP core. In that case you can use source line or address based breakpoints.
 
 Application Examples
 --------------------
@@ -294,10 +365,10 @@ Application Examples
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
 
 * :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
-
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
 
 * :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.
+* :example:`system/ulp/lp_core/debugging` shows how to debug code running on LP core using GDB and OpenOCD.
 
 API Reference
 -------------
