@@ -482,11 +482,11 @@ typedef enum {  // TODO: [ESP32C5] IDF-8701, IDF-8702, IDF-8703 (inherit from C6
 /**
  * @brief MWDT clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+typedef enum {
     MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MWDT_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL fixed 80 MHz as the source clock */
     MWDT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RTC fast as the source clock */
-    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select PLL fixed 80 MHz as the default clock choice */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL fixed 48 MHz as the default clock choice */
 } soc_periph_mwdt_clk_src_t;
 
 //////////////////////////////////////////////////LEDC/////////////////////////////////////////////////////////////////
