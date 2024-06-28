@@ -328,6 +328,14 @@ menu "SPI Flash driver"
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
                 chips, however will extend detecting time.
 
+        config SPI_FLASH_SUPPORT_AT25_CHIP
+            bool "AT25"
+            default y
+            help
+                Enable this to support auto detection of AT25 chips if chip vendor not directly
+                given by ``chip_drv`` member of the chip struct. This adds support for variant
+                chips, however will extend detecting time.
+
         config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
             bool "mxic (opi)"
             depends on IDF_TARGET_ESP32S3
