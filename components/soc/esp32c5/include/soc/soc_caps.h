@@ -67,7 +67,7 @@
 // #define SOC_ULP_LP_UART_SUPPORTED       1  // TODO: [ESP32C5] IDF-8633
 #define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  // TODO: [ESP32C5] IDF-8663
-// #define SOC_WDT_SUPPORTED               1  // TODO: [ESP32C5] IDF-8650
+#define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 // #define SOC_BITSCRAMBLER_SUPPORTED      1  // TODO: [ESP32C5] IDF-8711
 #define SOC_ECDSA_SUPPORTED             1

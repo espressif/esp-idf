@@ -28,76 +28,11 @@
 #define CHECK_RTC_MEM 1
 #endif //CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32
-#define DEEPSLEEP           "DEEPSLEEP_RESET"
-#define LOAD_STORE_ERROR    "LoadStoreError"
-#define RESET               "SW_CPU_RESET"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RESET"
-#define RTC_WDT             "RTCWDT_RTC_RESET"
-#if CONFIG_ESP32_REV_MIN_FULL >= 300
-#define BROWNOUT            "RTCWDT_BROWN_OUT_RESET"
-#else
-#define BROWNOUT            "SW_CPU_RESET"
-#endif // CONFIG_ESP32_REV_MIN_FULL >= 300
-#define STORE_ERROR         "StoreProhibited"
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "LoadStoreError"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWN_OUT_RST"
-#define STORE_ERROR         "StoreProhibited"
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWNOUT_RST"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG0WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWNOUT_RST"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "SW_CPU"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1_WDT_HPSYS"
-#define RTC_WDT             "LP_WDT_SYS"
-#define BROWNOUT            "LP_BOD_SYS"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "SW_CPU_RESET"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "HP_SYS_HP_WDT_RESET"
-#define RTC_WDT             "LP_WDT_SYS"
-#define BROWNOUT            "LP_BOD_SYS"
-#define STORE_ERROR         LOAD_STORE_ERROR
+#if CONFIG_IDF_TARGET_ESP32P4
 #define INT_WDT_HW_ESP_RST  ESP_RST_WDT // On P4 there is only one reset reason for MWDT0/1
-
-#endif // CONFIG_IDF_TARGET_ESP32
+#else
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
+#endif // CONFIG_IDF_TARGET_ESP32P4
 
 /* This test needs special test runners: rev1 silicon, and SPI flash with
  * fast start-up time. Otherwise reset reason will be RTCWDT_RESET.
@@ -165,7 +100,7 @@ static void check_reset_reason_deep_sleep(void)
 
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset="DEEPSLEEP"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason]",
                           do_deep_sleep,
                           check_reset_reason_deep_sleep);
 
@@ -198,11 +133,11 @@ static void check_reset_reason_panic(void)
 #endif //CHECK_RTC_MEM
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason][reset="LOAD_STORE_ERROR","RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason]",
                           do_exception,
                           check_reset_reason_panic);
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after abort", "[reset_reason][reset=abort,"RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after abort", "[reset_reason]",
                           do_abort,
                           check_reset_reason_panic);
 
@@ -236,12 +171,12 @@ static void check_reset_reason_sw(void)
 #endif //CHECK_RTC_MEM
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason][reset="RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason]",
                           do_restart,
                           check_reset_reason_sw);
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason][reset="RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason]",
                           do_restart_from_app_cpu,
                           check_reset_reason_sw);
 #endif
@@ -286,12 +221,12 @@ static void check_reset_reason_int_wdt_hw(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (panic)",
-                          "[reset_reason][reset="INT_WDT_PANIC","RESET"]",
+                          "[reset_reason]",
                           do_int_wdt,
                           check_reset_reason_int_wdt_sw);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (hw)",
-                          "[reset_reason][reset="INT_WDT"]",
+                          "[reset_reason]",
                           do_int_wdt_hw,
                           check_reset_reason_int_wdt_hw);
 
@@ -324,7 +259,7 @@ static void check_reset_reason_task_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
-                          "[reset_reason][reset="RESET"]",
+                          "[reset_reason]",
                           do_task_wdt,
                           check_reset_reason_task_wdt);
 #endif // CONFIG_ESP_TASK_WDT_EN
@@ -352,7 +287,7 @@ static void check_reset_reason_any_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after RTC watchdog",
-                          "[reset_reason][reset="RTC_WDT"]",
+                          "[reset_reason]",
                           do_rtc_wdt,
                           check_reset_reason_any_wdt);
 
@@ -379,7 +314,7 @@ static void check_reset_reason_brownout(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
-                          "[reset_reason][ignore][reset="BROWNOUT"]",
+                          "[reset_reason][ignore]",
                           do_brownout,
                           check_reset_reason_brownout);
 
@@ -457,11 +392,11 @@ static void test2_finish(void)
     printf("test - OK\n");
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack][reset="RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack]",
                           init_restart_task,
                           test1_finish);
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack][reset="STORE_ERROR","RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack]",
                           init_task_do_exception,
                           test2_finish);
 
