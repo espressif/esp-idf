@@ -38,7 +38,7 @@ foreach ($pair  in $envars_array) {
     $var_val = $pair[1].Trim() # trim spaces on the ends of the val
     if ($var_name -eq "PATH") {
         # trim "%PATH%" or "`$PATH"
-        if ($IsWindows || $Windows) {
+        if ($IsWindows -or $Windows) {
             $var_val = $var_val.Trim($S + "%PATH%")
         } else {
             $var_val = $var_val.Trim($S + "`$PATH")
