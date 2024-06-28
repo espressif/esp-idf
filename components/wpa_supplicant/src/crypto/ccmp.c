@@ -222,7 +222,7 @@ u8 * ccmp_encrypt(const u8 *tk, u8 *frame, size_t len, size_t hdrlen,
 	wpa_hexdump(MSG_MSGDUMP, "CCMP AAD", aad, aad_len);
 	wpa_hexdump(MSG_MSGDUMP, "CCMP nonce", nonce, 13);
 
-	if (aes_ccm_ae(tk, 16, nonce, 8, frame + hdrlen, plen, aad, aad_len,
+	if (aes_ccm_ae(tk, 16, nonce, 8, frame + hdrlen + 8, plen, aad, aad_len,
 		       pos, pos + plen) < 0) {
 		wpa_printf(MSG_ERROR, "aes ccm ae failed");
 		os_free(crypt);

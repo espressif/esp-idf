@@ -335,6 +335,10 @@ void perror(const char *s);
 #define BIT(x) (1U << (x))
 #endif
 
+#ifndef GET_BIT_POSITION
+#define GET_BIT_POSITION(value) (__builtin_ffs(value) - 1)
+#endif
+
 /*
  * Definitions for sparse validation
  * (http://kernel.org/pub/linux/kernel/people/josh/sparse/)

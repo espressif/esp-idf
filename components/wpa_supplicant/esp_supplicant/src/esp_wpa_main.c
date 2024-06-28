@@ -302,7 +302,7 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable, uint8_t *pairwise_cipher)
 {
     struct sta_info *sta_info;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
@@ -326,7 +326,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bo
         return true;
     }
 #endif
-    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
+    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, pmf_enable, pairwise_cipher)) {
         *sta = sta_info;
         return true;
     }

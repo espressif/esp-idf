@@ -331,7 +331,7 @@ struct hostapd_config {
 	char country[3]; /* first two octets: country code as described in
 			  * ISO/IEC 3166-1. Third octet:
 			  * ' ' (ascii 32): all environments
-			  * 'O': Outdoor environemnt only
+			  * 'O': Outdoor environment only
 			  * 'I': Indoor environment only
 			  */
 
@@ -373,7 +373,7 @@ const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
 struct sta_info;
-bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable);
+bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable, uint8_t *pairwise_cipher);
 bool wpa_ap_remove(void* sta_info);
 
 #endif /* HOSTAPD_CONFIG_H */
