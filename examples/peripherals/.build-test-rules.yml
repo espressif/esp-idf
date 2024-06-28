@@ -299,12 +299,14 @@ examples/peripherals/rmt/ir_nec_transceiver:
 
 examples/peripherals/rmt/musical_buzzer:
   disable:
+    - if: SOC_RMT_SUPPORTED != 1
     - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT != 1
   depends_components:
     - esp_driver_rmt
 
 examples/peripherals/rmt/stepper_motor:
   disable:
+    - if: SOC_RMT_SUPPORTED != 1
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
   depends_components:
     - esp_driver_rmt

@@ -168,11 +168,7 @@ typedef enum {  // TODO: [ESP32C5] IDF-8676 (inherit from C6)
  * }
  * @endcode
  */
-#if SOC_CLK_TREE_SUPPORTED
 #define SOC_GPTIMER_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
-#else
-#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_XTAL}
-#endif
 
 /**
  * @brief Type of GPTimer clock source
@@ -181,11 +177,7 @@ typedef enum {
     GPTIMER_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M as the source clock */
     GPTIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
     GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-#if SOC_CLK_TREE_SUPPORTED
     GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M as the default choice */
-#else
-    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default choice */
-#endif // SOC_CLK_TREE_SUPPORTED
 } soc_periph_gptimer_clk_src_t;
 
 /**
@@ -194,11 +186,7 @@ typedef enum {
 typedef enum {
     TIMER_SRC_CLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M,     /*!< Timer group clock source is PLL_F80M */
     TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,             /*!< Timer group clock source is XTAL */
-#if SOC_CLK_TREE_SUPPORTED
     TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,      /*!< Timer group clock source default choice is PLL_F80M */
-#else
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_XTAL,          /*!< Timer group clock source default choice is XTAL */
-#endif // SOC_CLK_TREE_SUPPORTED
 } soc_periph_tg_clk_src_legacy_t;
 
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
@@ -257,11 +245,7 @@ typedef enum {
     UART_SCLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M,          /*!< UART source clock is PLL_F80M */
     UART_SCLK_RTC = SOC_MOD_CLK_RC_FAST,                /*!< UART source clock is RC_FAST */
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,                  /*!< UART source clock is XTAL */
-#if SOC_CLK_TREE_SUPPORTED
     UART_SCLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,           /*!< UART source clock default choice is PLL_F80M */
-#else
-    UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL,               /*!< UART source clock default choice is XTAL for FPGA environment*/
-#endif
 } soc_periph_uart_clk_src_legacy_t;
 
 /**
@@ -293,11 +277,7 @@ typedef enum {
 typedef enum {
     MCPWM_TIMER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
     MCPWM_TIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-#if SOC_CLK_TREE_SUPPORTED
     MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default clock choice */
-#else
-    MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default clock choice */
-#endif
 } soc_periph_mcpwm_timer_clk_src_t;
 
 /**
@@ -311,11 +291,7 @@ typedef enum {
 typedef enum {
     MCPWM_CAPTURE_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
     MCPWM_CAPTURE_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-#if SOC_CLK_TREE_SUPPORTED
     MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default clock choice */
-#else
-    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default clock choice */
-#endif
 } soc_periph_mcpwm_capture_clk_src_t;
 
 /**
@@ -329,11 +305,7 @@ typedef enum {
 typedef enum {
     MCPWM_CARRIER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
     MCPWM_CARRIER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-#if SOC_CLK_TREE_SUPPORTED
     MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default clock choice */
-#else
-    MCPWM_CARRIER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default clock choice */
-#endif
 } soc_periph_mcpwm_carrier_clk_src_t;
 
 ///////////////////////////////////////////////////// I2S //////////////////////////////////////////////////////////////
@@ -400,11 +372,7 @@ typedef enum {
     SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_160M as SPI source clock */
     SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as SPI source clock */
-#if SOC_CLK_TREE_SUPPORTED
     SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,    /*!< Select PLL_80M as SPI source clock */
-#else
-    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,         /*!< Select PLL_80M as SPI source clock */
-#endif
 } soc_periph_spi_clk_src_t;
 
 //////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
@@ -523,11 +491,7 @@ typedef enum {
     PARLIO_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,       /*!< Select RC_FAST as the source clock */
     PARLIO_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_F240M,   /*!< Select PLL_F240M as the source clock */
     PARLIO_CLK_SRC_EXTERNAL = -1,                       /*!< Select EXTERNAL clock as the source clock */
-#if SOC_CLK_TREE_SUPPORTED  // TODO: [ESP32C5] IDF-8642 remove when clock tree is supported
     PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F240M,     /*!< Select PLL_F240M as the default clock choice */
-#else
-    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the default clock choice */
-#endif
 } soc_periph_parlio_clk_src_t;
 
 //////////////////////////////////////////////////MSPI///////////////////////////////////////////////////////////////////
