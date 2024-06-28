@@ -69,3 +69,10 @@ void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, 
     lp_aon_ll_set_regdma_link_loop_threshold(loop_num);
     lp_aon_ll_set_regdma_link_reg_access_tout_threshold(time);
 }
+
+void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval)
+{
+    HAL_ASSERT(count > 0 && interval > 0);
+    lp_aon_ll_set_regdma_link_wait_retry_count(count);
+    lp_aon_ll_set_regdma_link_wait_read_interval(interval);
+}

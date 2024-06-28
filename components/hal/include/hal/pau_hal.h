@@ -143,6 +143,15 @@ void pau_hal_regdma_link_count_config(pau_hal_context_t *hal, int count);
  */
 void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, uint32_t count);
 
+/**
+ * @brief Set regdma link wait timeout, include wait retry count and register read interval
+ *
+ * @param hal           regdma hal context
+ * @param count         the maximum number of regdma wait retry count
+ * @param interval      the interval of regdma wait link to read register
+ */
+void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval);
+
 #if SOC_PAU_IN_TOP_DOMAIN
 /**
  * If PAU is in TOP power domain, configuration will be lost after sleep, it is necessary

@@ -148,6 +148,16 @@ static inline void lp_aon_ll_set_regdma_link_addr(uint32_t addr)
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, link_addr_aon, addr);
 }
 
+static inline void lp_aon_ll_set_regdma_link_wait_retry_count(int count)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg1, link_wait_tout_thres_aon, count);
+}
+
+static inline void lp_aon_ll_set_regdma_link_wait_read_interval(int interval)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, read_interval_aon, interval);
+}
+
 #ifdef __cplusplus
 }
 #endif
