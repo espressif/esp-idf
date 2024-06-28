@@ -1106,32 +1106,33 @@ static void IRAM_ATTR rmt_tx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-null-dereference") // TODO IDF-10235
 static bool IRAM_ATTR rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     rmt_tx_channel_t *tx_chan = (rmt_tx_channel_t *)user_data;
+    // tx_eof_desc_addr must be non-zero, guaranteed by the hardware
     rmt_dma_descriptor_t *eof_desc_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(event_data->tx_eof_desc_addr);
-    rmt_dma_descriptor_t *n = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(eof_desc_nc->next); // next points to a cache address, needs to convert it to a non-cached one
-    if (n) {
-        rmt_dma_descriptor_t *nn = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(n->next);
-        // if the DMA descriptor link is still a ring (i.e. hasn't broken down by `rmt_tx_mark_eof()`), then we treat it as a valid ping-pong event
-        if (nn) {
-            // continue ping-pong transmission
-            rmt_tx_trans_desc_t *t = tx_chan->cur_trans;
-            size_t encoded_symbols = t->transmitted_symbol_num;
-            if (t->flags.encoding_done) {
-                rmt_tx_mark_eof(tx_chan);
-                encoded_symbols += 1;
-            } else {
-                encoded_symbols += rmt_encode_check_result(tx_chan, t);
-            }
-            t->transmitted_symbol_num = encoded_symbols;
-            tx_chan->mem_end = tx_chan->ping_pong_symbols * 3 - tx_chan->mem_end; // mem_end equals to either ping_pong_symbols or ping_pong_symbols*2
-            // tell DMA that we have a new descriptor attached
-            gdma_append(dma_chan);
-        }
+    if (!eof_desc_nc->next) {
+        return false;
     }
+    // next points to a cache address, convert it to a non-cached one
+    rmt_dma_descriptor_t *n = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(eof_desc_nc->next);
+    if (!n->next) {
+        return false;
+    }
+    // if the DMA descriptor link is still a ring (i.e. hasn't broken down by `rmt_tx_mark_eof()`), then we treat it as a valid ping-pong event
+    // continue ping-pong transmission
+    rmt_tx_trans_desc_t *t = tx_chan->cur_trans;
+    size_t encoded_symbols = t->transmitted_symbol_num;
+    if (t->flags.encoding_done) {
+        rmt_tx_mark_eof(tx_chan);
+        encoded_symbols += 1;
+    } else {
+        encoded_symbols += rmt_encode_check_result(tx_chan, t);
+    }
+    t->transmitted_symbol_num = encoded_symbols;
+    tx_chan->mem_end = tx_chan->ping_pong_symbols * 3 - tx_chan->mem_end; // mem_end equals to either ping_pong_symbols or ping_pong_symbols*2
+    // tell DMA that we have a new descriptor attached
+    gdma_append(dma_chan);
     return false;
 }
-ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-null-dereference")
 #endif // SOC_RMT_SUPPORT_DMA

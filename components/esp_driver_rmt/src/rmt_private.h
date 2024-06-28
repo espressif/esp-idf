@@ -65,7 +65,7 @@ extern "C" {
 typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
-#define RMT_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#define RMT_GET_NON_CACHE_ADDR(addr) (CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #else
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
