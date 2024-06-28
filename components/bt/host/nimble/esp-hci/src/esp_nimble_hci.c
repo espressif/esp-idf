@@ -365,6 +365,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
             evbuf = ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_EVT_LO);
             /* Skip advertising report if we're out of memory */
             if (!evbuf) {
+                ESP_LOGI(TAG, "Skipping advertising report due to low memory");
                 return 0;
             }
         } else {
