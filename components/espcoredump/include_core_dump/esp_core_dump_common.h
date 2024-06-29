@@ -101,40 +101,31 @@ bool esp_core_dump_in_isr_context(void);
  */
 uint32_t esp_core_dump_get_user_ram_size(void);
 
-/**
- * @brief Prints write start info string according to destination.
- */
-void esp_core_dump_print_write_start(void);
+typedef struct esp_core_dump_output {
+    // @brief Prints write start info string according to destination.
+    void (*print_write_start)(void);
+    // @brief Prints write end info string according to destination.
+    void (*print_write_end)(void);
+    // @brief Initializes the flash/UART hardware for data storage.
+    esp_err_t (*write_init)(void);
+    // @brief Prepares the flash/UART for data storage
+    esp_err_t (*write_prepare)(core_dump_write_data_t *wr_data, uint32_t *data_len);
+    // @brief Initiates the beginning of data writing.
+    esp_err_t (*write_start)(core_dump_write_data_t *wr_data);
+    // @brief Writes a data chunk to the flash/UART
+    esp_err_t (*write_data)(core_dump_write_data_t *wr_data, void *data, uint32_t data_len);
+    // @brief Finalizes the data writing process
+    esp_err_t (*write_end)(core_dump_write_data_t *wr_data);
+} esp_core_dump_output_t;
 
-/**
- * @brief Prints write end info string according to destination.
- */
-void esp_core_dump_print_write_end(void);
-
-/**
- * @brief Initializes the flash/UART hardware for data storage.
- */
-esp_err_t esp_core_dump_write_init(void);
-
-/**
- * @brief Prepares the flash/UART for data storage
- */
-esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len);
-
-/**
- * @brief Initiates the beginning of data writing.
- */
-esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data);
-
-/**
- * @brief Writes a data chunk to the flash/UART
- */
-esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len);
-
-/**
- * @brief Finalizes the data writing process
- */
-esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
+extern esp_core_dump_output_t esp_core_dump_output_uart;
+void esp_core_dump_uart_init(void);
+#endif
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+extern esp_core_dump_output_t esp_core_dump_output_flash;
+void esp_core_dump_flash_init(void);
+#endif
 
 /**
  * @brief Retrieve the stack information which will be used from the coredump module itself.
@@ -145,7 +136,7 @@ void esp_core_dump_get_own_stack_info(uint32_t *addr, uint32_t *size);
 /**
  * @brief Stores the core dump in either binary or ELF format.
  */
-esp_err_t esp_core_dump_store(void);
+esp_err_t esp_core_dump_store(esp_core_dump_output_t *output);
 
 /**
  * @brief Get TCB length, in bytes.

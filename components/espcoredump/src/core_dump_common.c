@@ -184,7 +184,7 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 
 static void* s_exc_frame = NULL;
 
-inline static void esp_core_dump_write_internal(panic_info_t *info)
+inline static void esp_core_dump_write_internal(esp_core_dump_output_t *output, panic_info_t *info)
 {
     bool isr_context = esp_core_dump_in_isr_context();
 
@@ -192,16 +192,21 @@ inline static void esp_core_dump_write_internal(panic_info_t *info)
 
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
-    esp_err_t err = esp_core_dump_store();
+    esp_err_t err = esp_core_dump_store(output);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
     }
     esp_core_dump_report_stack_usage();
 }
 
-void __attribute__((weak)) esp_core_dump_init(void)
+void esp_core_dump_init(void)
 {
-    /* do nothing by default */
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
+    esp_core_dump_uart_init();
+#endif
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+    esp_core_dump_flash_init();
+#endif
 }
 
 /**
@@ -356,13 +361,16 @@ inline bool esp_core_dump_in_isr_context(void)
 
 void esp_core_dump_write(panic_info_t *info)
 {
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-    return;
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+    esp_core_dump_output_flash.print_write_start();
+    esp_core_dump_write_internal(&esp_core_dump_output_flash, info);
+    esp_core_dump_output_flash.print_write_end();
 #endif
-
-    esp_core_dump_print_write_start();
-    esp_core_dump_write_internal(info);
-    esp_core_dump_print_write_end();
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+    esp_core_dump_output_uart.print_write_start();
+    esp_core_dump_write_internal(&esp_core_dump_output_uart, info);
+    esp_core_dump_output_uart.print_write_end();
+#endif
 }
 
 #endif

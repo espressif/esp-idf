@@ -15,9 +15,9 @@
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_binary";
 
-esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_binary")));
+esp_err_t esp_core_dump_store(esp_core_dump_output_t *output) __attribute__((alias("esp_core_dump_write_binary")));
 
-static esp_err_t esp_core_dump_save_task(core_dump_write_data_t *write_data, core_dump_task_header_t *task)
+static esp_err_t esp_core_dump_save_task(esp_core_dump_output_t *output, core_dump_write_data_t *write_data, core_dump_task_header_t *task)
 {
     esp_err_t err = ESP_FAIL;
     uint32_t stk_vaddr = 0;
@@ -27,19 +27,19 @@ static esp_err_t esp_core_dump_save_task(core_dump_write_data_t *write_data, cor
     stk_len = esp_core_dump_get_memory_len(stk_vaddr, stk_vaddr + stk_len);
 
     // Save memory segment header
-    err = esp_core_dump_write_data(write_data, task, sizeof(core_dump_task_header_t));
+    err = output->write_data(write_data, task, sizeof(core_dump_task_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write task header, error=%d!", err);
         return err;
     }
     // Save TCB block
-    err = esp_core_dump_write_data(write_data, task->tcb_addr, esp_core_dump_get_tcb_len());
+    err = output->write_data(write_data, task->tcb_addr, esp_core_dump_get_tcb_len());
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write TCB, error=%d!", err);
         return err;
     }
     // Save task stack
-    err = esp_core_dump_write_data(write_data, (void *)stk_paddr, stk_len);
+    err = output->write_data(write_data, (void *)stk_paddr, stk_len);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write stack for task (TCB:%p), stack_start=%" PRIx32 ", error=%d!",
                           task->tcb_addr,
@@ -53,7 +53,8 @@ static esp_err_t esp_core_dump_save_task(core_dump_write_data_t *write_data, cor
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_data,
+static esp_err_t esp_core_dump_save_mem_segment(esp_core_dump_output_t *output,
+                                                core_dump_write_data_t* write_data,
                                                 core_dump_mem_seg_header_t* seg)
 {
     esp_err_t err = ESP_FAIL;
@@ -64,13 +65,13 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_da
         return ESP_FAIL;
     }
     // Save TCB address, stack base and stack top addrq
-    err = esp_core_dump_write_data(write_data, seg, sizeof(core_dump_mem_seg_header_t));
+    err = output->write_data(write_data, seg, sizeof(core_dump_mem_seg_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write memory segment header, error=%d!", err);
         return err;
     }
     // Save memory contents
-    err = esp_core_dump_write_data(write_data, (void *)seg->start, seg->size);
+    err = output->write_data(write_data, (void *)seg->start, seg->size);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write memory segment, (%" PRIx32 ", %" PRIu32 "), error=%d!",
                           seg->start, seg->size, err);
@@ -81,7 +82,7 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_da
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_write_binary(void)
+static esp_err_t esp_core_dump_write_binary(esp_core_dump_output_t *output)
 {
     uint32_t tcb_sz = esp_core_dump_get_tcb_len();
     uint32_t data_len = 0;
@@ -93,7 +94,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     TaskIterator_t task_iter;
     void *cur_task = NULL;
 
-    esp_err_t err = esp_core_dump_write_init();
+    esp_err_t err = output->write_init();
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Binary write init failed!");
         return ESP_FAIL;
@@ -167,14 +168,14 @@ static esp_err_t esp_core_dump_write_binary(void)
     ESP_COREDUMP_LOG_PROCESS("Core dump length=%" PRIu32 ", tasks processed: %" PRIu32 ", broken tasks: %" PRIu32,
                              data_len, hdr.tasks_num, bad_tasks_num);
     // Prepare write
-    err = esp_core_dump_write_prepare(&write_data, &data_len);
+    err = output->write_prepare(&write_data, &data_len);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to prepare core dump, error=%d!", err);
         return err;
     }
 
     // Write start
-    err = esp_core_dump_write_start(&write_data);
+    err = output->write_start(&write_data);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to start core dump, error=%d!", err);
         return err;
@@ -185,7 +186,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     hdr.version   = COREDUMP_VERSION_BIN_CURRENT;
     hdr.tcb_sz    = tcb_sz;
     hdr.chip_rev  = efuse_hal_chip_revision();
-    err = esp_core_dump_write_data(&write_data, &hdr, sizeof(core_dump_header_t));
+    err = output->write_data(&write_data, &hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write core dump header error=%d!", err);
         return err;
@@ -196,7 +197,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     // Write first crashed task data first (not always first task in the snapshot)
     ESP_COREDUMP_LOGD("Save first crashed task %p", cur_task);
     if (esp_core_dump_get_task_snapshot(cur_task, &task_hdr, NULL)) {
-        err = esp_core_dump_save_task(&write_data, &task_hdr);
+        err = esp_core_dump_save_task(output, &write_data, &task_hdr);
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to save first crashed task %p, error=%d!",
                               task_hdr.tcb_addr, err);
@@ -215,7 +216,7 @@ static esp_err_t esp_core_dump_write_binary(void)
         }
         ESP_COREDUMP_LOGD("Save task %p (TCB:%p, stack:%" PRIx32 "..%" PRIx32 ")",
                           task_iter.pxTaskHandle, task_hdr.tcb_addr, task_hdr.stack_start, task_hdr.stack_end);
-        err = esp_core_dump_save_task(&write_data, &task_hdr);
+        err = esp_core_dump_save_task(output, &write_data, &task_hdr);
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to save core dump task %p, error=%d!",
                               task_hdr.tcb_addr, err);
@@ -234,7 +235,7 @@ static esp_err_t esp_core_dump_write_binary(void)
         if (mem_seg.size > 0) {
             ESP_COREDUMP_LOG_PROCESS("Save interrupted task stack %" PRIu32 " bytes @ %" PRIx32,
                                      mem_seg.size, mem_seg.start);
-            err = esp_core_dump_save_mem_segment(&write_data, &mem_seg);
+            err = esp_core_dump_save_mem_segment(output, &write_data, &mem_seg);
             if (err != ESP_OK) {
                 ESP_COREDUMP_LOGE("Failed to save interrupted task stack, error=%d!", err);
                 return err;
@@ -258,7 +259,7 @@ static esp_err_t esp_core_dump_write_binary(void)
                 mem_seg.size = esp_core_dump_get_memory_len(start, start + data_sz);;
                 ESP_COREDUMP_LOG_PROCESS("Save user memory region %" PRIu32 " bytes @ %" PRIx32,
                                          mem_seg.size, mem_seg.start);
-                err = esp_core_dump_save_mem_segment(&write_data, &mem_seg);
+                err = esp_core_dump_save_mem_segment(output, &write_data, &mem_seg);
                 if (err != ESP_OK) {
                     ESP_COREDUMP_LOGE("Failed to save user memory region, error=%d!", err);
                     return err;
@@ -268,7 +269,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     }
 
     // Write end
-    err = esp_core_dump_write_end(&write_data);
+    err = output->write_end(&write_data);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to end core dump error=%d!", err);
         return err;
