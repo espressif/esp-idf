@@ -1,0 +1,25 @@
+menu "Bootloader Rollback"
+
+    config BOOTLOADER_ANTI_ROLLBACK_ENABLE
+        bool "Enable bootloader rollback support"
+        depends on SOC_RECOVERY_BOOTLOADER_SUPPORTED
+        default n
+        help
+            This option prevents rollback to previous bootloader image with lower security version.
+
+    config BOOTLOADER_SECURE_VERSION
+        int "Secure version of bootloader"
+        depends on BOOTLOADER_ANTI_ROLLBACK_ENABLE
+        default 0
+        range 0 4
+        help
+            The secure version is the sequence number stored in the header of each bootloader.
+
+            The ROM Bootloader which runs the 2nd stage bootloader (PRIMARY or RECOVERY) checks that
+            the security version is greater or equal that recorded in the eFuse field.
+            Bootloaders that have a secure version in the image < secure version in efuse will not boot.
+
+            The security version is worth increasing if in previous versions there is
+            a significant vulnerability and their use is not acceptable.
+
+endmenu

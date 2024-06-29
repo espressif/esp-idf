@@ -64,6 +64,7 @@ The ``DRAM0`` segment of the bootloader binary starts with the :cpp:type:`esp_bo
 
  * ``magic_byte``: the magic byte for the esp_bootloader_desc structure
  * ``reserved``: reserved for the future IDF use
+ * ``secure_version``: the secure version used by the bootloader anti-rollback feature, see :ref:`CONFIG_BOOTLOADER_ANTI_ROLLBACK_ENABLE`.
  * ``version``: bootloader version, see :ref:`CONFIG_BOOTLOADER_PROJECT_VER`
  * ``idf_ver``: ESP-IDF version. [#f1]_
  * ``date`` and ``time``: compile date and time

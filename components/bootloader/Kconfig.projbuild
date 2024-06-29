@@ -2,6 +2,7 @@ menu "Bootloader config"
 
     orsource "../esp_bootloader_format/Kconfig.bootloader"
     orsource "Kconfig.app_rollback"
+    orsource "Kconfig.bootloader_rollback"
 
     config BOOTLOADER_OFFSET_IN_FLASH
         hex

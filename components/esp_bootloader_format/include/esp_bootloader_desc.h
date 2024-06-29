@@ -24,7 +24,8 @@ extern "C"
  */
 typedef struct {
     uint8_t magic_byte;         /*!< Magic byte ESP_BOOTLOADER_DESC_MAGIC_BYTE */
-    uint8_t reserved[3];        /*!< reserved for IDF */
+    uint8_t reserved[2];        /*!< reserved for IDF */
+    uint8_t secure_version;     /*!< The version used by bootloader anti-rollback feature */
     uint32_t version;           /*!< Bootloader version */
     char idf_ver[32];           /*!< Version IDF */
     char date_time[24];         /*!< Compile date and time*/
