@@ -1583,6 +1583,27 @@ esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback);
  */
 esp_gap_ble_cb_t esp_ble_gap_get_callback(void);
 
+/**
+ * @brief           This function is called to register user pointer
+ *
+ * @param[in]       ptr: user pointer to set
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_register_ptr(void *ptr);
+
+/**
+ * @brief           This function is called to get the current gap user pointer
+ *
+ * @return
+ *                  - current user pointer (may be NULL if not set)
+ *
+ */
+void *esp_ble_gap_get_ptr(void);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to override the BTA default ADV parameters.

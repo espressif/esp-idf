@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,18 @@ esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 esp_gatts_cb_t esp_ble_gatts_get_callback(void)
 {
     return (esp_gatts_cb_t) btc_profile_cb_get(BTC_PID_GATTS);
+}
+
+esp_err_t esp_ble_gatts_register_ptr(void *ptr)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    return (btc_profile_ptr_set(BTC_PID_GATTS, ptr) == 0 ? ESP_OK : ESP_FAIL);
+}
+
+void *esp_ble_gatts_get_ptr(void)
+{
+    return btc_profile_ptr_get(BTC_PID_GATTS);
 }
 
 esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
@@ -272,7 +284,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     }
 
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, p_tcb->peer_bda)) {
-        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        LOG_DEBUG("%s, the l2cap channel is congest.", __func__);
         return ESP_FAIL;
     }
 
