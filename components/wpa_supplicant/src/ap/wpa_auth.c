@@ -2560,7 +2560,7 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
                 uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
-                bool *pmf_enable, int subtype)
+                bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result status_code = WPA_IE_OK;
@@ -2611,6 +2611,7 @@ send_resp:
 
             //Check whether AP uses Management Frame Protection for this connection
             *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
+            *pairwise_cipher = GET_BIT_POSITION(sta->wpa_sm->pairwise);
         }
 
         wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
