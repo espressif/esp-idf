@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,8 +93,10 @@ struct pcnt_unit_t {
     int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
-    int clear_signal_gpio_num;                              // which gpio clear signal input
+    int step_limit;                                       // step limit value
+    int clear_signal_gpio_num;                            // which gpio clear signal input
     int accum_value;                                      // accumulated count value
+    int step_interval;                             // PCNT step notify interval value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
@@ -107,6 +109,10 @@ struct pcnt_unit_t {
     void *user_data;          // user data registered by user, which would be passed to the right callback function
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+        uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction*/
+        uint32_t en_step_notify_down: 1; /*!< Enable step notify in the negative direction*/
+#endif
     } flags;
 };
 
@@ -194,7 +200,9 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & PCNT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
-
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    ESP_GOTO_ON_FALSE(!(config->flags.en_step_notify_up && config->flags.en_step_notify_down), ESP_ERR_NOT_SUPPORTED, err, TAG, "This target can only notify in one direction");
+#endif
     unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
     // register unit to the group (because one group can have several units)
@@ -243,6 +251,19 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     unit->accum_value = 0;
     unit->clear_signal_gpio_num = -1;
     unit->flags.accum_count = config->flags.accum_count;
+
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+    unit->flags.en_step_notify_down = config->flags.en_step_notify_down;
+    unit->flags.en_step_notify_up = config->flags.en_step_notify_up;
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    if (config->flags.en_step_notify_up) {
+        unit->step_limit = config->high_limit;
+    } else if (config->flags.en_step_notify_down) {
+        unit->step_limit = config->low_limit;
+    }
+    pcnt_ll_set_step_limit_value(group->hal.dev, unit_id, unit->step_limit);
+#endif
+#endif
 
     // clear/pause register is shared by all units, so using group's spinlock
     portENTER_CRITICAL(&group->spinlock);
@@ -622,6 +643,51 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
     return ESP_OK;
 }
 
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
+{
+    pcnt_group_t *group = NULL;
+
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE((step_interval > 0 && unit->flags.en_step_notify_up) || (step_interval < 0 && unit->flags.en_step_notify_down),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
+    ESP_RETURN_ON_FALSE(unit->flags.en_step_notify_up || unit->flags.en_step_notify_down,
+                        ESP_ERR_INVALID_STATE, TAG, "step limit is not enabled yet");
+    ESP_RETURN_ON_FALSE(unit->step_interval == 0,
+                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
+    ESP_RETURN_ON_FALSE(step_interval >= unit->low_limit && step_interval <= unit->high_limit,
+                        ESP_ERR_INVALID_ARG, TAG, "step interval out of range [%d,%d]", unit->low_limit, unit->high_limit);
+    ESP_RETURN_ON_FALSE(unit->step_limit % step_interval == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "step interval should be a divisor of step limit");
+
+    group = unit->group;
+    unit->step_interval = step_interval;
+    pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval);
+    // different units are mixing in the same register, so we use the group's spinlock here
+    portENTER_CRITICAL(&group->spinlock);
+    pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, true);
+    portEXIT_CRITICAL(&group->spinlock);
+
+    return ESP_OK;
+}
+
+esp_err_t pcnt_unit_remove_watch_step(pcnt_unit_handle_t unit)
+{
+    pcnt_group_t *group = NULL;
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    group = unit->group;
+    ESP_RETURN_ON_FALSE(unit->step_interval != 0, ESP_ERR_INVALID_STATE, TAG, "watch step not added yet");
+
+    unit->step_interval = 0;
+
+    portENTER_CRITICAL(&group->spinlock);
+    pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, false);
+    portEXIT_CRITICAL(&group->spinlock);
+
+    return ESP_OK;
+}
+#endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
+
 esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *config, pcnt_channel_handle_t *ret_chan)
 {
     esp_err_t ret = ESP_OK;
@@ -827,27 +893,69 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
     if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit_id)) {
         pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
 
-        // points watcher event
+        // watcher event
         uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
+
+        // use flags to avoid multiple callbacks in one point
+        bool is_limit_event __attribute__((unused)) = false;
+        bool is_step_event = false;
+
         // iter on each event_id
         while (event_status) {
-            int event_id = __builtin_ffs(event_status) - 1;
-            event_status &= (event_status - 1); // clear the right most bit
-
-            portENTER_CRITICAL_ISR(&unit->spinlock);
-            if (unit->flags.accum_count) {
-                if (event_id == PCNT_LL_WATCH_EVENT_LOW_LIMIT) {
+            int watch_value = pcnt_ll_get_count(group->hal.dev, unit_id);
+            if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT));
+                is_limit_event = true;
+                if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
                     unit->accum_value += unit->low_limit;
-                } else if (event_id == PCNT_LL_WATCH_EVENT_HIGH_LIMIT) {
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+                }
+                watch_value = unit->low_limit;
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT));
+                is_limit_event = true;
+                if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
                     unit->accum_value += unit->high_limit;
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+                }
+                watch_value = unit->high_limit;
+            }
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+            else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
+                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT));
+                if (is_limit_event) {
+                    continue;
+                } else if (unit->flags.accum_count) {
+                    portENTER_CRITICAL_ISR(&unit->spinlock);
+                    unit->accum_value += unit->step_limit;
+                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+                }
+                watch_value = unit->step_limit;
+            } else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
+                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL));
+                is_step_event = true;
+            }
+#endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
+            else if (event_status & BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS));
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES0)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES0));
+                if (is_step_event) {
+                    continue;
+                }
+            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES1)) {
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES1));
+                if (is_step_event) {
+                    continue;
                 }
             }
-            portEXIT_CRITICAL_ISR(&unit->spinlock);
 
             // invoked user registered callback
             if (on_reach) {
                 pcnt_watch_event_data_t edata = {
-                    .watch_point_value = unit->watchers[event_id].watch_point_value,
+                    .watch_point_value = watch_value,
                     .zero_cross_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id),
                 };
                 if (on_reach(unit, &edata, unit->user_data)) {
