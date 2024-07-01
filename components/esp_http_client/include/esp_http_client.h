@@ -344,6 +344,21 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
 
 /**
+ * @brief      Get http response header.
+ *             The value parameter will be set to NULL if there is no header which is same as
+ *             the key specified, otherwise the address of header value will be assigned to value parameter.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  key     The header key
+ * @param[out] value   The header value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_http_client_response_header(esp_http_client_handle_t client, const char *key, char **value);
+
+/**
  * @brief      Get http request username.
  *             The address of username buffer will be assigned to value parameter.
  *             This function must be called after `esp_http_client_init`.
