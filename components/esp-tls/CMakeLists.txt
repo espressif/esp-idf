@@ -1,4 +1,4 @@
-set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c)
+set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c esp_tls_platform_port.c)
 if(CONFIG_ESP_TLS_USING_MBEDTLS)
     list(APPEND srcs
         "esp_tls_mbedtls.c")
@@ -11,13 +11,13 @@ endif()
 
 set(priv_req http_parser)
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-    list(APPEND priv_req lwip)
+    list(APPEND priv_req lwip esp_timer)
 endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS . esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
-                    # mbedtls is public requirements becasue esp_tls.h
+                    # mbedtls is public requirements because esp_tls.h
                     # includes mbedtls header files.
                     REQUIRES mbedtls
                     PRIV_REQUIRES ${priv_req})
