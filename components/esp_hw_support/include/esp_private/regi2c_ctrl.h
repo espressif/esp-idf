@@ -61,9 +61,9 @@ extern "C" {
 #define regi2c_write_reg_mask_raw  esp_rom_regi2c_write_mask
 
 
-#ifdef BOOTLOADER_BUILD
+#if NON_OS_BUILD
 /**
- * If compiling for the bootloader, ROM functions can be called directly,
+ * If compiling for the non-FreeRTOS builds (e.g. bootloader), ROM functions can be called directly,
  * without the need of a lock.
  */
 #define regi2c_ctrl_read_reg         regi2c_read_reg_raw
@@ -83,7 +83,7 @@ void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add,
 void regi2c_enter_critical(void);
 void regi2c_exit_critical(void);
 
-#endif // BOOTLOADER_BUILD
+#endif // NON_OS_BUILD
 
 /* Convenience macros for the above functions, these use register definitions
  * from regi2c_xxx.h header files.

@@ -649,9 +649,13 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     }
 #endif
 
+/* NOTE: ESP-TEE is responsible for all interrupt-related configurations
+ * when enabled. The following code is not applicable in that case */
+#if !CONFIG_SECURE_ENABLE_TEE
 #if SOC_INT_PLIC_SUPPORTED
     /* Make sure the interrupt is not delegated to user mode (IDF uses machine mode only) */
     RV_CLEAR_CSR(mideleg, BIT(intr));
+#endif
 #endif
 
     portEXIT_CRITICAL(&spinlock);
