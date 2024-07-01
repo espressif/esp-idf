@@ -13,7 +13,7 @@
  * The platform-specific string to insert into the OpenThread version string.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_IDF_TARGET
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -112,7 +112,7 @@
  * Define to the full name of this package.
  *
  */
-#define PACKAGE_NAME "openthread-esp32"
+#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
 
 /**
  * @def PACKAGE_STRING
