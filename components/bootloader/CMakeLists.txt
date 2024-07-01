@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
@@ -7,7 +8,9 @@ endif()
 idf_component_register(PRIV_REQUIRES partition_table esptool_py)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build
-if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
+# This also applies to the ESP-TEE build, as the esp_tee component only requires the
+# Kconfig options from the bootloader
+if(BOOTLOADER_BUILD OR esp_tee_build OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 

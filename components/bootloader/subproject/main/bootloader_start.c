@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,11 @@ void __attribute__((noreturn)) call_start_cpu0(void)
     if (boot_index == INVALID_INDEX) {
         bootloader_reset();
     }
+
+    // 2.1 Load the TEE image
+#if CONFIG_SECURE_ENABLE_TEE
+    bootloader_utility_load_tee_image(&bs);
+#endif
 
     // 3. Load the app image for booting
     bootloader_utility_load_boot_image(&bs, boot_index);
