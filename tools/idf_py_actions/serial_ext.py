@@ -387,7 +387,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             generate_flash_encryption_key_args += ['--keylen', keylen]
         if extra_args['keyfile']:
             generate_flash_encryption_key_args += [extra_args['keyfile']]
-        RunTool('espsecure',  generate_flash_encryption_key_args, args.build_dir)()
+        RunTool('espsecure',  generate_flash_encryption_key_args, args.project_dir)()
 
     def secure_generate_signing_key(action: str, ctx: click.core.Context, args: PropertyDict, version: str, scheme: str, **extra_args: str) -> None:
         ensure_build_directory(args, ctx.info_name)
@@ -406,7 +406,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             generate_signing_key_args += ['--scheme', scheme]
         if extra_args['keyfile']:
             generate_signing_key_args += [extra_args['keyfile']]
-        RunTool('espsecure', generate_signing_key_args, args.build_dir)()
+        RunTool('espsecure', generate_signing_key_args, args.project_dir)()
 
     def secure_sign_data(action: str,
                          ctx: click.core.Context,
