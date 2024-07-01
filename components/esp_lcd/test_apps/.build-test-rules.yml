@@ -52,7 +52,3 @@ components/esp_lcd/test_apps/spi_lcd:
     - esp_driver_spi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8975
