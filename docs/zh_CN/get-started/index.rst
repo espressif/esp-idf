@@ -130,8 +130,8 @@
     .. toctree::
         :maxdepth: 1
 
-        ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
-        ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
+        ESP32-C3-DevKitC-02 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c3/esp32-c3-devkitc-02/index.html>
+        ESP32-C3-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c3/esp32-c3-devkitm-1/index.html>
 
 
 .. only:: esp32s3
