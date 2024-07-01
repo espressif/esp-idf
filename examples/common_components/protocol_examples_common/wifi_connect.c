@@ -46,7 +46,12 @@ static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event
         example_wifi_sta_do_disconnect();
         return;
     }
-    ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
+    wifi_event_sta_disconnected_t *disconn = event_data;
+    if (disconn->reason == WIFI_REASON_ROAMING) {
+        ESP_LOGD(TAG, "station roaming, do nothing");
+        return;
+    }
+    ESP_LOGI(TAG, "Wi-Fi disconnected %d, trying to reconnect...", disconn->reason);
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_ERR_WIFI_NOT_STARTED) {
         return;
