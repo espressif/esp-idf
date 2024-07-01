@@ -264,6 +264,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \

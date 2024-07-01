@@ -950,3 +950,7 @@ config SOC_RCC_IS_INDEPENDENT
 config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
     bool
     default y
+
+config SOC_LP_CORE_SUPPORT_ETM
+    bool
+    default y

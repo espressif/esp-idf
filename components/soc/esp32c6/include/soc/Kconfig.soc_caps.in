@@ -1498,3 +1498,7 @@ config SOC_CAPS_NO_RESET_BY_ANA_BOD
 config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
     bool
     default y
+
+config SOC_LP_CORE_SUPPORT_ETM
+    bool
+    default y
