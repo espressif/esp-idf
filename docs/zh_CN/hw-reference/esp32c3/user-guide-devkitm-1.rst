@@ -193,8 +193,8 @@ J3
 10    IO5   I/O/T       GPIO5, ADC2_CH0, FSPIWP, MTDI
 11    IO4   I/O/T       GPIO4, ADC1_CH4, FSPIHD, MTMS
 12    GND   G           接地
-13    IO18  I/O/T       GPIO18
-14    IO19  I/O/T       GPIO19
+13    IO18  I/O/T       GPIO18, USB_D-
+14    IO19  I/O/T       GPIO19, USB_D+
 15    GND   G           接地
 ====  ====  ==========  ================================
 

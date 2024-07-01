@@ -192,23 +192,21 @@ J3
 9     RX    I/O/T        GPIO20, U0RXD
 10    TX    I/O/T        GPIO21, U0TXD
 11    G     G            接地
-12    18    I/O/T        GPIO18
-13    19    I/O/T        GPIO19
+12    18    I/O/T        GPIO18, USB_D-
+13    19    I/O/T        GPIO19, USB_D+
 14    G     G            接地
 15    G     G            接地
 ====  ====  ==========  ================================
 
-
 .. [1] P：电源；I：输入；O：输出；T：可设置为高阻。
 .. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3 芯片的 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。
-
 
 管脚布局
 ^^^^^^^^
 
 .. figure:: ../../../_static/esp32-c3-devkitc-02-v1-pinout.png
     :align: center
-    :scale: 50%
+    :scale: 45%
     :alt: ESP32-C3-DevKitC-02 管脚布局（点击放大）
     :figclass: align-center
 

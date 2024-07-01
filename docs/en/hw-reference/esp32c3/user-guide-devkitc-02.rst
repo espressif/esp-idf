@@ -70,7 +70,6 @@ The key components of the board are described in a counter-clockwise direction.
    * - RGB LED
      - Addressable RGB LED, driven by GPIO8.
 
-
 Start Application Development
 -----------------------------
 
@@ -104,7 +103,6 @@ Retail Orders
 If you order a few samples, each ESP32-C3-DevKitC-02 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
 For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
-
 
 Wholesale Orders
 ^^^^^^^^^^^^^^^^
@@ -192,8 +190,8 @@ No.  Name  Type [1]_   Function
 9    RX    I/O/T       GPIO20, U0RXD
 10   TX    I/O/T       GPIO21, U0TXD
 11   G     G           Ground
-12   18    I/O/T       GPIO18
-13   19    I/O/T       GPIO19
+12   18    I/O/T       GPIO18, USB_D-
+13   19    I/O/T       GPIO19, USB_D+
 14   G     G           Ground
 15   G     G           Ground
 ===  ====  ==========  ====================================
@@ -207,7 +205,7 @@ Pin Layout
 
 .. figure:: ../../../_static/esp32-c3-devkitc-02-v1-pinout.png
     :align: center
-    :scale: 50%
+    :scale: 45%
     :alt: ESP32-C3-DevKitC-02 (click to enlarge)
     :figclass: align-center
 
@@ -232,7 +230,6 @@ Related Documents
 * `ESP32-C3-DevKitC-02 Dimensions source file <https://dl.espressif.com/dl/schematics/DXF_ESP32-C3-DevKitC-02_V1_1_20210121AA.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
-
 
 .. _ESP32-C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
 .. _ESP32-C3-WROOM-02 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3-wroom-02_datasheet_en.pdf
