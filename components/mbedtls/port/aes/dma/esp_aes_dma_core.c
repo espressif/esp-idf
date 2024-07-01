@@ -6,32 +6,36 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_attr.h"
-#include "esp_cache.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_memory_utils.h"
-#include "esp_private/esp_cache_private.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
-#if CONFIG_PM_ENABLE
-#include "esp_pm.h"
-#endif
 #include "hal/aes_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 
 #include "esp_aes_dma_priv.h"
 #include "esp_aes_internal.h"
 #include "esp_crypto_dma.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-
 #include "mbedtls/aes.h"
 #include "mbedtls/platform_util.h"
+
+#if !ESP_TEE_BUILD
+#include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#endif
 
 #if SOC_AES_SUPPORT_GCM
 #include "aes/esp_aes_gcm.h"
@@ -60,12 +64,16 @@
  */
 #define AES_WAIT_INTR_TIMEOUT_MS 2000
 
+#if !ESP_TEE_BUILD
 #if defined(CONFIG_MBEDTLS_AES_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
 #if defined(CONFIG_PM_ENABLE)
 static esp_pm_lock_handle_t s_pm_cpu_lock;
 static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif
+#endif
+#else
+extern bool intr_flag;
 #endif
 
 static const char *TAG = "esp-aes";
@@ -82,6 +90,7 @@ static bool s_check_dma_capable(const void *p)
 }
 
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
+#if !ESP_TEE_BUILD
 static IRAM_ATTR void esp_aes_complete_isr(void *arg)
 {
     BaseType_t higher_woken;
@@ -112,12 +121,14 @@ void esp_aes_intr_alloc(void)
         assert(op_complete_sem != NULL);
     }
 }
+#endif
 
 static esp_err_t esp_aes_isr_initialise( void )
 {
     aes_hal_interrupt_clear();
     aes_hal_interrupt_enable(true);
 
+#if !ESP_TEE_BUILD
     /* AES is clocked proportionally to CPU clock, take power management lock */
 #ifdef CONFIG_PM_ENABLE
     if (s_pm_cpu_lock == NULL) {
@@ -132,6 +143,9 @@ static esp_err_t esp_aes_isr_initialise( void )
     }
     esp_pm_lock_acquire(s_pm_cpu_lock);
     esp_pm_lock_acquire(s_pm_sleep_lock);
+#endif
+#else
+    intr_flag = true;
 #endif
 
     return ESP_OK;
@@ -153,6 +167,7 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
 {
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     if (use_intr) {
+#if !ESP_TEE_BUILD
         if (!xSemaphoreTake(op_complete_sem, AES_WAIT_INTR_TIMEOUT_MS / portTICK_PERIOD_MS)) {
             /* indicates a fundamental problem with driver */
             ESP_LOGE(TAG, "Timed out waiting for completion of AES Interrupt");
@@ -162,6 +177,15 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
         esp_pm_lock_release(s_pm_cpu_lock);
         esp_pm_lock_release(s_pm_sleep_lock);
 #endif  // CONFIG_PM_ENABLE
+#else
+    /* NOTE: ESP-TEE does not support multitasking - secure service calls are serialized.
+     * When waiting for AES interrupt here, we simply busy-wait since there are no
+     * other tasks to switch to. Note that REE interrupts could still preempt us.
+     */
+    while (intr_flag) {
+        esp_rom_delay_us(1);
+    }
+#endif
     }
 #endif
     /* Checking this if interrupt is used also, to avoid
@@ -175,23 +199,14 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
 
 static inline size_t get_cache_line_size(const void *addr)
 {
-    esp_err_t ret = ESP_FAIL;
-    size_t cache_line_size = 0;
-
+    uint32_t cache_level =
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
-    if (esp_ptr_external_ram(addr)) {
-        ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_line_size);
-    } else
+        esp_ptr_external_ram(addr) ? CACHE_LL_LEVEL_EXT_MEM : CACHE_LL_LEVEL_INT_MEM;
+#else
+        CACHE_LL_LEVEL_INT_MEM;
 #endif
-    {
-        ret = esp_cache_get_alignment(MALLOC_CAP_DMA, &cache_line_size);
-    }
 
-    if (ret != ESP_OK) {
-        return 0;
-    }
-
-    return cache_line_size;
+    return (size_t)cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
 }
 
 /* Output buffers in external ram needs to be 16-byte aligned and DMA can't access input in the iCache mem range,
