@@ -25,6 +25,8 @@ SPI Interfaced LCD
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::spi_mode` sets the SPI mode. The LCD driver uses this mode to communicate with the LCD. For the meaning of the SPI mode, please refer to the :doc:`SPI Master API doc </api-reference/peripherals/spi_master>`.
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::trans_queue_depth` sets the depth of the SPI transaction queue. A bigger value means more transactions can be queued up, but it also consumes more memory.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::cs_ena_pretrans` sets the amount of SPI bit-cycles which the cs should be activated before the transmission (0-16).
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::cs_ena_posttrans` sets the amount of SPI bit-cycles which the cs should stay active after the transmission (0-16).
 
     .. code-block:: c
 
