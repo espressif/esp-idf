@@ -12,16 +12,26 @@
 #include "esp_radio_spinel.h"
 #include "esp_radio_spinel_adapter.hpp"
 #include "esp_radio_spinel_uart_interface.hpp"
+#include "spinel_driver.hpp"
 
 using ot::Spinel::RadioSpinel;
 using ot::Spinel::RadioSpinelCallbacks;
 using esp::radio_spinel::SpinelInterfaceAdapter;
 using esp::radio_spinel::UartSpinelInterface;
+using ot::Spinel::SpinelDriver;
 
 static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface[ot::Spinel::kSpinelHeaderMaxNumIid];
 static RadioSpinel s_radio[ot::Spinel::kSpinelHeaderMaxNumIid];
 static esp_radio_spinel_callbacks_t s_esp_radio_spinel_callbacks[ot::Spinel::kSpinelHeaderMaxNumIid];
+static SpinelDriver s_spinel_driver[ot::Spinel::kSpinelHeaderMaxNumIid];
 otRadioFrame s_transmit_frame;
+
+static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
+                                   OT_RADIO_CAPS_TRANSMIT_SEC      |
+                                   OT_RADIO_CAPS_RECEIVE_TIMING    |
+                                   OT_RADIO_CAPS_TRANSMIT_TIMING   |
+                                   OT_RADIO_CAPS_ACK_TIMEOUT       |
+                                   OT_RADIO_CAPS_SLEEP_TO_TX);
 
 static esp_radio_spinel_idx_t get_index_from_instance(otInstance *instance)
 {
@@ -213,7 +223,8 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
 
     // Multipan is not currently supported
     iidList[0] = 0;
-    s_radio[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), /*reset_radio=*/true, /*skip_rcp_compatibility_check=*/false, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps);
 }
 
 esp_err_t esp_radio_spinel_enable(esp_radio_spinel_idx_t idx)
@@ -309,6 +320,7 @@ void esp_radio_spinel_radio_update(esp_radio_spinel_mainloop_context_t *mainloop
 
 void esp_radio_spinel_radio_process(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
 {
+    s_spinel_driver[idx].Process((void *)mainloop_context);
     s_radio[idx].Process(static_cast<void *>(mainloop_context));
 }
 
@@ -352,5 +364,11 @@ esp_err_t esp_radio_spinel_rcp_version_get(char *running_rcp_version, esp_radio_
     const char *rcp_version = s_radio[idx].GetVersion();
     ESP_RETURN_ON_FALSE(rcp_version != nullptr, ESP_FAIL, ESP_SPINEL_LOG_TAG, "Fail to get rcp version");
     strcpy(running_rcp_version, rcp_version);
+    return ESP_OK;
+}
+
+esp_err_t esp_radio_spinel_set_rcp_ready(esp_radio_spinel_idx_t idx)
+{
+    s_spinel_driver[idx].SetCoprocessorReady();
     return ESP_OK;
 }

@@ -11,6 +11,7 @@
 #include "esp_openthread_common_macro.h"
 #include "openthread/platform/time.h"
 #include "hdlc.hpp"
+#include "core/common/code_utils.hpp"
 
 namespace esp {
 namespace radio_spinel {

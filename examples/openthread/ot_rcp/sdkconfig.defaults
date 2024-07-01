@@ -9,6 +9,11 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# Wireless Coexistence
+#
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=n
+
+#
 # OpenThread
 #
 CONFIG_OPENTHREAD_ENABLED=y

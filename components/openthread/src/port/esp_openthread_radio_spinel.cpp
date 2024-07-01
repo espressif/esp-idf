@@ -6,6 +6,7 @@
 
 #include "esp_openthread_radio.h"
 
+#include "link_raw.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_err.h"
@@ -23,9 +24,11 @@
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
 #include "platform/exit_code.h"
+#include "spinel_driver.hpp"
 
 using ot::Spinel::RadioSpinel;
 using esp::openthread::SpinelInterfaceAdapter;
+using ot::Spinel::SpinelDriver;
 
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
 using esp::openthread::UartSpinelInterface;
@@ -35,7 +38,17 @@ using esp::openthread::SpiSpinelInterface;
 static SpinelInterfaceAdapter<SpiSpinelInterface> s_spinel_interface;
 #endif
 
+static SpinelDriver s_spinel_driver;
 static RadioSpinel s_radio;
+static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+                                   OT_RADIO_CAPS_RX_ON_WHEN_IDLE   |
+#endif
+                                   OT_RADIO_CAPS_TRANSMIT_SEC      |
+                                   OT_RADIO_CAPS_RECEIVE_TIMING    |
+                                   OT_RADIO_CAPS_TRANSMIT_TIMING   |
+                                   OT_RADIO_CAPS_ACK_TIMEOUT       |
+                                   OT_RADIO_CAPS_SLEEP_TO_TX);
 
 static const char *radiospinel_workflow = "radio_spinel";
 
@@ -60,7 +73,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
 #if CONFIG_OPENTHREAD_DIAG
     callbacks.mDiagReceiveDone  = otPlatDiagRadioReceiveDone;
     callbacks.mDiagTransmitDone = otPlatDiagRadioTransmitDone;
-#endif // OPENTHREAD_CONFIG_DIAG_ENABLE
+#endif // CONFIG_OPENTHREAD_DIAG
     callbacks.mEnergyScanDone = otPlatRadioEnergyScanDone;
     callbacks.mReceiveDone    = otPlatRadioReceiveDone;
     callbacks.mTransmitDone   = otPlatRadioTxDone;
@@ -70,14 +83,15 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     esp_openthread_radio_config_set(&config->radio_config);
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(config->radio_config.radio_uart_config), OT_PLAT_LOG_TAG,
-                        "Spinel interface init falied");
+                        "Spinel interface init failed");
 #else // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(config->radio_config.radio_spi_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init failed");
 #endif
-    s_radio.Init(s_spinel_interface.GetSpinelInterface(), /*reset_radio=*/true, /*skip_rcp_compatibility_check=*/false, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
+    s_radio.Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver, s_radio_caps);
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_SPI // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
-    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().AfterRadioInit(), OT_PLAT_LOG_TAG, "Spinel interface init falied");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().AfterRadioInit(), OT_PLAT_LOG_TAG, "Spinel interface init failed");
 #endif
     return esp_openthread_platform_workflow_register(&esp_openthread_radio_update, &esp_openthread_radio_process,
                                                      radiospinel_workflow);
@@ -106,7 +120,7 @@ esp_err_t esp_openthread_rcp_init(void)
     const esp_openthread_radio_config_t *radio_config = esp_openthread_radio_config_get();
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(radio_config->radio_uart_config), OT_PLAT_LOG_TAG,
-                        "Spinel interface init falied");
+                        "Spinel interface init failed");
 #else   // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(radio_config->radio_spi_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init failed");
@@ -128,6 +142,7 @@ void esp_openthread_radio_deinit(void)
 
 esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
 {
+    s_spinel_driver.Process((void *)mainloop);
     s_radio.Process((void *)mainloop);
 
     return ESP_OK;
@@ -211,7 +226,8 @@ int8_t otPlatRadioGetRssi(otInstance *instance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *instance)
 {
-    return s_radio.GetRadioCaps();
+    s_radio_caps = s_radio.GetRadioCaps();
+    return s_radio_caps;
 }
 
 bool otPlatRadioGetPromiscuous(otInstance *instance)
@@ -319,7 +335,7 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCoun
     SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter, true));
 }
 
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
 otError otPlatDiagProcess(otInstance *instance, int argc, char *argv[], char *output, size_t output_max_len)
 {
     // deliver the platform specific diags commands to radio only ncp.
@@ -331,12 +347,19 @@ otError otPlatDiagProcess(otInstance *instance, int argc, char *argv[], char *ou
         cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", argv[index]);
     }
 
-    return s_radio.PlatDiagProcess(cmd, output, output_max_len);
+    return s_radio.PlatDiagProcess(cmd);
+}
+
+void otPlatDiagSetOutputCallback(otInstance *aInstance, otPlatDiagOutputCallback aCallback, void *aContext)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aCallback);
+    OT_UNUSED_VARIABLE(aContext);
 }
 
 void otPlatDiagModeSet(bool aMode)
 {
-    SuccessOrExit(s_radio.PlatDiagProcess(aMode ? "start" : "stop", NULL, 0));
+    SuccessOrExit(s_radio.PlatDiagProcess(aMode ? "start" : "stop"));
     s_radio.SetDiagEnabled(aMode);
 
 exit:
@@ -353,7 +376,7 @@ void otPlatDiagTxPowerSet(int8_t tx_power)
     char cmd[OPENTHREAD_CONFIG_DIAG_CMD_LINE_BUFFER_SIZE];
 
     snprintf(cmd, sizeof(cmd), "power %d", tx_power);
-    SuccessOrExit(s_radio.PlatDiagProcess(cmd, NULL, 0));
+    SuccessOrExit(s_radio.PlatDiagProcess(cmd));
 
 exit:
     return;
@@ -364,7 +387,7 @@ void otPlatDiagChannelSet(uint8_t channel)
     char cmd[OPENTHREAD_CONFIG_DIAG_CMD_LINE_BUFFER_SIZE];
 
     snprintf(cmd, sizeof(cmd), "channel %d", channel);
-    SuccessOrExit(s_radio.PlatDiagProcess(cmd, NULL, 0));
+    SuccessOrExit(s_radio.PlatDiagProcess(cmd));
 
 exit:
     return;
@@ -378,12 +401,12 @@ void otPlatDiagAlarmCallback(otInstance *instance)
 {
 }
 
+#endif // CONFIG_OPENTHREAD_DIAG
+
 const char *otPlatRadioGetVersionString(otInstance *aInstance)
 {
     return s_radio.GetVersion();
 }
-
-#endif // OPENTHREAD_CONFIG_DIAG_ENABLE
 
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
 {
