@@ -482,7 +482,7 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
-// #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
+#define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C5 has 3 UARTs (2 HP UART, and 1 LP UART)
