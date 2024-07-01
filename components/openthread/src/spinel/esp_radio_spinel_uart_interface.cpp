@@ -13,6 +13,7 @@
 #include "hdlc.hpp"
 #include "esp_heap_caps.h"
 #include "driver/uart.h"
+#include "core/common/code_utils.hpp"
 
 namespace esp {
 namespace radio_spinel {
