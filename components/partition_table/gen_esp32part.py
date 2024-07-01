@@ -24,6 +24,8 @@ PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
 MIN_PARTITION_SUBTYPE_APP_OTA = 0x10
 NUM_PARTITION_SUBTYPE_APP_OTA = 16
+MIN_PARTITION_SUBTYPE_APP_TEE = 0x30
+NUM_PARTITION_SUBTYPE_APP_TEE = 2
 
 SECURE_NONE = None
 SECURE_V1 = 'v1'
@@ -82,6 +84,8 @@ SUBTYPES = {
         'fat': 0x81,
         'spiffs': 0x82,
         'littlefs': 0x83,
+        'tee_ota': 0x90,
+        'tee_sec_stg': 0x91,
     },
 }
 
@@ -308,6 +312,18 @@ class PartitionTable(list):
             critical('%s' % (p.to_csv()))
             raise InputError('otadata partition must have size = 0x2000')
 
+        # Above checks but for TEE otadata
+        otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['tee_ota']]
+        if len(otadata_duplicates) > 1:
+            for p in otadata_duplicates:
+                critical('%s' % (p.to_csv()))
+            raise InputError('Found multiple TEE otadata partitions. Only one partition can be defined with type="data"(1) and subtype="tee_ota"(0x90).')
+
+        if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
+            p = otadata_duplicates[0]
+            critical('%s' % (p.to_csv()))
+            raise InputError('TEE otadata partition must have size = 0x2000')
+
     def flash_size(self):
         """ Return the size that partitions will occupy in flash
             (ie the offset the last partition ends at)
@@ -378,6 +394,10 @@ class PartitionDefinition(object):
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
     for ota_slot in range(NUM_PARTITION_SUBTYPE_APP_OTA):
         SUBTYPES[TYPES['app']]['ota_%d' % ota_slot] = MIN_PARTITION_SUBTYPE_APP_OTA + ota_slot
+
+    # add subtypes for the 2 TEE OTA slot values ("tee_XX, etc.")
+    for tee_slot in range(NUM_PARTITION_SUBTYPE_APP_TEE):
+        SUBTYPES[TYPES['app']]['tee_%d' % tee_slot] = MIN_PARTITION_SUBTYPE_APP_TEE + tee_slot
 
     def __init__(self):
         self.name = ''

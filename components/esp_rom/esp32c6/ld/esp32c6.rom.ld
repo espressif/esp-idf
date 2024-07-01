@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -259,11 +259,11 @@ gpio_bypass_matrix_in = 0x40000714;
  ***************************************/
 
 /* Functions */
-esprv_intc_int_set_priority = 0x40000718;
-esprv_intc_int_set_threshold = 0x4000071c;
-esprv_intc_int_enable = 0x40000720;
-esprv_intc_int_disable = 0x40000724;
-esprv_intc_int_set_type = 0x40000728;
+PROVIDE( esprv_intc_int_set_priority = 0x40000718 );
+PROVIDE( esprv_intc_int_set_threshold = 0x4000071c );
+PROVIDE( esprv_intc_int_enable = 0x40000720 );
+PROVIDE( esprv_intc_int_disable = 0x40000724 );
+PROVIDE( esprv_intc_int_set_type = 0x40000728 );
 PROVIDE( intr_handler_set = 0x4000072c );
 intr_matrix_set = 0x40000730;
 ets_intr_lock = 0x40000734;
