@@ -778,10 +778,10 @@ int wpa_drv_send_action(struct wpa_supplicant *wpa_s,
 		goto cleanup;
 	}
 
-	req->ifx = WIFI_IF_STA;
-	req->subtype = WLAN_FC_STYPE_ACTION;
-	req->data_len = data_len;
-	os_memcpy(req->data, data, req->data_len);
+    req->ifx = WIFI_IF_STA;
+    req->subtype = (WLAN_FC_STYPE_ACTION << 4);
+    req->data_len = data_len;
+    os_memcpy(req->data, data, req->data_len);
 
 	if (esp_wifi_send_mgmt_frm_internal(req) != 0) {
 		wpa_printf(MSG_ERROR, "action frame sending failed");
