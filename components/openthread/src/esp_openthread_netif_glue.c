@@ -320,7 +320,7 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     otIp6SetAddressCallback(instance, process_thread_address, instance);
     otIp6SetReceiveCallback(instance, process_thread_receive, instance);
     otIp6SetReceiveFilterEnabled(instance, true);
-    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_DISABLED);
+    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_RLOC_ALOC_ONLY);
 
     s_openthread_netif_glue.event_fd = eventfd(0, 0);
     if (s_openthread_netif_glue.event_fd < 0) {
