@@ -264,7 +264,7 @@ SNTP 的简要介绍、初始化代码和基本模式请参阅 :doc:`系统时�
 
 本节介绍了使用 SNTP 服务特定用例的详细信息，包括静态配置的服务器、使用 DHCP 提供的服务器或两者兼备的情况，操作流程如下：
 
-1) 调用 :cpp:func:`esp_netif_sntp_init()` 初始化服务并完成配置。
+1) 调用 :cpp:func:`esp_netif_sntp_init()` 初始化服务并完成配置。此操作只能执行一次（除非已调用 :cpp:func:`esp_netif_sntp_deinit()` 销毁 SNTP 服务）。
 2) 调用 :cpp:func:`esp_netif_sntp_start()` 启动服务。如果在前一步中已经默认启动了服务，则不需要此步骤。如果需使用通过 DHCP 获取的 NTP 服务器，推荐在完成连接后显式启动该服务。注意，应在连接前启用通过 DHCP 获取的 NTP 服务器选项，并在连接后再启用 SNTP 服务。
 3) 需要时，可调用 :cpp:func:`esp_netif_sntp_sync_wait()` 等待系统时间同步。
 4) 调用 :cpp:func:`esp_netif_sntp_deinit()` 停止并销毁服务。

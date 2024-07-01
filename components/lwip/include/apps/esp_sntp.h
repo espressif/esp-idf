@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,6 +218,20 @@ const ip_addr_t* esp_sntp_getserver(u8_t idx);
  */
 bool esp_sntp_enabled(void);
 
+/**
+ * @brief Gets the server reachability shift register as described in RFC 5905.
+ * @param idx Index of the SNTP server
+ * @return reachability shift register
+ */
+uint8_t esp_sntp_getreachability(uint8_t idx);
+
+/**
+ * @brief Get the configured operating mode
+ *
+ * @return operating mode enum
+ */
+esp_sntp_operatingmode_t esp_sntp_getoperatingmode(void);
+
 #if LWIP_DHCP_GET_NTP_SRV
 /**
  * @brief Enable acquiring SNTP server from DHCP
@@ -267,6 +281,17 @@ static inline __attribute__((deprecated("use esp_sntp_getserver() instead")))
 const ip_addr_t* sntp_getserver(u8_t idx)
 {
     return esp_sntp_getserver(idx);
+}
+
+static inline uint8_t sntp_getreachability(uint8_t idx)
+{
+    return esp_sntp_getreachability(idx);
+}
+
+static inline __attribute__((deprecated("use esp_sntp_getoperatingmode() instead")))
+esp_sntp_operatingmode_t sntp_getoperatingmode(void)
+{
+    return esp_sntp_getoperatingmode();
 }
 
 #endif /* ESP_LWIP_COMPONENT_BUILD */

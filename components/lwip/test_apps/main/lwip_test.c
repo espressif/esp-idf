@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,8 +294,16 @@ void test_sntp_timestamps(int year, bool msb_flag)
     localtime_r(&now, &timeinfo);
     TEST_ASSERT_EQUAL(year, 1900 + timeinfo.tm_year);
 
+    // Check that the server 0 was reachable
+    TEST_ASSERT_EQUAL(1, esp_sntp_getreachability(0));
     // close the SNTP and the fake server
     esp_sntp_stop();
+
+    // Test some other SNTP APIs
+    TEST_ASSERT_EQUAL(0, esp_sntp_getreachability(0));
+    TEST_ASSERT_EQUAL(ESP_SNTP_OPMODE_POLL, esp_sntp_getoperatingmode());
+    const ip_addr_t *server_ip = esp_sntp_getserver(0);
+    TEST_ASSERT_EQUAL(PP_HTONL(IPADDR_LOOPBACK), server_ip->u_addr.ip4.addr);
     close(sock);
 }
 
