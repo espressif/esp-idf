@@ -127,10 +127,23 @@ void vPortSetStackWatchpoint(void *pxStackStart)
 UBaseType_t ulPortSetInterruptMask(void)
 {
     int ret;
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    unsigned old_xstatus;
+
+#if CONFIG_SECURE_ENABLE_TEE
+    old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+#else
+    // For non-secure configuration
+    old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+#endif
+
     ret = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+
+#if CONFIG_SECURE_ENABLE_TEE
+    RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+#else
+    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
+#endif
     /**
      * In theory, this function should not return immediately as there is a
      * delay between the moment we mask the interrupt threshold register and

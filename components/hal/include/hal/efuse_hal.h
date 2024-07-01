@@ -69,6 +69,11 @@ uint32_t efuse_hal_get_major_chip_version(void);
  */
 uint32_t efuse_hal_get_minor_chip_version(void);
 
+/**
+ * @brief Returns the chip package version
+ */
+uint32_t efuse_hal_get_chip_ver_pkg(void);
+
 #if SOC_EFUSE_ECDSA_KEY
 /**
  * @brief Set the efuse block that should be used as ECDSA private key
