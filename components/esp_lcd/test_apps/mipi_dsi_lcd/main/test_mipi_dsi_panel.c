@@ -222,16 +222,16 @@ TEST_CASE("MIPI DSI with multiple frame buffers (ILI9881C)", "[mipi_dsi]")
     uint16_t *fbs[3];
     TEST_ESP_OK(esp_lcd_dpi_panel_get_frame_buffer(mipi_dpi_panel, 3, (void **)&fbs[0], (void **)&fbs[1], (void **)&fbs[2]));
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 9; i++) {
         uint16_t color_byte = rand() & 0xFFFF;
         int x_start = rand() % (MIPI_DSI_LCD_H_RES - 100);
         int y_start = rand() % (MIPI_DSI_LCD_V_RES - 100);
         for (int j = y_start; j < y_start + 100; j++) {
             for (int k = x_start; k < x_start + 100; k++) {
-                fbs[i][j * MIPI_DSI_LCD_H_RES + k] = color_byte;
+                fbs[i % 3][j * MIPI_DSI_LCD_H_RES + k] = color_byte;
             }
         }
-        esp_lcd_panel_draw_bitmap(mipi_dpi_panel, x_start, y_start, x_start + 100, y_start + 100, fbs[i]);
+        esp_lcd_panel_draw_bitmap(mipi_dpi_panel, x_start, y_start, x_start + 100, y_start + 100, fbs[i % 3]);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
