@@ -143,7 +143,7 @@ argtable3:
 
 md5_hash:
   include:
-    - 'components/esp_rom/include/**/rom/md5_hash.h'
+    - 'components/esp_rom/*/include/**/rom/md5_hash.h'
   allowed_licenses:
     - BSD-3-Clause
     - Apache-2.0
@@ -182,7 +182,7 @@ tinyusb:
 # with files licensed under a mix of Apache and BSD-3-Clause licenses.
 esp_rom_usb:
   include:
-    - 'components/esp_rom/include/*/rom/usb/'
+    - 'components/esp_rom/*/include/*/rom/usb/'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause
