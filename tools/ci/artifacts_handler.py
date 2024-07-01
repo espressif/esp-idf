@@ -30,6 +30,8 @@ TYPE_PATTERNS_DICT = {
     ArtifactType.MAP_AND_ELF_FILES: [
         '**/build*/bootloader/*.map',
         '**/build*/bootloader/*.elf',
+        '**/build*/esp_tee/*.map',
+        '**/build*/esp_tee/*.elf',
         '**/build*/*.map',
         '**/build*/*.elf',
     ],
@@ -37,6 +39,7 @@ TYPE_PATTERNS_DICT = {
         f'**/build*/{DEFAULT_BUILD_LOG_FILENAME}',
         '**/build*/*.bin',
         '**/build*/bootloader/*.bin',
+        '**/build*/esp_tee/*.bin',
         '**/build*/partition_table/*.bin',
         '**/build*/flasher_args.json',
         '**/build*/flash_project_args',

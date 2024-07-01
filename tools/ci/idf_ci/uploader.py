@@ -45,6 +45,8 @@ class AppUploader(AppDownloader):
         ArtifactType.MAP_AND_ELF_FILES: [
             'bootloader/*.map',
             'bootloader/*.elf',
+            'esp_tee/*.map',
+            'esp_tee/*.elf',
             '*.map',
             '*.elf',
             'gdbinit/*',
@@ -52,6 +54,7 @@ class AppUploader(AppDownloader):
         ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES: [
             '*.bin',
             'bootloader/*.bin',
+            'esp_tee/*.bin',
             'partition_table/*.bin',
             'flasher_args.json',
             'flash_project_args',

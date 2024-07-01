@@ -13,29 +13,7 @@ endif()
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
 
-if(NOT BOOTLOADER_BUILD)
-
-    if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
-        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-            list(APPEND compile_options "-Oz")
-        else()
-            list(APPEND compile_options "-Os")
-        endif()
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-            list(APPEND compile_options "-freorder-blocks")
-        endif()
-    elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
-        list(APPEND compile_options "-Og")
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
-            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
-        endif()
-    elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
-        list(APPEND compile_options "-O0")
-    elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
-        list(APPEND compile_options "-O2")
-    endif()
-
-else()  # BOOTLOADER_BUILD
+if(BOOTLOADER_BUILD)
 
     if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)
         if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -54,6 +32,37 @@ else()  # BOOTLOADER_BUILD
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE)
         list(APPEND compile_options "-O0")
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
+        list(APPEND compile_options "-O2")
+    endif()
+
+elseif(ESP_TEE_BUILD)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        list(APPEND compile_options "-Oz")
+    else()
+        list(APPEND compile_options "-Os")
+        list(APPEND compile_options "-freorder-blocks")
+    endif()
+
+else()
+
+    if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
+        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+            list(APPEND compile_options "-Oz")
+        else()
+            list(APPEND compile_options "-Os")
+        endif()
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            list(APPEND compile_options "-freorder-blocks")
+        endif()
+    elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
+        list(APPEND compile_options "-Og")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+        endif()
+    elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
+        list(APPEND compile_options "-O0")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
         list(APPEND compile_options "-O2")
     endif()
 
