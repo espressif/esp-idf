@@ -161,17 +161,17 @@ Restrictions
 
     .. important::
 
-        Over 16 MBytes space on flash mentioned above can be only used for ``data saving``, like file system.
+        Over 16 MBytes space on flash mentioned above can be only used for data storage, not instruction storage.
 
-        Mapping data/instructions to 32-bit physical address space (so as to be accessed by the CPU) needs the support of MMU. However {IDF_TARGET_NAME} doesn't support this feature. Only ESP32-S3 and ESP32-P4 supports this up to now.
+        Mapping data and instructions space to 32-bit physical address space (so as to be accessed by the CPU) needs the support of the MMU. However {IDF_TARGET_NAME} doesn't support this feature. Only the ESP32-S3 and ESP32-P4 models supports this.
 
 .. only:: SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 
-    By default, space over 16 MBytes on flash mentioned above can be used for ``data saving``, like file system.
+    By default, space over 16 MBytes on flash mentioned above can be used for data storage, not instruction storage.
 
-    Furthermore, to map data/instructions to 32-bit physical address space (so as to be accessed by the CPU), please enable the config ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``.
+    To map data and instruction space to 32-bit physical address space (so as to be accessed by the CPU, the config settings ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`` must be set.
 
-    Please note that, this option is experimental, which means it can not be used on all flash chips stably. For more information, please contact Espressif Business Support.
+    Please note that, this option is experimental, which means it can not be used reliably on all flash chips stably. For more information, please contact Espressif Business Support.
 
 .. _oct-flash-doc:
 
