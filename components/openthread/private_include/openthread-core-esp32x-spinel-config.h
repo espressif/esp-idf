@@ -6,6 +6,23 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
+
+/**
+ * @def PACKAGE_NAME
+ *
+ * Define to the full name of this package.
+ *
+ */
+#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
+
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
  *
