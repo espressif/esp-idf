@@ -38,10 +38,10 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     const u8 *rsnxe;
     u8 rsnxe_capa = 0;
 
-    rsnxe = esp_wifi_sta_get_rsnxe();
-    if (rsnxe && rsnxe[1] >= 1) {
-        rsnxe_capa = rsnxe[2];
-    }
+   rsnxe = esp_wifi_sta_get_rsnxe(bssid);
+   if (rsnxe && rsnxe[1] >= 1) {
+       rsnxe_capa = rsnxe[2];
+   }
 
 #ifdef CONFIG_SAE_PK
     bool use_pk = false;
