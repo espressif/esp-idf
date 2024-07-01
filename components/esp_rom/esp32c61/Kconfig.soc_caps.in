@@ -51,6 +51,10 @@ config ESP_ROM_TLSF_CHECK_PATCH
     bool
     default y
 
+config ESP_ROM_MULTI_HEAP_WALK_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
