@@ -299,6 +299,12 @@ examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   depends_components:
     - ulp
 
+examples/system/ulp/lp_core/gpio_wakeup:
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
+  depends_components:
+    - ulp
+
 examples/system/ulp/lp_core/inter_cpu_critical_section/:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
