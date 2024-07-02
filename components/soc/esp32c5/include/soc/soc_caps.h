@@ -196,7 +196,9 @@
 // On ESP32-C5, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 // GPIO0~7 on ESP32C5 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)  // TODO: [ESP32C5] IDF-8719
+#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
@@ -219,13 +221,13 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM           (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-#define SOC_RTCIO_PIN_COUNT                 0UL
-// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
-                                            //  * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
-                                            //  * when the pins are switched to RTC function.
-                                            //  */
-// #define SOC_RTCIO_HOLD_SUPPORTED            1
-// #define SOC_RTCIO_WAKE_SUPPORTED            1
+#define SOC_RTCIO_PIN_COUNT                 8
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+                                                * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
+                                                * when the pins are switched to RTC function.
+                                                */
+#define SOC_RTCIO_HOLD_SUPPORTED            1
+#define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 // #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */

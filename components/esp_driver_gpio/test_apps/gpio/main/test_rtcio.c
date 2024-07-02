@@ -238,7 +238,7 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 #if SOC_DEEP_SLEEP_SUPPORTED
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12) these pads' default configuration is low level
+// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12, P4: IO5, C5: IO5) these pads' default configuration is low level
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
