@@ -199,14 +199,19 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
     }
 
     p_cb = p_acl_cb->p_pm_mode_db;
+
     if (mode != BTM_PM_MD_ACTIVE) {
         /* check if the requested mode is supported */
         ind = mode - BTM_PM_MD_HOLD; /* make it base 0 */
         p_features = BTM_ReadLocalFeatures();
         if ( !(p_features[ btm_pm_mode_off[ind] ] & btm_pm_mode_msk[ind] ) ) {
+            //#if BTM_PM_DEBUG == TRUE
+                BTM_TRACE_DEBUG( "BTM_SetPowerMode: Unsupported BTM Mode");
+            //#endif
             return BTM_MODE_UNSUPPORTED;
         }
     }
+
 
     if (mode == p_cb->state) { /* the requested mode is current mode */
         /* already in the requested mode and the current interval has less latency than the max */
@@ -228,18 +233,18 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
             (btm_cb.pm_reg_db[pm_id].mask & BTM_PM_REG_SET))
             || ((pm_id == BTM_PM_SET_ONLY_ID)
 		&& (btm_cb.pm_pend_link_hdl != BTM_INVALID_HANDLE)) ) {
-#if BTM_PM_DEBUG == TRUE
+//#if BTM_PM_DEBUG == TRUE
         BTM_TRACE_DEBUG( "BTM_SetPowerMode: Saving cmd acl handle %d temp_pm_id %d", p_acl_cb->hci_handle, temp_pm_id);
-#endif  // BTM_PM_DEBUG
+//#endif  // BTM_PM_DEBUG
         /* Make sure mask is set to BTM_PM_REG_SET */
         btm_cb.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
         *(&p_cb->req_mode[temp_pm_id]) = *((tBTM_PM_PWR_MD *)p_mode);
         p_cb->chg_ind = TRUE;
     }
 
-#if BTM_PM_DEBUG == TRUE
+//#if BTM_PM_DEBUG == TRUE
     BTM_TRACE_DEBUG( "btm_pm state:0x%x, pm_pend_link_hdl: %d", p_cb->state, btm_cb.pm_pend_link_hdl);
-#endif  // BTM_PM_DEBUG
+//#endif  // BTM_PM_DEBUG
     /* if mode == hold or pending, return */
     if ( (p_cb->state == BTM_PM_STS_HOLD) ||
             (p_cb->state ==  BTM_PM_STS_PENDING) ||
@@ -737,6 +742,14 @@ void btm_pm_proc_cmd_status(UINT8 status)
     btm_pm_check_stored();
 }
 
+__attribute__((weak))
+void btm_hcif_mode_change_cb(UINT8 mode, UINT16 interval)
+{
+    // This is the weak implementation, which will be overwritten
+    (void) mode;
+    (void) interval;
+}
+
 /*******************************************************************************
 **
 ** Function         btm_process_mode_change
@@ -770,6 +783,8 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
     old_state       = p_cb->state;
     p_cb->state     = mode;
     p_cb->interval  = interval;
+
+    btm_hcif_mode_change_cb(mode, interval);
 
     BTM_TRACE_DEBUG("%s switched from %s to %s.", __func__, mode_to_string(old_state), mode_to_string(p_cb->state));
 
