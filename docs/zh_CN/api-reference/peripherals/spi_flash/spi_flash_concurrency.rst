@@ -19,7 +19,7 @@ SPI1 flash 并发约束
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` （默认禁用）和 :ref:`CONFIG_SPIRAM_RODATA` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
+    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
 
     禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
@@ -40,7 +40,7 @@ SPI1 flash 并发约束
 
     .. note::
 
-        同时启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项后，不会禁用 cache。
+        启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后，不会禁用 cache。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 

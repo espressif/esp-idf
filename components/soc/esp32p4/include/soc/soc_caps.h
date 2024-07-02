@@ -508,6 +508,8 @@
 /*-------------------------- LP SPI CAPS ----------------------------------------*/
 #define SOC_LP_SPI_PERIPH_NUM              1
 #define SOC_LP_SPI_MAXIMUM_BUFFER_SIZE     64
+/*-------------------------- SPIRAM CAPS ----------------------------------------*/
+#define SOC_SPIRAM_XIP_SUPPORTED        1
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
