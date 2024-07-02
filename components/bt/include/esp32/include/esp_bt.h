@@ -219,17 +219,17 @@ the adv packet will be discarded until the memory is restored. */
  * @brief Bluetooth Controller config options
  * @note
  *      1. For parameters configurable in menuconfig, please refer to menuconfig for details on range and default values.
- *      2. It is not recommended to modify the default values of `controller_task_stack_size`, `controller_task_prio`.
+ *      2. It is not recommended to modify the default values of `controller_task_stack_size` and `controller_task_prio`.
  */
 typedef struct {
     uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size in bytes */
     uint8_t controller_task_prio;           /*!< Bluetooth Controller task priority */
-    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
-    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
-    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig. */
-    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig. */
-    uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig. */
-    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig. */
+    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface. Configurable in menuconfig */
+    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface. Configurable in menuconfig */
+    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig */
+    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig */
+    uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig */
+    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
     uint8_t mode;                           /*!< Controller mode:
@@ -243,7 +243,7 @@ typedef struct {
     uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig. */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig. */
     bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig.*/
-    bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to  protect from BIAS attack; false otherwise. Configurable in menuconfig. */
+    bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to protect from BIAS attack; false otherwise. Configurable in menuconfig */
     uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig. */
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig. */
     uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig.*/
