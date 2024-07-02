@@ -43,6 +43,8 @@
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
+#include "modem/modem_lpcon_reg.h"
+#include "modem/modem_syscon_reg.h"
 
 static const char *TAG = "boot.esp32c61";
 
@@ -94,12 +96,10 @@ static inline void bootloader_hardware_init(void)
     esp_rom_spiflash_fix_dummylen(1, 1);
 #endif
 
-//TODO: [ESP32C61] IDF-9276
-#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    ESP_EARLY_LOGW(TAG, "ESP32C61 attention: analog i2c master clock enable skipped!!!");
-#else
-    ESP_LOGW(TAG, "ESP32C61 attention: analog i2c master clock enable skipped!!!");
-#endif
+    /* Enable analog i2c master clock */
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO); // TODO: IDF-9274 Remove this?
+    SET_PERI_REG_MASK(MODEM_SYSCON_CLK_CONF_REG, MODEM_SYSCON_CLK_I2C_MST_SEL_160M);
 }
 
 static inline void bootloader_ana_reset_config(void)

@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C61] IDF-9276, inherit from c6
-
 /**
  * @brief Start BBPLL self-calibration
  */
