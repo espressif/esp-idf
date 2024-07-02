@@ -818,6 +818,8 @@ typedef enum {
     WIFI_EVENT_ITWT_PROBE,              /**< iTWT probe */
     WIFI_EVENT_ITWT_SUSPEND,            /**< iTWT suspend */
     WIFI_EVENT_TWT_WAKEUP,              /**< TWT wakeup */
+    WIFI_EVENT_BTWT_SETUP,              /**< bTWT setup */
+    WIFI_EVENT_BTWT_TEARDOWN,           /**< bTWT teardown*/
 
     WIFI_EVENT_NAN_STARTED,              /**< NAN Discovery has started */
     WIFI_EVENT_NAN_STOPPED,              /**< NAN Discovery has stopped */
