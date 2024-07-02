@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -139,7 +139,6 @@ struct wpa_funcs {
     void (*wpa_config_done)(void);
     uint8_t *(*owe_build_dhie)(uint16_t group);
     int (*owe_process_assoc_resp)(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
-    int (*wpa_sta_set_ap_rsnxe)(const u8 *rsnxe, size_t rsnxe_ie_len);
 };
 
 struct wpa2_funcs {
@@ -284,7 +283,10 @@ bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
 uint8_t esp_wifi_sta_get_config_sae_pwe_h2e_internal(void);
 uint8_t esp_wifi_sta_get_use_h2e_internal(void);
 void esp_wifi_sta_disable_wpa2_authmode_internal(void);
+void esp_wifi_sta_disable_owe_trans_internal(void);
 uint8_t esp_wifi_ap_get_max_sta_conn(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
+uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
+esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
