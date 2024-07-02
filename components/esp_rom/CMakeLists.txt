@@ -127,10 +127,6 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32s2")
         rom_linker_script("spiflash_legacy")
-
-    elseif(target STREQUAL "esp32c6")
-        # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
-        rom_linker_script("phy")
     endif()
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB)
