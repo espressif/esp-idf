@@ -1074,6 +1074,11 @@ BOOLEAN    btm_acl_notif_conn_collision (BD_ADDR bda);
 void btm_pm_reset(void);
 tBTM_PM_MCB *btm_pm_sm_alloc(void);
 void btm_pm_proc_cmd_status(UINT8 status);
+
+// Custom code
+void btm_hcif_mode_change_interval(UINT8 mode, UINT16 interval);
+// end custom code
+
 void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode,
                               UINT16 interval);
 void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len);
