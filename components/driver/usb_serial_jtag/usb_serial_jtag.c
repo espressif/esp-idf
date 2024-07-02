@@ -182,10 +182,14 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     usb_serial_jtag_ll_phy_set_defaults();          // External PHY not supported. Set default values.
 #endif // USB_WRAP_LL_EXT_PHY_SUPPORTED
 
-    usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
-                                         USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
-    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
-                                     USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+    // Note: DO NOT clear the interrupt status bits here. The output routine needs
+    // USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY set because it needs the ISR to trigger
+    // as soon as data is sent; the input routine needs the status to retrieve any
+    // data that is still in the FIFOs.
+
+    // We only enable the RX interrupt; we'll enable the TX one when we actually
+    // have anything to send.
+    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
 
     err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
     if (err != ESP_OK) {

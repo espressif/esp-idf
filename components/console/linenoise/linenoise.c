@@ -1076,9 +1076,9 @@ int linenoiseProbe(void) {
         if (cb < 0) {
             continue;
         }
-        if (read_bytes == 0 && c != '\x1b') {
-            /* invalid response */
-            break;
+        if (read_bytes == 0 && c != ESC) {
+            /* invalid response, try again until the timeout triggers */
+            continue;
         }
         read_bytes += cb;
     }
