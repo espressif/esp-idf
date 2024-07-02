@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <sdkconfig.h>
 #ifndef CONFIG_IDF_TARGET_ESP32S2
 #error This file should only be included for ESP32-S2 target
 #endif
