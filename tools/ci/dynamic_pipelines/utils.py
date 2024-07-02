@@ -66,10 +66,14 @@ def load_known_failure_cases() -> t.Optional[t.Set[str]]:
     if not known_failures_file:
         return None
     try:
-        with open(known_failures_file) as f:
+        with open(known_failures_file, 'r') as f:
             file_content = f.read()
-        known_cases_list = re.sub(re.compile('#.*\n'), '', file_content).split()
-        return {case.strip() for case in known_cases_list}
+
+        pattern = re.compile(r'^(.*?)\s+#\s+([A-Z]+)-\d+', re.MULTILINE)
+        matches = pattern.findall(file_content)
+
+        known_cases_list = [match[0].strip() for match in matches]
+        return set(known_cases_list)
     except FileNotFoundError:
         return None
 
@@ -111,7 +115,7 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     response = requests.post(
         f'{ci_dash_api_backend_host}/jobs/failure_ratio',
         headers={'Authorization': f'Bearer {token}'},
-        json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_COMMIT_BRANCH', '')]},
+        json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
     )
     if response.status_code != 200:
         print(f'Failed to fetch jobs failure rate data: {response.status_code} with error: {response.text}')
@@ -128,20 +132,20 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     return combined_jobs
 
 
-def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase]) -> t.List[TestCase]:
+def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], branches_filter: dict) -> t.List[TestCase]:
     """
     Fetches info about failure rates of testcases using an API request to ci-dashboard-api.
     :param failed_testcases: The list of failed testcases models.
+    :param branches_filter: The filter to filter testcases by branch names.
     :return: A list of testcases with enriched with failure rates data.
     """
     token = os.getenv('ESPCI_TOKEN', '')
     ci_dash_api_backend_host = os.getenv('CI_DASHBOARD_API', '')
+    req_json = {'testcase_names': list(set([testcase.name for testcase in failed_testcases])), **branches_filter}
     response = requests.post(
         f'{ci_dash_api_backend_host}/testcases/failure_ratio',
         headers={'Authorization': f'Bearer {token}'},
-        json={'testcase_names': [testcase.name for testcase in failed_testcases],
-              'exclude_branches': [os.getenv('CI_COMMIT_BRANCH', '')],
-              },
+        json=req_json,
     )
     if response.status_code != 200:
         print(f'Failed to fetch testcases failure rate data: {response.status_code} with error: {response.text}')
@@ -166,3 +170,34 @@ def load_file(file_path: str) -> str:
     """
     with open(file_path, 'r') as file:
         return file.read()
+
+
+def format_permalink(s: str) -> str:
+    """
+    Formats a given string into a permalink.
+
+    :param s: The string to be formatted into a permalink.
+    :return: The formatted permalink as a string.
+    """
+    end_index = s.find('(')
+
+    if end_index != -1:
+        trimmed_string = s[:end_index].strip()
+    else:
+        trimmed_string = s.strip()
+
+    formatted_string = trimmed_string.lower().replace(' ', '-')
+
+    return formatted_string
+
+
+def get_report_url(job_id: int, output_filepath: str) -> str:
+    """
+    Generates the url of the path where the report will be stored in the job's artifacts .
+
+    :param job_id: The job identifier used to construct the URL.
+    :param output_filepath: The path to the output file.
+    :return: The modified URL pointing to the job's artifacts.
+    """
+    url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
+    return f'{url}/-/jobs/{job_id}/artifacts/{output_filepath}'

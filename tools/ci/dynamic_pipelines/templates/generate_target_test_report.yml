@@ -6,6 +6,9 @@ generate_pytest_report:
   artifacts:
     paths:
       - target_test_report.html
+      - failed_cases.html
+      - skipped_cases.html
+      - succeeded_cases.html
   script:
       - python tools/ci/get_known_failure_cases_file.py
       - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type target_test
