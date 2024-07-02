@@ -164,7 +164,7 @@ class TestCase:
             'name': node.attrib['name'],
             'file': node.attrib.get('file'),
             'time': float(node.attrib.get('time') or 0),
-            'ci_job_url': node.attrib.get('ci_job_url') or '',
+            'ci_job_url': node.attrib.get('ci_job_url') or 'Not found',
             'ci_dashboard_url': f'{grafana_base_url}?{encoded_params}',
             'dut_log_url': node.attrib.get('dut_log_url') or 'Not found',
         }

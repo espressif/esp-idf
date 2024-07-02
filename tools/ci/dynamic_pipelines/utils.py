@@ -10,6 +10,11 @@ from urllib.parse import urlparse
 import requests
 import yaml
 
+from .constants import CI_DASHBOARD_API
+from .constants import CI_JOB_TOKEN
+from .constants import CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+from .constants import CI_PAGES_URL
+from .constants import CI_PROJECT_URL
 from .models import GitlabJob
 from .models import Job
 from .models import TestCase
@@ -95,11 +100,9 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     :param commit_id: The commit ID for which to fetch jobs.
     :return: A list of jobs if the request is successful, otherwise an empty list.
     """
-    token = os.getenv('ESPCI_TOKEN', '')
-    ci_dash_api_backend_host = os.getenv('CI_DASHBOARD_API', '')
     response = requests.get(
-        f'{ci_dash_api_backend_host}/commits/{commit_id}/jobs',
-        headers={'Authorization': f'Bearer {token}'}
+        f'{CI_DASHBOARD_API}/commits/{commit_id}/jobs',
+        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'}
     )
     if response.status_code != 200:
         print(f'Failed to fetch jobs data: {response.status_code} with error: {response.text}')
@@ -113,8 +116,8 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
 
     failed_job_names = [job['name'] for job in jobs if job['status'] == 'failed']
     response = requests.post(
-        f'{ci_dash_api_backend_host}/jobs/failure_ratio',
-        headers={'Authorization': f'Bearer {token}'},
+        f'{CI_DASHBOARD_API}/jobs/failure_ratio',
+        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'},
         json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
     )
     if response.status_code != 200:
@@ -139,12 +142,10 @@ def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], bra
     :param branches_filter: The filter to filter testcases by branch names.
     :return: A list of testcases with enriched with failure rates data.
     """
-    token = os.getenv('ESPCI_TOKEN', '')
-    ci_dash_api_backend_host = os.getenv('CI_DASHBOARD_API', '')
     req_json = {'testcase_names': list(set([testcase.name for testcase in failed_testcases])), **branches_filter}
     response = requests.post(
-        f'{ci_dash_api_backend_host}/testcases/failure_ratio',
-        headers={'Authorization': f'Bearer {token}'},
+        f'{CI_DASHBOARD_API}/testcases/failure_ratio',
+        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'},
         json=req_json,
     )
     if response.status_code != 200:
@@ -191,13 +192,23 @@ def format_permalink(s: str) -> str:
     return formatted_string
 
 
-def get_report_url(job_id: int, output_filepath: str) -> str:
+def get_artifacts_url(job_id: int, output_filepath: str) -> str:
     """
-    Generates the url of the path where the report will be stored in the job's artifacts .
+    Generates the url of the path where the artifact will be stored in the job's artifacts .
 
     :param job_id: The job identifier used to construct the URL.
     :param output_filepath: The path to the output file.
     :return: The modified URL pointing to the job's artifacts.
     """
-    url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
+    url = CI_PAGES_URL.replace('esp-idf', '-/esp-idf')
     return f'{url}/-/jobs/{job_id}/artifacts/{output_filepath}'
+
+
+def get_repository_file_url(file_path: str) -> str:
+    """
+    Generates the url of the file path inside the repository.
+
+    :param file_path: The file path where the file is stored.
+    :return: The modified URL pointing to the file's path in the repository.
+    """
+    return f'{CI_PROJECT_URL}/-/raw/{CI_MERGE_REQUEST_SOURCE_BRANCH_SHA}/{file_path}'

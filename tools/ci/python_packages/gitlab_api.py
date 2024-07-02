@@ -254,7 +254,7 @@ class Gitlab(object):
     @staticmethod
     def decompress_archive(path: str, destination: str) -> str:
         full_destination = os.path.abspath(destination)
-        # By default max path lenght is set to 260 characters
+        # By default max path length is set to 260 characters
         # Prefix `\\?\` extends it to 32,767 characters
         if sys.platform == 'win32':
             full_destination = '\\\\?\\' + full_destination
@@ -279,6 +279,29 @@ class Gitlab(object):
         job = self.project.jobs.get(job_id)
         return ','.join(job.tag_list)
 
+    def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
+        """
+        Retry failed jobs for a specific pipeline. Optionally include jobs marked as 'allowed failures'.
+
+        :param pipeline_id: ID of the pipeline whose failed jobs are to be retried.
+        :param retry_allowed_failures: Whether to retry jobs that are marked as allowed failures.
+        """
+        pipeline = self.project.pipelines.get(pipeline_id)
+        jobs_to_retry = [
+            job
+            for job in pipeline.jobs.list(scope='failed')
+            if retry_allowed_failures or not job.attributes.get('allow_failure', False)
+        ]
+        jobs_succeeded_retry = []
+        for job in jobs_to_retry:
+            try:
+                res = self.project.jobs.get(job.id).retry()
+                jobs_succeeded_retry.append(job.id)
+                logging.info(f'Retried job {job.id} with result {res}')
+            except Exception as e:
+                logging.error(f'Failed to retry job {job.id}: {str(e)}')
+        return jobs_succeeded_retry
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -291,6 +314,9 @@ def main() -> None:
     parser.add_argument('--project_name', '-m', default=None)
     parser.add_argument('--destination', '-d', default=None)
     parser.add_argument('--artifact_path', '-a', nargs='*', default=None)
+    parser.add_argument(
+        '--retry-allowed-failures', action='store_true', help='Flag to retry jobs marked as allowed failures'
+    )
     args = parser.parse_args()
 
     gitlab_inst = Gitlab(args.project_id)
@@ -306,6 +332,9 @@ def main() -> None:
     elif args.action == 'get_project_id':
         ret = gitlab_inst.get_project_id(args.project_name)
         print('project id: {}'.format(ret))
+    elif args.action == 'retry_failed_jobs':
+        res = gitlab_inst.retry_failed_jobs(args.pipeline_id, args.retry_allowed_failures)
+        print('job retried successfully: {}'.format(res))
     elif args.action == 'get_job_tags':
         ret = gitlab_inst.get_job_tags(args.job_id)
         print(ret)

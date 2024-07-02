@@ -44,8 +44,8 @@ class TestReportGeneration(unittest.TestCase):
         self.mock_project.mergerequests.get.return_value = self.mock_mr
 
         self.addCleanup(self.gitlab_patcher.stop)
-        self.addCleanup(self.env_patcher.stop)
         self.addCleanup(self.failure_rate_patcher.stop)
+        self.addCleanup(self.env_patcher.stop)
         self.addCleanup(self.cleanup_files)
 
     def cleanup_files(self) -> None:
