@@ -17,7 +17,7 @@ from pytest_embedded_idf import IdfDut
     indirect=True,
 )
 def test_ledc(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
 
 
 @pytest.mark.esp32s3
@@ -31,4 +31,4 @@ def test_ledc(dut: IdfDut) -> None:
     indirect=True,
 )
 def test_ledc_psram(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
