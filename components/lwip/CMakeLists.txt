@@ -131,6 +131,10 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/md4.c"
         "lwip/src/netif/ppp/polarssl/md5.c"
         "lwip/src/netif/ppp/polarssl/sha1.c")
+
+    if(CONFIG_LWIP_NETIF_API)
+        list(APPEND srcs "port/if_index.c")
+    endif()
 endif()
 
 if(NOT ${target} STREQUAL "linux")
