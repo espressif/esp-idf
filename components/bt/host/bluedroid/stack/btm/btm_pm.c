@@ -743,9 +743,11 @@ void btm_pm_proc_cmd_status(UINT8 status)
 }
 
 __attribute__((weak))
-void btm_hcif_mode_change_cb(UINT8 mode, UINT16 interval)
+void btm_hcif_mode_change_cb(BOOLEAN succeeded, UINT16 hci_handle, UINT8 mode, UINT16 interval)
 {
     // This is the weak implementation, which will be overwritten
+    (void) succeeded;
+    (void) hci_handle;
     (void) mode;
     (void) interval;
 }
@@ -766,6 +768,12 @@ void btm_hcif_mode_change_cb(UINT8 mode, UINT16 interval)
 *******************************************************************************/
 void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, UINT16 interval)
 {
+    bool success = (hci_status == HCI_SUCCESS) ? true : false;
+    /* Custom HHL Code Callback */
+    btm_hcif_mode_change_cb(success, hci_handle, mode, interval);
+    // test not using the rest
+    return;
+
     tACL_CONN   *p;
     tBTM_PM_MCB *p_cb = NULL;
     int yy;
@@ -783,8 +791,6 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
     old_state       = p_cb->state;
     p_cb->state     = mode;
     p_cb->interval  = interval;
-
-    btm_hcif_mode_change_cb(mode, interval);
 
     BTM_TRACE_DEBUG("%s switched from %s to %s.", __func__, mode_to_string(old_state), mode_to_string(p_cb->state));
 
