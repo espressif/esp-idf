@@ -284,5 +284,10 @@ phy_wifi_set_tx_gain = 0x400014f4;
 phy_bt_get_tx_tab_ = 0x400014f8;
 phy_bt_set_tx_gain = 0x400014fc;
 phy_bt_tx_gain_init = 0x40001500;
+phy_pbus_xpd_rx_off = 0x40002518;
+phy_i2c_writeReg_Mask = 0x4000787e;
+phy_pbus_xpd_rx_on = 0x40002628;
+phy_pbus_xpd_tx_on = 0x4000274c;
 /* Data (.data, .bss, .rodata) */
+phy_rom_phyFuns = 0x4085fb80;
 phy_param_rom = 0x4085fc70;
