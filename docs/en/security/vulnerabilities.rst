@@ -43,6 +43,17 @@ Security Advisory Concerning the Bluetooth BLUFFS Vulnerability
 * Impact: Applicable for ESP-IDF
 * Resolution: Please see advisory for details
 
+
+CVE-2023-52160
+~~~~~~~~~~~~~~
+
+Security Advisory for PEAP Phase-2 Authentication
+
+* Espressif Advisory: `AR2024-003`_
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+
+
 CVE-2022
 --------
 
@@ -160,5 +171,6 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`AR2023-005`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2023-005%20Security%20Advisory%20Concerning%20Bypassing%20Secure%20Boot%20and%20Flash%20Encryption%20Using%20EMFI%20EN.pdf
 .. _`AR2023-008`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2023-008%20Security%20Advisory%20for%20WLAN%20FragAttacks%20v1.1%20EN_0.pdf
 .. _`AR2023-010`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2023-010%20Security%20Advisory%20Concerning%20the%20Bluetooth%20BLUFFS%20Vulnerability%20EN.pdf
+.. _`AR2024-003`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2024-003%20Security%20Advisory%20for%20PEAP%20Phase-2%20authentication%20EN.pdf
 .. _`GHSA-22x6-3756-pfp8` : https://github.com/espressif/esp-idf/security/advisories/GHSA-22x6-3756-pfp8
 .. _`GHSA-7f7f-jj2q-28wm` : https://github.com/espressif/esp-idf/security/advisories/GHSA-7f7f-jj2q-28wm
