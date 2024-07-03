@@ -684,6 +684,8 @@
 #define SOC_PAU_IN_TOP_DOMAIN           (1)
 #define SOC_CPU_IN_TOP_DOMAIN           (1)
 
+#define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
+
 /*-------------------------- PSRAM CAPS ----------------------------*/
 #define SOC_PSRAM_VDD_POWER_MPLL    (1)
 
