@@ -92,6 +92,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "isp_hal.c")
     endif()
 
+    if(CONFIG_SOC_LP_I2S_SUPPORTED)
+        list(APPEND srcs "lp_i2s_hal.c")
+    endif()
+
     if(CONFIG_SOC_RMT_SUPPORTED)
         list(APPEND srcs "rmt_hal.c")
     endif()

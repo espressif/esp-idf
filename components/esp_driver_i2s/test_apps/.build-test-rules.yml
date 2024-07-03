@@ -21,3 +21,9 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
       reason: lack of runners
   depends_components:
     - esp_driver_i2s
+
+components/esp_driver_i2s/test_apps/lp_i2s:
+  disable:
+    - if: SOC_LP_I2S_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s

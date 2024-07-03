@@ -51,7 +51,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
 {
     esp_err_t ret = ESP_OK;
     //ADC utilises I2S0 DMA on ESP32
-    ret = i2s_platform_acquire_occupation(ADC_DMA_I2S_HOST, "adc");
+    ret = i2s_platform_acquire_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST, "adc");
     if (ret != ESP_OK) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -62,7 +62,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
 esp_err_t adc_dma_deinit(adc_dma_t adc_dma)
 {
     esp_intr_free(adc_dma.dma_intr_hdl);
-    i2s_platform_release_occupation(ADC_DMA_I2S_HOST);
+    i2s_platform_release_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST);
     return ESP_OK;
 }
 

@@ -889,7 +889,7 @@ typedef union {
 } lp_i2s_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_i2s_dev_t {
     volatile lp_i2s_vad_conf_reg_t vad_conf;
     volatile lp_i2s_vad_result_reg_t vad_result;
     volatile lp_i2s_rx_mem_conf_reg_t rx_mem_conf;

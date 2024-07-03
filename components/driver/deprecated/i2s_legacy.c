@@ -1637,7 +1637,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #endif
     /* Disable module clock */
-    i2s_platform_release_occupation(i2s_num);
+    i2s_platform_release_occupation(I2S_CTLR_HP, i2s_num);
     free(obj);
     p_i2s[i2s_num] = NULL;
     return ESP_OK;
@@ -1656,7 +1656,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     /* Step 2: Allocate driver object and register to platform */
     i2s_obj_t *i2s_obj = calloc(1, sizeof(i2s_obj_t));
     ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NO_MEM, TAG, "no mem for I2S driver");
-    if (i2s_platform_acquire_occupation(i2s_num, "i2s_legacy") != ESP_OK) {
+    if (i2s_platform_acquire_occupation(I2S_CTLR_HP, i2s_num, "i2s_legacy") != ESP_OK) {
         free(i2s_obj);
         ESP_LOGE(TAG, "register I2S object to platform failed");
         return ESP_ERR_INVALID_STATE;

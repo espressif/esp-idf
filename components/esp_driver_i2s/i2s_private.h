@@ -12,6 +12,10 @@
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
+#include "hal/lp_i2s_hal.h"
+#if SOC_LP_I2S_SUPPORTED
+#include "hal/lp_i2s_ll.h"
+#endif
 #include "driver/i2s_types.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_clock_output.h"
@@ -86,6 +90,14 @@ typedef struct {
 } i2s_event_callbacks_internal_t;
 
 /**
+ * @brief LP I2S callbacks
+ */
+typedef struct {
+    lp_i2s_callback_t on_thresh_met;           ///< Triggered when the received bytes are bigger than `lp_i2s_chan_config_t:threshold`
+    lp_i2s_callback_t on_request_new_trans;    ///< Triggered when a new transaction buffer is needed, when this callback is registered, you don't need to use `lp_i2s_channel_read` to get data, you can get data via this callback asynchronously
+} lp_i2s_evt_cbs_internal_t;
+
+/**
  * @brief i2s channel level configurations
  * @note  It performs as channel handle
  */
@@ -155,13 +167,45 @@ struct i2s_channel_obj_t {
 };
 
 /**
+ * @brief lp i2s controller type
+ */
+typedef struct {
+    int                     id;             /*!< lp i2s port id */
+    lp_i2s_hal_context_t    hal;            /*!< hal context */
+    uint32_t                chan_occupancy; /*!< channel occupancy (rx/tx) */
+    lp_i2s_chan_handle_t    rx_chan;        /*!< rx channel handle */
+    intr_handle_t           intr;           /*!< interrupt handle */
+} lp_i2s_controller_t;
+
+/**
+ * @brief lp i2s channel object type
+ */
+struct lp_i2s_channel_obj_t {
+    /* Channel basic information */
+    lp_i2s_controller_t        *ctlr;          /*!< Parent pointer to controller object */
+    i2s_comm_mode_t            mode;           /*!< lp i2s channel communication mode */
+    i2s_role_t                 role;           /*!< lp i2s role */
+    i2s_dir_t                  dir;            /*!< lp i2s channel direction */
+    i2s_state_t                state;          /*!< lp i2s driver state. Ensuring the driver working in a correct sequence */
+    SemaphoreHandle_t          semphr;         /*!< lp i2s event semphr*/
+    lp_i2s_trans_t             trans;          /*!< transaction */
+    size_t                     threshold;      /*!< lp i2s threshold*/
+    lp_i2s_evt_cbs_internal_t  cbs;            /*!< callbacks */
+    void                       *user_data;     /*!< user data */
+};
+
+/**
  * @brief i2s platform level configurations
  * @note  All i2s controllers' resources are involved
  */
 typedef struct {
-    portMUX_TYPE            spinlock;                   /*!< Platform level lock */
-    i2s_controller_t        *controller[SOC_I2S_NUM];   /*!< Controller object */
-    const char              *comp_name[SOC_I2S_NUM];    /*!< The component name that occupied i2s controller */
+    portMUX_TYPE            spinlock;                          /*!< Platform level lock */
+    i2s_controller_t        *controller[SOC_I2S_NUM];          /*!< Controller object */
+    const char              *comp_name[SOC_I2S_NUM];           /*!< The component name that occupied i2s controller */
+#if SOC_LP_I2S_SUPPORTED
+    lp_i2s_controller_t     *lp_controller[SOC_LP_I2S_NUM];    /*!< LP controller object*/
+    const char              *lp_comp_name[SOC_I2S_NUM];        /*!< The component name that occupied lp i2s controller */
+#endif
 } i2s_platform_t;
 
 extern i2s_platform_t g_i2s;  /*!< Global i2s instance for driver internal use */
