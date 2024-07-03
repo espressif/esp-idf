@@ -81,7 +81,7 @@ enum {
     ESP_BLE_SCA_50PPM,            /*!< BLE SCA at 50 ppm */
     ESP_BLE_SCA_30PPM,            /*!< BLE SCA at 30 ppm */
     ESP_BLE_SCA_20PPM,            /*!< BLE SCA at 20 ppm */
-};
+} esp_ble_sca_t;
 
 #ifdef CONFIG_BT_ENABLED
 /* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE,
