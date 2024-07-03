@@ -21,6 +21,12 @@ if(CONFIG_SOC_ECDSA_SUPPORTED)
    list(APPEND srcs "ecdsa/test_ecdsa.c")
 endif()
 
+if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+   list(APPEND srcs "key_manager/test_key_manager.c"
+                    "$ENV{IDF_PATH}/components/esp_hw_support/esp_key_mgr.c")
+   list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/esp_hw_support/include")
+endif()
+
 if(CONFIG_SOC_AES_SUPPORTED)
    list(APPEND srcs "aes/test_aes.c"
                      "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_common.c"
@@ -68,7 +74,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES efuse mbedtls esp_mm bootloader_support
+                       PRIV_REQUIRES efuse mbedtls esp_mm bootloader_support spi_flash
                        REQUIRES test_utils unity
                        WHOLE_ARCHIVE
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
