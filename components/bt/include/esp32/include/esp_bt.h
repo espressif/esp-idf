@@ -85,9 +85,9 @@ enum {
 
 #ifdef CONFIG_BT_ENABLED
 /* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE,
-the adv packet will be discarded until the memory is restored. */
+the advertising packet will be discarded until the memory is restored. */
 #define SCAN_SEND_ADV_RESERVED_SIZE        1000
-/* enable controller log debug when adv lost */
+/* enable controller log debug when the advertising packet gets lost */
 #define CONTROLLER_ADV_LOST_DEBUG_BIT      (0<<0)
 
 #ifdef CONFIG_BTDM_CTRL_HCI_UART_NO
@@ -108,7 +108,7 @@ the adv packet will be discarded until the memory is restored. */
 #define SCAN_DUPLICATE_TYPE_VALUE  0
 #endif
 
-/* normal adv cache size */
+/* normal advertising cache size */
 #ifdef CONFIG_BTDM_SCAN_DUPL_CACHE_SIZE
 #define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            CONFIG_BTDM_SCAN_DUPL_CACHE_SIZE
 #else
@@ -229,28 +229,33 @@ typedef struct {
     uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig */
     uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig */
     uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig */
-    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig */
+    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh advertising packets in scan duplicate filtering list. Configurable in menuconfig */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
     uint8_t mode;                           /*!< Controller mode:
+
                                                 1: BLE mode
+
                                                 2: Classic Bluetooth mode
+
                                                 3: Dual mode
+
                                                 Others: Invalid
-                                                Configurable in menuconfig.
+
+                                                Configurable in menuconfig
                                                 */
-    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig. */
-    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig. */
-    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig. */
-    bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig.*/
+    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig */
+    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig */
+    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig */
+    bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig */
     bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to protect from BIAS attack; false otherwise. Configurable in menuconfig */
-    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig. */
-    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig. */
-    uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig.*/
-    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig. */
-    bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig. */
-    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig.*/
-    bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig.*/
+    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig */
+    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig */
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig */
+    bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig */
+    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig */
+    bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -258,9 +263,9 @@ typedef struct {
  * @brief Bluetooth Controller status
  */
 typedef enum {
-    ESP_BT_CONTROLLER_STATUS_IDLE = 0,  /*!< The Controller is not initialized or has been de-initialized.*/
+    ESP_BT_CONTROLLER_STATUS_IDLE = 0,  /*!< The Controller is not initialized or has been de-initialized. */
     ESP_BT_CONTROLLER_STATUS_INITED,    /*!< The Controller has been initialized, but not enabled or has been disabled. */
-    ESP_BT_CONTROLLER_STATUS_ENABLED,   /*!< The Controller has been initialized and enabled.  */
+    ESP_BT_CONTROLLER_STATUS_ENABLED,   /*!< The Controller has been initialized and enabled. */
     ESP_BT_CONTROLLER_STATUS_NUM,       /*!< Number of Controller statuses */
 } esp_bt_controller_status_t;
 
