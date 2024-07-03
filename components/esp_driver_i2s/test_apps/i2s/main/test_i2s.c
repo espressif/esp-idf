@@ -196,9 +196,9 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 
     /* Hold the occupation */
-    TEST_ESP_OK(i2s_platform_acquire_occupation(I2S_NUM_0, "test_i2s"));
+    TEST_ESP_OK(i2s_platform_acquire_occupation(I2S_CTLR_HP, I2S_NUM_0, "test_i2s"));
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
-    TEST_ESP_OK(i2s_platform_release_occupation(I2S_NUM_0));
+    TEST_ESP_OK(i2s_platform_release_occupation(I2S_CTLR_HP, I2S_NUM_0));
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
