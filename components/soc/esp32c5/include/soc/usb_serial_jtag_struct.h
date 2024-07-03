@@ -23,8 +23,7 @@ typedef union {
          *  can check USB_SERIAL_JTAG_OUT_EP1_WR_ADDR USB_SERIAL_JTAG_OUT_EP0_RD_ADDR to know
          *  how many data is received, then read data from UART Rx FIFO.
          */
-        uint32_t rdwr_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rdwr_byte:32;
     };
     uint32_t val;
 } usb_serial_jtag_ep1_reg_t;
