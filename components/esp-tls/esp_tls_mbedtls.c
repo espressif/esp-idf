@@ -91,6 +91,17 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     mbedtls_ssl_config_init(&tls->conf);
     mbedtls_entropy_init(&tls->entropy);
 
+    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
+                                     mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+        esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
+        goto exit;
+    }
+
+    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+
     if (tls->role == ESP_TLS_CLIENT) {
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
         if (esp_ret != ESP_OK) {
@@ -127,17 +138,6 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
             goto exit;
 #endif
     }
-
-    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
-                                     mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
-        mbedtls_print_error_msg(ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-        esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
-        goto exit;
-    }
-
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 
 #ifdef CONFIG_MBEDTLS_DEBUG
     mbedtls_esp_enable_debug_log(&tls->conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
