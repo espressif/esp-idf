@@ -208,6 +208,9 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
             case PART_SUBTYPE_BOOTLOADER_OTA:
                 partition_usage = "ota bootloader";
                 break;
+            case PART_SUBTYPE_BOOTLOADER_RECOVERY:
+                partition_usage = "recovery bootloader";
+                break;
             }
             break; /* PART_TYPE_BOOTLOADER */
         case PART_TYPE_PARTITION_TABLE: /* Partition table partition */
