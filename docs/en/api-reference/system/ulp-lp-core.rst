@@ -103,7 +103,7 @@ To access the ULP LP-Core program variables from the main program, the generated
 
 .. note::
 
-   Variables declared in the global scope of the LP-Core program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the LP-Core binary is loaded and executed. Accessing these variables from the main program on the HP-Core before the first LP-Core run may result in undefined behavior.
+    Variables declared in the global scope of the LP-Core program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the LP-Core binary is loaded and executed. Accessing these variables from the main program on the HP-Core before the first LP-Core run may result in undefined behavior.
 
 
 Starting the ULP LP-Core Program

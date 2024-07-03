@@ -101,6 +101,10 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
         ulp_measurement_count = 64;
     }
 
+.. note::
+
+    LP-Core 程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 LP-Core 二进制文件时被初始化。在首次运行 LP-Core 之前，从 HP-Core 主程序访问这些变量可能会导致未定义行为。
+
 
 启动 ULP LP-Core 程序
 --------------------------------
