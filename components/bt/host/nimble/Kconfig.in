@@ -767,6 +767,15 @@ config BT_NIMBLE_VS_SUPPORT
         This option is used to enable support for sending Vendor Specific HCI commands and handling
         Vendor Specific HCI Events.
 
+config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
+    bool "Gatt-proc preemption protect check"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        When BLE and Wireless protocol/IEEE 802.15.4 operate in coexistence, BLE preemption
+        can disrupt the GATT context,causing the service discovery callback to not be invoked.
+        A temporary list is maintained to preserve the GATT context and use it in case of preemption.
+
 config BT_NIMBLE_ENC_ADV_DATA
     bool "Encrypted Advertising Data"
     depends on BT_NIMBLE_50_FEATURE_SUPPORT
