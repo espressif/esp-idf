@@ -2437,13 +2437,28 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
         int desc_status;
         usb_dwc_hal_xfer_desc_parse(buffer->xfer_desc_list, desc_idx, &rem_len, &desc_status);
         usb_dwc_hal_xfer_desc_clear(buffer->xfer_desc_list, desc_idx);
-        assert(rem_len == 0 || is_in);
-        assert(desc_status == USB_DWC_HAL_XFER_DESC_STS_SUCCESS || desc_status == USB_DWC_HAL_XFER_DESC_STS_NOT_EXECUTED);
+        switch (desc_status) {
+        case USB_DWC_HAL_XFER_DESC_STS_SUCCESS:
+            transfer->isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_COMPLETED;
+            break;
+        case USB_DWC_HAL_XFER_DESC_STS_NOT_EXECUTED:
+            transfer->isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_SKIPPED;
+            break;
+        case USB_DWC_HAL_XFER_DESC_STS_PKTERR:
+            transfer->isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_ERROR;
+            break;
+        case USB_DWC_HAL_XFER_DESC_STS_BUFFER_ERR:
+            transfer->isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_ERROR;
+            break;
+        default:
+            assert(false);
+            break;
+        }
+
         assert(rem_len <= transfer->isoc_packet_desc[pkt_idx].num_bytes);    // Check for DMA errata
         // Update ISO packet actual length and status
         transfer->isoc_packet_desc[pkt_idx].actual_num_bytes = transfer->isoc_packet_desc[pkt_idx].num_bytes - rem_len;
         total_actual_num_bytes += transfer->isoc_packet_desc[pkt_idx].actual_num_bytes;
-        transfer->isoc_packet_desc[pkt_idx].status = (desc_status == USB_DWC_HAL_XFER_DESC_STS_NOT_EXECUTED) ? USB_TRANSFER_STATUS_SKIPPED : USB_TRANSFER_STATUS_COMPLETED;
         // A descriptor is also allocated for unscheduled frames. We need to skip over them
         desc_idx += buffer->flags.isoc.interval;
         if (desc_idx >= XFER_LIST_LEN_INTR) {
