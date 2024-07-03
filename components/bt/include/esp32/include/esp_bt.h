@@ -72,7 +72,7 @@ typedef enum {
  *
  * @note Currently only ESP_BLE_SCA_500PPM and ESP_BLE_SCA_250PPM are supported.
  */
-enum {
+typedef enum {
     ESP_BLE_SCA_500PPM     = 0,   /*!< BLE SCA at 500 ppm */
     ESP_BLE_SCA_250PPM,           /*!< BLE SCA at 250 ppm */
     ESP_BLE_SCA_150PPM,           /*!< BLE SCA at 150 ppm */
