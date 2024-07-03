@@ -208,8 +208,10 @@ MbedTLS 与 WolfSSL 对比
     在 ESP-TLS 中使用 ECDSA 外设
     -----------------------------
 
-    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 外设。使用 ECDSA 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__ 文档，了解如何在 eFuse 中烧写 ECDSA 密钥。
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 外设。使用 ECDSA 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 :doc:`ECDSA 指南 <../peripherals/ecdsa>`，了解如何在 eFuse 中烧写 ECDSA 密钥。
+
     在 ESP-TLS 中启用 ECDSA 外设前，请将 :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` 设置为 `true`，并将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为存储了 ECDSA 密钥的 eFuse 块 ID。
+
     这样就可以使用 ECDSA 外设进行私钥操作。由于客户私钥已经存储在 eFuse 中，因此无需将其传递给 :cpp:type:`esp_tls_cfg_t`。
 
     .. code-block:: c

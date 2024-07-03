@@ -122,7 +122,7 @@ NVS 密钥分区
     .. note:: 可以使用以下命令预先在 eFuse 中设置自己的 HMAC 密钥：
         ::
 
-            espefuse.py -p PORT burn_key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
+            idf.py -p PORT efuse-burn-key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
 
 加密读/写
 --------------------

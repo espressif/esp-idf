@@ -22,11 +22,11 @@ ECDSA 外设可以为 TLS 双向身份验证等用例建立 **安全设备身份
 
 在 {IDF_TARGET_NAME} 上，ECDSA 模块使用烧录到 eFuse 块中的密钥。密码模块外的任何资源都不可访问此密钥（默认模式），从而避免密钥泄露。
 
-ECDSA 密钥可以通过 ``espefuse.py`` 脚本在外部编程：
+ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编程 ECDSA 密钥的示例：
 
 .. code:: bash
 
-   espefuse.py burn_key <BLOCK_NUM> </path/to/ecdsa_private_key.pem> ECDSA_KEY
+   idf.py efuse-burn-key <BLOCK_NUM> </path/to/ecdsa_private_key.pem> ECDSA_KEY
 
 .. only:: SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
