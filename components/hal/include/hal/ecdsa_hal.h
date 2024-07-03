@@ -15,11 +15,23 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "hal/ecdsa_types.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if CONFIG_HAL_ECDSA_GEN_SIG_CM
+
+#define ECDSA_SIGN_MAX_DUMMY_OP_COUNT 0x7
+
+/* This value defines the maximum dummy operation count for the ECDSA signature countermeasure.
+   Higher the number, better the countermeasure's effectiveness against attacks.
+   At the same time higher number leads to slower performance.
+   After the countermeasure is enabled, hardware ECDSA signature operation
+   shall take time approximately equal to original time multiplied by this number.
+   If you observe that the reduced performance is affecting your use-case then you may try reducing this time to the minimum. */
+#endif /* CONFIG_HAL_ECDSA_GEN_SIG_CM */
 /*
  * ECDSA peripheral config structure
  */
