@@ -744,21 +744,21 @@ menu "mbedTLS"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDHE-ECDSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA
             bool "Enable ECDH-ECDSA based ciphersuite modes"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDH-ECDSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECDH_RSA
             bool "Enable ECDH-RSA based ciphersuite modes"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDH-RSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECJPAKE
             bool "Enable ECJPAKE based ciphersuite modes"
