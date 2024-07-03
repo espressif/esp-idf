@@ -396,11 +396,11 @@ examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   depends_components:
     - esp_driver_gptimer
 
-examples/peripherals/timer_group/legacy_driver:
+examples/peripherals/timer_group/wiegand_interface:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
+    - if: SOC_TIMER_GROUP_TOTAL_TIMERS < 2
   depends_components:
-    - driver # legacy driver is still located in the "driver" component
+    - esp_driver_gptimer
 
 examples/peripherals/touch_sensor:
   disable:
