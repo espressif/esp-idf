@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "unity.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#include "esp_private/esp_ipc.h"
 #endif
 #include "esp_log.h"
 #include "esp_rom_sys.h"
@@ -162,4 +163,50 @@ TEST_CASE("Test ipc_task can not wake up blocking task early", "[ipc]")
     TEST_ASSERT_EQUAL(31, val2);
 }
 
+TEST_CASE("Test ipc call nonblocking", "[ipc]")
+{
+    int val_for_1_call = 20;
+    TEST_ESP_OK(esp_ipc_call_nonblocking(1, test_func_ipc_cb2, (void*)&val_for_1_call));
+    TEST_ASSERT_EQUAL(20, val_for_1_call);
+
+    int val_for_2_call = 30;
+    TEST_ESP_ERR(ESP_FAIL, esp_ipc_call_nonblocking(1, test_func_ipc_cb3, (void*)&val_for_2_call));
+
+    vTaskDelay(150 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(21, val_for_1_call);
+
+    TEST_ESP_OK(esp_ipc_call_nonblocking(1, test_func_ipc_cb3, (void*)&val_for_2_call));
+
+    vTaskDelay(550 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(31, val_for_2_call);
+}
+
+static void test_func_ipc_cb4(void *arg)
+{
+    int *val = (int *)arg;
+    *val = *val + 1;
+}
+
+TEST_CASE("Test ipc call nonblocking when FreeRTOS Scheduler is suspended", "[ipc]")
+{
+    #ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+    #else
+        // Disable scheduler on the current CPU
+        vTaskSuspendAll();
+    #endif // CONFIG_FREERTOS_SMP
+
+    volatile int value = 20;
+    TEST_ESP_OK(esp_ipc_call_nonblocking(1, test_func_ipc_cb4, (void*)&value));
+    while (value == 20) { };
+    TEST_ASSERT_EQUAL(21, value);
+
+    #ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+    #else
+        xTaskResumeAll();
+    #endif
+}
 #endif /* !CONFIG_FREERTOS_UNICORE */
