@@ -152,7 +152,7 @@ E) ESP-NETIF L2 TAP 接口
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ESP-NETIF L2 TAP 接口是 ESP-IDF 访问用户应用程序中的数据链路层（OSI/ISO 中的 L2）以进行帧接收和传输的机制。在嵌入式开发中，它通常用于实现非 IP 相关协议，如 PTP 和 Wake on LAN 等。请注意，目前 ESP-NETIF L2 TAP 接口仅支持以太网 (IEEE 802.3)。
 
-使用 VFS 的文件描述符访问 ESP-NETIF L2 TAP 接口，VFS 文件描述符会提供类似文件的接口（调用 ``open()``、 ``read()``、 ``write()`` 等函数访问），详情请参阅 :doc:`/api-reference/storage/vfs`。
+使用 VFS 的文件描述符访问 ESP-NETIF L2 TAP 接口，VFS 文件描述符会提供类似文件的接口（调用 ``open()``、``read()``、``write()`` 等函数访问），详情请参阅 :doc:`/api-reference/storage/vfs`。
 
 ESP-NETIF 只提供一个 L2 TAP 接口设备（路径名），但由于 ESP-NETIF L2 TAP 接口也可作为第二层基础设施的通用入口点，因此可以同时打开多个不同配置的文件描述符。特定文件描述符的具体配置很关键，它可以配置为仅允许访问由 ``if_key`` （如 `ETH_DEF`）标识的特定网络接口，并根据帧类型（如 IEEE 802.3 中的以太网类型）过滤特定帧。由于 ESP-NETIF L2 TAP 需要与 IP 堆栈同时存在，因此不应将 IP 相关流量（IP、ARP 等）直接传递给用户应用程序，此时则需要通过配置过滤特定帧实现这一点。在未过滤的情况下，即使该选项仍可配置，也不建议在标准用例中使用。过滤的另一优势在于，过滤后，用户应用程序只能访问它感兴趣的帧类型，其余的流量会传递到其他 L2 TAP 文件描述符或 IP 堆栈。
 
@@ -188,7 +188,7 @@ ESP-NETIF L2 TAP 可以使用 ``O_NONBLOCK`` 文件状态标志打开，确保 `
     当前不支持识别 VLAN 标记帧。如果用户需要处理 VLAN 标记帧，应将过滤器设置为等于 VLAN 标记（即 0x8100 或 0x88A8），并在用户应用程序中处理 VLAN 标记帧。
 
 .. note::
-    当用户应用程序不需要使用 IP 栈时， ``L2TAP_S_DEVICE_DRV_HNDL`` 将非常适用，也无需初始化 ESP-NETIF。但在此情况下，网络接口无法通过 ``if_key`` 来识别，需要通过 IO 驱动程序句柄直接标识网络接口。
+    当用户应用程序不需要使用 IP 栈时，``L2TAP_S_DEVICE_DRV_HNDL`` 将非常适用，也无需初始化 ESP-NETIF。但在此情况下，网络接口无法通过 ``if_key`` 来识别，需要通过 IO 驱动程序句柄直接标识网络接口。
 
 | 成功时，``ioctl()`` 返回 0。出错时，返回 -1，并设置 ``errno`` 以指示错误类型:
 | * EBADF - 文件描述符无效。
@@ -371,6 +371,58 @@ ESP-NETIF 编程手册
     .. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
         * 在 ``AP+STA`` 模式下使用 Wi-Fi 时，须创建以上全部接口。
+
+
+IP 事件：发送或接收数据包
+---------------------------------
+
+每次发送或接收 IP 数据包会触发 ``IP_EVENT_TX_RX`` 事件，该事件提供有关数据包传输或接收、数据长度和 ``esp_netif`` 句柄的信息。
+
+启用事件
+------------------
+
+**编译时间:**
+
+编译时使用 kconfig 中的 :ref:`CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC` 标志，可完全禁用启动事件。
+
+**运行时间:**
+
+在运行时，你可以使用函数 :cpp:func:`esp_netif_tx_rx_event_enable()` 和 :cpp:func:`esp_netif_tx_rx_event_disable()` 来启用或禁用此事件。
+
+事件注册
+------------------
+
+要处理此事件，请使用以下语法注册一个处理程序：
+
+.. code-block:: c
+
+    static void
+    tx_rx_event_handler(void *arg, esp_event_base_t event_base,
+                                    int32_t event_id, void *event_data)
+    {
+        ip_event_tx_rx_t *event = (ip_event_tx_rx_t *)event_data;
+
+        if (event->dir == ESP_NETIF_TX) {
+            ESP_LOGI(TAG, "Got TX event: Interface \"%s\" data len: %d", esp_netif_get_desc(event->esp_netif), event->len);
+        } else if (event->dir == ESP_NETIF_RX) {
+            ESP_LOGI(TAG, "Got RX event: Interface \"%s\" data len: %d", esp_netif_get_desc(event->esp_netif), event->len);
+        } else {
+            ESP_LOGI(TAG, "Got Unknown event: Interface \"%s\"", esp_netif_get_desc(event->esp_netif));
+        }
+    }
+
+    esp_event_handler_register(IP_EVENT, IP_EVENT_TX_RX, &tx_rx_event_handler, NULL);
+
+``tx_rx_event_handler`` 为处理该事件的函数的名称。
+
+事件数据结构
+----------------
+
+事件数据结构，:cpp:class:`ip_event_tx_rx_t` 包含以下字段：
+
+- :cpp:member:`ip_event_tx_rx_t::dir`: 表示数据包是传输 ``ESP_NETIF_TX`` 还是接收 ``ESP_NETIF_RX``。
+- :cpp:member:`ip_event_tx_rx_t::len`: 数据帧的长度。
+- :cpp:member:`ip_event_tx_rx_t::esp_netif`: 数据包发送或接收的网络接口。
 
 
 API 参考
