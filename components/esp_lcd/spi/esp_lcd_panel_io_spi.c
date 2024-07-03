@@ -50,6 +50,8 @@ typedef struct {
     size_t num_trans_inflight;  // Number of transactions that are undergoing (the descriptor not recycled yet)
     int lcd_cmd_bits;          // Bit width of LCD command
     int lcd_param_bits;        // Bit width of LCD parameter
+    uint8_t cs_ena_pretrans;        // Amount of SPI bit-cycles the cs should be activated before the transmission (0-16)
+    uint8_t cs_ena_posttrans;       // Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
     struct {
         unsigned int dc_cmd_level: 1;    // Indicates the level of DC line when transferring command
         unsigned int dc_data_level: 1;   // Indicates the level of DC line when transferring color data
@@ -82,6 +84,8 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
         .queue_size = io_config->trans_queue_depth,
         .pre_cb = lcd_spi_pre_trans_cb, // pre-transaction callback, mainly control DC gpio level
         .post_cb = lcd_spi_post_trans_color_cb, // post-transaction, where we invoke user registered "on_color_trans_done()"
+        .cs_ena_pretrans = io_config->cs_ena_pretrans,
+        .cs_ena_posttrans = io_config->cs_ena_posttrans,
     };
     ret = spi_bus_add_device((spi_host_device_t)bus, &devcfg, &spi_panel_io->spi_dev);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "adding spi device to bus failed");
