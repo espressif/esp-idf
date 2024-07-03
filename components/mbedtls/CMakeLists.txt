@@ -306,6 +306,19 @@ if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
 endif()
 
+# Additional optional dependencies for the mbedcrypto library
+function(mbedcrypto_optional_deps component_name)
+    idf_build_get_property(components BUILD_COMPONENTS)
+    if(${component_name} IN_LIST components)
+        idf_component_get_property(lib_name ${component_name} COMPONENT_LIB)
+        target_link_libraries(mbedcrypto PRIVATE ${lib_name})
+    endif()
+endfunction()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
+    mbedcrypto_optional_deps(esp_timer idf::esp_timer)
+endif()
+
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
     idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
