@@ -25,6 +25,28 @@
 #define ECDSA_SHA_LEN               32
 #define MAX_ECDSA_COMPONENT_LEN     32
 
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+#include "esp_timer.h"
+
+#if CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
+/*
+ * This is the maximum time (in us) required for performing 1 ECDSA signature
+ * in this configuration along some additional margin considerations
+ */
+#define ECDSA_MAX_SIG_TIME 24000
+#else /* CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH */
+#define ECDSA_MAX_SIG_TIME  17500
+#endif /* !CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH */
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
+#define DUMMY_OP_COUNT ECDSA_SIGN_MAX_DUMMY_OP_COUNT
+#else /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM */
+#define DUMMY_OP_COUNT 0
+#endif /* !CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM */
+#define ECDSA_CM_FIXED_SIG_TIME ECDSA_MAX_SIG_TIME * (DUMMY_OP_COUNT + 1)
+
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM */
+
 __attribute__((unused)) static const char *TAG = "ecdsa_alt";
 
 static void esp_ecdsa_acquire_hardware(void)
@@ -335,8 +357,16 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             conf.use_km_key = 0;
             conf.efuse_key_blk = d->MBEDTLS_PRIVATE(n);
         }
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+        uint64_t sig_time = esp_timer_get_time();
+#endif
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+        sig_time = esp_timer_get_time() - sig_time;
+        if (sig_time < ECDSA_CM_FIXED_SIG_TIME) {
+            esp_rom_delay_us(ECDSA_CM_FIXED_SIG_TIME - sig_time);
+        }
+#endif
         process_again = !ecdsa_hal_get_operation_result()
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
