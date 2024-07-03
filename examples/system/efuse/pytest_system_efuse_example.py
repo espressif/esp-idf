@@ -49,6 +49,7 @@ def test_examples_efuse_linux(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
@@ -148,6 +149,7 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
@@ -223,6 +225,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
@@ -945,6 +948,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
 
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2

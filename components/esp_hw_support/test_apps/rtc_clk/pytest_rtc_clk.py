@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 from typing import Any
 
 import pytest
@@ -33,6 +32,7 @@ def test_rtc_no_xtal32k(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4'], reason='c6/h2/p4 support TBD')  # TODO: IDF-8973
+# TODO: [ESP32P4] IDF-8973 [ESP32C5] IDF-10309
+@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'], reason='c6/h2/p4/c5 support TBD')
 def test_rtc_calib(case_tester: Any) -> None:
     case_tester.run_all_multi_stage_cases()

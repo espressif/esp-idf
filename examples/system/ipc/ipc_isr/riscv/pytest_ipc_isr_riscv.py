@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -8,7 +7,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runner')
-def test_ipc_isr(dut: Dut) -> None:
+def test_ipc_isr_riscv(dut: Dut) -> None:
     dut.expect_exact('example: Start')
     dut.expect_exact('example: MSTATUS = 0x3880')
     dut.expect_exact('example: in[0] = 0x1')

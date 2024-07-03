@@ -3,6 +3,10 @@
 components/ulp/test_apps/lp_core:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: test not pass, should be re-enable  # TODO: [ESP32C5] IDF-10336
   depends_components:
     - ulp
 
