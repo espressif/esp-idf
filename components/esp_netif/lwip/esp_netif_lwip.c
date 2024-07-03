@@ -2152,7 +2152,7 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
 
     if (p_netif != NULL && netif_is_up(p_netif)) {
         for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-            if (!ip_addr_cmp(&p_netif->ip6_addr[i], IP6_ADDR_ANY)) {
+            if (ip6_addr_isvalid(netif_ip6_addr_state(p_netif, i)) && !ip_addr_cmp(&p_netif->ip6_addr[i], IP6_ADDR_ANY)) {
                 memcpy(&if_ip6[addr_count++], &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
             }
         }
