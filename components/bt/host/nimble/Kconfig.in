@@ -65,7 +65,7 @@ config BT_NIMBLE_LOG_LEVEL
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 2 if IDF_TARGET_ESP32C2
-    range 1 70 if IDF_TARGET_ESP32C6
+    range 1 70 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
     range 1 35 if IDF_TARGET_ESP32H2
     range 1 9
     default 2 if IDF_TARGET_ESP32C2
