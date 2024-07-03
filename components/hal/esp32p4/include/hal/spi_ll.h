@@ -42,6 +42,7 @@ extern "C" {
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_SUPPORT_CLK_SRC_PRE_DIV      1  //clock source have divider before peripheral
 #define SPI_LL_CLK_SRC_PRE_DIV_MAX          512//div1(8bit) * div2(8bit but set const 2)
+#define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -878,6 +879,16 @@ static inline int spi_ll_master_set_clock(spi_dev_t *hw, int fapb, int hz, int d
  */
 static inline void spi_ll_set_mosi_delay(spi_dev_t *hw, int delay_mode, int delay_num)
 {
+}
+
+/**
+ * Determine and unify the default level of mosi line when bus free
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_set_mosi_free_level(spi_dev_t *hw, bool level)
+{
+    hw->ctrl.d_pol = level;     //set default level for MOSI only on IDLE state
 }
 
 /**
