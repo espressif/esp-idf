@@ -753,7 +753,6 @@ r_ble_ll_hci_ev_send_adv_set_terminated = 0x40000ff4;
 r_ble_ll_hci_ev_send_scan_req_recv = 0x40000ff8;
 r_ble_ll_hci_ev_send_scan_timeout = 0x40000ffc;
 r_ble_ll_hci_ev_send_vendor_err = 0x40001000;
-r_ble_ll_hci_event_send = 0x40001004;
 r_ble_ll_hci_ext_scan_set_enable = 0x40001008;
 r_ble_ll_hci_get_num_cmd_pkts = 0x4000100c;
 r_ble_ll_hci_info_params_cmd_proc = 0x40001010;
