@@ -94,7 +94,7 @@ typedef struct {
 
     struct {
         TAILQ_HEAD(tailhead_devs, dev_tree_node_s) dev_nodes_tailq;     /**< Tailq of attached devices */
-        uint8_t next_uid;                           /**< Unique ID for next upcoming device */
+        unsigned int next_uid;                      /**< Unique ID for next upcoming device */
     } single_thread;                                /**< Single thread members don't require a critical section so long as they are never accessed from multiple threads */
 
     struct {

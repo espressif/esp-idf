@@ -110,7 +110,7 @@ struct client_s {
             uint32_t val;
         } flags;
         uint32_t num_done_ctrl_xfer;
-        uint32_t opened_dev_addr_map;
+        uint32_t opened_dev_addr_map[4];
     } dynamic;
     // Mux protected members must be protected by host library the mux_lock when accessed
     struct {
@@ -163,26 +163,25 @@ const char *USB_HOST_TAG = "USB HOST";
 
 static inline void _record_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map |= (1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] |= (uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline void _clear_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map &= ~(1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] &= ~(uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
     bool ret;
-
+    assert(dev_addr <= 127);
     if (dev_addr != 0) {
-        ret = client_obj->dynamic.opened_dev_addr_map & (1 << (dev_addr - 1));
+        ret = client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] & (uint32_t)(1 << (dev_addr % 32));
     } else {
         ret = false;
     }
-
     return ret;
 }
 
@@ -820,7 +819,10 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)
             client_obj->dynamic.flags.taking_mux ||
             client_obj->dynamic.flags.num_intf_claimed != 0 ||
             client_obj->dynamic.num_done_ctrl_xfer != 0 ||
-            client_obj->dynamic.opened_dev_addr_map != 0) {
+            client_obj->dynamic.opened_dev_addr_map[0] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[1] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[2] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[3] != 0) {
         can_deregister = false;
     } else {
         can_deregister = true;
