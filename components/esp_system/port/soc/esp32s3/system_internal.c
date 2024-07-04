@@ -1,11 +1,12 @@
 
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
+#include "esp_macros.h"
 #include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
@@ -155,7 +156,6 @@ void IRAM_ATTR esp_restart_noos(void)
         esp_rom_software_reset_cpu(1);
     }
 #endif
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }

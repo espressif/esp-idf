@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_compiler.h"
+#include "esp_macros.h"
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -213,5 +214,6 @@ static void start_cpu0_default(void)
 #endif
 
     esp_startup_start_app();
-    while (1);
+
+    ESP_INFINITE_LOOP();
 }

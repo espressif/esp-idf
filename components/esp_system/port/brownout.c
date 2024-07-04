@@ -11,6 +11,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/rtc_ctrl.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_macros.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "soc/soc.h"
@@ -67,9 +68,8 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
     }
 
     esp_rom_software_reset_system();
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }
 #endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 

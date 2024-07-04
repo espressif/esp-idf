@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include "esp_macros.h"
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
@@ -61,9 +62,8 @@ void IRAM_ATTR esp_restart_noos_dig(void)
 #endif
     // generate core reset
     esp_rom_software_reset_system();
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }
 #endif
 

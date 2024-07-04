@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@ This header contains various general purpose helper macros used across ESP-IDF
 */
 #include <assert.h>
 #include "esp_assert.h"
+#include "esp_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +52,7 @@ extern "C" {
  * - __GET_NTH_ARG__() takes args >= N (64) but only expand to Nth one (64th)
  * - __RSEQ_N__() is reverse sequential to N to add padding to have Nth
  *   position is the same as the number of arguments
- * - ##__VA_ARGS__ is used to deal with 0 paramerter (swallows comma)
+ * - ##__VA_ARGS__ is used to deal with 0 parameter (swallows comma)
  */
 #ifndef __VA_NARG__
 # define __VA_NARG__(...)   __NARG__(_0, ##__VA_ARGS__, __RSEQ_N__())
@@ -97,6 +98,13 @@ ESP_STATIC_ASSERT(foo(42, 87) == 1, "CHOOSE_MACRO_VA_ARG() result does not match
 #undef foo
 #undef foo_args
 #undef foo_no_args
+
+#define ESP_INFINITE_LOOP() \
+    do { \
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop") \
+        while(1); \
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop") \
+    } while(1)
 
 #ifdef __cplusplus
 }

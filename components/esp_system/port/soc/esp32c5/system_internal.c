@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include "sdkconfig.h"
+#include "esp_macros.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
@@ -113,7 +114,6 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset PRO CPU
     esp_rom_software_reset_cpu(0);
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }
