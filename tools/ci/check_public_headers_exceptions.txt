@@ -84,23 +84,6 @@ components/esp_coex/include/private/esp_coexist_adapter.h
 components/esp_coex/include/esp_coex_i154.h
 ### To be fixed: headers that rely on implicit inclusion
 #
-components/esp_rom/esp32/include/esp32/rom/rtc.h
-components/esp_rom/esp32c3/include/esp32c3/rom/rtc.h
-components/esp_rom/esp32s2/include/esp32s2/rom/rtc.h
-components/esp_rom/esp32s3/include/esp32s3/rom/rtc.h
-components/esp_rom/esp32c2/include/esp32c2/rom/rtc.h
-components/esp_rom/esp32c5/include/esp32c5/rom/rtc.h
-components/esp_rom/esp32c6/include/esp32c6/rom/rtc.h
-components/esp_rom/esp32h2/include/esp32h2/rom/rtc.h
-components/esp_rom/esp32p4/include/esp32p4/rom/rtc.h
-components/esp_rom/esp32c61/include/esp32c61/rom/rtc.h
-components/esp_rom/esp32/include/esp32/rom/sha.h
-components/esp_rom/esp32/include/esp32/rom/secure_boot.h
-components/esp_rom/esp32c3/include/esp32c3/rom/spi_flash.h
-components/esp_rom/esp32s2/include/esp32s2/rom/spi_flash.h
-components/esp_rom/esp32s2/include/esp32s2/rom/cache.h
-components/esp_rom/esp32s2/include/esp32s2/rom/secure_boot.h
-components/esp_rom/esp32s2/include/esp32s2/rom/opi_flash.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
@@ -123,8 +106,6 @@ components/spi_flash/include/esp_private/spi_flash_os.h
 ### To be fixed: files which don't compile for esp32s2 target:
 
 components/esp_psram/include/esp32/himem.h
-components/esp_rom/esp32/include/esp32/rom/ets_sys.h
-components/esp_rom/esp32/include/esp32/rom/uart.h
 
 
 ### To be fixed: files which don't compile for esp32s3 target:

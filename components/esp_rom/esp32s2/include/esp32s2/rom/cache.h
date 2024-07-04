@@ -7,6 +7,7 @@
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
