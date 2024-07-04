@@ -17,8 +17,12 @@ SECTIONS
    */
   .rtc.text :
   {
-    ALIGNED_SYMBOL(4, _rtc_fast_start)
-    ALIGNED_SYMBOL(4, _rtc_text_start)
+    /* Align the start of RTC code region as per PMP granularity
+     * this ensures we do not overwrite the permissions for the previous
+     * region (ULP mem) regardless of its end alignment
+     */
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_fast_start)
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_text_start)
 
     *(.rtc.entry.text)
 

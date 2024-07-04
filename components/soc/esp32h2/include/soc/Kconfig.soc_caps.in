@@ -407,6 +407,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_CPU_PMP_REGION_GRANULARITY
+    int
+    default 4
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
