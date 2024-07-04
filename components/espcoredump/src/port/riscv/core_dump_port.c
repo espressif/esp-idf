@@ -20,7 +20,7 @@
 #include "esp_core_dump_port.h"
 
 /* TAG used for logs */
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
 /* Code associated to RISC-V in ELF format */
 #define COREDUMP_EM_RISCV                   0xF3

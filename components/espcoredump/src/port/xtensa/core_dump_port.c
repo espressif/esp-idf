@@ -21,7 +21,7 @@
 #include "esp_debug_helpers.h"
 #include "esp_cpu_utils.h"
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) < (b) ? (b) : (a))

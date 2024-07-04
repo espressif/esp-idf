@@ -13,7 +13,7 @@
 
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_binary";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_binary";
 
 
 static esp_err_t esp_core_dump_save_task(core_dump_write_config_t *write_cfg,

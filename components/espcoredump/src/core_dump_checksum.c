@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_checksum";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_checksum";
 
 #define COREDUMP_SHA256_LEN                 32
 
@@ -147,13 +147,13 @@ static void esp_core_dump_print_sha256(const char* msg, const uint8_t* sha_outpu
     /* As this function is only called by `esp_core_dump_print_checksum`, we
      * have the guarantee that sha_output is not NULL. */
     if (msg != NULL) {
-        esp_rom_printf(DRAM_STR("%s='"), msg);
+        ESP_COREDUMP_PRINT("%s='", msg);
     }
 
     for (int i = 0; i < COREDUMP_SHA256_LEN; i++) {
-        esp_rom_printf(DRAM_STR("%02x"), sha_output[i]);
+        ESP_COREDUMP_PRINT("%02x", sha_output[i]);
     }
-    esp_rom_printf(DRAM_STR("'\r\n"));
+    ESP_COREDUMP_PRINT("'\r\n");
 }
 
 #endif
@@ -170,10 +170,10 @@ void esp_core_dump_print_checksum(const char* msg, core_dump_checksum_bytes chec
 
 #if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
     if (msg != NULL) {
-        esp_rom_printf(DRAM_STR("%s='"), msg);
+        ESP_COREDUMP_PRINT("%s='", msg);
     }
-    esp_rom_printf(DRAM_STR("%08x"), *((const uint32_t*) checksum));
-    esp_rom_printf(DRAM_STR("'\r\n"));
+    ESP_COREDUMP_PRINT("%08x", *((const uint32_t*) checksum));
+    ESP_COREDUMP_PRINT("'\r\n");
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     esp_core_dump_print_sha256(msg, (const uint8_t*) checksum);
 #endif

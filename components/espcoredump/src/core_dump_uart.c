@@ -13,7 +13,7 @@
 #include "esp_core_dump_common.h"
 #include "esp_rom_sys.h"
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
 
@@ -22,7 +22,7 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_uart"
 int esp_clk_cpu_freq(void);
 
 static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst) {
-    const static DRAM_ATTR char b64[] =
+    const static char b64[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int i, j, a, b, c;
 
@@ -53,7 +53,7 @@ static esp_err_t esp_core_dump_uart_write_start(core_dump_write_data_t *priv)
 
     ESP_COREDUMP_ASSERT(priv != NULL);
     esp_core_dump_checksum_init(&wr_data->checksum_ctx);
-    esp_rom_printf(DRAM_STR("================= CORE DUMP START =================\r\n"));
+    ESP_COREDUMP_PRINT("================= CORE DUMP START =================\r\n");
     return err;
 }
 
@@ -74,12 +74,12 @@ static esp_err_t esp_core_dump_uart_write_end(core_dump_write_data_t *priv)
         size_t cs_len = esp_core_dump_checksum_finish(wr_data->checksum_ctx, &cs_addr);
         wr_data->off += cs_len;
         esp_core_dump_b64_encode((const uint8_t *)cs_addr, cs_len, (uint8_t*)&buf[0]);
-        esp_rom_printf(DRAM_STR("%s\r\n"), buf);
+        ESP_COREDUMP_PRINT("%s\r\n", buf);
     }
-    esp_rom_printf(DRAM_STR("================= CORE DUMP END =================\r\n"));
+    ESP_COREDUMP_PRINT("================= CORE DUMP END =================\r\n");
 
     if (cs_addr) {
-        esp_core_dump_print_checksum(DRAM_STR("Coredump checksum"), cs_addr);
+        esp_core_dump_print_checksum("Coredump checksum", cs_addr);
     }
 
     return err;
@@ -103,7 +103,7 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *priv, voi
         memcpy(tmp, addr, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
-        esp_rom_printf(DRAM_STR("%s\r\n"), buf);
+        ESP_COREDUMP_PRINT("%s\r\n", buf);
     }
 
     if (wr_data) {
