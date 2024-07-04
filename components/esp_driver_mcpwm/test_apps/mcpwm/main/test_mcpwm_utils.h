@@ -31,7 +31,7 @@ extern "C" {
 #define TEST_FAULT_GPIO0 2
 #define TEST_FAULT_GPIO1 4
 #define TEST_FAULT_GPIO2 5
-#define TEST_SYNC_GPIO   12
+#define TEST_SYNC_GPIO   13
 #endif
 
 #if CONFIG_MCPWM_ISR_IRAM_SAFE
