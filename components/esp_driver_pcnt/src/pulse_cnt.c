@@ -201,7 +201,13 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 #if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
-    ESP_GOTO_ON_FALSE(!(config->flags.en_step_notify_up && config->flags.en_step_notify_down), ESP_ERR_NOT_SUPPORTED, err, TAG, "This target can only notify in one direction");
+    ESP_GOTO_ON_FALSE(!(config->flags.en_step_notify_up && config->flags.en_step_notify_down), ESP_ERR_NOT_SUPPORTED, err, TAG, CONFIG_IDF_TARGET " can't trigger step notify in both direction");
+    if (config->flags.en_step_notify_up) {
+        ESP_LOGW(TAG, "can't overflow at low limit: %d due to hardware limitation", config->low_limit);
+    }
+    if (config->flags.en_step_notify_down) {
+        ESP_LOGW(TAG, "can't overflow at high limit: %d due to hardware limitation", config->high_limit);
+    }
 #endif
     unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
@@ -651,14 +657,10 @@ esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((step_interval > 0 && unit->flags.en_step_notify_up) || (step_interval < 0 && unit->flags.en_step_notify_down),
                         ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
-    ESP_RETURN_ON_FALSE(unit->flags.en_step_notify_up || unit->flags.en_step_notify_down,
-                        ESP_ERR_INVALID_STATE, TAG, "step limit is not enabled yet");
-    ESP_RETURN_ON_FALSE(unit->step_interval == 0,
-                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
     ESP_RETURN_ON_FALSE(step_interval >= unit->low_limit && step_interval <= unit->high_limit,
                         ESP_ERR_INVALID_ARG, TAG, "step interval out of range [%d,%d]", unit->low_limit, unit->high_limit);
-    ESP_RETURN_ON_FALSE(unit->step_limit % step_interval == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "step interval should be a divisor of step limit");
+    ESP_RETURN_ON_FALSE(unit->step_interval == 0,
+                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
 
     group = unit->group;
     unit->step_interval = step_interval;
@@ -893,70 +895,74 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
     if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit_id)) {
         pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
 
-        // watcher event
+        // event status word contains information about the real watch event type
         uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
 
-        // use flags to avoid multiple callbacks in one point
-        bool is_limit_event __attribute__((unused)) = false;
-        bool is_step_event = false;
+        int count_value = 0;
+        pcnt_unit_zero_cross_mode_t zc_mode = PCNT_UNIT_ZERO_CROSS_INVALID;
 
-        // iter on each event_id
+        // using while loop so that we don't miss any event
         while (event_status) {
-            int watch_value = pcnt_ll_get_count(group->hal.dev, unit_id);
-            if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
-                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT));
-                is_limit_event = true;
-                if (unit->flags.accum_count) {
-                    portENTER_CRITICAL_ISR(&unit->spinlock);
-                    unit->accum_value += unit->low_limit;
-                    portEXIT_CRITICAL_ISR(&unit->spinlock);
-                }
-                watch_value = unit->low_limit;
-            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
-                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT));
-                is_limit_event = true;
-                if (unit->flags.accum_count) {
-                    portENTER_CRITICAL_ISR(&unit->spinlock);
-                    unit->accum_value += unit->high_limit;
-                    portEXIT_CRITICAL_ISR(&unit->spinlock);
-                }
-                watch_value = unit->high_limit;
-            }
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
-            else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
-                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT));
-                if (is_limit_event) {
-                    continue;
-                } else if (unit->flags.accum_count) {
-                    portENTER_CRITICAL_ISR(&unit->spinlock);
-                    unit->accum_value += unit->step_limit;
-                    portEXIT_CRITICAL_ISR(&unit->spinlock);
+            // step event has higher priority than pointer event
+            if (event_status & (BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL) | BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT))) {
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL);
+                    // align current count value to the step interval
+                    count_value = pcnt_ll_get_count(group->hal.dev, unit_id);
                 }
-                watch_value = unit->step_limit;
-            } else if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
-                event_status &= ~(BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL));
-                is_step_event = true;
-            }
-#endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
-            else if (event_status & BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS)) {
-                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS));
-            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES0)) {
-                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES0));
-                if (is_step_event) {
-                    continue;
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT);
+                    // adjust current count value to the step limit
+                    count_value = unit->step_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->step_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
                 }
-            } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES1)) {
-                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES1));
-                if (is_step_event) {
-                    continue;
+                // step event may happen with other pointer event at the same time, we don't need to process them again
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT) | BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT) |
+                                  BIT(PCNT_LL_WATCH_EVENT_THRES0) | BIT(PCNT_LL_WATCH_EVENT_THRES1));
+            } else
+#endif // SOC_PCNT_SUPPORT_STEP_NOTIFY
+                if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = unit->low_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->low_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = unit->high_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->high_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES0)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES0));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = pcnt_ll_get_thres_value(group->hal.dev, unit_id, 0);
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES1)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES1));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = pcnt_ll_get_thres_value(group->hal.dev, unit_id, 1);
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS));
+                    count_value = 0;
+                    zc_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id);
                 }
-            }
 
             // invoked user registered callback
             if (on_reach) {
                 pcnt_watch_event_data_t edata = {
-                    .watch_point_value = watch_value,
-                    .zero_cross_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id),
+                    .watch_point_value = count_value,
+                    .zero_cross_mode = zc_mode,
                 };
                 if (on_reach(unit, &edata, unit->user_data)) {
                     // check if we need to yield for high priority task

@@ -162,7 +162,6 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
     .. note::
 
         When a watch step and a watch point are triggered at the same time (i.e. at the same absolute point), the callback function only gets called by once.
-        The step interval must be a divisor of :cpp:member:`pcnt_unit_config_t::low_limit` or :cpp:member:`pcnt_unit_config_t::high_limit`.
 
     .. code:: c
 
