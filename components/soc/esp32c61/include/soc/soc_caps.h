@@ -153,6 +153,8 @@
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+#define SOC_CPU_PMP_REGION_GRANULARITY  128 // TODO IDF-9580 check when doing PMP bringup
+
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 //TODO: [ESP32C61] IDF-9325 (Copy from esp32c6, need check)
