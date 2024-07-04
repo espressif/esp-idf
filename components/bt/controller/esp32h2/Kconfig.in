@@ -2,17 +2,35 @@
 menu "HCI Config"
 
     choice BT_LE_HCI_INTERFACE
-        prompt "Select HCI interface"
+        prompt "HCI mode"
         default BT_LE_HCI_INTERFACE_USE_RAM
 
         config BT_LE_HCI_INTERFACE_USE_RAM
-            bool "ram"
+            bool "VHCI"
             help
                 Use RAM as HCI interface
         config BT_LE_HCI_INTERFACE_USE_UART
-            bool "uart"
+            bool "UART(H4)"
             help
                 Use UART as HCI interface
+    endchoice
+
+    choice BT_LE_UART_HCI_MODE_CHOICE
+        prompt "UART HCI mode"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default BT_LE_UART_HCI_NO_DMA_MODE
+        help
+            Specify UART HCI mode: DMA or No DMA
+
+        config BT_LE_UART_HCI_DMA_MODE
+            bool "UHCI(UART with DMA)(EXPERIMENTAL)"
+            help
+                UART HCI Mode with DMA functionality.
+
+        config BT_LE_UART_HCI_NO_DMA_MODE
+            bool "UART(NO DMA)"
+            help
+                UART HCI Mode without DMA functionality.
     endchoice
 
     config BT_LE_HCI_UART_PORT
@@ -73,12 +91,40 @@ menu "HCI Config"
                 UART_PARITY_ODD
     endchoice
 
-    config BT_LE_HCI_UART_TASK_STACK_SIZE
-        int "HCI uart task stack size"
-        depends on BT_LE_HCI_INTERFACE_USE_UART
-        default 1000
+    config BT_LE_HCI_UART_RX_BUFFER_SIZE
+        int "The size of rx ring buffer memory"
+        depends on BT_LE_UART_HCI_NO_DMA_MODE
+        default 512
         help
-            Set the size of uart task stack
+            The size of rx ring buffer memory
+
+    config BT_LE_HCI_UART_TX_BUFFER_SIZE
+        int "The size of tx ring buffer memory"
+        depends on BT_LE_UART_HCI_NO_DMA_MODE
+        default 256
+        help
+            The size of tx ring buffer memory
+
+    config BT_LE_HCI_TRANS_TASK_STACK_SIZE
+        int "HCI transport task stack size"
+        depends on !BT_LE_HCI_INTERFACE_USE_RAM
+        default 1024
+        help
+            This configures stack size of hci transport task
+
+    config BT_LE_HCI_TRANS_RX_MEM_NUM
+        int "The amount of rx memory received at the same time"
+        depends on BT_LE_UART_HCI_DMA_MODE
+        default 3
+        help
+            The amount of rx memory received at the same time
+
+    config BT_LE_HCI_LLDESCS_POOL_NUM
+        int "The amount of lldecs memory for driver dma mode"
+        depends on BT_LE_UART_HCI_DMA_MODE
+        default 20
+        help
+            The amount of lldecs memory for driver dma mode
 endmenu
 
 config BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT
