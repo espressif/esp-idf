@@ -134,11 +134,9 @@ size_t esp_himem_reserved_area_size(void)
     return CACHE_BLOCKSIZE * SPIRAM_BANKSWITCH_RESERVE;
 }
 
+#if SPIRAM_BANKSWITCH_RESERVE > 0
 void __attribute__((constructor)) esp_himem_init(void)
 {
-    if (SPIRAM_BANKSWITCH_RESERVE == 0) {
-        return;
-    }
     uint32_t maxram = 0;
     esp_psram_impl_get_available_size(&maxram);
     //catch double init
@@ -164,6 +162,7 @@ void __attribute__((constructor)) esp_himem_init(void)
     ESP_EARLY_LOGI(TAG, "Initialized. Using last %d 32KB address blocks for bank switching on %d KB of physical memory.",
                    SPIRAM_BANKSWITCH_RESERVE, (paddr_end - paddr_start) / 1024);
 }
+#endif
 
 //Allocate count not-necessarily consecutive physical RAM blocks, return numbers in blocks[]. Return
 //true if blocks can be allocated, false if not.
