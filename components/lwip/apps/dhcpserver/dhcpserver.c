@@ -454,18 +454,13 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
         }
     }
 
-    *optptr++ = DHCP_OPTION_DNS_SERVER;
-    *optptr++ = 4;
     if (dhcps_dns_enabled(dhcps->dhcps_dns)) {
+        *optptr++ = DHCP_OPTION_DNS_SERVER;
+        *optptr++ = 4;
         *optptr++ = ip4_addr1(&dhcps->dns_server);
         *optptr++ = ip4_addr2(&dhcps->dns_server);
         *optptr++ = ip4_addr3(&dhcps->dns_server);
         *optptr++ = ip4_addr4(&dhcps->dns_server);
-    }else {
-        *optptr++ = ip4_addr1(&ipadd);
-        *optptr++ = ip4_addr2(&ipadd);
-        *optptr++ = ip4_addr3(&ipadd);
-        *optptr++ = ip4_addr4(&ipadd);
     }
 
     ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & dhcps->dhcps_mask.addr) | ~dhcps->dhcps_mask.addr };
