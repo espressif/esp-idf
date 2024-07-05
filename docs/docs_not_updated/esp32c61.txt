@@ -83,7 +83,6 @@ api-reference/peripherals/usb_host/usb_host_notes_index.rst
 api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
-api-reference/peripherals/hmac.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/gpio.rst
 api-reference/peripherals/sdspi_host.rst
@@ -110,11 +109,9 @@ api-reference/peripherals/lcd/index.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/parlio.rst
-api-reference/peripherals/ds.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
-api-reference/peripherals/ecdsa.rst
 api-reference/peripherals/ldo_regulator.rst
 api-reference/peripherals/jpeg.rst
 api-reference/network/esp_openthread.rst
@@ -219,12 +216,6 @@ api-reference/protocols/esp_tls.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst
-security/host-based-security-workflows.rst
-security/flash-encryption.rst
-security/security.rst
-security/secure-boot-v2.rst
-security/secure-boot-v1.rst
-security/index.rst
 about.rst
 resources.rst
 get-started/establish-serial-connection.rst
