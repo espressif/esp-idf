@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # I2C-WIFI Test
 
@@ -73,7 +73,7 @@ I (379) system_api: read default base MAC address from EFUSE
 I (379) wifi:wifi firmware version: d062fdb
 I (389) wifi:wifi certification version: v7.0
 I (389) wifi:config NVS flash: enabled
-I (389) wifi:config nano formating: disabled
+I (389) wifi:config nano formatting: disabled
 I (399) wifi:Init data frame dynamic rx buffer num: 32
 I (399) wifi:Init management frame dynamic rx buffer num: 32
 I (409) wifi:Init management short buffer num: 32

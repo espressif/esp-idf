@@ -13,7 +13,7 @@ tools/test_apps/system/build_test:
 
 tools/test_apps/system/clang_build_test:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"]
       temporary: true
       reason: the other targets are not supported yet
 
