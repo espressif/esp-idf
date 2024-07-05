@@ -1501,7 +1501,8 @@
 #endif
 
 #ifndef SDP_MAX_PAD_LEN
-#define SDP_MAX_PAD_LEN             300
+// HHL Custom Code we have to increase this to 500 to fit the full procon descriptor
+#define SDP_MAX_PAD_LEN             500
 #endif
 
 /* The maximum length, in bytes, of an attribute. */
