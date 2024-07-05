@@ -224,12 +224,12 @@ the adv packet will be discarded until the memory is restored. */
 typedef struct {
     uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size in bytes */
     uint8_t controller_task_prio;           /*!< Bluetooth Controller task priority */
-    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
-    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface. Configurable in menuconfig. */
-    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig. */
-    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig. */
-    uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig. */
-    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig. */
+    uint8_t hci_uart_no;                    /*!< Indicates UART number if using UART1/2 as HCI I/O interface. Configurable in menuconfig */
+    uint32_t hci_uart_baudrate;             /*!< Indicates UART baudrate if using UART1/2 as HCI I/O interface. Configurable in menuconfig */
+    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode. Configurable in menuconfig */
+    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type. Configurable in menuconfig */
+    uint16_t normal_adv_size;               /*!< Maximum number of devices in scan duplicate filtering list. Configurable in menuconfig */
+    uint16_t mesh_adv_size;                 /*!< Maximum number of Mesh ADV packets in scan duplicate filtering list. Configurable in menuconfig */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
     uint8_t mode;                           /*!< Controller mode:
@@ -239,18 +239,18 @@ typedef struct {
                                                 Others: Invalid
                                                 Configurable in menuconfig.
                                                 */
-    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig. */
-    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig. */
-    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig. */
-    bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig.*/
-    bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to  protect from BIAS attack; false otherwise. Configurable in menuconfig. */
-    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig. */
-    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig. */
-    uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig.*/
-    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig. */
-    bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig. */
-    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig.*/
-    bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig.*/
+    uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig */
+    uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig */
+    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module. Configurable in menuconfig */
+    bool auto_latency;                      /*!< True if BLE auto latency is enabled, used to enhance Classic Bluetooth performance; false otherwise. Configurable in menuconfig */
+    bool bt_legacy_auth_vs_evt;             /*!< True if BR/EDR Legacy Authentication Vendor Specific Event is enabled, which is required to  protect from BIAS attack; false otherwise. Configurable in menuconfig */
+    uint8_t bt_max_sync_conn;               /*!< Maximum number of BR/EDR synchronous connections. Configurable in menuconfig */
+    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig */
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig */
+    bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig */
+    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig */
+    bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
