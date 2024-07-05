@@ -1,6 +1,6 @@
 choice ESP32P4_REV_MIN
     prompt "Minimum Supported ESP32-P4 Revision"
-    default ESP32P4_REV_MIN_0
+    default ESP32P4_REV_MIN_1
     help
         Required minimum chip revision. ESP-IDF will check for it and
         reject to boot if the chip revision fails the check.
