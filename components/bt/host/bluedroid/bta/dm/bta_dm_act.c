@@ -2385,7 +2385,12 @@ void bta_dm_queue_search (tBTA_DM_MSG *p_data)
         osi_free(bta_dm_search_cb.p_search_queue);
     }
 
-    bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_SEARCH));
+    tBTA_DM_API_SEARCH *search_queue = osi_malloc(sizeof(tBTA_DM_API_SEARCH));
+    if (search_queue == NULL) {
+        APPL_TRACE_ERROR("%s: couldn't allocate memory", __func__);
+        return;
+    }
+    bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *) search_queue;
     memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
 
 }
@@ -2406,7 +2411,12 @@ void bta_dm_queue_disc (tBTA_DM_MSG *p_data)
         osi_free(bta_dm_search_cb.p_search_queue);
     }
 
-    bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
+    tBTA_DM_API_DISCOVER *search_queue = osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
+    if (search_queue == NULL) {
+        APPL_TRACE_ERROR("%s: couldn't allocate memory", __func__);
+        return;
+    }
+    bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)search_queue;
     memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
 }
 #endif  ///SDP_INCLUDED == TRUE
