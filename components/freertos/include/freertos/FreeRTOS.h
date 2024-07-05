@@ -1254,6 +1254,12 @@ typedef struct xSTATIC_TCB
     #if ( configUSE_POSIX_ERRNO == 1 )
         int iDummy22;
     #endif
+    #if CONFIG_COMPILER_STACK_MIRROR
+        uint32_t uDummy23;
+        uint32_t uDummy24;
+        uint32_t uDummy25[CONFIG_COMPILER_STACK_MIRROR_DEPTH];
+    #endif
+
 } StaticTask_t;
 
 /*

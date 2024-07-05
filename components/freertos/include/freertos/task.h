@@ -1818,6 +1818,16 @@ configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVIL
  */
 uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
 
+#if CONFIG_COMPILER_STACK_MIRROR
+typedef struct {
+    uint32_t panicing;
+    uint32_t depth;
+    uint32_t backtrace[CONFIG_COMPILER_STACK_MIRROR_DEPTH];
+} esp_stack_mirror_t;
+
+esp_stack_mirror_t *pvTaskGetStackMirrorPointer();
+#endif // CONFIG_COMPILER_STACK_MIRROR
+
 /* When using trace macros it is sometimes necessary to include task.h before
  * FreeRTOS.h.  When this is done TaskHookFunction_t will not yet have been defined,
  * so the following two prototypes will cause a compilation error.  This can be

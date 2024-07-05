@@ -22,6 +22,7 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/cpu.h"
 #include "esp_private/panic_internal.h"
+#include "esp_private/stack_mirror.h"
 
 #include "xtensa/xtensa_context.h"
 
@@ -94,6 +95,9 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
     esp_err_t ret = ESP_OK;
     if (corrupted) {
         print_str(" |<-CORRUPTED", panic);
+#ifndef CONFIG_COMPILER_STACK_MIRROR
+        print_str("\r\nTurn on Stack Mirroring to avoid corruption", panic);
+#endif
         ret =  ESP_FAIL;
     } else if (stk_frame.next_pc != 0) {    //Backtrace continues
         print_str(" |<-CONTINUES", panic);
@@ -107,5 +111,12 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     //Initialize stk_frame with first frame of stack
     esp_backtrace_frame_t start = { 0 };
     esp_backtrace_get_start(&(start.pc), &(start.sp), &(start.next_pc));
-    return esp_backtrace_print_from_frame(depth, &start, false);
+    esp_err_t err = esp_backtrace_print_from_frame(depth, &start, false);
+#if CONFIG_COMPILER_STACK_MIRROR
+    if (err != ESP_OK) {
+        stack_mirror_print_backtrace(false);
+    }
+#endif
+    return err;
 }
+

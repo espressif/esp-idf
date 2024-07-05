@@ -20,6 +20,7 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
+            "stack_mirror.c"
             "task_wdt.c"
             "ubsan.c"
             "xt_wdt.c"
