@@ -148,6 +148,15 @@ static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
     }
 }
 
+static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
+{
+    if (enable) {
+        REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+    } else {
+        REG_CLR_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+    }
+}
+
 static inline void ecc_ll_write_param(ecc_ll_param_t param, const uint8_t *buf, uint16_t len)
 {
     uint32_t reg;
