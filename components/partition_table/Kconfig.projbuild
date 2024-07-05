@@ -25,6 +25,7 @@ menu "Partition Table"
 
                 This partition table is not suitable for an app that needs OTA
                 (over the air update) capability.
+
         config PARTITION_TABLE_SINGLE_APP_LARGE
             bool "Single factory app (large), no OTA"
             help
@@ -36,6 +37,7 @@ menu "Partition Table"
 
                 This partition table is not suitable for an app that needs OTA
                 (over the air update) capability.
+
         config PARTITION_TABLE_TWO_OTA
             bool "Factory app, two OTA definitions"
             help
@@ -45,6 +47,17 @@ menu "Partition Table"
 
                 The corresponding CSV file in the IDF directory is
                 components/partition_table/partitions_two_ota.csv
+
+        config PARTITION_TABLE_TWO_OTA_LARGE
+            bool "Two large size OTA partitions"
+            help
+                This is a basic OTA-enabled partition table with
+                two OTA app partitions. Both app partition sizes are 1700K,
+                so this partition table requires 4MB or larger flash size.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota_large.csv
+
         config PARTITION_TABLE_CUSTOM
             bool "Custom partition table CSV"
             help
@@ -52,6 +65,7 @@ menu "Partition Table"
 
                 Consult the Partition Table section in the ESP-IDF Programmers Guide
                 for more information.
+
         config PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS
             bool "Single factory app, no OTA, encrypted NVS"
             depends on !ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
@@ -63,6 +77,7 @@ menu "Partition Table"
 
                 The corresponding CSV file in the IDF directory is
                 components/partition_table/partitions_singleapp_encr_nvs.csv
+
         config PARTITION_TABLE_SINGLE_APP_LARGE_ENC_NVS
             bool "Single factory app (large), no OTA, encrypted NVS"
             depends on !ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
@@ -73,6 +88,7 @@ menu "Partition Table"
 
                 The corresponding CSV file in the IDF directory is
                 components/partition_table/partitions_singleapp_large_encr_nvs.csv
+
         config PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
             bool "Factory app, two OTA definitions, encrypted NVS"
             depends on !ESP_COREDUMP_ENABLE_TO_FLASH && NVS_SEC_KEY_PROTECT_USING_FLASH_ENC
@@ -83,6 +99,7 @@ menu "Partition Table"
 
                 The corresponding CSV file in the IDF directory is
                 components/partition_table/partitions_two_ota_encr_nvs.csv
+
     endchoice
 
     config PARTITION_TABLE_CUSTOM_FILENAME
@@ -104,6 +121,7 @@ menu "Partition Table"
         default "partitions_two_ota.csv" if PARTITION_TABLE_TWO_OTA && !ESP_COREDUMP_ENABLE_TO_FLASH
         default "partitions_two_ota_coredump.csv" if PARTITION_TABLE_TWO_OTA && ESP_COREDUMP_ENABLE_TO_FLASH
         default "partitions_two_ota_encr_nvs.csv" if PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
+        default "partitions_two_ota_large.csv" if PARTITION_TABLE_TWO_OTA_LARGE && !ESP_COREDUMP_ENABLE_TO_FLASH
         default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
 
     config PARTITION_TABLE_OFFSET
