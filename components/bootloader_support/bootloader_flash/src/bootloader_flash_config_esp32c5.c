@@ -28,6 +28,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
 
 void bootloader_flash_update_id()
 {
@@ -203,6 +204,12 @@ static void bootloader_spi_flash_resume(void)
 
 esp_err_t bootloader_init_spi_flash(void)
 {
+    // Set source mspi pll clock as 80M in bootloader stage.
+    // SPLL clock on C5 is 480MHz , and mspi_pll needs 80MHz
+    // in this stage, set divider as 6
+    mspi_ll_clock_src_sel(MSPI_CLK_SRC_SPLL);
+    mspi_ll_fast_set_hs_divider(6);
+
     bootloader_init_flash_configure();
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();

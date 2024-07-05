@@ -77,6 +77,7 @@
 // #define SOC_DEEP_SLEEP_SUPPORTED        1  // TODO: [ESP32C5] IDF-8638
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1  // TODO: [ESP32C5] IDF-8643
+#define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
