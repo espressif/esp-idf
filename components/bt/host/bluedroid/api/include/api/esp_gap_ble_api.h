@@ -880,6 +880,10 @@ typedef uint8_t esp_ble_gap_adv_type_t;
 /// Extend advertising tx power, range: [-127, +126] dBm
 #define EXT_ADV_TX_PWR_NO_PREFERENCE                      (127) /*!< host has no preference for tx power */
 
+
+/// max number of advertising sets to enable or disable
+#define EXT_ADV_NUM_SETS_MAX                              (10) /*!< max evt instance num */
+
 /**
 * @brief ext adv parameters
 */
@@ -1290,72 +1294,86 @@ typedef union {
      */
     struct ble_ext_adv_set_rand_addr_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising random address set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } ext_adv_set_rand_addr;                         /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT
      */
     struct ble_ext_adv_set_params_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate extend advertising parameters set status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_set_params;                           /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT
      */
      struct ble_ext_adv_data_set_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising data set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } ext_adv_data_set;                              /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT
      */
     struct ble_ext_adv_scan_rsp_set_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising scan response data set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } scan_rsp_set;                                  /*!< Event parameter of ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT
      */
     struct ble_ext_adv_start_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising start operation success status */
+        uint8_t instance_num;                       /*!< extend advertising handle numble*/
+        uint8_t instance[EXT_ADV_NUM_SETS_MAX];                       /*!< extend advertising handle list*/
     } ext_adv_start;                                /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT
      */
     struct ble_ext_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance_num;                       /*!< extend advertising handle numble*/
+        uint8_t instance[EXT_ADV_NUM_SETS_MAX];                       /*!< extend advertising handle list*/
     } ext_adv_stop;                                 /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_REMOVE_COMPLETE_EVT
      */
     struct ble_ext_adv_set_remove_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_remove;                               /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_REMOVE_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT
      */
     struct ble_ext_adv_set_clear_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_clear;                                /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT
      */
     struct ble_periodic_adv_set_params_cmpl_param {
         esp_bt_status_t status;                    /*!< Indicate periodic advertisingparameters set status */
+        uint8_t instance;                          /*!< extend advertising handle */
     } peroid_adv_set_params;                       /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT
      */
     struct ble_periodic_adv_data_set_cmpl_param {
         esp_bt_status_t status;                    /*!< Indicate periodic advertising data set status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } period_adv_data_set;                         /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT
      */
     struct ble_periodic_adv_start_cmpl_param {
         esp_bt_status_t status;                   /*!< Indicate periodic advertising start status */
+        uint8_t instance;                         /*!< extend advertising handle */
     } period_adv_start;                           /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_STOP_COMPLETE_EVT
      */
     struct ble_periodic_adv_stop_cmpl_param {
         esp_bt_status_t status;                  /*!< Indicate periodic advertising stop status */
+        uint8_t instance;                        /*!< extend advertising handle */
     } period_adv_stop;                           /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_STOP_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT

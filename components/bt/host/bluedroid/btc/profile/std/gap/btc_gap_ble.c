@@ -982,34 +982,48 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         case BTA_DM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT;
             param.ext_adv_set_rand_addr.status = btc_btm_status_to_esp_status(params->set_ext_rand_addr.status);
+            param.ext_adv_set_rand_addr.instance = params->set_ext_rand_addr.instance;
             break;
         case BTA_DM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT;
-            param.ext_adv_set_rand_addr.status = btc_btm_status_to_esp_status(params->set_params.status);
+            param.ext_adv_set_params.status = btc_btm_status_to_esp_status(params->set_params.status);
+            param.ext_adv_set_params.instance = params->set_params.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT;
             param.ext_adv_data_set.status = btc_btm_status_to_esp_status(params->adv_data_set.status);
+            param.ext_adv_data_set.instance = params->adv_data_set.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT;
             param.scan_rsp_set.status = btc_btm_status_to_esp_status(params->scan_rsp_data_set.status);
+            param.scan_rsp_set.instance = params->scan_rsp_data_set.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT;
             param.ext_adv_start.status = btc_btm_status_to_esp_status(params->adv_start.status);
+            for (UINT8 i = 0; i < params->adv_start.instance_num; i++) {
+                param.ext_adv_start.instance[i] = params->adv_start.instance[i];
+            }
+
+            param.ext_adv_start.instance_num = params->adv_start.instance_num;
             break;
         }
         case BTA_DM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT;
             param.ext_adv_stop.status = btc_btm_status_to_esp_status(params->adv_start.status);
+            for (UINT8 i = 0; i < params->adv_start.instance_num; i++) {
+                param.ext_adv_stop.instance[i] = params->adv_start.instance[i];
+            }
+            param.ext_adv_stop.instance_num = params->adv_start.instance_num;
             break;
         case BTA_DM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_SET_REMOVE_COMPLETE_EVT;
             param.ext_adv_remove.status = btc_btm_status_to_esp_status(params->adv_start.status);
+            param.ext_adv_remove.instance = params->adv_start.instance[0];
             break;
         case BTA_DM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT;
@@ -1018,21 +1032,25 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT;
             param.peroid_adv_set_params.status = btc_btm_status_to_esp_status(params->per_adv_set_params.status);
+            param.peroid_adv_set_params.instance = params->per_adv_set_params.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT;
             param.period_adv_data_set.status = btc_btm_status_to_esp_status(params->per_adv_data_set.status);
+            param.period_adv_data_set.instance = params->per_adv_data_set.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT;
             param.period_adv_start.status = btc_btm_status_to_esp_status(params->per_adv_start.status);
+            param.period_adv_start.instance = params->per_adv_start.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_STOP_COMPLETE_EVT;
             param.period_adv_stop.status = btc_btm_status_to_esp_status(params->per_adv_stop.status);
+            param.period_adv_stop.instance = params->per_adv_stop.instance;
             break;
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT: {
