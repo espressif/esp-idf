@@ -340,8 +340,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
     }
 
 end:
-    cb_params.status = status;
-
+    cb_params.set_ext_rand_addr.status = status;
+    cb_params.set_ext_rand_addr.instance = instance;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -420,7 +420,8 @@ end:
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
         }
     }
-    cb_params.status = status;
+    cb_params.set_params.status = status;
+    cb_params.set_params.instance = instance;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -471,7 +472,14 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
     } while (rem_len);
 
 end:
-    cb_params.status = status;
+    if (is_scan_rsp) {
+        cb_params.scan_rsp_data_set.status = status;
+        cb_params.scan_rsp_data_set.instance = instance;
+    } else {
+        cb_params.adv_data_set.status = status;
+        cb_params.adv_data_set.instance = instance;
+    }
+
     BTM_ExtBleCallbackTrigger(is_scan_rsp ? BTM_BLE_5_GAP_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -574,7 +582,12 @@ end:
         }
     }
 
-    cb_params.status = status;
+    cb_params.adv_start.status = status;
+    cb_params.adv_start.instance_num = num;
+    for (uint8_t i = 0; i < num; i++) {
+        cb_params.adv_start.instance[i] = ext_adv[i].instance;
+    }
+
     BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_EXT_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -629,7 +642,9 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
 
 end:
 
-    cb_params.status = status;
+    cb_params.adv_start.status = status;
+    cb_params.adv_start.instance_num = 1;
+    cb_params.adv_start.instance[0] = instance;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT, &cb_params);
 
@@ -655,7 +670,7 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
         }
     }
 
-    cb_params.status = status;
+    cb_params.adv_start.status = status;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT, &cb_params);
 
@@ -693,7 +708,8 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
 
 end:
 
-    cb_params.status = status;
+    cb_params.per_adv_set_params.status = status;
+    cb_params.per_adv_set_params.instance = instance;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
 
@@ -747,7 +763,9 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
     } while(rem_len);
 
 end:
-    cb_params.status = status;
+    cb_params.per_adv_data_set.status = status;
+    cb_params.per_adv_data_set.instance = instance;
+
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -771,8 +789,13 @@ tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, UINT8 enable)
     }
 
 end:
-
-    cb_params.status = status;
+    if (enable) {
+        cb_params.per_adv_start.status = status;
+        cb_params.per_adv_start.instance = instance;
+    } else {
+        cb_params.per_adv_stop.status = status;
+        cb_params.per_adv_stop.instance = instance;
+    }
 
     BTM_ExtBleCallbackTrigger(enable ? BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT : BTM_BLE_5_GAP_PERIODIC_ADV_STOP_COMPLETE_EVT, &cb_params);
 
