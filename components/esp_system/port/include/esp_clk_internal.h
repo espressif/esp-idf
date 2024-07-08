@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,14 @@ void esp_clk_init(void);
  * This function disables clock of useless peripherals when cpu starts.
  */
 void esp_perip_clk_init(void);
+
+/**
+ * @brief Initialize the crypto clock
+ *
+ * Called from cpu_start.c, not intended to be called from other places.
+ * This function configures the crypto clock.
+ */
+void esp_crypto_clk_init(void);
 
 #if !CONFIG_IDF_TARGET_ESP32C2
 /* Selects an external clock source (32 kHz) for RTC.
