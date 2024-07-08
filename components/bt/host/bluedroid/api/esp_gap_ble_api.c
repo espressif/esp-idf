@@ -27,6 +27,18 @@ esp_gap_ble_cb_t esp_ble_gap_get_callback(void)
     return (esp_gap_ble_cb_t) btc_profile_cb_get(BTC_PID_GAP_BLE);
 }
 
+esp_err_t esp_ble_gap_register_ptr(void *ptr)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    return (btc_profile_ptr_set(BTC_PID_GAP_BLE, ptr) == 0 ? ESP_OK : ESP_FAIL);
+}
+
+void *esp_ble_gap_get_ptr(void)
+{
+    return btc_profile_ptr_get(BTC_PID_GAP_BLE);
+}
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -304,6 +304,27 @@ esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback);
  *
  */
 esp_gatts_cb_t esp_ble_gatts_get_callback(void);
+
+/**
+ * @brief           This function is called to register application user pointer
+ *                  with BTA GATTS module.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gatts_register_ptr(void *ptr);
+
+/**
+ * @brief           This function is called to get the current application user pointer
+ *                  with BTA GATTS module.
+ *
+ * @return
+ *                  - current user pointer (may be NULL if not set)
+ *
+ */
+void *esp_ble_gatts_get_ptr(void);
 
 /**
  * @brief           This function is called to register application identifier
