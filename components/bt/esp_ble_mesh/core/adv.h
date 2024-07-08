@@ -10,6 +10,7 @@
 #ifndef _ADV_H_
 #define _ADV_H_
 
+#include "mesh/atomic.h"
 #include "mesh/access.h"
 #include "mesh/adapter.h"
 
@@ -24,6 +25,7 @@ extern "C" {
 #define BLE_MESH_ADV_USER_DATA_SIZE     4
 
 #define BLE_MESH_ADV(buf)               (*(struct bt_mesh_adv **)net_buf_user_data(buf))
+#define BLE_MESH_ADV_BUSY(buf)          (BLE_MESH_ADV(buf)->busy)
 
 uint16_t bt_mesh_pdu_duration(uint8_t xmit);
 
@@ -48,8 +50,10 @@ struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
 
-    uint8_t type:3,
-            busy:1;
+    uint8_t type:3;
+
+    bt_mesh_atomic_t busy;
+
     uint8_t xmit;
 };
 
