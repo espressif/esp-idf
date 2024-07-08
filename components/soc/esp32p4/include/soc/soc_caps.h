@@ -698,6 +698,12 @@
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
+#define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
+#define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
+#define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
+#define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
+#define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
+
 /*-------------------------- LP_VAD CAPS -------------------------------------*/
 #define SOC_LP_I2S_SUPPORT_VAD           (1)
 

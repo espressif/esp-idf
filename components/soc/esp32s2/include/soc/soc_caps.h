@@ -369,6 +369,8 @@
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
+#define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
+
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED          1
 #define SOC_SPIRAM_XIP_SUPPORTED      1

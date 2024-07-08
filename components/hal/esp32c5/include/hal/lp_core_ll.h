@@ -132,6 +132,14 @@ static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
 }
 
 /**
+ * @brief Enable wakeup from LP UART.
+ */
+static inline void lp_core_ll_enable_lp_uart_wakeup(bool enable)
+{
+    LPPERI.mem_ctrl.uart_wakeup_en = enable;
+}
+
+/**
  * @brief Get the flag that marks whether LP CPU is awakened by ETM
  *
  * @return Return true if lpcore is woken up by soc_etm

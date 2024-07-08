@@ -212,7 +212,7 @@ The ULP has the following wake-up sources:
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER` - LP core can be woken up by the LP timer.
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_ETM` - LP core can be woken up by a ETM event. (Not yet supported)
     * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_IO` - LP core can be woken up when LP IO level changes. (Not yet supported)
-    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - LP core can be woken up after receiving a certain number of UART RX pulses. (Not yet supported)
+    * :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` - LP core can be woken up when LP_UART receives wakeup data based on different modes.
 
 When the ULP is woken up, it will go through the following steps:
 
@@ -390,6 +390,7 @@ Application Examples
     :esp32c6: - :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
     - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
+    - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` shows how to trigger a wakeup using the LP UART specific character sequence wakeup mode.
     - :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
     - :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
     - :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.
@@ -430,3 +431,8 @@ LP Core API Reference
     .. include-build-file:: inc/ulp_lp_core_spi.inc
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    .. include-build-file:: inc/ulp_lp_core_lp_uart_shared.inc
+

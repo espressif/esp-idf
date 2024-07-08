@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 
 /**
  * @brief Traverse all possible wake-up sources and update the wake-up cause so that
@@ -51,6 +52,13 @@ void ulp_lp_core_delay_us(uint32_t us);
  * @param cycles Number of cycles to busy-wait for
  */
 void ulp_lp_core_delay_cycles(uint32_t cycles);
+
+#if SOC_ULP_LP_UART_SUPPORTED
+/**
+ * @brief Reset LP CORE uart wakeup enable.
+ */
+void ulp_lp_core_lp_uart_reset_wakeup_en(void);
+#endif
 
 /**
  * @brief Finishes the ULP program and powers down the ULP

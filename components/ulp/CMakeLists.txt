@@ -56,7 +56,9 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         "lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
     if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
-        list(APPEND srcs "lp_core/lp_core_uart.c")
+        list(APPEND srcs
+        "lp_core/lp_core_uart.c"
+        "lp_core/shared/ulp_lp_core_lp_uart_shared.c")
     endif()
 
     if(CONFIG_SOC_LP_I2C_SUPPORTED)

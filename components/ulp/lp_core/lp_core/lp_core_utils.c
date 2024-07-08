@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,11 +48,13 @@ void ulp_lp_core_update_wakeup_cause(void)
         pmu_ll_lp_clear_intsts_mask(&PMU, PMU_HP_SW_TRIGGER_INT_CLR);
     }
 
+#if SOC_ULP_LP_UART_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_UART) \
             && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_UART;
         uart_ll_clr_intsts_mask(&LP_UART, LP_UART_WAKEUP_INT_CLR);
     }
+#endif
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_IO) \
             && rtcio_ll_get_interrupt_status()) {
@@ -136,6 +138,15 @@ void ulp_lp_core_delay_cycles(uint32_t cycles)
         /* nothing to do */
     }
 }
+
+#if SOC_ULP_LP_UART_SUPPORTED
+
+void ulp_lp_core_lp_uart_reset_wakeup_en(void)
+{
+    lp_core_ll_enable_lp_uart_wakeup(false);
+    lp_core_ll_enable_lp_uart_wakeup(true);
+}
+#endif
 
 void ulp_lp_core_halt(void)
 {

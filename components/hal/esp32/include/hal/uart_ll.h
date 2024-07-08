@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,8 +30,10 @@ extern "C" {
 // The timeout calibration factor when using ref_tick
 #define UART_LL_TOUT_REF_FACTOR_DEFAULT (8)
 
-#define UART_LL_MIN_WAKEUP_THRESH (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
+
 
 // Define UART interrupts
 typedef enum {
@@ -710,12 +712,18 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_edge_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
     // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+2)
     // Note: On ESP32, the minimum UART wakeup threshold is 2 + 1 = 3 (UART_ACTIVE_THRESHOLD set to 0 leads to consecutive triggering wakeup)
-    hw->sleep_conf.active_threshold = wakeup_thrd  - (UART_LL_MIN_WAKEUP_THRESH - 1);
+    hw->sleep_conf.active_threshold = wakeup_thrd  - (UART_LL_WAKEUP_EDGE_THRED_MIN - 1);
 }
+
+/**
+ * @brief  Mocking the selection of the UART wakeup mode, as it is not supported by this SOC.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_t mode)
+{}
 
 /**
  * @brief   Enable/disable the UART pad clock in sleep_state
@@ -867,9 +875,9 @@ FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char
  *
  * @return The UART wakeup threshold value.
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_edge_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf.active_threshold + (UART_LL_MIN_WAKEUP_THRESH - 1);
+    return hw->sleep_conf.active_threshold + (UART_LL_WAKEUP_EDGE_THRED_MIN - 1);
 }
 
 /**
