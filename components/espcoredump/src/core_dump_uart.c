@@ -18,14 +18,6 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
 
-void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_uart_print_write_start")));
-void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_uart_print_write_end")));
-esp_err_t esp_core_dump_write_init(void) __attribute__((alias("esp_core_dump_uart_hw_init")));
-esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_uart_write_prepare")));
-esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_uart_write_start")));
-esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_uart_write_end")));
-esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len) __attribute__((alias("esp_core_dump_uart_write_data")));
-
 /* This function exists on every board, thus, we don't need to specify
  * explicitly the header for each board. */
 int esp_clk_cpu_freq(void);
@@ -172,8 +164,19 @@ static esp_err_t esp_core_dump_uart_hw_init(void)
     return ESP_OK;
 }
 
-void esp_core_dump_init(void)
+void esp_core_dump_uart_init(void)
 {
     ESP_COREDUMP_LOGI("Init core dump to UART");
 }
+
+esp_core_dump_output_t esp_core_dump_output_uart = {
+    .print_write_start = esp_core_dump_uart_print_write_start,
+    .print_write_end = esp_core_dump_uart_print_write_end,
+    .write_init = esp_core_dump_uart_hw_init,
+    .write_prepare = esp_core_dump_uart_write_prepare,
+    .write_start = esp_core_dump_uart_write_start,
+    .write_data = esp_core_dump_uart_write_data,
+    .write_end = esp_core_dump_uart_write_end,
+};
+
 #endif
