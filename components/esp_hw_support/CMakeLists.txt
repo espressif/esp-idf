@@ -119,10 +119,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_etm.c")
     endif()
 
-    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
-        list(APPEND srcs "esp_dpa_protection.c")
-    endif()
-
     if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
         list(APPEND srcs "esp_ds.c")
     endif()
