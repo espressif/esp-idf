@@ -64,10 +64,6 @@ components/driver/test_apps/legacy_pcnt_driver:
 components/driver/test_apps/legacy_rmt_driver:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed   # TODO: [ESP32C5] IDF-10330
   depends_filepatterns:
     - components/driver/deprecated/**/*rmt*
 
