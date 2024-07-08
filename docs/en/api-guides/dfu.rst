@@ -116,11 +116,22 @@ Restart your computer so the previous setting could take into affect or run ``su
 USB Drivers (Windows Only)
 --------------------------
 
-``dfu-util`` uses `libusb` to access the device. You have to register on Windows the device with the `WinUSB` driver.
+``dfu-util`` uses `libusb` to access the device. On Windows, the `WinUSB` driver is the recommended driver which has to be installed for the device to work properly. For more details please see the `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_.
 
-Please see the `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_ for more details.
+.. only:: esp32s2
 
-The drivers can be installed by the `Zadig tool <https://zadig.akeo.ie/>`_. Please make sure that the device is in download mode before you run the tool and that it detects the {IDF_TARGET_NAME} device before you install the drivers. The Zadig tool might detect several USB interfaces of {IDF_TARGET_NAME}. Please install the WinUSB driver only for the interface where there is no driver installed (probably it is Interface 2) and do not re-install the driver for the other interface.
+    The development board driver can be downloaded from https://github.com/espressif/esp-win-usb-drivers/releases. The files need to be extracted and `installed <https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/using-an-inf-file-to-install-a-file-system-filter-driver#right-click-install>`_. This should change or install the WinUSB driver for the right interface of the device.
+
+.. note::
+
+    If the feature is not working please proceed with the manual driver assignment. Otherwise, the following section can be skipped.
+
+USB Drivers (Windows Only) - manual driver assignment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Manual driver assignment can be performed with the `Zadig tool <https://zadig.akeo.ie/>`_. Please make sure that the device is in download mode before running the tool and that the {IDF_TARGET_NAME} device is detected before the driver installation.
+
+The Zadig tool might detect several USB interfaces of {IDF_TARGET_NAME}. Please install the `WinUSB` driver **only** for the interface where there is no driver installed (probably it is Interface 2) and do not re-install the driver for the other interface.
 
 .. warning::
 
