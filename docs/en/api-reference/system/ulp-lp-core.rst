@@ -241,9 +241,15 @@ Main CPU API Reference
 .. include-build-file:: inc/lp_core_i2c.inc
 .. include-build-file:: inc/lp_core_uart.inc
 
-.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+.. only:: SOC_LP_SPI_SUPPORTED
 
     .. include-build-file:: inc/lp_core_spi.inc
+
+.. only:: SOC_LP_CORE_SUPPORT_ETM
+
+    .. include-build-file:: inc/lp_core_etm.inc
+
+.. include-build-file:: inc/lp_core_types.inc
 
 LP Core API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -255,7 +261,7 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
 
-.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+.. only:: SOC_LP_SPI_SUPPORTED
 
     .. include-build-file:: inc/ulp_lp_core_spi.inc
 

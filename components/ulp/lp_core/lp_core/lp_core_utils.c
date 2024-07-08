@@ -15,6 +15,10 @@
 #include "hal/uart_ll.h"
 #include "hal/rtc_io_ll.h"
 
+#if !CONFIG_IDF_TARGET_ESP32P4
+#include "hal/lp_aon_ll.h"
+#endif
+
 #if SOC_ETM_SUPPORTED
 #include "hal/etm_ll.h"
 #endif
@@ -52,7 +56,11 @@ void ulp_lp_core_update_wakeup_cause(void)
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
             && etm_ll_is_lpcore_wakeup_triggered()) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_ETM;
-        etm_ll_clear_lpcore_wakeup_status();
+#if CONFIG_IDF_TARGET_ESP32P4
+        lp_core_ll_clear_etm_wakeup_status();
+#else
+        lp_aon_ll_clear_lpcore_etm_wakeup_flag();
+#endif
     }
 #endif /* SOC_ETM_SUPPORTED */
 

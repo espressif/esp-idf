@@ -1778,3 +1778,7 @@ config SOC_LCDCAM_CAM_PERIPH_NUM
 config SOC_LCDCAM_CAM_DATA_WIDTH_MAX
     int
     default 16
+
+config SOC_LP_CORE_SUPPORT_ETM
+    bool
+    default y
