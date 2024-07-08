@@ -416,8 +416,13 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
   * Enabling this feature makes all digital gpio pads be at the holding state during Deep-sleep. The state of each pad
   * holds is its active configuration (not pad's sleep configuration!).
   *
-  * Note that this pad hold feature only works when the chip is in Deep-sleep mode. When the chip is in active mode,
-  * the digital gpio state can be changed freely even you have called this function.
+  * Note:
+  *   1. For digital IO, this API takes effect only if the corresponding digital IO pad hold function has been enabled. You
+  *      can enable the GPIO pad hold function by calling `gpio_hold_en`.
+  *      has been enabled. You can call `gpio_hold_en` to enable the gpio pad hold function.
+  *   2. Though this API targets all digital IOs, the pad hold feature only works when the chip is in Deep-sleep mode. When
+  *      the chip is in active mode, the digital GPIO state can be changed freely even if you have called this function, except
+  *      for IOs that are already held by `gpio_hold_en`.
   *
   * After this API is being called, the digital gpio Deep-sleep hold feature will work during every sleep process. You
   * should call `gpio_deep_sleep_hold_dis` to disable this feature.
