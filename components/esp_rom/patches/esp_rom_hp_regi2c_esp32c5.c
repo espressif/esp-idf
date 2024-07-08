@@ -6,7 +6,7 @@
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
-#include "modem/modem_lpcon_reg.h"
+#include "hal/regi2c_ctrl_ll.h"
 
 #define REGI2C_BIAS_MST_SEL    (BIT(8))
 #define REGI2C_BBPLL_MST_SEL   (BIT(9))
@@ -75,7 +75,7 @@ static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
     uint32_t i2c_sel = 0;
 
-    REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    regi2c_ctrl_ll_master_enable_clock(true);
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {

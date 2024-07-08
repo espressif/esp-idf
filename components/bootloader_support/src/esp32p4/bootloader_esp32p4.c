@@ -48,6 +48,7 @@
 #include "soc/regi2c_cpll.h"
 #include "soc/regi2c_bias.h"
 #include "esp_private/periph_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
 
 static const char *TAG = "boot.esp32p4";
 
@@ -92,8 +93,10 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
-    // regi2c is enabled by default on ESP32P4, do nothing
+    int __DECLARE_RCC_RC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors/warnings about __DECLARE_RCC_RC_ATOMIC_ENV
+    regi2c_ctrl_ll_master_enable_clock(true);
+    regi2c_ctrl_ll_master_configure_clock();
+
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         // On ESP32P4 ECO0, the default (power on reset) CPLL and SPLL frequencies are very high, lower them to avoid bias may not be enough in bootloader
@@ -106,6 +109,7 @@ static inline void bootloader_hardware_init(void)
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 
     // IDF-10019 TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used.
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
     if (likely(ESP_CHIP_REV_ABOVE(chip_version, 1))) {
         spimem_flash_ll_select_clk_source(0, FLASH_CLK_SRC_SPLL);
         spimem_ctrlr_ll_set_core_clock(0, 6);
