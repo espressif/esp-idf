@@ -9,10 +9,6 @@
 components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:
@@ -21,24 +17,16 @@ components/esp_driver_spi/test_apps/param:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
+      reason: no multi-dev runner  # TODO: [ESP32P4] IDF-9517
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported, no multi-dev runner  # TODO: [ESP32P4] IDF-8942
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported # TODO: IDF-8942
   <<: *spi_depends_default

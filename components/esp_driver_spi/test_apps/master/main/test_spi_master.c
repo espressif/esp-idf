@@ -29,6 +29,7 @@ const static char TAG[] = "test_spi";
 // There is no input-only pin except on esp32 and esp32s2
 #define TEST_SOC_HAS_INPUT_ONLY_PINS  (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 
+#if !CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-8313
 static void check_spi_pre_n_for(spi_clock_source_t clock_source, int clk, int pre, int n)
 {
     spi_device_handle_t handle;
@@ -176,6 +177,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
+#endif // IDF-8313
 
 static spi_device_handle_t setup_spi_bus_loopback(int clkspeed, bool dma)
 {
