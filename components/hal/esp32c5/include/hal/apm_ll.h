@@ -260,11 +260,6 @@ static inline void apm_ll_apm_ctrl_region_filter_enable(apm_ll_apm_ctrl_t apm_ct
 static inline void apm_ll_apm_ctrl_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
                                                  apm_ll_ctrl_access_path_t apm_m_path, bool enable)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     if (enable) {
         REG_SET_BIT(APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl), BIT(apm_m_path));
     } else {
@@ -282,10 +277,6 @@ static inline void apm_ll_apm_ctrl_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
 static inline void apm_ll_apm_ctrl_set_region_start_address(apm_ll_apm_ctrl_t apm_ctrl,
                                                             uint32_t regn_num, uint32_t addr)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     REG_WRITE(APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num), addr);
 }
 
@@ -299,10 +290,6 @@ static inline void apm_ll_apm_ctrl_set_region_start_address(apm_ll_apm_ctrl_t ap
 static inline void apm_ll_apm_ctrl_set_region_end_address(apm_ll_apm_ctrl_t apm_ctrl,
                                                           uint32_t regn_num, uint32_t addr)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     REG_WRITE(APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num), addr);
 }
 
@@ -317,10 +304,6 @@ static inline void apm_ll_apm_ctrl_set_region_end_address(apm_ll_apm_ctrl_t apm_
 static inline void apm_ll_apm_ctrl_sec_mode_region_attr_config(apm_ll_apm_ctrl_t apm_ctrl,
                                                                uint32_t regn_num, apm_ll_secure_mode_t sec_mode, uint32_t regn_pms)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     uint32_t val = 0;
     val = REG_READ(APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num));
     val &= ~APM_LL_SEC_MODE_REGION_ATTR_M(sec_mode);
@@ -337,11 +320,6 @@ static inline void apm_ll_apm_ctrl_sec_mode_region_attr_config(apm_ll_apm_ctrl_t
 static inline uint8_t apm_ll_apm_ctrl_exception_status(apm_ll_apm_ctrl_t apm_ctrl,
                                                        apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     return REG_READ(APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path));
 }
 
@@ -354,11 +332,6 @@ static inline uint8_t apm_ll_apm_ctrl_exception_status(apm_ll_apm_ctrl_t apm_ctr
 static inline void apm_ll_apm_ctrl_exception_clear(apm_ll_apm_ctrl_t apm_ctrl,
                                                    apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     REG_SET_BIT(APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path),
                 APM_CTRL_M_REGION_STATUS_CLR);
 }
@@ -371,11 +344,6 @@ static inline void apm_ll_apm_ctrl_exception_clear(apm_ll_apm_ctrl_t apm_ctrl,
  */
 static inline void apm_ll_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t *excp_info)
 {
-    HAL_ASSERT(((excp_info->apm_path.apm_ctrl == LP_APM0_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((excp_info->apm_path.apm_ctrl == HP_APM_CTRL) && (excp_info->apm_path.apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((excp_info->apm_path.apm_ctrl == LP_APM_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     excp_info->excp_id = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
                                        APM_LL_CTRL_EXCEPTION_ID);
     excp_info->excp_mode = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
@@ -396,11 +364,6 @@ static inline void apm_ll_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t 
 static inline void apm_ll_apm_ctrl_interrupt_enable(apm_ll_apm_ctrl_t apm_ctrl,
                                                     apm_ll_ctrl_access_path_t apm_m_path, bool enable)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     if (enable) {
         REG_SET_BIT(APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl), BIT(apm_m_path));
     } else {
@@ -448,13 +411,8 @@ static inline void apm_ll_apm_ctrl_reset_event_enable(bool enable)
  * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
  * @param apm_m_path APM Ctrl access patch(M[0:n])
  */
-static inline esp_err_t apm_ll_apm_ctrl_get_int_src_num(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_ctrl_access_path_t apm_m_path)
+static inline int apm_ll_apm_ctrl_get_int_src_num(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     switch (apm_ctrl) {
     case LP_APM0_CTRL :
         return (ETS_LP_APM0_INTR_SOURCE);
