@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition,
     if (src_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (src_offset + size > partition->size) {
+    if (size > partition->size - src_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -70,7 +70,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition,
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (dst_offset + size > partition->size) {
+    if (size > partition->size - dst_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     dst_offset = partition->address + dst_offset;
@@ -95,7 +95,7 @@ esp_err_t esp_partition_read_raw(const esp_partition_t *partition,
     if (src_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (src_offset + size > partition->size) {
+    if (size > partition->size - src_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -112,7 +112,7 @@ esp_err_t esp_partition_write_raw(const esp_partition_t *partition,
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (dst_offset + size > partition->size) {
+    if (size > partition->size - dst_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     dst_offset = partition->address + dst_offset;
@@ -130,7 +130,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
     if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size) {
+    if (size > partition->size - offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (size % SPI_FLASH_SEC_SIZE != 0) {
@@ -159,7 +159,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size) {
+    if (size > partition->size - offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (partition->flash_chip != esp_flash_default_chip) {
