@@ -41,7 +41,7 @@ ESP-IDF 项目重视持续维护和更新，确保我们的客户始终处于技
 
 * 新芯片支持
 	* 在 ESP-IDF v5.3 中为 ESP32-P4 提供完整支持，参考 [ESP32-P4 支持状态](https://github.com/espressif/esp-idf/issues/12996)
-	* 在 ESP-IDF v5.3 中为 ESP32-C5 提供预览支持，并在 ESP-IDF v5.3.x 中为 ESP32-C5 提供完整支持
+	* 在 ESP-IDF v5.3 中为 ESP32-C5 提供预览支持，并在 ESP-IDF v5.3.x 中为 ESP32-C5 提供完整支持，参考 [ESP32-C5 支持状态](https://github.com/espressif/esp-idf/issues/14021)
 	* 在 ESP-IDF v5.4 中增加对 ESP32-C61 的支持
 * Bugfix 版本发布
 	* 发布 Bugfix 版本 IDF v4.4.8，并在 2024 年 7 月底停止维护 ESP-IDF v4.4
