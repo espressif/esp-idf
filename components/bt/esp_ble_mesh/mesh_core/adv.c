@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -311,8 +311,7 @@ static void adv_thread(void *p)
         }
 
         /* busy == 0 means this was canceled */
-        if (BLE_MESH_ADV(*buf)->busy) {
-            BLE_MESH_ADV(*buf)->busy = 0U;
+         if (bt_mesh_atomic_cas(&BLE_MESH_ADV_BUSY(*buf), 1, 0)) {
 #if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
             if (adv_send(*buf)) {
                 BT_WARN("Failed to send adv packet");
@@ -427,7 +426,7 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
 
     if (msg->arg) {
         buf = (struct net_buf *)msg->arg;
-        BLE_MESH_ADV(buf)->busy = 0U;
+        bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 0);
         if (buf->ref > 1U) {
             buf->ref = 1U;
         }
@@ -471,7 +470,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
-    BLE_MESH_ADV(buf)->busy = 1U;
+    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 1);
 
     bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
 
@@ -573,7 +572,7 @@ void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *c
 
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
-    BLE_MESH_ADV(buf)->busy = 1U;
+    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 1);
 
     msg.arg = (void *)net_buf_ref(buf);
     msg.src = src;
@@ -736,7 +735,7 @@ static void bt_mesh_ble_adv_send(struct net_buf *buf, const struct bt_mesh_send_
 
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
-    BLE_MESH_ADV(buf)->busy = 1U;
+    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 1);
 
     bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
 
@@ -755,7 +754,7 @@ static void ble_adv_tx_reset(struct ble_adv_tx *tx, bool unref)
     }
     bt_mesh_atomic_set(tx->flags, 0);
     memset(&tx->param, 0, sizeof(tx->param));
-    BLE_MESH_ADV(tx->buf)->busy = 0U;
+    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(tx->buf), 0);
     if (unref) {
         net_buf_unref(tx->buf);
     }
@@ -946,7 +945,8 @@ int bt_mesh_stop_ble_advertising(uint8_t index)
     /* busy 1, ref 1; busy 1, ref 2;
      * busy 0, ref 0; busy 0, ref 1;
      */
-    if (BLE_MESH_ADV(tx->buf)->busy == 1U &&
+
+    if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(tx->buf)) &&
         tx->buf->ref == 1U) {
         unref = false;
     }

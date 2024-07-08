@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #ifndef _ADV_H_
 #define _ADV_H_
 
+#include "mesh_atomic.h"
 #include "mesh_access.h"
 #include "mesh_bearer_adapt.h"
 
@@ -23,7 +24,8 @@ extern "C" {
 /* The user data is a pointer (4 bytes) to struct bt_mesh_adv */
 #define BLE_MESH_ADV_USER_DATA_SIZE 4
 
-#define BLE_MESH_ADV(buf) (*(struct bt_mesh_adv **)net_buf_user_data(buf))
+#define BLE_MESH_ADV(buf)               (*(struct bt_mesh_adv **)net_buf_user_data(buf))
+#define BLE_MESH_ADV_BUSY(buf)          (BLE_MESH_ADV(buf)->busy)
 
 typedef struct bt_mesh_msg {
     bool  relay;        /* Flag indicates if the packet is a relayed one */
@@ -45,8 +47,10 @@ struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
 
-    uint8_t type:3,
-            busy:1;
+    uint8_t type:3;
+
+    bt_mesh_atomic_t busy;
+
     uint8_t xmit;
 };
 
