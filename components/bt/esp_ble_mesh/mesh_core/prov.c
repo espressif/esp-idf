@@ -285,7 +285,7 @@ static void free_segments(void)
         link.tx.buf[i] = NULL;
         bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
         /* Mark as canceled */
-        BLE_MESH_ADV(buf)->busy = 0U;
+        bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(buf), 0);
         net_buf_unref(buf);
     }
 
@@ -1327,7 +1327,7 @@ static void prov_retransmit(struct k_work *work)
             break;
         }
 
-        if (BLE_MESH_ADV(buf)->busy) {
+        if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(buf))) {
             continue;
         }
 
