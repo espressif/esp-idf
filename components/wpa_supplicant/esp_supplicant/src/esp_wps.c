@@ -1919,7 +1919,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
             sm->ignore_sel_reg = true;
             sm->wps_pin_war = false;
         }
-        ets_timer_arm(&sm->wps_scan_timer, 100, 0);
+        ets_timer_arm(&sm->wps_scan_timer, 300, 0);
     } else {
         return;
     }
@@ -1929,13 +1929,34 @@ void
 wifi_wps_scan_internal(void)
 {
     struct wps_sm *sm = gWpsSm;
+    int ret;
+    wifi_country_t country;
+    u8 scan_channel = 0;
+
+    // check country channel
+    ret = esp_wifi_get_country(&country);
+    if (ESP_OK != ret) {
+        wpa_printf(MSG_ERROR, "wps check wifi country: failed to get wifi country ret=%d", ret);
+    }
+    else {
+        scan_channel = sm->scan_cnt % (country.schan + country.nchan - 1) + 1;
+        if (scan_channel < country.schan)
+        	scan_channel = country.schan;
+    }
 
     sm->scan_cnt++;
     wpa_printf(MSG_DEBUG, "wifi_wps_scan : %d", sm->scan_cnt);
 
     typedef void (* scan_done_cb_t)(void *arg, STATUS status);
     extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
-    esp_wifi_promiscuous_scan_start(NULL, wifi_wps_scan_done);
+    wifi_scan_config_t scan_config = {
+        .channel = scan_channel,
+        .scan_type = WIFI_SCAN_TYPE_ACTIVE,
+        .show_hidden = 1,
+        .scan_time.active.min = 10,
+        .scan_time.active.max = 100
+	};
+    esp_wifi_promiscuous_scan_start(&scan_config, wifi_wps_scan_done);
 }
 
 void wifi_wps_scan(void)
