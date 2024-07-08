@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -310,7 +310,15 @@ static void seg_tx_done(struct seg_tx *tx, uint8_t seg_idx)
 {
     bt_mesh_adv_buf_ref_debug(__func__, tx->seg[seg_idx], 3U, BLE_MESH_BUF_REF_SMALL);
 
-    BLE_MESH_ADV(tx->seg[seg_idx])->busy = 0U;
+    /**
+     * When cancelling a segment that is still in the adv sending queue, `tx->seg_pending`
+     * must else be decremented by one. More detailed information
+     * can be found in BLEMESH24-26.
+     */
+    if (bt_mesh_atomic_cas(&BLE_MESH_ADV_BUSY(tx->seg[seg_idx]), 1, 0)) {
+        tx->seg_pending--;
+    }
+
     net_buf_unref(tx->seg[seg_idx]);
     tx->seg[seg_idx] = NULL;
     tx->nack_count--;
@@ -443,7 +451,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
             continue;
         }
 
-        if (BLE_MESH_ADV(seg)->busy) {
+        if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(seg))) {
             BT_DBG("Skipping segment that's still advertising");
             continue;
         }
