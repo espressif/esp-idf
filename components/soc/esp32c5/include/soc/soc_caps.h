@@ -424,7 +424,6 @@
 // #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 // #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 
-// TODO: [ESP32C5] IDF-8649
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
