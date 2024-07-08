@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "esp_private/rtc_clk.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp32p4/rom/cache.h"
 #include "soc/chip_revision.h"
@@ -22,6 +23,7 @@
 #include "soc/pau_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/pmu_struct.h"
+#include "hal/clk_tree_hal.h"
 #include "hal/lp_aon_hal.h"
 #include "soc/lp_system_reg.h"
 #include "hal/pmu_hal.h"
@@ -290,6 +292,8 @@ FORCE_INLINE_ATTR void sleep_writeback_l1_dcache(void) {
     while (!REG_GET_BIT(CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE));
 }
 
+static TCM_DRAM_ATTR uint32_t s_mpll_freq_mhz_before_sleep = 0;
+
 TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     lp_aon_hal_inform_wakeup_type(dslp);
@@ -302,7 +306,14 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
 
+    // !!! Need to manually check that data in L2 memory will not be modified from now on. !!!
     sleep_writeback_l1_dcache();
+
+    // !!! Need to manually check that data in PSRAM will not be accessed from now on. !!!
+    s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
+    if (s_mpll_freq_mhz_before_sleep) {
+        rtc_clk_mpll_disable();
+    }
 
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);
@@ -335,6 +346,11 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 
     // Wait eFuse memory update done.
     while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
+
+    if (s_mpll_freq_mhz_before_sleep) {
+        rtc_clk_mpll_enable();
+        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep);
+    }
 
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {

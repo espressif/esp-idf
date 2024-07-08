@@ -990,13 +990,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 #endif
 
-#if SOC_CLK_MPLL_SUPPORTED
-            uint32_t mpll_freq_mhz = rtc_clk_mpll_get_freq();
-            if (mpll_freq_mhz) {
-                rtc_clk_mpll_disable();
-            }
-#endif
-
 #if SOC_DCDC_SUPPORTED
 #if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
             if (!deep_sleep) {
@@ -1029,13 +1022,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_EXIT_SLEEP, (void *)0);
 #else
             result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
-#endif
-
-#if SOC_CLK_MPLL_SUPPORTED
-            if (mpll_freq_mhz) {
-                rtc_clk_mpll_enable();
-                rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), mpll_freq_mhz);
-            }
 #endif
 
             /* Unhold the SPI CS pin */
