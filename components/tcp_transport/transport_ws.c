@@ -700,7 +700,7 @@ static int ws_get_socket(esp_transport_handle_t t)
 
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
-    if (parent_handle == NULL || parent_handle->foundation == NULL) {
+    if (parent_handle == NULL) {
       ESP_LOGE(TAG, "Invalid parent ptotocol");
       return NULL;
     }
