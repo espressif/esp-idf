@@ -57,7 +57,8 @@
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
-// #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
+#define SOC_APM_SUPPORTED               1
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1
 #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_TIMER_SUPPORTED          1
