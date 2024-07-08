@@ -316,6 +316,7 @@ extensions += ['sphinx_copybutton',
                'esp_docs.idf_extensions.kconfig_reference',
                'esp_docs.idf_extensions.gen_idf_tools_links',
                'esp_docs.esp_extensions.run_doxygen',
+               'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
                ]
 
 # Use wavedrompy as backend, instead of wavedrom-cli

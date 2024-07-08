@@ -566,6 +566,10 @@ esptool 中包含一个用于读取/写入 {IDF_TARGET_NAME} eFuse 位的有用�
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
+获取所有 eFuse 寄存器的转储数据。
+
+.. include:: inc/espefuse_summary_{IDF_TARGET_NAME}_dump.rst
+
 应用示例
 -----------------
 
