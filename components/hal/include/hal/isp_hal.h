@@ -67,6 +67,17 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
 void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_window_t *window);
 
 /*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+/**
+ * @brief Configure AE window
+ *
+ * @param[in] hal        Context of the HAL layer
+ * @param[in] window     Window info, see `isp_window_t`
+ */
+void isp_hal_ae_window_config(const isp_hal_context_t *hal, const isp_window_t *window);
+
+/*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
 /**

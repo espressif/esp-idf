@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -398,35 +398,35 @@ typedef union {
 typedef union {
     struct {
         /** gau_template21 : R/W; bitpos: [3:0]; default: 15;
-         *  this field configures index 21 of gausian template
+         *  this field configures index 21 of gaussian template
          */
         uint32_t gau_template21:4;
         /** gau_template20 : R/W; bitpos: [7:4]; default: 15;
-         *  this field configures index 20 of gausian template
+         *  this field configures index 20 of gaussian template
          */
         uint32_t gau_template20:4;
         /** gau_template12 : R/W; bitpos: [11:8]; default: 15;
-         *  this field configures index 12 of gausian template
+         *  this field configures index 12 of gaussian template
          */
         uint32_t gau_template12:4;
         /** gau_template11 : R/W; bitpos: [15:12]; default: 15;
-         *  this field configures index 11 of gausian template
+         *  this field configures index 11 of gaussian template
          */
         uint32_t gau_template11:4;
         /** gau_template10 : R/W; bitpos: [19:16]; default: 15;
-         *  this field configures index 10 of gausian template
+         *  this field configures index 10 of gaussian template
          */
         uint32_t gau_template10:4;
         /** gau_template02 : R/W; bitpos: [23:20]; default: 15;
-         *  this field configures index 02 of gausian template
+         *  this field configures index 02 of gaussian template
          */
         uint32_t gau_template02:4;
         /** gau_template01 : R/W; bitpos: [27:24]; default: 15;
-         *  this field configures index 01 of gausian template
+         *  this field configures index 01 of gaussian template
          */
         uint32_t gau_template01:4;
         /** gau_template00 : R/W; bitpos: [31:28]; default: 15;
-         *  this field configures index 00 of gausian template
+         *  this field configures index 00 of gaussian template
          */
         uint32_t gau_template00:4;
     };
@@ -439,7 +439,7 @@ typedef union {
 typedef union {
     struct {
         /** gau_template22 : R/W; bitpos: [3:0]; default: 15;
-         *  this field configures index 22 of gausian template
+         *  this field configures index 22 of gaussian template
          */
         uint32_t gau_template22:4;
         uint32_t reserved_4:28;
@@ -1321,7 +1321,7 @@ typedef union {
          */
         uint32_t ae_monitor_th:8;
         /** ae_monitor_period : R/W; bitpos: [21:16]; default: 0;
-         *  this field cnfigures ae monitor frame period
+         *  this field configures ae monitor frame period
          */
         uint32_t ae_monitor_period:6;
         uint32_t reserved_22:10;
@@ -1536,7 +1536,7 @@ typedef union {
 typedef union {
     struct {
         /** dma_en : WT; bitpos: [0]; default: 0;
-         *  write 1 to triger dma to get 1 frame
+         *  write 1 to trigger dma to get 1 frame
          */
         uint32_t dma_en:1;
         /** dma_update_reg : R/W; bitpos: [1]; default: 0;
@@ -1584,7 +1584,7 @@ typedef union {
 typedef union {
     struct {
         /** cam_en : R/W; bitpos: [0]; default: 0;
-         *  write 1 to start recive camera data, write 0 to disable
+         *  write 1 to start receive camera data, write 0 to disable
          */
         uint32_t cam_en:1;
         /** cam_update_reg : R/W; bitpos: [1]; default: 0;
@@ -1596,7 +1596,7 @@ typedef union {
          */
         uint32_t cam_reset:1;
         /** cam_clk_inv : R/W; bitpos: [3]; default: 0;
-         *  this bit configures the invertion of cam clk from pad. 0: not invert cam clk, 1:
+         *  this bit configures the inversion of cam clk from pad. 0: not invert cam clk, 1:
          *  invert cam clk
          */
         uint32_t cam_clk_inv:1;
@@ -1880,7 +1880,7 @@ typedef union {
 typedef union {
     struct {
         /** awb_mode : R/W; bitpos: [1:0]; default: 3;
-         *  this field configures awb algo sel. 00: none sellected. 01: sel algo0. 10: sel
+         *  this field configures awb algo sel. 00: none selected. 01: sel algo0. 10: sel
          *  algo1. 11: sel both algo0 and algo1
          */
         uint32_t awb_mode:2;
@@ -2627,6 +2627,19 @@ typedef union {
     uint32_t val;
 } isp_lut_rdata_reg_t;
 
+/** Type of ae_block_mean register
+ *  ae statistic result
+ */
+typedef union {
+    struct {
+        /** ae_lum : RO; bitpos: [31:0]; default: 0;
+         *  this field represents the result of AE block
+         */
+        uint8_t ae_b_mean[4];
+    };
+    uint32_t val;
+} isp_ae_block_mean_reg_t;
+
 /** Type of ae_block_mean_0 register
  *  ae statistic result register 0
  */
@@ -2790,7 +2803,6 @@ typedef union {
     };
     uint32_t val;
 } isp_ae_block_mean_6_reg_t;
-
 /** Type of af_sum_a register
  *  result of sum of af window a
  */
@@ -3764,13 +3776,7 @@ typedef struct {
     volatile isp_ae_by_reg_t ae_by;
     volatile isp_ae_winpixnum_reg_t ae_winpixnum;
     volatile isp_ae_win_reciprocal_reg_t ae_win_reciprocal;
-    volatile isp_ae_block_mean_0_reg_t ae_block_mean_0;
-    volatile isp_ae_block_mean_1_reg_t ae_block_mean_1;
-    volatile isp_ae_block_mean_2_reg_t ae_block_mean_2;
-    volatile isp_ae_block_mean_3_reg_t ae_block_mean_3;
-    volatile isp_ae_block_mean_4_reg_t ae_block_mean_4;
-    volatile isp_ae_block_mean_5_reg_t ae_block_mean_5;
-    volatile isp_ae_block_mean_6_reg_t ae_block_mean_6;
+    volatile isp_ae_block_mean_reg_t ae_block_mean[7];
     volatile isp_sharp_ctrl0_reg_t sharp_ctrl0;
     volatile isp_sharp_filter0_reg_t sharp_filter0;
     volatile isp_sharp_filter1_reg_t sharp_filter1;

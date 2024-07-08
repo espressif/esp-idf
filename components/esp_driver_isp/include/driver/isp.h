@@ -16,3 +16,4 @@
 #include "driver/isp_awb.h"
 #include "driver/isp_bf.h"
 #include "driver/isp_ccm.h"
+#include "driver/isp_ae.h"

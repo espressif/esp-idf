@@ -126,7 +126,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
         isp_hal_af_window_config(&isp_proc->hal, i, &af_config->window[i]);
     }
 
-    isp_ll_af_set_edge_thresh_mode(isp_proc->hal.hw, ISP_LL_AF_EDGE_MONITOR_MODE_MANUAL);
+    isp_ll_af_set_edge_thresh_mode(isp_proc->hal.hw, ISP_LL_AF_EDGE_DETECTOR_MODE_MANUAL);
     isp_ll_af_set_edge_thresh(isp_proc->hal.hw, af_config->edge_thresh);
     isp_ll_clear_intr(isp_proc->hal.hw, ISP_LL_EVENT_AF_MASK);
 
@@ -229,7 +229,7 @@ esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctlr_t af_ctrl
 }
 
 /*---------------------------------------------
-                AF Env Monitor
+                AF Env Detector
 ----------------------------------------------*/
 esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config)
 {
@@ -238,11 +238,11 @@ esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const e
 
     af_ctrlr->config.interval = env_config->interval;
 
-    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, 0);
+    isp_ll_af_env_detector_set_period(af_ctrlr->isp_proc->hal.hw, 0);
     isp_ll_clear_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV);
 
-    isp_ll_af_env_monitor_set_mode(af_ctrlr->isp_proc->hal.hw, ISP_LL_AF_ENV_MONITOR_MODE_ABS);
-    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, af_ctrlr->config.interval);
+    isp_ll_af_env_detector_set_mode(af_ctrlr->isp_proc->hal.hw, ISP_LL_AF_ENV_DETECTOR_MODE_ABS);
+    isp_ll_af_env_detector_set_period(af_ctrlr->isp_proc->hal.hw, af_ctrlr->config.interval);
     isp_ll_enable_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV, true);
 
     return ESP_OK;
@@ -276,7 +276,7 @@ esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctlr_t af_ctrl
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
 
-    isp_ll_af_env_monitor_set_thresh(af_ctrlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
+    isp_ll_af_env_detector_set_thresh(af_ctrlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
 
     return ESP_OK;
 }

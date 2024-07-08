@@ -57,6 +57,24 @@ void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config)
         isp_ll_bf_set_template(hal->hw, default_template);
     }
 }
+
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+void isp_hal_ae_window_config(const isp_hal_context_t *hal, const isp_window_t *window)
+{
+    uint32_t ae_x_start = window->top_left.x;
+    uint32_t ae_x_bsize = (window->btm_right.x - window-> top_left.x) / SOC_ISP_AE_BLOCK_X_NUMS;
+
+    uint32_t ae_y_start = window->top_left.y;
+    uint32_t ae_y_bsize = (window->btm_right.y - window->top_left.y) / SOC_ISP_AE_BLOCK_Y_NUMS;
+
+    isp_ll_ae_set_window_range(hal->hw, ae_x_start, ae_x_bsize, ae_y_start, ae_y_bsize);
+
+    int ae_subwin_pixnum = ae_x_bsize * ae_y_bsize;
+    isp_ll_ae_set_subwin_pixnum_recip(hal->hw, ae_subwin_pixnum);
+}
+
 /*---------------------------------------------------------------
                       INTR, put in iram
 ---------------------------------------------------------------*/
