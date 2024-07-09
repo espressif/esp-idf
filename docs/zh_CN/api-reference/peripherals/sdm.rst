@@ -145,8 +145,8 @@ Kconfig 选项
 应用示例
 --------
 
-* 使用 Sigma-Delta 调制的 100 Hz 正弦波：:example:`peripherals/sigma_delta/sdm_dac`。
-* 使用 Sigma-Delta 调制、并由 GPIO 驱动的 LED：:example:`peripherals/sigma_delta/sdm_led`。
+* :example:`peripherals/sigma_delta/sdm_dac` 演示了如何使用 sigma-delta 驱动器作为 8 位 DAC（数字模拟转换器），并输出 100 Hz 的正弦波。
+* :example:`peripherals/sigma_delta/sdm_led` 演示了如何使用 sigma-delta 驱动器来控制 LED 或 LCD 背光的亮度。
 
 API 参考
 --------
