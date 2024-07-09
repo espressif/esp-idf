@@ -12,7 +12,7 @@ This section contains reference of the high-level storage APIs. They are based o
 - :doc:`FAT <fatfs>` is a standard file system which can be used in SPI flash or on SD/MMC cards
 - :doc:`Wear Levelling <wear-levelling>` library implements a flash translation layer (FTL) suitable for SPI NOR flash. It is used as a container for FAT partitions in flash.
 
-Topics related to :doc:`Storage Security <storage-security>` are described in separate section.
+For information about storage security, please refer to :doc:`Storage Security <storage-security>`.
 
 .. note::
 
@@ -37,21 +37,21 @@ Topics related to :doc:`Storage Security <storage-security>` are described in se
     wear-levelling
     storage-security.rst
 
-.. list-table:: Code examples for this API section
+.. list-table:: Code Examples for Storage API
     :widths: 25 75
     :header-rows: 0
 
-    * - **Link**
+    * - **Code Example**
       - **Description**
-    * - :doc:`FAT <fatfs>`
+    * - :doc:`fatfs`
       -
-    * - :example:`<wear_levelling <storage/wear_levelling>`
+    * - :example:`wear_leveling <storage/wear_levelling>`
       - Demonstrates using FATFS over wear leveling on internal flash.
     * - :example:`ext_flash_fatfs <storage/ext_flash_fatfs>`
       - Demonstrates using FATFS over wear leveling on external flash.
     * - :example:`fatfsgen <storage/fatfsgen>`
       - Demonstrates the capabilities of Python-based tooling for FATFS images available on host computers.
-    * - :doc:`Non-Volatile Storage library (NVS) <nvs_flash>`
+    * - :doc:`nvs_flash`
       -
     * - :example:`nvs_rw_blob <storage/nvs_rw_blob>`
       - Shows the use of the C-style API to read and write blob data types in NVS flash.
@@ -61,19 +61,19 @@ Topics related to :doc:`Storage Security <storage-security>` are described in se
       - Shows the use of the C++-style API to read and write integer data types in NVS flash.
     * - :example:`nvsgen <storage/nvsgen>`
       - Demonstrates how to use the Python-based NVS image generation tool to create an NVS partition image from the contents of a CSV file.
-    * - :doc:`SPIFFS <spiffs>`
+    * - :doc:`spiffs`
       -
     * - :example:`spiffs <storage/spiffs>`
       - Shows the use of the SPIFFS API to initialize the filesystem and work with files using POSIX functions.
     * - :example:`spiffsgen <storage/spiffsgen>`
       - Demonstrates the capabilities of Python-based tooling for SPIFFS images available on host computers.
-    * - :doc:`Partitions API <partition>`
+    * - :doc:`partition`
       -
     * - :example:`partition_api <storage/partition_api>`
       - Provides an overview of API functions to look up particular partitions, perform basic I/O operations, and use partitions via CPU memory mapping.
     * - :example:`parttool <storage/parttool>`
       - Demonstrates the capabilities of Python-based tooling for partition images available on host computers.
-    * - :doc:`Virtual File System (VFS) <vfs>`
+    * - :doc:`vfs`
       -
     * - :example:`littlefs <storage/littlefs>`
       - Shows the use of the LittleFS component to initialize the filesystem and work with a file using POSIX functions.
