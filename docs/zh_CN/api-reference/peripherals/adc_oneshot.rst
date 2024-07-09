@@ -229,7 +229,7 @@ Kconfig 选项
 应用示例
 --------------------
 
-* ADC 单次转换模式示例：:example:`peripherals/adc/oneshot_read`。
+* :example:`peripherals/adc/oneshot_read` 演示了如何使用 ADC 单次模式驱动程序从 GPIO 管脚获取单次 ADC 数值，并展示了如何使用 ADC 校准功能在 {IDF_TARGET_NAME} 上获得校准后的结果，单位为毫伏。
 
 
 API 参考

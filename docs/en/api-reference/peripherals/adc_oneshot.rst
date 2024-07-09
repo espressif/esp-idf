@@ -229,7 +229,7 @@ Kconfig Options
 Application Examples
 --------------------
 
-* ADC oneshot mode example: :example:`peripherals/adc/oneshot_read`.
+* :example:`peripherals/adc/oneshot_read` demonstrates how to obtain a one-shot ADC reading from a GPIO pin using the ADC one-shot mode driver and how to use the ADC Calibration functions to obtain a calibrated result in mV on {IDF_TARGET_NAME}.
 
 
 API Reference
