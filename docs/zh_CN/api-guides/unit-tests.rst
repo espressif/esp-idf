@@ -368,3 +368,8 @@ Mocks
 这两种方法都会让组件模拟覆盖 ESP-IDF 中的现有组件。如果你使用的是 ESP-IDF 提供的组件模拟，则第二个方法更加方便。
 
 可参考 ``esp_event`` 基于主机的单元测试及其 :component_file:`esp_event/host_test/esp_event_unit_test/CMakeLists.txt` 作为组件模拟的示例。
+
+应用示例
+--------------------
+
+:example:`system/unit_test` 演示了如何在 {IDF_TARGET_NAME} 开发环境中使用 Unity 库为自定义组件添加单元测试，展示了如断言、测试注册等功能，以及如何使用 UNITY_BEGIN() 和 UNITY_END() 宏。

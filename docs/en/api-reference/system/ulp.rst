@@ -19,7 +19,7 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 Programming ULP FSM
 -------------------
 
-The ULP FSM can be programmed using the supported instruction set. Alternatively, the ULP FSM coprocessor can also be programmed using C Macros on the main CPU. Theses two methods are described in the following section:
+The ULP FSM can be programmed using the supported instruction set. Alternatively, the ULP FSM coprocessor can also be programmed using C Macros on the main CPU. These two methods are described in the following section:
 
 .. toctree::
    :maxdepth: 1
@@ -176,8 +176,11 @@ Declaration of the entry point symbol comes from the generated header file menti
 Application Examples
 --------------------
 
-* ULP FSM Coprocessor counts pulses on an IO while main CPU is in Deep-sleep: :example:`system/ulp/ulp_fsm/ulp`.
-* ULP FSM Coprocessor polls ADC in while main CPU is in Deep-sleep: :example:`system/ulp/ulp_fsm/ulp_adc`.
+* :example:`system/ulp/ulp_fsm/ulp` demonstrates how to program the ULP FSM coprocessor to count pulses on an IO while the main CPUs are running other code or are in deep sleep, with the pulse count saved into NVS upon wakeup.
+
+.. only:: esp32 or esp32s3
+
+    * :example:`system/ulp/ulp_fsm/ulp_adc` demonstrates how to use the ULP FSM coprocessor to periodically measure input voltage on a specific ADC channel during deep sleep, compare it to the set threshold, and wake up the system if the voltage is outside the threshold.
 
 API Reference
 -------------

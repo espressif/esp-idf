@@ -186,13 +186,16 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
     同样，如果 REPL 环境是构建在 USB_SERIAL_JTAG 设备基础上，你只需要先调用 :cpp:func:`esp_console_new_repl_usb_serial_jtag` 函数进行初始化，然后再照常调用其它函数。
 
-应用程序示例
+应用示例
 ------------
 
-:example:`system/console` 目录下提供了 ``console`` 组件的示例应用程序，展示了具体的使用方法。该示例介绍了如何初始化 UART 和 VFS 的功能，设置 linenoise 库，从 UART 中读取命令并加以处理，然后将历史命令存储到 flash 中。更多信息，请参阅示例代码目录中的 README.md 文件。
+- :example:`system/console/basic` 演示了如何使用控制台组件的 REPL（读-评估-打印循环）API 在 {IDF_TARGET_NAME} 上创建一个交互式 Shell，该 Shell 可以通过串行接口控制，支持 UART 和 USB 接口，并可以作为需要命令行接口的应用程序的基础。
 
-此外，ESP-IDF 还提供了众多基于 ``console`` 组件的示例程序，它们可以辅助应用程序的开发。例如，:example:`peripherals/i2c/i2c_tools`，:example:`wifi/iperf` 等等。
+- :example:`system/console/advanced` 演示了如何使用控制台组件在 {IDF_TARGET_NAME} 上创建一个交互式 Shell，该 Shell 可以通过串行端口控制，为需要命令行接口的应用程序提供基础。
 
+.. only:: esp32s3
+
+    - :example:`system/console/advanced_usb_cdc` 演示了如何通过 {IDF_TARGET_NAME} 的 USB_OTG 外设创建并与具有命令行接口的交互式 Shell 进行交互。
 
 API 参考
 --------

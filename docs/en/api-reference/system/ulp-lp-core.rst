@@ -225,10 +225,17 @@ Application Examples
 --------------------
 
 * :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in Deep-sleep.
-* :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+
+.. only:: esp32c6
+
+    * :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
+
 * :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
+
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
 
 API Reference

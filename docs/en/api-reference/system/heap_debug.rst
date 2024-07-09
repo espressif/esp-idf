@@ -510,6 +510,11 @@ Not everything printed by :cpp:func:`heap_trace_dump` is necessarily a memory le
 
 One way to differentiate between "real" and "false positive" memory leaks is to call the suspect code multiple times while tracing is running, and look for patterns (multiple matching allocations) in the heap trace output.
 
+Application Examples
+--------------------
+
+- :example:`system/heap_task_tracking` demonstrates the use of the heap task tracking feature to track heap memory allocated on a per-task basis.
+
 API Reference - Heap Tracing
 ----------------------------
 

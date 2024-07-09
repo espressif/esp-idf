@@ -314,7 +314,7 @@ If you see a stack overflow error when executing a callback function, consider r
 Application Examples
 --------------------
 
-* :example:`system/esp_timer` creates and starts one-shot and periodic software timers, shows how they work with Light-sleep mode, and then stops and deletes the timers
+- :example:`system/esp_timer` creates and starts one-shot and periodic software timers, shows how they work with Light-sleep mode, and then stops and deletes the timers.
 
 
 API Reference
