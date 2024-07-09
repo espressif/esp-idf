@@ -280,7 +280,7 @@ There are several ways to use the ``arg`` in the queue parameter:
 Application Example
 -------------------
 
-Slave/master communication: :example:`peripherals/sdio`.
+- :example:`peripherals/sdio/host` and :example:`peripherals/sdio/slave` demonstrate how to use a host to communicate with an ESP SDIO slave device.
 
 API Reference
 -------------
