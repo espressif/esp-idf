@@ -350,7 +350,7 @@ ADC continuous mode driver APIs are not guaranteed to be thread-safe. However, t
 Application Examples
 --------------------
 
-* ADC continuous mode example: :example:`peripherals/adc/continuous_read`.
+* :example:`peripherals/adc/continuous_read` demonstrates how to use the ADC Continuous Read Mode (DMA Mode) on {IDF_TARGET_NAME} development boards to read from GPIO pins via on-chip ADC modules.
 
 
 API Reference
