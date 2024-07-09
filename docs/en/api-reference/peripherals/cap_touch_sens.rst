@@ -447,12 +447,10 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
 Application Examples
 ------------------------
 
-.. only:: esp32p4
-
-    - Touch sensor basic example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}`.
+    - :example:`peripherals/touch_sensor/touch_sensor_v3` demonstrates how to register touch channels and read the data, including hardware requirements and project configuration instructions.
 
 API Reference
----------------
+-------------
 
 .. only:: esp32p4
 
