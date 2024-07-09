@@ -16,6 +16,15 @@
 extern "C" {
 #endif
 
+typedef enum {
+    EFUSE_CONTROLLER_STATE_RESET            = 0,    ///< efuse_controllerid is on reset state.
+    EFUSE_CONTROLLER_STATE_IDLE             = 1,    ///< efuse_controllerid is on idle state.
+    EFUSE_CONTROLLER_STATE_READ_INIT        = 2,    ///< efuse_controllerid is on read init state.
+    EFUSE_CONTROLLER_STATE_READ_BLK0        = 3,    ///< efuse_controllerid is on reading block0 state.
+    EFUSE_CONTROLLER_STATE_BLK0_CRC_CHECK   = 4,    ///< efuse_controllerid is on checking block0 crc state.
+    EFUSE_CONTROLLER_STATE_READ_RS_BLK      = 5,    ///< efuse_controllerid is on reading RS block state.
+} efuse_controller_state_t;
+
 // Always inline these functions even no gcc optimization is applied.
 
 /******************* eFuse fields *************************/
@@ -173,6 +182,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
     EFUSE.wr_tim_conf2.pwr_off_num = value;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
+{
+    return EFUSE.status.state;
 }
 
 /******************* eFuse control functions *************************/
