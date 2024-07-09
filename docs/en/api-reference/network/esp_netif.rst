@@ -10,11 +10,7 @@ The purpose of the ESP-NETIF library is twofold:
 
 ESP-IDF currently implements ESP-NETIF for the lwIP TCP/IP stack only. However, the adapter itself is TCP/IP implementation-agnostic and allows different implementations.
 
-It is also possible to use a custom TCP/IP stack with ESP-IDF, provided it implements BSD API. For more information on building ESP-IDF without lwIP, please refer to :idf_file:`components/esp_netif_stack/README.md`.
-
-Some ESP-NETIF API functions are intended to be called by application code, for example, to get or set interface IP addresses, and configure DHCP. Other functions are intended for internal ESP-IDF use by the network driver layer.
-
-In many cases, applications do not need to call ESP-NETIF APIs directly as they are called by the default network event handlers.
+Some ESP-NETIF API functions are intended to be called by application code, for example, to get or set interface IP addresses, and configure DHCP. Other functions are intended for internal ESP-IDF use by the network driver layer. In many cases, applications do not need to call ESP-NETIF APIs directly as they are called by the default network event handlers.
 
 If you are only interested in using the most common network interfaces with default setting, please read :ref:`esp_netif_user` to see how you can initialize default interfaces and register event handlers.
 
@@ -29,7 +25,7 @@ If you would like to develop your own network driver, implement support for a ne
 ESP-NETIF User's Manual
 =======================
 
-It is usually just enough to create a default network interface after startup and destroy it upon closing (see :ref:`esp_netif_init`). It is also necessary to receive a notification upon assigning a new IP address or losing it (see :ref:`esp-netif-ip-events`).
+It is usually just enough to create a default network interface after startup and destroy it upon closing (see :ref:`esp_netif_init`). It is also useful to receive a notification upon assigning a new IP address or losing it (see :ref:`esp-netif-ip-events`).
 
 
 .. _esp_netif_init:
@@ -37,7 +33,7 @@ It is usually just enough to create a default network interface after startup an
 Initialization
 --------------
 
-Since the ESP-NETIF component uses system events, the typical network startup code looks like this (note, that error handling is omitted for clarity):
+Since the ESP-NETIF component uses system events, the typical network startup code looks like this (note, that error handling is omitted for clarity, see :example_file:`ethernet/basic/main/ethernet_example_main.c` for complete startup code):
 
 .. code-block:: c
 
@@ -48,7 +44,7 @@ Since the ESP-NETIF component uses system events, the typical network startup co
       // 2) Create the network interface handle
       esp_netif = esp_netif_new(&config);
 
-      // 3) Create the communication driver (e.g. Ethernet) and it's network layer glue
+      // 3) Create the network interface driver (e.g. Ethernet) and it's network layer glue
       // and register the ESP-NETIF event (e.g. to bring the interface up upon link-up event)
       esp_netif_glue_t glue = driver_glue(driver);
 
@@ -57,15 +53,15 @@ Since the ESP-NETIF component uses system events, the typical network startup co
 
       // 5) Register user-side event handlers
       esp_event_handler_register(DRIVER_EVENT, ...);  // to observe driver states, e.g. link-up
-      esp_event_handler_register(IP_EVENT, ...);      // to observer ESP-NETIF states, e.g. get an IP
+      esp_event_handler_register(IP_EVENT, ...);      // to observe ESP-NETIF states, e.g. get an IP
 
 
 .. note::
 
-    These 5 steps need to be performed in the exact order as shown above, mainly due to the default event loop, which is used by network interface drivers to register system events.
+    These steps must be performed in the exact order shown above, primarily due to the default event loop used by network interface drivers to register system events.
 
-      - Default event loop needs to be created **before** initializing an interface driver (as it typically needs register system even handlers)
-      - Registering application event handlers need to happen **after** calling :cpp:func:`esp_netif_attach`, because the event handlers are called in the order they were registered and we need to have the system handlers called first.
+      - The default event loop needs to be created **before** initializing an interface driver, as the driver typically needs to register system event handlers.
+      - Registering application event handlers must occur **after** calling :cpp:func:`esp_netif_attach`, because event handlers are called in the order they were registered. To ensure that system handlers are called first, you should register application handlers afterward.
 
     Steps ``2)``, ``3)`` and ``4)`` are quite complex for most common use-cases, so  ESP-NETIF provides some pre-configured interfaces and convenience functions that create the most common network interfaces in their most common configurations.
 
@@ -74,16 +70,16 @@ Since the ESP-NETIF component uses system events, the typical network startup co
     Each network interface needs to be initialized separately, so if you would like to use multiple interfaces, you would have to run steps ``2)`` to ``5)`` for every interface. Set ``1)`` should be performed only once.
 
 
-Creating and configuring the interface and attaching the communication driver to it (steps ``2)``, ``3)`` and ``4)``) is described in :ref:`create_esp_netif`.
+Creating and configuring the interface and attaching the network interface driver to it (steps ``2)``, ``3)`` and ``4)``) is described in :ref:`create_esp_netif`.
 Using the ESP-NETIF event handlers (step ``5)``) is described in :ref:`esp-netif-ip-events`.
 
 
 .. _create_esp_netif:
 
-Common network interfaces
+Common Network Interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As the initialization of network interfaces could be quite complex, ESP-NETIF provides some convenient methods of creating the most common onc, such as Wi-Fi and Ethernet.
+As the initialization of network interfaces could be quite complex, ESP-NETIF provides some convenient methods of creating the most common ones, such as Wi-Fi and Ethernet.
 
 Please refer to the following example to understand the initialization process of the default interface:
 
@@ -115,33 +111,33 @@ The initialization code as well as registering event handlers for default interf
 
 .. only:: SOC_WIFI_SUPPORTED
 
-    Please note that these functions return the ``esp_netif`` handle, i.e., a pointer to a network interface object allocated and configured with default settings, as a consequence, which means that:
+    Please note that these functions return the ``esp_netif`` handle, i.e., a pointer to a network interface object allocated and configured with default settings, which means that:
 
     * The created object has to be destroyed if a network de-initialization is provided by an application using :cpp:func:`esp_netif_destroy_default_wifi()`.
 
-    * These *default* interfaces must not be created multiple times unless the created handle is deleted using :cpp:func:`esp_netif_destroy()`.
+    * These *default* interfaces must not be created multiple times unless the created handle is deleted using :cpp:func:`esp_netif_destroy_default_wifi()`.
 
 
 .. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
-    * When using Wi-Fi in ``AP+STA`` mode, both these interfaces have to be created.
+    * When using Wi-Fi in ``AP+STA`` mode, both these interfaces have to be created. Please refer to the example :example_file:`wifi/softap_sta/main/softap_sta.c`
 
 .. _esp-netif-ip-events:
 
 IP Events
 ---------
 
-In the last section of :ref:`esp_netif_init` code (step ``5)``), we register two sets of event handlers:
+In the final section of :ref:`esp_netif_init` code (step ``5)``), you register two sets of event handlers:
 
-* Communication driver events: To be notified about driver's lifecycle states, for example when Wi-Fi station joined an AP, or when it gets disconnected. Handling these events is out of the scope of ESP-NETIF component, it is only worth mentioning that the same events are also used by ESP-NETIF to set the network interface to a desired state of, so if an application uses the driver's events to assume specific states of the network interface, it need to register their handlers **after** registering system handlers (which typically happen when attaching the driver to the interface). That is why the handler registration is performed in the last step of the :ref:`esp_netif_init` code.
+* **Network Interface Driver Events**: These events notify you about the driver's lifecycle states, such as when a Wi-Fi station joins an AP or gets disconnected. Handling these events is outside the scope of the ESP-NETIF component. It is worth noting that the same events are also used by ESP-NETIF to set the network interface to a desired state. Therefore, if your application uses the driver's events to determine specific states of the network interface, you should register these handlers **after** registering the system handlers (which typically happens when attaching the driver to the interface). This is why handler registration occurs in the final step of the :ref:`esp_netif_init` code.
 
-* IP events: To be notified about IP address changes, that is when we get assigned a new address or when the valid address is lost. Specific types of these events are listed in :cpp:type:`ip_event_t`, each common interface has the related pair of ``GOT_IP`` and ``LOST_IP`` events.
+* **IP Events**: These events notify you about IP address changes, such as when a new address is assigned or when a valid address is lost. Specific types of these events are listed in :cpp:type:`ip_event_t`. Each common interface has a related pair of ``GOT_IP`` and ``LOST_IP`` events.
+
+Registering event handlers is crucial due to the asynchronous nature of networking, where changes in network state can occur unpredictably. By registering event handlers, applications can respond to these changes promptly, ensuring appropriate actions are taken in response to network events.
 
 .. note::
 
     Lost IP events are triggered by a timer configurable by :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`. The timer is started upon losing the IP address and the event will be raised after the configured interval, which is 120s by default. The event could be disabled when setting the interval to 0.
-
-
 
 .. _esp-netif structure:
 
@@ -175,26 +171,25 @@ ESP-NETIF Architecture
       +-----|     |  |   |                           |         |                       |
             |     |  |   |                           |         |         (D)           |
       (B)   |     |  |   |          (C)              |         +-----------------------+
-    --------+     |  |   +===========================+
-  COMMUNICATION   |  |                                               NETWORK STACK
-  DRIVER          |  |           ESP-NETIF
-                  |  |                                         +------------------+
-                  |  |   +---------------------------+.........| open/close       |
+    --------+     |  |   +===========================+               NETWORK STACK
+  NETWORK         |  |           ESP-NETIF
+  INTERFACE       |  |
+  DRIVER          |  |   +---------------------------+         +------------------+
+                  |  |   |                           |.........| open/close       |
                   |  |   |                           |         |                  |
                   |  -<--|  l2tap_write              |-----<---|  write           |
                   |      |                           |         |                  |
                   ---->--|  esp_vfs_l2tap_eth_filter |----->---|  read            |
-                         |                           |         |                  |
+                         |                           |         |        (A)       |
                          |            (E)            |         +------------------+
-                         +---------------------------+
-                                                                     USER CODE
+                         +---------------------------+              USER CODE
                                ESP-NETIF L2 TAP
 
 
 Data and Event Flow in the Diagram
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* ``........``     Initialization line from user code to ESP-NETIF and communication driver
+* ``........``     Initialization line from user code to ESP-NETIF and network interface driver
 
 * ``--<--->--``    Data packets going from communication media to TCP/IP stack and back
 
@@ -208,7 +203,7 @@ ESP-NETIF Interaction
 A) User Code, Boilerplate
 '''''''''''''''''''''''''
 
-Overall application interaction with a specific IO driver for communication media and configured TCP/IP network stack is abstracted using ESP-NETIF APIs and is outlined as below:
+Overall application interaction with a specific IO driver for the communication media (network interface driver) and configured TCP/IP network stack is abstracted using ESP-NETIF APIs and is outlined as below:
 
 A) Initialization code
 
@@ -232,10 +227,10 @@ B) Interaction with network interfaces using ESP-NETIF API
   3) Controls application lifecycle (set interface up or down)
 
 
-B) Communication Driver, IO Driver, and Media Driver
-''''''''''''''''''''''''''''''''''''''''''''''''''''
+B) Network Interface Driver
+'''''''''''''''''''''''''''
 
-Communication driver plays these two important roles in relation to ESP-NETIF:
+Network interface driver (also called I/O Driver, or Media Driver) plays these two important roles in relation to ESP-NETIF:
 
 1) Event handlers: Defines behavior patterns of interaction with ESP-NETIF (e.g., ethernet link-up -> turn netif on)
 
@@ -276,18 +271,14 @@ The network stack has no public interaction with application code with regard to
 
 E) ESP-NETIF L2 TAP Interface
 '''''''''''''''''''''''''''''
-The ESP-NETIF L2 TAP interface is a mechanism in ESP-IDF used to access Data Link Layer (L2 per OSI/ISO) for frame reception and transmission from the user application. Its typical usage in the embedded world might be the implementation of non-IP-related protocols, e.g., PTP, Wake on LAN. Note that only Ethernet (IEEE 802.3) is currently supported.
-
-From a user perspective, the ESP-NETIF L2 TAP interface is accessed using file descriptors of VFS, which provides file-like interfacing (using functions like ``open()``, ``read()``, ``write()``, etc). To learn more, refer to :doc:`/api-reference/storage/vfs`.
-
-There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configurations can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as a generic entry point to the Layer 2 infrastructure. What is important is then the specific configuration of the particular file descriptor. It can be configured to give access to a specific Network Interface identified by ``if_key`` (e.g., `ETH_DEF`) and to filter only specific frames based on their type (e.g., Ethernet type in the case of IEEE 802.3). Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to exist along with the IP stack and so the IP-related traffic (IP, ARP, etc.) should not be passed directly to the user application. Even though this option is still configurable, it is not recommended in standard use cases. Filtering is also advantageous from the perspective of the user's application, as it only gets access to the frame types it is interested in, and the remaining traffic is either passed to other L2 TAP file descriptors or to the IP stack.
+The ESP-NETIF L2 TAP interface is a mechanism in ESP-IDF used to access Data Link Layer (L2 per OSI/ISO) for frame reception and transmission from the user application. Its typical usage in the embedded world might be the implementation of non-IP-related protocols, e.g., PTP, Wake on LAN. Note that only Ethernet (IEEE 802.3) is currently supported. Please read more about L2 TAP in :ref:`esp_netif_l2tap`.
 
 .. _esp_netif_programmer:
 
 ESP-NETIF Programmer's Manual
 =============================
 
-In same cases, it is not enough to simply initialize a network interface by default, start using it and connect to the local network. If so, please consult the programming guide: :doc:`/api-reference/network/esp_netif_programming`.
+In some cases, it is not enough to simply initialize a network interface by default, start using it and connect to the local network. If so, please consult the programming guide: :doc:`/api-reference/network/esp_netif_programming`.
 
 You would typically need to use specific sets of ESP-NETIF APIs in the following use-cases:
 
@@ -303,4 +294,4 @@ You would typically need to use specific sets of ESP-NETIF APIs in the following
 ESP-NETIF Developer's Manual
 ============================
 
-In some cases, user applications might need to customize ESP-NETIF, register custom drivers or even custom TCP/IP stacks. If so, please consult the programming guide: :doc:`/api-reference/network/esp_netif_driver`.
+In some cases, user applications might need to customize ESP-NETIF, register custom drivers or even use a custom TCP/IP stack. If so, please consult the :doc:`/api-reference/network/esp_netif_driver`.

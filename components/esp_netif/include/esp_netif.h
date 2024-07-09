@@ -595,12 +595,16 @@ esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif);
  * @brief  Set or Get DHCP server option
  *
  * @note Please note that not all combinations of identifiers and options are supported.
+ *
  * Get operations:
+ *
  *  * IP_ADDRESS_LEASE_TIME
  *  * ESP_NETIF_SUBNET_MASK/REQUESTED_IP_ADDRESS (both options do the same, they reflect dhcps_lease_t)
  *  * ROUTER_SOLICITATION_ADDRESS
  *  * DOMAIN_NAME_SERVER
+ *
  * Set operations:
+ *
  *  * IP_ADDRESS_LEASE_TIME
  *  * ESP_NETIF_SUBNET_MASK -- set operation is allowed only if the configured mask corresponds to the settings,
  *                             if not, please use esp_netif_set_ip_info() to prevent misconfiguration of DHCPS.
@@ -631,10 +635,14 @@ esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_
  * @brief  Set or Get DHCP client option
  *
  * @note Please note that not all combinations of identifiers and options are supported.
+ *
  * Get operations:
+ *
  *  * ESP_NETIF_IP_REQUEST_RETRY_TIME
  *  * ESP_NETIF_VENDOR_SPECIFIC_INFO -- only available if ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER=n
+ *
  * Set operations:
+ *
  *  * ESP_NETIF_IP_REQUEST_RETRY_TIME
  *  * ESP_NETIF_VENDOR_SPECIFIC_INFO -- only available if ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER=n
  *                                      lwip layer creates its own copy of the supplied identifier.

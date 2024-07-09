@@ -59,8 +59,8 @@ ESP-NETIF
 .. toctree::
     :hidden:
 
-    esp_netif_driver
     esp_netif_programming
+    esp_netif_driver
 
 IP Network Layer
 ================

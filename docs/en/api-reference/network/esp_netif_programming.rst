@@ -5,10 +5,10 @@ ESP-NETIF Programmers Manual
 
 .. _esp_netif_set_ip:
 
-Configure IP, GW and DNS
-------------------------
+Configure IP, Gateway, and DNS
+------------------------------
 
-We typically obtain IP addresses (including gateway, network mask, and DNS servers) automatically from DHCP or Router Advertisement services and receive notifications by means of ``IP_EVENT`` with IP address information. It is also possible to read the current address information using :cpp:func:`esp_netif_get_ip_info()`, which returns this address structure :cpp:type:`esp_netif_ip_info_t` containing IPv4 address of the network interface with the network mask and gateway address. Similarly, you can use :cpp:func:`esp_netif_get_all_ip6()` to obtain all IPv6 addresses of the interface.
+Typically, IP addresses -- including the gateway, network mask, and DNS servers -- are automatically obtained through a DHCP server or Router Advertisement services. Notifications regarding IP address assignments are received via the ``IP_EVENT``, which provides the relevant IP address information. You can also retrieve the current address details using the function :cpp:func:`esp_netif_get_ip_info()`. This function returns a structure, :cpp:type:`esp_netif_ip_info_t`, that contains the IPv4 address of the network interface, along with its network mask and gateway address. Similarly, the function :cpp:func:`esp_netif_get_all_ip6()` can be used to obtain all IPv6 addresses associated with the interface.
 
 In order to configure static IP addresses and DNS servers, it's necessary to disable or stop DHCP client (which is enabled by default on some network interfaces, such as the default Ethernet, or the default WiFi station). Please refer to the example :example:`/protocols/static_ip` for more details.
 
@@ -20,23 +20,25 @@ To configure DNS servers, please use :cpp:func:`esp_netif_set_dns_info()` API.
 Configure DHCP options
 ----------------------
 
-Some network interfaces are pre-configured to use either a DHCP client (typically the Ethernet interface) or a DHCP server (typically a WiFi software access point). When creating a custom network interface manually, these configuration flags :cpp:type:`esp_netif_flags_t` are used to specify the behavioral options of this interface, so adding :cpp:enumerator:`ESP_NETIF_DHCP_CLIENT` or :cpp:enumerator:`ESP_NETIF_DHCP_SERVER` will enable DHCP client or server respectively. Note that these two options are mutually exclusive and cannot be altered runtime, so an interface configured with the DHCP server on creating cannot be used to start a DHCP server.
+Some network interfaces are pre-configured to use either a DHCP client (commonly for Ethernet interfaces) or a DHCP server (typically for Wi-Fi software access points). When manually creating a custom network interface, the configuration flags :cpp:type:`esp_netif_flags_t` are used to specify the behavior of the interface. Adding :cpp:enumerator:`ESP_NETIF_DHCP_CLIENT` or :cpp:enumerator:`ESP_NETIF_DHCP_SERVER` will enable the DHCP client or server, respectively.
 
-In order to set or get a specific DHCP option, we use this common type :cpp:type:`esp_netif_dhcp_option_id_t` for both DHCP server and DHCP client, but not all options are supported for both server and client. Please refer to the API documentation of :cpp:func:`esp_netif_dhcpc_option()` to see which options are available for the DHCP client. Conversely, consult the API documentation of :cpp:func:`esp_netif_dhcps_option()` on the options available for the DHCP server.
+It is important to note that these two options are mutually exclusive and cannot be changed at runtime. If an interface is configured as a DHCP client upon creation, it cannot later be used as a DHCP server. The only option is to destroy the existing network interface and create a new one with the desired configuration.
+
+To set or get a specific DHCP option, the common type :cpp:type:`esp_netif_dhcp_option_id_t` is used for both the DHCP server and client. However, not all options are supported for both. For details on the available options for the DHCP client, refer to the API documentation for :cpp:func:`esp_netif_dhcpc_option()`. Similarly, for the options available for the DHCP server, consult the API documentation for :cpp:func:`esp_netif_dhcps_option()`.
 
 .. _esp_netif-sntp-api:
 
 SNTP Service
 ------------
 
-You can find a brief introduction to SNTP in general, its initialization code, and basic modes in Section :ref:`system-time-sntp-sync` in :doc:`System Time </api-reference/system/system_time>`.
+A brief introduction to SNTP, its initialization code, and basic modes can be found in Section :ref:`system-time-sntp-sync` in :doc:`System Time </api-reference/system/system_time>`.
 
-This section provides more details about specific use cases of the SNTP service, with statically configured servers, or use the DHCP-provided servers, or both. The workflow is usually very simple:
+This section provides more details on specific use cases for the SNTP service, such as using statically configured servers, DHCP-provided servers, or both. The workflow is typically straightforward:
 
-1) Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`. This operations can only be called once (unless the SNTP service has been destroyed by :cpp:func:`esp_netif_sntp_deinit()`)
-2) Start the service via :cpp:func:`esp_netif_sntp_start()`. This step is not needed if we auto-started the service in the previous step (default). It is useful to start the service explicitly after connecting if we want to use the DHCP-obtained NTP servers. Please note, this option needs to be enabled before connecting, but the SNTP service should be started after.
-3) Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (only if needed).
-4) Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
+1. Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`. This function can only be called once unless the SNTP service has been destroyed using :cpp:func:`esp_netif_sntp_deinit()`.
+2. Start the service with :cpp:func:`esp_netif_sntp_start()`. This step is not necessary if the service was auto-started in the previous step (default behavior). However, it can be useful to start the service explicitly after connecting if DHCP-provided NTP servers are being used. Note that this option needs to be enabled before connecting, but the SNTP service should only be started afterward.
+3. Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (if required).
+4. Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
 
 
 Basic Mode with Statically Defined Server(s)
@@ -52,13 +54,13 @@ Initialize the module with the default configuration after connecting to the net
 
 .. note::
 
-    If we want to configure multiple SNTP servers, we have to update the lwIP configuration :ref:`CONFIG_LWIP_SNTP_MAX_SERVERS`.
+    If you want to configure multiple SNTP servers, update the lwIP configuration option :ref:`CONFIG_LWIP_SNTP_MAX_SERVERS`.
 
 
 Use DHCP-Obtained SNTP Server(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First of all, we have to enable the lwIP configuration option :ref:`CONFIG_LWIP_DHCP_GET_NTP_SRV`. Then we have to initialize the SNTP module with the DHCP option and without the NTP server:
+First, you need to enable the lwIP configuration option :ref:`CONFIG_LWIP_DHCP_GET_NTP_SRV`. Then, initialize the SNTP module with the DHCP option, without specifying an NTP server.
 
 .. code-block:: c
 
@@ -67,7 +69,7 @@ First of all, we have to enable the lwIP configuration option :ref:`CONFIG_LWIP_
     config.server_from_dhcp = true;             // accept the NTP offer from the DHCP server
     esp_netif_sntp_init(&config);
 
-Then, once we are connected, we could start the service using:
+Once connected, you can start the service using:
 
 .. code-block:: c
 
@@ -75,13 +77,13 @@ Then, once we are connected, we could start the service using:
 
 .. note::
 
-    It is also possible to start the service during initialization (default ``config.start=true``). This would likely to cause the initial SNTP request to fail (since we are not connected yet) and lead to some back-off time for subsequent requests.
+    It is also possible to start the service during initialization (with the default ``config.start=true``). However, this may cause the initial SNTP request to fail since you are not connected yet, which could result in a back-off period for subsequent requests.
 
 
 Use Both Static and Dynamic Servers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Very similar to the scenario above (DHCP provided SNTP server), but in this configuration, we need to make sure that the static server configuration is refreshed when obtaining NTP servers by DHCP. The underlying lwIP code cleans up the rest of the list of NTP servers when the DHCP-provided information gets accepted. Thus the ESP-NETIF SNTP module saves the statically configured server(s) and reconfigures them after obtaining a DHCP lease.
+This scenario is similar to using DHCP-provided SNTP servers. However, in this configuration, you need to ensure that the static server configuration is refreshed when obtaining NTP servers via DHCP. The underlying lwIP code removes the existing list of NTP servers when DHCP-provided information is accepted. Therefore, the ESP-NETIF SNTP module retains the statically configured server(s) and appends them to the list after obtaining a DHCP lease.
 
 The typical configuration now looks as per below, providing the specific ``IP_EVENT`` to update the config and index of the first server to reconfigure (for example setting ``config.index_of_first_server=1`` would keep the DHCP provided server at index 0, and the statically configured server at index 1).
 
@@ -92,15 +94,24 @@ The typical configuration now looks as per below, providing the specific ``IP_EV
     config.server_from_dhcp = true;             // accept the NTP offers from DHCP server
     config.renew_servers_after_new_IP = true;   // let esp-netif update the configured SNTP server(s) after receiving the DHCP lease
     config.index_of_first_server = 1;           // updates from server num 1, leaving server 0 (from DHCP) intact
-    config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;  // IP event on which we refresh the configuration
+    config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;  // IP event on which you refresh your configuration
 
-Then we start the service normally with  :cpp:func:`esp_netif_sntp_start()`.
+Then you start the service normally with  :cpp:func:`esp_netif_sntp_start()`.
 
 
 .. _esp_netif_l2tap:
 
-L2 TAP Interface Usage Manual
------------------------------
+L2 TAP Interface Usage
+----------------------
+
+The ESP-NETIF L2 TAP interface is used to access Data Link Layer, please refer to the :ref:`esp-netif structure` diagram to see how L2 TAP interacts with ESP-NETIF and application.
+
+From a user perspective, the ESP-NETIF L2 TAP interface is accessed using file descriptors of VFS, which provides file-like interfacing (using functions like ``open()``, ``read()``, ``write()``, etc). To learn more, refer to :doc:`/api-reference/storage/vfs`.
+
+There is only one ESP-NETIF L2 TAP interface device (path name) available, but you can open multiple file descriptors from it, each with its own unique configuration. Think of the ESP-NETIF L2 TAP interface as a general gateway to the Layer 2 network infrastructure. The key point is that each file descriptor can be individually configured, which is crucial. For example, a file descriptor can be set up to access a specific network interface identified by if_key (like ETH_DEF) and to filter specific types of frames (such as filtering by Ethernet type for IEEE 802.3 frames).
+
+This filtering is essential because the ESP-NETIF L2 TAP works alongside the IP stack, meaning that IP-related traffic (like IP, ARP, etc.) should not be sent directly to your application. Although this option is still possible, it is not recommended in standard use cases. The benefit of filtering is that it allows your application to receive only the frame types it cares about, while other traffic is either routed to different L2 TAP file descriptors or handled by the IP stack.
+
 
 Initialization
 ^^^^^^^^^^^^^^
