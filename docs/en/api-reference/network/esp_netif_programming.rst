@@ -3,17 +3,26 @@ ESP-NETIF Programmers Manual
 
 :link_to_translation:`zh_CN:[中文]`
 
+.. _esp_netif_set_ip:
 
-Configure DNS servers
----------------------
+Configure IP, GW and DNS
+------------------------
 
+We typically obtain IP addresses (including gateway, network mask, and DNS servers) automatically from DHCP or Router Advertisement services and receive notifications by means of ``IP_EVENT`` with IP address information. It is also possible to read the current address information using :cpp:func:`esp_netif_get_ip_info()`, which returns this address structure :cpp:type:`esp_netif_ip_info_t` containing IPv4 address of the network interface with the network mask and gateway address. Similarly, you can use :cpp:func:`esp_netif_get_all_ip6()` to obtain all IPv6 addresses of the interface.
 
+In order to configure static IP addresses and DNS servers, it's necessary to disable or stop DHCP client (which is enabled by default on some network interfaces, such as the default Ethernet, or the default WiFi station). Please refer to the example :example:`/protocols/static_ip` for more details.
 
+To set IPv4 address, you can use :cpp:func:`esp_netif_set_ip_info()`. For IPv6, these two functions can be used for adding or removing addresses: :cpp:func:`esp_netif_add_ip6_address()`,  :cpp:func:`esp_netif_remove_ip6_address()`.
+To configure DNS servers, please use :cpp:func:`esp_netif_set_dns_info()` API.
+
+.. _esp_netif_set_dhcp:
 
 Configure DHCP options
 ----------------------
 
+Some network interfaces are pre-configured to use either a DHCP client (typically the Ethernet interface) or a DHCP server (typically a WiFi software access point). When creating a custom network interface manually, these configuration flags :cpp:type:`esp_netif_flags_t` are used to specify the behavioral options of this interface, so adding :cpp:enumerator:`ESP_NETIF_DHCP_CLIENT` or :cpp:enumerator:`ESP_NETIF_DHCP_SERVER` will enable DHCP client or server respectively. Note that these two options are mutually exclusive and cannot be altered runtime, so an interface configured with the DHCP server on creating cannot be used to start a DHCP server.
 
+In order to set or get a specific DHCP option, we use this common type :cpp:type:`esp_netif_dhcp_option_id_t` for both DHCP server and DHCP client, but not all options are supported for both server and client. Please refer to the API documentation of :cpp:func:`esp_netif_dhcpc_option()` to see which options are available for the DHCP client. Conversely, consult the API documentation of :cpp:func:`esp_netif_dhcps_option()` on the options available for the DHCP server.
 
 .. _esp_netif-sntp-api:
 
@@ -88,6 +97,7 @@ The typical configuration now looks as per below, providing the specific ``IP_EV
 Then we start the service normally with  :cpp:func:`esp_netif_sntp_start()`.
 
 
+.. _esp_netif_l2tap:
 
 L2 TAP Interface Usage Manual
 -----------------------------
@@ -188,6 +198,8 @@ Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free
 Select is used in a standard way, just :ref:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to make the ``select()`` function available.
 
 
+.. _esp_netif_other_events:
+
 IP Event: Transmit/Receive Packet
 ---------------------------------
 
@@ -239,6 +251,8 @@ The event data structure, :cpp:class:`ip_event_tx_rx_t`, contains the following 
 - :cpp:member:`ip_event_tx_rx_t::len`: Length of the data frame.
 - :cpp:member:`ip_event_tx_rx_t::esp_netif`: The network interface on which the packet was sent or received.
 
+
+.. _esp_netif_api_reference:
 
 API Reference
 -------------

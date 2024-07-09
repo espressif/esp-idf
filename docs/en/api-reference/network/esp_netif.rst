@@ -291,12 +291,12 @@ In same cases, it is not enough to simply initialize a network interface by defa
 
 You would typically need to use specific sets of ESP-NETIF APIs in the following use-cases:
 
-* Set or get IP and DNS information
-* Configure DHCP client or server
-* Start SNTP service
-* Use L2 TAP interface
-* Use other IP events
-* Use multiple network interfaces
+* :ref:`esp_netif_set_ip`
+* :ref:`esp_netif_set_dhcp`
+* :ref:`esp_netif-sntp-api`
+* :ref:`esp_netif_l2tap`
+* :ref:`esp_netif_other_events`
+* :ref:`esp_netif_api_reference`
 
 .. _esp_netif_developer:
 
