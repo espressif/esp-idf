@@ -13,7 +13,7 @@ This example demonstrates how to use print statements from a program running on 
 
 ### Hardware Required
 
-To run this example, you should have an ESP32-C6 based development board and a host machine with a serial input connection.
+To run this example, you should have an ESP based development board that supports the LP UART peripheral on the LP Core and a host machine with a serial input connection.
 
 #### Pin Assignment:
 
@@ -23,6 +23,7 @@ To run this example, you should have an ESP32-C6 based development board and a h
 |                         | Tx     |
 | ----------------------- | -------|
 | ESP32-C6                | GPIO5  |
+| ESP32-C5                | GPIO5  |
 | ESP32-P4                | GPIO14 |
 | Host machine            | Rx     |
 
