@@ -282,7 +282,7 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     };
     TEST_ESP_OK(pcnt_unit_register_event_callbacks(unit, &cbs, &user_data));
 
-    printf("add watchpoints\r\n");
+    printf("add watch points\r\n");
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 0));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 100));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, -100));
@@ -310,7 +310,10 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     int count_value;
     printf("checking count value\r\n");
     TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
-    printf("count_value=%d\r\n", count_value);
+    printf("counter stopped at %d\r\n", count_value);
+    for (int i = 0 ; i < user_data.index; i++) {
+        printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
+    }
     TEST_ASSERT_EQUAL(-20, count_value); // 0-30*4+100
     TEST_ASSERT_EQUAL(3, user_data.index);
     TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[0]);
@@ -324,7 +327,10 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     vTaskDelay(pdMS_TO_TICKS(100));
     printf("checking count value\r\n");
     TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
-    printf("count_value=%d\r\n", count_value);
+    printf("counter stopped at %d\r\n", count_value);
+    for (int i = 0 ; i < user_data.index; i++) {
+        printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
+    }
     TEST_ASSERT_EQUAL(40, count_value); // -20+40*4-100
     TEST_ASSERT_EQUAL(4, user_data.index);
     TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[0]);
@@ -332,7 +338,7 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     TEST_ASSERT_EQUAL(100, user_data.triggered_watch_values[2]);
     TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[3]);
 
-    printf("remove watchpoints and uninstall channels\r\n");
+    printf("remove watch points and uninstall channels\r\n");
     TEST_ESP_OK(pcnt_unit_remove_watch_point(unit, 0));
     TEST_ESP_OK(pcnt_unit_remove_watch_point(unit, 100));
     TEST_ESP_OK(pcnt_unit_remove_watch_point(unit, -100));
@@ -582,14 +588,17 @@ TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 }
 #endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
-#if SOC_PCNT_SUPPORT_STEP_NOTIFY
-TEST_CASE("pcnt_step_notify_event", "[pcnt]")
+TEST_CASE("pcnt overflow accumulation", "[pcnt]")
 {
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
-        .flags.accum_count = true,
-        .flags.en_step_notify_down = true,
+        .flags = {
+            .accum_count = true,
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+            .en_step_notify_down = true,
+#endif
+        },
     };
 
     printf("install pcnt unit\r\n");
@@ -608,8 +617,89 @@ TEST_CASE("pcnt_step_notify_event", "[pcnt]")
     };
     pcnt_channel_handle_t channelA = NULL;
     TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelA));
-    TEST_ESP_OK(pcnt_channel_set_edge_action(channelA, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
-    TEST_ESP_OK(pcnt_channel_set_level_action(channelA, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(channelA, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+    TEST_ESP_OK(pcnt_channel_set_level_action(channelA, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    // switch edge gpio and level gpio, the assign to another channel in the same unit
+    pcnt_channel_handle_t channelB = NULL;
+    channel_config.edge_gpio_num = TEST_PCNT_GPIO_B;
+    channel_config.level_gpio_num = TEST_PCNT_GPIO_A;
+    TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelB));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(channelB, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
+    TEST_ESP_OK(pcnt_channel_set_level_action(channelB, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+
+    TEST_ESP_OK(pcnt_unit_add_watch_point(unit, -100));
+    TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 100));
+
+    // ensure the simulation signal in a stable state
+    TEST_ESP_OK(gpio_set_level(TEST_PCNT_GPIO_A, 1));
+    TEST_ESP_OK(gpio_set_level(TEST_PCNT_GPIO_B, 1));
+
+    TEST_ESP_OK(pcnt_unit_enable(unit));
+    TEST_ESP_OK(pcnt_unit_start(unit));
+
+    printf("simulating quadrature signals and count down\r\n");
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B, 50); // 50*(-4) = -200
+
+    int count_value;
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("counter stopped at %d\r\n", count_value);
+    TEST_ASSERT_EQUAL(-200, count_value);
+
+    printf("simulating quadrature signals and count up\r\n");
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_B, TEST_PCNT_GPIO_A, 31); // -200+31*4 = -76
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("counter stopped at %d\r\n", count_value);
+    TEST_ASSERT_EQUAL(-76, count_value);
+
+    printf("simulating quadrature signals and count down again\r\n");
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B, 20); // -76-20*4 = -156
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("counter stopped at %d\r\n", count_value);
+    TEST_ASSERT_EQUAL(-156, count_value);
+
+    TEST_ESP_OK(pcnt_del_channel(channelA));
+    TEST_ESP_OK(pcnt_del_channel(channelB));
+    TEST_ESP_OK(pcnt_unit_stop(unit));
+    TEST_ESP_OK(pcnt_unit_disable(unit));
+    TEST_ESP_OK(pcnt_del_unit(unit));
+}
+
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+TEST_CASE("pcnt_step_notify_event", "[pcnt]")
+{
+    pcnt_unit_config_t unit_config = {
+        .low_limit = -100,
+        .high_limit = 100,
+        .flags = {
+            .en_step_notify_down = true,
+        },
+    };
+
+    printf("install pcnt unit\r\n");
+    pcnt_unit_handle_t unit = NULL;
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &unit));
+    pcnt_glitch_filter_config_t filter_config = {
+        .max_glitch_ns = 1000,
+    };
+    TEST_ESP_OK(pcnt_unit_set_glitch_filter(unit, &filter_config));
+
+    printf("install two pcnt channels with different edge/level action\r\n");
+    pcnt_chan_config_t channel_config = {
+        .edge_gpio_num = TEST_PCNT_GPIO_A,
+        .level_gpio_num = TEST_PCNT_GPIO_B,
+        .flags.io_loop_back = true,
+    };
+    pcnt_channel_handle_t channelA = NULL;
+    TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelA));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(channelA, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+    TEST_ESP_OK(pcnt_channel_set_level_action(channelA, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    // switch edge gpio and level gpio, the assign to another channel in the same unit
+    pcnt_channel_handle_t channelB = NULL;
+    channel_config.edge_gpio_num = TEST_PCNT_GPIO_B;
+    channel_config.level_gpio_num = TEST_PCNT_GPIO_A;
+    TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelB));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(channelB, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
+    TEST_ESP_OK(pcnt_channel_set_level_action(channelB, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
 
     // ensure the simulation signal in a stable state
     TEST_ESP_OK(gpio_set_level(TEST_PCNT_GPIO_A, 1));
@@ -624,69 +714,94 @@ TEST_CASE("pcnt_step_notify_event", "[pcnt]")
     };
     TEST_ESP_OK(pcnt_unit_register_event_callbacks(unit, &cbs, &user_data));
 
-    printf("add step notify\r\n");
+    printf("add watch step and point\r\n");
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, 0));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, 20));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, -120));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, pcnt_unit_add_watch_step(unit, -30));
     TEST_ESP_OK(pcnt_unit_add_watch_step(unit, -25));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_step(unit, -100));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, -100));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 0));
     TEST_ESP_OK(pcnt_unit_add_watch_point(unit, -50));
-#if !SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
-    // the above added watch point won't take effect at once, unless we clear the internal counter manually
-    TEST_ESP_OK(pcnt_unit_clear_count(unit));
-#endif
+    TEST_ESP_OK(pcnt_unit_add_watch_point(unit, 11));
 
     TEST_ESP_OK(pcnt_unit_enable(unit));
     TEST_ESP_OK(pcnt_unit_start(unit));
+
+    printf("simulating quadrature signals and count down\r\n");
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B, 25); // 25*(-4) = -100 -> 0
+
     int count_value;
-
-    // trigger 150 rising edge on GPIO
-    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 150);
-
-    printf("checking count value\r\n");
     TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
-    printf("count_value=%d\r\n", count_value);
+    printf("counter stopped at %d\r\n", count_value);
 
     for (int i = 0 ; i < user_data.index; i++) {
         printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
     }
-    TEST_ASSERT_EQUAL(-150, count_value);
-    TEST_ASSERT_EQUAL(7, user_data.index);
-    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[0]);
-    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[1]);
-    TEST_ASSERT_EQUAL(-75, user_data.triggered_watch_values[2]);
-    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[3]);
-    TEST_ASSERT_EQUAL(-0, user_data.triggered_watch_values[4]);
-    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[5]);
-    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[6]);
+    TEST_ASSERT_EQUAL(0, count_value);
+    TEST_ASSERT_EQUAL(5, user_data.index);
+    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[0]); // step point (-25*1)
+    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[1]); // step point && watch point
+    TEST_ASSERT_EQUAL(-75, user_data.triggered_watch_values[2]); // step point (-25*3)
+    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[3]);// step point && watch point
+    TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[4]);   // watch point (overflow zero cross)
 
-    printf("add a new step interval\r\n");
-    TEST_ESP_OK(pcnt_unit_remove_watch_step(unit));
-    TEST_ESP_OK(pcnt_unit_clear_count(unit));
-    TEST_ESP_OK(pcnt_unit_add_watch_step(unit, -100));
+    printf("simulating quadrature signals and count up\r\n");
     user_data.index = 0;
-
-    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 120);
-
-    printf("checking count value\r\n");
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_B, TEST_PCNT_GPIO_A, 3); // 0+3*4 = 12
     TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
-    printf("count_value=%d\r\n", count_value);
+    printf("counter stopped at %d\r\n", count_value);
     for (int i = 0 ; i < user_data.index; i++) {
         printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
     }
+    TEST_ASSERT_EQUAL(12, count_value);
+    TEST_ASSERT_EQUAL(1, user_data.index);
+    TEST_ASSERT_EQUAL(11, user_data.triggered_watch_values[0]); // watch point
 
-    TEST_ASSERT_EQUAL(-120, count_value);
+    printf("simulating quadrature signals and count down again\r\n");
+    user_data.index = 0;
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B, 13); // 12-13*4 = -40
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("counter stopped at %d\r\n", count_value);
+    for (int i = 0 ; i < user_data.index; i++) {
+        printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
+    }
+    TEST_ASSERT_EQUAL(-40, count_value);
     TEST_ASSERT_EQUAL(3, user_data.index);
-    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[0]);
-    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[1]);
-    TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[2]);
+    TEST_ASSERT_EQUAL(11, user_data.triggered_watch_values[0]); // watch point
+    TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[1]);  // watch point (zero cross)
+    TEST_ASSERT_EQUAL(-25, user_data.triggered_watch_values[2]);// step point (-25*1)
+
+    // before change step interval, the next step point should be -25-25=-50
+    printf("change step interval\r\n");
+    TEST_ESP_OK(pcnt_unit_remove_watch_step(unit));
+    TEST_ESP_OK(pcnt_unit_add_watch_step(unit, -20));
+    // but after change, the next step point is -25-20=-45 (-25 is the last active step point)
+
+    printf("simulating quadrature signals and count down\r\n");
+    user_data.index = 0;
+    test_gpio_simulate_quadrature_signals(TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B, 20); // -40+20*(-4) = -120 -> -20
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    printf("counter stopped at %d\r\n", count_value);
+
+    for (int i = 0 ; i < user_data.index; i++) {
+        printf("%d:%d\r\n", i, user_data.triggered_watch_values[i]);
+    }
+    TEST_ASSERT_EQUAL(-20, count_value);
+    TEST_ASSERT_EQUAL(7, user_data.index);
+    TEST_ASSERT_EQUAL(-45, user_data.triggered_watch_values[0]); // watch step
+    TEST_ASSERT_EQUAL(-50, user_data.triggered_watch_values[1]); // watch point
+    TEST_ASSERT_EQUAL(-65, user_data.triggered_watch_values[2]); // step point (-45-20)
+    TEST_ASSERT_EQUAL(-85, user_data.triggered_watch_values[3]); // step point (-65-20)
+    TEST_ASSERT_EQUAL(-100, user_data.triggered_watch_values[4]);// step && watch point
+    TEST_ASSERT_EQUAL(0, user_data.triggered_watch_values[5]);   // watch point (overflow)
+    TEST_ASSERT_EQUAL(-20, user_data.triggered_watch_values[6]); // step point (0-20)
+
     printf("remove step_notify and uninstall channels\r\n");
     TEST_ESP_OK(pcnt_unit_remove_watch_step(unit));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_remove_watch_step(unit));
     TEST_ESP_OK(pcnt_del_channel(channelA));
+    TEST_ESP_OK(pcnt_del_channel(channelB));
     TEST_ESP_OK(pcnt_unit_stop(unit));
     TEST_ESP_OK(pcnt_unit_disable(unit));
     TEST_ESP_OK(pcnt_del_unit(unit));
