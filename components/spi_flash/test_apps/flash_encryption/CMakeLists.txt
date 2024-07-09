@@ -7,4 +7,9 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # and esptool_py as we set CONFIG_SPIRAM_... and CONFIG_ESPTOOLPY_... options.
 set(COMPONENTS main esp_psram esptool_py)
 
+set(EXTRA_COMPONENT_DIRS
+    "$ENV{IDF_PATH}/tools/unit-test-app/components"
+    "$ENV{IDF_PATH}/components/spi_flash/test_apps/components"
+)
+
 project(test_flash_encryption)

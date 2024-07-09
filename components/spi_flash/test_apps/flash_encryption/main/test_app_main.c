@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,8 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
+#include "esp_partition.h"
+#include "memory_checks.h"
 
 // Some resources are lazy allocated in flash encryption, the threadhold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (-400)
@@ -23,6 +25,12 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
 
 void setUp(void)
 {
+    // Calling esp_partition_find_first ensures that the paritions have been loaded
+    // and subsequent calls to esp_partition_find_first from the tests would not
+    // load partitions which otherwise gets considered as a memory leak.
+    esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+
+    test_utils_record_free_mem();
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 }

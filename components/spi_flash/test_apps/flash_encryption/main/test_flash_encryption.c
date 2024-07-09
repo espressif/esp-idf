@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,6 +16,10 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_heap_caps.h"
+#include "esp_cpu.h"
+#include "test_utils.h"
+#include "ccomp_timer.h"
+#include "test_flash_utils.h"
 
 /*-------------------- For running this test, some configurations are necessary -------------------*/
 /*     ESP32    |           CONFIG_SECURE_FLASH_ENC_ENABLED         |             SET              */
@@ -32,15 +36,6 @@ static void test_encrypted_write(size_t offset, const uint8_t *data, size_t leng
 static void verify_erased_flash(size_t offset, size_t length);
 
 static size_t start;
-
-const esp_partition_t *get_test_data_partition(void)
-{
-    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
-    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
-            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
-    TEST_ASSERT_NOT_NULL(result); /* means partition table set wrong */
-    return result;
-}
 
 static void setup_tests(void)
 {
@@ -261,7 +256,7 @@ TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[flash_
     start = (start + 31) & (~31); // round up to 32 byte boundary
 
     ESP_LOG_BUFFER_HEXDUMP(TAG, plainttext_data, sizeof(plainttext_data), ESP_LOG_INFO);
-    printf("Encrypteed writting......\n");
+    printf("Encrypted writing......\n");
     TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, plainttext_data, sizeof(plainttext_data)));
 
     uint8_t *cmp_encrypt_buf = heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
@@ -293,7 +288,7 @@ TEST_CASE("test read & write encrypted data(16 bytes alianed but 32 bytes unalig
     printf("Write data partition @ 0x%" PRIx32 "\n", (uint32_t) start);
 
     ESP_LOG_BUFFER_HEXDUMP(TAG, plainttext_data, sizeof(plainttext_data), ESP_LOG_INFO);
-    printf("Encrypteed writting......\n");
+    printf("Encrypted writing......\n");
     TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, plainttext_data, sizeof(plainttext_data)));
 
     uint8_t *cmp_encrypt_buf = heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
@@ -330,13 +325,49 @@ TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[fl
     // The tested buffer should be n*64(or n*32)+16 bytes.
     setup_tests();
     TEST_ESP_OK(esp_flash_erase_region(NULL, start, 5 * 4096));
-    printf("Encrypteed writting......\n");
+    printf("Encrypted writing......\n");
 
+    TEST_ESP_OK(ccomp_timer_start());
     TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, large_const_buffer, sizeof(large_const_buffer)));
-    uint8_t *buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer), MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    int64_t write_time = ccomp_timer_stop();
+    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time/sizeof(large_const_buffer))*1024);
+
+    uint8_t *buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer), MALLOC_CAP_8BIT);
 
     TEST_ESP_OK(esp_flash_read_encrypted(NULL, start, buf, sizeof(large_const_buffer)));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(buf, large_const_buffer, sizeof(large_const_buffer));
+    free(buf);
+}
+
+static DRAM_ATTR const uint8_t large_const_buffer_dram[16432] = {
+    203, // first byte
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
+    [50 ... 99] = 2,
+    [108 ... 1520] = 0x9b,
+    [1600 ... 2000] = 0x3d,
+    [8000 ... 9000] = 0xf7,
+    [15000 ... 16398] = 0xe8,
+    43, 0x7f,
+    [16401 ... 16430] = 0xd1,
+    202, // last byte
+};
+
+TEST_CASE("test read & write encrypted data with large buffer in ram", "[flash_encryption]")
+{
+    // The tested buffer should be n*64(or n*32)+16 bytes.
+    setup_tests();
+    TEST_ESP_OK(esp_flash_erase_region(NULL, start, 5 * 4096));
+    printf("Encrypted writing......\n");
+
+    TEST_ESP_OK(ccomp_timer_start());
+    TEST_ESP_OK(esp_flash_write_encrypted(NULL, start, large_const_buffer_dram, sizeof(large_const_buffer_dram)));
+    int64_t write_time = ccomp_timer_stop();
+    IDF_LOG_PERFORMANCE(TAG, "Writing speed: %.2f us/KB", (double)(write_time/sizeof(large_const_buffer_dram))*1024);
+    uint8_t *buf = (uint8_t*)heap_caps_malloc(sizeof(large_const_buffer_dram), MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
+
+    TEST_ESP_OK(esp_flash_read_encrypted(NULL, start, buf, sizeof(large_const_buffer_dram)));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(buf, large_const_buffer_dram, sizeof(large_const_buffer_dram));
     free(buf);
 }
 
