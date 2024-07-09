@@ -306,6 +306,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (3U)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 // #define SOC_I2S_SUPPORTS_APLL       (1) // TODO: IDF-8884
 #define SOC_I2S_SUPPORTS_PCM        (1)
