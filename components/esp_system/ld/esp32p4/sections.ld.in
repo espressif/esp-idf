@@ -475,6 +475,28 @@ SECTIONS
     mapping[rodata_noload]
   } > rodata_seg_low
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+  /**
+   * This section is required to skip flash sections, because `extern_ram_seg`
+   * and `drom_seg` / `irom_seg` are on the same bus when xip on psram
+   */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . = ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start);
+    . = ALIGN (0x10000);
+  } > ext_ram_seg
+#endif  //CONFIG_SPIRAM_XIP_FROM_PSRAM
+
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+    mapping[extern_ram]
+    ALIGNED_SYMBOL(4, _ext_ram_bss_end)
+  } > ext_ram_seg
+#endif  //CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+
   .dram0.bss (NOLOAD) :
   {
     ALIGNED_SYMBOL(4, _bss_start_low)

@@ -148,11 +148,6 @@ extern int _mtvt_table;
 
 static const char *TAG = "cpu_start";
 
-#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-extern int _ext_ram_bss_start;
-extern int _ext_ram_bss_end;
-#endif
-
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;
 extern int _iram_bss_end;
@@ -683,7 +678,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+    esp_psram_bss_init();
 #endif
 
 //Enable trace memory and immediately start trace.
