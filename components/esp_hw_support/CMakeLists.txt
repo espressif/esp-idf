@@ -146,7 +146,6 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_IDF_TARGET_ESP32C5)
         list(REMOVE_ITEM srcs
                 "sleep_wake_stub.c"   # TODO: [ESP32C5] IDF-8638
-                "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638
             )
     endif()
 
@@ -180,6 +179,10 @@ add_subdirectory(lowpower)
 
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10229
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()
+
+if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
 endif()
 
 if(NOT BOOTLOADER_BUILD)
