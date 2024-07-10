@@ -336,7 +336,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 /**
  * @brief  Get BLE TX power
  *
- * @note    Connection TX power should only be retrived after the connection is established.
+ * @note    Connection TX power should only be retrieved after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising/Connection/Default and etc.
  *
@@ -488,7 +488,7 @@ bool esp_vhci_host_check_send_available(void);
  *      1. This function shall not be called within a critical section or when the scheduler is suspended.
  *      2. This function should be called only if `esp_vhci_host_check_send_available()` returns True.
  *
- * @param[in] Pointer to the packet data
+ * @param[in] data Pointer to the packet data
  * @param[in] len The packet length
  */
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
