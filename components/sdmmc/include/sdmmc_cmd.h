@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** Call `sdmmc_io_read_bytes`, `sdmmc_io_write_bytes`, `sdmmc_io_read_blocks` or `sdmmc_io_write_bocks` APIs with
+ * address ORed by this flag to send CMD53 with OP Code clear (fixed address) */
+#define SDMMC_IO_FIXED_ADDR BIT(31)
 
 /**
  * Probe and initialize SD/MMC card using given host
@@ -196,6 +200,9 @@ esp_err_t sdmmc_io_write_byte(sdmmc_card_t* card, uint32_t function,
  * This function performs read operation using CMD53 in byte mode.
  * For block mode, see sdmmc_io_read_blocks.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
@@ -218,6 +225,9 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
  * This function performs write operation using CMD53 in byte mode.
  * For block mode, see sdmmc_io_write_blocks.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
@@ -238,6 +248,9 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
  *
  * This function performs read operation using CMD53 in block mode.
  * For byte mode, see sdmmc_io_read_bytes.
+ *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
  *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
@@ -260,6 +273,9 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
  *
  * This function performs write operation using CMD53 in block mode.
  * For byte mode, see sdmmc_io_write_bytes.
+ *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
  *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
