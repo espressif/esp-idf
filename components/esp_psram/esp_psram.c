@@ -11,6 +11,7 @@
  * When we add more types of external RAM memory, this can be made into a more intelligent dispatcher.
  *----------------------------------------------------------------------------------------------------*/
 #include <sys/param.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -520,4 +521,12 @@ bool esp_psram_extram_test(void)
     }
 
     return true;
+}
+
+void esp_psram_bss_init(void)
+{
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    size_t size = (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start);
+    memset(&_ext_ram_bss_start, 0, size);
+#endif
 }
