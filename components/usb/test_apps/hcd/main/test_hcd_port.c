@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,29 @@
 #define TRANSFER_MAX_BYTES          256
 #define URB_DATA_BUFF_SIZE          (sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES)   // 256 is worst case size for configuration descriptors
 #define POST_ENQUEUE_DELAY_US       10
+
+/*
+Test a port for a disconnect event, when port is in ENABLED state
+
+Purpose: This test is essential on HS HCD ports, when device is detaching during the action.
+    When the HS port is ENABLED, the port operates in HS mode and device disconnection is detected by HS logic.
+    When the HS port is DISABLED (without issuing a reset), the port operates in FS mode and device disconnection differs for HS mode disconnection logic.
+
+Procedure:
+    - Setup the HCD and a port
+    - Trigger the port connection event
+    - Trigger the port disconnection event
+    - Teardown port and HCD
+*/
+TEST_CASE("Test HCD port disconnect event, port enabled", "[port][low_speed][full_speed]")
+{
+    usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl); // Trigger a connection
+    printf("Connected %s speed device \n", (char*[]) {
+        "Low", "Full", "High"
+    }[port_speed]);
+    vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
+    test_hcd_wait_for_disconn(port_hdl, true);
+}
 
 /*
 Test a port sudden disconnect and port recovery
