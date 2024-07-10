@@ -79,10 +79,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         string
         default "$IDF_INIT_VERSION"
 
-    config IDF_TARGET_LINUX
-        bool
-        default "y" if IDF_TARGET="linux"
-
     config IDF_TARGET_ESP32
         bool
         default "y" if IDF_TARGET="esp32"
