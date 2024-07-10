@@ -385,7 +385,7 @@ typedef enum {
 /**
  * @brief Sigma Delta Modulator clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8687 (inherit from C6)
+typedef enum {
     SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
     SDM_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
