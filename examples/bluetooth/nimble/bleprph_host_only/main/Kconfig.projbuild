@@ -56,7 +56,7 @@ menu "Example Configuration"
 
     config EXAMPLE_EXTENDED_ADV
         bool
-        depends on SOC_BLE_50_SUPPORTED
+        depends on SOC_BLE_50_SUPPORTED && BT_NIMBLE_50_FEATURE_SUPPORT
         default y if SOC_ESP_NIMBLE_CONTROLLER
         select BT_NIMBLE_EXT_ADV
         prompt "Enable Extended Adv"
