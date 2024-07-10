@@ -507,7 +507,15 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
 
     if (is_enclosed) {
         ESP_LOGW(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
-        *out_ptr = (void *)mem_block->vaddr_start;
+        /*
+         * This condition is triggered when `s_is_enclosed` is true and hence
+         * we are sure that `paddr_start` >= `mem_block->paddr_start`.
+         *
+         * Add the offset of new physical address while returning the virtual
+         * address.
+         */
+        const uint32_t new_paddr_offset = paddr_start - mem_block->paddr_start;
+        *out_ptr = (void *)mem_block->vaddr_start + new_paddr_offset;
         return ESP_ERR_INVALID_STATE;
     }
 
