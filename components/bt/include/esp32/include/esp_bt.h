@@ -521,9 +521,8 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
  * @note
  *    1. This function is optional and should be called only if you want to free up memory for other components.
  *    2. This function should only be called when the controller is in `ESP_BT_CONTROLLER_STATUS_IDLE` status.
- *    3. This function should be called only before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
- *    4. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
- *    5. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
+ *    3. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
+ *    4. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
  *
  * If you never intend to use Bluetooth in a current boot-up cycle, calling `esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)` could release the BSS and data consumed by both Classic Bluetooth and BLE Controller to heap.
  *
