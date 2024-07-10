@@ -1,4 +1,1 @@
-
-.. code-block:: none
-
-    To be updated for C5
+.. include:: ../../../en/api-reference/system/inc/show-efuse-table_ESP32-C5.rst

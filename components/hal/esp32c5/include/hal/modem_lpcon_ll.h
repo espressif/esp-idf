@@ -10,19 +10,15 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8845 remove
 #include "soc/soc.h"
 #include "hal/assert.h"
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "modem/modem_lpcon_struct.h"
 #include "hal/modem_clock_types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en)
 {
@@ -140,7 +136,19 @@ static inline uint32_t modem_lpcon_ll_get_wifi_lpclk_divisor_value(modem_lpcon_d
 __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_i2c_master_160m_clock(modem_lpcon_dev_t *hw, bool en)
 {
-    hw->i2c_mst_clk_conf.clk_i2c_mst_sel_160m = en;
+    // ESP32C5 Not Support
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_modem_pwr_clk_src_fo(modem_lpcon_dev_t *hw, bool value)
+{
+    hw->modem_src_clk_conf.modem_pwr_clk_src_fo = value;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_set_clk_modem_aon_force(modem_lpcon_dev_t *hw, uint32_t value)
+{
+    hw->modem_src_clk_conf.clk_modem_aon_force = value;
 }
 
 __attribute__((always_inline))
@@ -292,7 +300,23 @@ static inline uint32_t modem_lpcon_ll_get_date(modem_lpcon_dev_t *hw)
     return hw->date.val;
 }
 
-#endif
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_enable_chan_freq_mem(modem_lpcon_dev_t *hw, bool en)
+{
+    hw->apb_mem_sel.chan_freq_mem_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_enable_pbus_mem(modem_lpcon_dev_t *hw, bool en)
+{
+    hw->apb_mem_sel.pbus_mem_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_enable_agc_mem(modem_lpcon_dev_t *hw, bool en)
+{
+    hw->apb_mem_sel.agc_mem_en = en;
+}
 
 #ifdef __cplusplus
 }

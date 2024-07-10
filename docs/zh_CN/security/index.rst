@@ -26,3 +26,9 @@
 
    host-based-security-workflows
 
+漏洞
+---------
+.. toctree::
+   :maxdepth: 1
+
+   vulnerabilities

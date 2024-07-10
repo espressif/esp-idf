@@ -429,7 +429,7 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
     }
 #endif
 
-    return pmu_sleep_finish();
+    return pmu_sleep_finish(dslp);
 }
 
 esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),
@@ -528,8 +528,9 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
 
     // Wait another core start to do retention
     bool smp_skip_retention = false;
+    smp_retention_state_t another_core_state;
     while (1) {
-        smp_retention_state_t another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
+        another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
         if (another_core_state == SMP_SKIP_RETENTION) {
             // If another core skips the retention, the current core should also have to skip it.
             smp_skip_retention = true;
@@ -548,9 +549,12 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
         if ((frame_critical->pmufunc & 0x3) == 0x1) {
             atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
             // wait another core trigger sleep and wakeup
-            esp_cpu_wait_for_intr();
             while (1) {
-                ;
+                // If another core's sleep request is rejected by the hardware, jumps out of blocking.
+                another_core_state = atomic_load(&s_smp_retention_state[!core_id]);
+                if (another_core_state == SMP_SKIP_RETENTION) {
+                    break;
+                }
             }
         } else {
             // Start core1

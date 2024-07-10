@@ -636,7 +636,7 @@ static inline void parlio_ll_tx_reset_fifo(parl_io_dev_t *dev)
 __attribute__((always_inline))
 static inline void parlio_ll_tx_set_idle_data_value(parl_io_dev_t *dev, uint32_t value)
 {
-    dev->tx_genrl_cfg.tx_idle_value = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->tx_genrl_cfg, tx_idle_value, value);
 }
 
 /**

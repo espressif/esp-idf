@@ -63,6 +63,42 @@ extern "C" {
 #include "esp_efuse_table.h"
 #endif
 
+/**
+ * @brief   Secure Boot Signature Block Version field
+ */
+typedef enum {
+    ESP_SECURE_BOOT_V1_ECDSA = 0,           /*!< Secure Boot v1 */
+    ESP_SECURE_BOOT_V2_RSA   = 2,           /*!< Secure Boot v2 with RSA key */
+    ESP_SECURE_BOOT_V2_ECDSA = 3,           /*!< Secure Boot v2 with ECDSA key */
+} esp_secure_boot_sig_scheme_t;
+
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V1_ECDSA
+#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_RSA
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_ECDSA
+#endif
+
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+/** @brief Get the selected secure boot scheme key type
+ *
+ * @return key type for the selected secure boot scheme
+ */
+static inline char* esp_secure_boot_get_scheme_name(esp_secure_boot_sig_scheme_t scheme)
+{
+    switch (scheme) {
+        case ESP_SECURE_BOOT_V2_RSA:
+            return "RSA";
+        case ESP_SECURE_BOOT_V1_ECDSA:
+        case ESP_SECURE_BOOT_V2_ECDSA:
+            return "ECDSA";
+        default:
+            return "Unknown";
+    }
+}
+#endif
+
 /** @brief Is secure boot currently enabled in hardware?
  *
  * This means that the ROM bootloader code will only boot

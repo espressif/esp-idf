@@ -236,6 +236,16 @@ typedef struct {
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
 
 /**
+ * @brief Deregister console command
+ * @param cmd_name Name of the command to be deregistered. Must not be NULL, must not contain spaces.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if command is not registered
+ */
+esp_err_t esp_console_cmd_deregister(const char *cmd_name);
+
+/**
  * @brief Run command line
  * @param cmdline command line (command name followed by a number of arguments)
  * @param[out] cmd_ret return code from the command (set if command was run)

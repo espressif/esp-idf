@@ -1,9 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 The Apache Software Foundation (ASF)
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- * SPDX-FileContributor: 2019-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <assert.h>
@@ -18,7 +16,6 @@
 #include "freertos/timers.h"
 #include "freertos/portable.h"
 #include "nimble/npl_freertos.h"
-#include "nimble/nimble_port.h"
 
 #include "os/os_mempool.h"
 #include "esp_log.h"
@@ -481,32 +478,32 @@ IRAM_ATTR npl_freertos_mutex_release(struct ble_npl_mutex *mu)
 ble_npl_error_t
 npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 {
-    struct ble_npl_sem_freertos *semaphor = NULL;
+    struct ble_npl_sem_freertos *semaphore = NULL;
 #if OS_MEM_ALLOC
     if (!os_memblock_from(&ble_freertos_sem_pool,sem->sem)) {
         sem->sem = os_memblock_get(&ble_freertos_sem_pool);
-        semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+        semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-        if (!semaphor) {
+        if (!semaphore) {
             return BLE_NPL_INVALID_PARAM;
         }
 
-        memset(semaphor, 0, sizeof(*semaphor));
-        semaphor->handle = xSemaphoreCreateCounting(128, tokens);
-        BLE_LL_ASSERT(semaphor->handle);
+        memset(semaphore, 0, sizeof(*semaphore));
+        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
+        BLE_LL_ASSERT(semaphore->handle);
     }
 #else
     if(!sem->sem) {
         sem->sem = malloc(sizeof(struct ble_npl_sem_freertos));
-        semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+        semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-        if (!semaphor) {
+        if (!semaphore) {
             return BLE_NPL_INVALID_PARAM;
         }
 
-        memset(semaphor, 0, sizeof(*semaphor));
-        semaphor->handle = xSemaphoreCreateCounting(128, tokens);
-        BLE_LL_ASSERT(semaphor->handle);
+        memset(semaphore, 0, sizeof(*semaphore));
+        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
+        BLE_LL_ASSERT(semaphore->handle);
     }
 #endif
 
@@ -516,19 +513,19 @@ npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 ble_npl_error_t
 npl_freertos_sem_deinit(struct ble_npl_sem *sem)
 {
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
-    vSemaphoreDelete(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
+    vSemaphoreDelete(semaphore->handle);
 
 #if OS_MEM_ALLOC
-    os_memblock_put(&ble_freertos_sem_pool,semaphor);
+    os_memblock_put(&ble_freertos_sem_pool,semaphore);
 #else
-    free((void *)semaphor);
+    free((void *)semaphore);
 #endif
     sem->sem = NULL;
 
@@ -540,22 +537,22 @@ IRAM_ATTR npl_freertos_sem_pend(struct ble_npl_sem *sem, ble_npl_time_t timeout)
 {
     BaseType_t woken;
     BaseType_t ret;
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
         BLE_LL_ASSERT(timeout == 0);
-        ret = xSemaphoreTakeFromISR(semaphor->handle, &woken);
+        ret = xSemaphoreTakeFromISR(semaphore->handle, &woken);
         if( woken == pdTRUE ) {
             portYIELD_FROM_ISR();
         }
     } else {
-        ret = xSemaphoreTake(semaphor->handle, timeout);
+        ret = xSemaphoreTake(semaphore->handle, timeout);
     }
 
     return ret == pdPASS ? BLE_NPL_OK : BLE_NPL_TIMEOUT;
@@ -566,21 +563,21 @@ IRAM_ATTR npl_freertos_sem_release(struct ble_npl_sem *sem)
 {
     BaseType_t ret;
     BaseType_t woken;
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
-        ret = xSemaphoreGiveFromISR(semaphor->handle, &woken);
+        ret = xSemaphoreGiveFromISR(semaphore->handle, &woken);
         if( woken == pdTRUE ) {
             portYIELD_FROM_ISR();
         }
     } else {
-        ret = xSemaphoreGive(semaphor->handle);
+        ret = xSemaphoreGive(semaphore->handle);
     }
 
     BLE_LL_ASSERT(ret == pdPASS);
@@ -773,8 +770,8 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 uint16_t
 IRAM_ATTR npl_freertos_sem_get_count(struct ble_npl_sem *sem)
 {
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
-    return uxSemaphoreGetCount(semaphor->handle);
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
+    return uxSemaphoreGetCount(semaphore->handle);
 }
 
 

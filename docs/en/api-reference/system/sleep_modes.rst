@@ -304,6 +304,20 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
+    .. only:: SOC_PM_SUPPORT_TOP_PD
+
+       .. note::
+
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+
+                Alternatively，you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly in that condition for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
+
+            .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED
 
     GPIO Wakeup
@@ -313,11 +327,13 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
-           In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate GPIO wakeup.
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
 
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -224,6 +224,11 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-pwsh-check
+    rev: v1.0.1
+    hooks:
+    - id: check-powershell-scripts
+      stages: [manual]
   - repo: https://github.com/espressif/esp-idf-sbom.git
     rev: v0.13.0
     hooks:

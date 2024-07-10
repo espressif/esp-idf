@@ -1,6 +1,5 @@
 choice XTAL_FREQ
     prompt "Main XTAL frequency"
-    default XTAL_FREQ_48 if IDF_TARGET_ESP32C5_BETA3_VERSION
     default XTAL_FREQ_AUTO
     help
         This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
@@ -11,14 +10,7 @@ choice XTAL_FREQ
         the crystal frequency, and record to PCR_CLK_XTAL_FREQ register field.
 
     config XTAL_FREQ_AUTO
-        depends on IDF_TARGET_ESP32C5_MP_VERSION
         bool "Autodetect"
-    config XTAL_FREQ_40
-        depends on IDF_TARGET_ESP32C5_BETA3_VERSION
-        bool "40 MHz"
-    config XTAL_FREQ_48
-        depends on IDF_TARGET_ESP32C5_BETA3_VERSION
-        bool "48 MHz"
 endchoice
 
 # soc_xtal_freq_t enum in soc/clk_tree_defs.h lists the XTAL frequencies can be supported
@@ -26,5 +18,3 @@ endchoice
 config XTAL_FREQ
     int
     default 0  if XTAL_FREQ_AUTO
-    default 40 if XTAL_FREQ_40
-    default 48 if XTAL_FREQ_48

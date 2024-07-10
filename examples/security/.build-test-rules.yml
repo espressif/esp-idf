@@ -29,3 +29,7 @@ examples/security/nvs_encryption_hmac:
     - nvs_sec_provider
   depends_filepatterns:
     - examples/security/nvs_encryption_hmac/**/*
+
+examples/security/security_features_app:
+  disable:
+    - if: IDF_TARGET not in ["esp32c3"]

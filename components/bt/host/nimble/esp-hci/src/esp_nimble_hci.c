@@ -217,6 +217,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
             evbuf = ble_transport_alloc_evt(1);
             /* Skip advertising report if we're out of memory */
             if (!evbuf) {
+                ESP_LOGI(TAG, "Skipping advertising report due to low memory");
                 return 0;
             }
         } else {

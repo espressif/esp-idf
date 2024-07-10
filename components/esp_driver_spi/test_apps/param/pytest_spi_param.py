@@ -16,7 +16,8 @@ def test_param_single_dev(case_tester) -> None:       # type: ignore
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 support TBD')  # TODO: IDF-8942
+# TODO: [ESP32P4] IDF-8942 [ESP32C5] IDF-10322
+@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='no multi-dev runner')
 @pytest.mark.supported_targets
 @pytest.mark.esp32h2
 @pytest.mark.generic_multi_device

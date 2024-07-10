@@ -1,0 +1,12 @@
+generate_failed_jobs_report:
+  stage: post_deploy
+  tags: [build, shiny]
+  image: $ESP_ENV_IMAGE
+  when: always
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - job_report.html
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type job

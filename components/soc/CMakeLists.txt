@@ -1,12 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(target_folder "esp32c5/beta3")
-elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(target_folder "esp32c5/mp")
-else()
-    set(target_folder "${target}")
-endif()
+set(target_folder "${target}")
 
 # On Linux the soc component is a simple wrapper, without much functionality
 if(NOT ${target} STREQUAL "linux")
@@ -125,6 +119,10 @@ endif()
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "${target_folder}/twai_periph.c")
+endif()
+
+if(CONFIG_SOC_WDT_SUPPORTED)
+    list(APPEND srcs "${target_folder}/wdt_periph.c")
 endif()
 
 if(CONFIG_SOC_IEEE802154_SUPPORTED)

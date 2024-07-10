@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='not supported yet')  # TODO: [ESP32C5] IDF-8643, IDF-10310
 @pytest.mark.parametrize('config', [
     'default',
     'slp_iram_opt',
@@ -45,9 +46,11 @@ def test_esp_attr_xip_psram_esp32s3(dut: Dut) -> None:
 
 
 # power down CPU and TOP domain in auto-lightsleep
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='not supported yet')  # TODO: [ESP32C5] IDF-8643, IDF-10310
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

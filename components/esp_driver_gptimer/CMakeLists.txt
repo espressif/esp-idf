@@ -1,24 +1,23 @@
 idf_build_get_property(target IDF_TARGET)
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
 
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_GPTIMER_SUPPORTED)
     list(APPEND srcs "src/gptimer.c"
-                     "src/gptimer_priv.c")
+                     "src/gptimer_common.c")
 endif()
 
 if(CONFIG_SOC_TIMER_SUPPORT_ETM)
     list(APPEND srcs "src/gptimer_etm.c")
 endif()
 
-if(${target} STREQUAL "linux")
-    set(requires "")
-else()
-    set(requires esp_pm)
-endif()
+set(requires esp_pm)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES "${requires}"
+                       REQUIRES ${requires}
                        LDFRAGMENTS "linker.lf"
                       )

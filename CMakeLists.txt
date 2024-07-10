@@ -96,7 +96,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-Wno-pointer-bool-conversion")
     # mbedTLS md5.c triggers this warning in md5_test_buf (false positive)
     list(APPEND compile_options "-Wno-string-concatenation")
-    # multiple cases of implict convertions between unrelated enum types
+    # multiple cases of implicit conversions between unrelated enum types
     list(APPEND compile_options "-Wno-enum-conversion")
     # When IRAM_ATTR is specified both in function declaration and definition,
     # it produces different section names, since section names include __COUNTER__.
@@ -201,10 +201,18 @@ if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
                                     "-Wno-dangling-reference")
 endif()
 
+if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        idf_build_replace_option_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
+    endif()
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    list(APPEND compile_options "-fstrict-volatile-bitfields"
-                                )
+    list(APPEND compile_options "-fstrict-volatile-bitfields")
+    if(CONFIG_COMPILER_STATIC_ANALYZER)
+        list(APPEND compile_options "-fanalyzer")
+    endif()
 endif()
 
 if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)

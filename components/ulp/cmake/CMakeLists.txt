@@ -114,18 +114,15 @@ elseif(ULP_COCPU_IS_LP_CORE)
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
 
-    if(${IDF_TARGET} STREQUAL "esp32c5")
-        set(target_folder "esp32c5/mp")
-    else()
-        set(target_folder ${IDF_TARGET})
-    endif()
+    set(target_folder ${IDF_TARGET})
 
     target_link_options(${ULP_APP_NAME}
         PRIVATE SHELL:-T ${IDF_PATH}/components/soc/${target_folder}/ld/${IDF_TARGET}.peripherals.ld)

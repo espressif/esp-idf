@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "esp_assert.h"
 #include "esp_heap_caps.h"
+#include "esp_compiler.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
     #include "esp_private/freertos_debug.h"
@@ -1041,6 +1042,8 @@ int xTaskGetNext( TaskIterator_t * xIterator )
 BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
                              TaskSnapshot_t * pxTaskSnapshot )
 {
+    ESP_STATIC_ANALYZER_CHECK(!pxTask, pdFALSE);
+
     if( ( portVALID_TCB_MEM( pxTask ) == false ) || ( pxTaskSnapshot == NULL ) )
     {
         return pdFALSE;

@@ -36,15 +36,9 @@ typedef enum
  */
 static inline void spi_flash_encrypt_ll_enable(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    REG_SET_BIT(HP_SYS_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-                HP_SYS_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
-                HP_SYS_ENABLE_SPI_MANUAL_ENCRYPT);
-#else
     REG_SET_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
                 HP_SYSTEM_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
                 HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-#endif
 }
 
 /*
@@ -52,13 +46,8 @@ static inline void spi_flash_encrypt_ll_enable(void)
  */
 static inline void spi_flash_encrypt_ll_disable(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    REG_CLR_BIT(HP_SYS_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-                HP_SYS_ENABLE_SPI_MANUAL_ENCRYPT);
-#else
     REG_CLR_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
                 HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-#endif
 }
 
 /**

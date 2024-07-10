@@ -30,4 +30,5 @@ include:
   - '.gitlab/ci/integration_test.yml'
   - '.gitlab/ci/host-test.yml'
   - '.gitlab/ci/deploy.yml'
+  - '.gitlab/ci/post_deploy.yml'
   - '.gitlab/ci/test-win.yml'

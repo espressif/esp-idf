@@ -168,11 +168,11 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS;
+            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS_DEFAULT;
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS_DEFAULT;
         }
 
         config->analog = analog_default;
@@ -274,11 +274,16 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
         ;
     }
 
-    return pmu_sleep_finish();
+    return pmu_sleep_finish(dslp);
 }
 
-bool pmu_sleep_finish(void)
+bool pmu_sleep_finish(bool dslp)
 {
+    (void)dslp;
+
+    // Wait eFuse memory update done.
+    while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
+
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 

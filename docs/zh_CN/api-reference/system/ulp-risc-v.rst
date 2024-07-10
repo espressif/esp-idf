@@ -103,6 +103,11 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
         ulp_measurement_count = 64;
     }
 
+.. note::
+
+    ULP RISC-V 程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 ULP RISC-V 二进制文件时被初始化。在首次运行 ULP RISC-V 之前，从主 CPU 上的主程序访问这些变量可能会导致未定义行为。
+
+
 互斥
 ^^^^^^^
 

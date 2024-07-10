@@ -34,7 +34,7 @@ else
 COMPILER := gcc
 endif
 
-CPPFLAGS += -I../private_include -I../include -I../src -I../../heap/include -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../esp_partition/include -I ../../hal/include -I ../../xtensa/include -I ../../soc/linux/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
+CPPFLAGS += -I../private_include -I../include -I../src -I../../heap/include -I../../esp_rom/include -I../../esp_rom/include/linux -I../../esp_rom/linux/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../esp_partition/include -I ../../hal/include -I ../../xtensa/include -I ../../soc/linux/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
 CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage

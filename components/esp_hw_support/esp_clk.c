@@ -96,7 +96,7 @@ int IRAM_ATTR esp_clk_cpu_freq(void)
 int IRAM_ATTR esp_clk_apb_freq(void)
 {
     // TODO: IDF-5173 Require cleanup, implementation should be unified
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C61
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     return rtc_clk_apb_freq_get();
 #else
     return MIN(s_get_cpu_freq_mhz() * MHZ, APB_CLK_FREQ);

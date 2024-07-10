@@ -20,7 +20,7 @@ extern "C" {
  *
  * 2) External 40MHz Crystal Clock: XTAL
  *
- * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referrred as SOSC in TRM or reg. description)
+ * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referred as SOSC in TRM or reg. description)
  *
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
@@ -467,24 +467,6 @@ typedef enum {
 
     LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
-
-//////////////////////////////////////////////////PARLIO////////////////////////////////////////////////////////////////
-
-/**
- * @brief Array initializer for all supported clock sources of PARLIO
- */
-#define SOC_PARLIO_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F240M}
-
-/**
- * @brief PARLIO clock source
- */
-typedef enum {
-    PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    PARLIO_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_F240M, /*!< Select PLL_F240M as the source clock */
-    PARLIO_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-    PARLIO_CLK_SRC_EXTERNAL = -1,                     /*!< Select EXTERNAL clock as the source clock */
-    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F240M,   /*!< Select PLL_F240M as the default clock choice */
-} soc_periph_parlio_clk_src_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {

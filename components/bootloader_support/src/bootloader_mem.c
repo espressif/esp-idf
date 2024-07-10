@@ -47,6 +47,6 @@ void bootloader_init_mem(void)
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
     // protect memory region
-    esp_cpu_configure_region_protection();  // TODO: [ESP32C5] IDF-8833 PSRAM support write
+    esp_cpu_configure_region_protection();
 #endif
 }

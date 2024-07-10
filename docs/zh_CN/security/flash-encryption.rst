@@ -55,7 +55,7 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 相关 eFuses
 ------------------------------
 
-flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这些 eFuse 列表及其描述，下表中的各 eFuse 名称也在 espefuse.py 工具中使用，为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT)。
+flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制，具体 eFuse 名称及其描述请参见下表。``espefuse.py`` 工具和基于 ``idf.py`` 的 eFuse 指令也会使用下表中的 eFuse 名。为了能在 eFuse API 中使用，请在名称前加上 ``ESP_EFUSE_``，如：esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT)。
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
@@ -164,7 +164,7 @@ flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
   * 上表中列出的所有 eFuse 位都提供读/写访问控制。
   * 这些位的默认值是 0。
 
-对上述 eFuse 位的读写访问由 ``WR_DIS`` 和 ``RD_DIS`` 寄存器中的相应字段控制。有关 {IDF_TARGET_NAME} eFuse 的详细信息，请参考 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。要使用 espefuse.py 更改 eFuse 字段的保护位，请使用以下两个命令：read_protect_efuse 和 write_protect_efuse。例如 ``espefuse.py write_protect_efuse DISABLE_DL_ENCRYPT``。
+对上述 eFuse 位的读写访问由 ``WR_DIS`` 和 ``RD_DIS`` 寄存器中的相应字段控制。有关 {IDF_TARGET_NAME} eFuse 的详细信息，请参考 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。要使用 ``idf.py`` 更改 eFuse 字段的保护位，请使用以下两个命令：efuse-read-protect 和 efuse-write-protect（``idf.py`` 基于 ``espefuse.py`` 命令 write_protect_efuse 和 read_protect_efuse 的别名）。例如 ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``。
 
 .. only:: esp32c2
 
@@ -405,42 +405,42 @@ flash 加密设置
 
     .. code-block:: bash
 
-        espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
+        idf.py --port PORT efuse-burn-key flash_encryption my_flash_encryption_key.bin
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. code-block:: bash
 
-        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+        idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
-    其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥区。而 ``KEYPURPOSE`` 是 ``AES_256_KEY_1``、``XTS_AES_256_KEY_2`` 或 ``XTS_AES_128_KEY``。关于密钥用途，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
+    其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥区。而 ``KEYPURPOSE`` 是 ``XTS_AES_256_KEY_1``、``XTS_AES_256_KEY_2`` 或 ``XTS_AES_128_KEY``。关于密钥用途，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
     对于 AES-128（256 位密钥）- ``XTS_AES_128_KEY``:
 
     .. code-block:: bash
 
-        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+        idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-    对于 AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。espefuse.py 支持通过虚拟密钥用途 ``XTS_AES_256_KEY`` 将这两个密钥用途和一个 512 位密钥一起烧录到两个独立的密钥块。使用此功能时，``espefuse.py`` 将把密钥的前 256 位烧录到指定的 ``BLOCK``，并把相应的区块密钥用途烧录到 ``XTS_AES_256_KEY_1``。密钥的后 256 位将被烧录到 ``BLOCK`` 后的第一个空闲密钥块，并把相应的密钥用途烧录到 ``XTS_AES_256_KEY_2``。
+    对于 AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。``idf.py`` 支持通过虚拟密钥用途 ``XTS_AES_256_KEY`` 将这两个密钥用途和一个 512 位密钥一起烧录到两个独立的密钥块。使用此功能时，``idf.py`` 将把密钥的前 256 位烧录到指定的 ``BLOCK``，并把相应的区块密钥用途烧录到 ``XTS_AES_256_KEY_1``。密钥的后 256 位将被烧录到 ``BLOCK`` 后的第一个空闲密钥块，并把相应的密钥用途烧录到 ``XTS_AES_256_KEY_2``。
 
     .. code-block:: bash
 
-        espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
+        idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
     如果你想指定使用哪两个区块，则可以将密钥分成两个 256 位密钥，并分别使用 ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2`` 为密钥用途进行手动烧录：
 
     .. code-block:: bash
 
       split -b 32 my_flash_encryption_key.bin my_flash_encryption_key.bin.
-      espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
-      espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
+      idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
+      idf.py --port PORT efuse-burn-key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
 
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
     .. code-block:: bash
 
-        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+        idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
     其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的一个空闲密钥区。
 
@@ -450,19 +450,19 @@ flash 加密设置
 
     .. code-block:: bash
 
-        espefuse.py  --port PORT  burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
+        idf.py --port PORT efuse-burn-key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
     对于由 128 位导出的 AES-128 密钥（SHA256（128 位））- ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。flash 加密密钥会被写入 eFuse BLOCK_KEY0 的低位，留出高 128 位以支持软件读取。如小节 ``同时烧录两个密钥`` 所示，在 espefuse 工具的特殊模式下，你可以使用任意 espefuse 命令来写入数据。
 
     .. code-block:: bash
 
-        espefuse.py  --port PORT  burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
+        idf.py --port PORT efuse-burn-key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
     同时烧录两个密钥（安全启动和 flash 加密）:
 
     .. code-block:: bash
 
-        espefuse.py --port PORT --chip esp32c2  burn_key_digest secure_boot_signing_key.pem \
+        espefuse.py --port PORT --chip esp32c2 burn_key_digest secure_boot_signing_key.pem \
                                                 burn_key BLOCK_KEY0 flash_encryption_key128.bin XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS
 
   如果未烧录密钥并在启用 flash 加密后启动设备，{IDF_TARGET_NAME} 将生成一个软件无法访问或修改的随机密钥。
@@ -706,7 +706,7 @@ flash 加密设置
 
   .. code-block:: bash
 
-      espefuse.py -p PORT summary
+      idf.py efuse-summary
 
 
 .. _reading-writing-content:
@@ -806,11 +806,11 @@ OTA 更新
 #. 在 :ref:`项目配置菜单 <project-configuration-menu>` 中，禁用 :ref:`启动时使能 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>` 选项，然后保存并退出。
 #. 再次打开项目配置菜单，再次检查你是否已经禁用了该选项，如果这个选项仍被启用，引导加载程序在启动时将立即重新启用加密功能。
 #. 在禁用 flash 加密后，通过运行 ``idf.py flash`` 来构建和烧录新的引导加载程序和应用程序。
-#. 使用 ``espefuse.py`` （在 ``components/esptool_py/esptool`` 中）以关闭 ``{IDF_TARGET_CRYPT_CNT}``，运行:
+#. 使用 ``idf.py`` 来关闭 ``{IDF_TARGET_CRYPT_CNT}``，请运行以下命令：
 
   .. code-block:: bash
 
-      espefuse.py burn_efuse {IDF_TARGET_CRYPT_CNT}
+      idf.py efuse-burn {IDF_TARGET_CRYPT_CNT}
 
 重置 {IDF_TARGET_NAME}，flash 加密应处于关闭状态，引导加载程序将正常启动。
 
@@ -940,15 +940,15 @@ flash 加密的高级功能
 
   .. code-block:: bash
 
-    espefuse.py --port PORT burn_efuse DISABLE_DL_DECRYPT
-    espefuse.py --port PORT write_protect_efuse DISABLE_DL_ENCRYPT
+    idf.py --port PORT efuse-burn DISABLE_DL_DECRYPT
+    idf.py --port PORT efuse-write-protect DISABLE_DL_ENCRYPT
 
 .. only:: not esp32
 
   .. code-block:: bash
 
-    espefuse.py --port PORT burn_efuse DIS_DOWNLOAD_MANUAL_ENCRYPT
-    espefuse.py --port PORT write_protect_efuse DIS_DOWNLOAD_MANUAL_ENCRYPT
+    idf.py --port PORT efuse-burn DIS_DOWNLOAD_MANUAL_ENCRYPT
+    idf.py --port PORT efuse-write-protect DIS_DOWNLOAD_MANUAL_ENCRYPT
 
   .. note::
 

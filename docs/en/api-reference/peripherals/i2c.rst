@@ -150,6 +150,27 @@ Once the :cpp:type:`i2c_device_config_t` structure is populated with mandatory p
     i2c_master_dev_handle_t dev_handle;
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+Get I2C master handle via port
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given that i2c master handle has been initialized in some module(e.g. an audio module), an another module(e.g. a video module) is not convenient to reused the handle. We have a helper function, :cpp:func:`i2c_master_get_bus_handle` for getting the initialized handle via port. However, please make sure the handle has already been initialized ahead of time. Otherwise an error would be reported.
+
+.. code:: c
+
+    // Source File 1
+    #include "driver/i2c_master.h"
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_bus_config_t i2c_mst_config = {
+        ... // same as others
+    };
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    // Source File 2
+    #include "esp_private/i2c_platform.h"
+    #include "driver/i2c_master.h"
+    i2c_master_bus_handle_t handle;
+    ESP_ERROR_CHECK(i2c_master_get_bus_handle(0, &handle));
+
 .. only:: SOC_LP_I2C_SUPPORTED
 
     Install I2C master bus with LP I2C Peripheral
@@ -362,7 +383,7 @@ Some I2C device needs write configurations before reading data from it. Therefor
 
     I2C master write to slave and read from slave
 
-Simple example for writing and reading from slave:
+Please note that no STOP condition bit is inserted between the write and read operations; therefore, this function is suited to read a register from an I2C device. A simple example for writing and reading from a slave device:
 
 .. code:: c
 
@@ -624,6 +645,14 @@ Kconfig Options
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
+
+Application Examples
+--------------------
+
+.. list::
+
+    - :example:`peripherals/i2c/i2c_eeprom` demonstrates the basic usage of I2C driver by reading and writing from an I2C connected EEPROM.
+    - :example:`peripherals/i2c/i2c_tools` implements some basic features of I2C tools based on the ESP32 console component.
 
 API Reference
 -------------

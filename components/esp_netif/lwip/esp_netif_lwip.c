@@ -9,6 +9,7 @@
 #include <lwip/ip_addr.h>
 #include <lwip/sockets.h>
 
+#include "esp_compiler.h"
 #include "esp_check.h"
 #include "esp_netif_lwip_internal.h"
 #include "lwip/esp_netif_net_stack.h"
@@ -859,12 +860,15 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
 
 static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 {
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak"); // False-positive detection. TODO GCC-366
     if (esp_netif->lwip_netif == NULL) {
         esp_netif->lwip_netif = calloc(1, sizeof(struct netif));
         if (esp_netif->lwip_netif == NULL) {
             return ESP_ERR_NO_MEM;
         }
     }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak");
+
     if (esp_netif->flags & ESP_NETIF_FLAG_IS_PPP) {
 #if CONFIG_PPP_SUPPORT
         err_t err = esp_netif->lwip_init_fn(NULL);
@@ -2537,7 +2541,7 @@ static esp_err_t esp_netif_napt_control_api(esp_netif_api_msg_t *msg)
         /* Disable napt on all other interface */
         esp_netif_t *netif = esp_netif_next_unsafe(NULL);
         while (netif) {
-            if (netif != esp_netif) {
+            if (netif != esp_netif && netif->lwip_netif->napt == 1) {
                 ip_napt_enable_netif(netif->lwip_netif, 0); // Fails only if netif is down
                 ESP_LOGW(TAG, "napt disabled on esp_netif:%p", esp_netif);
             }

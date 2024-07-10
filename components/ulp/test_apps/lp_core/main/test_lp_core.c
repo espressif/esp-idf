@@ -8,7 +8,6 @@
 #include <inttypes.h>
 #include <sys/time.h>
 #include "soc/soc_caps.h"
-#include "soc/gpio_num.h"
 #include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
@@ -321,6 +320,7 @@ TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
     TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_set_timer_wakeup_counter, "LP Core did not wake up the expected number of times");
 }
 
+#if SOC_RTCIO_PIN_COUNT > 0
 TEST_CASE("LP core gpio tests", "[ulp]")
 {
     /* Load ULP firmware and start the coprocessor */
@@ -337,19 +337,15 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 
     TEST_ASSERT_TRUE(ulp_gpio_test_succeeded);
 }
+#endif //SOC_RTCIO_PIN_COUNT > 0
 
 #endif //SOC_LP_TIMER_SUPPORTED
 
 #define ISR_TEST_ITERATIONS 100
 #define IO_TEST_PIN 0
-#include "lp_core_uart.h"
 
 TEST_CASE("LP core ISR tests", "[ulp]")
 {
-    lp_core_uart_cfg_t ucfg = LP_CORE_UART_DEFAULT_CONFIG();
-
-    ESP_ERROR_CHECK(lp_core_uart_init(&ucfg));
-
     /* Load ULP firmware and start the coprocessor */
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
@@ -368,6 +364,7 @@ TEST_CASE("LP core ISR tests", "[ulp]")
     printf("ULP PMU ISR triggered %"PRIu32" times\n", ulp_pmu_isr_counter);
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_pmu_isr_counter);
 
+#if SOC_RTCIO_PIN_COUNT > 0
     /* Test LP IO interrupt */
     rtc_gpio_init(IO_TEST_PIN);
     rtc_gpio_set_direction(IO_TEST_PIN, RTC_GPIO_MODE_INPUT_ONLY);
@@ -384,4 +381,6 @@ TEST_CASE("LP core ISR tests", "[ulp]")
 
     printf("ULP LP IO ISR triggered %"PRIu32" times\n", ulp_io_isr_counter);
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
+#endif //SOC_RTCIO_PIN_COUNT > 0
+
 }

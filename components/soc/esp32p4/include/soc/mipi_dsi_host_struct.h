@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1943,11 +1943,11 @@ typedef struct dsi_host_dev_t {
     volatile dsi_host_gen_pld_data_reg_t gen_pld_data;
     volatile dsi_host_cmd_pkt_status_reg_t cmd_pkt_status;
     volatile dsi_host_to_cnt_cfg_reg_t to_cnt_cfg;
-    volatile dsi_host_hs_rd_to_cnt_reg_t hs_rd_to_cnt;
-    volatile dsi_host_lp_rd_to_cnt_reg_t lp_rd_to_cnt;
-    volatile dsi_host_hs_wr_to_cnt_reg_t hs_wr_to_cnt;
-    volatile dsi_host_lp_wr_to_cnt_reg_t lp_wr_to_cnt;
-    volatile dsi_host_bta_to_cnt_reg_t bta_to_cnt;
+    volatile dsi_host_hs_rd_to_cnt_reg_t hs_rd_timeout_cnt;
+    volatile dsi_host_lp_rd_to_cnt_reg_t lp_rd_timeout_cnt;
+    volatile dsi_host_hs_wr_to_cnt_reg_t hs_wr_timeout_cnt;
+    volatile dsi_host_lp_wr_to_cnt_reg_t lp_wr_timeout_cnt;
+    volatile dsi_host_bta_to_cnt_reg_t bta_timeout_cnt;
     volatile dsi_host_sdf_3d_reg_t sdf_3d;
     volatile dsi_host_lpclk_ctrl_reg_t lpclk_ctrl;
     volatile dsi_host_phy_tmr_lpclk_cfg_reg_t phy_tmr_lpclk_cfg;

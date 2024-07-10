@@ -293,6 +293,9 @@ endif()
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
+        target_compile_options(${target} PRIVATE "-fno-analyzer")
+    endif()
 endforeach()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)

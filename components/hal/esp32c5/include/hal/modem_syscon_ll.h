@@ -10,23 +10,55 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8845 remove
 #include "soc/soc.h"
 #include "hal/assert.h"
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "modem/modem_syscon_struct.h"
 #include "hal/modem_clock_types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_test_clk(modem_syscon_dev_t *hw, bool en)
 {
     hw->test_conf.clk_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_pwdet_sar_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.pwdet_sar_clock_ena = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_set_pwdet_clk_div_num(modem_syscon_dev_t *hw, uint32_t div)
+{
+    hw->clk_conf.pwdet_clk_div_num = div;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_clk_tx_dac_inv(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.clk_tx_dac_inv_ena = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_clk_rx_dac_inv(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.clk_rx_adc_inv_ena = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_clk_pwdet_adc_inv(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.clk_pwdet_adc_inv_ena = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_clk_i2c_mst_sel_160m(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.clk_i2c_mst_sel_160m = en;
 }
 
 __attribute__((always_inline))
@@ -240,6 +272,13 @@ static inline void modem_syscon_ll_reset_etm(modem_syscon_dev_t *hw)
 }
 
 __attribute__((always_inline))
+static inline void modem_syscon_ll_reset_zbmac_apb(modem_syscon_dev_t *hw)
+{
+    hw->modem_rst_conf.rst_zbmac_apb = 1;
+    hw->modem_rst_conf.rst_zbmac_apb = 0;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_reset_zbmac(modem_syscon_dev_t *hw)
 {
     hw->modem_rst_conf.rst_zbmac = 1;
@@ -405,21 +444,21 @@ static inline void modem_syscon_ll_enable_fe_apb_clock(modem_syscon_dev_t *hw, b
     hw->clk_conf1.clk_fe_apb_en = en;
 }
 
-// The modem_syscon of esp32c5beta3 adds the enablement of the adc clock on the analog front end compared to esp32h2 and esp32c6.
+// The modem_syscon of esp32c5 adds the enablement of the adc clock on the analog front end compared to esp32h2 and esp32c6.
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_fe_adc_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_fe_adc_en = en;
 }
 
-// The modem_syscon of esp32c5beta3 adds the enablement of the dac clock on the analog front end compared to esp32h2 and esp32c6.
+// The modem_syscon of esp32c5 adds the enablement of the dac clock on the analog front end compared to esp32h2 and esp32c6.
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_fe_dac_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_fe_dac_en = en;
 }
 
-// The modem_syscon of esp32c5beta3 adds the enablement of the analog power detect clock on the analog front end compared to esp32h2 and esp32c6.
+// The modem_syscon of esp32c5 adds the enablement of the analog power detect clock on the analog front end compared to esp32h2 and esp32c6.
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_fe_pwdet_clock(modem_syscon_dev_t *hw, bool en)
 {
@@ -642,7 +681,6 @@ static inline uint32_t modem_syscon_ll_get_date(modem_syscon_dev_t *hw)
 {
     return hw->date.val;
 }
-#endif
 
 #ifdef __cplusplus
 }

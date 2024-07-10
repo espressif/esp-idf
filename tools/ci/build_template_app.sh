@@ -81,35 +81,6 @@ build_stage1() {
         --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61
 }
 
-# TODO: IDF-9197 remove the additional test for esp32c5 beta3
-build_c5beta3() {
-    # Update the config to select C5 beta3
-    C5BETA3_CFG="CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION=y\nCONFIG_IDF_TARGET_ESP32C5_MP_VERSION=n"
-    if [ $1 = 1 ]
-    then
-        echo "${C5BETA3_CFG}" >> ${TEMPLATE_APP_PATH}/sdkconfig.ci2.Og
-        CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
-        KEEP_GOING=""
-    else
-        echo "${C5BETA3_CFG}" >> ${TEMPLATE_APP_PATH}/sdkconfig.ci.O0
-        echo "${C5BETA3_CFG}" >> ${TEMPLATE_APP_PATH}/sdkconfig.ci.Os
-        echo "${C5BETA3_CFG}" >> ${TEMPLATE_APP_PATH}/sdkconfig.ci.O2
-        CONFIG_STR=$(get_config_str sdkconfig.ci.*=)
-        KEEP_GOING=" --keep-going"
-    fi
-    python -m idf_build_apps build -vv \
-           -p ${TEMPLATE_APP_PATH} \
-           -t esp32c5 \
-           ${CONFIG_STR} \
-           --work-dir ${BUILD_PATH}/cmake \
-           --build-dir ${BUILD_DIR} \
-           --build-log ${BUILD_LOG_CMAKE} \
-           --size-file size.json \
-           ${KEEP_GOING} \
-           --collect-size-info size_info.txt \
-           --default-build-targets esp32c5
-}
-
 # Default arguments
 # STAGE:
 # 1 (-p): fast build, 2 (default): regular build
@@ -135,7 +106,3 @@ then
 else
     build_stage2
 fi
-
-# TODO: IDF-9197 remove the additional test for esp32c5 beta3
-echo "Build ESP32-C5 beta3 additionally"
-build_c5beta3 ${STAGE}

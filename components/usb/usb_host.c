@@ -10,6 +10,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -49,6 +50,9 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
 #define PROCESS_REQUEST_PENDING_FLAG_USBH       (1 << 0)
 #define PROCESS_REQUEST_PENDING_FLAG_HUB        (1 << 1)
 #define PROCESS_REQUEST_PENDING_FLAG_ENUM       (1 << 2)
+
+#define SHORT_DESC_REQ_LEN                      8
+#define CTRL_TRANSFER_MAX_DATA_LEN              CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 
 typedef struct ep_wrapper_s ep_wrapper_t;
 typedef struct interface_s interface_t;
@@ -106,7 +110,7 @@ struct client_s {
             uint32_t val;
         } flags;
         uint32_t num_done_ctrl_xfer;
-        uint32_t opened_dev_addr_map;
+        uint32_t opened_dev_addr_map[4];
     } dynamic;
     // Mux protected members must be protected by host library the mux_lock when accessed
     struct {
@@ -159,26 +163,25 @@ const char *USB_HOST_TAG = "USB HOST";
 
 static inline void _record_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map |= (1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] |= (uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline void _clear_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map &= ~(1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] &= ~(uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
     bool ret;
-
+    assert(dev_addr <= 127);
     if (dev_addr != 0) {
-        ret = client_obj->dynamic.opened_dev_addr_map & (1 << (dev_addr - 1));
+        ret = client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] & (uint32_t)(1 << (dev_addr % 32));
     } else {
         ret = false;
     }
-
     return ret;
 }
 
@@ -223,6 +226,11 @@ static inline bool _is_internal_client(void *client)
     if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
         return true;
     }
+#if ENABLE_USB_HUBS
+    if (p_host_lib_obj->constant.hub_client && (client == p_host_lib_obj->constant.hub_client)) {
+        return true;
+    }
+#endif // ENABLE_USB_HUBS
     return false;
 }
 
@@ -307,9 +315,15 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
             .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
+#if ENABLE_USB_HUBS
+        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         break;
     }
     case USBH_EVENT_DEV_GONE: {
+#if ENABLE_USB_HUBS
+        hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         // Prepare event msg, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
@@ -320,9 +334,10 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
     }
     case USBH_EVENT_DEV_FREE: {
         // Let the Hub driver know that the device is free and its port can be recycled
-        ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
-                                         event_data->dev_free_data.port_num,
-                                         event_data->dev_free_data.dev_uid));
+        // Port could be absent, no need to verify
+        hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
+                         event_data->dev_free_data.port_num,
+                         event_data->dev_free_data.dev_uid);
         break;
     }
     case USBH_EVENT_ALL_FREE: {
@@ -374,6 +389,8 @@ static void enum_event_callback(enum_event_data_t *event_data, void *arg)
         hub_port_reset(event_data->reset_req.parent_dev_hdl, event_data->reset_req.parent_port_num);
         break;
     case ENUM_EVENT_COMPLETED:
+        // Notify port that device completed enumeration
+        hub_port_active(event_data->complete.parent_dev_hdl, event_data->complete.parent_port_num);
         // Propagate a new device event
         ESP_ERROR_CHECK(usbh_devs_new_dev_event(event_data->complete.dev_hdl));
         break;
@@ -406,6 +423,12 @@ static bool endpoint_callback(usbh_ep_handle_t ep_hdl, usbh_ep_event_t ep_event,
     HOST_EXIT_CRITICAL_SAFE();
 
     return yield;
+}
+
+static void get_config_desc_transfer_cb(usb_transfer_t *transfer)
+{
+    SemaphoreHandle_t transfer_done = (SemaphoreHandle_t)transfer->context;
+    xSemaphoreGive(transfer_done);
 }
 
 // ------------------------------------------------ Library Functions --------------------------------------------------
@@ -796,7 +819,10 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)
             client_obj->dynamic.flags.taking_mux ||
             client_obj->dynamic.flags.num_intf_claimed != 0 ||
             client_obj->dynamic.num_done_ctrl_xfer != 0 ||
-            client_obj->dynamic.opened_dev_addr_map != 0) {
+            client_obj->dynamic.opened_dev_addr_map[0] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[1] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[2] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[3] != 0) {
         can_deregister = false;
     } else {
         can_deregister = true;
@@ -985,6 +1011,9 @@ esp_err_t usb_host_device_free_all(void)
     HOST_CHECK_FROM_CRIT(p_host_lib_obj->dynamic.flags.num_clients == 0, ESP_ERR_INVALID_STATE);    // All clients must have been deregistered
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
+#if ENABLE_USB_HUBS
+    hub_notify_all_free();
+#endif // ENABLE_USB_HUBS
     ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
@@ -1020,6 +1049,135 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
 {
     HOST_CHECK(dev_hdl != NULL && config_desc != NULL, ESP_ERR_INVALID_ARG);
     return usbh_dev_get_config_desc(dev_hdl, config_desc);
+}
+
+// ----------------- Descriptors Transfer Requests --------------------
+
+static usb_transfer_status_t wait_for_transmission_done(usb_transfer_t *transfer)
+{
+    SemaphoreHandle_t transfer_done = (SemaphoreHandle_t)transfer->context;
+    xSemaphoreTake(transfer_done, portMAX_DELAY);
+    usb_transfer_status_t status = transfer->status;
+
+    // EP0 halt->flush->clear is managed by USBH and lower layers
+    return status;
+}
+
+static esp_err_t get_config_desc_transfer(usb_host_client_handle_t client_hdl, usb_transfer_t *ctrl_transfer, const int bConfigurationValue, const int num_bytes)
+{
+    const usb_device_desc_t *dev_desc;
+    ESP_ERROR_CHECK(usbh_dev_get_desc(ctrl_transfer->device_handle, &dev_desc));
+
+    usb_setup_packet_t *setup_pkt = (usb_setup_packet_t *)ctrl_transfer->data_buffer;
+    USB_SETUP_PACKET_INIT_GET_CONFIG_DESC(setup_pkt, bConfigurationValue - 1, num_bytes);
+    ctrl_transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(num_bytes, dev_desc->bMaxPacketSize0);
+
+    // IN data stage should return exactly num_bytes (SHORT_DESC_REQ_LEN or wTotalLength) bytes
+    const int expect_num_bytes = sizeof(usb_setup_packet_t) + num_bytes;
+
+    // Submit control transfer
+    esp_err_t ret = usb_host_transfer_submit_control(client_hdl, ctrl_transfer);
+    if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Submit ctrl transfer failed");
+        return ret;
+    }
+
+    // Wait for transfer to finish
+    const usb_transfer_status_t status_short_desc = wait_for_transmission_done(ctrl_transfer);
+    if (status_short_desc != USB_TRANSFER_STATUS_COMPLETED) {
+        ESP_LOGE(USB_HOST_TAG, "Get config descriptor transfer status: %d", status_short_desc);
+        ret = ESP_ERR_INVALID_STATE;
+        return ret;
+    }
+
+    // Check IN transfer returned the expected correct number of bytes
+    if ((expect_num_bytes != 0) && (ctrl_transfer->actual_num_bytes != expect_num_bytes)) {
+        if (ctrl_transfer->actual_num_bytes > expect_num_bytes) {
+            // The device returned more bytes than requested.
+            // This violates the USB specs chapter 9.3.5, but we can continue
+            ESP_LOGW(USB_HOST_TAG, "Incorrect number of bytes returned %d", ctrl_transfer->actual_num_bytes);
+            return ESP_OK;
+        } else {
+            // The device returned less bytes than requested. We cannot continue.
+            ESP_LOGE(USB_HOST_TAG, "Incorrect number of bytes returned %d", ctrl_transfer->actual_num_bytes);
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+    return ESP_OK;
+}
+
+esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bConfigurationValue, const usb_config_desc_t **config_desc_ret)
+{
+    esp_err_t ret = ESP_OK;
+    HOST_CHECK(client_hdl != NULL && dev_hdl != NULL && config_desc_ret != NULL, ESP_ERR_INVALID_ARG);
+
+    // Get number of configurations
+    const usb_device_desc_t *dev_desc;
+    ESP_ERROR_CHECK(usbh_dev_get_desc(dev_hdl, &dev_desc));
+
+    HOST_CHECK(bConfigurationValue != 0, ESP_ERR_INVALID_ARG);
+    HOST_CHECK(bConfigurationValue <= dev_desc->bNumConfigurations, ESP_ERR_NOT_SUPPORTED);
+
+    // Initialize transfer
+    usb_transfer_t *ctrl_transfer;
+    if (usb_host_transfer_alloc(sizeof(usb_setup_packet_t) + CTRL_TRANSFER_MAX_DATA_LEN, 0, &ctrl_transfer)) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    SemaphoreHandle_t transfer_done = xSemaphoreCreateBinary();
+    if (transfer_done == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto exit;
+    }
+
+    ctrl_transfer->device_handle = dev_hdl;
+    ctrl_transfer->bEndpointAddress = 0;
+    ctrl_transfer->callback = get_config_desc_transfer_cb;
+    ctrl_transfer->context = (void *)transfer_done;
+
+    // Initiate control transfer for short config descriptor
+    ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, SHORT_DESC_REQ_LEN);
+    if (ret != ESP_OK) {
+        goto exit;
+    }
+
+    // Get length of full config descriptor
+    const usb_config_desc_t *config_desc_short = (usb_config_desc_t *)(ctrl_transfer->data_buffer + sizeof(usb_setup_packet_t));
+
+    // Initiate control transfer for full config descriptor
+    ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, config_desc_short->wTotalLength);
+    if (ret != ESP_OK) {
+        goto exit;
+    }
+
+    // Allocate memory to store the configuration descriptor
+    const usb_config_desc_t *config_desc_full = (usb_config_desc_t *)(ctrl_transfer->data_buffer + sizeof(usb_setup_packet_t));
+    usb_config_desc_t *config_desc = heap_caps_malloc(config_desc_full->wTotalLength, MALLOC_CAP_DEFAULT);
+    if (config_desc == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto exit;
+    }
+
+    // Copy the configuration descriptor
+    memcpy(config_desc, config_desc_full, config_desc_full->wTotalLength);
+    *config_desc_ret = config_desc;
+    ret = ESP_OK;
+
+exit:
+    if (ctrl_transfer) {
+        usb_host_transfer_free(ctrl_transfer);
+    }
+    if (transfer_done != NULL) {
+        vSemaphoreDelete(transfer_done);
+    }
+    return ret;
+}
+
+esp_err_t usb_host_get_config_desc_free(const usb_config_desc_t *config_desc)
+{
+    HOST_CHECK(config_desc != NULL, ESP_ERR_INVALID_ARG);
+    heap_caps_free((usb_config_desc_t*)config_desc);
+    return ESP_OK;
 }
 
 // ----------------------------------------------- Interface Functions -------------------------------------------------

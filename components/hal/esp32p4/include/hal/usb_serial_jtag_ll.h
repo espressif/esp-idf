@@ -13,6 +13,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/usb_serial_jtag_types.h"
+#include "hal/misc.h"
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 

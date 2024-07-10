@@ -152,6 +152,7 @@
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+#define SOC_CPU_PMP_REGION_GRANULARITY  4
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
@@ -445,6 +446,7 @@
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL

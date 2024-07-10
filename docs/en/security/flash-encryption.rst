@@ -55,7 +55,7 @@ Other types of data can be encrypted conditionally:
 Relevant eFuses
 ---------------
 
-The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by espefuse.py tool and idf.py based eFuse commands. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT).
+The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. The list of eFuses and their descriptions is given in the table below. The names in eFuse column are also used by ``espefuse.py`` tool and ``idf.py`` based eFuse commands. For usage in the eFuse API, modify the name by adding ``ESP_EFUSE_``, for example: esp_efuse_read_field_bit (ESP_EFUSE_DISABLE_DL_ENCRYPT).
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
@@ -164,7 +164,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
   * R/W access control is available for all the eFuse bits listed in the table above.
   * The default value of these bits is 0 after manufacturing.
 
-Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using idf.py, use these two commands: efuse-read-protect and efuse-write-protect (idf.py based aliases of espefuse.py commands write_protect_efuse and read_protect_efuse). Example ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``.
+Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using ``idf.py``, use these two commands: efuse-read-protect and efuse-write-protect (idf.py based aliases of espefuse.py commands write_protect_efuse and read_protect_efuse). Example ``idf.py efuse-write-protect DISABLE_DL_ENCRYPT``.
 
 .. only:: esp32c2
 
@@ -413,7 +413,7 @@ To use a host generated key, take the following steps:
 
         idf.py --port PORT efuse-burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
-    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
+    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``XTS_AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
 
     For AES-128 (256-bit key) - ``XTS_AES_128_KEY``:
 

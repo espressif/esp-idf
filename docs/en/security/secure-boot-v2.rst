@@ -13,11 +13,11 @@ Secure Boot v2
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v3.0 onwards)"}
 
-{IDF_TARGET_RSA_TIME:default="", esp32c6="about 2.7 ms", esp32h2="about 4.5 ms"}
+{IDF_TARGET_RSA_TIME:default="", esp32c6="about 2.7 ms", esp32h2="about 4.5 ms", esp32p4="about 2.4 ms"}
 
-{IDF_TARGET_ECDSA_TIME:default="", esp32c6="about 21.5 ms", esp32h2="about 36 ms"}
+{IDF_TARGET_ECDSA_TIME:default="", esp32c6="about 21.5 ms", esp32h2="about 36 ms", esp32p4="about 10.3 ms"}
 
-{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz"}
+{IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
 
 {IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (v2)"}
 

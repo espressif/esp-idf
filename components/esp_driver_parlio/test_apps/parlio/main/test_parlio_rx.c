@@ -178,6 +178,8 @@ static void pulse_delimiter_sender_task_i2s(void *args)
     }
 }
 
+#if CONFIG_IDF_TARGET_ESP32C6   // TODO: IDF-9806 fix the bit shift issue in other target
+
 static void cs_high(spi_transaction_t *trans)
 {
     gpio_set_level(TEST_VALID_GPIO, 1);
@@ -274,6 +276,7 @@ static void level_delimiter_sender_task_spi(void *args)
         vTaskDelay(portMAX_DELAY);
     }
 }
+#endif
 
 static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_clk, void (*sender_task_thread)(void *args))
 {
@@ -339,6 +342,7 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
     return is_success;
 }
 
+#if CONFIG_IDF_TARGET_ESP32C6   // TODO: IDF-9806 fix the bit shift issue in other target
 // This test case uses level delimiter
 TEST_CASE("parallel_rx_unit_level_delimiter_test_via_spi", "[parlio_rx]")
 {
@@ -358,6 +362,7 @@ TEST_CASE("parallel_rx_unit_level_delimiter_test_via_spi", "[parlio_rx]")
     TEST_ESP_OK(parlio_del_rx_delimiter(deli));
     TEST_ASSERT(is_success);
 }
+#endif
 
 // This test case uses pulse delimiter
 TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")

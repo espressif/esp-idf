@@ -252,6 +252,14 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
  */
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
 
+/**
+ * @brief Check whether bus is acquired
+ *
+ * @param port_num number of port
+ * @return true if the bus is occupied, false if the bus is not occupied.
+*/
+bool i2c_bus_occupied(i2c_port_num_t port_num);
+
 #ifdef __cplusplus
 }
 #endif

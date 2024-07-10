@@ -25,6 +25,8 @@ SPI 接口的 LCD
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::spi_mode` 设置 SPI 模式。LCD 驱动程序使用此模式与 LCD 通信。有关 SPI 模式的详细信息，请参阅 :doc:`SPI 主机 API 文档 </api-reference/peripherals/spi_master>`。
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_cmd_bits` 和 :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_param_bits` 分别设置 LCD 控制器芯片可识别的命令及参数的位宽。不同芯片对位宽要求不同，请提前参阅 LCD 规格书。
     - :cpp:member:`esp_lcd_panel_io_spi_config_t::trans_queue_depth` 设置 SPI 传输队列的深度。该值越大，可以排队的传输越多，但消耗的内存也越多。
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::cs_ena_pretrans` 设置 SPI 在传输之前应激活 CS 信号线的 SPI 位周期数 （0-16）。
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::cs_ena_posttrans` 设置 SPI 在传输之后保持激活 CS 信号线的 SPI 位周期数 （0-16）。
 
     .. code-block:: c
 

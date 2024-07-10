@@ -135,6 +135,8 @@ class TestCase:
     ci_job_url: t.Optional[str] = None
     ci_dashboard_url: t.Optional[str] = None
     dut_log_url: t.Optional[str] = None
+    latest_total_count: int = 0
+    latest_failed_count: int = 0
 
     @property
     def is_failure(self) -> bool:
@@ -177,5 +179,47 @@ class TestCase:
         skipped_node = node.find('skipped')
         if skipped_node is not None:
             kwargs['skipped'] = skipped_node.attrib['message']
+
+        return cls(**kwargs)  # type: ignore
+
+
+@dataclass
+class GitlabJob:
+    id: int
+    name: str
+    stage: str
+    status: str
+    url: str
+    ci_dashboard_url: str
+    failure_reason: t.Optional[str] = None
+    failure_log: t.Optional[str] = None
+    latest_total_count: int = 0
+    latest_failed_count: int = 0
+
+    @property
+    def is_failed(self) -> bool:
+        return self.status == 'failed'
+
+    @property
+    def is_success(self) -> bool:
+        return self.status == 'success'
+
+    @classmethod
+    def from_json_data(cls, job_data: dict, failure_data: dict) -> t.Optional['GitlabJob']:
+        grafana_base_url = urllib.parse.urljoin(os.getenv('CI_DASHBOARD_HOST', ''), '/d/LoUa-qLWz/job-list')
+        encoded_params = urllib.parse.urlencode({'var-job_name': job_data['name']}, quote_via=urllib.parse.quote)
+
+        kwargs = {
+            'id': job_data['id'],
+            'name': job_data['name'],
+            'stage': job_data['stage'],
+            'status': job_data['status'],
+            'url': job_data['url'],
+            'ci_dashboard_url': f'{grafana_base_url}?{encoded_params}',
+            'failure_reason': job_data['failure_reason'],
+            'failure_log': job_data['failure_log'],
+            'latest_total_count': failure_data.get('total_count', 0),
+            'latest_failed_count': failure_data.get('failed_count', 0),
+        }
 
         return cls(**kwargs)  # type: ignore

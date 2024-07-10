@@ -19,6 +19,7 @@ static void esp_ecc_acquire_hardware(void)
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
+        ecc_ll_power_up();
         ecc_ll_reset_register();
     }
 }
@@ -27,6 +28,7 @@ static void esp_ecc_release_hardware(void)
 {
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
+        ecc_ll_power_down();
     }
 
     esp_crypto_ecc_lock_release();

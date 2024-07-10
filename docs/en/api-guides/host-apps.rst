@@ -27,7 +27,7 @@ A large number of ESP-IDF components depend on chip-specific hardware. These har
 1. Using the `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ that simulates FreeRTOS scheduling. On top of this simulation, other APIs are also simulated or implemented when running on host.
 2. Using `CMock <https://www.throwtheswitch.org/cmock>`_ to mock all dependencies and run the code in complete isolation.
 
-In principle, it is possible to mix both approaches (POSIX/Linux simulator and mocking using CMock), but this has not been done yet in ESP-IDF. Note that despite the name, the FreeRTOS POSIX/Linux simulator currently also works on macOS. Running ESP-IDF applications on host machines is often used for testing. However, simulating the environment and mocking dependencies does not fully represent the target device. Thus, testing on the target device is still necessary, though with a different focus that usually puts more weight on integration and system testing.
+Note that despite the name, the FreeRTOS POSIX/Linux simulator currently also works on macOS. Running ESP-IDF applications on host machines is often used for testing. However, simulating the environment and mocking dependencies does not fully represent the target device. Thus, testing on the target device is still necessary, though with a different focus that usually puts more weight on integration and system testing.
 
 .. note::
 
@@ -43,6 +43,18 @@ POSIX/Linux Simulator Approach
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. This simulator allows ESP-IDF components to be implemented on the host, making them accessible to ESP-IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore, the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information about whether the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
+
+Note that this simulator relies heavily on POSIX signals and signal handlers to control and interrupt threads. Hence, it has the following *limitations*:
+
+.. list::
+    - Functions that are not *async-signal-safe*, e.g. ``printf()``, should be avoided. In particular, calling them from different tasks with different priority can lead to crashes and deadlocks.
+    - Calling any FreeRTOS primitives from threads not created by FreeRTOS API functions is forbidden.
+    - FreeRTOS tasks using any native blocking/waiting mechanism (e.g., ``select()``), may be perceived as *ready* by the simulated FreeRTOS scheduler and therefore may be scheduled, even though they are actually blocked. This is because the simulated FreeRTOS scheduler only recognizes tasks blocked on any FreeRTOS API as *waiting*.
+    - APIs that may be interrupted by signals will continually receive the signals simulating FreeRTOS tick interrupts when invoked from a running simulated FreeRTOS task. Consequently, code that calls these APIs should be designed to handle potential interrupting signals or the API needs to be wrapped by the linker.
+
+Since these limitations are not very practical, in particular for testing and development, we are currently evaluating if we can find a better solution for running ESP-IDF applications on the host machine.
+
+Note furthermore that if you use the ESP-IDF FreeRTOS mock component (``tools/mocks/freertos``), these limitations do not apply. But that mock component will not do any scheduling, either.
 
 .. only:: not esp32p4
 

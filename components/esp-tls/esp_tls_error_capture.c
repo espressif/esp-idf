@@ -7,6 +7,7 @@
 #include <sys/cdefs.h>
 #include "esp_tls.h"
 #include "esp_tls_error_capture_internal.h"
+#include "esp_compiler.h"
 
 typedef struct esp_tls_error_storage {
     struct esp_tls_last_error parent;   /*!< standard esp-tls last error container */
@@ -34,11 +35,13 @@ void esp_tls_internal_event_tracker_capture(esp_tls_error_handle_t h, uint32_t t
 
 esp_tls_error_handle_t esp_tls_internal_event_tracker_create(void)
 {
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     // Allocating internal error storage which extends the parent type
     // `esp_tls_last_error` defined at interface level
     struct esp_tls_error_storage* storage =
             calloc(1, sizeof(struct esp_tls_error_storage));
     return &storage->parent;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 void esp_tls_internal_event_tracker_destroy(esp_tls_error_handle_t h)

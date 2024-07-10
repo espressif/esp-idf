@@ -7,12 +7,6 @@ set(includes "platform_port/include")
 # because of the "include_next" directive used by the efuse_hal.h
 list(APPEND includes "${target}/include")
 
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    list(APPEND includes "${target}/beta3/include")
-elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    list(APPEND includes "${target}/mp/include")
-endif()
-
 list(APPEND includes "include")
 
 if(CONFIG_SOC_MPU_SUPPORTED)
@@ -62,7 +56,7 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_CLK_TREE_SUPPORTED OR CONFIG_IDF_TARGET_ESP32C5) # TODO: IDF-8642
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
         list(APPEND srcs "${target}/clk_tree_hal.c")
     endif()
 
@@ -331,4 +325,9 @@ if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
 elseif(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 2)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __assert_func")
+endif()
+
+if((CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3) AND
+   CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10234
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
 endif()

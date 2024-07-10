@@ -29,9 +29,7 @@
 enum {
     SOC_MEMORY_TYPE_RAM     = 0,
     SOC_MEMORY_TYPE_RTCRAM  = 1,
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     SOC_MEMORY_TYPE_SPIRAM  = 2,
-#endif
     SOC_MEMORY_TYPE_NUM,
 };
 
@@ -52,9 +50,7 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     /*                           Mem Type Name   High Priority Matching                      Medium Priority Matching    Low Priority Matching */
     [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C5_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                        ESP32C5_MEM_COMMON_CAPS,   0 }},
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",       { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}},
-#endif
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -73,7 +69,7 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END                 (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#if CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW,  (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW),   SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //SPI SRAM, if available
 #endif
     { SOC_DIRAM_DRAM_LOW,   (APP_USABLE_DRAM_END - SOC_DIRAM_DRAM_LOW),     SOC_MEMORY_TYPE_RAM,    SOC_DIRAM_IRAM_LOW,     false}, //D/IRAM, can be used as trace memory

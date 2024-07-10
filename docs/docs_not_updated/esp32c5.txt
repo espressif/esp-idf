@@ -32,7 +32,6 @@ api-guides/blufi.rst
 api-guides/lwip.rst
 api-guides/coexist.rst
 api-guides/flash_psram_config.rst
-api-guides/usb-serial-jtag-console.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/bluetooth.rst
@@ -87,6 +86,7 @@ api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_host/usb_host_notes_enum.rst
+api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
@@ -97,7 +97,6 @@ api-reference/peripherals/lcd.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
-api-reference/peripherals/clk_tree.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
@@ -107,8 +106,6 @@ api-reference/peripherals/sdm.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/spi_slave_hd.rst
-api-reference/peripherals/parlio.rst
-api-reference/peripherals/i2c.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/spi_master.rst

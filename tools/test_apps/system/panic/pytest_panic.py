@@ -1050,9 +1050,9 @@ def _test_coredump_summary(dut: PanicTestDut, flash_encrypted: bool, coredump_en
     dut.expect_elf_sha256('App ELF file SHA256: ')
     dut.expect_exact('Crashed task: main')
     if dut.is_xtensa:
-        dut.expect_exact('Exception cause: 29')
+        dut.expect_exact('Exception cause: 0')
     else:
-        dut.expect_exact('Exception cause: 7')
+        dut.expect_exact('Exception cause: 2')
     dut.expect(PANIC_ABORT_PREFIX + r'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$')
 
 

@@ -48,6 +48,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "y" if IDF_TOOLCHAIN="clang"
 
+    config IDF_TOOLCHAIN_GCC
+        bool
+        default "y" if IDF_TOOLCHAIN="gcc"
+
     config IDF_TARGET_ARCH_RISCV
         bool
         default "n"
@@ -119,28 +123,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
-    # TODO: IDF-9197
-    choice IDF_TARGET_ESP32C5_VERSION
-        prompt "ESP32-C5 version"
-        depends on IDF_TARGET_ESP32C5
-        default IDF_TARGET_ESP32C5_MP_VERSION
-        help
-            ESP32-C5 will support two versions for a period.
-            This option is for internal use only.
-            Select the one that matches your chip model.
-
-        config IDF_TARGET_ESP32C5_BETA3_VERSION
-            bool
-            prompt "ESP32-C5 beta3"
-            select ESPTOOLPY_NO_STUB
-
-        config IDF_TARGET_ESP32C5_MP_VERSION
-            bool
-            prompt "ESP32-C5 MP"
-            select ESPTOOLPY_NO_STUB
-            select IDF_ENV_FPGA
-    endchoice
-
     config IDF_TARGET_ESP32P4
         bool
         default "y" if IDF_TARGET="esp32p4"
@@ -173,8 +155,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x000D if IDF_TARGET_ESP32C6
         default 0x0010 if IDF_TARGET_ESP32H2
         default 0x0012 if IDF_TARGET_ESP32P4
-        default 0x0011 if IDF_TARGET_ESP32C5 && IDF_TARGET_ESP32C5_BETA3_VERSION  # TODO: IDF-9197
-        default 0x0017 if IDF_TARGET_ESP32C5 && IDF_TARGET_ESP32C5_MP_VERSION     # TODO: IDF-9197
+        default 0x0017 if IDF_TARGET_ESP32C5
         default 0x0014 if IDF_TARGET_ESP32C61
         default 0xFFFF
 
@@ -559,6 +540,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This option can be enabled for RISC-V targets only.
 
+        config COMPILER_DISABLE_DEFAULT_ERRORS
+            bool "Disable errors for default warnings"
+            default "y"
+            help
+                Enable this option if you do not want default warnings to be considered as errors,
+                especially when updating IDF.
+
+                This is a temporary flag that could help to allow upgrade while having
+                some time to address the warnings raised by those default warnings.
+                Alternatives are:
+                1) fix code (preferred),
+                2) remove specific warnings,
+                3) do not consider specific warnings as error.
+
         config COMPILER_DISABLE_GCC12_WARNINGS
             bool "Disable new warnings introduced in GCC 12"
             default "n"
@@ -627,6 +622,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 help
                     Places orphan sections without a warning/error message.
         endchoice
+
+        config COMPILER_STATIC_ANALYZER
+            bool "Enable compiler static analyzer"
+            default "n"
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Enable compiler static analyzer. This may produce false-positive results and increases compile time.
 
     endmenu # Compiler Options
 

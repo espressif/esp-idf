@@ -90,15 +90,36 @@ static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
 }
 
 /**
- * @brief Power down memory
+ * @brief Force power on the RMT memory block, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
- * @param enable True to power down, False to power up
  */
-static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, bool enable)
+static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 {
-    dev->apb_conf.mem_force_pu = !enable;
-    dev->apb_conf.mem_force_pd = enable;
+    dev->apb_conf.mem_force_pu = 1;
+    dev->apb_conf.mem_force_pd = 0;
+}
+
+/**
+ * @brief Force power off the RMT memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
+{
+    dev->apb_conf.mem_force_pd = 1;
+    dev->apb_conf.mem_force_pu = 0;
+}
+
+/**
+ * @brief Power control the RMT memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
+{
+    dev->apb_conf.mem_force_pd = 0;
+    dev->apb_conf.mem_force_pu = 0;
 }
 
 /**
@@ -774,12 +795,9 @@ static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel
     return dev->conf_ch[channel].conf1.idle_out_lv_chn;
 }
 
-static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
+static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
 {
-    // the RTC domain can also power down RMT memory
-    // so it's probably not enough to detect whether it's powered down or not
-    // mem_force_pd has higher priority than mem_force_pu
-    return (dev->apb_conf.mem_force_pd) || !(dev->apb_conf.mem_force_pu);
+    return dev->apb_conf.mem_force_pd;
 }
 
 __attribute__((always_inline))

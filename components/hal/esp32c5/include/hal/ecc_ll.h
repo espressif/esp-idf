@@ -7,11 +7,11 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "hal/assert.h"
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
 #include "soc/pcr_struct.h"
+#include "soc/pcr_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +45,20 @@ static inline void ecc_ll_reset_register(void)
     PCR.ecc_conf.ecc_rst_en = 0;
     // Clear reset on ECDSA, otherwise ECC is held in reset
     PCR.ecdsa_conf.ecdsa_rst_en = 0;
+}
+
+static inline void ecc_ll_power_up(void)
+{
+    /* Power up the ECC peripheral (default state is power-down) */
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_PD);
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
+}
+
+static inline void ecc_ll_power_down(void)
+{
+    /* Power down the ECC peripheral */
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PU);
+    REG_SET_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_PD);
 }
 
 static inline void ecc_ll_enable_interrupt(void)

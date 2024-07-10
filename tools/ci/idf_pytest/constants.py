@@ -16,7 +16,7 @@ from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from pytest_embedded.utils import to_list
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5']
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 DEFAULT_LOGDIR = 'pytest-embedded'
@@ -27,6 +27,7 @@ TARGET_MARKERS = {
     'esp32s3': 'support esp32s3 target',
     'esp32c3': 'support esp32c3 target',
     'esp32c2': 'support esp32c2 target',
+    'esp32c5': 'support esp32c5 target',
     'esp32c6': 'support esp32c6 target',
     'esp32h2': 'support esp32h2 target',
     'esp32p4': 'support esp32p4 target',
@@ -34,7 +35,8 @@ TARGET_MARKERS = {
 }
 
 SPECIAL_MARKERS = {
-    'supported_targets': "support all officially announced supported targets ('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6')",
+    'supported_targets': 'support all officially announced supported targets '
+                         "('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32p4', 'esp32c5')",
     'preview_targets': "support all preview targets ('none')",
     'all_targets': 'support all targets, including supported ones and preview ones',
     'temp_skip_ci': 'temp skip tests for specified targets only in ci',

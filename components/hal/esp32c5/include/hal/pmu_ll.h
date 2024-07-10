@@ -683,6 +683,16 @@ FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
     hw->lp_ext.int_clr.val = mask;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_sw_intr_status(pmu_dev_t *hw)
+{
+    hw->lp_ext.int_clr.sw_trigger = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_enable_sw_intr(pmu_dev_t *hw, bool enable)
+{
+    hw->lp_ext.int_ena.sw_trigger = enable;
+}
+
 #ifdef __cplusplus
 }
 #endif

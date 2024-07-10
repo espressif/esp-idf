@@ -41,14 +41,19 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 static const char *TAG = "clk";
 
-__attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
         esp_ocode_calib_init();
     }
+#endif
+}
 
+__attribute__((weak)) void esp_clk_init(void)
+{
+#if !CONFIG_IDF_ENV_FPGA
     assert(rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M);
 
     rtc_clk_8m_enable(true);

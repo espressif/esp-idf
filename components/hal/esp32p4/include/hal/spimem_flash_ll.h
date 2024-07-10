@@ -570,7 +570,7 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
     dev->cache_fctrl.cache_usr_addr_4byte = 0;
-    dev->rd_status.wb_mode = extra_addr;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
 }
 
 /**

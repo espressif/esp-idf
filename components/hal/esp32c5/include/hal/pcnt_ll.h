@@ -33,6 +33,12 @@ typedef enum {
     PCNT_LL_WATCH_EVENT_MAX
 } pcnt_ll_watch_event_id_t;
 
+typedef enum {
+    PCNT_LL_STEP_EVENT_REACH_LIMIT = PCNT_LL_WATCH_EVENT_MAX,
+    PCNT_LL_STEP_EVENT_REACH_INTERVAL
+} pcnt_ll_step_event_id_t;
+
+#define PCNT_LL_STEP_NOTIFY_DIR_LIMIT     1
 #define PCNT_LL_WATCH_EVENT_MASK          ((1 << PCNT_LL_WATCH_EVENT_MAX) - 1)
 #define PCNT_LL_UNIT_WATCH_EVENT(unit_id) (1 << (unit_id))
 

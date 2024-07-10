@@ -743,3 +743,293 @@ Deep-sleep 有如下可配置选项：
   .. only:: esp32c2
 
     平均电流约 4.9 μA
+
+.. only:: esp32c6
+
+  目标唤醒时间 (TWT)
+  ----------------------------------
+
+  目标唤醒时间 (Target Wake Time, TWT) 是 Wi-Fi 6 中引入的一项特性，旨在降低设备功耗和提高网络效率。
+
+  在以往的 Wi-Fi 节能机制中，设备可能需要在每个 DTIM 周期醒来与 AP 交换数据，而在 TWT 机制中支持 AP 和设备协商得到特定的唤醒时间，设备会在这些时间点醒来与 AP 进行数据交换，而其余时间则处于休眠状态。TWT 协商的唤醒和休眠时间取决于设备具体的应用需求。例如，有些传感器设备需要定时上传数据，在该场景下设备可以与 AP 建立 TWT 协商，相隔多个小时交换一次数据。实际应用中可根据具体需求定制唤醒时间，在不影响设备正常工作的情况下降低功耗。
+
+  AP 可以与多个设备建立 TWT 协商。利用 Wi-Fi 6 的多用户特性，AP 可以对上行和下行数据传输做出合理协调，从而减少信道竞争，提高传输效率。
+
+  TWT 类型
+  ++++++++++
+
+  根据协商类型和工作模式，可以把 TWT 分为：
+
+  - **Individual TWT (iTWT)**
+
+    iTWT 模式下，AP 与终端设备建立的是一对一的 TWT 协商。
+
+  - **Broadcast TWT (bTWT)**
+
+    在 bTWT 模式下，AP 通过 Beacon 帧广播 TWT 信息，以组的形式来管理多个终端设备的 TWT 过程。终端设备可以根据 Beacon 中的 TWT 信息选择执行加组操作。
+
+  .. note::
+      在建立 TWT 协商前，需要确认 AP 是否支持并开启了 TWT 功能。{IDF_TARGET_NAME} 当前只支持 iTWT 模式。
+
+  TWT 工作流程
+  ++++++++++++
+  TWT 工作流程一般分为 TWT 协商建立、TWT 协商暂停/恢复、TWT 协商终止。TWT 协商建立后，Station 就可以按照协商的参数进入休眠状态，直到约定好的下一个 TWT 时间点到来时苏醒。
+  对已经建立的 TWT，用户可以根据需求协商暂停/恢复 TWT 或者终止 TWT。
+
+  - TWT 协商建立
+
+    - Individual TWT 协商建立
+
+      在 iTWT 协商建立过程中，通常由 Station 充当请求发起方发送 TWT 请求，而后 AP 作为接收方对该请求做出回应。AP 也可以主动向 Station 发起 TWT 协商建立过程。
+      在成功建立起 iTWT 协商后，Station 可以进入休眠状态，直到约定好的下一个 TWT 时间点到来时苏醒，该时间点通过和 AP 间的协商得到。Station 醒来后和 AP 进行数据交换，这段时间被称为 TWT 服务时间 (Service Period, SP)。
+      TWT SP 的持续时间被称为 TWT Wake Duration，其最小值为 256 微秒。当一次 TWT SP 结束后，Station 进入休眠状态直到下次 TWT SP 醒来进行数据传输。本次 TWT SP 的起始到下次 TWT SP 的起始的时间间隔被称为 TWT Wake Interval。下图为基本的 iTWT 示例：
+
+      .. figure:: ../../_static/itwt_setup.png
+          :align: center
+
+          Individual TWT 协商建立过程示例
+
+      Station 在 iTWT 协商建立时可以发送不同类型的请求，AP 会根据请求类型及参数做出对应的回复。用户需要根据 AP 回复中的类型和具体参数决定后续的操作逻辑。Station 所发送的请求类型有 ``Request``、``Suggest`` 和 ``Demand``。
+      AP 的回复类型可分为 ``Accept``、``Alternate`` 和 ``Dictate``。下表描述了发送不同请求时 AP 可能的回复以及不同情况下对应的含义：
+
+      .. list-table::
+        :header-rows: 1
+        :widths: 20 10 40
+
+        * - 请求类型
+          - AP 回复
+          - 含义
+        * - Request, Suggest or Demand
+          - No response
+          - 在该情况下 AP 不会与 Station 建立 iTWT 协商。
+        * - Suggest or Request
+          - Accept
+          - AP 同意建立 iTWT 协商，其使用的参数以回复中 TWT 参数为准。回复中的 TWT 参数有可能与请求中不一致。
+        * - Demand
+          - Accept
+          - AP 同意建立 iTWT 协商，且回复中的 TWT 参数与请求中的一致。
+        * - Demand or Suggest
+          - Alternate
+          - AP 使用该回复类型代表给 Station提供一组备选 TWT 参数，此时不会建立 iTWT 协商。后续 Station 可以发送新的请求，但 AP 仍有可能使用该组参数。
+        * - Demand or Suggest
+          - Dictate
+          - AP 使用该回复类型代表给 Station 提供一组备选 TWT 参数，此时不会建立 iTWT 协商，同时也表明 AP 不接受除该组参数以外的其他参数。后续 Station 可以发送新的请求，但只有参数与所提供的备选参数一致才会收到 Accept 回复。
+        * - Request, Suggest or Demand
+          - Reject
+          - 在该情况下 AP 不会与 station 建立 iTWT 协商。后续 Station 可以更改 TWT 参数发送新的请求。
+
+      在 TWT SP 中依照数据交互时的操作可以将 TWT 进一步地细分为多种类型，下表描述了这些类型间的差异：
+
+      .. list-table::
+        :header-rows: 1
+        :widths: 10 20
+
+        * - Types
+          - 含义
+        * - Trigger-enabled
+          - AP 会在 SP 中使用 Trigger 帧来协调 Station 的数据传输。
+        * - Non trigger-enabled
+          - 在 SP 中不需要使用 Trigger 帧。
+        * - Announced
+          - Station 会发送 QoS Null 帧告知 AP 其唤醒状态。
+        * - Unannounced
+          - 不需要发送 QoS Null 帧。
+
+    - Broadcast TWT 协商建立
+
+      与 iTWT 不同的是，在 bTWT 模式下 AP 将 TWT 信息放在 Beacon 帧中进行广播宣告。Station 接收到 Beacon 后，可以向 AP 发送请求申请选择加入某个 TWT。
+      当建立起 bTWT 协商后， Station 和 AP 会在协商好的 TWT SP 中进行数据传输。
+
+      与 iTWT 类似，可以把 bTWT 进一步分成 Trigger-enabled 和 Non trigger-enabled 类型，以及 Announced 和 Unannounced 类型，具体的行为差异可以参考 iTWT 中的描述。
+
+  - TWT 协商暂停/恢复
+
+    建立起 TWT 协商后， Station 可以通过向 AP 发送 TWT Information 帧暂停或者恢复指定的 TWT 协商。由 flow_id 来标识需要暂停或者恢复的 TWT 协商，具体可以参考 TWT 参数配置。
+
+    .. figure:: ../../_static/itwt_suspend.png
+        :align: center
+
+        Individual TWT 协商暂停/恢复过程示例
+
+  - TWT 协商终止
+
+    建立起 TWT 协商后， Station 可以通过向 AP 发送 TWT Teardown 帧终止指定的 TWT 协商。由 flow_id 来标识需要终止的 TWT 协商，具体可以参考 TWT 参数配置。
+
+    .. figure:: ../../_static/itwt_teardown.png
+        :align: center
+
+        Individual TWT 协商终止过程示例
+
+  TWT 参数配置
+  ++++++++++++
+
+  在使用过程中，需要配置 TWT 和低功耗模式的相关参数，其中低功耗模式相关参数决定了设备在休眠状态下的行为模式。本小节将主要阐述如何配置 TWT，有关低功耗模式下的参数配置，请参考 `如何配置 Wi-Fi 场景下低功耗模式`_。
+
+  - Individual TWT 参数配置
+
+    在建立 Station 和 AP 间的 iTWT 时，使用 :component_file:`esp_wifi/include/esp_wifi_he_types.h` 中定义的结构体 :cpp:type:`wifi_twt_setup_config_t` 来配置 TWT 的相关参数，其定义如下：
+
+    .. code-block:: C
+
+      typedef struct
+      {
+        wifi_twt_setup_cmds_t setup_cmd;
+        uint16_t trigger :1;
+        uint16_t flow_type :1;
+        uint16_t flow_id :3;
+        uint16_t wake_invl_expn :5;
+        uint16_t wake_duration_unit :1;
+        uint16_t reserved :5;
+        uint8_t min_wake_dura;
+        uint16_t wake_invl_mant;
+        uint16_t twt_id;
+        uint16_t timeout_time_ms;
+      } wifi_twt_setup_config_t;
+
+    :cpp:type:`wifi_twt_setup_config_t` 中各个字段的含义如下：
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 45
+      :align: center
+
+      * - 字段
+        - 描述
+      * - setup_cmd
+        - 指示了 TWT 建立时请求和回复使用的命令类型，具体类型请参阅 :cpp:type:`wifi_twt_setup_cmds_t` 。
+      * - trigger
+        - 值为 1 时配置 TWT 类型为 Trigger-enabled，值为 0 时配置为 Non trigger-enabled。
+      * - flow_type
+        - 值为 1 时配置 TWT 类型为 Unannounced，值为 0 时配置为 Announced。
+      * - flow_id
+        - 当建立起一个 iTWT 协商后，AP 会为其分配 flow_id。Station 在协商建立请求中可以指定 flow_id，但在 AP 的回复中该字段可能会被改变。
+      * - wake_invl_expn
+        - TWT Wake Interval 指数部分。
+      * - wake_duration_unit
+        - TWT Wake Duration 计数单元。为 0 代表 256 微秒，为 1 代表以 TU (1024 微秒) 为单位。
+      * - reserved
+        - 保留字段。
+      * - min_wake_dura
+        - 该字段代表 Station 期望处于唤醒状态的时间，以 ``wake_duration_unit`` 作为基本单位。
+      * - wake_invl_mant
+        - TWT Wake Interval 尾数部分。
+      * - twt_id
+        - TWT 配置标识。在发起多个 TWT 请求时，该字段用于在 handler 中区分不同的 TWT 参数配置。
+      * - timeout_time_ms
+        - TWT 请求超时时间，单位为毫秒。
+
+    需要指出的是，Station 在协商中所期望的 TWT Wake Interval 为 wake_invl_mant * 2\ :sup:`wake_invl_expn`\，单位是微秒。
+    而所期望的 TWT Wake Duration 为 min_wake_dura * wake_duration_unit。
+
+    .. note::
+        注意， TWT Wake Interval 和 TWT Wake Duration 的差值需要大于 10 毫秒。
+
+    配置示例如下：
+
+    .. code-block:: C
+
+      wifi_twt_setup_config_t setup_config = {
+        .setup_cmd = TWT_REQUEST,
+        .flow_id = 0,
+        .twt_id = 0,
+        .flow_type = 0,
+        .min_wake_dura = 255,
+        .wake_duration_unit = 0,
+        .wake_invl_expn = 10,
+        .wake_invl_mant = 512,
+        .trigger = 1,
+        .timeout_time_ms = 5000,
+      };
+
+    以上配置指定建立 TWT 请求时使用的类型为 Trigger-enabled，Announced，期望的 TWT Wake Interval 为 524288 微秒， TWT Wake Duration 为 65280 微秒。配置好 :cpp:type:`wifi_twt_setup_config_t` 后，调用 API :cpp:func:`esp_wifi_sta_itwt_setup` 向 AP 发起 iTWT 建立请求。
+
+    .. note::
+        {IDF_TARGET_NAME} 支持用户调用 API :cpp:func:`esp_wifi_sta_itwt_set_target_wake_time_offset` 配置相对于目标唤醒时间的偏移时间。
+
+  TWT 事件
+  ++++++++++
+
+  - WIFI_EVENT_ITWT_SETUP
+
+    发送请求后，用户可以在 :cpp:enumerator:`WIFI_EVENT_ITWT_SETUP` 事件的对应处理程序中获取请求结果并自定义处理逻辑。事件结果保存在 :cpp:type:`wifi_event_sta_itwt_setup_t` 结构体中，其成员变量 status 指示了此次事件的状态。
+    当 status 为 :c:macro:`ITWT_SETUP_SUCCESS` 时代表请求成功收到了对应回复，为其他值代表请求失败。在得到请求成功的状态后，用户可以从该结构体中的 config 成员变量中得到 AP 回复中的具体参数，并根据具体参数决定后续的处理逻辑。
+    例如，Station 发送了类型为 Demand 的 TWT 请求，收到 AP 的回复类型为 Dictate，用户此时可以考察回复中的 TWT 参数是否可行，若可行便可以发送一个新的 TWT 请求与 AP 继续建立 TWT 协商，并且该请求中的 TWT 参数需要与 AP 回复中一致。
+
+    在 Station 未主动发送请求时也有可能触发 :cpp:enumerator:`WIFI_EVENT_ITWT_SETUP` 事件，这种情况下对应的是 AP 主动向 Station 发起 iTWT 协商建立过程，此时 AP 向 Station 发送的帧中会带有 TWT 参数。同样地，用户可以在 :cpp:enumerator:`WIFI_EVENT_ITWT_SETUP` 事件的对应处理程序中获取结果并自定义处理逻辑。
+    用户需要检查 config 成员变量中 AP 发送的 TWT 参数类型，一般有两种情况：
+    1. AP 发送的 TWT 参数为 Accept 类型，此时 Station 会与 AP 建立起使用该 TWT 参数的 iTWT 协商。若用户不希望建立此 iTWT 协商，可以向 AP 发送 Teardown 帧。
+    2. AP 发送的 TWT 参数为 Alternate 或 Dictate 类型，此时 Station 不会与 AP 建立起 iTWT 协商，但可以在接下来使用该参数向 AP 发起 iTWT 协商建立请求。
+
+  - WIFI_EVENT_ITWT_SUSPEND
+
+    在调用 API :cpp:func:`esp_wifi_sta_itwt_suspend` 请求暂停已经建立的 iTWT 协商时， 用户可以在 :cpp:enumerator:`WIFI_EVENT_ITWT_SUSPEND` 事件的对应处理程序中获取请求结果并自定义处理逻辑。事件结果保存在 :cpp:type:`wifi_event_sta_itwt_suspend_t` 结构体中，其成员变量 status 指示了此次事件的状态。
+    当 status 为 :c:macro:`ESP_OK` 时代表成功暂停了指定的 iTWT 协商，为其他值代表请求暂停失败。
+
+    .. note::
+        注意，调用 API :cpp:func:`esp_wifi_sta_itwt_suspend` 请求暂停 iTWT 时，用户需要指定对应 iTWT 的 flow_id 以及暂停时间。需要注意的是，当暂停时间大于 0 时，对应 iTWT 会在暂停指定时间后恢复，而当暂停时间为 0 时，对应的 iTWT 会暂停，直到被用户调用 API 手动恢复为止。
+
+  - WIFI_EVENT_ITWT_TEARDOWN
+
+    在调用 API :cpp:func:`esp_wifi_sta_itwt_teardown` 请求终止 iTWT 时，用户可以在 :cpp:enumerator:`WIFI_EVENT_ITWT_TEARDOWN` 事件的对应处理程序中获取请求结果并自定义处理逻辑。事件结果保存在 :cpp:type:`wifi_event_sta_itwt_teardown_t` 结构体中，其成员变量 status 指示了此次事件的状态。
+    当 status 为 :cpp:enumerator:`ITWT_TEARDOWN_SUCCESS` 时代表成功终止了指定的 iTWT 协商，为其他值代表终止 iTWT 失败。调用 API 时用户需要指定需要终止的 iTWT 的 flow_id。
+
+  - WIFI_EVENT_TWT_WAKEUP
+
+    当 Station 在休眠中醒来时，Wi-Fi 驱动程序将会上报 :cpp:enumerator:`WIFI_EVENT_TWT_WAKEUP` 事件，用户可以在该事件的对应处理程序中自定义处理逻辑。事件结果保存在 :cpp:type:`wifi_event_sta_twt_wakeup_t` 结构体中，成员变量 twt_type 指示了此次事件 TWT 的类型，成员变量 flow_id 指示了此次醒来的具体的 TWT。
+
+  - WIFI_EVENT_ITWT_PROBE
+
+    调用 API :cpp:func:`esp_wifi_sta_itwt_send_probe_req` 在 iTWT 期间发送 probe request 时，用户可以在 :cpp:enumerator:`WIFI_EVENT_ITWT_PROBE` 事件的对应处理程序中获取请求结果并自定义处理逻辑。事件结果保存在 :cpp:type:`wifi_event_sta_itwt_probe_t` 结构体中，其成员变量 status 指示了此次事件的状态。
+    当 status 为 :cpp:enumerator:`ITWT_PROBE_SUCCESS` 时代表成功发送 probe request 并且接收到 AP 回复的 probe response，为其他值代表发送或者接收 probe 失败。
+
+
+  有关 iTWT 使用的更多信息，可以参考示例 :example:`wifi/itwt` 。
+
+  TWT 功耗分析
+  +++++++++++++
+
+  为了展现 TWT 在节省设备功耗方面的优势，我们使用功率分析仪追踪了 {IDF_TARGET_NAME} 在不同模式下的电流情况。如下图所示，{IDF_TARGET_NAME} 首先处于 DTIM 模式，接着与 AP 建立起 iTWT 协商，TWT Wake Interval 为 10 s，在 TWT SP 结束后，{IDF_TARGET_NAME} 会进入 Light-sleep 状态直到下个 SP 到来时唤醒。
+  其中 :cpp:type:`wifi_twt_setup_config_t` 配置示例如下：
+
+  .. code-block:: C
+
+    wifi_twt_setup_config_t setup_config = {
+      .setup_cmd = TWT_REQUEST,
+      .flow_id = 0,
+      .twt_id = 0,
+      .flow_type = 0,
+      .min_wake_dura = 255,
+      .wake_duration_unit = 0,
+      .wake_invl_expn = 10,
+      .wake_invl_mant = 10000,
+      .trigger = 1,
+      .timeout_time_ms = 5000,
+    };
+
+  .. figure:: ../../_static/itwt_10s_current.png
+      :align: center
+
+      DTIM 与 iTWT 模式下的电流图
+
+  进一步，将 TWT 协商中的 TWT Wake Interval 参数更改为 30 s，下图展现了参数变化对于电流的影响。
+  其中 :cpp:type:`wifi_twt_setup_config_t` 配置示例如下：
+
+  .. code-block:: C
+
+    wifi_twt_setup_config_t setup_config = {
+      .setup_cmd = TWT_REQUEST,
+      .flow_id = 0,
+      .twt_id = 0,
+      .flow_type = 0,
+      .min_wake_dura = 255,
+      .wake_duration_unit = 0,
+      .wake_invl_expn = 10,
+      .wake_invl_mant = 30000,
+      .trigger = 1,
+      .timeout_time_ms = 5000,
+    };
+
+  .. figure:: ../../_static/itwt_30s_current.png
+      :align: center
+
+      更改参数后的 DTIM 与 iTWT 模式下的电流图

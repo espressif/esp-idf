@@ -459,6 +459,10 @@ NAPT 和端口转发
 
 如 :ref:`lwip-dns-limitation` 所述，ESP-IDF 中的 lwIP 扩展功能仍然受到全局 DNS 限制的影响。为了在应用程序代码中解决这一限制，可以使用 ``FALLBACK_DNS_SERVER_ADDRESS()`` 宏定义所有接口能够访问的全局 DNS 备用服务器，或者单独维护每个接口的 DNS 服务器，并在默认接口更改时重新配置。
 
+通过网络数据库 API 返回的 IP 地址数量受限：``getaddrinfo()`` 和 ``gethostbyname()`` 受到宏 ``DNS_MAX_HOST_IP`` 的限制，宏的默认值为 1。
+
+在调用 ``getaddrinfo()`` 函数时，不会返回规范名称。因此，第一个返回的 ``addrinfo`` 结构中的 ``ai_canonname`` 字段仅包含 ``nodename`` 参数或相同内容的字符串。
+
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 
 .. only:: esp32

@@ -1,16 +1,10 @@
 idf_build_get_property(target IDF_TARGET)
 
-# TODO: IDF-9197
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(target_folder "esp32c5/beta3/esp32c5")
-elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(target_folder "esp32c5/mp/esp32c5")
-else()
-    set(target_folder "${target}")
-endif()
+set(target_folder "${target}")
 
 set(include_dirs "include"
-                 "include/${target_folder}"
+                 "${target_folder}/include"
+                 "${target_folder}/include/${target_folder}"
                  "${target_folder}")
 
 set(private_required_comp "")
@@ -24,9 +18,6 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
 else()
-    if(CONFIG_IDF_TARGET_ESP32C5)
-        list(APPEND include_dirs "include/${target_folder}/..")
-    endif()
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
@@ -36,10 +27,7 @@ else()
     # Override regi2c implementation in ROM
     if(CONFIG_ESP_ROM_HAS_REGI2C_BUG OR CONFIG_ESP_ROM_WITHOUT_REGI2C)
         if(target STREQUAL "esp32c6" OR target STREQUAL "esp32c5")
-            # TODO: [ESP32C5] IDF-8824
-            if(NOT CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-                list(APPEND sources "patches/esp_rom_hp_regi2c_${target}.c")
-            endif()
+            list(APPEND sources "patches/esp_rom_hp_regi2c_${target}.c")
         else()
             list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
         endif()
@@ -139,10 +127,6 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32s2")
         rom_linker_script("spiflash_legacy")
-
-    elseif(target STREQUAL "esp32c6")
-        # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
-        rom_linker_script("phy")
     endif()
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB)

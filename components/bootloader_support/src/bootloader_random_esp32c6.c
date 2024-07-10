@@ -53,7 +53,7 @@ void bootloader_random_enable(void)
 
     // create patterns and set them in pattern table
     uint32_t pattern_one = (SAR2_CHANNEL << 2) | SAR2_ATTEN; // we want channel 9 with max attenuation
-    uint32_t pattern_two = SAR1_ATTEN; // we want channel 0 with max attenuation, channel doesn't really matter here
+    uint32_t pattern_two = (SAR2_CHANNEL << 2) | SAR1_ATTEN; // we want channel 9 with max attenuation
     uint32_t pattern_table = 0 | (pattern_two << 3 * PATTERN_BIT_WIDTH) | pattern_one << 2 * PATTERN_BIT_WIDTH;
     REG_WRITE(APB_SARADC_SAR_PATT_TAB1_REG, pattern_table);
 

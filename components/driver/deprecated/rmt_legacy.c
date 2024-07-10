@@ -27,6 +27,7 @@
 #include "hal/rmt_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
+#include "esp_compiler.h"
 
 #define RMT_CHANNEL_ERROR_STR "RMT CHANNEL ERR"
 #define RMT_ADDR_ERROR_STR "RMT ADDRESS ERR"
@@ -251,7 +252,11 @@ esp_err_t rmt_set_mem_pd(rmt_channel_t channel, bool pd_en)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    rmt_ll_power_down_mem(rmt_contex.hal.regs, pd_en);
+    if (pd_en) {
+        rmt_ll_mem_force_power_off(rmt_contex.hal.regs);
+    } else {
+        rmt_ll_mem_power_by_pmu(rmt_contex.hal.regs);
+    }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -260,7 +265,7 @@ esp_err_t rmt_get_mem_pd(rmt_channel_t channel, bool *pd_en)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    *pd_en = rmt_ll_is_mem_powered_down(rmt_contex.hal.regs);
+    *pd_en = rmt_ll_is_mem_force_powered_down(rmt_contex.hal.regs);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -1061,6 +1066,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
     if (p_rmt_obj[channel]->rx_item_buf == NULL && rx_buf_size > 0) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // False-positive detection. TODO GCC-366
 #if !CONFIG_SPIRAM_USE_MALLOC
         p_rmt_obj[channel]->rx_item_buf = calloc(1, rx_buf_size);
 #else
@@ -1074,6 +1080,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
             ESP_LOGE(TAG, "RMT malloc fail");
             return ESP_FAIL;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
         p_rmt_obj[channel]->rx_item_buf_size = rx_buf_size;
     }
 #endif
@@ -1237,7 +1244,7 @@ esp_err_t rmt_translator_get_context(const size_t *item_num, void **context)
 {
     ESP_RETURN_ON_FALSE(item_num && context, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
 
-    // the address of tx_len_rem is directlly passed to the callback,
+    // the address of tx_len_rem is directly passed to the callback,
     // so it's possible to get the object address from that
     rmt_obj_t *obj = __containerof(item_num, rmt_obj_t, tx_len_rem);
     *context = obj->tx_context;

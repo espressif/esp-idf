@@ -42,9 +42,8 @@
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
-#if SOC_MODEM_CLOCK_SUPPORTED
 #include "modem/modem_lpcon_reg.h"
-#endif
+#include "modem/modem_syscon_reg.h"
 
 static const char *TAG = "boot.esp32c5";
 
@@ -88,10 +87,9 @@ static void bootloader_super_wdt_auto_feed(void)
 static inline void bootloader_hardware_init(void)
 {
     /* Enable analog i2c master clock */
-#if SOC_MODEM_CLOCK_SUPPORTED
     SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
-    SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
-#endif
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO); // TODO: IDF-8667 Remove this?
+    SET_PERI_REG_MASK(MODEM_SYSCON_CLK_CONF_REG, MODEM_SYSCON_CLK_I2C_MST_SEL_160M);
 }
 
 static inline void bootloader_ana_reset_config(void)
@@ -163,7 +161,7 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
+    // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();

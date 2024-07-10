@@ -304,6 +304,20 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
+    .. only:: SOC_PM_SUPPORT_TOP_PD
+
+       .. note::
+
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+
+                或者， 可以使用直接调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 用于 GPIO 唤醒，因为此时 digital IO 的电源域已经被关闭，这个情况类似于进入 Deep-sleep。
+
+            .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED
 
     GPIO 唤醒
@@ -313,11 +327,13 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     此外，可将由 VDD3P3_RTC 电源域供电的 IO 用于芯片的 Deep-sleep 唤醒。调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 函数可以配置相应的唤醒管脚和唤醒触发电平，该函数用于启用相应管脚的 Deep-sleep 唤醒功能。
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
-           在 Light-sleep 模式下，设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 GPIO 唤醒失效。
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，可以使用直接调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 用于 GPIO 唤醒，因为此时 digital IO 的电源域已经被关闭，这个情况类似于进入 Deep-sleep。
 
 UART 唤醒（仅适用于 Light-sleep 模式）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -8,6 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "esp_compiler.h"
 
 #include "esp_private/system_internal.h"
 #include "esp_private/usb_console.h"
@@ -221,7 +222,7 @@ static inline void disable_all_wdts(void)
     wdt_hal_write_protect_enable(&wdt0_context);
 
 #if SOC_TIMER_GROUPS >= 2
-    //Interupt WDT is the Main Watchdog Timer of Timer Group 1
+    //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
@@ -460,7 +461,12 @@ void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(cons
 #endif
 #endif
 
-    *((volatile int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+#ifdef __XTENSA__
+    asm("ill");     // should be an invalid operation on xtensa targets
+#elif __riscv
+    asm("unimp");   // should be an invalid operation on RISC-V targets
+#endif
+
     while (1);
 }
 

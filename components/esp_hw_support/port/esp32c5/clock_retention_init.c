@@ -12,11 +12,7 @@ static __attribute__((unused)) const char *TAG = "sleep_clock";
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_1_REG - DR_REG_PCR_BASE) / 4) + 1)
-#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
-#endif
+#define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_1_REG - DR_REG_PCR_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */

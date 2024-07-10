@@ -29,6 +29,8 @@ typedef struct {
     void *user_ctx;    /*!< User private data, passed directly to on_color_trans_done's user_ctx */
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
+    uint8_t cs_ena_pretrans;        /*!< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16) */
+    uint8_t cs_ena_posttrans;       /*!< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16) */
     struct {
         unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
         unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */

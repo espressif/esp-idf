@@ -29,8 +29,16 @@ if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND priv_includes "private_include")
 endif()
 
+if(CONFIG_USB_HOST_HUBS_SUPPORTED)
+    list(APPEND srcs "ext_hub.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include}
                        PRIV_INCLUDE_DIRS ${priv_includes}
                        PRIV_REQUIRES ${priv_requires}
                        )
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO GCC-366 (segfault)
+    set_property(SOURCE usb_host.c PROPERTY COMPILE_FLAGS -fno-analyzer)
+endif()

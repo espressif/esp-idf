@@ -15,7 +15,9 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port_freertos.h"
 #include "esp_private/esp_modem_clock.h"
 
@@ -28,7 +30,7 @@
 #endif // CONFIG_ESP_COEX_ENABLED
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
@@ -123,7 +125,7 @@ typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
  ************************************************************************
  */
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
-extern int ble_controller_init(esp_bt_controller_config_t *cfg);
+extern int r_ble_controller_init(esp_bt_controller_config_t *cfg);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int r_ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int r_ble_log_deinit_async(void);
@@ -131,12 +133,12 @@ extern void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void r_ble_log_async_output_dump_all(bool output);
 extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-extern int ble_controller_deinit(void);
-extern int ble_controller_enable(uint8_t mode);
-extern int ble_controller_disable(void);
+extern int r_ble_controller_deinit(void);
+extern int r_ble_controller_enable(uint8_t mode);
+extern int r_ble_controller_disable(void);
 extern int esp_register_ext_funcs (struct ext_funcs_t *);
 extern void esp_unregister_ext_funcs (void);
-extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
+extern int r_esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
@@ -149,17 +151,19 @@ extern int os_msys_init(void);
 extern void os_msys_deinit(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
-extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
+extern void r_esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
-extern void esp_ble_change_rtc_freq(uint32_t freq);
+extern void r_esp_ble_change_rtc_freq(uint32_t freq);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
                                 const uint8_t *peer_pub_key_y,
                                 const uint8_t *our_priv_key, uint8_t *out_dhkey);
 extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
-extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
-extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
-extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
+extern int r_ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
+extern int r_ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
+extern int r_ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
 extern char *ble_controller_get_compile_version(void);
+extern int esp_ble_register_bb_funcs(void);
+extern void esp_ble_unregister_bb_funcs(void);
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _bt_controller_bss_start;
@@ -551,7 +555,7 @@ static void sleep_modem_ble_mac_modem_state_deinit(void)
 
 void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
 {
-    esp_ble_set_wakeup_overhead(overhead);
+    r_esp_ble_set_wakeup_overhead(overhead);
 }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 
@@ -577,6 +581,9 @@ esp_err_t controller_sleep_init(void)
         goto error;
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
+#error "CONFIG_MAC_BB_PD required for BLE light sleep to run properly"
+#endif // CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
     /* Create a new regdma link for BLE related register restoration */
     rc = sleep_modem_ble_mac_modem_state_init(1);
     assert(rc == 0);
@@ -744,7 +751,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto free_mem;
     }
 
-    ble_get_npl_element_info(cfg, &npl_info);
+    r_ble_get_npl_element_info(cfg, &npl_info);
     npl_freertos_set_controller_npl_info(&npl_info);
     if (npl_freertos_mempool_init() != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl mempool init failed");
@@ -821,14 +828,20 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto modem_deint;
     }
 #endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
-    ret = ble_controller_init(cfg);
+    ret = esp_ble_register_bb_funcs();
     if (ret != ESP_OK) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "esp_ble_register_bb_funcs failed %d", ret);
+        goto modem_deint;
+    }
+
+    ret = r_ble_controller_init(cfg);
+    if (ret != ESP_OK) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "r_ble_controller_init failed %d", ret);
         goto modem_deint;
     }
 
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
-    esp_ble_change_rtc_freq(slow_clk_freq);
+    r_esp_ble_change_rtc_freq(slow_clk_freq);
 
     ble_controller_scan_duplicate_config();
 
@@ -845,7 +858,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
     ESP_ERROR_CHECK(esp_read_mac((uint8_t *)mac, ESP_MAC_BT));
     swap_in_place(mac, 6);
-    esp_ble_ll_set_public_addr(mac);
+    r_esp_ble_ll_set_public_addr(mac);
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
@@ -856,8 +869,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 free_controller:
     controller_sleep_deinit();
     os_msys_deinit();
-    ble_controller_deinit();
+    r_ble_controller_deinit();
 modem_deint:
+    esp_ble_unregister_bb_funcs();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     r_ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -891,7 +905,8 @@ esp_err_t esp_bt_controller_deinit(void)
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
-    ble_controller_deinit();
+    r_ble_controller_deinit();
+    esp_ble_unregister_bb_funcs();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     r_ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -939,7 +954,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     coex_enable();
 #endif // CONFIG_SW_COEXIST_ENABLE
 
-    if (ble_controller_enable(mode) != 0) {
+    if (r_ble_controller_enable(mode) != 0) {
         ret = ESP_FAIL;
         goto error;
     }
@@ -967,7 +982,7 @@ esp_err_t esp_bt_controller_disable(void)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
-    if (ble_controller_disable() != 0) {
+    if (r_ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
 #if CONFIG_SW_COEXIST_ENABLE
@@ -1101,7 +1116,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
     case ESP_BLE_PWR_TYPE_DEFAULT:
     case ESP_BLE_PWR_TYPE_ADV:
     case ESP_BLE_PWR_TYPE_SCAN:
-        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+        if (r_ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
@@ -1114,7 +1129,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
     case ESP_BLE_PWR_TYPE_CONN_HDL6:
     case ESP_BLE_PWR_TYPE_CONN_HDL7:
     case ESP_BLE_PWR_TYPE_CONN_HDL8:
-        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type, power_level) == 0) {
+        if (r_ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
@@ -1134,13 +1149,13 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
     case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
     case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
     case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
-        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+        if (r_ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
     case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
     case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
-        if (ble_txpwr_set(power_type, handle, power_level) == 0) {
+        if (r_ble_txpwr_set(power_type, handle, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
@@ -1160,7 +1175,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
     case ESP_BLE_PWR_TYPE_ADV:
     case ESP_BLE_PWR_TYPE_SCAN:
     case ESP_BLE_PWR_TYPE_DEFAULT:
-        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        tx_level = r_ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
         break;
     case ESP_BLE_PWR_TYPE_CONN_HDL0:
     case ESP_BLE_PWR_TYPE_CONN_HDL1:
@@ -1171,7 +1186,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
     case ESP_BLE_PWR_TYPE_CONN_HDL6:
     case ESP_BLE_PWR_TYPE_CONN_HDL7:
     case ESP_BLE_PWR_TYPE_CONN_HDL8:
-        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type);
+        tx_level = r_ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type);
         break;
     default:
         return ESP_PWR_LVL_INVALID;
@@ -1193,11 +1208,11 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
     case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
     case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
     case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
-        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        tx_level = r_ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
         break;
     case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
     case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
-        tx_level = ble_txpwr_get(power_type, handle);
+        tx_level = r_ble_txpwr_get(power_type, handle);
         break;
     default:
         return ESP_PWR_LVL_INVALID;

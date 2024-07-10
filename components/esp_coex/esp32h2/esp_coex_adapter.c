@@ -21,7 +21,7 @@
 #include "soc/rtc.h"
 #include "esp_private/esp_clk.h"
 #include "private/esp_coexist_adapter.h"
-#include "esp32c6/rom/ets_sys.h"
+#include "esp32h2/rom/ets_sys.h"
 
 #define TAG "esp_coex_adapter"
 

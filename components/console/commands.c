@@ -94,6 +94,23 @@ esp_err_t esp_console_deinit(void)
     return ESP_OK;
 }
 
+void esp_console_rm_item_free_hint(cmd_item_t *item)
+{
+    SLIST_REMOVE(&s_cmd_list, item, cmd_item_, next);
+    free(item->hint);
+}
+
+esp_err_t esp_console_cmd_deregister(const char *cmd_name)
+{
+    cmd_item_t *item = (cmd_item_t *)find_command_by_name(cmd_name);
+    if (item == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_console_rm_item_free_hint(item);
+    heap_caps_free(item);
+    return ESP_OK;
+}
+
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
 {
     cmd_item_t *item = NULL;
@@ -116,8 +133,7 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         }
     } else {
         // remove from list and free the old hint, because we will alloc new hint for the command
-        SLIST_REMOVE(&s_cmd_list, item, cmd_item_, next);
-        free(item->hint);
+        esp_console_rm_item_free_hint(item);
     }
     item->command = cmd->command;
     item->help = cmd->help;

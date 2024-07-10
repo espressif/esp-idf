@@ -62,12 +62,16 @@ void bootloader_clock_configure(void)
     REG_WRITE(RTC_XTAL_FREQ_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 
-void esp_clk_init(void)
+void esp_rtc_init(void)
 {
-    s_warn();
 #if SOC_PMU_SUPPORTED
     pmu_init();
 #endif
+}
+
+void esp_clk_init(void)
+{
+    s_warn();
 }
 
 void esp_perip_clk_init(void)

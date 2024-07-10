@@ -351,7 +351,7 @@ I2C 主机读取
 
     i2c_master_receive(dev_handle, data_rd, DATA_LENGTH, -1);
 
-I2C 主机写入和读取
+I2C 主机写入后读取
 ~~~~~~~~~~~~~~~~~~~
 
 从一些 I2C 设备中读取数据之前需要进行写入配置，可通过 :cpp:func:`i2c_master_transmit_receive` 接口进行配置。下图解释了该函数的原理。
@@ -362,7 +362,7 @@ I2C 主机写入和读取
 
     I2C 主机向从机设备写入并从从机设备读取数据
 
-向从机设备写入并从从机设备读取数据的简单示例：
+请注意，在写入操作和读取操作之间没有插入 STOP 条件位，因此该功能适用于从 I2C 设备读取寄存器。以下是向从机设备写入数据并从从机设备读取数据的简单示例：
 
 .. code:: c
 
@@ -624,6 +624,14 @@ Kconfig 选项
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 将在 cache 被禁用时控制默认的 ISR 处理程序正常工作，详情请参阅 `IRAM 安全 <#iram-safe>`__。
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` 可启用调试日志，但会增加固件二进制文件大小。
+
+应用示例
+--------
+
+.. list::
+
+    - :example:`peripherals/i2c/i2c_eeprom` 通过读取和写入 I2C 连接的 EEPROM 展示了 I2C 驱动程序的使用方法。
+    - :example:`peripherals/i2c/i2c_tools` 基于 ESP32 控制台组件实现了一些 I2C 工具的基本功能。
 
 API 参考
 --------

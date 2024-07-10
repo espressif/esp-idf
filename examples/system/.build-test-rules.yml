@@ -2,11 +2,15 @@
 
 examples/system/app_trace_basic:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5"]
       temporary: true
-      reason: target esp32c6, esp32h2, esp32p4 is not supported yet
+      reason: target esp32c6, esp32h2, esp32p4, esp32c5 is not supported yet
 
 examples/system/base_mac_address:
+  disable_test:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: target test failed  # TODO [ESP32C5] IDF-10347
   depends_components:
     - esp_hw_support
 
@@ -77,7 +81,16 @@ examples/system/flash_suspend:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/freertos:
+examples/system/freertos/basic_freertos_smp_usage:
+  enable:
+    - if: IDF_TARGET == "esp32c3" or IDF_TARGET == "esp32s3"
+      reason: no target specific functionality, testing on a single core target and a multiple core target is sufficient
+  depends_components:
+    - freertos
+    - console
+    - esp_timer
+
+examples/system/freertos/real_time_stats:
   disable:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
@@ -169,7 +182,7 @@ examples/system/ota/native_ota_example:
 
 examples/system/ota/otatool:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c5"]
       temporary: true
       reason: target esp32h2 is not supported yet
 
@@ -258,14 +271,17 @@ examples/system/task_watchdog:
     - esp_system
 
 examples/system/ulp/lp_core/gpio:
+  disable:
+    - if: SOC_DEEP_SLEEP_SUPPORTED != 1
   enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
+
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1)
   depends_components:
     - ulp
 
@@ -370,7 +386,7 @@ examples/system/unit_test/:
 
 examples/system/xip_from_psram:
   enable:
-    - if: SOC_SPIRAM_SUPPORTED == 1
+    - if: SOC_SPIRAM_SUPPORTED == 1 and SOC_SPIRAM_XIP_SUPPORTED == 1
       reason: this feature is supported on chips that have PSRAM
   disable:
     - if: IDF_TARGET == "esp32"

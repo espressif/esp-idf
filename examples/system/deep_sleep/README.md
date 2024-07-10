@@ -19,7 +19,7 @@ Note: Some wake up sources can be disabled via configuration (see section on [pr
 
 Warning: On ESP32, touch wake up source cannot be used together with EXT0 wake up source. If they co-exist, IDF will give a runtime error and the program will crash. By default in this example, touch wake up is enabled, and the other two are disabled. You can switch to enable the other wake up sources via menuconfig.
 
-In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in rtc memory the address of a running partition and uses it when it wakes up. This example allows you to skip all image checks and speed up the boot.
+In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in RTC memory the address of a running partition and uses it when it wakes up (ESP32-C2 does not have RTC memory, so a running partition cannot be saved there, instead the partition table is read to select an application). This example allows you to skip all image checks and speed up the boot.
 
 ## How to use example
 

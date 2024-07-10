@@ -21,6 +21,8 @@
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_heap_caps.h"
+#include "esp_compiler.h"
+
 static const char *TAG = "lcd_panel.io.i2c";
 
 #define BYTESHIFT(VAR, IDX) (((VAR) >> ((IDX) * 8)) & 0xFF)
@@ -56,6 +58,8 @@ esp_err_t esp_lcd_new_panel_io_i2c_v2(i2c_master_bus_handle_t bus, const esp_lcd
     i2c_master_dev_handle_t i2c_handle = NULL;
     ESP_GOTO_ON_FALSE(io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(io_config->control_phase_bytes * 8 > io_config->dc_bit_offset, ESP_ERR_INVALID_ARG, err, TAG, "D/C bit exceeds control bytes");
+    // leak detection of i2c_panel_io because saving i2c_panel_io->base address
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     i2c_panel_io = calloc(1, sizeof(lcd_panel_io_i2c_t));
     ESP_GOTO_ON_FALSE(i2c_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for i2c panel io");
 
@@ -88,6 +92,7 @@ err:
         free(i2c_panel_io);
     }
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io)

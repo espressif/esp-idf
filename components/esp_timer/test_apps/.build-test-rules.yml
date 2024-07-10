@@ -1,7 +1,0 @@
-# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
-
-components/esp_timer/test_apps:
-  disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: C5 not support yet # TODO: [ESP32C5] IDF-8705

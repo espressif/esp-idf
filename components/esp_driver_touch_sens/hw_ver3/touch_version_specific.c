@@ -282,8 +282,8 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
     if (filter_cfg) {
-        ESP_RETURN_ON_FALSE(filter_cfg->benchmark.update.neg_limit >= filter_cfg->data.debounce_cnt,
-                            ESP_ERR_INVALID_ARG, TAG, "The neg_limit should be greater than debounce_cnt");
+        ESP_RETURN_ON_FALSE(filter_cfg->benchmark.denoise_lvl >= 0 && filter_cfg->benchmark.denoise_lvl <= 4,
+                            ESP_ERR_INVALID_ARG, TAG, "denoise_lvl is out of range");
     }
 
     esp_err_t ret = ESP_OK;
@@ -297,8 +297,7 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
         if (filter_cfg->benchmark.filter_mode == TOUCH_BM_JITTER_FILTER) {
             touch_ll_filter_set_jitter_step(filter_cfg->benchmark.jitter_step);
         }
-        touch_ll_filter_set_pos_noise_thresh(filter_cfg->benchmark.update.pos_thresh);
-        touch_ll_filter_set_neg_noise_thresh(filter_cfg->benchmark.update.neg_thresh, filter_cfg->benchmark.update.neg_limit);
+        touch_ll_filter_set_denoise_level(filter_cfg->benchmark.denoise_lvl);
         /* Configure the touch data filter */
         touch_ll_filter_set_smooth_mode(filter_cfg->data.smooth_filter);
         touch_ll_filter_set_active_hysteresis(filter_cfg->data.active_hysteresis);

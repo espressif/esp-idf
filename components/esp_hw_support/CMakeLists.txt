@@ -153,21 +153,15 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_clock_output.c")
     endif()
 
-    if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-        list(REMOVE_ITEM srcs
-                "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638
-                "port/esp_clk_tree_common.c"    # TODO: [ESP32C5] IDF-8638
-            )
-    endif()
-    if(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
+    if(CONFIG_IDF_TARGET_ESP32C5)
         list(REMOVE_ITEM srcs
                 "sleep_modes.c"       # TODO: [ESP32C5] IDF-8638
                 "sleep_modem.c"       # TODO: [ESP32C5] IDF-8638
                 "sleep_wake_stub.c"   # TODO: [ESP32C5] IDF-8638
                 "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638
-                "port/esp_clk_tree_common.c"    # TODO: [ESP32C5] IDF-8638
             )
     endif()
+
     if(CONFIG_IDF_TARGET_ESP32C61)  # TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-9248
         list(REMOVE_ITEM srcs
                 "sleep_cpu.c"
@@ -193,6 +187,10 @@ idf_component_register(SRCS ${srcs}
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 add_subdirectory(lowpower)
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10229
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()
 
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)

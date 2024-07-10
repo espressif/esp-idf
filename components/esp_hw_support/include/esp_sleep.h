@@ -84,6 +84,9 @@ typedef enum {
 #if SOC_PM_SUPPORT_TOP_PD
     ESP_PD_DOMAIN_TOP,             //!< SoC TOP
 #endif
+#if SOC_PM_SUPPORT_CNNT_PD
+    ESP_PD_DOMAIN_CNNT,            //!< Hight-speed connect peripherals power domain
+#endif
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 

@@ -65,7 +65,7 @@ extern "C" {
 typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
-#define RMT_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#define RMT_GET_NON_CACHE_ADDR(addr) (CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #else
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
@@ -73,7 +73,6 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
-// Use retention link only when the target supports sleep retention and PM is enabled
 #define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef struct {

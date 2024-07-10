@@ -248,6 +248,8 @@ menu "Bootloader config"
             Protects the unmapped memory regions of the entire address space from unintended accesses.
             This will ensure that an exception will be triggered whenever the CPU performs a memory
             operation on unmapped regions of the address space.
+            NOTE: Disabling this config on some targets (ESP32-C6, ESP32-H2, ESP32-C5) would not generate
+            an exception when reading from or writing to 0x0.
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
@@ -360,9 +362,9 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
+        depends on ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
-        select BOOTLOADER_RESERVE_RTC_MEM
+        select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             This option disables the normal validation of an image coming out of
             deep sleep (checksums, SHA256, and signature). This is a trade-off

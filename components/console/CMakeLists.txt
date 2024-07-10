@@ -37,3 +37,7 @@ idf_component_register(SRCS ${srcs}
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
                     )
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10085
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()

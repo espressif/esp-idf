@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,7 @@ static inline void psram_ctrlr_ll_set_wr_cmd(uint32_t mspi_id, uint32_t cmd_bitl
     HAL_ASSERT(cmd_bitlen > 0);
     SPIMEM2.mem_cache_sctrl.mem_cache_sram_usr_wcmd = 1;
     SPIMEM2.mem_sram_dwr_cmd.mem_cache_sram_usr_wr_cmd_bitlen = cmd_bitlen - 1;
-    SPIMEM2.mem_sram_dwr_cmd.mem_cache_sram_usr_wr_cmd_value = cmd_val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM2.mem_sram_dwr_cmd, mem_cache_sram_usr_wr_cmd_value, cmd_val);
 }
 
 /**
@@ -70,7 +70,7 @@ static inline void psram_ctrlr_ll_set_rd_cmd(uint32_t mspi_id, uint32_t cmd_bitl
     HAL_ASSERT(cmd_bitlen > 0);
     SPIMEM2.mem_cache_sctrl.mem_cache_sram_usr_rcmd = 1;
     SPIMEM2.mem_sram_drd_cmd.mem_cache_sram_usr_rd_cmd_bitlen = cmd_bitlen - 1;
-    SPIMEM2.mem_sram_drd_cmd.mem_cache_sram_usr_rd_cmd_value = cmd_val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM2.mem_sram_drd_cmd, mem_cache_sram_usr_rd_cmd_value, cmd_val);
 }
 
 /**
@@ -501,7 +501,7 @@ static inline void psram_ctrlr_ll_enable_skip_page_corner(uint32_t mspi_id, bool
 }
 
 /**
- * @brief Enable spliting transactions
+ * @brief Enable splitting transactions
  *
  * @param mspi_id      mspi_id
  * @param en           enable / disable

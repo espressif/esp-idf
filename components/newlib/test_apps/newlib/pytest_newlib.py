@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import subprocess
 from os import path
 
@@ -32,6 +31,7 @@ def validate_sbom(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='not support yet')  # TODO: [ESP32C5] IDF-8675, IDF-10312
 @pytest.mark.parametrize(
     'config',
     [

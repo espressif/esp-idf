@@ -66,6 +66,8 @@
   - "tools/ci/check_esp_memory_utils_headers.sh"
   - "tools/ci/check_blobs.sh"
   - "tools/ci/check_public_headers.py"
+  - "tools/ci/check_register_rw_half_word.cmake"
+  - "tools/ci/check_register_rw_half_word.py"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"

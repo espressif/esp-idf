@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define I2S_LL_GET_HW(num)                      (((num) == 0)? (&LP_I2S) : NULL)
+#define LP_I2S_LL_GET_HW(num)                   (((num) == 0)? (&LP_I2S) : NULL)
 
 #define LP_I2S_LL_EVENT_RX_DONE_INT             (1<<0)
 #define LP_I2S_LL_EVENT_RX_HUNG_INT_INT         (1<<1)
@@ -146,7 +146,7 @@ static inline void lp_i2s_ll_clk_source_div_num(int id, uint32_t val)
  * @param a     div a
  * @param b     div b
  */
-static inline void i2s_ll_tx_set_raw_clk_div(int id, uint32_t a, uint32_t b)
+static inline void lp_i2s_ll_tx_set_raw_clk_div(int id, uint32_t a, uint32_t b)
 {
     if (b <= a / 2) {
         LPPERI.lp_i2s_rxclk_div_xyz.lp_i2s_rx_clkm_div_yn1 = 0;
@@ -297,7 +297,7 @@ static inline void lp_i2s_ll_rx_enable_pdm(lp_i2s_dev_t *hw)
 /**
  * @brief Configure LP I2S rx channel bits and bits mode
  */
-static inline void i2s_ll_rx_set_sample_bit(lp_i2s_dev_t *hw, int chan_bits, int bits_mode)
+static inline void lp_i2s_ll_rx_set_sample_bit(lp_i2s_dev_t *hw, int chan_bits, int bits_mode)
 {
     hw->rx_conf1.rx_tdm_chan_bits = chan_bits - 1;
     hw->rx_conf1.rx_bits_mod = bits_mode - 1;
