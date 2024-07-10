@@ -149,6 +149,8 @@ typedef struct {
     int (* _coex_schm_curr_phase_idx_set)(int idx);
     int (* _coex_schm_curr_phase_idx_get)(void);
     int (* _coex_register_start_cb)(int (* cb)(void));
+    int (*_coex_schm_flexible_period_set)(uint8_t);
+    uint8_t (*_coex_schm_flexible_period_get)(void);
     int32_t _magic;
 } wifi_osi_funcs_t;
 

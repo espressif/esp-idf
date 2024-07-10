@@ -18,6 +18,13 @@ menu "Wi-Fi"
             If only Bluetooth is used, it is recommended to disable this option to reduce binary file
             size.
 
+    config ESP_COEX_POWER_MANAGEMENT
+        bool "Support power management under coexistence"
+        default n
+        depends on (ESP32_WIFI_SW_COEXIST_ENABLE)
+        help
+            If enabled, coexist power management will be enabled.
+
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
         range 2 25

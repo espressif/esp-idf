@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -639,6 +639,24 @@ static int coex_register_start_cb_wrapper(int (* cb)(void))
 #endif
 }
 
+static int coex_schm_flexible_period_set_wrapper(uint8_t period)
+{
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+    return coex_schm_flexible_period_set(period);
+#else
+    return 0;
+#endif
+}
+
+static uint8_t coex_schm_flexible_period_get_wrapper(void)
+{
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+    return coex_schm_flexible_period_get();
+#else
+    return 1;
+#endif
+}
+
 static void IRAM_ATTR esp_empty_wrapper(void)
 {
 
@@ -772,6 +790,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_curr_phase_idx_set = coex_schm_curr_phase_idx_set_wrapper,
     ._coex_schm_curr_phase_idx_get = coex_schm_curr_phase_idx_get_wrapper,
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
+    ._coex_schm_flexible_period_set = coex_schm_flexible_period_set_wrapper,
+    ._coex_schm_flexible_period_get = coex_schm_flexible_period_get_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
 
