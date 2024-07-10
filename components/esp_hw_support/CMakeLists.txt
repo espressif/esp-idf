@@ -8,7 +8,7 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(requires soc)
+set(requires soc esp_security) # TODO: remove esp_security from REQUIRES in ESP-IDF v6.0
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support)
 
@@ -111,20 +111,8 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "port/${target}/systimer.c")
     endif()
 
-    if(CONFIG_SOC_HMAC_SUPPORTED)
-        list(APPEND srcs "esp_hmac.c")
-    endif()
-
     if(CONFIG_SOC_ETM_SUPPORTED)
         list(APPEND srcs "esp_etm.c")
-    endif()
-
-    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
-        list(APPEND srcs "esp_ds.c")
-    endif()
-
-    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
-        list(APPEND srcs "esp_key_mgr.c")
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)

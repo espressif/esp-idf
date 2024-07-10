@@ -7,8 +7,7 @@ set(srcs "rtc_clk_init.c"
 )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "sar_periph_ctrl.c"
-                     "esp_crypto_lock.c")
+    list(APPEND srcs "sar_periph_ctrl.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

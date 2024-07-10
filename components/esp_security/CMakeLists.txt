@@ -1,5 +1,5 @@
 set(srcs "")
-set(priv_requires "")
+set(priv_requires "soc")
 
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32P4 OR CONFIG_IDF_TARGET_ESP32C5)
@@ -10,7 +10,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "src/crypto/esp_dpa_protection.c")
     endif()
 
-    list(APPEND priv_requires "soc")
+    list(APPEND srcs "src/crypto/${IDF_TARGET}/esp_crypto_lock.c")
 endif()
 
 idf_component_register(SRCS ${srcs}

@@ -153,6 +153,10 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_security)
+endif()
+
 # Choose peripheral type
 
 if(CONFIG_SOC_SHA_SUPPORTED)
