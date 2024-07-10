@@ -53,7 +53,7 @@ extern "C" {
 /**
 * @brief Internal use only
 *
-* @note Please do not modify this value.
+* @note Please do not modify this value
 */
 #define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240315
 
@@ -539,7 +539,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
 /** @brief Release the Controller memory, BSS and data section of the Classic Bluetooth/BLE Host stack as per the mode
  *
  * @note
- *    1. This function is optional and should be called only if you want to free up memory for other components.   
+ *    1. This function is optional and should be called only if you want to free up memory for other components.
  *    2. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
  *    3. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
  *    4. In case of NimBLE Host, to release BSS and data memory to heap, the mode needs to be set to `ESP_BT_MODE_BTDM` as the Controller is in Dual mode.
