@@ -477,11 +477,11 @@ typedef struct esp_vhci_host_callback {
 /**
  * @brief Check whether the Controller is ready to receive the packet
  *
- *  If the return value is True, the Host can send the packet to the Controller.
+ * If the return value is True, the Host can send the packet to the Controller.
  *
- *  @note This function should be called before each `esp_vhci_host_send_packet()`.
+ * @note This function should be called before each `esp_vhci_host_send_packet()`.
  *
- *  @return
+ * @return
  *       True if the Controller is ready to receive packets; false otherwise
  */
 bool esp_vhci_host_check_send_available(void);
