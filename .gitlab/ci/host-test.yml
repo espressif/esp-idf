@@ -348,6 +348,7 @@ test_pytest_linux:
     - run_cmd pytest
       --target linux
       -m host_test
+      --embedded-services idf
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
