@@ -845,6 +845,10 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     ESP_RETURN_ON_FALSE((uart_config->flow_ctrl < UART_HW_FLOWCTRL_MAX), ESP_FAIL, UART_TAG, "hw_flowctrl mode error");
     ESP_RETURN_ON_FALSE((uart_config->data_bits < UART_DATA_BITS_MAX), ESP_FAIL, UART_TAG, "data bit error");
 
+#if !SOC_UART_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(uart_config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, UART_TAG, "register back up is not supported");
+#endif
+
     uart_module_enable(uart_num);
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
