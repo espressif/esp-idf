@@ -10,7 +10,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "src/crypto/esp_dpa_protection.c")
     endif()
 
-    list(APPEND srcs "src/crypto/${IDF_TARGET}/esp_crypto_lock.c")
+    list(APPEND srcs "src/crypto/esp_crypto_lock.c")
 endif()
 
 idf_component_register(SRCS ${srcs}
