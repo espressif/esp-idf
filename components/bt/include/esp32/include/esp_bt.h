@@ -272,8 +272,8 @@ typedef enum {
 /**
  * @brief BLE TX power type
  * @note
- *       1. Please use `ESP_BLE_PWR_TYPE_DEFAULT` to set connection TX power before establishing the connection.
- *          After disconnecting, the corresponding TX power will not be affected.
+ *       1. `ESP_BLE_PWR_CONN_HDL0` - `ESP_BLE_PWR_CONN_HDL8` are not effective currently. Please use `ESP_BLE_PWR_TYPE_DEFAULT`
+ *          to set / get BLE TX power for all connection handles.
  *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
  *          It will not affect the TX power values which have been set for the ADV/SCAN power types.
  *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for all power types.
@@ -327,7 +327,9 @@ typedef enum {
 /**
  * @brief  Set BLE TX power
  *
- * @note   Connection TX power should only be set after the connection is established.
+ * @note
+ *      1. Please use `ESP_BLE_PWR_TYPE_DEFAULT` to set BLE TX power for all connection handles.
+ *      2. Connection TX power should only be set after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising, Connection, Default, etc.
  * @param[in]  power_level Power level (index) corresponding to the absolute value (dBm)
@@ -341,7 +343,9 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 /**
  * @brief  Get BLE TX power
  *
- * @note    Connection TX power should only be retrieved after the connection is established.
+ * @note
+ *      1. Please use `ESP_BLE_PWR_TYPE_DEFAULT` to get BLE TX power for all connection handles.
+ *      2. Connection TX power should only be retrieved after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising/Connection/Default and etc.
  *
@@ -516,16 +520,17 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
  *
  * @note
  *    1. This function is optional and should be called only if you want to free up memory for other components.
- *    2. This function should be called only before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
- *    3. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
- *    4. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
+ *    2. This function should only be called when the controller is in `ESP_BT_CONTROLLER_STATUS_IDLE` status.
+ *    3. This function should be called only before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
+ *    4. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
+ *    5. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
  *
- * If the app calls `esp_bt_controller_enable(ESP_BT_MODE_BLE)` to use BLE only,
- * then it is safe to call `esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT)` at initialization time to free unused Classic Bluetooth memory.
+ * If you never intend to use Bluetooth in a current boot-up cycle, calling `esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)` could release the BSS and data consumed by both Classic Bluetooth and BLE Controller to heap.
  *
- * If the mode is `ESP_BT_MODE_BTDM`, then it may be useful to call API `esp_bt_mem_release(ESP_BT_MODE_BTDM)` instead,
- * which internally calls `esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)` and additionally releases the BSS and data
- * consumed by the Classic Bluetooth/BLE Host stack to heap. For more details about usage please refer to the documentation of `esp_bt_mem_release()` function.
+ * If you intend to use BLE only, calling `esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT)` could release the BSS and data consumed by Classic Bluetooth Controller. You can then continue using BLE.
+ *
+ * If you intend to use Classic Bluetooth only, calling `esp_bt_controller_mem_release(ESP_BT_MODE_BLE)` could release the BSS and data consumed by BLE Controller. You can then continue using Classic Bluetooth.
+ *
  *
  * @param[in] mode The Bluetooth Controller mode
  *
@@ -540,15 +545,17 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  *
  * @note
  *    1. This function is optional and should be called only if you want to free up memory for other components.
- *    2. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
- *    3. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
- *    4. In case of NimBLE Host, to release BSS and data memory to heap, the mode needs to be set to `ESP_BT_MODE_BTDM` as the Controller is in Dual mode.
+ *    2. This function should only be called when the controller is in `ESP_BT_CONTROLLER_STATUS_IDLE` status.
+ *    3. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
+ *    4. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
  *
- * This function first releases Controller memory by internally calling `esp_bt_controller_mem_release()`.
- * Additionally, if the mode is set to `ESP_BT_MODE_BTDM`, it also releases the BSS and data consumed by the Classic Bluetooth and BLE Host stack to heap.
+ * This function first releases Controller memory by internally calling `esp_bt_controller_mem_release()`, then release Host memory.
  *
- * If you never intend to use Bluetooth in a current boot-up cycle, you can call `esp_bt_mem_release(ESP_BT_MODE_BTDM)`
- * before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
+ * If you never intend to use Bluetooth in a current boot-up cycle, calling `esp_bt_mem_release(ESP_BT_MODE_BTDM)` could release the BSS and data consumed by both Classic Bluetooth and BLE stack to heap.
+ *
+ * If you intend to use BLE only, calling `esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT)` could release the BSS and data consumed by Classic Bluetooth. You can then continue using BLE.
+ *
+ * If you intend to use Classic Bluetooth only, calling `esp_bt_mem_release(ESP_BT_MODE_BLE)` could release the BSS and data consumed by BLE. You can then continue using Classic Bluetooth.
  *
  * For example, if you only use Bluetooth for setting the Wi-Fi configuration, and do not use Bluetooth in the rest of the product operation,
  *  after receiving the Wi-Fi configuration, you can disable/de-init Bluetooth and release its memory.
