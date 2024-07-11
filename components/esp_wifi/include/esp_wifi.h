@@ -1490,6 +1490,21 @@ esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
   */
 esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+/**
+  * @brief      Enable Wi-Fi coexistence power management
+  *
+  * @attention  This API should be called after esp_wifi_init().
+  *
+  * @param      enabled Wi-Fi coexistence power management is enabled or not.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_coex_pwr_configure(bool enabled);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

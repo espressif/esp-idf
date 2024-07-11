@@ -26,4 +26,11 @@ menu "Wireless Coexistence"
             This function depends on BT-off
             because currently we do not support external coex and internal coex simultaneously.
 
+    config ESP_COEX_POWER_MANAGEMENT
+        bool "Support power management under coexistence"
+        default n
+        depends on (ESP_COEX_SW_COEXIST_ENABLE)
+        help
+            If enabled, coexist power management will be enabled.
+
 endmenu  # Wireless Coexistence
