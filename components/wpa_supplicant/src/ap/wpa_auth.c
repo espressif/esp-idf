@@ -2411,21 +2411,6 @@ bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t 
     return true;
 }
 
-#ifdef CONFIG_WPS_REGISTRAR
-static void ap_free_sta_timeout(void *ctx, void *data)
-{
-    struct hostapd_data *hapd = (struct hostapd_data *) ctx;
-    u8 *addr = (u8 *) data;
-    struct sta_info *sta = ap_get_sta(hapd, addr);
-
-    if (sta) {
-        ap_free_sta(hapd, sta);
-    }
-
-    os_free(addr);
-}
-#endif
-
 bool wpa_ap_remove(void* sta_info)
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
@@ -2434,19 +2419,6 @@ bool wpa_ap_remove(void* sta_info)
         return false;
     }
 
-#ifdef CONFIG_WPS_REGISTRAR
-    wpa_printf(MSG_DEBUG, "wps_status=%d", wps_get_status());
-    if (wps_get_status() == WPS_STATUS_PENDING) {
-        struct sta_info *sta = (struct sta_info *)sta_info;
-        u8 *addr = os_malloc(ETH_ALEN);
-
-	if (!addr) {
-            return false;
-	}
-	os_memcpy(addr, sta->addr, ETH_ALEN);
-        eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
-    } else
-#endif
     ap_free_sta(hapd, sta_info);
 
     return true;
