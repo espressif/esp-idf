@@ -548,7 +548,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  *    3. Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
  *    4. If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
  *
- * This function first releases Controller memory by internally calling `esp_bt_controller_mem_release()`, then release Host memory.
+ * This function first releases Controller memory by internally calling `esp_bt_controller_mem_release()`, then releases Host memory.
  *
  * If you never intend to use Bluetooth in a current boot-up cycle, calling `esp_bt_mem_release(ESP_BT_MODE_BTDM)` could release the BSS and data consumed by both Classic Bluetooth and BLE stack to heap.
  *
