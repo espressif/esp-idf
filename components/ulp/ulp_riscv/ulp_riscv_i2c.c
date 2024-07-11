@@ -72,6 +72,8 @@ static esp_err_t i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_io_
 
 static esp_err_t i2c_configure_io(gpio_num_t io_num, bool pullup_en)
 {
+    /* Set the IO pin to high to avoid them from toggling from Low to High state during initialization. This can register a spurious I2C start condition. */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_level(io_num, 1), RTCI2C_TAG, "RTC GPIO failed to set level to high for %d", io_num);
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), RTCI2C_TAG, "RTC GPIO Init failed for GPIO %d", io_num);
     /* Set direction to input+output */
@@ -98,11 +100,15 @@ static esp_err_t i2c_set_pin(const ulp_riscv_i2c_cfg_t *cfg)
     /* Verify that the I2C GPIOs are valid */
     ESP_RETURN_ON_ERROR(i2c_gpio_is_cfg_valid(sda_io_num, scl_io_num), RTCI2C_TAG, "RTC I2C GPIO config invalid");
 
-    /* Initialize SDA Pin */
-    ESP_RETURN_ON_ERROR(i2c_configure_io(sda_io_num, sda_pullup_en), RTCI2C_TAG, "RTC I2C SDA pin config failed");
+    // NOTE: We always initialize the SCL pin first, then the SDA pin.
+    // This order of initialization is important to avoid any spurious
+    // I2C start conditions on the bus.
 
     /* Initialize SCL Pin */
     ESP_RETURN_ON_ERROR(i2c_configure_io(scl_io_num, scl_pullup_en), RTCI2C_TAG, "RTC I2C SCL pin config failed");
+
+    /* Initialize SDA Pin */
+    ESP_RETURN_ON_ERROR(i2c_configure_io(sda_io_num, sda_pullup_en), RTCI2C_TAG, "RTC I2C SDA pin config failed");
 
     /* Route SDA IO signal to the RTC subsystem */
     rtc_io_dev->touch_pad[sda_io_num].mux_sel = 1;
@@ -471,6 +477,12 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
     WRITE_PERI_REG(RTC_I2C_CTRL_REG, 0);
     WRITE_PERI_REG(SENS_SAR_I2C_CTRL_REG, 0);
 
+    /* Verify that the input cfg param is valid */
+    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "RTC I2C configuration is NULL");
+
+    /* Configure RTC I2C GPIOs */
+    ESP_RETURN_ON_ERROR(i2c_set_pin(cfg), RTCI2C_TAG, "Failed to configure RTC I2C GPIOs");
+
     /* Reset RTC I2C */
 #if CONFIG_IDF_TARGET_ESP32S2
     i2c_dev->ctrl.i2c_reset = 1;
@@ -483,12 +495,6 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
     i2c_dev->i2c_ctrl.i2c_i2c_reset = 0;
     CLEAR_PERI_REG_MASK(SENS_SAR_PERI_RESET_CONF_REG, SENS_RTC_I2C_RESET);
 #endif // CONFIG_IDF_TARGET_ESP32S2
-
-    /* Verify that the input cfg param is valid */
-    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, RTCI2C_TAG, "RTC I2C configuration is NULL");
-
-    /* Configure RTC I2C GPIOs */
-    ESP_RETURN_ON_ERROR(i2c_set_pin(cfg), RTCI2C_TAG, "Failed to configure RTC I2C GPIOs");
 
     /* Enable internal open-drain mode for SDA and SCL lines */
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -518,6 +524,9 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
 
     /* Configure RTC I2C timing parameters */
     ESP_RETURN_ON_ERROR(i2c_set_timing(cfg), RTCI2C_TAG, "Failed to configure RTC I2C timing");
+
+    /* Clear any pending interrupts */
+    WRITE_PERI_REG(RTC_I2C_INT_CLR_REG, UINT32_MAX);
 
     /* Enable RTC I2C interrupts */
     SET_PERI_REG_MASK(RTC_I2C_INT_ENA_REG, RTC_I2C_RX_DATA_INT_ENA |
