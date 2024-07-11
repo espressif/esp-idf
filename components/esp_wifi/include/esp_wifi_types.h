@@ -955,6 +955,7 @@ typedef struct {
 typedef enum {
     WPS_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
     WPS_FAIL_REASON_RECV_M2D,       /**< WPS receive M2D frame */
+    WPS_FAIL_REASON_RECV_DEAUTH,    /**< Recv deauth from AP while wps handshake */
     WPS_FAIL_REASON_MAX
 } wifi_event_sta_wps_fail_reason_t;
 
