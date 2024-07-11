@@ -2845,7 +2845,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC0_IN_SEL    0x0000007FU
 #define GPIO_FUNC0_IN_SEL_M  (GPIO_FUNC0_IN_SEL_V << GPIO_FUNC0_IN_SEL_S)
@@ -2884,7 +2884,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC6_IN_SEL    0x0000007FU
 #define GPIO_FUNC6_IN_SEL_M  (GPIO_FUNC6_IN_SEL_V << GPIO_FUNC6_IN_SEL_S)
@@ -2923,7 +2923,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC7_IN_SEL    0x0000007FU
 #define GPIO_FUNC7_IN_SEL_M  (GPIO_FUNC7_IN_SEL_V << GPIO_FUNC7_IN_SEL_S)
@@ -2962,7 +2962,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC8_IN_SEL    0x0000007FU
 #define GPIO_FUNC8_IN_SEL_M  (GPIO_FUNC8_IN_SEL_V << GPIO_FUNC8_IN_SEL_S)
@@ -3001,7 +3001,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC9_IN_SEL    0x0000007FU
 #define GPIO_FUNC9_IN_SEL_M  (GPIO_FUNC9_IN_SEL_V << GPIO_FUNC9_IN_SEL_S)
@@ -3040,7 +3040,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC10_IN_SEL    0x0000007FU
 #define GPIO_FUNC10_IN_SEL_M  (GPIO_FUNC10_IN_SEL_V << GPIO_FUNC10_IN_SEL_S)
@@ -3079,7 +3079,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC11_IN_SEL    0x0000007FU
 #define GPIO_FUNC11_IN_SEL_M  (GPIO_FUNC11_IN_SEL_V << GPIO_FUNC11_IN_SEL_S)
@@ -3118,7 +3118,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC12_IN_SEL    0x0000007FU
 #define GPIO_FUNC12_IN_SEL_M  (GPIO_FUNC12_IN_SEL_V << GPIO_FUNC12_IN_SEL_S)
@@ -3157,7 +3157,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC13_IN_SEL    0x0000007FU
 #define GPIO_FUNC13_IN_SEL_M  (GPIO_FUNC13_IN_SEL_V << GPIO_FUNC13_IN_SEL_S)
@@ -3196,7 +3196,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC14_IN_SEL    0x0000007FU
 #define GPIO_FUNC14_IN_SEL_M  (GPIO_FUNC14_IN_SEL_V << GPIO_FUNC14_IN_SEL_S)
@@ -3235,7 +3235,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC15_IN_SEL    0x0000007FU
 #define GPIO_FUNC15_IN_SEL_M  (GPIO_FUNC15_IN_SEL_V << GPIO_FUNC15_IN_SEL_S)
@@ -3274,7 +3274,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC16_IN_SEL    0x0000007FU
 #define GPIO_FUNC16_IN_SEL_M  (GPIO_FUNC16_IN_SEL_V << GPIO_FUNC16_IN_SEL_S)
@@ -3313,7 +3313,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC17_IN_SEL    0x0000007FU
 #define GPIO_FUNC17_IN_SEL_M  (GPIO_FUNC17_IN_SEL_V << GPIO_FUNC17_IN_SEL_S)
@@ -3352,7 +3352,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC27_IN_SEL    0x0000007FU
 #define GPIO_FUNC27_IN_SEL_M  (GPIO_FUNC27_IN_SEL_V << GPIO_FUNC27_IN_SEL_S)
@@ -3391,7 +3391,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC28_IN_SEL    0x0000007FU
 #define GPIO_FUNC28_IN_SEL_M  (GPIO_FUNC28_IN_SEL_V << GPIO_FUNC28_IN_SEL_S)
@@ -3430,7 +3430,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC29_IN_SEL    0x0000007FU
 #define GPIO_FUNC29_IN_SEL_M  (GPIO_FUNC29_IN_SEL_V << GPIO_FUNC29_IN_SEL_S)
@@ -3469,7 +3469,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC30_IN_SEL    0x0000007FU
 #define GPIO_FUNC30_IN_SEL_M  (GPIO_FUNC30_IN_SEL_V << GPIO_FUNC30_IN_SEL_S)
@@ -3508,7 +3508,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC31_IN_SEL    0x0000007FU
 #define GPIO_FUNC31_IN_SEL_M  (GPIO_FUNC31_IN_SEL_V << GPIO_FUNC31_IN_SEL_S)
@@ -3547,7 +3547,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC32_IN_SEL    0x0000007FU
 #define GPIO_FUNC32_IN_SEL_M  (GPIO_FUNC32_IN_SEL_V << GPIO_FUNC32_IN_SEL_S)
@@ -3586,7 +3586,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC33_IN_SEL    0x0000007FU
 #define GPIO_FUNC33_IN_SEL_M  (GPIO_FUNC33_IN_SEL_V << GPIO_FUNC33_IN_SEL_S)
@@ -3625,7 +3625,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC34_IN_SEL    0x0000007FU
 #define GPIO_FUNC34_IN_SEL_M  (GPIO_FUNC34_IN_SEL_V << GPIO_FUNC34_IN_SEL_S)
@@ -3664,7 +3664,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC35_IN_SEL    0x0000007FU
 #define GPIO_FUNC35_IN_SEL_M  (GPIO_FUNC35_IN_SEL_V << GPIO_FUNC35_IN_SEL_S)
@@ -3703,7 +3703,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC41_IN_SEL    0x0000007FU
 #define GPIO_FUNC41_IN_SEL_M  (GPIO_FUNC41_IN_SEL_V << GPIO_FUNC41_IN_SEL_S)
@@ -3742,7 +3742,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC42_IN_SEL    0x0000007FU
 #define GPIO_FUNC42_IN_SEL_M  (GPIO_FUNC42_IN_SEL_V << GPIO_FUNC42_IN_SEL_S)
@@ -3781,7 +3781,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC43_IN_SEL    0x0000007FU
 #define GPIO_FUNC43_IN_SEL_M  (GPIO_FUNC43_IN_SEL_V << GPIO_FUNC43_IN_SEL_S)
@@ -3820,7 +3820,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC46_IN_SEL    0x0000007FU
 #define GPIO_FUNC46_IN_SEL_M  (GPIO_FUNC46_IN_SEL_V << GPIO_FUNC46_IN_SEL_S)
@@ -3859,7 +3859,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC47_IN_SEL    0x0000007FU
 #define GPIO_FUNC47_IN_SEL_M  (GPIO_FUNC47_IN_SEL_V << GPIO_FUNC47_IN_SEL_S)
@@ -3898,7 +3898,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC48_IN_SEL    0x0000007FU
 #define GPIO_FUNC48_IN_SEL_M  (GPIO_FUNC48_IN_SEL_V << GPIO_FUNC48_IN_SEL_S)
@@ -3937,7 +3937,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC49_IN_SEL    0x0000007FU
 #define GPIO_FUNC49_IN_SEL_M  (GPIO_FUNC49_IN_SEL_V << GPIO_FUNC49_IN_SEL_S)
@@ -3976,7 +3976,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC50_IN_SEL    0x0000007FU
 #define GPIO_FUNC50_IN_SEL_M  (GPIO_FUNC50_IN_SEL_V << GPIO_FUNC50_IN_SEL_S)
@@ -4015,7 +4015,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC51_IN_SEL    0x0000007FU
 #define GPIO_FUNC51_IN_SEL_M  (GPIO_FUNC51_IN_SEL_V << GPIO_FUNC51_IN_SEL_S)
@@ -4054,7 +4054,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC52_IN_SEL    0x0000007FU
 #define GPIO_FUNC52_IN_SEL_M  (GPIO_FUNC52_IN_SEL_V << GPIO_FUNC52_IN_SEL_S)
@@ -4093,7 +4093,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC53_IN_SEL    0x0000007FU
 #define GPIO_FUNC53_IN_SEL_M  (GPIO_FUNC53_IN_SEL_V << GPIO_FUNC53_IN_SEL_S)
@@ -4132,7 +4132,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC54_IN_SEL    0x0000007FU
 #define GPIO_FUNC54_IN_SEL_M  (GPIO_FUNC54_IN_SEL_V << GPIO_FUNC54_IN_SEL_S)
@@ -4171,7 +4171,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC55_IN_SEL    0x0000007FU
 #define GPIO_FUNC55_IN_SEL_M  (GPIO_FUNC55_IN_SEL_V << GPIO_FUNC55_IN_SEL_S)
@@ -4210,7 +4210,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC56_IN_SEL    0x0000007FU
 #define GPIO_FUNC56_IN_SEL_M  (GPIO_FUNC56_IN_SEL_V << GPIO_FUNC56_IN_SEL_S)
@@ -4249,7 +4249,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC57_IN_SEL    0x0000007FU
 #define GPIO_FUNC57_IN_SEL_M  (GPIO_FUNC57_IN_SEL_V << GPIO_FUNC57_IN_SEL_S)
@@ -4288,7 +4288,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC58_IN_SEL    0x0000007FU
 #define GPIO_FUNC58_IN_SEL_M  (GPIO_FUNC58_IN_SEL_V << GPIO_FUNC58_IN_SEL_S)
@@ -4327,7 +4327,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC59_IN_SEL    0x0000007FU
 #define GPIO_FUNC59_IN_SEL_M  (GPIO_FUNC59_IN_SEL_V << GPIO_FUNC59_IN_SEL_S)
@@ -4366,7 +4366,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC60_IN_SEL    0x0000007FU
 #define GPIO_FUNC60_IN_SEL_M  (GPIO_FUNC60_IN_SEL_V << GPIO_FUNC60_IN_SEL_S)
@@ -4405,7 +4405,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC61_IN_SEL    0x0000007FU
 #define GPIO_FUNC61_IN_SEL_M  (GPIO_FUNC61_IN_SEL_V << GPIO_FUNC61_IN_SEL_S)
@@ -4444,7 +4444,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC62_IN_SEL    0x0000007FU
 #define GPIO_FUNC62_IN_SEL_M  (GPIO_FUNC62_IN_SEL_V << GPIO_FUNC62_IN_SEL_S)
@@ -4483,7 +4483,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC63_IN_SEL    0x0000007FU
 #define GPIO_FUNC63_IN_SEL_M  (GPIO_FUNC63_IN_SEL_V << GPIO_FUNC63_IN_SEL_S)
@@ -4522,7 +4522,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC64_IN_SEL    0x0000007FU
 #define GPIO_FUNC64_IN_SEL_M  (GPIO_FUNC64_IN_SEL_V << GPIO_FUNC64_IN_SEL_S)
@@ -4561,7 +4561,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC65_IN_SEL    0x0000007FU
 #define GPIO_FUNC65_IN_SEL_M  (GPIO_FUNC65_IN_SEL_V << GPIO_FUNC65_IN_SEL_S)
@@ -4600,7 +4600,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC66_IN_SEL    0x0000007FU
 #define GPIO_FUNC66_IN_SEL_M  (GPIO_FUNC66_IN_SEL_V << GPIO_FUNC66_IN_SEL_S)
@@ -4639,7 +4639,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC70_IN_SEL    0x0000007FU
 #define GPIO_FUNC70_IN_SEL_M  (GPIO_FUNC70_IN_SEL_V << GPIO_FUNC70_IN_SEL_S)
@@ -4678,7 +4678,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC74_IN_SEL    0x0000007FU
 #define GPIO_FUNC74_IN_SEL_M  (GPIO_FUNC74_IN_SEL_V << GPIO_FUNC74_IN_SEL_S)
@@ -4717,7 +4717,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC75_IN_SEL    0x0000007FU
 #define GPIO_FUNC75_IN_SEL_M  (GPIO_FUNC75_IN_SEL_V << GPIO_FUNC75_IN_SEL_S)
@@ -4756,7 +4756,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC76_IN_SEL    0x0000007FU
 #define GPIO_FUNC76_IN_SEL_M  (GPIO_FUNC76_IN_SEL_V << GPIO_FUNC76_IN_SEL_S)
@@ -4795,7 +4795,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC77_IN_SEL    0x0000007FU
 #define GPIO_FUNC77_IN_SEL_M  (GPIO_FUNC77_IN_SEL_V << GPIO_FUNC77_IN_SEL_S)
@@ -4834,7 +4834,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC78_IN_SEL    0x0000007FU
 #define GPIO_FUNC78_IN_SEL_M  (GPIO_FUNC78_IN_SEL_V << GPIO_FUNC78_IN_SEL_S)
@@ -4873,7 +4873,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC79_IN_SEL    0x0000007FU
 #define GPIO_FUNC79_IN_SEL_M  (GPIO_FUNC79_IN_SEL_V << GPIO_FUNC79_IN_SEL_S)
@@ -4912,7 +4912,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC80_IN_SEL    0x0000007FU
 #define GPIO_FUNC80_IN_SEL_M  (GPIO_FUNC80_IN_SEL_V << GPIO_FUNC80_IN_SEL_S)
@@ -4951,7 +4951,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC81_IN_SEL    0x0000007FU
 #define GPIO_FUNC81_IN_SEL_M  (GPIO_FUNC81_IN_SEL_V << GPIO_FUNC81_IN_SEL_S)
@@ -4990,7 +4990,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC82_IN_SEL    0x0000007FU
 #define GPIO_FUNC82_IN_SEL_M  (GPIO_FUNC82_IN_SEL_V << GPIO_FUNC82_IN_SEL_S)
@@ -5029,7 +5029,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC83_IN_SEL    0x0000007FU
 #define GPIO_FUNC83_IN_SEL_M  (GPIO_FUNC83_IN_SEL_V << GPIO_FUNC83_IN_SEL_S)
@@ -5068,7 +5068,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC84_IN_SEL    0x0000007FU
 #define GPIO_FUNC84_IN_SEL_M  (GPIO_FUNC84_IN_SEL_V << GPIO_FUNC84_IN_SEL_S)
@@ -5107,7 +5107,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC85_IN_SEL    0x0000007FU
 #define GPIO_FUNC85_IN_SEL_M  (GPIO_FUNC85_IN_SEL_V << GPIO_FUNC85_IN_SEL_S)
@@ -5146,7 +5146,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC86_IN_SEL    0x0000007FU
 #define GPIO_FUNC86_IN_SEL_M  (GPIO_FUNC86_IN_SEL_V << GPIO_FUNC86_IN_SEL_S)
@@ -5185,7 +5185,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC87_IN_SEL    0x0000007FU
 #define GPIO_FUNC87_IN_SEL_M  (GPIO_FUNC87_IN_SEL_V << GPIO_FUNC87_IN_SEL_S)
@@ -5224,7 +5224,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC88_IN_SEL    0x0000007FU
 #define GPIO_FUNC88_IN_SEL_M  (GPIO_FUNC88_IN_SEL_V << GPIO_FUNC88_IN_SEL_S)
@@ -5263,7 +5263,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC89_IN_SEL    0x0000007FU
 #define GPIO_FUNC89_IN_SEL_M  (GPIO_FUNC89_IN_SEL_V << GPIO_FUNC89_IN_SEL_S)
@@ -5302,7 +5302,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC90_IN_SEL    0x0000007FU
 #define GPIO_FUNC90_IN_SEL_M  (GPIO_FUNC90_IN_SEL_V << GPIO_FUNC90_IN_SEL_S)
@@ -5341,7 +5341,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC91_IN_SEL    0x0000007FU
 #define GPIO_FUNC91_IN_SEL_M  (GPIO_FUNC91_IN_SEL_V << GPIO_FUNC91_IN_SEL_S)
@@ -5380,7 +5380,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC92_IN_SEL    0x0000007FU
 #define GPIO_FUNC92_IN_SEL_M  (GPIO_FUNC92_IN_SEL_V << GPIO_FUNC92_IN_SEL_S)
@@ -5419,7 +5419,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC97_IN_SEL    0x0000007FU
 #define GPIO_FUNC97_IN_SEL_M  (GPIO_FUNC97_IN_SEL_V << GPIO_FUNC97_IN_SEL_S)
@@ -5458,7 +5458,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC98_IN_SEL    0x0000007FU
 #define GPIO_FUNC98_IN_SEL_M  (GPIO_FUNC98_IN_SEL_V << GPIO_FUNC98_IN_SEL_S)
@@ -5497,7 +5497,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC99_IN_SEL    0x0000007FU
 #define GPIO_FUNC99_IN_SEL_M  (GPIO_FUNC99_IN_SEL_V << GPIO_FUNC99_IN_SEL_S)
@@ -5536,7 +5536,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC100_IN_SEL    0x0000007FU
 #define GPIO_FUNC100_IN_SEL_M  (GPIO_FUNC100_IN_SEL_V << GPIO_FUNC100_IN_SEL_S)
@@ -5575,7 +5575,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC101_IN_SEL    0x0000007FU
 #define GPIO_FUNC101_IN_SEL_M  (GPIO_FUNC101_IN_SEL_V << GPIO_FUNC101_IN_SEL_S)
@@ -5614,7 +5614,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC102_IN_SEL    0x0000007FU
 #define GPIO_FUNC102_IN_SEL_M  (GPIO_FUNC102_IN_SEL_V << GPIO_FUNC102_IN_SEL_S)
@@ -5653,7 +5653,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC103_IN_SEL    0x0000007FU
 #define GPIO_FUNC103_IN_SEL_M  (GPIO_FUNC103_IN_SEL_V << GPIO_FUNC103_IN_SEL_S)
@@ -5692,7 +5692,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC104_IN_SEL    0x0000007FU
 #define GPIO_FUNC104_IN_SEL_M  (GPIO_FUNC104_IN_SEL_V << GPIO_FUNC104_IN_SEL_S)
@@ -5731,7 +5731,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC105_IN_SEL    0x0000007FU
 #define GPIO_FUNC105_IN_SEL_M  (GPIO_FUNC105_IN_SEL_V << GPIO_FUNC105_IN_SEL_S)
@@ -5770,7 +5770,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC106_IN_SEL    0x0000007FU
 #define GPIO_FUNC106_IN_SEL_M  (GPIO_FUNC106_IN_SEL_V << GPIO_FUNC106_IN_SEL_S)
@@ -5809,7 +5809,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC107_IN_SEL    0x0000007FU
 #define GPIO_FUNC107_IN_SEL_M  (GPIO_FUNC107_IN_SEL_V << GPIO_FUNC107_IN_SEL_S)
@@ -5848,7 +5848,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC108_IN_SEL    0x0000007FU
 #define GPIO_FUNC108_IN_SEL_M  (GPIO_FUNC108_IN_SEL_V << GPIO_FUNC108_IN_SEL_S)
@@ -5887,7 +5887,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC109_IN_SEL    0x0000007FU
 #define GPIO_FUNC109_IN_SEL_M  (GPIO_FUNC109_IN_SEL_V << GPIO_FUNC109_IN_SEL_S)
@@ -5926,7 +5926,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC110_IN_SEL    0x0000007FU
 #define GPIO_FUNC110_IN_SEL_M  (GPIO_FUNC110_IN_SEL_V << GPIO_FUNC110_IN_SEL_S)
@@ -5965,7 +5965,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC111_IN_SEL    0x0000007FU
 #define GPIO_FUNC111_IN_SEL_M  (GPIO_FUNC111_IN_SEL_V << GPIO_FUNC111_IN_SEL_S)
@@ -6004,7 +6004,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC112_IN_SEL    0x0000007FU
 #define GPIO_FUNC112_IN_SEL_M  (GPIO_FUNC112_IN_SEL_V << GPIO_FUNC112_IN_SEL_S)
@@ -6043,7 +6043,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC113_IN_SEL    0x0000007FU
 #define GPIO_FUNC113_IN_SEL_M  (GPIO_FUNC113_IN_SEL_V << GPIO_FUNC113_IN_SEL_S)
@@ -6082,7 +6082,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC114_IN_SEL    0x0000007FU
 #define GPIO_FUNC114_IN_SEL_M  (GPIO_FUNC114_IN_SEL_V << GPIO_FUNC114_IN_SEL_S)
@@ -6121,7 +6121,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC115_IN_SEL    0x0000007FU
 #define GPIO_FUNC115_IN_SEL_M  (GPIO_FUNC115_IN_SEL_V << GPIO_FUNC115_IN_SEL_S)
@@ -6160,7 +6160,7 @@ extern "C" {
  *  28: Select GPIO28\\
  *  Or\\
  *  0x40: A constantly high input\\
- *  0x50: A constantly low input\\
+ *  0x60: A constantly low input\\
  */
 #define GPIO_FUNC116_IN_SEL    0x0000007FU
 #define GPIO_FUNC116_IN_SEL_M  (GPIO_FUNC116_IN_SEL_V << GPIO_FUNC116_IN_SEL_S)
