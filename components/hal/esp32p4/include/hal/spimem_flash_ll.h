@@ -29,6 +29,7 @@
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
+#include "hal/clk_tree_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -645,7 +646,26 @@ static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t 
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-    return 80;
+    // return 80;
+    int source_clk_mhz = 0;
+
+    switch (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel)
+    {
+    case 0:
+        source_clk_mhz = clk_ll_xtal_load_freq_mhz();
+        break;
+    case 1:
+        source_clk_mhz = CLK_LL_PLL_480M_FREQ_MHZ; // SPLL
+        break;
+    case 2:
+        source_clk_mhz = CLK_LL_PLL_400M_FREQ_MHZ; // CPLL
+        break;
+    default:
+        break;
+    }
+
+    uint8_t clock_val = source_clk_mhz / (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_div_num + 1);
+    return clock_val;
 }
 
 /**

@@ -29,6 +29,8 @@
 #include "hal/spi_flash_types.h"
 #include "soc/pcr_struct.h"
 #include "esp_rom_sys.h"
+#include "hal/clk_tree_ll.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -626,8 +628,25 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-    // TODO: [ESP32C5] IDF-8649
-    return 80;
+    int source_clk_mhz = 0;
+
+    switch (PCR.mspi_clk_conf.mspi_func_clk_sel)
+    {
+    case 0:
+        source_clk_mhz = clk_ll_xtal_get_freq_mhz();
+        break;
+    case 1:
+        source_clk_mhz = (SOC_CLK_RC_FAST_FREQ_APPROX/(1 * 1000 * 1000));
+        break;
+    case 2:
+        source_clk_mhz = clk_ll_bbpll_get_freq_mhz();
+        break;
+    default:
+        break;
+    }
+
+    uint8_t clock_val = source_clk_mhz / (PCR.mspi_clk_conf.mspi_fast_div_num + 1);
+    return clock_val;
 }
 
 /**
