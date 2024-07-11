@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include "soc/cache_reg.h"
+#include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
@@ -47,8 +48,10 @@ extern "C" {
 #define CACHE_LL_DEFAULT_IBUS_MASK                  (CACHE_BUS_IBUS0 | CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2)
 #define CACHE_LL_DEFAULT_DBUS_MASK                  (CACHE_BUS_DBUS0 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)
 
-//TODO: IDF-7515
-#define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x3f)
+#define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x1f)
+#define CACHE_LL_L2_ACCESS_EVENT_MASK               (1<<6)
+#define CACHE_LL_L1_CORE0_EVENT_MASK                (1<<0)
+#define CACHE_LL_L1_CORE1_EVENT_MASK                (1<<1)
 
 /*------------------------------------------------------------------------------
  * Autoload
@@ -1019,27 +1022,29 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
  * Interrupt
  *----------------------------------------------------------------------------*/
 /**
- * @brief Enable Cache access error interrupt
+ * @brief Enable L1 Cache access error interrupt
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    CACHE.l1_cache_acs_fail_int_ena.val |= mask;
 }
 
 /**
- * @brief Clear Cache access error interrupt status
+ * @brief Clear L1 Cache access error interrupt status
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    CACHE.l1_cache_acs_fail_int_clr.val = mask;
 }
 
 /**
- * @brief Get Cache access error interrupt status
+ * @brief Get L1 Cache access error interrupt status
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
@@ -1048,7 +1053,42 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
-    return 0;
+    return CACHE.l1_cache_acs_fail_int_st.val & mask;
+}
+
+/**
+ * @brief Enable L2 Cache access error interrupt
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l2_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    CACHE.l2_cache_acs_fail_int_ena.val |= mask;
+}
+
+/**
+ * @brief Clear L2 Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l2_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    CACHE.l2_cache_acs_fail_int_clr.val = mask;
+}
+
+/**
+ * @brief Get L2 Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ *
+ * @return            Status mask
+ */
+static inline uint32_t cache_ll_l2_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
+{
+    return CACHE.l2_cache_acs_fail_int_st.val & mask;
 }
 
 #ifdef __cplusplus
