@@ -39,7 +39,6 @@
  */
 static inline void print_cache_err_details(const void *frame)
 {
-#if !CONFIG_IDF_TARGET_ESP32P4
     const char* cache_err_msg = esp_cache_err_panic_string();
     if (cache_err_msg) {
         panic_print_str(cache_err_msg);
@@ -47,7 +46,6 @@ static inline void print_cache_err_details(const void *frame)
         panic_print_str("Cache error active, but failed to find a corresponding error message");
     }
     panic_print_str("\r\n");
-#endif
 }
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -195,7 +193,7 @@ bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info)
     /* Cache errors when reading instructions will result in an illegal instructions,
        before any cache error interrupts trigger. We override the exception cause if
        any cache errors are active to more accurately report the actual reason */
-    if (esp_cache_err_has_active_err() && (frame->mcause == MCAUSE_ILLEGAL_INSTRUCTION)) {
+    if (esp_cache_err_has_active_err() && ((frame->mcause == MCAUSE_ILLEGAL_INSTRUCTION) || (frame->mcause == MCAUSE_ILLIGAL_INSTRUCTION_ACCESS) || (frame->mcause == MCAUSE_LOAD_ACCESS_FAULT))) {
         pseudo_cause = true;
         frame->mcause = ETS_CACHEERR_INUM;
     }
