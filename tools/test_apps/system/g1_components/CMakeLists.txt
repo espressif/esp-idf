@@ -110,3 +110,16 @@ if(NOT "${expected_components}" STREQUAL "${build_components}")
                         "Expected: ${expected_components}. "
                         "Actual: ${build_components}")
 endif()
+
+set(comp_deps_dot "${CMAKE_BINARY_DIR}/component_deps.dot")
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E echo "Checking dependency violations"
+    COMMAND python "${CMAKE_SOURCE_DIR}/check_dependencies.py" --component_deps_file ${comp_deps_dot}
+    RESULT_VARIABLE result
+)
+
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Found unexpected componend dependencies while running check_dependencies.py, "
+                        "please update the dependency list in the script according to the error output.")
+endif()
