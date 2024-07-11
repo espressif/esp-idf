@@ -30,10 +30,6 @@ tools/test_apps/system/eh_frame:
       reason: the other targets are not tested yet
 
 tools/test_apps/system/esp_intr_dump:
-  disable_test:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed  # TODO [ESP32C5] IDF-10344
 
 tools/test_apps/system/g0_components:
   enable:

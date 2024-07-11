@@ -176,9 +176,3 @@ examples/storage/wear_levelling:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: only one target per arch needed
-
-examples/system/base_mac_address:
-  disable_test:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed, runner not burnt efuse # TODO: [ESP32C5] IDF-10337

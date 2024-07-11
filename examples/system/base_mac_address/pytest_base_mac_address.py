@@ -5,8 +5,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-# TODO: [ESP32C5] IDF-10337
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='c5 runners not burnt mac efuse')
 @pytest.mark.generic
 def test_base_mac_address(dut: Dut) -> None:
     def get_hex_r(num_bytes: int) -> str:
