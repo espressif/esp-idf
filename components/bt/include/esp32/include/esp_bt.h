@@ -275,7 +275,7 @@ typedef enum {
  *       1. The connection TX power can only be set after the connection is established. 
  *          After disconnecting, the corresponding TX power will not be affected.
  *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
- *          It will not affect the TX power values which have been set for the ADV/SCAN power types.
+ *          It will not affect the TX power values which have been set for the ADV/SCAN/CONN0-8 power types.
  *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for all power types.
  */
 typedef enum {
