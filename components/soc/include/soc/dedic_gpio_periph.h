@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -25,7 +17,6 @@ extern "C" {
 
 #if SOC_DEDICATED_GPIO_SUPPORTED
 typedef struct {
-    const periph_module_t module; // Peripheral module
     const int irq;                // Interrupt resource (-1 means no interrupt supported)
     struct {
         const int in_sig_per_channel[SOC_DEDIC_GPIO_IN_CHANNELS_NUM];
