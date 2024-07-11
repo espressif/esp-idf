@@ -272,22 +272,22 @@ typedef enum {
 /**
  * @brief BLE TX power type
  * @note
- *       1. `ESP_BLE_PWR_CONN_HDL0` - `ESP_BLE_PWR_CONN_HDL8` are not effective currently. Please use `ESP_BLE_PWR_TYPE_DEFAULT`
- *          to set / get BLE TX power for all connection handles.
+ *       1. The connection TX power can only be set after the connection is established. 
+ *          After disconnecting, the corresponding TX power will not be affected.
  *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
  *          It will not affect the TX power values which have been set for the ADV/SCAN power types.
  *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for all power types.
  */
 typedef enum {
-    ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< TX power for connection handle 0. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL1  = 1,            /*!< TX power for connection handle 1. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL2  = 2,            /*!< TX power for connection handle 2. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL3  = 3,            /*!< TX power for connection handle 3. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL4  = 4,            /*!< TX power for connection handle 4. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL5  = 5,            /*!< TX power for connection handle 5. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL6  = 6,            /*!< TX power for connection handle 6. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL7  = 7,            /*!< TX power for connection handle 7. Currently not effective */
-    ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< TX power for connection handle 8. Currently not effective */
+    ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< TX power for connection handle 0 */
+    ESP_BLE_PWR_TYPE_CONN_HDL1  = 1,            /*!< TX power for connection handle 1 */
+    ESP_BLE_PWR_TYPE_CONN_HDL2  = 2,            /*!< TX power for connection handle 2 */
+    ESP_BLE_PWR_TYPE_CONN_HDL3  = 3,            /*!< TX power for connection handle 3 */
+    ESP_BLE_PWR_TYPE_CONN_HDL4  = 4,            /*!< TX power for connection handle 4 */
+    ESP_BLE_PWR_TYPE_CONN_HDL5  = 5,            /*!< TX power for connection handle 5 */
+    ESP_BLE_PWR_TYPE_CONN_HDL6  = 6,            /*!< TX power for connection handle 6 */
+    ESP_BLE_PWR_TYPE_CONN_HDL7  = 7,            /*!< TX power for connection handle 7 */
+    ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< TX power for connection handle 8 */
     ESP_BLE_PWR_TYPE_ADV        = 9,            /*!< TX power for advertising */
     ESP_BLE_PWR_TYPE_SCAN       = 10,           /*!< TX power for scan */
     ESP_BLE_PWR_TYPE_DEFAULT    = 11,           /*!< Default TX power type, which can be used to set the TX power for power types that have not been set before.*/
@@ -328,8 +328,7 @@ typedef enum {
  * @brief  Set BLE TX power
  *
  * @note
- *      1. Please use `ESP_BLE_PWR_TYPE_DEFAULT` to set BLE TX power for all connection handles.
- *      2. Connection TX power should only be set after the connection is established.
+ *      1. Connection TX power should only be set after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising, Connection, Default, etc.
  * @param[in]  power_level Power level (index) corresponding to the absolute value (dBm)
@@ -344,8 +343,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  * @brief  Get BLE TX power
  *
  * @note
- *      1. Please use `ESP_BLE_PWR_TYPE_DEFAULT` to get BLE TX power for all connection handles.
- *      2. Connection TX power should only be retrieved after the connection is established.
+ *      1. Connection TX power should only be retrieved after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising/Connection/Default and etc.
  *
