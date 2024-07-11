@@ -181,16 +181,31 @@ esp_err_t esp_wifi_sta_btwt_setup(wifi_btwt_setup_config_t *config);
 esp_err_t esp_wifi_sta_btwt_teardown(uint8_t btwt_id);
 
 /**
+  * @brief     Get number of btwts supported by the connected AP
+  *
+  * @param[out] btwt_number  store number of btwts supported by the connected AP
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_sta_get_btwt_num(uint8_t *btwt_number);
+
+/**
   * @brief     Get broadcast TWT information
   *
-  * @param[in]    btwt_info pointer to bTWT information structure.
+  * @param[inout]  btwt_number As input param, it stores max btwt number AP supported.
+  *                As output param, it receives the actual btwt numbers AP supported.
+  * @param[in]    btwt_info array to hold the btwt information supported by AP
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_FAIL: fail
   *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
   */
-esp_err_t esp_wifi_sta_btwt_get_info(esp_wifi_btwt_info_t *btwt_info);
+esp_err_t esp_wifi_sta_btwt_get_info(uint8_t btwt_number, esp_wifi_btwt_info_t *btwt_info);
 
 /**
   * @brief     Set wifi TWT config

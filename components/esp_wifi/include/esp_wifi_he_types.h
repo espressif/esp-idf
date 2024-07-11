@@ -412,6 +412,7 @@ typedef struct {
     uint8_t flow_id;                    /**< flow id */
 } wifi_event_sta_twt_wakeup_t;
 
+/** Argument structure for twt information */
 typedef struct {
     bool btwt_id_in_use;                      /**< indicate whether the btwt id is in use or not */
     uint16_t btwt_trigger : 1;                /**< 1: a trigger-enabled TWT, 0: a non-trigger-enabled TWT */
