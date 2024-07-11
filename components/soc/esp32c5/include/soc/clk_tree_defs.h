@@ -347,15 +347,15 @@ typedef enum {  // TODO: [ESP32C5] IDF-8694, IDF-8696 (inherit from C6)
 /**
  * @brief Array initializer for all supported clock sources of LP_I2C
  */
-#define SOC_LP_I2C_CLKS {SOC_MOD_CLK_RTC_FAST, SOC_MOD_CLK_XTAL_D2}
+#define SOC_LP_I2C_CLKS {SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL_D2}
 
 /**
  * @brief Type of LP_I2C clock source.
  */
 typedef enum {  // TODO: [ESP32C5] IDF-8695 (inherit from C6)
-    LP_I2C_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,                 /*!< LP_I2C source clock is RTC_FAST */
+    LP_I2C_SCLK_LP_FAST = SOC_MOD_CLK_RC_FAST,                 /*!< LP_I2C source clock is RC_FAST */
     LP_I2C_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,                  /*!< LP_I2C source clock is XTAL_D2 */
-    LP_I2C_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,                 /*!< LP_I2C source clock default choice is RTC_FAST */
+    LP_I2C_SCLK_DEFAULT = SOC_MOD_CLK_RC_FAST,                 /*!< LP_I2C source clock default choice is RC_FAST */
 } soc_periph_lp_i2c_clk_src_t;
 
 /////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////

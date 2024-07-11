@@ -881,7 +881,7 @@ typedef struct lp_i2c_dev_t {
     volatile lp_i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
 } lp_i2c_dev_t;
 
-// We map the LP_I2C instance to the i2c_dev_t struct for convinience of using the same HAL/LL. See soc/i2c_struct.h
+// We map the LP_I2C instance to the i2c_dev_t struct for convenience of using the same HAL/LL. See soc/i2c_struct.h
 //extern lp_i2c_dev_t LP_I2C;
 
 #ifndef __cplusplus
