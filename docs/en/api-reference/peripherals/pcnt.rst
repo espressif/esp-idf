@@ -163,6 +163,8 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
 
         When a watch step and a watch point are triggered at the same time (i.e. at the same absolute point), the callback function only gets called by once.
 
+        The step increment will be reset to 0 when the count reaches the high/low limit value. Please do not rely too much on the exact step interval.
+
     .. code:: c
 
         // add positive direction watch step with 100 step intervals
