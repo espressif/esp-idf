@@ -1,3 +1,6 @@
+#ifndef _FFCONF_DEFINED
+#define _FFCONF_DEFINED
+
 #include "sdkconfig.h"
 
 /*---------------------------------------------------------------------------/
@@ -362,3 +365,5 @@ void ff_memfree(void*);
 #define disk_read           ff_disk_read
 #define disk_write          ff_disk_write
 #define disk_ioctl          ff_disk_ioctl
+
+#endif /* _FFCONF_DEFINED */
