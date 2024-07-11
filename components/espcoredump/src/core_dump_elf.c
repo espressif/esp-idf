@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -207,8 +207,8 @@ static int elf_write_note_header(core_dump_elf_t *self,
     static char name_buffer[ELF_NOTE_NAME_MAX_SIZE] = { 0 };
     elf_note note_hdr = { 0 };
 
-    memcpy((void*)name_buffer, (void*)name, name_len);
-    note_hdr.n_namesz = name_len;
+    memcpy(name_buffer, name, name_len);
+    note_hdr.n_namesz = ALIGN_UP(name_len, 4);
     note_hdr.n_descsz = data_sz;
     note_hdr.n_type = type;
     // write note header
@@ -216,7 +216,7 @@ static int elf_write_note_header(core_dump_elf_t *self,
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
             "Write ELF note header failure (%d)", err);
     // write note name
-    err = esp_core_dump_write_data(&self->write_data, name_buffer, name_len);
+    err = esp_core_dump_write_data(&self->write_data, name_buffer, note_hdr.n_namesz);
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                     "Write ELF note name failure (%d)", err);
 
@@ -543,7 +543,7 @@ static void elf_write_core_dump_note_cb(void *opaque, const char *data)
 
 static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 {
-    uint32_t name_len = ALIGN_UP(sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME), 4);
+    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME);
     core_dump_elf_opaque_t param = {
         .self = self,
         .total_size = 0,
@@ -577,7 +577,7 @@ static int elf_add_wdt_panic_details(core_dump_elf_t *self)
         }
     }
 
-	return ALIGN_UP(name_len + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note), 4);
+    return ALIGN_UP(ALIGN_UP(name_len, 4) + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note), 4);
 }
 #endif //CONFIG_ESP_TASK_WDT_EN
 
