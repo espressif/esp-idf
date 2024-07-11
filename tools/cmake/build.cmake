@@ -295,11 +295,14 @@ function(__build_resolve_and_add_req var component_target req type)
     __component_get_target(_req_target ${req})
     __component_get_property(_component_name ${component_target} COMPONENT_NAME)
     if(NOT _req_target)
-        message(FATAL_ERROR "Failed to resolve component '${req}' required by component '${_component_name}'.")
+        message(FATAL_ERROR
+                "Failed to resolve component '${req}' required by component '${_component_name}': unknown name.")
     endif()
     __component_get_property(_req_registered ${_req_target} __COMPONENT_REGISTERED)
     if(NOT _req_registered)
-        message(FATAL_ERROR "Failed to resolve component '${req}' required by component '${_component_name}'.")
+        message(FATAL_ERROR
+                "Failed to resolve component '${req}' required by component '${_component_name}': "
+                "component not registered.")
     endif()
     __component_set_property(${component_target} ${type} ${_req_target} APPEND)
     set(${var} ${_req_target} PARENT_SCOPE)

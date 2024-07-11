@@ -153,3 +153,14 @@ def test_version_in_component_cmakelist(idf_py: IdfPyFunc, test_app_copy: Path) 
     replace_in_file((test_app_copy / 'main' / 'CMakeLists.txt'), '# placeholder_before_idf_component_register',
                     '\n'.join(['if (NOT IDF_VERSION_MAJOR)', ' message(FATAL_ERROR "IDF version not set")', 'endif()']))
     idf_py('reconfigure')
+
+
+def test_unknown_component_error(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('When unknown component name is specified, correct error is shown')
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        search='# placeholder_inside_idf_component_register',
+        replace='REQUIRES unknown',
+    )
+    ret = idf_py('reconfigure', check=False)
+    assert 'Failed to resolve component \'unknown\' required by component \'main\'' in ret.stderr
