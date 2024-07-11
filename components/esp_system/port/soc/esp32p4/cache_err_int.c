@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,19 +20,24 @@
 
 static const char *TAG = "CACHE_ERR";
 
-//TODO: IDF-7515
+const char cache_error_msg[] = "Cache access error";
+
 const char *esp_cache_err_panic_string(void)
 {
-    return NULL;
+    uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
+
+    /* Return the error string if a cache error is active */
+    const char* err_str = access_err_status ? cache_error_msg : NULL;
+
+    return err_str;
 }
 
-//TODO: IDF-7515
 bool esp_cache_err_has_active_err(void)
 {
-    return false;
+    bool has_active_err = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
+    return has_active_err;
 }
 
-//TODO: IDF-7515
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;
@@ -56,10 +61,13 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
-    /* On the hardware side, start by clearing all the bits reponsible for cache access error */
+    /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    cache_ll_l2_clear_access_error_intr(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
+
     /* Then enable cache access error interrupts. */
     cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    cache_ll_l2_enable_access_error_intr(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
 
     /* Enable the interrupts for cache error. */
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
@@ -67,7 +75,11 @@ void esp_cache_err_int_init(void)
 
 int esp_cache_err_get_cpuid(void)
 {
-    //TODO: IDF-7515
-    //Should return hart ID according to the cache error
-    return 0;
+    if (cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_CORE0_EVENT_MASK)) {
+        return 0;
+    } else if (cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_CORE1_EVENT_MASK)) {
+        return 1;
+    } else {
+        return -1;
+    }
 }
