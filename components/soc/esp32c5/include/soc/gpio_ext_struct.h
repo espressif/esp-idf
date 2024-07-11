@@ -142,13 +142,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable channel n of Glitch Filter.\\
          *  0: Not enable\\
          *  1: Enable\\
          */
-        uint32_t filter_ch0_en:1;
-        /** filter_ch0_input_io_num : R/W; bitpos: [6:1]; default: 0;
+        uint32_t filter_chn_en:1;
+        /** filter_chn_input_io_num : R/W; bitpos: [6:1]; default: 0;
          *  Configures to select the input GPIO for Glitch Filter. \\
          *  0: Select GPIO0\\
          *  1: Select GPIO1\\
@@ -157,20 +157,20 @@ typedef union {
          *  28: Select GPIO28\\
          *  29 ~ 63: Reserved\\
          */
-        uint32_t filter_ch0_input_io_num:6;
+        uint32_t filter_chn_input_io_num:6;
         uint32_t reserved_7:1;
-        /** filter_ch0_window_thres : R/W; bitpos: [13:8]; default: 0;
+        /** filter_chn_window_thres : R/W; bitpos: [13:8]; default: 0;
          *  Configures the window threshold for Glitch Filter. The window threshold should be
          *  less than or equal to GPIOSD_FILTER_CHn_WINDOW_WIDTH.\\  %see DOC-4768\\
          *  Measurement unit: IO MUX operating clock cycle\\
          */
-        uint32_t filter_ch0_window_thres:6;
-        /** filter_ch0_window_width : R/W; bitpos: [19:14]; default: 0;
+        uint32_t filter_chn_window_thres:6;
+        /** filter_chn_window_width : R/W; bitpos: [19:14]; default: 0;
          *  Configures the window width for Glitch Filter. The effective value of window width
          *  is 0 ~ 63. \\
          *  Measurement unit: IO MUX operating clock cycle\\
          */
-        uint32_t filter_ch0_window_width:6;
+        uint32_t filter_chn_window_width:6;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -455,12 +455,16 @@ typedef struct gpio_etm_dev_t {
 } gpio_etm_dev_t;
 
 typedef struct {
+    volatile gpio_ext_glitch_filter_chn_reg_t glitch_filter_chn[8];
+} gpio_glitch_filter_dev_t;
+
+typedef struct {
     volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[16];
     volatile gpio_ext_pad_comp_config_0_reg_t pad_comp_config_0;
     volatile gpio_ext_pad_comp_filter_0_reg_t pad_comp_filter_0;
     uint32_t reserved_060[30];
-    volatile gpio_ext_glitch_filter_chn_reg_t glitch_filter_chn[8];
+    volatile gpio_glitch_filter_dev_t glitch_filter;
     uint32_t reserved_0f8[8];
     volatile gpio_etm_dev_t etm;
     uint32_t reserved_170[24];
@@ -474,6 +478,7 @@ typedef struct {
 } gpio_ext_dev_t;
 
 extern gpio_sd_dev_t SDM;
+extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
 
