@@ -562,11 +562,6 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  *       esp_bt_controller_deinit();
  *       esp_bt_mem_release(ESP_BT_MODE_BTDM);
  *
- * @note
- *    1.  Once Bluetooth Controller memory is released, the process cannot be reversed. This means you cannot use the Bluetooth Controller mode that you have released using this function.
- *    2.  If your firmware will upgrade the Bluetooth Controller mode later (such as switching from BLE to Classic Bluetooth or from disabled to enabled), then do not call this function.
- *    3.  In case of NimBLE Host, to release BSS and data memory to heap, the mode needs to be set to `ESP_BT_MODE_BTDM` as the Controller is in Dual mode.
- *
  * @param[in] mode The Bluetooth Controller mode
  *
  * @return
