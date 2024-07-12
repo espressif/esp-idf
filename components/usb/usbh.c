@@ -383,6 +383,7 @@ static esp_err_t device_alloc(usbh_dev_params_t *params, device_t **dev_obj_ret)
     hcd_pipe_handle_t default_pipe_hdl;
     ret = hcd_pipe_alloc(params->root_port_hdl, &pipe_config, &default_pipe_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(USBH_TAG, "HCD Pipe alloc error: %s", esp_err_to_name(ret));
         goto err;
     }
     // Initialize device object
@@ -842,7 +843,7 @@ esp_err_t usbh_devs_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *nu
 
 esp_err_t usbh_devs_add(usbh_dev_params_t *params)
 {
-    USBH_CHECK(params != NULL, ESP_ERR_NOT_ALLOWED);
+    USBH_CHECK(params != NULL, ESP_ERR_INVALID_ARG);
     USBH_CHECK(params->root_port_hdl != NULL, ESP_ERR_INVALID_ARG);
     esp_err_t ret;
     device_t *dev_obj;
@@ -1401,6 +1402,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
     // Allocate the endpoint object
     ret = endpoint_alloc(dev_obj, ep_desc, ep_config, &ep_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USBH_TAG, "EP Alloc error: %s", esp_err_to_name(ret));
         goto alloc_err;
     }
 
@@ -1411,6 +1413,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
     if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
         USBH_EXIT_CRITICAL();
         ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGE(USBH_TAG, "USB Device must be in Configured state");
         goto dev_state_err;
     }
     USBH_EXIT_CRITICAL();
@@ -1423,6 +1426,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
     } else {
         // Endpoint is already allocated
         ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGE(USBH_TAG, "EP with %d address already allocated", bEndpointAddress);
     }
 dev_state_err:
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
@@ -1531,6 +1535,7 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb)
 
     esp_err_t ret;
     if (hcd_pipe_get_state(dev_obj->constant.default_pipe) != HCD_PIPE_STATE_ACTIVE) {
+        ESP_LOGE(USBH_TAG, "HCD Pipe not in active state");
         ret = ESP_ERR_INVALID_STATE;
         goto hcd_err;
     }

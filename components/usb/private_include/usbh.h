@@ -153,8 +153,13 @@ typedef struct {
  *
  * @note Before calling this function, the Host Controller must already be un-clock gated and reset. The USB PHY
  *       (internal or external, and associated GPIOs) must already be configured.
- * @param usbh_config USBH driver configuration
- * @return esp_err_t
+ * @param[in] usbh_config USBH driver configuration
+ *
+ * @return
+ *    - ESP_OK: USBH driver installed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: USBH driver is already installed
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usbh_install(const usbh_config_t *usbh_config);
 
@@ -166,7 +171,10 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config);
  *
  * @note This function will simply free the resources used by the USBH. The underlying Host Controller and USB PHY will
  *       not be disabled.
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USBH driver uninstalled successfully
+ *    - ESP_ERR_INVALID_STATE: USBH driver is not installed, or has unfinished actions
  */
 esp_err_t usbh_uninstall(void);
 
@@ -178,7 +186,10 @@ esp_err_t usbh_uninstall(void);
  *   source. The USB_PROC_REQ_SOURCE_USBH source indicates that this function should be called.
  *
  * @note This function can block
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: All devices with pending events have been handled
+ *    - ESP_ERR_INVALID_STATE: USBH driver is not installed
  */
 esp_err_t usbh_process(void);
 
@@ -189,7 +200,10 @@ esp_err_t usbh_process(void);
  *
  * @note This function can block
  * @param[out] num_devs_ret Current number of devices
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Number of devices obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_devs_num(int *num_devs_ret);
 
@@ -204,7 +218,10 @@ esp_err_t usbh_devs_num(int *num_devs_ret);
  * @param[in] list_len Length of empty list
  * @param[inout] dev_addr_list Empty list to be filled
  * @param[out] num_dev_ret Number of devices filled into list
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Address list filled successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_devs_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
 
@@ -220,7 +237,12 @@ esp_err_t usbh_devs_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *nu
  * usbh_dev_set_...() functions.
  *
  * @param[in] params   Device parameters, using for device creation
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device added to the device pool successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_NOT_FINISHED: Adding a device to the device pool not finished
  */
 esp_err_t usbh_devs_add(usbh_dev_params_t *params);
 
@@ -228,7 +250,10 @@ esp_err_t usbh_devs_add(usbh_dev_params_t *params);
  * @brief Indicates to the USBH that a device is gone
  *
  * @param[in] uid Unique ID assigned to the device on creation (see 'usbh_devs_add()')
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device removed successfully
+ *    - ESP_ERR_NOT_FOUND: Device with provided uid not found
  */
 esp_err_t usbh_devs_remove(unsigned int uid);
 
@@ -239,8 +264,11 @@ esp_err_t usbh_devs_remove(unsigned int uid);
  *
  * @param[in] uid               Unique ID assigned to the device
  * @param[out] parent_info      Parent device handle
- * @param[out] port_num         Parent port number
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device parent info obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Device with provided uid not found
  */
 esp_err_t usbh_devs_get_parent_info(unsigned int uid, usb_parent_dev_info_t *parent_info);
 
@@ -250,8 +278,8 @@ esp_err_t usbh_devs_get_parent_info(unsigned int uid, usb_parent_dev_info_t *par
  * A device marked as free will not be freed until the last client using the device has called usbh_devs_close()
  *
  * @return
- *  - ESP_OK: There were no devices to free to begin with. Current state is all free
- *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
+ *    - ESP_OK: There were no devices to free to begin with. Current state is all free
+ *    - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
  */
 esp_err_t usbh_devs_mark_all_free(void);
 
@@ -262,7 +290,13 @@ esp_err_t usbh_devs_mark_all_free(void);
  *
  * @param[in] dev_addr Device address
  * @param[out] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device opened successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Device is in invalid state, either already gone (disconnected), or waiting to be freed
+ *    - ESP_ERR_NOT_ALLOWED: It is not allowed to open the device, it is locked for the enumeration
+ *    - ESP_ERR_NOT_FOUND: Device with provided address not found
  */
 esp_err_t usbh_devs_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl);
 
@@ -272,7 +306,10 @@ esp_err_t usbh_devs_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl);
  * This is typically called after a device has been fully enumerated.
  *
  * @param[in] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USBH_EVENT_NEW_DEV triggered successfully
+ *    - ESP_ERR_INVALID_STATE: Device is not in configured state
  */
 esp_err_t usbh_devs_new_dev_event(usb_device_handle_t dev_hdl);
 
@@ -282,9 +319,13 @@ esp_err_t usbh_devs_new_dev_event(usb_device_handle_t dev_hdl);
  * @brief Close a device
  *
  * @note Callers of this function must have opened the device via usbh_devs_open()
- * *
+ *
  * @param[in] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device closed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_ALLOWED: It is not allowed to close the device, it is locked for the enumeration
  */
 esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
 
@@ -296,7 +337,10 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
  *
  * @param[in] dev_hdl Device handle
  * @param[out] dev_addr Device's address
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's address obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_dev_get_addr(usb_device_handle_t dev_hdl, uint8_t *dev_addr);
 
@@ -304,12 +348,14 @@ esp_err_t usbh_dev_get_addr(usb_device_handle_t dev_hdl, uint8_t *dev_addr);
  * @brief Get a device's information
  *
  * @note Callers of this function must have opened the device via usbh_devs_open()
- * @note It is possible that the device has not been enumerated yet, thus some
- * fields may be NULL.
+ * @note It is possible that the device has not been enumerated yet, thus some fields may be NULL.
  *
  * @param[in] dev_hdl Device handle
  * @param[out] dev_info Device information
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's information obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_info);
 
@@ -318,11 +364,14 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
  *
  * The device descriptor is cached when the device is created by the Hub driver
  *
- * @note It is possible that the device has not been enumerated yet, thus the
- * device descriptor could be NULL.
+ * @note It is possible that the device has not been enumerated yet, thus the device descriptor could be NULL.
+ *
  * @param[in] dev_hdl Device handle
  * @param[out] dev_desc_ret Device descriptor
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's device descriptor obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t **dev_desc_ret);
 
@@ -332,11 +381,14 @@ esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t
  * @note Callers of this function must have opened the device via usbh_devs_open()
  * Simply returns a reference to the internally cached configuration descriptor
  *
- * @note It is possible that the device has not been enumerated yet, thus the
- * configuration descriptor could be NULL.
+ * @note It is possible that the device has not been enumerated yet, thus the configuration descriptor could be NULL.
+ *
  * @param[in] dev_hdl Device handle
- * @param config_desc_ret
- * @return esp_err_t
+ * @param[out] config_desc_ret
+ *
+ * @return
+ *    - ESP_OK: Device's active configuration descriptor obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config_desc_t **config_desc_ret);
 
@@ -353,7 +405,11 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
  * when locking the device for enumeration.
  *
  * @param[in] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device is locked for enumeration successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Device is in an invalid state and can't be locked for enumeration
  */
 esp_err_t usbh_dev_enum_lock(usb_device_handle_t dev_hdl);
 
@@ -363,7 +419,11 @@ esp_err_t usbh_dev_enum_lock(usb_device_handle_t dev_hdl);
  * @note Callers of this function must have opened the device via usbh_devs_open()
  *
  * @param[in] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device enumeration lock released successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Device is in an invalid state and enumeration lock can't be released
  */
 esp_err_t usbh_dev_enum_unlock(usb_device_handle_t dev_hdl);
 
@@ -380,7 +440,13 @@ esp_err_t usbh_dev_enum_unlock(usb_device_handle_t dev_hdl);
  *
  * @param[in] dev_hdl Device handle
  * @param[in] wMaxPacketSize Maximum packet size
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: EP0 MPS set successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Device's EP0 MPS can only be updated when in the default state,
+ *      pipe is non in a condition to be updated
+ *    - ESP_ERR_NOT_ALLOWED: Device's enum_lock must be set before enumeration related data fields can be set
  */
 esp_err_t usbh_dev_set_ep0_mps(usb_device_handle_t dev_hdl, uint16_t wMaxPacketSize);
 
@@ -396,14 +462,20 @@ esp_err_t usbh_dev_set_ep0_mps(usb_device_handle_t dev_hdl, uint16_t wMaxPacketS
  * (see 'usbh_dev_enum_lock()')
  * @param[in] dev_hdl Device handle
  * @param[in] dev_addr Device address to set
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's address set successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Device's EP0 MPS can only be updated when in the default state,
+ *      pipe is not in a condition to be updated
+ *    - ESP_ERR_NOT_ALLOWED: Device's enum_lock must be set before enumeration related data fields can be set
  */
 esp_err_t usbh_dev_set_addr(usb_device_handle_t dev_hdl, uint8_t dev_addr);
 
 /**
- * @brief Set a device's descriptor
+ * @brief Set a device's device descriptor
  *
- * Typically called during enumeration after obtaining the device's descriptor
+ * Typically called during enumeration after obtaining the device's device descriptor
  * via a GET_DESCRIPTOR request.
  *
  * @note Callers of this function must have opened the device via usbh_devs_open()
@@ -413,7 +485,13 @@ esp_err_t usbh_dev_set_addr(usb_device_handle_t dev_hdl, uint8_t dev_addr);
  *
  * @param[in] dev_hdl Device handle
  * @param[in] device_desc Device descriptor to copy
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's device descriptor set successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_STATE: Device's device descriptor can only be set in the default or addressed state
+ *    - ESP_ERR_NOT_ALLOWED: Device's enum_lock must be set before we can set its device descriptor
  */
 esp_err_t usbh_dev_set_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t *device_desc);
 
@@ -430,7 +508,13 @@ esp_err_t usbh_dev_set_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t
  *
  * @param[in] dev_hdl Device handle
  * @param[in] config_desc_full Configuration descriptor to copy
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's configuration descriptor set successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_STATE: Device's config descriptor can only be set when in the addressed state
+ *    - ESP_ERR_NOT_ALLOWED: Device's enum_lock must be set before we can set its config descriptor
  */
 esp_err_t usbh_dev_set_config_desc(usb_device_handle_t dev_hdl, const usb_config_desc_t *config_desc_full);
 
@@ -449,7 +533,13 @@ esp_err_t usbh_dev_set_config_desc(usb_device_handle_t dev_hdl, const usb_config
  * @param[in] str_desc String descriptor to copy
  * @param[in] select Select string descriptor. 0/1/2 for Manufacturer/Product/Serial
  * Number string descriptors respectively
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device's string descriptor set successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_STATE: Device's string descriptors can only be set when in the default state
+ *    - ESP_ERR_NOT_ALLOWED: Device's enum_lock must be set before we can set its string descriptors
  */
 esp_err_t usbh_dev_set_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select);
 
@@ -472,7 +562,14 @@ esp_err_t usbh_dev_set_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_
  * @param[in] dev_hdl Device handle
  * @param[in] ep_config Endpoint configuration
  * @param[out] ep_hdl_ret Endpoint handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Endpoint allocated successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_NOT_FOUND: Endpoint with this address has not been found in device's configuration descriptor
+ *    - ESP_ERR_INVALID_STATE: USBH is not in a correct state to allocate an endpoint
+ *    - ESP_ERR_NOT_SUPPORTED: The pipe's configuration cannot be supported
  */
 esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config, usbh_ep_handle_t *ep_hdl_ret);
 
@@ -487,7 +584,12 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
  *
  * @note This function can block
  * @param[in] ep_hdl Endpoint handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Endpoint freed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Endpoint's underlying pipe has an in-flight URB
+ *    - ESP_ERR_NOT_FOUND: Endpoint with this address has not been allocated on the device
  */
 esp_err_t usbh_ep_free(usbh_ep_handle_t ep_hdl);
 
@@ -499,7 +601,11 @@ esp_err_t usbh_ep_free(usbh_ep_handle_t ep_hdl);
  * @param[in] dev_hdl Device handle
  * @param[in] bEndpointAddress Endpoint address
  * @param[out] ep_hdl_ret Endpoint handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Endpoint handle obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Endpoint with this address has not been allocated on the device
  */
 esp_err_t usbh_ep_get_handle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress, usbh_ep_handle_t *ep_hdl_ret);
 
@@ -510,7 +616,11 @@ esp_err_t usbh_ep_get_handle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddre
  *
  * @param[in] ep_hdl Endpoint handle
  * @param[in] command Endpoint command
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Command executed successfully on an endpoint
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: The pipe is not in the correct state/condition too execute the command
  */
 esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command);
 
@@ -521,7 +631,9 @@ esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command);
  *
  * @note This function can block
  * @param[in] ep_hdl Endpoint handle
- * @return Endpoint context
+ *
+ * @return
+ *    - Endpoint context
  */
 void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl);
 
@@ -532,7 +644,11 @@ void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl);
  *
  * @param[in] dev_hdl Device handle
  * @param[in] urb URB
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Control transfer submitted successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: The pipe is not in an active state or an URB can't be enqueued
  */
 esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
 
@@ -544,7 +660,11 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
  *
  * @param[in] ep_hdl Endpoint handle
  * @param[in] urb URB to enqueue
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: URB enqueued successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: The pipe is not in an active state or an URB can't be enqueued
  */
 esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb);
 
@@ -555,7 +675,10 @@ esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb);
  *
  * @param[in] ep_hdl Endpoint handle
  * @param[out] urb_ret Dequeued URB, or NULL if no more URBs to dequeue
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: URB dequeued successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usbh_ep_dequeue_urb(usbh_ep_handle_t ep_hdl, urb_t **urb_ret);
 
