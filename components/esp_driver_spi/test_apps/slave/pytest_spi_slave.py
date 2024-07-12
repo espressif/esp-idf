@@ -1,12 +1,10 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 
 
 # If `test_env` is define, should not run on generic runner
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 support TBD')  # TODO: IDF-8942
 @pytest.mark.supported_targets
-@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['defaults',], indirect=True)
 def test_slave_single_dev(case_tester) -> None:       # type: ignore
@@ -17,10 +15,9 @@ def test_slave_single_dev(case_tester) -> None:       # type: ignore
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
-# TODO: [ESP32P4] IDF-8942 [ESP32C5] IDF-10322
+# TODO: [ESP32P4] IDF-9517 [ESP32C5] IDF-10322
 @pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='no multi-dev runner')
 @pytest.mark.supported_targets
-@pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count, config', [(2, 'defaults'), (2, 'iram_safe')], indirect=True)
 def test_slave_multi_dev(case_tester) -> None:        # type: ignore
