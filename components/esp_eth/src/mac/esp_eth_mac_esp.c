@@ -260,8 +260,7 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
 
-    switch (cmd)
-    {
+    switch (cmd) {
     case ETH_MAC_ESP_CMD_PTP_ENABLE:
         return ESP_ERR_NOT_SUPPORTED;
     case ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS:
@@ -282,7 +281,7 @@ static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     uint32_t sent_len = emac_esp_dma_transmit_frame(emac->emac_dma_hndl, buf, length);
-    if(sent_len != length) {
+    if (sent_len != length) {
         ESP_LOGD(TAG, "insufficient TX buffer size");
         return ESP_ERR_NO_MEM;
     }
@@ -583,7 +582,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
 {
     esp_err_t ret = ESP_OK;
     switch (esp32_emac_config->interface) {
-    case EMAC_DATA_INTERFACE_MII:
+    case EMAC_DATA_INTERFACE_MII: {
         /* MII interface GPIO initialization */
 #if SOC_EMAC_MII_USE_GPIO_MATRIX
         ESP_GOTO_ON_ERROR(emac_esp_gpio_matrix_init_mii(&esp32_emac_config->emac_dataif_gpio.mii), err, TAG, "failed to initialize EMAC MII GPIO Matrix");
@@ -599,7 +598,8 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
             emac_hal_clock_enable_mii(&emac->hal);
         }
         break;
-    case EMAC_DATA_INTERFACE_RMII:
+    }
+    case EMAC_DATA_INTERFACE_RMII: {
         /* RMII interface GPIO initialization */
         const eth_mac_rmii_gpio_config_t *rmii_data_gpio = NULL;
 #if SOC_EMAC_USE_MULTI_IO_MUX
@@ -640,6 +640,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
             ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock mode");
         }
         break;
+    }
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC Data Interface:%i", esp32_emac_config->interface);
     }
