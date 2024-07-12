@@ -233,13 +233,13 @@ typedef struct {
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
     uint8_t mode;                           /*!< Controller mode:
-                                                
+
                                                 1: BLE mode
-                                                
+
                                                 2: Classic Bluetooth mode
-                                                
+
                                                 3: Dual mode
-                                                
+
                                                 Others: Invalid
                                                 C
                                                 onfigurable in menuconfig
@@ -276,7 +276,7 @@ typedef enum {
  *          After disconnecting, the corresponding TX power will not be affected.
  *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
  *          It will not affect the TX power values which have been set for the following CONN0-8/ADV/SCAN power types.
- *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for ADV/SCAN/CONN0-8.
+ *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for all power types.
  */
 typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< TX power for connection handle 0 */
@@ -535,7 +535,7 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
  */
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
 
-/** 
+/**
  * @brief Release the Controller memory, BSS and data section of the Classic Bluetooth/BLE Host stack as per the mode
  *
  * @note
