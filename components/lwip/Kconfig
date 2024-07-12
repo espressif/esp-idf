@@ -998,6 +998,17 @@ menu "LWIP"
         help
             Enable PPP debug log output
 
+    config LWIP_USE_EXTERNAL_MBEDTLS
+        bool "Use mbedTLS instead of internal polarSSL"
+        depends on LWIP_PPP_SUPPORT
+        depends on !LWIP_PPP_MPPE_SUPPORT && !LWIP_PPP_MSCHAP_SUPPORT
+        default n
+        help
+            This option uses mbedTLS crypto functions (instead of internal PolarSSL
+            implementation) for PPP authentication modes (PAP, CHAP, etc.).
+            You can use this option to address symbol duplication issues, since
+            the internal functions are not namespaced (e.g. md5_init()).
+
     menuconfig LWIP_SLIP_SUPPORT
         bool "Enable SLIP support (new/experimental)"
         default n

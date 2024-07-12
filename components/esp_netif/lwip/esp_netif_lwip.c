@@ -2632,15 +2632,6 @@ esp_err_t esp_netif_ppp_set_auth(esp_netif_t *esp_netif, esp_netif_auth_type_t a
 {
     set_auth_msg_t msg = { .authtype = authtype, .user = user, .passwd = passwd };
     return esp_netif_lwip_ipc_call(esp_netif_ppp_set_auth_api, esp_netif, &msg);
-#if PPP_AUTH_SUPPORT
-        lwip_peer2peer_ctx_t *ppp_ctx = (lwip_peer2peer_ctx_t *)netif->related_data;
-    assert(ppp_ctx->base.netif_type == PPP_LWIP_NETIF);
-    pppapi_set_auth(ppp_ctx->ppp, authtype, user, passwd);
-    return ESP_OK;
-#else
-    ESP_LOGE(TAG, "%s failed: No authorisation enabled in menuconfig", __func__);
-    return ESP_ERR_ESP_NETIF_IF_NOT_READY;
-#endif
 }
 
 esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif)
