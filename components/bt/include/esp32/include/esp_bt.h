@@ -327,8 +327,7 @@ typedef enum {
 /**
  * @brief  Set BLE TX power
  *
- * @note
- *      1. Connection TX power should only be set after the connection is established.
+ * @note Connection TX power should only be set after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising, Connection, Default, etc.
  * @param[in]  power_level Power level (index) corresponding to the absolute value (dBm)
@@ -342,8 +341,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 /**
  * @brief  Get BLE TX power
  *
- * @note
- *      1. Connection TX power should only be retrieved after the connection is established.
+ * @note Connection TX power should only be retrieved after the connection is established.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising/Connection/Default and etc.
  *
