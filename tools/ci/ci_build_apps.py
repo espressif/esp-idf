@@ -48,8 +48,8 @@ def main(args: argparse.Namespace) -> None:
         filter_expr=args.filter_expr,
         preserve_all=args.preserve_all,
         extra_default_build_targets=extra_default_build_targets,
-        modified_files=args.modified_components,
-        modified_components=args.modified_files,
+        modified_files=args.modified_files,
+        modified_components=args.modified_components,
         ignore_app_dependencies_filepatterns=args.ignore_app_dependencies_filepatterns,
     )
 
@@ -249,7 +249,7 @@ if __name__ == '__main__':
         arguments.modified_files = None
         arguments.ignore_app_dependencies_filepatterns = None
 
-    # default file patterns to tigger full build
+    # default file patterns to trigger full build
     if arguments.modified_files is not None and arguments.ignore_app_dependencies_filepatterns is None:
         arguments.ignore_app_dependencies_filepatterns = DEFAULT_FULL_BUILD_TEST_FILEPATTERNS
 
