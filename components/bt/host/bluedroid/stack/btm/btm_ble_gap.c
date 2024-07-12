@@ -388,6 +388,12 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy)
                              &p_cb->adv_addr_type);
         }
 
+        uint8_t null_addr[BD_ADDR_LEN] = {0};
+        if ((p_cb->evt_type == 0x01 || p_cb->evt_type == 0x04) && memcmp(p_addr_ptr, null_addr, BD_ADDR_LEN) == 0) {
+            /* directed advertising */
+            return;
+        }
+
         btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
                                          BTM_BLE_GAP_ADV_SLOW_INT),
                                          (UINT16)(p_cb->adv_interval_max ? p_cb->adv_interval_max :
