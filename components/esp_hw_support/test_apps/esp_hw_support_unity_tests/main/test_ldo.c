@@ -72,7 +72,7 @@ TEST_CASE("LDO channel state dump", "[LDO][manual][ignore]")
     esp_ldo_channel_handle_t success_ldo_chans[3] = {};
     esp_ldo_channel_config_t ldo_chan_config = {
         .chan_id = 2,
-        .voltage_mv = 1900,
+        .voltage_mv = 1800,
     };
     TEST_ESP_OK(esp_ldo_acquire_channel(&ldo_chan_config, &success_ldo_chans[0]));
 
