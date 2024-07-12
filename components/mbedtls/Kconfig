@@ -795,7 +795,7 @@ menu "mbedTLS"
 
     config MBEDTLS_SSL_RENEGOTIATION
         bool "Support TLS renegotiation"
-        depends on MBEDTLS_TLS_ENABLED
+        depends on MBEDTLS_TLS_ENABLED && MBEDTLS_SSL_PROTO_TLS1_2
         default y
         help
             The two main uses of renegotiation are (1) refresh keys on long-lived
