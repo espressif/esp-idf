@@ -129,7 +129,7 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
                 matched_dref = EFUSE.rd_mac_sys_2.ldo_vo1_dref;
             }
         }
-        if (ldo_unit == 1 && voltage_mv == 1900) {
+        if (ldo_unit == 1 && voltage_mv == 1800) {
             if (EFUSE.rd_mac_sys_2.ldo_vo2_dref && EFUSE.rd_mac_sys_3.ldo_vo2_mul) {
                 matched_mul = EFUSE.rd_mac_sys_3.ldo_vo2_mul;
                 matched_dref = EFUSE.rd_mac_sys_2.ldo_vo2_dref;
