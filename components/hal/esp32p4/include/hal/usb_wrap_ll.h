@@ -12,6 +12,7 @@
 #include "soc/lp_system_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hp_system_struct.h" // For HP_SYSTEM domain
 #include "soc/usb_wrap_struct.h"
 #include "hal/usb_wrap_types.h"
 
@@ -261,6 +262,14 @@ FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
 
 // P_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
 #define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
+
+/* ------------------------------- HP System  ------------------------------- */
+
+FORCE_INLINE_ATTR void usb_wrap_ll_enable_precise_detection(void)
+{
+    // Enable VBUS precise detection
+    HP_SYSTEM.sys_usbotg20_ctrl.sys_otg_suspendm = 1;
+}
 
 #ifdef __cplusplus
 }
