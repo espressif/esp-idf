@@ -150,6 +150,27 @@ I2C 主机设备需要 :cpp:type:`i2c_device_config_t` 指定的配置：
     i2c_master_dev_handle_t dev_handle;
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+通过端口获取 I2C 主控句柄
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+当在某个模块（例如音频模块）中已经初始化了 I2C 主控句柄，但在另一个模块（例如视频模块）中不方便获取该句柄。使用辅助函数 :cpp:func:`i2c_master_get_bus_handle` 可通过端口获取已初始化的句柄。但请确保句柄已经提前初始化，否则可能会报错。
+
+.. code:: c
+
+    // 源文件 1
+    #include "driver/i2c_master.h"
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_bus_config_t i2c_mst_config = {
+        ... // 与其他相同
+    };
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    // 源文件 2
+    #include "esp_private/i2c_platform.h"
+    #include "driver/i2c_master.h"
+    i2c_master_bus_handle_t handle;
+    ESP_ERROR_CHECK(i2c_master_get_bus_handle(0, &handle));
+
 .. only:: SOC_LP_I2C_SUPPORTED
 
     使用 LP I2C 外设来安装 I2C 主机总线
@@ -418,7 +439,7 @@ I2C 从机控制器
 通过调用 :cpp:func:`i2c_new_slave_device` 安装好 I2C 从机驱动程序后，{IDF_TARGET_NAME} 就可以作为从机与其他 I2C 主机进行通信了。
 
 I2C 从机写入
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 I2C 从机的发送 buffer 可作为 FIFO 来存储要发送的数据。在主机请求这些数据前，它们会一直排队。可通过调用 :cpp:func:`i2c_slave_transmit` 来传输数据。
 
