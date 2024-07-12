@@ -1067,11 +1067,14 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct gpio_sd_dev_t {
+    volatile gpio_ext_clock_gate_reg_t clock_gate;
+    volatile gpio_ext_sigmadelta_misc_reg_t misc;
+    volatile gpio_ext_sigmadeltan_reg_t channel[4];
+} gpio_sd_dev_t;
 
 typedef struct {
-    volatile gpio_ext_clock_gate_reg_t clock_gate;
-    volatile gpio_ext_sigmadelta_misc_reg_t sigmadelta_misc;
-    volatile gpio_ext_sigmadeltan_reg_t sigmadeltan[4];
+    volatile gpio_sd_dev_t sigma_delta;
     uint32_t reserved_018[16];
     volatile gpio_ext_pad_comp_config_0_reg_t pad_comp_config_0;
     volatile gpio_ext_pad_comp_filter_0_reg_t pad_comp_filter_0;
@@ -1096,6 +1099,7 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
+extern gpio_sd_dev_t SDM;
 extern gpio_ext_dev_t GPIO_EXT;
 
 #ifndef __cplusplus
