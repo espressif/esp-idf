@@ -1011,6 +1011,7 @@ esp_err_t hcd_install(const hcd_config_t *config)
                              (void *)p_hcd_obj_dmy->port_obj,
                              &p_hcd_obj_dmy->isr_hdl);
     if (err_ret != ESP_OK) {
+        ESP_LOGE(HCD_DWC_TAG, "Interrupt alloc error: %s", esp_err_to_name(err_ret));
         goto intr_alloc_err;
     }
     HCD_ENTER_CRITICAL();

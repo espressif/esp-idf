@@ -1185,12 +1185,14 @@ esp_err_t ext_hub_new_dev(uint8_t dev_addr)
     // Open device
     ret = usbh_devs_open(dev_addr, &dev_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(EXT_HUB_TAG, "USBH device opening error: %s", esp_err_to_name(ret));
         return ret;
     }
 
     // Get Configuration Descriptor
     ret = usbh_dev_get_config_desc(dev_hdl, &config_desc);
     if (ret != ESP_OK) {
+        ESP_LOGE(EXT_HUB_TAG, "Getting config desc error %s", esp_err_to_name(ret));
         goto exit;
     }
 
@@ -1204,12 +1206,14 @@ esp_err_t ext_hub_new_dev(uint8_t dev_addr)
 
     ret = find_first_intf_desc(config_desc, &hub_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(EXT_HUB_TAG, "Finding HUB interface error %s", esp_err_to_name(ret));
         goto exit;
     }
 
     // Create External Hub device
     ret = device_alloc(&hub_config, &hub_dev);
     if (ret != ESP_OK) {
+        ESP_LOGE(EXT_HUB_TAG, "External HUB device alloc error %s", esp_err_to_name(ret));
         goto exit;
     }
 

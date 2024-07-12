@@ -479,6 +479,7 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     };
     ret = ext_hub_install(&ext_hub_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(HUB_DRIVER_TAG, "Ext hub install error: %s", esp_err_to_name(ret));
         goto err_ext_hub;
     }
     *client_ret = ext_hub_get_client();
@@ -496,6 +497,7 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     hcd_port_handle_t root_port_hdl;
     ret = hcd_port_init(HUB_ROOT_PORT_NUM, &port_config, &root_port_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(HUB_DRIVER_TAG, "HCD Port init error: %s", esp_err_to_name(ret));
         goto err;
     }
 
@@ -598,6 +600,9 @@ esp_err_t hub_port_recycle(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
         ext_hub_handle_t ext_hub_hdl = NULL;
         ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
         ret = ext_hub_port_recycle(ext_hub_hdl, parent_port_num);
+        if (ret != ESP_OK) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Ext hub port recycle error: %s", esp_err_to_name(ret));
+        }
 #else
         ESP_LOGW(HUB_DRIVER_TAG, "Recycling External Port is not available (External Hub support disabled)");
         ret = ESP_ERR_NOT_SUPPORTED;
@@ -626,6 +631,9 @@ esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port
         ext_hub_handle_t ext_hub_hdl = NULL;
         ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
         ret = ext_hub_port_reset(ext_hub_hdl, parent_port_num);
+        if (ret != ESP_OK) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Ext hub port reset error: %s", esp_err_to_name(ret));
+        }
 #else
         ESP_LOGW(HUB_DRIVER_TAG, "Resetting External Port is not available (External Hub support disabled)");
         ret = ESP_ERR_NOT_SUPPORTED;
@@ -647,6 +655,9 @@ esp_err_t hub_port_active(usb_device_handle_t parent_dev_hdl, uint8_t parent_por
         ext_hub_handle_t ext_hub_hdl = NULL;
         ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
         ret = ext_hub_port_active(ext_hub_hdl, parent_port_num);
+        if (ret != ESP_OK) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Ext hub port activation error: %s", esp_err_to_name(ret));
+        }
 #else
         ESP_LOGW(HUB_DRIVER_TAG, "Activating External Port is not available (External Hub support disabled)");
         ret = ESP_ERR_NOT_SUPPORTED;
