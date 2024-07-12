@@ -101,7 +101,12 @@ typedef struct {
  *
  * @param[in]  enum_config Enumeration driver configuration
  * @param[out] client_ret Unique pointer to identify Enum Driver as a USB Host client
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Enumeration driver installed successfully
+ *    - ESP_ERR_INVALID_STATE: Enumeration driver is already installed
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t enum_install(enum_config_t *enum_config, void **client_ret);
 
@@ -110,7 +115,9 @@ esp_err_t enum_install(enum_config_t *enum_config, void **client_ret);
  *
  * This must be called before uninstalling the HUB and USBH
  *
- *  @return esp_err_t
+ * @return
+ *    - ESP_OK: Enumeration driver uninstalled successfully
+ *    - ESP_ERR_INVALID_STATE: Enumeration driver is not installed
  */
 esp_err_t enum_uninstall(void);
 
@@ -120,8 +127,10 @@ esp_err_t enum_uninstall(void);
  * This will start the enumeration process for the device currently at address 0
  *
  * @param[in] uid  Unique device ID
- * @retval ESP_OK: Enumeration process started
- * @retval ESP_ERR_NOT_FOUND: No device at address 0
+ *
+ * @return
+ *    - ESP_OK: Enumeration process started
+ *    - ESP_ERR_NOT_FOUND: No device at address 0
  */
 esp_err_t enum_start(unsigned int uid);
 
@@ -132,7 +141,10 @@ esp_err_t enum_start(unsigned int uid);
  * handling of a request from the Enumerator driver (such as ENUM_EVENT_RESET_REQUIRED)
  *
  * @param[in] uid  Unique device ID
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Enumeration continues normally
+ *    - ESP_ERR_INVALID_STATE: Enumeration driver not installed, or enumeration process in not active
  */
 esp_err_t enum_proceed(unsigned int uid);
 
@@ -141,7 +153,11 @@ esp_err_t enum_proceed(unsigned int uid);
  *
  * This will cancel enumeration process for device object under enumeration
  *
- * @return esp_err_t
+ * @param[in] uid Unique device ID
+ *
+ * @return
+ *    - ESP_OK: Enumeration process canceled successfully
+ *    - ESP_ERR_INVALID_STATE: Enumeration driver not installed, or enumeration process in not active
  */
 esp_err_t enum_cancel(unsigned int uid);
 
@@ -150,7 +166,9 @@ esp_err_t enum_cancel(unsigned int uid);
  *
  * Processing function that must be called repeatedly to process enumeration stages
  *
- * @return esp_err_t
+ * @return
+ *    - ESP_OK: Enumeration continues normally
+ *    - ESP_ERR_INVALID_STATE: Enumeration driver not installed, or enumeration process in not active
  */
 esp_err_t enum_process(void);
 
