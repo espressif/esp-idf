@@ -434,7 +434,6 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
-    wpa_cb->wpa_sta_set_ap_rsnxe = wpa_sm_set_ap_rsnxe;
 
     esp_wifi_register_wpa3_ap_cb(wpa_cb);
     esp_wifi_register_wpa3_cb(wpa_cb);
