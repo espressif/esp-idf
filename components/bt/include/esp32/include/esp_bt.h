@@ -233,11 +233,16 @@ typedef struct {
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value in bytes. Internal use only */
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag. Internal use only */
     uint8_t mode;                           /*!< Controller mode:
+                                                
                                                 1: BLE mode
+                                                
                                                 2: Classic Bluetooth mode
+                                                
                                                 3: Dual mode
+                                                
                                                 Others: Invalid
-                                                Configurable in menuconfig.
+                                                
+                                                Configurable in menuconfig
                                                 */
     uint8_t ble_max_conn;                   /*!< Maximum number of BLE connections. Configurable in menuconfig */
     uint8_t bt_max_acl_conn;                /*!< Maximum number of BR/EDR ACL connections. Configurable in menuconfig */
@@ -474,9 +479,9 @@ typedef struct esp_vhci_host_callback {
  *
  *If the return value is True, the Host can send the packet to the Controller.
  *
- *@note This function should be called before each `esp_vhci_host_send_packet()`.
+ * @note This function should be called before each `esp_vhci_host_send_packet()`.
  *
- *@return
+ * @return
  *       True if the Controller is ready to receive packets; false otherwise
  */
 bool esp_vhci_host_check_send_available(void);
