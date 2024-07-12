@@ -911,6 +911,71 @@ menu "BLE Services"
         default 3
         help
             Defines maximum number of report characteristics per service instance
+
+    config BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_NOTIFY
+        depends on BT_NIMBLE_ENABLED
+        bool "BAS Battery Level NOTIFY permission"
+        default n
+        help
+            Enable/Disable notifications on BAS Battery Level Characteristic
+
+    menu "Device Information Service"
+        config BT_NIMBLE_SVC_DIS_MANUFACTURER_NAME
+            depends on BT_NIMBLE_ENABLED
+            bool "Manufacturer Name"
+            default n
+            help
+                Enable the DIS characteristic Manufacturer Name String characteristic
+
+        config BT_NIMBLE_SVC_DIS_SERIAL_NUMBER
+            depends on BT_NIMBLE_ENABLED
+            bool "Serial Number"
+            default n
+            help
+                Enable the DIS Serial Number characteristic
+
+        config BT_NIMBLE_SVC_DIS_HARDWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Hardware Revision"
+            default n
+            help
+                Enable the DIS Hardware Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_FIRMWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Firmware Revision"
+            default n
+            help
+                Enable the DIS Firmware Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_SOFTWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Software Revision"
+            default n
+            help
+                Enable the DIS Software Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_SYSTEM_ID
+            depends on BT_NIMBLE_ENABLED
+            bool "System ID"
+            default n
+            help
+                Enable the DIS System ID characteristic
+
+        config BT_NIMBLE_SVC_DIS_PNP_ID
+            depends on BT_NIMBLE_ENABLED
+            bool "PnP ID"
+            default n
+            help
+                Enable the DIS PnP ID characteristic
+
+        config BT_NIMBLE_SVC_DIS_INCLUDED
+            depends on BT_NIMBLE_ENABLED
+            bool "DIS as an Included Service"
+            default n
+            help
+                Use DIS as an included service
+    endmenu
 endmenu
 
 config BT_NIMBLE_VS_SUPPORT
