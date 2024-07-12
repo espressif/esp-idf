@@ -2,6 +2,7 @@
 archive: libieee802154.a
 entries:
     if IEEE802154_ENABLED = y:
+        # When adding static functions here, add IEEE802154_NOINLINE attribute to them
         esp_ieee802154_ack: ieee802154_ack_config_pending_bit (noflash)
         esp_ieee802154_dev: ieee802154_rx_frame_info_update (noflash)
         esp_ieee802154_dev: ieee802154_isr (noflash)
