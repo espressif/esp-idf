@@ -207,6 +207,9 @@ void adc_apb_periph_claim(void)
     if (s_adc_digi_ctrlr_cnt == 1) {
         ADC_BUS_CLK_ATOMIC() {
             adc_ll_enable_bus_clock(true);
+#if SOC_RCC_IS_INDEPENDENT
+            adc_ll_enable_func_clock(true);
+#endif
             adc_ll_reset_register();
         }
     }
@@ -221,6 +224,9 @@ void adc_apb_periph_free(void)
     if (s_adc_digi_ctrlr_cnt == 0) {
         ADC_BUS_CLK_ATOMIC() {
             adc_ll_enable_bus_clock(false);
+#if SOC_RCC_IS_INDEPENDENT
+            adc_ll_enable_func_clock(false);
+#endif
         }
     } else if (s_adc_digi_ctrlr_cnt < 0) {
         portEXIT_CRITICAL(&s_spinlock);
