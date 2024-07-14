@@ -44,10 +44,11 @@
 
 #define XFER_LIST_LEN_CTRL                      3   // One descriptor for each stage
 #define XFER_LIST_LEN_BULK                      2   // One descriptor for transfer, one to support an extra zero length packet
-// Same length as the frame list makes it easier to schedule. Must be power of 2
+// Periodic transfer descriptor lists: Same length as the frame list makes it easier to schedule. Must be power of 2
 // FS: Must be 2-64. HS: Must be 8-256. See USB-OTG databook Table 5-47
 #define XFER_LIST_LEN_INTR                      FRAME_LIST_LEN
-#define XFER_LIST_LEN_ISOC                      FRAME_LIST_LEN
+#define XFER_LIST_LEN_ISOC                      64  // Implement longer ISOC transfer list to give us enough space for additional timing margin
+#define XFER_LIST_ISOC_MARGIN                   2   // The 1st ISOC transfer is scheduled 2 (micro)frames later so we have enough timing margin
 
 // ------------------------ Flags --------------------------
 
@@ -1982,7 +1983,7 @@ static inline void IRAM_ATTR _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_t
     assert(interval > 0);
     assert(__builtin_popcount(interval) == 1); // Isochronous interval must be power of 2 according to USB2.0 specification
     int total_num_desc = transfer->num_isoc_packets * interval;
-    assert(total_num_desc <= XFER_LIST_LEN_ISOC);
+    assert(total_num_desc <= XFER_LIST_LEN_ISOC - XFER_LIST_ISOC_MARGIN); // Some space in the qTD list is reserved for timing margin
     int desc_idx = start_idx;
     int bytes_filled = 0;
     // Zeroize the whole QTD, so we can focus only on the active descriptors
@@ -2038,19 +2039,8 @@ static void IRAM_ATTR _buffer_fill(pipe_t *pipe)
         if (pipe->multi_buffer_control.buffer_num_to_exec == 0) {
             // There are no more previously filled buffers to execute. We need to calculate a new start index based on HFNUM and the pipe's schedule
             uint16_t cur_frame_num = usb_dwc_hal_port_get_cur_frame_num(pipe->port->hal);
-            start_idx = cur_frame_num + 1; // This is the next frame that the periodic scheduler will fetch
-            uint16_t rem_time = usb_dwc_ll_hfnum_get_frame_time_rem(pipe->port->hal->dev);
-
-            // If there is not enough time remaining in this frame, consider the next frame as start index
-            // The remaining time is in USB PHY clocks. The threshold value is time between buffer fill and execute (6-11us) = 180 + 5 x num_packets
-            if (rem_time < 195 + 5 * transfer->num_isoc_packets) {
-                if (rem_time > 165 + 5 * transfer->num_isoc_packets) {
-                    // If the remaining time is +-15 PHY clocks around the threshold value we cannot be certain whether we will schedule it in time for this frame
-                    // Busy wait 10us to be sure that we are at the beginning of next frame/microframe
-                    esp_rom_delay_us(10);
-                }
-                start_idx++;
-            }
+            start_idx = cur_frame_num + 1;      // This is the next frame that the periodic scheduler will fetch
+            start_idx += XFER_LIST_ISOC_MARGIN; // Start scheduling with a little delay. This will get us enough timing margin so no transfer is skipped
 
             // Only every (interval + offset) transfer belongs to this channel
             // Following calculation effectively rounds up to nearest (interval + offset)
@@ -2290,9 +2280,7 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
         total_actual_num_bytes += transfer->isoc_packet_desc[pkt_idx].actual_num_bytes;
         // A descriptor is also allocated for unscheduled frames. We need to skip over them
         desc_idx += buffer->flags.isoc.interval;
-        if (desc_idx >= XFER_LIST_LEN_INTR) {
-            desc_idx -= XFER_LIST_LEN_INTR;
-        }
+        desc_idx %= XFER_LIST_LEN_ISOC;
     }
     // Write back the actual_num_bytes and statue of entire transfer
     assert(total_actual_num_bytes <= transfer->num_bytes);
