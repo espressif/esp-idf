@@ -285,7 +285,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     }
     int header_len = 0;
     do {
-        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - header_len, timeout_ms)) <= 0) {
+        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - header_len - 1, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
             return -1;
         }
@@ -293,7 +293,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ws->buffer_len = header_len;
         ws->buffer[header_len] = '\0'; // We will mark the end of the header to ensure that strstr operations for parsing the headers don't fail.
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
-    } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE);
+    } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE - 1);
 
     char* delim_ptr = strstr(ws->buffer, delimiter);
 
