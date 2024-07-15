@@ -63,7 +63,6 @@
 //  \#define SOC_MODEM_CLOCK_SUPPORTED       1
 //  \#define SOC_REG_I2C_SUPPORTED           1    //TODO: [ESP32C61] IDF-9276
 
-//  \#define SOC_PCNT_SUPPORTED              0    //TODO: [ESP32C61] IDF-9332
 //  \#define SOC_TWAI_SUPPORTED              0    //TODO: [ESP32C61] IDF-9336
 //  \#define SOC_ETM_SUPPORTED               0
 //  \#define SOC_LP_CORE_SUPPORTED           0    //TODO: [ESP32C61] IDF-9331
@@ -289,13 +288,6 @@
 #define SOC_MPU_REGIONS_MAX_NUM                   8
 #define SOC_MPU_REGION_RO_SUPPORTED               0
 #define SOC_MPU_REGION_WO_SUPPORTED               0
-
-/*-------------------------- PCNT CAPS ---------------------------------------*/
-// #define SOC_PCNT_GROUPS                       1U
-// #define SOC_PCNT_UNITS_PER_GROUP              4
-// #define SOC_PCNT_CHANNELS_PER_UNIT            2
-// #define SOC_PCNT_THRES_POINT_PER_UNIT         2
-// #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 
 /*------------------------ USB SERIAL JTAG CAPS ------------------------------*/
 //  \#define SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP     (1)     /*!< Support to maintain minimum usb communication during light sleep */ // TODO: IDF-6395

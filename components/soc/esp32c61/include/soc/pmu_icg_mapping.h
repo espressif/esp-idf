@@ -17,7 +17,6 @@
 #define PMU_ICG_APB_ENA_MEM_MONITOR             25
 #define PMU_ICG_APB_ENA_MSPI                    5
 #define PMU_ICG_APB_ENA_PARL                    23
-#define PMU_ICG_APB_ENA_PCNT                    20
 #define PMU_ICG_APB_ENA_PVT_MONITOR             27
 #define PMU_ICG_APB_ENA_REGDMA                  24
 #define PMU_ICG_APB_ENA_SARADC                  9
