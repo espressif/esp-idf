@@ -221,7 +221,7 @@ int esp_wifi_ap_wps_enable(const esp_wps_config_t *config)
     return ret;
 }
 
-static int wifi_ap_wps_disable_internal(void)
+int wifi_ap_wps_disable_internal(void)
 {
     struct wps_sm *sm = gWpsSm;
 
