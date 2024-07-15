@@ -45,6 +45,9 @@ typedef union  {
     spimem_flash_ll_clock_reg_t spimem;
 } spi_flash_ll_clock_reg_t;
 
+#define SPIMEM_LL_APB SPIMEM1
+#define SPIMEM_LL_CACHE SPIMEM0
+
 #ifdef GPSPI_BUILD
 #define spi_flash_ll_reset(dev)                              gpspi_flash_ll_reset((spi_dev_t*)dev)
 #define spi_flash_ll_cmd_is_done(dev)                        gpspi_flash_ll_cmd_is_done((spi_dev_t*)dev)
@@ -95,6 +98,10 @@ typedef union  {
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        spimem_flash_ll_set_cs_setup((spi_mem_dev_t*)dev, cs_setup_time)
 #define spi_flash_ll_set_extra_address(dev, extra_addr)      spimem_flash_ll_set_extra_address((spi_mem_dev_t*)dev, extra_addr)
 #define spi_flash_ll_get_ctrl_val(dev)                       spimem_flash_ll_get_ctrl_val((spi_mem_dev_t*)dev)
+#define spi_flash_ll_sync_reset()                            spimem_flash_ll_sync_reset()
+#define spi_flash_ll_set_common_command_register_info(dev, ctrl_reg, user_reg, user1_reg, user2_reg)        spimem_flash_ll_set_common_command_register_info((spi_mem_dev_t*)dev, ctrl_reg, user_reg, user1_reg, user2_reg)
+#define spi_flash_ll_get_common_command_register_info(dev, ctrl_reg, user_reg, user1_reg, user2_reg)        spimem_flash_ll_get_common_command_register_info((spi_mem_dev_t*)dev, ctrl_reg, user_reg, user1_reg, user2_reg)
+
 
 #endif
 

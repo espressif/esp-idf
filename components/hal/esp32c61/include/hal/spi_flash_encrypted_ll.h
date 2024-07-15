@@ -61,7 +61,7 @@ static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 {
     // Our hardware only support flash encryption
     HAL_ASSERT(type == FLASH_ENCRYPTION_MANU);
-    REG_SET_FIELD(SPI_MEM_XTS_DESTINATION_REG(0), SPI_MEM_XTS_DESTINATION, type);
+    REG_SET_FIELD(SPI_MEM_XTS_DESTINATION_REG(0), SPI_XTS_DESTINATION, type);
 }
 
 /**
@@ -72,7 +72,7 @@ static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
 {
     // Desired block should not be larger than the block size.
-    REG_SET_FIELD(SPI_MEM_XTS_LINESIZE_REG(0), SPI_MEM_XTS_LINESIZE, size >> 5);
+    REG_SET_FIELD(SPI_MEM_XTS_LINESIZE_REG(0), SPI_XTS_LINESIZE, size >> 5);
 }
 
 /**
@@ -97,7 +97,7 @@ static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const u
  */
 static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
 {
-    REG_SET_FIELD(SPI_MEM_XTS_PHYSICAL_ADDRESS_REG(0), SPI_MEM_XTS_PHYSICAL_ADDRESS, flash_addr);
+    REG_SET_FIELD(SPI_MEM_XTS_PHYSICAL_ADDRESS_REG(0), SPI_XTS_PHYSICAL_ADDRESS, flash_addr);
 }
 
 /**
@@ -105,7 +105,7 @@ static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
  */
 static inline void spi_flash_encrypt_ll_calculate_start(void)
 {
-    REG_SET_FIELD(SPI_MEM_XTS_TRIGGER_REG(0), SPI_MEM_XTS_TRIGGER, 1);
+    REG_SET_FIELD(SPI_MEM_XTS_TRIGGER_REG(0), SPI_XTS_TRIGGER, 1);
 }
 
 /**
@@ -113,7 +113,7 @@ static inline void spi_flash_encrypt_ll_calculate_start(void)
  */
 static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
 {
-    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_MEM_XTS_STATE) == 0x1) {
+    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_XTS_STATE) == 0x1) {
     }
 }
 
@@ -122,8 +122,8 @@ static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
  */
 static inline void spi_flash_encrypt_ll_done(void)
 {
-    REG_SET_BIT(SPI_MEM_XTS_RELEASE_REG(0), SPI_MEM_XTS_RELEASE);
-    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_MEM_XTS_STATE) != 0x3) {
+    REG_SET_BIT(SPI_MEM_XTS_RELEASE_REG(0), SPI_XTS_RELEASE);
+    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_XTS_STATE) != 0x3) {
     }
 }
 
@@ -132,7 +132,7 @@ static inline void spi_flash_encrypt_ll_done(void)
  */
 static inline void spi_flash_encrypt_ll_destroy(void)
 {
-    REG_SET_BIT(SPI_MEM_XTS_DESTROY_REG(0), SPI_MEM_XTS_DESTROY);
+    REG_SET_BIT(SPI_MEM_XTS_DESTROY_REG(0), SPI_XTS_DESTROY);
 }
 
 /**
