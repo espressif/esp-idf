@@ -14,20 +14,6 @@ components/esp_hw_support/test_apps/dma2d:
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
 
-components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-
-components/esp_hw_support/test_apps/etm:
-  disable:
-    - if: SOC_ETM_SUPPORTED != 1
-  depends_components:
-    - esp_driver_gptimer
-    - esp_driver_gpio
-    - esp_driver_mcpwm
-    - esp_timer
-    - esp_driver_ana_cmpr
-
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"

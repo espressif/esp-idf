@@ -17,6 +17,10 @@ set(SRC  "test_app_main.c"
          "test_system_time.c"
          "test_task_wdt.c")
 
+if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
+    list(APPEND SRC "test_systick_etm.c")
+endif()
+
 if(CONFIG_ESP_IPC_ISR_ENABLE)
     list(APPEND SRC  "test_ipc_isr.c")
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

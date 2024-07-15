@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,19 @@
 #include "driver/gpio_etm.h"
 #include "driver/gpio.h"
 
+#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
+#else
+#define TEST_ALARM_CALLBACK_ATTR
+#endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
+
+TEST_ALARM_CALLBACK_ATTR
 static bool on_gptimer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     return false;
 }
 
-TEST_CASE("gptimer_etm_alarm_event_with_interrupt_enabled", "[etm]")
+TEST_CASE("gptimer_etm_alarm_event_with_interrupt_enabled", "[gptimer][etm]")
 {
     const uint32_t output_gpio = 1;
     // GPTimer alarm ---> ETM channel A ---> GPIO toggle
@@ -100,11 +107,11 @@ TEST_CASE("gptimer_etm_alarm_event_with_interrupt_enabled", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
 }
 
-TEST_CASE("gptimer_etm_alarm_event_without_interrupt", "[etm]")
+TEST_CASE("gptimer_etm_alarm_event_without_interrupt", "[gptimer][etm]")
 {
     const uint32_t output_gpio = 1;
     // GPTimer alarm ---> ETM channel A ---> GPIO toggle
-    // GPTimer alarm ---> ETM channel B ---> GPTimer alarm reenable
+    // GPTimer alarm ---> ETM channel B ---> GPTimer alarm re-enable
     printf("allocate etm channel\r\n");
     esp_etm_channel_config_t etm_config = {};
     esp_etm_channel_handle_t etm_channel_a, etm_channel_b;
@@ -188,11 +195,11 @@ TEST_CASE("gptimer_etm_alarm_event_without_interrupt", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_b));
 }
 
-TEST_CASE("gptimer_auto_reload_by_etm", "[etm]")
+TEST_CASE("gptimer_auto_reload_by_etm", "[gptimer][etm]")
 {
     const uint32_t output_gpio = 1;
     // GPTimer alarm ---> ETM channel A ---> GPIO toggle
-    // GPTimer alarm ---> ETM channel B ---> GPTimer alarm reenable
+    // GPTimer alarm ---> ETM channel B ---> GPTimer alarm re-enable
     // GPTimer alarm ---> ETM channel C ---> GPTimer reload
     printf("allocate etm channel\r\n");
     esp_etm_channel_config_t etm_config = {};
@@ -289,7 +296,7 @@ TEST_CASE("gptimer_auto_reload_by_etm", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_c));
 }
 
-TEST_CASE("gptimer_etm_task_capture", "[etm]")
+TEST_CASE("gptimer_etm_task_capture", "[gptimer][etm]")
 {
     const uint32_t input_gpio = 0;
     // GPIO Posedge ---> ETM channel A ---> GPTimer capture
@@ -366,7 +373,7 @@ TEST_CASE("gptimer_etm_task_capture", "[etm]")
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
 }
 
-TEST_CASE("gptimer_start_stop_by_etm_task", "[etm]")
+TEST_CASE("gptimer_start_stop_by_etm_task", "[gptimer][etm]")
 {
     const uint32_t input_gpio = 0;
     // GPIO pos edge ---> ETM channel A ---> GPTimer start

@@ -94,10 +94,10 @@ TEST_CASE("gpio_etm_self_trigger", "[etm]")
 TEST_CASE("gpio_etm_self_trigger_multi_action", "[etm]")
 {
     // GPIO 0 pos edge event ---> GPIO 1 set level task
-    // GPIO 22 pos edge event ---> GPIO 1 clear level task
+    // GPIO 2 pos edge event ---> GPIO 1 clear level task
 
     const uint32_t input_gpio1 = 0;
-    const uint32_t input_gpio2 = 22;
+    const uint32_t input_gpio2 = 2;
     const uint32_t output_gpio = 1;
     printf("allocate etm channels\r\n");
     esp_etm_channel_config_t etm_config = {};
