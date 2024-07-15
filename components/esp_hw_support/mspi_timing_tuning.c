@@ -28,6 +28,10 @@
 #include "hal/spimem_flash_ll.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-10464
+#include "hal/mspi_timing_tuning_ll.h"
+#endif
+
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_ipc_isr.h"
 #endif
@@ -465,7 +469,11 @@ void mspi_timing_psram_tuning(void)
 void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
 #if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
+#if CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-10464
+    mspi_ll_clock_src_sel(MSPI_CLK_SRC_XTAL);
+#else
     spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_ROM_DEFAULT);
+#endif
 #endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
@@ -501,7 +509,11 @@ void mspi_timing_enter_low_speed_mode(bool control_spi1)
 void mspi_timing_enter_high_speed_mode(bool control_spi1)
 {
 #if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
+#if CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-10464
+    mspi_ll_clock_src_sel(MSPI_CLK_SRC_SPLL);
+#else
     spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_DEFAULT);
+#endif
 #endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
