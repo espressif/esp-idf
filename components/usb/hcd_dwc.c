@@ -1264,6 +1264,7 @@ static esp_err_t _port_cmd_reset(port_t *port)
     ret = ESP_OK;
 bailout:
     // Reinitialize channel registers
+    (void) 0;  // clang doesn't allow variable declarations after labels
     pipe_t *pipe;
     TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
         usb_dwc_hal_chan_set_ep_char(port->hal, pipe->chan_obj, &pipe->ep_char);

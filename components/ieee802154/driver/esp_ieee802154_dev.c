@@ -136,7 +136,7 @@ static IRAM_ATTR void receive_ack_timeout_timer_start(uint32_t duration)
 }
 #endif
 
-static void ieee802154_rx_frame_info_update(void)
+static IEEE802154_NOINLINE void ieee802154_rx_frame_info_update(void)
 {
     uint8_t len = s_rx_frame[s_rx_index][0];
     int8_t rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer

@@ -245,6 +245,7 @@ extern void esp_ieee802154_timer1_done(void);
 #define IEEE802154_STATIC  static
 #define IEEE802154_INLINE  inline
 #endif // CONFIG_IEEE802154_TEST
+#define IEEE802154_NOINLINE __attribute__((noinline))
 
 #ifdef __cplusplus
 }
