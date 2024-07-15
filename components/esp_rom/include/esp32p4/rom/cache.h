@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,10 @@
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
+#if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
 #include <stdint.h>
 #include "esp_bit_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,6 +88,16 @@ extern "C" {
 // should NOT =
 #define SMMU_GID_TBIT_INDEX_HIGH (SMMU_GID_TBIT_INDEX_LOW + SMMU_GID_TBIT_NUM)
 
+#define CACHE_MAP_L1_ICACHE_0 BIT(0)
+#define CACHE_MAP_L1_ICACHE_1 BIT(1)
+#define CACHE_MAP_L1_DCACHE   BIT(4)
+#define CACHE_MAP_L2_CACHE    BIT(5)
+
+#define CACHE_MAP_L1_ICACHE_MASK (CACHE_MAP_L1_ICACHE_0 | CACHE_MAP_L1_ICACHE_1)
+#define CACHE_MAP_L1_CACHE_MASK  (CACHE_MAP_L1_ICACHE_MASK | CACHE_MAP_L1_DCACHE)
+#define CACHE_MAP_MASK           (CACHE_MAP_L1_ICACHE_MASK | CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE)
+
+#if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
 typedef enum {
     CACHE_L1_ICACHE0 = 0,
     CACHE_L1_ICACHE1 = 1,
@@ -224,14 +236,6 @@ typedef enum {
     CACHE_SYNC_WRITEBACK = BIT(2),
     CACHE_SYNC_WRITEBACK_INVALIDATE = BIT(3),
 } cache_sync_t;
-
-#define CACHE_MAP_L1_ICACHE_0 BIT(0)
-#define CACHE_MAP_L1_ICACHE_1 BIT(1)
-#define CACHE_MAP_L1_DCACHE   BIT(4)
-#define CACHE_MAP_L2_CACHE    BIT(5)
-
-#define CACHE_MAP_L1_ICACHE_MASK (CACHE_MAP_L1_ICACHE_0 | CACHE_MAP_L1_ICACHE_1)
-#define CACHE_MAP_MASK           (CACHE_MAP_L1_ICACHE_MASK | CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE)
 
 struct cache_internal_stub_table {
     uint32_t (*l1_icache_line_size)(void);
@@ -507,7 +511,7 @@ void ROM_Direct_Boot_Cache_Init(void);
   *
   * @param None
   *
-  * @return 0 if mmu map is sucessfully, others if not.
+  * @return 0 if mmu map is successfully, others if not.
   */
 int ROM_Direct_Boot_MMU_Init(void);
 
@@ -1517,7 +1521,7 @@ void Cache_Freeze_L2_Cache_Disable(void);
 void Cache_Travel_Tag_Memory(struct cache_mode *mode, uint32_t filter_addr, void (*process)(struct tag_group_info *, int res[]), int res[]);
 
 /**
-  * @brief Travel tag memory to run a call back function using 2rd tag api.
+  * @brief Travel tag memory to run a call back function using 2nd tag api.
   *        ICache and DCache are suspend when doing this.
   *        The callback will get the parameter tag_group_info, which will include a group of tag memory addresses and cache memory addresses.
   *        Please do not call this function in your SDK application.
@@ -1539,7 +1543,7 @@ void Cache_Travel_Tag_Memory2(struct cache_mode *mode, uint32_t filter_addr, voi
   *
   * @param  struct cache_mode * mode : the cache to calculate the virtual address and the cache mode.
   *
-  * @param  uint32_t tag : the tag part fo a tag item, 12-14 bits.
+  * @param  uint32_t tag : the tag part for a tag item, 12-14 bits.
   *
   * @param  uint32_t addr_offset : the virtual address offset of the cache ways.
   *
@@ -1601,6 +1605,8 @@ int flash2spiram_instruction_offset(void);
 int flash2spiram_rodata_offset(void);
 uint32_t flash_instr_rodata_start_page(uint32_t bus);
 uint32_t flash_instr_rodata_end_page(uint32_t bus);
+
+#endif // #if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
 
 #ifdef __cplusplus
 }

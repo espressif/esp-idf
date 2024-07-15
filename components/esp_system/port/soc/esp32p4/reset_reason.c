@@ -8,6 +8,8 @@
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "esp32p4/rom/rtc.h"
 
 static void esp_reset_reason_clear_hint(void);
@@ -57,7 +59,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CORE_EFUSE_CRC:
 #if CONFIG_IDF_TARGET_ESP32P4
-        return ESP_RST_DEEPSLEEP; // TODO: IDF-9564
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+            return ESP_RST_DEEPSLEEP;
+        }
 #endif
         return ESP_RST_EFUSE;
 
