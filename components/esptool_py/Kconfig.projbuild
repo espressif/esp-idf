@@ -114,7 +114,7 @@ menu "Serial flasher config"
 
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
+            depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED && !ESP32P4_REV_MIN_0 # TODO IDF-10488
         config ESPTOOLPY_FLASHFREQ_64M
             bool "64 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
