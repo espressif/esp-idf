@@ -8,7 +8,7 @@ API Guides
    app_trace
    startup
    :SOC_BLUFI_SUPPORTED: blufi
-   :SOC_BT_SUPPORTED: bluetooth
+   :SOC_BT_SUPPORTED: bluetooth/index
    bootloader
    build-system
    :SOC_SUPPORT_COEXISTENCE: coexist
