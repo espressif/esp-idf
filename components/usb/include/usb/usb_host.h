@@ -352,7 +352,7 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
  * - The USB Host library only caches a device's active configuration descriptor.
  * - This function reads any configuration descriptor of a particular device (specified by bConfigurationValue).
  * - This function will read the specified configuration descriptor via control transfers, and allocate memory to store that descriptor.
- * - Users can call usb_host_get_config_desc_free() to free the descriptor's memory afterwards.
+ * - Users can call usb_host_free_config_desc() to free the descriptor's memory afterwards.
  *
  * @note This function can block
  * @note A client must call usb_host_device_open() on the device first
@@ -373,7 +373,7 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
  * @param[out] config_desc Configuration descriptor
  * @return esp_err_t
  */
-esp_err_t usb_host_get_config_desc_free(const usb_config_desc_t *config_desc);
+esp_err_t usb_host_free_config_desc(const usb_config_desc_t *config_desc);
 
 // ----------------------------------------------- Interface Functions -------------------------------------------------
 

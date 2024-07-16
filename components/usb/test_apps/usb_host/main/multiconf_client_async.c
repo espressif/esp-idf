@@ -146,7 +146,7 @@ void multiconf_client_async_task(void *arg)
             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(config_desc_ref, multiconf_obj.config_desc_cached, sizeof(usb_config_desc_t), "Configuration descriptors do not match");
 
             // Free the memory used to store the config descriptor
-            TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_config_desc_free(multiconf_obj.config_desc_cached));
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_free_config_desc(multiconf_obj.config_desc_cached));
             multiconf_obj.next_stage = TEST_STAGE_DEV_CLOSE;
             skip_event_handling = true;
             break;
