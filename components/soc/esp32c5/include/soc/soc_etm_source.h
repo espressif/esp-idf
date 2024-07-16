@@ -292,8 +292,8 @@
 #define I2S0_TASK_START_TX                      140
 #define I2S0_TASK_STOP_RX                       141
 #define I2S0_TASK_STOP_TX                       142
-#define ULP_TASK_WAKEUP_CPU                     143
-#define ULP_TASK_INT_CPU                        144
+#define ULP_TASK_WAKEUP_CPU                     137
+#define ULP_TASK_INT_CPU                        138
 #define RTC_TASK_START                          145
 #define RTC_TASK_STOP                           146
 #define RTC_TASK_CLR                            147
