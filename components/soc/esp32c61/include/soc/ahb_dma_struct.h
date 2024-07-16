@@ -455,53 +455,6 @@ typedef union {
     uint32_t val;
 } gdma_in_link_chn_reg_t;
 
-/** Type of out_conf0_ch0 register
- *  Configuration register 0 of TX channel 0
- */
-typedef union {
-    struct {
-        /** out_rst_ch0 : R/W; bitpos: [0]; default: 0;
-         *  Configures the reset state of AHB_DMA channel 0 TX FSM and TX FIFO pointer.\\0:
-         *  Release reset\\1: Reset\\
-         */
-        uint32_t out_rst_ch0:1;
-        /** out_loop_test_ch0 : R/W; bitpos: [1]; default: 0;
-         *  Reserved.
-         */
-        uint32_t out_loop_test_ch0:1;
-        /** out_auto_wrback_ch0 : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable automatic outlink write-back when all the data
-         *  in TX FIFO has been transmitted.\\0: Disable\\1: Enable\\
-         */
-        uint32_t out_auto_wrback_ch0:1;
-        /** out_eof_mode_ch0 : R/W; bitpos: [3]; default: 1;
-         *  Configures when to generate EOF flag.\\0: EOF flag for TX channel 0 is generated
-         *  when data to be transmitted has been pushed into FIFO in AHB_DMA.\\ 1: EOF flag for
-         *  TX channel 0 is generated when data to be transmitted has been popped from FIFO in
-         *  AHB_DMA.\\
-         */
-        uint32_t out_eof_mode_ch0:1;
-        /** outdscr_burst_en_ch0 : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable INCR burst transfer for TX channel 0 reading
-         *  descriptors.\\0: Disable\\1: Enable\\
-         */
-        uint32_t outdscr_burst_en_ch0:1;
-        uint32_t reserved_5:1;
-        /** out_etm_en_ch0 : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable ETM control for TX channel 0.\\0: Disable\\1:
-         *  Enable\\
-         */
-        uint32_t out_etm_en_ch0:1;
-        uint32_t reserved_7:1;
-        /** out_data_burst_mode_sel_ch0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures max burst size for TX channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
-         *  incr8\\ 2'b11: incr16\\
-         */
-        uint32_t out_data_burst_mode_sel_ch0:2;
-        uint32_t reserved_10:22;
-    };
-    uint32_t val;
-} gdma_out_conf0_ch0_reg_t;
 
 /** Type of out_conf1_chn register
  *  Configuration register 1 of TX channel 0
@@ -627,7 +580,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} gdma_tx_ch_arb_weigh_chn_reg_t;
+} ahb_dma_tx_ch_arb_weigh_chn_reg_t;
 
 /** Type of tx_arb_weigh_opt_dir_chn register
  *  TX channel 0 weight arbitration optimization enable register
@@ -641,7 +594,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} gdma_tx_arb_weigh_opt_dir_chn_reg_t;
+} ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t;
 
 /** Type of rx_ch_arb_weigh_chn register
  *  RX channel 0 arbitration weight configuration register
@@ -655,7 +608,7 @@ typedef union {
         uint32_t reserved_4:28;
     };
     uint32_t val;
-} gdma_rx_ch_arb_weigh_chn_reg_t;
+} ahb_dma_rx_ch_arb_weigh_chn_reg_t;
 
 /** Type of rx_arb_weigh_opt_dir_chn register
  *  RX channel 0 weight arbitration optimization enable register
@@ -669,7 +622,7 @@ typedef union {
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} gdma_rx_arb_weigh_opt_dir_chn_reg_t;
+} ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t;
 
 /** Type of in_link_addr_chn register
  *  Link list descriptor address configuration of RX channel 0
@@ -682,7 +635,7 @@ typedef union {
         uint32_t inlink_addr_chn:32;
     };
     uint32_t val;
-} gdma_in_link_addr_chn_reg_t;
+} ahb_dma_in_link_addr_chn_reg_t;
 
 /** Type of out_link_addr_chn register
  *  Link list descriptor address configuration of TX channel 0
@@ -695,7 +648,7 @@ typedef union {
         uint32_t outlink_addr_chn:32;
     };
     uint32_t val;
-} gdma_out_link_addr_chn_reg_t;
+} ahb_dma_out_link_addr_chn_reg_t;
 
 /** Type of intr_mem_start_addr register
  *  Accessible address space start address configuration register
@@ -838,7 +791,7 @@ typedef union {
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} gdma_infifo_status_chn_reg_t;
+} ahb_dma_infifo_status_chn_reg_t;
 
 /** Type of in_state_chn register
  *  Receive status of RX channel 0
@@ -861,7 +814,7 @@ typedef union {
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} gdma_in_state_chn_reg_t;
+} ahb_dma_in_state_chn_reg_t;
 
 /** Type of in_suc_eof_des_addr_chn register
  *  Receive descriptor address when EOF occurs on RX channel 0
@@ -875,7 +828,7 @@ typedef union {
         uint32_t in_suc_eof_des_addr_chn:32;
     };
     uint32_t val;
-} gdma_in_suc_eof_des_addr_chn_reg_t;
+} ahb_dma_in_suc_eof_des_addr_chn_reg_t;
 
 /** Type of in_err_eof_des_addr_chn register
  *  Receive descriptor address when errors occur of RX channel 0
@@ -889,7 +842,7 @@ typedef union {
         uint32_t in_err_eof_des_addr_chn:32;
     };
     uint32_t val;
-} gdma_in_err_eof_des_addr_chn_reg_t;
+} ahb_dma_in_err_eof_des_addr_chn_reg_t;
 
 /** Type of in_dscr_chn register
  *  Current receive descriptor address of RX channel 0
@@ -1158,109 +1111,97 @@ typedef union {
     uint32_t val;
 } gdma_out_peri_sel_chn_reg_t;
 
+typedef struct {
+    volatile gdma_in_int_raw_chn_reg_t raw;
+    volatile gdma_in_int_st_chn_reg_t st;
+    volatile gdma_in_int_ena_chn_reg_t ena;
+    volatile gdma_in_int_clr_chn_reg_t clr;
+} gdma_in_int_chn_reg_t;
 
 typedef struct {
-    volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch0;
-    volatile gdma_in_int_st_chn_reg_t in_int_st_ch0;
-    volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch0;
-    volatile gdma_in_int_clr_chn_reg_t in_int_clr_ch0;
-    volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch1;
-    volatile gdma_in_int_st_chn_reg_t in_int_st_ch1;
-    volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch1;
-    volatile gdma_in_int_clr_chn_reg_t in_int_clr_ch1;
+    volatile gdma_out_int_raw_chn_reg_t raw;
+    volatile gdma_out_int_st_chn_reg_t st;
+    volatile gdma_out_int_ena_chn_reg_t ena;
+    volatile gdma_out_int_clr_chn_reg_t clr;
+} gdma_out_int_chn_reg_t;
+
+
+typedef struct {
+    volatile gdma_in_conf0_chn_reg_t in_conf0;
+    volatile gdma_in_conf1_chn_reg_t in_conf1;
+    volatile ahb_dma_infifo_status_chn_reg_t infifo_status;
+    volatile gdma_in_pop_chn_reg_t in_pop;
+    volatile gdma_in_link_chn_reg_t in_link;
+    volatile ahb_dma_in_state_chn_reg_t in_state;
+    volatile ahb_dma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
+    volatile ahb_dma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
+    volatile gdma_in_dscr_chn_reg_t in_dscr;
+    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0;
+    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1;
+    volatile gdma_in_pri_chn_reg_t in_pri;
+    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel;
+} gdma_in_chn_reg_t;
+
+typedef struct {
+    volatile gdma_out_conf0_chn_reg_t out_conf0;
+    volatile gdma_out_conf1_chn_reg_t out_conf1;
+    volatile gdma_outfifo_status_chn_reg_t outfifo_status;
+    volatile gdma_out_push_chn_reg_t out_push;
+    volatile gdma_out_link_chn_reg_t out_link;
+    volatile gdma_out_state_chn_reg_t out_state;
+    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr;
+    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr;
+    volatile gdma_out_dscr_chn_reg_t out_dscr;
+    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0;
+    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1;
+    volatile gdma_out_pri_chn_reg_t out_pri;
+    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel;
+} gdma_out_chn_reg_t;
+
+typedef struct {
+    volatile gdma_in_chn_reg_t in;
+    // uint32_t reserved_in[11]; //  volatile gdma_in_done_des_addr_chn_reg_t in_done_des_addr_ch0;
+    uint32_t reserved_in1[3];
+    volatile gdma_in_done_des_addr_chn_reg_t in_done_des_addr_chn;
+    uint32_t reserved_in2[7];
+    volatile gdma_out_chn_reg_t out;
+    // uint32_t reserved_out[11]; //    volatile gdma_out_done_des_addr_chn_reg_t out_done_des_addr_ch0;
+    uint32_t reserved_out1[3];
+    volatile gdma_out_done_des_addr_chn_reg_t out_done_des_addr_chn;
+    uint32_t reserved_out2[7];
+} gdma_chn_reg_t;
+
+
+typedef struct {
+    uint32_t reserved[8];
+    ahb_dma_tx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
+    ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
+} ahb_dma_out_crc_arb_chn_reg_t;
+
+typedef struct {
+    uint32_t reserved[8];
+    ahb_dma_rx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
+    ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
+} ahb_dma_in_crc_arb_chn_reg_t;
+
+typedef struct {
+    volatile gdma_in_int_chn_reg_t in_intr[2];
     uint32_t reserved_020[4];
-    volatile gdma_out_int_raw_chn_reg_t out_int_raw_ch0;
-    volatile gdma_out_int_st_chn_reg_t out_int_st_ch0;
-    volatile gdma_out_int_ena_chn_reg_t out_int_ena_ch0;
-    volatile gdma_out_int_clr_chn_reg_t out_int_clr_ch0;
-    volatile gdma_out_int_raw_chn_reg_t out_int_raw_ch1;
-    volatile gdma_out_int_st_chn_reg_t out_int_st_ch1;
-    volatile gdma_out_int_ena_chn_reg_t out_int_ena_ch1;
-    volatile gdma_out_int_clr_chn_reg_t out_int_clr_ch1;
+    volatile gdma_out_int_chn_reg_t out_intr[2];
     uint32_t reserved_050[4];
     volatile gdma_ahb_test_reg_t ahb_test;
     volatile gdma_misc_conf_reg_t misc_conf;
     volatile gdma_date_reg_t date;
     uint32_t reserved_06c;
-    volatile gdma_in_conf0_chn_reg_t in_conf0_ch0;
-    volatile gdma_in_conf1_chn_reg_t in_conf1_ch0;
-    volatile gdma_infifo_status_chn_reg_t infifo_status_ch0;
-    volatile gdma_in_pop_chn_reg_t in_pop_ch0;
-    volatile gdma_in_link_chn_reg_t in_link_ch0;
-    volatile gdma_in_state_chn_reg_t in_state_ch0;
-    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch0;
-    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch0;
-    volatile gdma_in_dscr_chn_reg_t in_dscr_ch0;
-    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch0;
-    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch0;
-    volatile gdma_in_pri_chn_reg_t in_pri_ch0;
-    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel_ch0;
-    uint32_t reserved_0a4[3];
-    volatile gdma_in_done_des_addr_chn_reg_t in_done_des_addr_ch0;
-    uint32_t reserved_0b4[7];
-    volatile gdma_out_conf0_ch0_reg_t out_conf0_ch0;
-    volatile gdma_out_conf1_chn_reg_t out_conf1_ch0;
-    volatile gdma_outfifo_status_chn_reg_t outfifo_status_ch0;
-    volatile gdma_out_push_chn_reg_t out_push_ch0;
-    volatile gdma_out_link_chn_reg_t out_link_ch0;
-    volatile gdma_out_state_chn_reg_t out_state_ch0;
-    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch0;
-    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch0;
-    volatile gdma_out_dscr_chn_reg_t out_dscr_ch0;
-    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch0;
-    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch0;
-    volatile gdma_out_pri_chn_reg_t out_pri_ch0;
-    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel_ch0;
-    uint32_t reserved_104[3];
-    volatile gdma_out_done_des_addr_chn_reg_t out_done_des_addr_ch0;
-    uint32_t reserved_114[7];
-    volatile gdma_in_conf0_chn_reg_t in_conf0_ch1;
-    volatile gdma_in_conf1_chn_reg_t in_conf1_ch1;
-    volatile gdma_infifo_status_chn_reg_t infifo_status_ch1;
-    volatile gdma_in_pop_chn_reg_t in_pop_ch1;
-    volatile gdma_in_link_chn_reg_t in_link_ch1;
-    volatile gdma_in_state_chn_reg_t in_state_ch1;
-    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch1;
-    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch1;
-    volatile gdma_in_dscr_chn_reg_t in_dscr_ch1;
-    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch1;
-    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch1;
-    volatile gdma_in_pri_chn_reg_t in_pri_ch1;
-    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel_ch1;
-    uint32_t reserved_164[3];
-    volatile gdma_in_done_des_addr_chn_reg_t in_done_des_addr_ch1;
-    uint32_t reserved_174[7];
-    volatile gdma_out_conf0_chn_reg_t out_conf0_ch1;
-    volatile gdma_out_conf1_chn_reg_t out_conf1_ch1;
-    volatile gdma_outfifo_status_chn_reg_t outfifo_status_ch1;
-    volatile gdma_out_push_chn_reg_t out_push_ch1;
-    volatile gdma_out_link_chn_reg_t out_link_ch1;
-    volatile gdma_out_state_chn_reg_t out_state_ch1;
-    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch1;
-    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch1;
-    volatile gdma_out_dscr_chn_reg_t out_dscr_ch1;
-    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch1;
-    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch1;
-    volatile gdma_out_pri_chn_reg_t out_pri_ch1;
-    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel_ch1;
-    uint32_t reserved_1c4[3];
-    volatile gdma_out_done_des_addr_chn_reg_t out_done_des_addr_ch1;
-    uint32_t reserved_1d4[66];
-    volatile gdma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch0;
-    volatile gdma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch0;
-    uint32_t reserved_2e4[8];
-    volatile gdma_tx_ch_arb_weigh_chn_reg_t tx_ch_arb_weigh_ch1;
-    volatile gdma_tx_arb_weigh_opt_dir_chn_reg_t tx_arb_weigh_opt_dir_ch1;
-    uint32_t reserved_30c[18];
-    volatile gdma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch0;
-    volatile gdma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch0;
-    uint32_t reserved_35c[8];
-    volatile gdma_rx_ch_arb_weigh_chn_reg_t rx_ch_arb_weigh_ch1;
-    volatile gdma_rx_arb_weigh_opt_dir_chn_reg_t rx_arb_weigh_opt_dir_ch1;
+    volatile gdma_chn_reg_t channel[2];
+    uint32_t reserved_1d4[51];
+    volatile ahb_dma_out_crc_arb_chn_reg_t out_crc_arb[2];
+    uint32_t reserved_30c[10];
+    volatile ahb_dma_in_crc_arb_chn_reg_t in_crc_arb[2];
     uint32_t reserved_384[10];
-    volatile gdma_in_link_addr_chn_reg_t in_link_addr_chn[2];
+    volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr[2];
     uint32_t reserved_3b4;
-    volatile gdma_out_link_addr_chn_reg_t out_link_addr_chn[2];
+    volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr[2];
     uint32_t reserved_3c0;
     volatile gdma_intr_mem_start_addr_reg_t intr_mem_start_addr;
     volatile gdma_intr_mem_end_addr_reg_t intr_mem_end_addr;
@@ -1268,12 +1209,12 @@ typedef struct {
     volatile gdma_arb_timeout_rx_reg_t arb_timeout_rx;
     volatile gdma_weight_en_tx_reg_t weight_en_tx;
     volatile gdma_weight_en_rx_reg_t weight_en_rx;
-} gdma_dev_t;
+} ahb_dma_dev_t;
 
-extern gdma_dev_t GDMA;
+extern ahb_dma_dev_t AHB_DMA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(gdma_dev_t) == 0x3dc, "Invalid size of gdma_dev_t structure");
+_Static_assert(sizeof(ahb_dma_dev_t) == 0x3dc, "Invalid size of ahb_dma_dev_t structure");
 #endif
 
 #ifdef __cplusplus

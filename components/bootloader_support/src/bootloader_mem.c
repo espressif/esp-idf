@@ -16,6 +16,12 @@
 #include "hal/apm_hal.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9230 Remove the workaround when APM supported on C61!
+#include "soc/hp_apm_reg.h"
+#include "soc/lp_apm_reg.h"
+#endif
+
+
 void bootloader_init_mem(void)
 {
 
@@ -31,6 +37,13 @@ void bootloader_init_mem(void)
     apm_hal_apm_ctrl_filter_enable_all(false);
 #endif
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9230 Remove the workaround when APM supported on C61!
+    // disable apm filter
+    REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
+    REG_WRITE(HP_APM_FUNC_CTRL_REG, 0);
+#endif
+
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
     // protect memory region

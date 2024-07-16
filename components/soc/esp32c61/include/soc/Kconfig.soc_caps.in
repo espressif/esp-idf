@@ -7,11 +7,23 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
 config SOC_USB_SERIAL_JTAG_SUPPORTED
+    bool
+    default y
+
+config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
@@ -162,6 +174,22 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
 config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 128
+
+config SOC_DMA_CAN_ACCESS_FLASH
+    bool
+    default y
+
+config SOC_AHB_GDMA_VERSION
+    int
+    default 2
+
+config SOC_GDMA_NUM_GROUPS_MAX
+    int
+    default 1
+
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
+    int
+    default 2
 
 config SOC_ETM_GROUPS
     int
