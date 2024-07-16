@@ -14,7 +14,7 @@ extern "C" {
 /** APB_SARADC_CTRL_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_CTRL_REG (DR_REG_APB_BASE + 0x0)
+#define APB_SARADC_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x0)
 /** APB_SARADC_SARADC_START_FORCE : R/W; bitpos: [0]; default: 0;
  *  select software enable saradc sample
  */
@@ -82,7 +82,7 @@ extern "C" {
 /** APB_SARADC_CTRL2_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_CTRL2_REG (DR_REG_APB_BASE + 0x4)
+#define APB_SARADC_CTRL2_REG (DR_REG_APB_SARADC_BASE + 0x4)
 /** APB_SARADC_SARADC_MEAS_NUM_LIMIT : R/W; bitpos: [0]; default: 0;
  *  enable max meas num
  */
@@ -129,7 +129,7 @@ extern "C" {
 /** APB_SARADC_FILTER_CTRL1_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_FILTER_CTRL1_REG (DR_REG_APB_BASE + 0x8)
+#define APB_SARADC_FILTER_CTRL1_REG (DR_REG_APB_SARADC_BASE + 0x8)
 /** APB_SARADC_APB_SARADC_FILTER_FACTOR1 : R/W; bitpos: [28:26]; default: 0;
  *  Factor of saradc filter1
  */
@@ -148,7 +148,7 @@ extern "C" {
 /** APB_SARADC_FSM_WAIT_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_FSM_WAIT_REG (DR_REG_APB_BASE + 0xc)
+#define APB_SARADC_FSM_WAIT_REG (DR_REG_APB_SARADC_BASE + 0xc)
 /** APB_SARADC_SARADC_XPD_WAIT : R/W; bitpos: [7:0]; default: 8;
  *  saradc_xpd_wait
  */
@@ -174,7 +174,7 @@ extern "C" {
 /** APB_SARADC_SAR1_STATUS_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR1_STATUS_REG (DR_REG_APB_BASE + 0x10)
+#define APB_SARADC_SAR1_STATUS_REG (DR_REG_APB_SARADC_BASE + 0x10)
 /** APB_SARADC_SARADC_SAR1_STATUS : RO; bitpos: [31:0]; default: 536870912;
  *  saradc1 status about data and channel
  */
@@ -186,7 +186,7 @@ extern "C" {
 /** APB_SARADC_SAR2_STATUS_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR2_STATUS_REG (DR_REG_APB_BASE + 0x14)
+#define APB_SARADC_SAR2_STATUS_REG (DR_REG_APB_SARADC_BASE + 0x14)
 /** APB_SARADC_SARADC_SAR2_STATUS : RO; bitpos: [31:0]; default: 536870912;
  *  saradc2 status about data and channel
  */
@@ -198,7 +198,7 @@ extern "C" {
 /** APB_SARADC_SAR_PATT_TAB1_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR_PATT_TAB1_REG (DR_REG_APB_BASE + 0x18)
+#define APB_SARADC_SAR_PATT_TAB1_REG (DR_REG_APB_SARADC_BASE + 0x18)
 /** APB_SARADC_SARADC_SAR_PATT_TAB1 : R/W; bitpos: [23:0]; default: 16777215;
  *  item 0 ~ 3 for pattern table 1 (each item one byte)
  */
@@ -210,7 +210,7 @@ extern "C" {
 /** APB_SARADC_SAR_PATT_TAB2_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR_PATT_TAB2_REG (DR_REG_APB_BASE + 0x1c)
+#define APB_SARADC_SAR_PATT_TAB2_REG (DR_REG_APB_SARADC_BASE + 0x1c)
 /** APB_SARADC_SARADC_SAR_PATT_TAB2 : R/W; bitpos: [23:0]; default: 16777215;
  *  Item 4 ~ 7 for pattern table 1 (each item one byte)
  */
@@ -222,7 +222,7 @@ extern "C" {
 /** APB_SARADC_ONETIME_SAMPLE_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_ONETIME_SAMPLE_REG (DR_REG_APB_BASE + 0x20)
+#define APB_SARADC_ONETIME_SAMPLE_REG (DR_REG_APB_SARADC_BASE + 0x20)
 /** APB_SARADC_SARADC_ONETIME_ATTEN : R/W; bitpos: [24:23]; default: 0;
  *  configure onetime atten
  */
@@ -262,7 +262,7 @@ extern "C" {
 /** APB_SARADC_ARB_CTRL_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_ARB_CTRL_REG (DR_REG_APB_BASE + 0x24)
+#define APB_SARADC_ARB_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x24)
 /** APB_SARADC_ADC_ARB_APB_FORCE : R/W; bitpos: [2]; default: 0;
  *  adc2 arbiter force to enableapb controller
  */
@@ -323,7 +323,7 @@ extern "C" {
 /** APB_SARADC_FILTER_CTRL0_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_FILTER_CTRL0_REG (DR_REG_APB_BASE + 0x28)
+#define APB_SARADC_FILTER_CTRL0_REG (DR_REG_APB_SARADC_BASE + 0x28)
 /** APB_SARADC_APB_SARADC_FILTER_CHANNEL1 : R/W; bitpos: [21:18]; default: 13;
  *  configure filter1 to adc channel
  */
@@ -349,7 +349,7 @@ extern "C" {
 /** APB_SARADC_SAR1DATA_STATUS_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR1DATA_STATUS_REG (DR_REG_APB_BASE + 0x2c)
+#define APB_SARADC_SAR1DATA_STATUS_REG (DR_REG_APB_SARADC_BASE + 0x2c)
 /** APB_SARADC_APB_SARADC1_DATA : RO; bitpos: [16:0]; default: 0;
  *  saradc1 data
  */
@@ -361,7 +361,7 @@ extern "C" {
 /** APB_SARADC_SAR2DATA_STATUS_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_SAR2DATA_STATUS_REG (DR_REG_APB_BASE + 0x30)
+#define APB_SARADC_SAR2DATA_STATUS_REG (DR_REG_APB_SARADC_BASE + 0x30)
 /** APB_SARADC_APB_SARADC2_DATA : RO; bitpos: [16:0]; default: 0;
  *  saradc2 data
  */
@@ -373,7 +373,7 @@ extern "C" {
 /** APB_SARADC_THRES0_CTRL_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_THRES0_CTRL_REG (DR_REG_APB_BASE + 0x34)
+#define APB_SARADC_THRES0_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x34)
 /** APB_SARADC_APB_SARADC_THRES0_CHANNEL : R/W; bitpos: [3:0]; default: 13;
  *  configure thres0 to adc channel
  */
@@ -399,7 +399,7 @@ extern "C" {
 /** APB_SARADC_THRES1_CTRL_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_THRES1_CTRL_REG (DR_REG_APB_BASE + 0x38)
+#define APB_SARADC_THRES1_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x38)
 /** APB_SARADC_APB_SARADC_THRES1_CHANNEL : R/W; bitpos: [3:0]; default: 13;
  *  configure thres1 to adc channel
  */
@@ -425,7 +425,7 @@ extern "C" {
 /** APB_SARADC_THRES_CTRL_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_THRES_CTRL_REG (DR_REG_APB_BASE + 0x3c)
+#define APB_SARADC_THRES_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x3c)
 /** APB_SARADC_APB_SARADC_THRES_ALL_EN : R/W; bitpos: [27]; default: 0;
  *  enable thres to all channel
  */
@@ -451,7 +451,7 @@ extern "C" {
 /** APB_SARADC_INT_ENA_REG register
  *  digital saradc int register
  */
-#define APB_SARADC_INT_ENA_REG (DR_REG_APB_BASE + 0x40)
+#define APB_SARADC_INT_ENA_REG (DR_REG_APB_SARADC_BASE + 0x40)
 /** APB_SARADC_APB_SARADC_TSENS_INT_ENA : R/W; bitpos: [25]; default: 0;
  *  tsens low  interrupt enable
  */
@@ -505,7 +505,7 @@ extern "C" {
 /** APB_SARADC_INT_RAW_REG register
  *  digital saradc int register
  */
-#define APB_SARADC_INT_RAW_REG (DR_REG_APB_BASE + 0x44)
+#define APB_SARADC_INT_RAW_REG (DR_REG_APB_SARADC_BASE + 0x44)
 /** APB_SARADC_APB_SARADC_TSENS_INT_RAW : R/WTC/SS; bitpos: [25]; default: 0;
  *  saradc tsens  interrupt raw
  */
@@ -559,7 +559,7 @@ extern "C" {
 /** APB_SARADC_INT_ST_REG register
  *  digital saradc int register
  */
-#define APB_SARADC_INT_ST_REG (DR_REG_APB_BASE + 0x48)
+#define APB_SARADC_INT_ST_REG (DR_REG_APB_SARADC_BASE + 0x48)
 /** APB_SARADC_APB_SARADC_TSENS_INT_ST : RO; bitpos: [25]; default: 0;
  *  saradc tsens  interrupt state
  */
@@ -613,7 +613,7 @@ extern "C" {
 /** APB_SARADC_INT_CLR_REG register
  *  digital saradc int register
  */
-#define APB_SARADC_INT_CLR_REG (DR_REG_APB_BASE + 0x4c)
+#define APB_SARADC_INT_CLR_REG (DR_REG_APB_SARADC_BASE + 0x4c)
 /** APB_SARADC_APB_SARADC_TSENS_INT_CLR : WT; bitpos: [25]; default: 0;
  *  saradc tsens  interrupt clear
  */
@@ -667,7 +667,7 @@ extern "C" {
 /** APB_SARADC_DMA_CONF_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_DMA_CONF_REG (DR_REG_APB_BASE + 0x50)
+#define APB_SARADC_DMA_CONF_REG (DR_REG_APB_SARADC_BASE + 0x50)
 /** APB_SARADC_APB_ADC_EOF_NUM : R/W; bitpos: [15:0]; default: 255;
  *  the dma_in_suc_eof gen when sample cnt = spi_eof_num
  */
@@ -693,7 +693,7 @@ extern "C" {
 /** APB_SARADC_CLKM_CONF_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_CLKM_CONF_REG (DR_REG_APB_BASE + 0x54)
+#define APB_SARADC_CLKM_CONF_REG (DR_REG_APB_SARADC_BASE + 0x54)
 /** APB_SARADC_CLKM_DIV_NUM : R/W; bitpos: [7:0]; default: 4;
  *  Integral I2S clock divider value
  */
@@ -733,7 +733,7 @@ extern "C" {
 /** APB_SARADC_APB_TSENS_CTRL_REG register
  *  digital tsens configure register
  */
-#define APB_SARADC_APB_TSENS_CTRL_REG (DR_REG_APB_BASE + 0x58)
+#define APB_SARADC_APB_TSENS_CTRL_REG (DR_REG_APB_SARADC_BASE + 0x58)
 /** APB_SARADC_TSENS_OUT : RO; bitpos: [7:0]; default: 128;
  *  temperature sensor data out
  */
@@ -766,7 +766,7 @@ extern "C" {
 /** APB_SARADC_TSENS_CTRL2_REG register
  *  digital tsens configure register
  */
-#define APB_SARADC_TSENS_CTRL2_REG (DR_REG_APB_BASE + 0x5c)
+#define APB_SARADC_TSENS_CTRL2_REG (DR_REG_APB_SARADC_BASE + 0x5c)
 /** APB_SARADC_TSENS_XPD_WAIT : R/W; bitpos: [11:0]; default: 2;
  *  the time that power up tsens need wait
  */
@@ -799,7 +799,7 @@ extern "C" {
 /** APB_SARADC_CALI_REG register
  *  digital saradc configure register
  */
-#define APB_SARADC_CALI_REG (DR_REG_APB_BASE + 0x60)
+#define APB_SARADC_CALI_REG (DR_REG_APB_SARADC_BASE + 0x60)
 /** APB_SARADC_APB_SARADC_CALI_CFG : R/W; bitpos: [16:0]; default: 32768;
  *  saradc cali factor
  */
@@ -811,7 +811,7 @@ extern "C" {
 /** APB_TSENS_WAKE_REG register
  *  digital tsens configure register
  */
-#define APB_TSENS_WAKE_REG (DR_REG_APB_BASE + 0x64)
+#define APB_TSENS_WAKE_REG (DR_REG_APB_SARADC_BASE + 0x64)
 /** APB_SARADC_WAKEUP_TH_LOW : R/W; bitpos: [7:0]; default: 0;
  *  reg_wakeup_th_low
  */
@@ -851,7 +851,7 @@ extern "C" {
 /** APB_TSENS_SAMPLE_REG register
  *  digital tsens configure register
  */
-#define APB_TSENS_SAMPLE_REG (DR_REG_APB_BASE + 0x68)
+#define APB_TSENS_SAMPLE_REG (DR_REG_APB_SARADC_BASE + 0x68)
 /** APB_SARADC_TSENS_SAMPLE_RATE : R/W; bitpos: [15:0]; default: 20;
  *  HW sample rate
  */
@@ -870,7 +870,7 @@ extern "C" {
 /** APB_SARADC_CTRL_DATE_REG register
  *  version
  */
-#define APB_SARADC_CTRL_DATE_REG (DR_REG_APB_BASE + 0x3fc)
+#define APB_SARADC_CTRL_DATE_REG (DR_REG_APB_SARADC_BASE + 0x3fc)
 /** APB_SARADC_DATE : R/W; bitpos: [31:0]; default: 35676736;
  *  version
  */
