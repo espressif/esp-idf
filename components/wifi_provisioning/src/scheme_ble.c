@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@ static const char *TAG = "wifi_prov_scheme_ble";
 extern const wifi_prov_scheme_t wifi_prov_scheme_ble;
 
 static uint8_t *custom_service_uuid;
-
+static uint8_t *custom_ble_addr;
 static uint8_t *custom_manufacturer_data;
 static size_t custom_manufacturer_data_len;
 
@@ -56,6 +56,22 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
         ESP_LOGE(TAG, "Failed to start protocomm BLE service");
         return ESP_FAIL;
     }
+    return ESP_OK;
+}
+
+esp_err_t wifi_prov_scheme_ble_set_random_addr(const uint8_t *addr)
+{
+    if (!addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    custom_ble_addr = (uint8_t *) malloc(BLE_ADDR_LEN);
+    if (custom_ble_addr == NULL) {
+         ESP_LOGE(TAG, "Error allocating memory for random address");
+         return ESP_ERR_NO_MEM;
+    }
+
+    memcpy(custom_ble_addr, addr, BLE_ADDR_LEN);
     return ESP_OK;
 }
 
@@ -157,6 +173,12 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
     } else {
         ble_config->manufacturer_data = NULL;
         ble_config->manufacturer_data_len = 0;
+    }
+
+    if (custom_ble_addr){
+        ble_config->ble_addr = custom_ble_addr;
+    } else {
+        ble_config->ble_addr = NULL;
     }
 
     return ESP_OK;

@@ -798,7 +798,6 @@ components/unity/include/unity_config.h
 components/unity/include/unity_fixture_extras.h
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
-components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
 components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h
