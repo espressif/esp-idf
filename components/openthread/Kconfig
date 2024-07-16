@@ -259,7 +259,8 @@ menu "OpenThread"
     config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
         int "The size of openthread spinel rx frame buffer"
         depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
-        default 2048
+        default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
+        default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
 
     config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
         int "Maximum backoffs times before declaring a channel access failure."
