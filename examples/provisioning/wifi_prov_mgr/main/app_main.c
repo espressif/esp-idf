@@ -136,7 +136,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
                 retries++;
                 if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
-                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, reseting provisioned credentials");
+                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, resetting provisioned credentials");
                     wifi_prov_mgr_reset_sm_state_on_failure();
                     retries = 0;
                 }
