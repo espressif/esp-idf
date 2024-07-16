@@ -72,6 +72,7 @@ static int enum_function(struct sock_db *session, void *context)
     case HTTPD_TASK_INIT:
         session->fd = -1;
         session->ctx = NULL;
+        session->for_async_req = false;
         break;
     // Get active session
     case HTTPD_TASK_GET_ACTIVE:
@@ -87,7 +88,7 @@ static int enum_function(struct sock_db *session, void *context)
         break;
     // Set descriptor
     case HTTPD_TASK_SET_DESCRIPTOR:
-        if (session->fd != -1) {
+        if (session->fd != -1 && !session->for_async_req) {
             FD_SET(session->fd, ctx->fdset);
             if (session->fd > ctx->max_fd) {
                 ctx->max_fd = session->fd;
