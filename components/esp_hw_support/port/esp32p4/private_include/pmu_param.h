@@ -314,9 +314,18 @@ typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
 } pmu_sleep_digital_config_t;
 
+
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(pd_flags) {               \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 0,                                           \
+        .lp_pad_hold_all = (pd_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
+    }                                                                   \
+}
+
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags) {               \
     .syscntl = {                                                        \
-        .dig_pad_slp_sel = ((pd_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,     \
+        .dig_pad_slp_sel = (pd_flags & PMU_SLEEP_PD_TOP) ? 0 : 1,       \
+        .lp_pad_hold_all = (pd_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
     }                                                                   \
 }
 

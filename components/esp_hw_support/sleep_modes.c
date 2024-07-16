@@ -217,8 +217,8 @@ typedef struct {
     uint32_t ext0_rtc_gpio_num : 5;
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-    uint32_t gpio_wakeup_mask : 8;  // 8 is the maximum RTCIO number in all chips that support GPIO wakeup
-    uint32_t gpio_trigger_mode : 8;
+    uint32_t gpio_wakeup_mask : SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT;  // Only RTC_GPIO supports wakeup deepsleep
+    uint32_t gpio_trigger_mode : SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT;
 #endif
     uint32_t sleep_time_adjustment;
     uint32_t ccount_ticks_record;
