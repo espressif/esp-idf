@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-此文档概述了 ESP-IDF 中蓝牙协议栈的架构，并提供了一些相关文档和应用示例的快速链接。
+此文档概述了 ESP-IDF 中低功耗蓝牙协议栈的架构，并提供了一些相关文档和应用示例的快速链接。
 
 .. only:: esp32
 
@@ -17,7 +17,7 @@
 
     {IDF_TARGET_NAME} 支持蓝牙 5.0 (LE)，并且已经获得蓝牙 LE 5.3 认证。
 
-ESP-IDF 中的蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现蓝牙功能，详见下。
+ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现低功耗蓝牙功能，详见下。
 
 .. only:: esp32 or esp32s3 or esp32c3 or esp32c6
 
@@ -46,7 +46,7 @@ ESP-IDF 中的蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} �
 
         {IDF_TARGET_NAME} 蓝牙协议栈架构
 
-参考下表可知特定芯片是否支持蓝牙模块。
+参考下表可知特定芯片是否支持低功耗蓝牙模块。
 
 .. list-table::
     :width: 100%
@@ -143,11 +143,6 @@ ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两�
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`低功耗蓝牙 <../../api-reference/bluetooth/bt_le>`
-
-  .. only:: esp32
-
-    - :doc:`../../api-reference/bluetooth/classic_bt`
-
 - :example:`应用程序示例 <bluetooth/bluedroid>`
 
 
@@ -198,4 +193,4 @@ ESP-NimBLE 仅支持低功耗蓝牙，不支持经典蓝牙。
 应用
 ----
 
-最上层是应用层。利用上述 API 和蓝牙规范，可以在 ESP-Bluedroid 和 ESP-NimBLE 协议栈之上创建特定用例的蓝牙应用程序。
+最上层是应用层。利用上述 API 和蓝牙规范，可以在 ESP-Bluedroid 和 ESP-NimBLE 协议栈之上创建特定用例的低功耗蓝牙应用程序。

@@ -3,7 +3,7 @@ Introduction
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides an architecture overview of the Bluetooth stack in ESP-IDF and some quick links to related documents and application examples.
+This document provides an architecture overview of the Bluetooth Low Energy (Bluetooth LE) stack in ESP-IDF and some quick links to related documents and application examples.
 
 .. only:: esp32
 
@@ -17,36 +17,36 @@ This document provides an architecture overview of the Bluetooth stack in ESP-ID
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.3.
 
-The Bluetooth stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
+The Bluetooth LE stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
 
 .. only:: esp32 or esp32s3 or esp32c3 or esp32c6
 
     .. figure:: ../../../_static/bluetooth-architecture.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
 .. only:: esp32c2
 
     .. figure:: ../../../_static/bluetooth-architecture-no-ble-mesh.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
 .. only:: esp32h2
 
     .. figure:: ../../../_static/bluetooth-architecture-no-blufi.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-The table below shows whether the Bluetooth modules are supported in a specific chip series.
+The table below shows whether the Bluetooth LE modules are supported in a specific chip series.
 
 .. list-table::
     :width: 100%
@@ -143,11 +143,6 @@ ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Blued
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`Bluetooth LE <../../api-reference/bluetooth/bt_le>`
-
-  .. only:: esp32
-
-    - :doc:`../../api-reference/bluetooth/classic_bt`
-
 - :example:`Application examples <bluetooth/bluedroid>`
 
 
@@ -198,4 +193,4 @@ Above the host stacks are the profile implementations by Espressif and some comm
 Applications
 ------------
 
-At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid and ESP-NimBLE stacks, leveraging the provided APIs and profiles to create Bluetooth-enabled applications tailored to specific use cases.
+At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid and ESP-NimBLE stacks, leveraging the provided APIs and profiles to create Bluetooth LE-enabled applications tailored to specific use cases.
