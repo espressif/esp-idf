@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,11 +56,25 @@ const ip_addr_t *__weak lwip_hook_ip6_select_source_address(struct netif *netif,
 #endif
 
 #ifdef CONFIG_LWIP_HOOK_IP6_INPUT_DEFAULT
+/**
+ * @brief The default IPv6 input hook checks if we already have an IPv6 address (netif->ip6_addr[0] is link local),
+ * so we drop all incoming IPv6 packets if the input netif has no LL address.
+ *
+ * LWIP accepts IPv6 multicast packets even if the ip6_addr[] for the given address wasn't set,
+ * this may cause trouble if we enable IPv6 SLAAC (LWIP_IPV6_AUTOCONFIG), but have not created any LL address.
+ * If the router sends a packet to all nodes 0xff01::1 with RDNSS servers, it would be accepted and rewrite
+ * DNS server info with IPv6 values (which won't be routable without any IPv6 address assigned)
+ */
 int __weak lwip_hook_ip6_input(struct pbuf *p, struct netif *inp)
 {
-    LWIP_UNUSED_ARG(p);
-    LWIP_UNUSED_ARG(inp);
-
+    /* Check if the first IPv6 address (link-local) is unassigned (all zeros).
+     * If the address is empty, it indicates that no link-local address has been configured,
+     * and the interface should not accept incoming IPv6 traffic. */
+    if (ip6_addr_isany(ip_2_ip6(&inp->ip6_addr[0]))) {
+        /* We don't have an LL address -> eat this packet here, so it won't get accepted on the input netif */
+        pbuf_free(p);
+        return 1;
+    }
     return 0;
 }
 #endif
