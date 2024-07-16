@@ -247,6 +247,11 @@ static int httpd_process_session(struct sock_db *session, void *context)
         return 1;
     }
 
+    // session is busy in an async task, do not process here.
+    if (session->for_async_req) {
+        return 1;
+    }
+
     process_session_context_t *ctx = (process_session_context_t *)context;
     int fd = session->fd;
 
