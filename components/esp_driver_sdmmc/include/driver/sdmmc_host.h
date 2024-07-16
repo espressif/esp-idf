@@ -64,8 +64,7 @@ typedef struct {
  * @note This function is not thread safe
  *
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if sdmmc_host_init was already called
+ *      - ESP_OK on success or if sdmmc_host_init was already initialized with this function
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  */
 esp_err_t sdmmc_host_init(void);

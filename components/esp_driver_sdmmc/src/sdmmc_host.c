@@ -45,6 +45,27 @@
 #define SDMMC_CLK_SRC_ATOMIC()
 #endif
 
+/* Default disabled interrupts (on init):
+ *  SDMMC_INTMASK_RXDR,
+ *  SDMMC_INTMASK_TXDR,
+ *  SDMMC_INTMASK_BCI,
+ *  SDMMC_INTMASK_ACD,
+ *  SDMMC_INTMASK_IO_SLOT1,
+ *  SDMMC_INTMASK_IO_SLOT0
+ */
+// Default enabled interrupts (sdio is enabled only when use):
+#define SDMMC_INTMASK_DEFAULT \
+    (SDMMC_INTMASK_CD | SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER | \
+    SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | \
+    SDMMC_INTMASK_HLE | \
+    SDMMC_INTMASK_SBE | \
+    SDMMC_INTMASK_EBE)
+
+#define SLOT_CHECK(slot_num) \
+if (slot_num < 0 || slot_num >= SOC_SDMMC_NUM_SLOTS) { \
+    return ESP_ERR_INVALID_ARG; \
+}
+
 static const char *TAG = "sdmmc_periph";
 
 /**
@@ -67,7 +88,7 @@ typedef struct host_ctx_t {
     slot_ctx_t           slot_ctx[SOC_SDMMC_NUM_SLOTS];
 } host_ctx_t;
 
-static host_ctx_t s_host_ctx;
+static host_ctx_t s_host_ctx = {0};
 
 static void sdmmc_isr(void *arg);
 static void sdmmc_host_dma_init(void);
@@ -227,11 +248,16 @@ static int sdmmc_host_calc_freq(const int host_div, const int card_div)
     return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
 
+static void sdmmc_host_set_data_timeout(uint32_t freq_khz)
+{
+    const uint32_t data_timeout_ms = 100;
+    uint32_t data_timeout_cycles = data_timeout_ms * freq_khz;
+    sdmmc_ll_set_data_timeout(s_host_ctx.hal.dev, data_timeout_cycles);
+}
+
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
 
     // Disable clock first
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, false);
@@ -269,10 +295,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
         return err;
     }
 
-    // set data timeout
-    const uint32_t data_timeout_ms = 100;
-    uint32_t data_timeout_cycles = data_timeout_ms * freq_khz;
-    sdmmc_ll_set_data_timeout(s_host_ctx.hal.dev, data_timeout_cycles);
+    sdmmc_host_set_data_timeout(freq_khz);
     // always set response timeout to highest value, it's small enough anyway
     sdmmc_ll_set_response_timeout(s_host_ctx.hal.dev, 255);
 
@@ -281,10 +304,9 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 
 esp_err_t sdmmc_host_get_real_freq(int slot, int *real_freq_khz)
 {
+    SLOT_CHECK(slot);
+
     if (real_freq_khz == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -345,9 +367,8 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
 
 esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
     // if this isn't a clock update command, check the card detect status
     if (!sdmmc_ll_is_card_detected(s_host_ctx.hal.dev, slot) && !cmd.update_clk_reg) {
         return ESP_ERR_NOT_FOUND;
@@ -378,10 +399,24 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     return ESP_OK;
 }
 
+static void sdmmc_host_intmask_clear_disable(void)
+{
+    SDMMC.rintsts.val = 0xffffffff;
+    SDMMC.intmask.val = 0;
+    SDMMC.ctrl.int_enable = 0;
+}
+
+static void sdmmc_host_intmask_set_enable(uint32_t mask)
+{
+    SDMMC.intmask.val = mask;
+    SDMMC.ctrl.int_enable = 1;
+}
+
 esp_err_t sdmmc_host_init(void)
 {
     if (s_host_ctx.intr_handle) {
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGI(TAG, "%s: SDMMC host already initialized, skipping init flow", __func__);
+        return ESP_OK;
     }
 
     //enable bus clock for registers
@@ -406,9 +441,7 @@ esp_err_t sdmmc_host_init(void)
     ESP_LOGD(TAG, "peripheral version %"PRIx32", hardware config %08"PRIx32, SDMMC.verid, SDMMC.hcon.val);
 
     // Clear interrupt status and set interrupt mask to known state
-    SDMMC.rintsts.val = 0xffffffff;
-    SDMMC.intmask.val = 0;
-    SDMMC.ctrl.int_enable = 0;
+    sdmmc_host_intmask_clear_disable();
 
     // Allocate event queue
     s_host_ctx.event_queue = xQueueCreate(SDMMC_EVENT_QUEUE_LENGTH, sizeof(sdmmc_event_t));
@@ -431,15 +464,7 @@ esp_err_t sdmmc_host_init(void)
         return ret;
     }
     // Enable interrupts
-    SDMMC.intmask.val =
-        SDMMC_INTMASK_CD |
-        SDMMC_INTMASK_CMD_DONE |
-        SDMMC_INTMASK_DATA_OVER |
-        SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC |
-        SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
-        SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-        SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
-    SDMMC.ctrl.int_enable = 1;
+    sdmmc_host_intmask_set_enable(SDMMC_INTMASK_DEFAULT);
 
     // Disable generation of Busy Clear Interrupt
     SDMMC.cardthrctl.busy_clr_int_en = 0;
@@ -517,9 +542,9 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (!s_host_ctx.intr_handle) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+
+    SLOT_CHECK(slot);
+
     if (slot_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -705,9 +730,8 @@ esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t *out_event)
 
 esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
     if (sdmmc_slot_info[slot].width < width) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -739,9 +763,8 @@ size_t sdmmc_host_get_slot_width(int slot)
 
 esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
     if (s_host_ctx.slot_ctx[slot].slot_width == 8 && ddr_enabled) {
         ESP_LOGW(TAG, "DDR mode with 8-bit bus width is not supported yet");
         // requires reconfiguring controller clock for 2x card frequency
@@ -755,9 +778,9 @@ esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
 
 esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
+    // During initialization this is not protected by a mutex
     if (cclk_always_on) {
         sdmmc_ll_enable_card_clock_low_power(s_host_ctx.hal.dev, slot, false);
     } else {
@@ -925,7 +948,9 @@ static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width)
 
 esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
 {
-    if (!(slot == 0 || slot == 1)) {
+    SLOT_CHECK(slot);
+
+    if (dma_mem_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
