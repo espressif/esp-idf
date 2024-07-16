@@ -36,73 +36,73 @@ extern "C" {
 #define APM_LL_MASTER_MAX        32
 
 #define  LP_APM0_MAX_ACCESS_PATH 0x1
-#define  HP_APM_MAX_ACCESS_PATH  0x4
+#define  HP_APM_MAX_ACCESS_PATH  0x5
 #define  LP_APM_MAX_ACCESS_PATH  0x2
 
 #define APM_CTRL_REGION_FILTER_EN_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION_FILTER_EN_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION_FILTER_EN_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION_FILTER_EN_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION_FILTER_EN_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION_FILTER_EN_REG) :  \
+                                     (LP_APM_REGION_FILTER_EN_REG));  \
     })
 
 #define TEE_LL_MODE_CTRL_REG(master_id) (TEE_M0_MODE_CTRL_REG + 4 * (master_id))
 
 #define APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_START_REG + 0xC * (regn_num)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_START_REG + 0xC * (regn_num)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) :  \
+                                     (LP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)));  \
     })
 
 #define APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num) \
     ({\
         (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_END_REG + 0xC * (regn_num)) :     \
         ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) : 0)); \
+                                     (LP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num))); \
     })
 
 #define APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ATTR_REG + 0xC * (regn_num)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ATTR_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_ATTR_REG + 0xC * (regn_num)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ATTR_REG + 0xC * (regn_num)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ATTR_REG + 0xC * (regn_num)) :  \
+                                     (LP_APM_REGION0_ATTR_REG + 0xC * (regn_num)));  \
     })
 
 #define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_CTRL_M_REGION_STATUS_CLR    (BIT(0))
 #define APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :  \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :   \
+                                     (LP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)));   \
     })
 
 #define APM_LL_TEE_EXCP_INFO0_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_TEE_EXCP_INFO1_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_SEC_MODE_REGION_ATTR(sec_mode, regn_pms) ((regn_pms) << (4 * (sec_mode - 1)))
@@ -111,24 +111,24 @@ extern "C" {
 
 #define APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_INT_EN_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_INT_EN_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_INT_EN_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_INT_EN_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_INT_EN_REG) :  \
+                                     (LP_APM_INT_EN_REG));  \
     })
 
 #define APM_CTRL_CLK_EN    (BIT(0))
 #define APM_LL_APM_CTRL_CLOCK_GATE_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_CLOCK_GATE_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_CLOCK_GATE_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_CLOCK_GATE_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_CLOCK_GATE_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_CLOCK_GATE_REG) :  \
+                                     (LP_APM_CLOCK_GATE_REG));  \
     })
 
 #define APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_FUNC_CTRL_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_FUNC_CTRL_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_FUNC_CTRL_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_FUNC_CTRL_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_FUNC_CTRL_REG) :  \
+                                     (LP_APM_FUNC_CTRL_REG));  \
     })
 
 /**
