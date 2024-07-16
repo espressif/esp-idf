@@ -72,6 +72,16 @@ typedef enum {
 } ecdsa_ll_sha_mode_t;
 
 /**
+ * @brief Get the state of ECDSA peripheral
+ *
+ * @return State of ECDSA
+ */
+static inline uint32_t ecdsa_ll_get_state(void)
+{
+    return REG_GET_FIELD(ECDSA_STATE_REG, ECDSA_BUSY);
+}
+
+/**
  * @brief Enable the bus clock for ECDSA peripheral module
  *
  * @param true to enable the module, false to disable the module
@@ -95,6 +105,10 @@ static inline void ecdsa_ll_reset_register(void)
 
     // Clear reset on parent crypto, otherwise ECDSA is held in reset
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
+
+    while (ecdsa_ll_get_state() != ECDSA_STATE_IDLE) {
+        ;
+    }
 }
 
 /**
@@ -271,16 +285,6 @@ static inline void ecdsa_ll_set_stage(ecdsa_ll_stage_t stage)
             HAL_ASSERT(false && "Unsupported state");
             break;
     }
-}
-
-/**
- * @brief Get the state of ECDSA peripheral
- *
- * @return State of ECDSA
- */
-static inline uint32_t ecdsa_ll_get_state(void)
-{
-    return REG_GET_FIELD(ECDSA_STATE_REG, ECDSA_BUSY);
 }
 
 /**
