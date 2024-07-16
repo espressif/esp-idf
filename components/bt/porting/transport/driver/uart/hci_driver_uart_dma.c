@@ -423,6 +423,10 @@ int hci_driver_uart_dma_tx_start(esp_bt_hci_tl_callback_t callback, void *arg)
         uart_env.tx.link_head = lldesc_head;
         uart_env.tx.callback = callback;
         uart_env.tx.arg = arg;
+        /* The DMA interrupt may have been triggered before setting the tx_state,
+         * So we set it first.
+         */
+        hci_driver_uart_dma_txstate_set(HCI_TRANS_TX_START);
         gdma_start(s_tx_channel, (intptr_t)(uart_env.tx.link_head));
         return 0;
     } else {
@@ -513,6 +517,11 @@ hci_driver_uart_dma_process_task(void *p)
     while (true) {
         xSemaphoreTake(s_hci_driver_uart_dma_env.process_sem, portMAX_DELAY);
         ESP_LOGD(TAG, "task run:%d\n",s_hci_driver_uart_dma_env.hci_tx_state);
+        /* Process Tx data */
+        if (s_hci_driver_uart_dma_env.hci_tx_state == HCI_TRANS_TX_IDLE) {
+            hci_driver_uart_dma_tx_start(hci_driver_uart_dma_send_callback, (void*)&uart_env);
+        }
+
         if (s_hci_driver_uart_dma_env.rxinfo_mem_exhausted) {
             rx_data = (void *)uart_env.rx.link_head->buf;
             rx_len = uart_env.rx.link_head->length;
@@ -551,14 +560,6 @@ hci_driver_uart_dma_process_task(void *p)
                 hci_driver_uart_dma_rx_start(rx_data, HCI_RX_DATA_BLOCK_SIZE);
             } else {
                 os_memblock_put(s_hci_driver_uart_dma_env.hci_rx_data_pool, rx_data);
-            }
-        }
-
-        /* Process Tx data */
-        if (s_hci_driver_uart_dma_env.hci_tx_state == HCI_TRANS_TX_IDLE) {
-            ret = hci_driver_uart_dma_tx_start(hci_driver_uart_dma_send_callback, (void*)&uart_env);
-            if (!ret) {
-                s_hci_driver_uart_dma_env.hci_tx_state = HCI_TRANS_TX_START;
             }
         }
     }
