@@ -8,15 +8,13 @@
 #include "esp_log.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_io.h"
 #include "esp_lcd_ili9881c.h"
 #include "example_dsi_init.h"
 #include "example_dsi_init_config.h"
 
-void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
+void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_panel_io_handle_t *mipi_dbi_io, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
 {
-    esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
-    esp_lcd_panel_io_handle_t mipi_dbi_io = NULL;
-
     //---------------DSI resource allocation------------------//
     esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
@@ -24,21 +22,21 @@ void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
         .lane_bit_rate_mbps = 1000, // 1000 Mbps
     };
-    ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
+    ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, mipi_dsi_bus));
 
     esp_lcd_dbi_io_config_t dbi_config = {
         .virtual_channel = 0,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(*mipi_dsi_bus, &dbi_config, mipi_dbi_io));
 
     esp_lcd_panel_dev_config_t lcd_dev_config = {
         .bits_per_pixel = 16,
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .reset_gpio_num = -1,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(mipi_dbi_io, &lcd_dev_config, ili9881c_ctrl_panel));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(*mipi_dbi_io, &lcd_dev_config, ili9881c_ctrl_panel));
 
     esp_lcd_dpi_panel_config_t dpi_config = {
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
@@ -56,7 +54,7 @@ void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp
             .vsync_front_porch = EXAMPLE_MIPI_DSI_IMAGE_VFP,
         },
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, mipi_dpi_panel));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(*mipi_dsi_bus, &dpi_config, mipi_dpi_panel));
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(*mipi_dpi_panel, 1, frame_buffer));
 }
 
@@ -73,4 +71,12 @@ void example_dpi_panel_init(esp_lcd_panel_handle_t mipi_dpi_panel)
 {
     //---------------DPI Panel Init------------------//
     ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
+}
+
+void example_dsi_resource_destroy(esp_lcd_panel_handle_t ili9881c_ctrl_panel, esp_lcd_dsi_bus_handle_t mipi_dsi_bus, esp_lcd_panel_io_handle_t mipi_dbi_io, esp_lcd_panel_handle_t mipi_dpi_panel)
+{
+    ESP_ERROR_CHECK(esp_lcd_panel_del(mipi_dpi_panel));
+    ESP_ERROR_CHECK(esp_lcd_panel_del(ili9881c_ctrl_panel));
+    ESP_ERROR_CHECK(esp_lcd_panel_io_del(mipi_dbi_io));
+    ESP_ERROR_CHECK(esp_lcd_del_dsi_bus(mipi_dsi_bus));
 }

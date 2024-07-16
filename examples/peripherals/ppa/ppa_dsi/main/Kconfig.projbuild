@@ -1,0 +1,28 @@
+menu "Example Configuration"
+    config EXAMPLE_USED_LDO_CHAN_ID
+        int "example used LDO channel ID"
+        default 3
+        help
+            Example used LDO channel ID, you may check datasheet to know more details.
+
+    config EXAMPLE_USED_LDO_VOLTAGE_MV
+        int "example used LDO voltage in mV"
+        default 2500
+        range 0 3300
+        help
+            Example used LDO voltage, in mV
+
+    choice EXAMPLE_SOURCE_IMAGE_FORMAT
+        prompt "Select source image format"
+        default EXAMPLE_SOURCE_IMAGE_FORMAT_JPEG
+        help
+            Select the source image format
+
+        config EXAMPLE_SOURCE_IMAGE_FORMAT_JPEG
+            bool "JPEG"
+
+        config EXAMPLE_SOURCE_IMAGE_FORMAT_RGB565
+            bool "RGB565"
+    endchoice
+
+endmenu

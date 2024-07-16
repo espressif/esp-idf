@@ -142,6 +142,11 @@ Performance Overview
 
 The PPA operations are acted on the target block of an input picture. Therefore, the time it takes to complete a PPA transaction is proportional to the amount of the data in the block. The size of the entire picture has no influence on the performance. More importantly, the PPA performance highly relies on the PSRAM bandwidth if the pictures are located in the PSRAM section. When there are quite a few peripherals reading and writing to the PSRAM at the same time, the performance of PPA operation will be greatly reduced.
 
+Application Examples
+^^^^^^^^^^^^^^^^^^^^
+
+* PPA with DSI display example: :example:`peripherals/ppa/ppa_dsi`. This example used image will be first scaled up, rotated at counter-clockwise direction and rotated back, mirrored and mirror back, and scaled down. Then the image will be blended with a whole red image with less transparency. Next the `ESP32` word will be color-keyed out. Lastly a frame will be filled around the `ESP32`.
+
 API Reference
 -------------
 

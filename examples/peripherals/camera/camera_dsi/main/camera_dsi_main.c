@@ -34,6 +34,8 @@ static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ct
 void app_main(void)
 {
     esp_err_t ret = ESP_FAIL;
+    esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
+    esp_lcd_panel_io_handle_t mipi_dbi_io = NULL;
     esp_lcd_panel_handle_t ili9881c_ctrl_panel = NULL;
     esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
     void *frame_buffer = NULL;
@@ -53,7 +55,7 @@ void app_main(void)
      * ISP convert to RGB565
      */
     //---------------DSI Init------------------//
-    example_dsi_resource_alloc(&ili9881c_ctrl_panel, &mipi_dpi_panel, &frame_buffer);
+    example_dsi_resource_alloc(&ili9881c_ctrl_panel, &mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, &frame_buffer);
 
     //---------------Necessary variable config------------------//
     frame_buffer_size = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
