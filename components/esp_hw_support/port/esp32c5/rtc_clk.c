@@ -20,6 +20,8 @@
 #include "hal/gpio_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "esp_private/esp_modem_clock.h"
@@ -265,9 +267,16 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         divider = 1;
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_PLL_F160M;
-        source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
-        divider = 2;
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+            // ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
+            source = SOC_CPU_CLK_SRC_PLL_F240M;
+            source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
+            divider = 3;
+        } else {
+            source = SOC_CPU_CLK_SRC_PLL_F160M;
+            source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+            divider = 2;
+        }
     } else {
         // unsupported frequency
         return false;
