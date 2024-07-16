@@ -385,7 +385,7 @@ menu "Wi-Fi"
 
     config ESP_WIFI_GMAC_SUPPORT
         bool "WiFi GMAC Support(GMAC128 and GMAC256)"
-        default n
+        default y
         help
             Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
 
