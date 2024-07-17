@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ extern "C" {
                                      APB_SARADC_APB_SARADC_THRES1_HIGH_INT_ST_M | \
                                      APB_SARADC_APB_SARADC_THRES0_LOW_INT_ST_M  | \
                                      APB_SARADC_APB_SARADC_THRES1_LOW_INT_ST_M)
+
 #define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_APB_SARADC_THRES0_HIGH_INT_ST_M : APB_SARADC_APB_SARADC_THRES1_HIGH_INT_ST_M)
 #define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_APB_SARADC_THRES0_LOW_INT_ST_M : APB_SARADC_APB_SARADC_THRES1_LOW_INT_ST_M)
 
@@ -59,7 +60,7 @@ extern "C" {
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C6 supported to manage power mode
+#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C5 supported to manage power mode
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
 ---------------------------------------------------------------*/
@@ -79,7 +80,7 @@ typedef enum {
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32C6 only support ONLY_ADC1 mode
+ *        ESP32C5 only support ONLY_ADC1 mode
  *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
@@ -169,13 +170,13 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
 /**
  * Set adc conversion mode for digital controller.
  *
- * @note ESP32C6 only support ADC1 single mode.
+ * @note ESP32C5 only support ADC1 single mode.
  *
  * @param mode Conversion mode select.
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32C6 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
+    //ESP32C5 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -312,10 +313,10 @@ static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
         case ADC_DIGI_CLK_SRC_XTAL:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 0;
             break;
-        case ADC_DIGI_CLK_SRC_PLL_F80M:
+        case ADC_DIGI_CLK_SRC_RC_FAST:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 1;
             break;
-        case ADC_DIGI_CLK_SRC_RC_FAST:
+        case ADC_DIGI_CLK_SRC_PLL_F80M:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 2;
             break;
         default:
@@ -557,7 +558,7 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 ---------------------------------------------------------------*/
 
 /**
- * @brief Enable the ADC clock
+ * @brief Enable the ADC APB clock
  * @param enable true to enable, false to disable
  */
 static inline void adc_ll_enable_bus_clock(bool enable)
@@ -610,66 +611,7 @@ static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t mana
 __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
-    //Not used on ESP32C6
-}
-
-/* ADC calibration code. */
-/**
- * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
- */
-__attribute__((always_inline))
-static inline void adc_ll_calibration_init(adc_unit_t adc_n)
-{
-    (void)adc_n;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
-}
-
-/**
- * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- */
-static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
-    } else {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-    }
-}
-
-/**
- * Resume register status after calibration.
- *
- * @param adc_n ADC index number.
- */
-static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-}
-
-/**
- * Set the calibration result to ADC.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- */
-__attribute__((always_inline))
-static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    uint8_t msb = param >> 8;
-    uint8_t lsb = param & 0xFF;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    //Not used on ESP32C5
 }
 
 /*---------------------------------------------------------------
@@ -678,13 +620,13 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
 /**
  * Set adc output data format for oneshot mode
  *
- * @note ESP32C6 Oneshot mode only supports 12bit.
+ * @note ESP32C5 Oneshot mode only supports 12bit.
  * @param adc_n ADC unit.
  * @param bits  Output data bits width option.
  */
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    //ESP32C6 only supports 12bit, leave here for compatibility
+    //ESP32C5 only supports 12bit, leave here for compatibility
     HAL_ASSERT(bits == ADC_BITWIDTH_12 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
@@ -765,6 +707,7 @@ static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
     ret_val = APB_SARADC.saradc_sar1data_status.saradc_apb_saradc1_data & 0xfff;
     return ret_val;
 }
+
 
 /**
  * Analyze whether the obtained raw data is correct.

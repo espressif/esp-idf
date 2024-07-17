@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一"}
+{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一", esp32c5="一"}
 
 简介
 ------------
