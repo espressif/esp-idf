@@ -483,6 +483,7 @@ if(CONFIG_BT_ENABLED)
             list(APPEND srcs
                     "porting/npl/freertos/src/npl_os_freertos.c"
                     "porting/mem/os_msys_init.c"
+                    "porting/transport/src/hci_transport.c"
             )
 
             list(APPEND include_dirs
@@ -491,9 +492,17 @@ if(CONFIG_BT_ENABLED)
                     porting/transport/include
             )
 
-            if(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+            if(CONFIG_BT_LE_HCI_INTERFACE_USE_RAM)
                 list(APPEND srcs
-                        "porting/transport/uart/hci_uart.c"
+                    "porting/transport/driver/vhci/hci_driver_standard.c"
+                )
+            elseif(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+                list(APPEND srcs
+                        "porting/transport/driver/common/hci_driver_util.c"
+                        "porting/transport/driver/common/hci_driver_h4.c"
+                        "porting/transport/driver/common/hci_driver_mem.c"
+                        "porting/transport/driver/uart/hci_driver_uart_config.c"
+                        "porting/transport/driver/uart/hci_driver_uart.c"
                     )
             endif()
     endif()
