@@ -30,7 +30,7 @@
 #include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
-static const char *TAG = "sleep";
+static const char *TAG = "sleep_gpio";
 
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 void gpio_sleep_mode_config_apply(void)

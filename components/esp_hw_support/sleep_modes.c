@@ -181,6 +181,10 @@
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 #endif
 
+#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+#define SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US  (961)
+#endif
+
 // Minimal amount of time we can sleep for
 #define LIGHT_SLEEP_MIN_TIME_US     200
 
@@ -1005,6 +1009,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+            if (pd_flags & PMU_SLEEP_PD_TOP) {
+                esp_sleep_mmu_retention(true);
+            }
+#endif
+
 #if SOC_PMU_SUPPORTED
 #if SOC_PM_CPU_RETENTION_BY_SW && ESP_SLEEP_POWER_DOWN_CPU
             esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_GOTO_SLEEP, (void *)0);
@@ -1024,6 +1034,11 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
 #endif
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+            if (pd_flags & PMU_SLEEP_PD_TOP) {
+                esp_sleep_mmu_retention(false);
+            }
+#endif
             /* Unhold the SPI CS pin */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
@@ -1343,6 +1358,10 @@ esp_err_t esp_light_sleep_start(void)
     int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
     int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
     s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
+#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+    int sleep_time_sw_mmu_table_restore = (pd_flags & PMU_SLEEP_PD_TOP) ? SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US : 0;
+    s_config.sleep_time_adjustment += sleep_time_sw_mmu_table_restore;
+#endif
 #else
     uint32_t rtc_cntl_xtl_buf_wait_slp_cycles = rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, s_config.rtc_clk_cal_period);
     s_config.sleep_time_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out
@@ -2126,6 +2145,9 @@ FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
     top_pd_allowed &= cpu_domain_pd_allowed();
 #else
     top_pd_allowed = false;
+#endif
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+    top_pd_allowed &= mmu_domain_pd_allowed();
 #endif
     top_pd_allowed &= clock_domain_pd_allowed();
     top_pd_allowed &= peripheral_domain_pd_allowed();

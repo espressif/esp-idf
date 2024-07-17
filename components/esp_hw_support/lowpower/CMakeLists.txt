@@ -16,6 +16,10 @@ if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
     endif()
 endif()
 
+if(CONFIG_SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD AND CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+    list(APPEND srcs "cpu_retention/port/${target}/sleep_mmu.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
