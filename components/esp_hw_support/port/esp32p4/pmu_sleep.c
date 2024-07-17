@@ -168,8 +168,8 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         // Get light sleep analog default
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
 #if CONFIG_SPIRAM
-        analog_default.hp_sys.analog.pd_cur = 1;
-        analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 1;
+        analog_default.hp_sys.analog.pd_cur = 0;
+        analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 0;
 #endif
 
 #if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
