@@ -56,3 +56,8 @@ examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
+
+examples/openthread/ot_trel:
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
+  <<: *openthread_dependencies
