@@ -7,7 +7,7 @@
 #include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
-#include "error.h"
+#include "openthread/error.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
