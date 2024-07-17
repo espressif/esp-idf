@@ -6,7 +6,6 @@
 
 #include "esp_openthread_radio.h"
 
-#include "link_raw.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_err.h"
