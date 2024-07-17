@@ -26,9 +26,9 @@ examples/storage/ext_flash_fatfs:
     - spi_flash
     - driver
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: not supported on p4 and c5  # TODO: [ESP32C5] IDF-8715
+      reason: not supported on p4 and c5  # TODO: [ESP32C5] IDF-8715, [ESP32C61] IDF-9314
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
@@ -111,9 +111,9 @@ examples/storage/perf_benchmark:
     - esp_partition
     - esp_driver_sdmmc
   disable:
-    - if: IDF_TARGET == "esp32c5"
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C5] IDF-8704, IDF-10314
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8704, IDF-10314, [ESP32C61] IDF-9314
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true

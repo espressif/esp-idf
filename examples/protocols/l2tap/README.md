@@ -69,7 +69,7 @@ python3 pytest_example_l2tap_echo.py [<dest_mac_address>] [<host_eth_interface>]
 
 * `dest_mac_address` - MAC address of the destination device (the ESP32 board with flashed example). ESP 32 board MAC address is printed by the example so you can find it in monitor output under "Ethernet HW Addr". Broadcast address is used when this parameter is omitted.
 
-* `host_eth_interface` - name of host PC Ethernet device on which the frame is to be transmitted/received. When this parameter is omitted, the script tries to find Ethernet interface automatically. If you need, you can find names of installed Network interfaces by running either of bellow commands on Linux:
+* `host_eth_interface` - name of host PC Ethernet device on which the frame is to be transmitted/received. When this parameter is omitted, the script tries to find Ethernet interface automatically. If you need, you can find names of installed Network interfaces by running either of below commands on Linux:
 
 ```bash
 $ ifconfig

@@ -5,6 +5,9 @@ components/freertos/test_apps/freertos:
     - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4"
       temporary: true
       reason: target(s) not supported yet
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: target(s) not supported yet  # TODO: [esp32c61] IDF-9280
   disable_test:
     - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32c5"
       temporary: true
