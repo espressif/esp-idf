@@ -3,13 +3,12 @@
 # SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import csv
-import distutils.dir_util
 import os
 from itertools import zip_longest
 
+import distutils.dir_util
 import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 
 
