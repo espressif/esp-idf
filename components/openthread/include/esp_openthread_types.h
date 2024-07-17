@@ -136,6 +136,7 @@ typedef enum {
     RADIO_MODE_NATIVE = 0x0,   /*!< Use the native 15.4 radio */
     RADIO_MODE_UART_RCP,       /*!< UART connection to a 15.4 capable radio co-processor (RCP) */
     RADIO_MODE_SPI_RCP,        /*!< SPI connection to a 15.4 capable radio co-processor (RCP) */
+    RADIO_MODE_TREL,           /*!< Use the Thread Radio Encapsulation Link (TREL) */
     RADIO_MODE_MAX,            /*!< Using for parameter check */
 } esp_openthread_radio_mode_t;
 
