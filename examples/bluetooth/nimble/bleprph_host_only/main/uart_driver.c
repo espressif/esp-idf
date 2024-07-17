@@ -163,6 +163,13 @@ void hci_uart_send(uint8_t *buf, uint16_t len)
     }
 }
 
+
+void
+ble_transport_ll_init(void)
+{
+
+}
+
 int
 ble_transport_to_ll_acl_impl(struct os_mbuf *om)
 {
