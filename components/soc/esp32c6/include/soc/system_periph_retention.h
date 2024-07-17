@@ -75,7 +75,7 @@ extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_L
  * useful for external use.
  */
 #define SPIMEM_RETENTION_LINK_LEN   8
-extern const regdma_entries_config_t spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
+extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
 
 /**
  * @brief Provide access to systimer configuration registers retention

@@ -289,15 +289,16 @@ static inline void psram_ctrlr_ll_enable_rd_splice(uint32_t mspi_id, bool en)
  * @param en           enable / disable
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en)
+static inline void _psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en)
 {
     (void)mspi_id;
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_psram_sys_clk_en = en;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = en;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_enable_module_clock(__VA_ARGS__)
+#define psram_ctrlr_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_enable_module_clock(__VA_ARGS__)
 
 /**
  * @brief Reset PSRAM module clock
@@ -325,7 +326,7 @@ static inline void psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
  * @param clk_src      clock source, see valid sources in type `soc_periph_psram_clk_src_t`
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph_psram_clk_src_t clk_src)
+static inline void _psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph_psram_clk_src_t clk_src)
 {
     (void)mspi_id;
     uint32_t clk_val = 0;
@@ -347,13 +348,12 @@ static inline void psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph
         break;
     }
 
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_clk_src_sel = clk_val;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_select_clk_source(__VA_ARGS__)
+#define psram_ctrlr_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_select_clk_source(__VA_ARGS__)
 
 /**
  * @brief Set PSRAM core clock
@@ -362,15 +362,29 @@ static inline void psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph
  * @param freqdiv  Divider value
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_set_core_clock(uint8_t spi_num, uint32_t freqdiv)
+static inline void _psram_ctrlr_ll_set_core_clock_div(uint8_t spi_num, uint32_t freqdiv)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_core_clk_en = 1;
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_psram_core_clk_div_num, freqdiv - 1);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define psram_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_set_core_clock(__VA_ARGS__)
+#define psram_ctrlr_ll_set_core_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_set_core_clock_div(__VA_ARGS__)
+
+/**
+ * @brief Enable or disable the PSRAM core clock
+ *
+ * @param en    enable / disable
+ */
+__attribute__((always_inline))
+static inline void _psram_ctrlr_ll_enable_core_clock(uint8_t spi_num, bool en)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_core_clk_en = en;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define psram_ctrlr_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _psram_ctrlr_ll_enable_core_clock(__VA_ARGS__)
 
 /**
  * @brief Set PSRAM bus clock
@@ -733,6 +747,24 @@ static inline void psram_ctrlr_ll_common_transaction(uint32_t mspi_id,
     psram_ctrlr_ll_common_transaction_base(mspi_id, mode, cmd, cmd_bitlen, addr, addr_bitlen, dummy_bits,
                                            mosi_data, mosi_bitlen, miso_data, miso_bitlen, cs_mask,
                                            is_write_erase_operation);
+}
+
+/**
+ * @brief Wait MSPI PSRAM controller transaction done
+ *
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_wait_all_transaction_done(void)
+{
+#define ALL_TRANSACTION_DONE    (   SPI_MEM_S_ALL_FIFO_EMPTY | \
+                                    SPI_MEM_S_RDATA_AFIFO_REMPTY | \
+                                    SPI_MEM_S_RADDR_AFIFO_REMPTY | \
+                                    SPI_MEM_S_WDATA_AFIFO_REMPTY | \
+                                    SPI_MEM_S_WBLEN_AFIFO_REMPTY | \
+                                    SPI_MEM_S_ALL_AXI_TRANS_AFIFO_EMPTY)
+    while (SPIMEM2.smem_axi_addr_ctrl.val != ALL_TRANSACTION_DONE) {
+        ;
+    }
 }
 
 #ifdef __cplusplus
