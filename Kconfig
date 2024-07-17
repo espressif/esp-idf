@@ -510,6 +510,15 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Stack smashing protection.
 
+        config COMPILER_NO_MERGE_CONSTANTS
+            bool "Disable merging const sections"
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Disable merging identical constants (string/floating-point) across compilation units.
+                This helps in better size analysis of the application binary as the rodata section
+                distribution is more uniform across libraries. On downside, it may increase
+                the binary size and hence should be used during development phase only.
+
         config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"
