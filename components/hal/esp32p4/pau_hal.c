@@ -63,6 +63,10 @@ void IRAM_ATTR pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal)
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
 }
 
+void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, uint32_t time)
+{
+}
+
 #if SOC_PAU_IN_TOP_DOMAIN
 void IRAM_ATTR pau_hal_lp_sys_initialize(void)
 {

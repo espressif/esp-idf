@@ -134,6 +134,15 @@ void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
 void pau_hal_regdma_link_count_config(pau_hal_context_t *hal, int count);
 #endif
 
+/**
+ * @brief Set PAU module link work timeout threshold
+ *
+ * @param hal           regdma hal context
+ * @param loop_num      the maximum number of regdma link loop num
+ * @param count         the maximum number of register access timeout
+ */
+void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, uint32_t count);
+
 #if SOC_PAU_IN_TOP_DOMAIN
 /**
  * If PAU is in TOP power domain, configuration will be lost after sleep, it is necessary

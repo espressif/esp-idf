@@ -14,10 +14,12 @@
 #include "soc/soc_caps.h"
 #include "esp_private/esp_pau.h"
 #include "esp_private/periph_ctrl.h"
-
 #if SOC_PAU_IN_TOP_DOMAIN
 #include "hal/lp_sys_ll.h"
 #endif
+
+#define PAU_REGDMA_LINK_LOOP                (0x3FF)
+#define PAU_REGDMA_REG_ACCESS_TIME          (0x3FF)
 
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
@@ -36,6 +38,7 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
         pau_hal_enable_bus_clock(true);
+        pau_hal_set_regdma_work_timeout(&pau_hal, PAU_REGDMA_LINK_LOOP, PAU_REGDMA_REG_ACCESS_TIME);
 #if SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
         pau_hal_regdma_link_count_config(&pau_hal, SOC_PM_PAU_LINK_NUM);
 #endif
