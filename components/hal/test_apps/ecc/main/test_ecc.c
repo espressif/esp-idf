@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -12,6 +12,7 @@
 #include "test_params.h"
 #include "soc/soc_caps.h"
 #include "hal/ecc_hal.h"
+#include "hal/ecc_ll.h"
 #include "hal/clk_gate_ll.h"
 
 #include "unity.h"
@@ -43,6 +44,7 @@ static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len
 static void ecc_enable_and_reset(void)
 {
     periph_ll_enable_clk_clear_rst(PERIPH_ECC_MODULE);
+    ecc_ll_power_up();
 }
 
 #if SOC_ECC_SUPPORT_POINT_MULT

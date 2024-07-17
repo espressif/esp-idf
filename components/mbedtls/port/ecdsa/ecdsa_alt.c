@@ -14,6 +14,7 @@
 #include "mbedtls/platform_util.h"
 #include "esp_private/periph_ctrl.h"
 #include "ecdsa/ecdsa_alt.h"
+#include "hal/ecc_ll.h"
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
@@ -26,11 +27,13 @@ static void esp_ecdsa_acquire_hardware(void)
     esp_crypto_ecdsa_lock_acquire();
 
     periph_module_enable(PERIPH_ECDSA_MODULE);
+    ecc_ll_power_up();
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
     periph_module_disable(PERIPH_ECDSA_MODULE);
+    ecc_ll_power_down();
 
     esp_crypto_ecdsa_lock_release();
 }
