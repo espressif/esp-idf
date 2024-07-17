@@ -48,6 +48,7 @@ if(CONFIG_BT_ENABLED)
             common/btc/include
             common/include
             porting/mem/
+            porting/include
         )
     list(APPEND include_dirs
          common/api/include/api
@@ -488,29 +489,51 @@ if(CONFIG_BT_ENABLED)
 
 
     if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
+        list(APPEND srcs
+                "porting/npl/freertos/src/npl_os_freertos.c"
+                "porting/mem/os_msys_init.c"
+                "porting/transport/src/hci_transport.c"
+        )
+
+        if(CONFIG_BT_CONTROLLER_DISABLED)
             list(APPEND srcs
-                    "porting/npl/freertos/src/npl_os_freertos.c"
-                    "porting/mem/os_msys_init.c"
+                "host/nimble/nimble/porting/nimble/src/hal_uart.c"
             )
-
-            if(CONFIG_BT_CONTROLLER_DISABLED)
+        elseif(CONFIG_BT_LE_HCI_INTERFACE_USE_RAM)
+            if(CONFIG_BT_NIMBLE_ENABLED)
                 list(APPEND srcs
-                        "host/nimble/nimble/porting/nimble/src/hal_uart.c"
-                    )
-            endif()
-            list(APPEND include_dirs
-                    porting/include
-                    porting/npl/freertos/include
-                    porting/transport/include
-            )
-
-            if(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+                    "porting/transport/driver/vhci/hci_driver_nimble.c"
+                    "host/nimble/nimble/nimble/transport/esp_ipc/src/hci_esp_ipc.c"
+                )
+            else()
                 list(APPEND srcs
-                        "porting/transport/uart/hci_uart.c"
-                    )
+                    "porting/transport/driver/vhci/hci_driver_standard.c"
+                )
             endif()
+        elseif(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+                list(APPEND srcs
+                    "porting/transport/driver/common/hci_driver_util.c"
+                    "porting/transport/driver/common/hci_driver_h4.c"
+                    "porting/transport/driver/common/hci_driver_mem.c"
+                    "porting/transport/driver/uart/hci_driver_uart_config.c"
+                )
+            if(CONFIG_BT_LE_UART_HCI_DMA_MODE)
+                list(APPEND srcs
+                    "porting/transport/driver/uart/hci_driver_uart_dma.c"
+                )
+            else()
+                list(APPEND srcs
+                    "porting/transport/driver/uart/hci_driver_uart.c"
+                )
+            endif()
+        endif()
+
+        list(APPEND include_dirs
+                porting/include
+                porting/npl/freertos/include
+                porting/transport/include
+        )
     endif()
-
 
     if(NOT (CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS))
         list(APPEND include_dirs
@@ -536,7 +559,6 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_BT_NIMBLE_ENABLED)
 
         list(APPEND include_dirs
-
                     host/nimble/nimble/nimble/host/include
                     host/nimble/nimble/nimble/include
                     host/nimble/nimble/nimble/host/services/ans/include
@@ -640,10 +662,12 @@ if(CONFIG_BT_ENABLED)
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
                 "host/nimble/port/src/nvs_port.c"
             )
+
             list(APPEND include_dirs
                 host/nimble/nimble/porting/nimble/include
                 host/nimble/port/include
                 host/nimble/nimble/nimble/transport/include
+                host/nimble/nimble/nimble/include
             )
 
             if(CONFIG_BT_CONTROLLER_DISABLED)
@@ -677,6 +701,7 @@ if(CONFIG_BT_ENABLED)
         if(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE AND CONFIG_BT_CONTROLLER_ENABLED)
             list(APPEND srcs
                 "host/nimble/esp-hci/src/esp_nimble_hci.c"
+                "host/nimble/nimble/nimble/transport/esp_ipc_legacy/src/hci_esp_ipc_legacy.c"
             )
             list(APPEND include_dirs
                 host/nimble/esp-hci/include

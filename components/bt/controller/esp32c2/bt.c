@@ -31,7 +31,7 @@
 #endif
 
 #include "nimble/nimble_npl_os.h"
-#include "ble_hci_trans.h"
+#include "esp_hci_transport.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
@@ -42,12 +42,7 @@
 #include "soc/syscon_reg.h"
 #include "soc/modem_clkrst_reg.h"
 #include "esp_private/periph_ctrl.h"
-#include "hci_uart.h"
 #include "bt_osi_mem.h"
-
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-#include "hci/hci_hal.h"
-#endif
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
@@ -65,6 +60,7 @@
 
 #include "hal/efuse_ll.h"
 #include "soc/rtc.h"
+
 /* Macro definition
  ************************************************************************
  */
@@ -77,12 +73,6 @@
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 #define BT_ASSERT_PRINT              ets_printf
-
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-/* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
-#define ACL_DATA_MBUF_LEADINGSPCAE    4
-#endif // CONFIG_BT_BLUEDROID_ENABLED
-
 typedef enum ble_rtc_slow_clk_src {
     BT_SLOW_CLK_SRC_MAIN_XTAL,
     BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0,
@@ -106,12 +96,12 @@ struct ext_funcs_t {
     int (*_esp_intr_free)(void **ret_handle);
     void *(* _malloc)(size_t size);
     void (*_free)(void *p);
-    void (*_hal_uart_start_tx)(int);
-    int (*_hal_uart_init_cbs)(int, hci_uart_tx_char, hci_uart_tx_done, hci_uart_rx_char, void *);
-    int (*_hal_uart_config)(int, int32_t, uint8_t, uint8_t, uart_parity_t, uart_hw_flowcontrol_t);
-    int (*_hal_uart_close)(int);
-    void (*_hal_uart_blocking_tx)(int, uint8_t);
-    int (*_hal_uart_init)(int, void *);
+    void (*_rsv1)(int);
+    int (*_rsv2)(int, int (*)(void *arg), int (*)(void *arg, uint8_t byte), int (*)(void *arg, uint8_t byte), void *);
+    int (*_rsv3)(int, int32_t, uint8_t, uint8_t, int, int);
+    int (*_rsv4)(int);
+    void (*_rsv5)(int, uint8_t);
+    int (*_rsv6)(int, void *);
     int (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
@@ -189,16 +179,6 @@ static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-static void hci_uart_start_tx_wrapper(int uart_no);
-static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
-                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg);
-static int hci_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits, uint8_t stopbits,
-                                   uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl);
-static int hci_uart_close_wrapper(int uart_no);
-static void hci_uart_blocking_tx_wrapper(int port, uint8_t data);
-static int hci_uart_init_wrapper(int uart_no, void *cfg);
-#endif // CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
                                   void *arg, void **ret_handle_in);
 static int esp_intr_free_wrapper(void **ret_handle);
@@ -216,7 +196,6 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
  */
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -229,7 +208,6 @@ static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
 
 #define BLE_RTC_DELAY_US                    (1800)
-
 
 static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
     ._magic = OSI_COEX_MAGIC_VALUE,
@@ -246,14 +224,6 @@ struct ext_funcs_t ext_funcs_ro = {
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = bt_osi_mem_malloc_internal,
     ._free = bt_osi_mem_free,
-#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    ._hal_uart_start_tx     =  hci_uart_start_tx_wrapper,
-    ._hal_uart_init_cbs     =  hci_uart_init_cbs_wrapper,
-    ._hal_uart_config       =  hci_uart_config_wrapper,
-    ._hal_uart_close        =  hci_uart_close_wrapper,
-    ._hal_uart_blocking_tx  =  hci_uart_blocking_tx_wrapper,
-    ._hal_uart_init         =  hci_uart_init_wrapper,
-#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
@@ -300,83 +270,6 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 #endif // CONFIG_SW_COEXIST_ENABLE
 }
 
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-bool esp_vhci_host_check_send_available(void)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return false;
-    }
-    return true;
-}
-
-/**
- * Allocates an mbuf for use by the nimble host.
- */
-static struct os_mbuf *ble_hs_mbuf_gen_pkt(uint16_t leading_space)
-{
-    struct os_mbuf *om;
-    int rc;
-
-    om = os_msys_get_pkthdr(0, 0);
-    if (om == NULL) {
-        return NULL;
-    }
-
-    if (om->om_omp->omp_databuf_len < leading_space) {
-        rc = os_mbuf_free_chain(om);
-        assert(rc == 0);
-        return NULL;
-    }
-
-    om->om_data += leading_space;
-
-    return om;
-}
-
-/**
- * Allocates an mbuf suitable for an HCI ACL data packet.
- *
- * @return                  An empty mbuf on success; null on memory
- *                              exhaustion.
- */
-struct os_mbuf *ble_hs_mbuf_acl_pkt(void)
-{
-    return ble_hs_mbuf_gen_pkt(4 + 1);
-}
-
-void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return;
-    }
-
-    if (*(data) == DATA_TYPE_COMMAND) {
-        struct ble_hci_cmd *cmd = NULL;
-        cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
-        assert(cmd);
-        memcpy((uint8_t *)cmd, data + 1, len - 1);
-        ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
-    }
-
-    if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
-        assert(om);
-        assert(os_mbuf_append(om, &data[1], len - 1) == 0);
-        ble_hci_trans_hs_acl_tx(om);
-    }
-}
-
-esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return ESP_FAIL;
-    }
-
-    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
-
-    return ESP_OK;
-}
-#endif // CONFIG_BT_BLUEDROID_ENABLED
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
     return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
@@ -404,56 +297,6 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
     rc = ble_sm_alg_gen_dhkey(peer_pub_key_x, peer_pub_key_y, our_priv_key, out_dhkey);
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
     return rc;
-}
-
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-static void hci_uart_start_tx_wrapper(int uart_no)
-{
-    hci_uart_start_tx(uart_no);
-}
-
-static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
-                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg)
-{
-    int rc = -1;
-    rc = hci_uart_init_cbs(uart_no, tx_func, tx_done, rx_func, arg);
-    return rc;
-}
-
-
-static int hci_uart_config_wrapper(int port_num, int32_t baud_rate, uint8_t data_bits,
-                                   uint8_t stop_bits,uart_parity_t parity,
-                                   uart_hw_flowcontrol_t flow_ctl)
-{
-    int rc = -1;
-    rc = hci_uart_config(port_num, baud_rate, data_bits, stop_bits, parity, flow_ctl);
-    return rc;
-}
-
-static int hci_uart_close_wrapper(int uart_no)
-{
-    int rc = -1;
-    rc = hci_uart_close(uart_no);
-    return rc;
-}
-
-static void hci_uart_blocking_tx_wrapper(int port, uint8_t data)
-{
-    //This function is nowhere to use.
-}
-
-static int hci_uart_init_wrapper(int uart_no, void *cfg)
-{
-    //This function is nowhere to use.
-    return 0;
-}
-
-#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-
-static int ble_hci_unregistered_hook(void*, void*)
-{
-    ESP_LOGD(NIMBLE_PORT_LOG_TAG,"%s ble hci rx_evt is not registered.",__func__);
-    return 0;
 }
 
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
@@ -633,6 +476,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
     ble_rtc_slow_clk_src_t rtc_clk_src;
+    uint8_t hci_transport_mode;
 
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
@@ -755,10 +599,19 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
-    ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hci_unregistered_hook,NULL,
-                         (ble_hci_trans_rx_acl_fn *)ble_hci_unregistered_hook,NULL);
+#if CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
+    hci_transport_mode = HCI_TRANSPORT_VHCI;
+#elif CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+    hci_transport_mode = HCI_TRANSPORT_UART_NO_DMA;
+#endif // CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
+    ret = hci_transport_init(hci_transport_mode);
+    if (ret) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "hci transport init failed %d", ret);
+        goto free_controller;
+    }
     return ESP_OK;
 free_controller:
+    hci_transport_deinit();
     controller_sleep_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 controller_init_err:
@@ -787,6 +640,7 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_FAIL;
     }
 
+    hci_transport_deinit();
     controller_sleep_deinit();
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
