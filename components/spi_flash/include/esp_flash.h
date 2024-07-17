@@ -146,15 +146,15 @@ esp_err_t esp_flash_read_id(esp_flash_t *chip, uint32_t *out_id);
 
 /** @brief Detect flash size based on flash ID.
  *
- * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
- * @param[out] out_size Detected size in bytes, standing for the size in the binary image header.
+ * @param chip Pointer to identify flash chip. Must have been successfully initialized via esp_flash_init().
+ * @param[out] out_size Detected size in bytes, corresponding to the size in the binary image header.
  *
  * @note 1. Most flash chips use a common format for flash ID, where the lower 4 bits specify the size as a power of 2. If
  * the manufacturer doesn't follow this convention, the size may be incorrectly detected.
- *       2. The out_size returned only stands for The out_size stands for the size in the binary image header.
- *  If you want to get the real size of the chip, please call `esp_flash_get_physical_size` instead.
+ *       2. The out_size returned only represents the size in the binary image header.
+ *          If you want to get the actual size of the chip, please call `esp_flash_get_physical_size` instead.
  *
- * @return ESP_OK on success, or a flash error code if operation failed.
+ * @return ESP_OK on success, or a flash error code if the operation failed.
  */
 esp_err_t esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size);
 
