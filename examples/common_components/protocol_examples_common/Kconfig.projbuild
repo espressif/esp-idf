@@ -384,16 +384,29 @@ menu "Example Connection Configuration"
         select LWIP_IPV6
         select LWIP_PPP_ENABLE_IPV6 if EXAMPLE_CONNECT_PPP
         help
-            By default, examples will wait until IPv4 and IPv6 local link addresses are obtained.
-            Disable this option if the network does not support IPv6.
-            Choose the preferred IPv6 address type if the connection code should wait until other than
-            the local link address gets assigned.
-            Consider enabling IPv6 stateless address autoconfiguration (SLAAC) in the LWIP component.
+            By default, examples will wait until any IP preferred (usually global) address is obtained,
+            allowing flexible deployment to IPv4-only, IPv6-only, or dual-stack networks.
+
+            Enables SLAAC (State-Less Address Auto-Configuration) to get IPv6
+            address prefixes from Router Advertisement (RA) messages, and both
+            RA RDNSS (Recursive DNS Server) and DHCPv6 Stateless mode to get IPv6 DNS
+            server details from whichever is available on the network.
 
     if EXAMPLE_CONNECT_IPV6
+        config EXAMPLE_CONNECT_PREF_ANY
+            bool "Obtain any preferred address"
+            default y
+            help
+                By default, examples will wait until any IP preferred address is obtained, either an IPv4 or
+                IPv6 global scope addresses.
+                This enables flexible deployment into any network type.
+                Disable this option to wait for both address types, although this will break single-stack networks.
+                Choose the preferred IPv6 address type if the connection code should wait until other than
+                an IPv6 global address.
+
         choice EXAMPLE_CONNECT_PREFERRED_IPV6
             prompt "Preferred IPv6 Type"
-            default EXAMPLE_CONNECT_IPV6_PREF_LOCAL_LINK
+            default EXAMPLE_CONNECT_IPV6_PREF_GLOBAL
             help
                 Select which kind of IPv6 address the connect logic waits for.
 
@@ -420,6 +433,5 @@ menu "Example Connection Configuration"
         endchoice
 
     endif
-
 
 endmenu

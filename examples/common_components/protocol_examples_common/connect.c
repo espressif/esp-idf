@@ -18,6 +18,7 @@
 #include "freertos/event_groups.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "lwip/netdb.h"
 
 static const char *TAG = "example_common";
 
@@ -135,4 +136,47 @@ esp_err_t example_disconnect(void)
     ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&example_wifi_shutdown));
 #endif
     return ESP_OK;
+}
+
+esp_err_t example_getaddrinfo(const char *nodename, const char *servname, struct addrinfo **res)
+{
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+    // Iterate over active interfaces, and find if we have any global scope IPv6
+    bool has_global_scope_ipv6 = false;
+    esp_netif_t *netif = NULL;
+    while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
+        esp_ip6_addr_t ip6[MAX_IP6_ADDRS_PER_NETIF];
+        int ip6_addrs = esp_netif_get_all_ip6(netif, ip6);
+        for (int j = 0; j < ip6_addrs; ++j) {
+            // Both global and unique local addresses have global scope.
+            // ULA assumes either private DNS or NAT66 (same assumpation as IPv4 private address ranges).
+            esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
+            if (ipv6_type == ESP_IP6_ADDR_IS_GLOBAL || ipv6_type == ESP_IP6_ADDR_IS_UNIQUE_LOCAL) {
+                has_global_scope_ipv6 = true;
+                break;
+            }
+        }
+        if (has_global_scope_ipv6) break;
+    }
+
+    if (has_global_scope_ipv6) {
+        const struct addrinfo hints6 = {
+            .ai_family = AF_INET6,
+            .ai_socktype = SOCK_STREAM,
+        };
+        ESP_LOGI(TAG, "IPv6 DNS lookup");
+        int err6 = getaddrinfo(nodename, servname, &hints6, res);
+        if(err6 == 0) return err6;
+        ESP_LOGI(TAG, "- IPv6 DNS lookup failed, trying IPv4 lookup");
+    }
+#endif
+
+    const struct addrinfo hints4 = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+    };
+    ESP_LOGI(TAG, "IPv4 DNS lookup");
+    int err4 = getaddrinfo(nodename, servname, &hints4, res);
+
+    return err4;
 }
