@@ -1173,7 +1173,7 @@ exit:
     return ret;
 }
 
-esp_err_t usb_host_get_config_desc_free(const usb_config_desc_t *config_desc)
+esp_err_t usb_host_free_config_desc(const usb_config_desc_t *config_desc)
 {
     HOST_CHECK(config_desc != NULL, ESP_ERR_INVALID_ARG);
     heap_caps_free((usb_config_desc_t*)config_desc);
