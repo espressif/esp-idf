@@ -6,16 +6,6 @@ contribute/style-guide.rst
 contribute/copyright-guide.rst
 contribute/install-pre-commit-hook.rst
 contribute/index.rst
-api-guides/jtag-debugging/debugging-examples.rst
-api-guides/jtag-debugging/configure-ft2232h-jtag.rst
-api-guides/jtag-debugging/tips-and-quirks.rst
-api-guides/jtag-debugging/using-debugger.rst
-api-guides/jtag-debugging/building-openocd-macos.rst
-api-guides/jtag-debugging/building-openocd-linux.rst
-api-guides/jtag-debugging/configure-other-jtag.rst
-api-guides/jtag-debugging/building-openocd-windows.rst
-api-guides/jtag-debugging/index.rst
-api-guides/jtag-debugging/configure-builtin-jtag.rst
 api-guides/tools/idf-tools.rst
 api-guides/tools/idf-clang-tidy.rst
 api-guides/tools/idf-component-manager.rst
