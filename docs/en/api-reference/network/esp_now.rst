@@ -123,9 +123,7 @@ If Power-saving is needed for ESP-NOW, call :cpp:func:`esp_wifi_connectionless_m
 Application Examples
 --------------------
 
-* Example of sending and receiving ESP-NOW data between two devices: :example:`wifi/espnow`.
-
-* For more application examples of how to use ESP-NOW, please visit `ESP-NOW <https://github.com/espressif/esp-now>`_ repository.
+- :example:`wifi/espnow` demonstrates how to use the ESPNOW feature of {IDF_TARGET_NAME}'s Wi-Fi, including starting Wi-Fi, initializing ESP-NOW, registering ESP-NOW sending or receiving callback function, adding ESP-NOW peer information, and sending and receiving ESP-NOW data between two devices.
 
 API Reference
 -------------

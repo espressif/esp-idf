@@ -123,9 +123,7 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 应用示例
 ----------
 
-* 如何在设备间传输 ESP-NOW 数据：:example:`wifi/espnow`。
-
-* 了解更多 ESP-NOW 的应用示例，请参考 `README.md 文件 <https://github.com/espressif/esp-now>`_。
+- :example:`wifi/espnow` 演示了如何使用 {IDF_TARGET_NAME} 的 Wi-Fi 的 ESPNOW 功能，包括启动 Wi-Fi、初始化 ESP-NOW、注册 ESP-NOW 发送或接收回调函数、添加 ESP-NOW 对等信息，以及在两台设备之间发送和接收 ESP-NOW 数据。
 
 API 参考
 -------------
