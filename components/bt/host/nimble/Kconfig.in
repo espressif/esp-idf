@@ -100,6 +100,14 @@ config BT_NIMBLE_L2CAP_COC_MAX_NUM
     help
         Defines maximum number of BLE Connection Oriented Channels. When set to (0), BLE COC is not compiled in
 
+config BT_NIMBLE_L2CAP_ENHANCED_COC
+    bool "L2CAP Enhanced Connection Oriented Channel"
+    depends on BT_NIMBLE_ENABLED && (BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1)
+    default 0
+    help
+        Enable Enhanced Credit Based Flow Control Mode
+
+
 choice BT_NIMBLE_PINNED_TO_CORE_CHOICE
     prompt "The CPU core on which NimBLE host will run"
     depends on BT_NIMBLE_ENABLED && !FREERTOS_UNICORE
