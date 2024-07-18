@@ -454,7 +454,7 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
     s_sleep_hook_deregister(old_dslp_cb, s_dslp_cb);
 }
 
-#if CONFIG_ESP_PHY_ENABLED
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
 esp_err_t esp_deep_sleep_register_phy_hook(esp_deep_sleep_cb_t new_dslp_cb)
 {
     return s_sleep_hook_register(new_dslp_cb, s_dslp_phy_cb);
