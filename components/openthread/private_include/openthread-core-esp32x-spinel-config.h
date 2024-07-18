@@ -7,31 +7,37 @@
 #pragma once
 
 #include "sdkconfig.h"
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_INFO
- *
- * The platform-specific string to insert into the OpenThread version string.
- *
- */
-#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
 
-/**
- * @def PACKAGE_NAME
- *
- * Define to the full name of this package.
- *
- */
-#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
-
-/**
- * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
- *
- * Define 1 to enable feeding an OpenThread message to encoder/decoder.
- *
- */
-#ifndef OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
-#define OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE 0
+#if CONFIG_OPENTHREAD_HEADER_CUSTOM
+#include CONFIG_OPENTHREAD_CUSTOM_HEADER_FILE_NAME
 #endif
+
+/**
+ * @def OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE
+ *
+ * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
+ * `RadioSpinel` platform is used.
+ *
+ */
+#ifdef OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE
+#error `OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE` is redefined.
+#endif
+#define OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+ *
+ * The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access failure.
+ *
+ * Equivalent to macMaxCSMABackoffs in IEEE 802.15.4-2006, default value is 4.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+#error `OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT` is redefined.
+#endif
+#define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_SPINEL_MAC_MAX_CSMA_BACKOFFS_DIRECT
+
+/*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT
@@ -44,37 +50,8 @@
 #define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 3
 #endif
 
+#ifndef OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE
 #define OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE 1
-
-/**
- * @def OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION
- *
- * Define 1 to call the custom RCP failure handler on RCP failure.
- *
- */
-#ifndef OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION
-#define OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION 0
-#endif
-
-/**
- * @def OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE
- *
- * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
- * `RadioSpinel` platform is used.
- *
- */
-#define OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
-
-/**
- * @def OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
- *
- * The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access failure.
- *
- * Equivalent to macMaxCSMABackoffs in IEEE 802.15.4-2006, default value is 4.
- *
- */
-#ifndef OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
-#define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 #endif
 
 
@@ -85,14 +62,4 @@
  */
 #ifndef OPENTHREAD_SPINEL_CONFIG_COMPATIBILITY_ERROR_CALLBACK_ENABLE
 #define OPENTHREAD_SPINEL_CONFIG_COMPATIBILITY_ERROR_CALLBACK_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
- *
- * Defines size of the local source match table used by RadioSpinel
- * when OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT is used.
- */
-#ifndef OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
-#define OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES 12
 #endif

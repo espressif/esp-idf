@@ -17,6 +17,12 @@ Thread
 
 - :example:`openthread/ot_rcp` 演示了如何与主处理器配合使用，作为 Thread 边界路由器和 Thread Sniffer。该示例需要在配备 IEEE 802.15.4 模块的开发板上运行。
 
+- :example:`openthread/ot_trel` 演示了 Thread Radio Encapsulation Link (TREL) 功能。该示例需要在配备 Wi-Fi 模块的开发板上运行。
+
+- :example:`openthread/ot_sleepy_device/deep_sleep` 演示了 Thread 深度睡眠功能。
+
+- :example:`openthread/ot_sleepy_device/light_sleep` 演示了 Thread 浅睡眠功能。
+
 API参考
 -------------
 
