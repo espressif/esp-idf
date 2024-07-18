@@ -291,6 +291,13 @@ typedef enum {
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
 
+/** Argument structure for wifi band */
+typedef enum {
+    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
+    WIFI_BAND_5G = 2,                   /* Band is 5G */
+    WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
+} wifi_band_t;
+
 #define WIFI_PROTOCOL_11B         0x1
 #define WIFI_PROTOCOL_11G         0x2
 #define WIFI_PROTOCOL_11N         0x4
@@ -298,6 +305,12 @@ typedef enum {
 #define WIFI_PROTOCOL_11A         0x10
 #define WIFI_PROTOCOL_11AC        0x20
 #define WIFI_PROTOCOL_11AX        0x40
+
+/** @brief Description of a WiFi protocol bitmap */
+typedef struct {
+    int ghz_2g_protocol;            /**< Represents 2.4 GHz protocol bitmap */
+    int ghz_5g_protocol;            /**< Represents 5 GHz protocol bitmap */
+} wifi_protocol_bitmap_t;
 
 typedef enum {
     WIFI_BW_HT20   = 1,       /* Bandwidth is HT20      */
@@ -308,6 +321,12 @@ typedef enum {
     WIFI_BW160     = 4,       /* Bandwidth is 160 MHz   */
     WIFI_BW80_BW80 = 5,       /* Bandwidth is 80+80 MHz */
 } wifi_bandwidth_t;
+
+/** @brief Description of a WiFi band bandwidths */
+typedef struct {
+    wifi_bandwidth_t ghz_2g;       /* Represents 2.4 GHz bandwidth */
+    wifi_bandwidth_t ghz_5g;       /* Represents 5 GHz bandwidth */
+} wifi_band_bw_t;
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
@@ -335,7 +354,7 @@ typedef struct {
     uint8_t ssid[32];           /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
     uint8_t password[64];       /**< Password of soft-AP. */
     uint8_t ssid_len;           /**< Optional length of SSID field. */
-    uint8_t channel;            /**< Channel of soft-AP */
+    uint8_t channel;            /**< 2G Channel of soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of soft-AP. Do not support AUTH_WEP, AUTH_WAPI_PSK and AUTH_OWE in soft-AP mode. When the auth mode is set to WPA2_PSK, WPA2_WPA3_PSK or WPA3_PSK, the pairwise cipher will be overwritten with WIFI_CIPHER_TYPE_CCMP.  */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;     /**< Max number of stations allowed to connect in */
@@ -357,7 +376,7 @@ typedef struct {
     wifi_scan_method_t scan_method;           /**< do all channel scan or fast scan */
     bool bssid_set;                           /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];                         /**< MAC address of target AP*/
-    uint8_t channel;                          /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint8_t channel;                          /**< channel of target AP. For 2G AP, set to 1~13 to scan starting from the specified channel before connecting to AP. For 5G AP, set to 36~177 (36, 40, 44 ... 177) to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;                 /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;           /**< sort the connect AP in the list by rssi or security mode */
     wifi_scan_threshold_t  threshold;         /**< When scan_threshold is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
@@ -1067,13 +1086,6 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
-
-/** Argument structure for wifi band */
-typedef enum {
-    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
-    WIFI_BAND_5G = 2,                   /* Band is 5G */
-    WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
-} wifi_band_t;
 
 #ifdef __cplusplus
 }

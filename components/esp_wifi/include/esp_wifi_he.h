@@ -151,7 +151,7 @@ esp_err_t esp_wifi_enable_tx_statistics(esp_wifi_aci_t aci, bool tx_stats);
   * @attention  Support at most 32 TWT agreements, otherwise ESP_ERR_WIFI_TWT_FULL will be returned.
   *             Support sleep time up to (1 << 35) us.
   *
-  * @param[in,out]   setup_config pointer to btwt setup config structure.
+  * @param[in,out]   config pointer to btwt setup config structure.
   *
   * @return
   *    - ESP_OK: succeed
@@ -196,8 +196,7 @@ esp_err_t esp_wifi_sta_get_btwt_num(uint8_t *btwt_number);
 /**
   * @brief     Get broadcast TWT information
   *
-  * @param[inout]  btwt_number As input param, it stores max btwt number AP supported.
-  *                As output param, it receives the actual btwt numbers AP supported.
+  * @param[in]    btwt_number As input param, it stores max btwt number AP supported.
   * @param[in]    btwt_info array to hold the btwt information supported by AP
   *
   * @return
