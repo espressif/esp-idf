@@ -18,6 +18,12 @@ ESP-IDF 示例目录 :example:`openthread` 包含以下应用程序：
 - Thread 无线电协处理器 (Thread Radio Co-Processor)：:example:`openthread/ot_rcp`
 
 
+- :example:`openthread/ot_trel` 演示了 Thread Radio Encapsulation Link (TREL) 功能。该示例需要在配备 Wi-Fi 模块的开发板上运行。
+
+- :example:`openthread/ot_sleepy_device/deep_sleep` 演示了 Thread 深度睡眠功能。
+
+- :example:`openthread/ot_sleepy_device/light_sleep` 演示了 Thread 浅睡眠功能。
+
 API参考
 -------------
 
