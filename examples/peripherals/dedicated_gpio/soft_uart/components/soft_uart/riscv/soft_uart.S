@@ -4,12 +4,18 @@
  * SPDX-License-Identifier: CC0-1.0
  */
     #include "sdkconfig.h"
+    #include "soc/soc_caps.h"
 
     /* RISC-V fast GPIO special registers, taken from "hal/dedic_gpio_cpu_ll.h" */
     #define CSR_GPIO_IN_USER    0x804
     #define CSR_GPIO_OUT_USER   0x805
     /* Special register for machine cycle count */
+
+#if SOC_CPU_HAS_CSR_PC
     #define CSR_PCCR_MACHINE    0x7e2
+#else
+    #define CSR_PCCR_MACHINE    mcycle
+#endif
 
     .section .text
 
