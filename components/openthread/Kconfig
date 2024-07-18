@@ -173,7 +173,7 @@ menu "OpenThread"
     config OPENTHREAD_NCP_VENDOR_HOOK
         bool "Enable vendor command for RCP"
         depends on OPENTHREAD_RADIO
-        default n
+        default y
         help
             Select this to enable OpenThread NCP vendor commands.
 

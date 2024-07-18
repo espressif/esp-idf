@@ -14,6 +14,12 @@
 #include "esp_radio_spinel_uart_interface.hpp"
 #include "spinel_driver.hpp"
 
+#define SPINEL_VENDOR_PROPERTY_BIT_PENDINGMODE BIT(0)
+#define SPINEL_VENDOR_PROPERTY_BIT_COORDINATOR BIT(1)
+static esp_ieee802154_pending_mode_t s_spinel_vendor_property_pendingmode[ot::Spinel::kSpinelHeaderMaxNumIid] = {ESP_IEEE802154_AUTO_PENDING_DISABLE};
+static bool s_spinel_vendor_property_coordinator[ot::Spinel::kSpinelHeaderMaxNumIid] = {false};
+static uint64_t s_spinel_vendor_property_mask[ot::Spinel::kSpinelHeaderMaxNumIid] = {0};
+
 using ot::Spinel::RadioSpinel;
 using ot::Spinel::RadioSpinelCallbacks;
 using esp::radio_spinel::SpinelInterfaceAdapter;
@@ -43,6 +49,22 @@ static otInstance* get_instance_from_index(esp_radio_spinel_idx_t idx)
 {
     // TZ-563: Implement the function to get otInstance pointer from esp radio spinel idx
     return nullptr;
+}
+
+static void esp_radio_spinel_restore_vendor_properities(void *context)
+{
+    esp_radio_spinel_idx_t idx = get_index_from_instance((otInstance*)context);
+    if (s_spinel_vendor_property_mask[idx] & SPINEL_VENDOR_PROPERTY_BIT_PENDINGMODE) {
+        if (esp_radio_spinel_set_pending_mode(s_spinel_vendor_property_pendingmode[idx], idx) != ESP_OK) {
+            ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to restore pendingmode: %d", idx);
+        }
+    }
+
+    if (s_spinel_vendor_property_mask[idx] & SPINEL_VENDOR_PROPERTY_BIT_COORDINATOR) {
+        if (esp_radio_spinel_set_pan_coord(s_spinel_vendor_property_coordinator[idx], idx) != ESP_OK) {
+            ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to restore coordinator: %d", idx);
+        }
+    }
 }
 
 void ReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
@@ -225,17 +247,14 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
     iidList[0] = 0;
     s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps);
+    otInstance *instance = get_instance_from_index(idx);
+    s_radio[idx].SetVendorRestorePropertiesCallback(esp_radio_spinel_restore_vendor_properities, instance);
 }
 
 esp_err_t esp_radio_spinel_enable(esp_radio_spinel_idx_t idx)
 {
     otInstance *instance = get_instance_from_index(idx);
     return (s_radio[idx].Enable(instance) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx)
-{
-    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE, SPINEL_DATATYPE_INT32_S, static_cast<int32_t>(pending_mode)) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx)
@@ -258,11 +277,6 @@ esp_err_t esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_
     otExtAddress aExtAddress;
     memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
     return (s_radio[idx].SetExtendedAddress(aExtAddress) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx)
-{
-    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR, SPINEL_DATATYPE_BOOL_S, enable) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx)
@@ -312,6 +326,24 @@ esp_err_t esp_radio_spinel_set_promiscuous_mode(bool enable, esp_radio_spinel_id
 {
     return (s_radio[idx].SetPromiscuous(enable) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
+
+/*------------------------------------------------Vendor Property Set-------------------------------------------------------*/
+esp_err_t esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx)
+{
+    s_spinel_vendor_property_pendingmode[idx] = pending_mode;
+    s_spinel_vendor_property_mask[idx] |= SPINEL_VENDOR_PROPERTY_BIT_PENDINGMODE;
+    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE, SPINEL_DATATYPE_INT32_S, static_cast<int32_t>(pending_mode)) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx)
+{
+    s_spinel_vendor_property_coordinator[idx] = enable;
+    s_spinel_vendor_property_mask[idx] |= SPINEL_VENDOR_PROPERTY_BIT_COORDINATOR;
+    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR, SPINEL_DATATYPE_BOOL_S, enable) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
+}
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
+
 
 void esp_radio_spinel_radio_update(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
 {
@@ -372,3 +404,23 @@ esp_err_t esp_radio_spinel_set_rcp_ready(esp_radio_spinel_idx_t idx)
     s_spinel_driver[idx].SetCoprocessorReady();
     return ESP_OK;
 }
+
+namespace ot {
+namespace Spinel {
+
+otError RadioSpinel::VendorHandleValueIs(spinel_prop_key_t aPropKey)
+{
+    otError error = OT_ERROR_NONE;
+
+    switch (aPropKey)
+    {
+    default:
+        ESP_LOGW(ESP_SPINEL_LOG_TAG, "Not Implemented!");
+        error = OT_ERROR_NOT_FOUND;
+        break;
+    }
+    return error;
+}
+
+} // namespace Spinel
+} // namespace ot
