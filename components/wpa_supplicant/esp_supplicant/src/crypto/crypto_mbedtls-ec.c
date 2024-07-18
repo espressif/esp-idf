@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,8 @@
 #include "mbedtls/error.h"
 #include "mbedtls/oid.h"
 
-#define ECP_PRV_DER_MAX_BYTES   29 + 3 * MBEDTLS_ECP_MAX_BYTES
+#define ECP_PRV_DER_MAX_BYTES   ( 29 + 3 * MBEDTLS_ECP_MAX_BYTES )
+#define ECP_PUB_DER_MAX_BYTES   ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
 
 #ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
 #define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(var)
@@ -518,6 +519,7 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
 	struct crypto_key *pkey = NULL;
 	int ret;
 	mbedtls_pk_context *key = (mbedtls_pk_context *)crypto_alloc_key();
+	mbedtls_ecp_group *ecp_grp = (mbedtls_ecp_group *)group;
 
 	if (!key) {
 		wpa_printf(MSG_ERROR, "%s: memory allocation failed", __func__);
@@ -538,7 +540,7 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
 		goto fail;
 	}
 
-	if (mbedtls_ecp_check_pubkey((mbedtls_ecp_group *)group, point) < 0) { //typecast
+	if (mbedtls_ecp_check_pubkey(ecp_grp, point) < 0) {
 		// ideally should have failed in upper condition, duplicate code??
 		wpa_printf(MSG_ERROR, "Invalid key");
 		goto fail;
@@ -547,8 +549,9 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
 	if( ( ret = mbedtls_pk_setup( key,
 					mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY) ) ) != 0 )
 		goto fail;
+
 	mbedtls_ecp_copy(&mbedtls_pk_ec(*key)->MBEDTLS_PRIVATE(Q), point);
-	mbedtls_ecp_group_load(&mbedtls_pk_ec(*key)->MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+	mbedtls_ecp_group_load(&mbedtls_pk_ec(*key)->MBEDTLS_PRIVATE(grp), ecp_grp->id);
 
 	pkey = (struct crypto_key *)key;
 	crypto_ec_point_deinit((struct crypto_ec_point *)point, 0);
@@ -581,19 +584,27 @@ struct crypto_ec_point *crypto_ec_get_public_key(struct crypto_key *key)
 int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data, int *key_len)
 {
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
-	char der_data[ECP_PRV_DER_MAX_BYTES];
+	char *der_data = os_malloc(ECP_PRV_DER_MAX_BYTES);
 
-	*key_len = mbedtls_pk_write_key_der(pkey, (unsigned char *)der_data, ECP_PRV_DER_MAX_BYTES);
-	if (*key_len <= 0)
+	if (!der_data) {
+		wpa_printf(MSG_ERROR, "memory allocation failed");
 		return -1;
-
+	}
+	*key_len = mbedtls_pk_write_key_der(pkey, (unsigned char *)der_data, ECP_PRV_DER_MAX_BYTES);
+	if (*key_len <= 0) {
+		wpa_printf(MSG_ERROR, "Failed to write priv key");
+		os_free(der_data);
+		return -1;
+	}
 	*key_data = os_malloc(*key_len);
 
 	if (!*key_data) {
 		wpa_printf(MSG_ERROR, "memory allocation failed");
+		os_free(der_data);
 		return -1;
 	}
-	os_memcpy(*key_data, der_data, *key_len);
+	os_memcpy(*key_data, der_data + ECP_PRV_DER_MAX_BYTES - *key_len, *key_len);
+	os_free(der_data);
 
 	return 0;
 }
@@ -643,16 +654,25 @@ int crypto_ec_get_publickey_buf(struct crypto_key *key, u8 *key_buf, int len)
 
 int crypto_write_pubkey_der(struct crypto_key *key, unsigned char **key_buf)
 {
-	unsigned char output_buf[1600] = {0};
-	int len = mbedtls_pk_write_pubkey_der((mbedtls_pk_context *)key, output_buf, 1600);
-	if (len <= 0)
-		return 0;
+	unsigned char *buf = os_malloc(ECP_PUB_DER_MAX_BYTES);
+
+	if(!buf) {
+		wpa_printf(MSG_ERROR, "memory allocation failed");
+		return -1;
+	}
+	int len = mbedtls_pk_write_pubkey_der((mbedtls_pk_context *)key, buf, ECP_PUB_DER_MAX_BYTES);
+	if (len <= 0) {
+		os_free(buf);
+		return -1;
+	}
 
 	*key_buf = os_malloc(len);
 	if (!*key_buf) {
-		return 0;
+		os_free(buf);
+		return -1;
 	}
-	os_memcpy(*key_buf, output_buf + 1600 - len, len);
+	os_memcpy(*key_buf, buf + ECP_PUB_DER_MAX_BYTES - len, len);
+	os_free(buf);
 
 	return len;
 }
@@ -812,27 +832,20 @@ fail:
 int crypto_edcsa_sign_verify(const unsigned char *hash,
 		const struct crypto_bignum *r, const struct crypto_bignum *s, struct crypto_key *csign, int hlen)
 {
-	mbedtls_pk_context *pkey = (mbedtls_pk_context *)csign;
-	int ret = 0;
-
-	mbedtls_ecdsa_context *ctx = os_malloc(sizeof(*ctx));
-	if (!ctx) {
-		wpa_printf(MSG_ERROR, "failed to allcate memory");
-		return ret;
+	/* (mbedtls_ecdsa_context *) */
+        mbedtls_ecp_keypair *ecp_kp = mbedtls_pk_ec(*(mbedtls_pk_context *)csign);
+        if (!ecp_kp) {
+                return -1;
 	}
-	mbedtls_ecdsa_init(ctx);
 
-	if (mbedtls_ecdsa_from_keypair(ctx, mbedtls_pk_ec(*pkey)) < 0)
-		return ret;
-
-	if((ret = mbedtls_ecdsa_verify(&ctx->MBEDTLS_PRIVATE(grp), hash, hlen,
-					&ctx->MBEDTLS_PRIVATE(Q), (mbedtls_mpi *)r, (mbedtls_mpi *)s)) != 0){
+        mbedtls_ecp_group *ecp_kp_grp = &ecp_kp->MBEDTLS_PRIVATE(grp);
+        mbedtls_ecp_point *ecp_kp_q = &ecp_kp->MBEDTLS_PRIVATE(Q);
+        int ret = mbedtls_ecdsa_verify(ecp_kp_grp, hash, hlen,
+                                       ecp_kp_q, (mbedtls_mpi *)r, (mbedtls_mpi *)s);
+        if (ret != 0) {
 		wpa_printf(MSG_ERROR, "ecdsa verification failed");
 		return ret;
 	}
-
-	mbedtls_ecdsa_free(ctx);
-	os_free(ctx);
 
 	return ret;
 }
@@ -861,14 +874,18 @@ struct crypto_key *crypto_ec_parse_subpub_key(const unsigned char *p, size_t len
 {
 	int ret;
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)crypto_alloc_key();
-	ret = mbedtls_pk_parse_subpubkey((unsigned char **)&p, p + len, pkey);
 
-	if (ret < 0) {
-		os_free(pkey);
+	if (!pkey) {
 		return NULL;
 	}
+	ret = mbedtls_pk_parse_subpubkey((unsigned char **)&p, p + len, pkey);
+	if (ret == 0) {
+		return (struct crypto_key *)pkey;
+	}
 
-	return (struct crypto_key *)pkey;
+	mbedtls_pk_free(pkey);
+	os_free(pkey);
+	return NULL;
 }
 
 int crypto_is_ec_key(struct crypto_key *key)
