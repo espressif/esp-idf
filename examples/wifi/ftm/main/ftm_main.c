@@ -258,29 +258,61 @@ void initialise_wifi(void)
     initialized = true;
 }
 
+esp_err_t wifi_add_mode(wifi_mode_t mode)
+{
+    wifi_mode_t cur_mode, new_mode = mode;
+
+    if (esp_wifi_get_mode(&cur_mode)) {
+        ESP_LOGE(TAG_STA, "Failed to get mode!");
+        return ESP_FAIL;
+    }
+
+    if (mode == WIFI_MODE_STA) {
+        if (cur_mode == WIFI_MODE_STA || cur_mode == WIFI_MODE_APSTA) {
+            int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+            if (bits & CONNECTED_BIT) {
+                s_reconnect = false;
+                xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
+                ESP_ERROR_CHECK( esp_wifi_disconnect() );
+                xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
+            }
+            return ESP_OK;
+        } else if (cur_mode == WIFI_MODE_AP) {
+            new_mode = WIFI_MODE_APSTA;
+        } else {
+            new_mode = WIFI_MODE_STA;
+        }
+    } else if (mode == WIFI_MODE_AP) {
+        if (cur_mode == WIFI_MODE_AP || cur_mode == WIFI_MODE_APSTA) {
+            /* Do nothing */
+            return ESP_OK;
+        } else if (cur_mode == WIFI_MODE_STA) {
+            new_mode = WIFI_MODE_APSTA;
+        } else {
+            new_mode = WIFI_MODE_AP;
+        }
+    }
+
+    ESP_ERROR_CHECK( esp_wifi_set_mode(new_mode) );
+    return ESP_OK;
+}
+
 static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
 {
-    int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+
+    if (ESP_OK != wifi_add_mode(WIFI_MODE_STA)) {
+        return false;
+    }
 
     wifi_config_t wifi_config = { 0 };
-
     strlcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
         strlcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
-
-    if (bits & CONNECTED_BIT) {
-        s_reconnect = false;
-        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
-        ESP_ERROR_CHECK( esp_wifi_disconnect() );
-        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
-    }
-
-    s_reconnect = true;
-    s_retry_num = 0;
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_connect() );
+    s_reconnect = true;
+    s_retry_num = 0;
 
     xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_PERIOD_MS);
 
@@ -312,9 +344,15 @@ static bool wifi_perform_scan(const char *ssid, bool internal)
 {
     wifi_scan_config_t scan_config = { 0 };
     scan_config.ssid = (uint8_t *) ssid;
+    wifi_mode_t mode;
     uint8_t i;
 
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_get_mode(&mode) );
+    if ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA)) {
+        if (ESP_OK != wifi_add_mode(WIFI_MODE_STA)) {
+            return false;
+        }
+    }
     if (ESP_OK != esp_wifi_scan_start(&scan_config, true)) {
         ESP_LOGI(TAG_STA, "Failed to perform scan");
         return false;
@@ -389,11 +427,13 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
         return false;
     }
 
+    if (ESP_OK != wifi_add_mode(WIFI_MODE_AP)) {
+        return false;
+    }
     if (strlen(pass) == 0) {
         g_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
     g_ap_config.ap.channel = channel;
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
     if (bw == 40) {
         esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT40);
@@ -668,7 +708,7 @@ void register_wifi(void)
     ftm_args.initiator = arg_lit0("I", "ftm_initiator", "FTM Initiator mode");
     ftm_args.ssid = arg_str0("s", "ssid", "SSID", "SSID of AP");
     ftm_args.frm_count = arg_int0("c", "frm_count", "<0/8/16/24/32/64>", "FTM frames to be exchanged (0: No preference)");
-    ftm_args.burst_period = arg_int0("p", "burst_period", "<0-100 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
+    ftm_args.burst_period = arg_int0("p", "burst_period", "<0-100 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of milliseconds (0: No preference)");
     /* FTM Responder commands */
     ftm_args.responder = arg_lit0("R", "ftm_responder", "FTM Responder mode");
     ftm_args.enable = arg_lit0("e", "enable", "Restart SoftAP with FTM enabled");
