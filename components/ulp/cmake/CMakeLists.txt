@@ -135,6 +135,8 @@ elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
             PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.newlib.ld)
         target_link_options(${ULP_APP_NAME}
             PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.version.ld)
+        target_link_options(${ULP_APP_NAME}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.api.ld)
     endif()
 
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
