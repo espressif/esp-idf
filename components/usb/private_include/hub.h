@@ -155,6 +155,20 @@ esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port
  */
 esp_err_t hub_port_active(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num);
 
+/**
+ * @brief Disable the port
+ *
+ * @note This function should only be called from the Host Library task
+ *
+ * @param[in] parent_dev_hdl    Parent device handle (is used to get the External Hub handle)
+ * @param[in] parent_port_num   Parent number (is used to specify the External Port)
+ * @return
+ * @retval ESP_OK:                  Port has been disabled without error
+ * @retval ESP_ERR_INVALID_STATE:   Port can't be disabled in current state
+ * @retval ESP_ERR_NOT_SUPPORTED:   This function is not support by the selected port
+ */
+esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num);
+
 #if ENABLE_USB_HUBS
 /**
  * @brief Notify Hub driver that new device has been attached
