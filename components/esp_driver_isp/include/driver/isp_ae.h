@@ -21,7 +21,7 @@ extern "C" {
 typedef struct {
     isp_ae_sample_point_t   sample_point;           ///< The input data source, ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC: AE input data after demosaic, ISP_AE_SAMPLE_POINT_AFTER_GAMMA: AE input data after gamma
     isp_window_t            window;                 ///< The sampling windows of AE
-    int                     intr_priority;          ///< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) otherwise the larger the higher, 7 is NMI
+    int                     intr_priority;          ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
 } esp_isp_ae_config_t;
 
 /**

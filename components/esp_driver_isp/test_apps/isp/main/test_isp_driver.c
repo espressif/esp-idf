@@ -187,7 +187,7 @@ TEST_CASE("ISP AE driver basic function", "[isp]")
     isp_ae_ctlr_t ae_ctlr = NULL;
     /* Default parameters from helper macro */
     esp_isp_ae_config_t ae_config = {
-        .ae_sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_result_t ae_res = {};
     /* Create the ae controller */
@@ -230,7 +230,7 @@ TEST_CASE("ISP AE controller exhausted allocation", "[isp]")
     TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
 
     esp_isp_ae_config_t ae_config = {
-        .ae_sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
     };
     isp_ae_ctlr_t ae_ctrlr[SOC_ISP_AE_CTLR_NUMS + 1] = {};
     for (int i = 0; i < SOC_ISP_AE_CTLR_NUMS; i++) {

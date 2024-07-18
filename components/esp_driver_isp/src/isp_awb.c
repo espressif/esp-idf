@@ -18,7 +18,6 @@ typedef struct isp_awb_controller_t {
     isp_fsm_t                          fsm;
     portMUX_TYPE                       spinlock;
     intr_handle_t                      intr_handle;
-    int                                intr_priority;
     isp_proc_handle_t                  isp_proc;
     QueueHandle_t                      evt_que;
     SemaphoreHandle_t                  stat_lock;
@@ -27,8 +26,6 @@ typedef struct isp_awb_controller_t {
 } isp_awb_controller_t;
 
 static const char *TAG = "ISP_AWB";
-
-static void s_isp_awb_default_isr(void *arg);
 
 /*---------------------------------------------
                 AWB
@@ -64,10 +61,10 @@ static void s_isp_awb_free_controller(isp_awb_ctlr_t awb_ctlr)
             esp_intr_free(awb_ctlr->intr_handle);
         }
         if (awb_ctlr->evt_que) {
-            vQueueDelete(awb_ctlr->evt_que);
+            vQueueDeleteWithCaps(awb_ctlr->evt_que);
         }
         if (awb_ctlr->stat_lock) {
-            vSemaphoreDelete(awb_ctlr->stat_lock);
+            vSemaphoreDeleteWithCaps(awb_ctlr->stat_lock);
         }
         free(awb_ctlr);
     }
@@ -109,11 +106,11 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
 
     // Claim an AWB controller
     ESP_GOTO_ON_ERROR(s_isp_claim_awb_controller(isp_proc, awb_ctlr), err1, TAG, "no available controller");
+
     // Register the AWB ISR
-    uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    awb_ctlr->intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | awb_ctlr->intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AWB_MASK,
-                                                s_isp_awb_default_isr, awb_ctlr, &awb_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
+    int intr_priority = (awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3) ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_GOTO_ON_ERROR(intr_priority != isp_proc->intr_priority, err2, TAG, "intr_priority error");
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(awb_ctlr->isp_proc, ISP_SUBMODULE_AWB), err2, TAG, "fail to register ISR");
 
     // Configure the hardware
     isp_ll_awb_enable(isp_proc->hal.hw, false);
@@ -137,6 +134,8 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(awb_ctlr->isp_proc->awb_ctlr == awb_ctlr, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
     ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
+
+    ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(awb_ctlr->isp_proc, ISP_SUBMODULE_AWB) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
     s_isp_declaim_awb_controller(awb_ctlr);
 
     isp_ll_awb_enable_algorithm_mode(awb_ctlr->isp_proc->hal.hw, false);
@@ -148,9 +147,6 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
 esp_err_t esp_isp_awb_controller_reconfig(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_config_t *awb_cfg)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    int intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_RETURN_ON_FALSE(intr_priority == awb_ctlr->intr_priority, ESP_ERR_INVALID_ARG, TAG, "can't change interrupt priority after initialized");
-
     return s_esp_isp_awb_config_hardware(awb_ctlr->isp_proc, awb_cfg);
 }
 
@@ -161,14 +157,10 @@ esp_err_t esp_isp_awb_controller_enable(isp_awb_ctlr_t awb_ctlr)
     awb_ctlr->fsm = ISP_FSM_ENABLE;
 
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_ERROR(esp_intr_enable(awb_ctlr->intr_handle), err, TAG, "failed to enable the AWB interrupt");
     isp_ll_awb_clk_enable(awb_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(awb_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AWB_MASK, true);
     xSemaphoreGive(awb_ctlr->stat_lock);
 
-    return ret;
-err:
-    awb_ctlr->fsm = ISP_FSM_INIT;
     return ret;
 }
 
@@ -245,13 +237,8 @@ esp_err_t esp_isp_awb_controller_stop_continuous_statistics(isp_awb_ctlr_t awb_c
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_awb_default_isr(void *arg)
+bool IRAM_ATTR esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events)
 {
-    isp_awb_ctlr_t awb_ctlr = (isp_awb_ctlr_t)arg;
-    isp_proc_handle_t proc = awb_ctlr->isp_proc;
-
-    uint32_t awb_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AWB_MASK);
-
     bool need_yield = false;
 
     if (awb_events & ISP_LL_EVENT_AWB_FDONE) {
@@ -279,10 +266,7 @@ static void IRAM_ATTR s_isp_awb_default_isr(void *arg)
             isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, true);
         }
     }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
+    return need_yield;
 }
 
 esp_err_t esp_isp_awb_register_event_callbacks(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_cbs_t *cbs, void *user_data)

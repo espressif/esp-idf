@@ -32,10 +32,10 @@ extern "C" {
 #endif
 
 #if CONFIG_ISP_ISR_IRAM_SAFE
-#define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
+#define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #define ISP_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
+#define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED)
 #define ISP_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
@@ -67,8 +67,33 @@ typedef struct isp_processor_t {
     isp_awb_ctlr_t              awb_ctlr;
     isp_fsm_t                   bf_fsm;
     isp_ae_ctlr_t               ae_ctlr;
+    /* ISR */
+    intr_handle_t               intr_hdl;
+    int                         intr_priority;
+    int                         isr_ref_counts;
+    struct {
+        uint32_t                af_isr_added: 1;
+        uint32_t                ae_isr_added: 1;
+        uint32_t                awb_isr_added: 1;
+    } isr_users;
+
 } isp_processor_t;
 #endif
+
+typedef enum {
+    ISP_SUBMODULE_AF,
+    ISP_SUBMODULE_AE,
+    ISP_SUBMODULE_AWB,
+} isp_submodule_t;
+
+/*---------------------------------------------------------------
+                      INTR
+---------------------------------------------------------------*/
+esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule);
+esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodule);
+bool esp_isp_af_isr(isp_proc_handle_t proc, uint32_t af_events);
+bool esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events);
+bool esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events);
 
 #ifdef __cplusplus
 }

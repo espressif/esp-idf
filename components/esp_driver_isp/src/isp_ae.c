@@ -31,10 +31,6 @@ typedef struct isp_ae_controller_t {
     void                               *user_data;
 } isp_ae_controller_t;
 
-extern portMUX_TYPE fsm_spinlock;
-
-static void s_isp_ae_default_isr(void *arg);
-
 /*---------------------------------------------
                 AE
 ----------------------------------------------*/
@@ -69,10 +65,10 @@ static void s_isp_ae_free_controller(isp_ae_ctlr_t ae_ctlr)
             esp_intr_free(ae_ctlr->intr_handle);
         }
         if (ae_ctlr->evt_que) {
-            vQueueDelete(ae_ctlr->evt_que);
+            vQueueDeleteWithCaps(ae_ctlr->evt_que);
         }
         if (ae_ctlr->stat_lock) {
-            vSemaphoreDelete(ae_ctlr->stat_lock);
+            vSemaphoreDeleteWithCaps(ae_ctlr->stat_lock);
         }
         free(ae_ctlr);
     }
@@ -105,10 +101,9 @@ esp_err_t esp_isp_new_ae_controller(isp_proc_handle_t isp_proc, const esp_isp_ae
     ESP_GOTO_ON_ERROR(s_isp_claim_ae_controller(isp_proc, ae_ctlr), err1, TAG, "no available controller");
 
     // Register the AE ISR
-    uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    int intr_priority = ae_config->intr_priority > 0 && ae_config->intr_priority <= 7 ? BIT(ae_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AE_MASK,
-                                                s_isp_ae_default_isr, ae_ctlr, &ae_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
+    int intr_priority = (ae_config->intr_priority > 0 && ae_config->intr_priority <= 3) ? BIT(ae_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_GOTO_ON_ERROR(intr_priority != isp_proc->intr_priority, err2, TAG, "intr_priority error");
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(ae_ctlr->isp_proc, ISP_SUBMODULE_AE), err2, TAG, "fail to register ISR");
 
     isp_ll_ae_set_sample_point(isp_proc->hal.hw, ae_config->sample_point);
     isp_ll_ae_enable(isp_proc->hal.hw, false);
@@ -132,8 +127,11 @@ esp_err_t esp_isp_del_ae_controller(isp_ae_ctlr_t ae_ctlr)
     ESP_RETURN_ON_FALSE(ae_ctlr && ae_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ae_ctlr->isp_proc->ae_ctlr == ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
     ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
-    s_isp_declaim_ae_controller(ae_ctlr);
 
+    // Deregister the AE ISR
+    ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(ae_ctlr->isp_proc, ISP_SUBMODULE_AE) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
+
+    s_isp_declaim_ae_controller(ae_ctlr);
     s_isp_ae_free_controller(ae_ctlr);
 
     return ESP_OK;
@@ -143,17 +141,14 @@ esp_err_t esp_isp_ae_controller_enable(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && ae_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
-    esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_ERROR(esp_intr_enable(ae_ctlr->intr_handle), err, TAG, "failed to enable the AE interrupt");
+
     isp_ll_ae_clk_enable(ae_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(ae_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AE_MASK, true);
     isp_ll_ae_enable(ae_ctlr->isp_proc->hal.hw, true);
     xSemaphoreGive(ae_ctlr->stat_lock);
 
-    return ret;
-err:
-    ae_ctlr->fsm = ISP_FSM_INIT;
-    return ret;
+    ae_ctlr->fsm = ISP_FSM_ENABLE;
+    return ESP_OK;
 }
 
 esp_err_t esp_isp_ae_controller_disable(isp_ae_ctlr_t ae_ctlr)
@@ -195,9 +190,7 @@ esp_err_t esp_isp_ae_controller_get_oneshot_statistics(isp_ae_ctlr_t ae_ctlr, in
     // Re-enable the env detector after manual statistics.
     isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
 
-    portENTER_CRITICAL(&fsm_spinlock);
     ae_ctlr->fsm = ISP_FSM_ENABLE;
-    portEXIT_CRITICAL(&fsm_spinlock);
 
 err:
     xSemaphoreGive(ae_ctlr->stat_lock);
@@ -208,7 +201,6 @@ err:
 esp_err_t esp_isp_ae_controller_start_continuous_statistics(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE_ISR(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
     esp_err_t ret = ESP_OK;
     if (xSemaphoreTake(ae_ctlr->stat_lock, 0) == pdFALSE) {
         ESP_LOGW(TAG, "statistics lock is not acquired, controller is busy");
@@ -216,9 +208,7 @@ esp_err_t esp_isp_ae_controller_start_continuous_statistics(isp_ae_ctlr_t ae_ctl
     }
     ESP_GOTO_ON_FALSE(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "controller isn't in enable state");
 
-    portENTER_CRITICAL(&fsm_spinlock);
     ae_ctlr->fsm = ISP_FSM_START;
-    portEXIT_CRITICAL(&fsm_spinlock);
 
     isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
 
@@ -231,11 +221,8 @@ esp_err_t esp_isp_ae_controller_stop_continuous_statistics(isp_ae_ctlr_t ae_ctlr
 {
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr->fsm == ISP_FSM_START, ESP_ERR_INVALID_STATE, TAG, "controller isn't in continuous state");
-    isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
 
-    portENTER_CRITICAL(&fsm_spinlock);
     ae_ctlr->fsm = ISP_FSM_ENABLE;
-    portEXIT_CRITICAL(&fsm_spinlock);
     xSemaphoreGive(ae_ctlr->stat_lock);
 
     return ESP_OK;
@@ -297,12 +284,9 @@ esp_err_t esp_isp_ae_controller_set_env_detector_threshold(isp_ae_ctlr_t ae_ctlr
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_ae_default_isr(void *arg)
+bool IRAM_ATTR esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events)
 {
-    isp_ae_ctlr_t ae_ctlr = (isp_ae_ctlr_t)arg;
-    isp_proc_handle_t proc = ae_ctlr->isp_proc;
-
-    uint32_t ae_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AE_MASK);
+    isp_ae_ctlr_t ae_ctlr = proc->ae_ctlr;
 
     bool need_yield = false;
     esp_isp_ae_env_detector_evt_data_t edata = {};
@@ -343,8 +327,5 @@ static void IRAM_ATTR s_isp_ae_default_isr(void *arg)
             need_yield |= ae_ctlr->cbs.on_env_change(ae_ctlr, &edata, ae_ctlr->user_data);
         }
     }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
+    return need_yield;
 }
