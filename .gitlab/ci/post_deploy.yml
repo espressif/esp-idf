@@ -3,6 +3,7 @@ generate_failed_jobs_report:
   tags: [build, shiny]
   image: $ESP_ENV_IMAGE
   when: always
+  dependencies: []  # Do not download artifacts from the previous stages
   artifacts:
     expire_in: 1 week
     when: always

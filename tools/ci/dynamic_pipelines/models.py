@@ -166,6 +166,7 @@ class TestCase:
             'time': float(node.attrib.get('time') or 0),
             'ci_job_url': node.attrib.get('ci_job_url') or '',
             'ci_dashboard_url': f'{grafana_base_url}?{encoded_params}',
+            'dut_log_url': node.attrib.get('dut_log_url') or 'Not found',
         }
 
         failure_node = node.find('failure')

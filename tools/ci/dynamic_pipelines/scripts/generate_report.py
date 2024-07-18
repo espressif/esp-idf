@@ -74,17 +74,17 @@ def generate_build_report(args: argparse.Namespace) -> None:
         app for file_name in glob.glob(args.app_list_filepattern) for app in import_apps_from_txt(file_name)
     ]
     report_generator = BuildReportGenerator(
-        args.project_id, args.mr_iid, args.pipeline_id, apps=apps
+        args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, apps=apps
     )
-    report_generator.post_report(args.job_id, args.commit_id)
+    report_generator.post_report()
 
 
 def generate_target_test_report(args: argparse.Namespace) -> None:
     test_cases: t.List[t.Any] = parse_testcases_from_filepattern(args.junit_report_filepattern)
     report_generator = TargetTestReportGenerator(
-        args.project_id, args.mr_iid, args.pipeline_id, test_cases=test_cases
+        args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, test_cases=test_cases
     )
-    report_generator.post_report(args.job_id, args.commit_id)
+    report_generator.post_report(print_report_path=False)
 
 
 def generate_jobs_report(args: argparse.Namespace) -> None:
@@ -93,8 +93,8 @@ def generate_jobs_report(args: argparse.Namespace) -> None:
     if not jobs:
         return
 
-    report_generator = JobReportGenerator(args.project_id, args.mr_iid, args.pipeline_id, jobs=jobs)
-    report_generator.post_report(args.job_id, args.commit_id)
+    report_generator = JobReportGenerator(args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, jobs=jobs)
+    report_generator.post_report(print_report_path=False)
 
 
 if __name__ == '__main__':

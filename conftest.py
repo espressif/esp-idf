@@ -252,6 +252,34 @@ def set_test_case_name(request: FixtureRequest, test_case_name: str) -> None:
     request.node.funcargs['test_case_name'] = test_case_name
 
 
+@pytest.fixture(autouse=True)
+def set_dut_log_url(record_xml_attribute: t.Callable[[str, object], None], _pexpect_logfile: str) -> t.Generator:
+    # Record the "dut_log_url" attribute in the XML report once test execution finished
+    yield
+
+    if not isinstance(_pexpect_logfile, str):
+        record_xml_attribute('dut_log_url', 'No log URL found')
+        return
+
+    ci_pages_url = os.getenv('CI_PAGES_URL')
+    logdir_pattern = re.compile(rf'({DEFAULT_LOGDIR}/.*)')
+    match = logdir_pattern.search(_pexpect_logfile)
+
+    if not match:
+        record_xml_attribute('dut_log_url', 'No log URL found')
+        return
+
+    if not ci_pages_url:
+        record_xml_attribute('dut_log_url', _pexpect_logfile)
+        return
+
+    job_id = os.getenv('CI_JOB_ID', '0')
+    modified_ci_pages_url = ci_pages_url.replace('esp-idf', '-/esp-idf')
+    log_url = f'{modified_ci_pages_url}/-/jobs/{job_id}/artifacts/{match.group(1)}'
+
+    record_xml_attribute('dut_log_url', log_url)
+
+
 ######################
 # Log Util Functions #
 ######################
