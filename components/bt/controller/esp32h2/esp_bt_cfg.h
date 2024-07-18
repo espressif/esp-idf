@@ -216,8 +216,7 @@ extern "C" {
 
 #define RTC_FREQ_N                          (32768) /* in Hz */
 
-#define BLE_LL_TX_PWR_DBM_N                 (9)
-
+#define BLE_LL_TX_PWR_DBM_N                 (CONFIG_BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF)
 
 #define RUN_BQB_TEST                        (0)
 #define RUN_QA_TEST                         (0)
