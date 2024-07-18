@@ -179,6 +179,7 @@ static void wifi_scan(void)
     }
     array_2_channel_bitmap(channel_list, CHANNEL_LIST_SIZE, scan_config);
     esp_wifi_scan_start(scan_config, true);
+    free(scan_config);
 
 #else
     esp_wifi_scan_start(NULL, true);
