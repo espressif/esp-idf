@@ -66,7 +66,6 @@ static esp_err_t set_dhcps_dns(esp_netif_t *netif, uint32_t addr)
     dns.ip.u_addr.ip4.addr = addr;
     dns.ip.type = IPADDR_TYPE_V4;
     dhcps_offer_t dhcps_dns_value = OFFER_DNS;
-    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_stop(netif));
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
     ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns));
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_start(netif));
@@ -351,6 +350,20 @@ static esp_netif_t* create_mesh_link_ap(void)
 }
 
 /**
+ * @brief Destroy esp-netif for AP interface over mesh
+ */
+static void destory_mesh_link_ap(void)
+{
+    if (netif_ap) {
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_stop(netif_ap));
+        esp_netif_action_disconnected(netif_ap, NULL, 0, NULL);
+        mesh_delete_if_driver(esp_netif_get_io_driver(netif_ap));
+        esp_netif_destroy(netif_ap);
+        netif_ap = NULL;
+    }
+}
+
+/**
  * @brief Creates esp-netif for station interface over mesh
  *
  * @note Interface needs to be started (later) using the above APIs
@@ -376,12 +389,7 @@ static esp_netif_t* create_mesh_link_sta(void)
 esp_err_t mesh_netif_start_root_ap(bool is_root, uint32_t addr)
 {
     if (is_root) {
-        if (netif_ap) {
-            esp_netif_action_disconnected(netif_ap, NULL, 0, NULL);
-            mesh_delete_if_driver(esp_netif_get_io_driver(netif_ap));
-            esp_netif_destroy(netif_ap);
-            netif_ap = NULL;
-        }
+        destory_mesh_link_ap();
         netif_ap = create_mesh_link_ap();
         mesh_netif_driver_t driver = mesh_create_if_driver(true, true);
         if (driver == NULL) {
@@ -445,13 +453,7 @@ esp_err_t mesh_netifs_start(bool is_root)
         esp_netif_attach(netif_sta, driver);
         start_mesh_link_sta();
         // If we have a AP on NODE -> stop and remove it!
-        if (netif_ap) {
-            esp_netif_action_disconnected(netif_ap, NULL, 0, NULL);
-            mesh_delete_if_driver(esp_netif_get_io_driver(netif_ap));
-            esp_netif_destroy(netif_ap);
-            netif_ap = NULL;
-        }
-
+        destory_mesh_link_ap();
     }
     return ESP_OK;
 }
@@ -475,12 +477,7 @@ esp_err_t mesh_netifs_stop(void)
         netif_sta = NULL;
     }
 
-    if (netif_ap) {
-        esp_netif_action_disconnected(netif_ap, NULL, 0, NULL);
-        mesh_delete_if_driver(esp_netif_get_io_driver(netif_ap));
-        esp_netif_destroy(netif_ap);
-        netif_ap = NULL;
-    }
+    destory_mesh_link_ap();
     // reserve the default (STA gets ready to become root)
     mesh_netif_init_station();
     start_wifi_link_sta();
