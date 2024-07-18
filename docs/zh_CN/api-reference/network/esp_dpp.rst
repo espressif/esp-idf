@@ -21,7 +21,7 @@ Easy Connect 协议仍在不断发展。目前已知支持二维码的平台为�
 应用示例
 -------------------
 
-如需了解使用智能手机配置 {IDF_TARGET_NAME} 的示例，请前往 :example:`wifi/wifi_easy_connect/dpp-enrollee`。
+- :example:`wifi/wifi_easy_connect/dpp-enrollee` 演示如何使用 DPP 将 {IDF_TARGET_NAME} 配置为注册设备，通过二维码和 Android 10 及以上的设备安全地将 ESP 设备接入网络。
 
 API 参考
 -------------
