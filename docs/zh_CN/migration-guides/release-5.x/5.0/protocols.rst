@@ -205,7 +205,7 @@ ESP-Modbus
     espressif/esp-modbus:
       version: "^1.0"
 
-可以前往 `组件管理器注册表 <https://components.espressif.com/component/espressif/esp-modbus>`__ 找到 ``ESP-Modbus`` 组件。更多有关如何设置组件管理器的信息，请参考 `组件管理器文档 <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html>`__。
+可以前往 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/esp-modbus>`__ 找到 ``ESP-Modbus`` 组件。更多有关如何设置组件管理器的信息，请参考 `组件管理器文档 <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html>`__。
 
 对于使用 ESP-IDF v4.x 及以后版本的应用程序，需要通过添加组件管理器清单文件 ``idf_component.yml`` 拉取新版 ``ESP-Modbus`` 组件。同时，在编译时，应去掉已过时的 ``freemodbus`` 组件。此项操作可通过项目 ``CMakeLists.txt`` 中的以下语句实现：
 

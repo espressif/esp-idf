@@ -14,7 +14,7 @@ USB 设备栈
 
 USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 USB 设备支持。通过使用设备栈，可以为 {IDF_TARGET_NAME} 烧录任意具有明确定义的 USB 设备功能（如键盘、鼠标、摄像头）、自定义功能（也称特定供应商类别）或上述功能的组合（也称复合设备）。
 
-设备栈基于 TinyUSB 栈构建，但对 TinyUSB 进行了一些小的功能扩展和修改，使其更好地集成到 ESP-IDF。设备栈通过 `ESP-IDF 组件注册器 <https://components.espressif.com/components/espressif/esp_tinyusb>`__ 作为托管组件分发。
+设备栈基于 TinyUSB 栈构建，但对 TinyUSB 进行了一些小的功能扩展和修改，使其更好地集成到 ESP-IDF。设备栈通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/esp_tinyusb>`__ 作为托管组件分发。
 
 功能列表
 --------
@@ -63,7 +63,7 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 组件依赖项
 -------------
 
-设备栈通过 `ESP-IDF 组件注册器 <https://components.espressif.com/components/espressif/esp_tinyusb>`__ 分发，使用前，请使用以下命令将设备栈组件添加为依赖项：
+设备栈通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/esp_tinyusb>`__ 分发，使用前，请使用以下命令将设备栈组件添加为依赖项：
 
 .. code:: bash
 

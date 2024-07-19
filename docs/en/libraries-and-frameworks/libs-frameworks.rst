@@ -104,4 +104,5 @@ The `ESP-BSP <https://github.com/espressif/esp-bsp>`_ repository contains Board 
 ESP-IDF-CXX
 -----------
 
-`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is `available as a component <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ from the ESP Component Registry. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.
+`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is available as a component from `ESP Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`__. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.
+

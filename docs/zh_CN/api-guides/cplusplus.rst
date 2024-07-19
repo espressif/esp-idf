@@ -19,7 +19,7 @@ ESP-IDF 支持以下 C++ 功能：
 ``esp-idf-cxx`` 组件
 -------------------------
 
-`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ 组件为一些 ESP-IDF 中的功能提供了更高级别的 C++ API，该组件可以从 `ESP-IDF 组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。
+`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ 组件为一些 ESP-IDF 中的功能提供了更高级别的 C++ API，该组件可以从 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。
 
 
 C++ 语言标准

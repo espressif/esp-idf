@@ -84,7 +84,7 @@ ESP-IoT-Solution 支持：
 ESP-Protocols
 -----------------------------------------
 
-`ESP-Protocols <https://github.com/espressif/esp-protocols>`_ 库包含 ESP-IDF 的协议组件集。ESP-Protocols 中的代码以独立组件存在，可以轻松地集成到 ESP-IDF 项目中。此外，每个组件都可以在 `ESP-IDF 组件注册表 <https://components.espressif.com/>`_ 中找到。
+`ESP-Protocols <https://github.com/espressif/esp-protocols>`_ 库包含 ESP-IDF 的协议组件集。ESP-Protocols 中的代码以独立组件存在，可以轻松地集成到 ESP-IDF 项目中。此外，每个组件都可以在 `乐鑫组件注册表 <https://components.espressif.com/>`__ 中找到。
 
 ESP-Protocols 组件：
 
@@ -104,4 +104,4 @@ ESP-BSP
 ESP-IDF-CXX
 ----------------------------------------------------------
 
-`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ 包含了 ESP-IDF 的部分 C++ 封装，重点在实现易用性、安全性、自动资源管理，以及将错误检查转移到编译过程中，以避免运行时失败。它还提供了 ESP 定时器、I2C、SPI、GPIO 等外设或 ESP-IDF 其他功能的 C++ 类。ESP-IDF-CXX 作为组件可以从 `组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。详情请参阅 `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_。
+`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ 包含了 ESP-IDF 的部分 C++ 封装，重点在实现易用性、安全性、自动资源管理，以及将错误检查转移到编译过程中，以避免运行时失败。它还提供了 ESP 定时器、I2C、SPI、GPIO 等外设或 ESP-IDF 其他功能的 C++ 类。ESP-IDF-CXX 作为组件可以从 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`__ 中获取。详情请参阅 `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_。
