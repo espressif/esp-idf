@@ -44,3 +44,26 @@ extern void ets_install_uart_printf(void);
  * @param c     character to be printed
  */
 void lp_core_print_char(char c);
+
+/**
+ * @brief Print a null-terminated string from the LP core
+ *
+ * @param str    null-terminated string to be printed
+ */
+void lp_core_print_str(const char *str);
+
+/**
+ * @brief Print a hex value from the LP core
+ *
+ * @param h     hex value to be printed
+ *
+ * @note Does not print '0x', only the digits (will always print 8 digits)
+ */
+void lp_core_print_hex(int h);
+
+/**
+ * @brief Print a two digit integer from the LP-Core
+ *
+ * @param d     integer to be printed
+ */
+void lp_core_print_dec_two_digits(int d);
