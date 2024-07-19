@@ -172,13 +172,9 @@ void rtc_clk_init(rtc_clk_config_t cfg);
 /**
  * @brief Get main XTAL frequency
  *
- * This is the value stored in RTC register RTC_XTAL_FREQ_REG by the bootloader. As passed to
- * rtc_clk_init function
- *
  * @return XTAL frequency, one of soc_xtal_freq_t
  */
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void);
-
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator

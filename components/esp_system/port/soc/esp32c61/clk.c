@@ -25,9 +25,6 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "ocode_init.h"
-
-// TODO: [ESP32C61] IDF-9249
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -45,9 +42,6 @@ void esp_rtc_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
-    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
-        esp_ocode_calib_init();
-    }
 #endif
 }
 
@@ -104,7 +98,9 @@ __attribute__((weak)) void esp_clk_init(void)
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+    if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM != -1) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+    }
 
     if (res)  {
         rtc_clk_cpu_freq_set_config(&new_config);
@@ -183,6 +179,7 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
+#if SOC_MODEM_CLOCK_SUPPORTED
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher
@@ -198,6 +195,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                                                   : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K
                                                   : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+#endif
 
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 }

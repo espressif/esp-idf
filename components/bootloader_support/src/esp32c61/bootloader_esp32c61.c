@@ -39,7 +39,6 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
-#include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
@@ -86,15 +85,6 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    // In 80MHz flash mode, ROM sets the mspi module clk divider to 2, fix it here
-#if CONFIG_ESPTOOLPY_FLASHFREQ_80M && !CONFIG_APP_BUILD_TYPE_RAM
-    clk_ll_mspi_fast_set_hs_divider(6);
-    esp_rom_spiflash_config_clk(1, 0);
-    esp_rom_spiflash_config_clk(1, 1);
-    esp_rom_spiflash_fix_dummylen(0, 1);
-    esp_rom_spiflash_fix_dummylen(1, 1);
-#endif
-
     regi2c_ctrl_ll_master_enable_clock(true);
     regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-9274 Remove this?
     regi2c_ctrl_ll_master_configure_clock();

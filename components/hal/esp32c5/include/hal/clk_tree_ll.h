@@ -41,7 +41,7 @@ extern "C" {
 }
 
 // Fix default division factor for the RC_FAST clock for calibration to be 32
-#define CLK_LL_RC_FAST_TICK_DIV_BITS        5
+#define CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS        5
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -274,7 +274,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
 }
 
 /**
- * @brief Get PLL_CLK frequency
+ * @brief Get SPLL_CLK frequency
  *
  * @return PLL clock frequency, in MHz. Returns 0 if register field value is invalid.
  */
@@ -407,6 +407,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
 /**
  * @brief Set CPU_CLK's divider
  *
+ * SOC_ROOT_CLK ------> CPU_CLK
+ *
  * @param divider Divider. (PCR_CPU_DIV_NUM + 1) = divider.
  */
 static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_t divider)
@@ -428,6 +430,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
 /**
  * @brief Set AHB_CLK's divider
  *
+ * SOC_ROOT_CLK ------> AHB_CLK
  * Constraint: f_ahb <= 48 MHz, f_cpu = n * f_ahb
  *
  * @param divider Divider. (PCR_AHB_DIV_NUM + 1) = divider.
@@ -576,7 +579,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
@@ -589,7 +592,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
  */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_TICK_DIV_BITS
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
 }
 
 /**

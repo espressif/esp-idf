@@ -266,7 +266,7 @@ typedef union {
     struct {
         /** mspi_fast_div_num : R/W; bitpos: [7:0]; default: 0;
          *  Set as one within (0,1,2) to generate div1(default)/div2/div4 of low-speed
-         *  clock-source to drive clk_mspi_fast. Only avaiable whe the clck-source is a
+         *  clock-source to drive clk_mspi_fast. Only available when the clck-source is a
          *  low-speed clock-source such as XTAL/FOSC.
          */
         uint32_t mspi_fast_div_num:8;
@@ -916,7 +916,7 @@ typedef union {
         uint32_t pvt_monitor_func_clk_div_num:4;
         uint32_t reserved_4:16;
         /** pvt_monitor_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  Configures the clock source of PVT MONITER.\\
+         *  Configures the clock source of PVT MONITOR.\\
          *  0 (default): XTAL_CLK\\
          *  1: PLL_F160M_CLK\\
          */
@@ -1399,15 +1399,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ls_div_num : HRO; bitpos: [7:0]; default: 0;
-         *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
-         *  clock-source such as XTAL/FOSC.
-         */
-        uint32_t ls_div_num:8;
-        /** hs_div_num : HRO; bitpos: [15:8]; default: 2;
-         *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
-         */
-        uint32_t hs_div_num:8;
+        uint32_t reserved_0:16;
         /** soc_clk_sel : R/W; bitpos: [17:16]; default: 0;
          *  Configures to select the clock source of HP_ROOT_CLK.\\
          *  0 (default): XTAL_CLK\\
@@ -1462,8 +1454,8 @@ typedef union {
 typedef union {
     struct {
         /** cpu_div_num : R/W; bitpos: [7:0]; default: 0;
-         *  Set this field to generate clk_cpu drived by clk_hproot. The clk_cpu is
-         *  div1(default)/div2/div4 of clk_hproot. This field is only avaliable for low-speed
+         *  Set this field to generate clk_cpu derived by clk_hproot. The clk_cpu is
+         *  div1(default)/div2/div4 of clk_hproot. This field is only available for low-speed
          *  clock-source such as XTAL/FOSC, and should be used together with PCR_AHB_DIV_NUM.
          */
         uint32_t cpu_div_num:8;
@@ -1478,8 +1470,8 @@ typedef union {
 typedef union {
     struct {
         /** ahb_div_num : R/W; bitpos: [7:0]; default: 0;
-         *  Set this field to generate clk_ahb drived by clk_hproot. The clk_ahb is
-         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only avaliable for
+         *  Set this field to generate clk_ahb derived by clk_hproot. The clk_ahb is
+         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only available for
          *  low-speed clock-source such as XTAL/FOSC, and should be used together with
          *  PCR_CPU_DIV_NUM.
          */
@@ -1505,7 +1497,7 @@ typedef union {
          */
         uint32_t apb_decrease_div_num:8;
         /** apb_div_num : R/W; bitpos: [15:8]; default: 0;
-         *  Set as one within (0,1,3) to generate clk_apb drived by clk_ahb. The clk_apb is
+         *  Set as one within (0,1,3) to generate clk_apb derived by clk_ahb. The clk_apb is
          *  div1(default)/div2/div4 of clk_ahb.
          */
         uint32_t apb_div_num:8;
@@ -1521,43 +1513,43 @@ typedef union {
     struct {
         uint32_t reserved_0:1;
         /** pll_160m_clk_en : R/W; bitpos: [1]; default: 1;
-         *  This field is used to open 160 MHz clock (div3 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 160 MHz clock (div3 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_160m_clk_en:1;
         /** pll_120m_clk_en : R/W; bitpos: [2]; default: 1;
-         *  This field is used to open 120 MHz clock (div4 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 120 MHz clock (div4 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_120m_clk_en:1;
         /** pll_80m_clk_en : R/W; bitpos: [3]; default: 1;
-         *  This field is used to open 80 MHz clock (div6  of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 80 MHz clock (div6  of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_80m_clk_en:1;
         /** pll_60m_clk_en : R/W; bitpos: [4]; default: 1;
-         *  This field is used to open 60 MHz clock (div8 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 60 MHz clock (div8 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_60m_clk_en:1;
         /** pll_48m_clk_en : R/W; bitpos: [5]; default: 1;
-         *  This field is used to open 48 MHz clock (div10 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 48 MHz clock (div10 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_48m_clk_en:1;
         /** pll_40m_clk_en : R/W; bitpos: [6]; default: 1;
-         *  This field is used to open 40 MHz clock (div12 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 40 MHz clock (div12 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_40m_clk_en:1;
         /** pll_20m_clk_en : R/W; bitpos: [7]; default: 1;
-         *  This field is used to open 20 MHz clock (div24 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 20 MHz clock (div24 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_20m_clk_en:1;
         /** pll_12m_clk_en : HRO; bitpos: [8]; default: 1;
-         *  This field is used to open 12 MHz clock (div40 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 12 MHz clock (div40 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_12m_clk_en:1;
         uint32_t reserved_9:23;

@@ -65,7 +65,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 {
     rtc_cpu_freq_config_t old_config, new_config;
 
-    rtc_clk_modem_clock_domain_active_state_icg_map_preinit();
+    rtc_clk_modem_clock_domain_active_state_icg_map_preinit(); // TODO: comment?
 
     /* Set tuning parameters for RC_FAST, RC_SLOW, and RC32K clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
@@ -89,16 +89,9 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     SET_PERI_REG_BITS(PMU_HP_MODEM_HP_REGULATOR0_REG, PMU_HP_MODEM_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
     SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
 
-    clk_ll_rc_fast_tick_conf();
+    // XTAL freq can be directly informed from register field PCR_CLK_XTAL_FREQ
 
-    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_output_tx_wait_idle(0);
-    rtc_clk_xtal_freq_update(xtal_freq);
-
-    // On ESP32C61, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration
-    // Therefore, before switching SOC_ROOT_CLK to HS, we need to set MSPI source clock HS divider to make it run at
-    // 80MHz after the switch. PLL = 480MHz, so divider is 6.
-    clk_ll_mspi_fast_set_hs_divider(6);
+    // No need to wait UART0 TX idle since its default clock source is XTAL, should not be affected by system clock configuration
 
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);

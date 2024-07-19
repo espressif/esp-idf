@@ -6,7 +6,6 @@
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
-#include "soc/pmu_reg.h" // TODO: IDF-9249 Can be removed
 #include "hal/regi2c_ctrl_ll.h"
 
 #define REGI2C_BIAS_MST_SEL    (BIT(8))
@@ -77,8 +76,6 @@ static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
     uint32_t i2c_sel = 0;
 
     regi2c_ctrl_ll_master_enable_clock(true);
-    REG_SET_BIT(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB); // TODO: IDF-9249 Move to pmu_init()
-    REG_SET_BIT(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C); // TODO: IDF-9249 Move to pmu_init()
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {

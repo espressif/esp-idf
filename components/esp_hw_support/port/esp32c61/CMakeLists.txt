@@ -21,11 +21,8 @@ endif()
 # TODO: [ESP32C61] IDF-9250
 if(CONFIG_IDF_TARGET_ESP32C61)
     list(REMOVE_ITEM srcs
-        "pmu_param.c"
-        "pmu_init.c"
         "pmu_sleep.c"
         "sar_periph_ctrl.c"
-        "ocode_init.c"
     )
 endif()
 

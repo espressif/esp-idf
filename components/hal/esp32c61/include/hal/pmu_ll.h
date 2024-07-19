@@ -17,7 +17,8 @@
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
 
-// TODO: [ESP32C61] IDF-9250, inherit from c6
+// TODO: [ESP32C61] IDF-9250
+#pragma message "pmu_ll.h has not been fully updated on ESP32C61 (IDF-9250). Use with care!"
 
 #ifdef __cplusplus
 extern "C" {
@@ -587,6 +588,26 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_digital_power_down_wait_cycle(pmu_dev_t *hw
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_digital_power_down_wait_cycle(pmu_dev_t *hw)
 {
     return hw->power.wait_timer1.powerdown_timer;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_set_isolate_wait_cycle(pmu_dev_t *hw, uint32_t isolate_wait_cycle)
+{
+    hw->power.wait_timer2.lp_iso_wait_timer = isolate_wait_cycle;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_set_reset_wait_cycle(pmu_dev_t *hw, uint32_t reset_wait_cycle)
+{
+    hw->power.wait_timer2.lp_rst_wait_timer = reset_wait_cycle;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_isolate_wait_cycle(pmu_dev_t *hw, uint32_t isolate_wait_cycle)
+{
+    hw->power.wait_timer2.hp_iso_wait_timer = isolate_wait_cycle;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_reset_wait_cycle(pmu_dev_t *hw, uint32_t reset_wait_cycle)
+{
+    hw->power.wait_timer2.hp_rst_wait_timer = reset_wait_cycle;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_analog_wait_target_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)

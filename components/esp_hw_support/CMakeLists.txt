@@ -174,7 +174,6 @@ if(NOT BOOTLOADER_BUILD)
                 "sleep_modes.c"
                 "sleep_wake_stub.c"
                 "sleep_gpio.c"
-                "port/esp_clk_tree_common.c"
             )
     endif()
 else()

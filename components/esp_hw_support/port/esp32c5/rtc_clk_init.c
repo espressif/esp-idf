@@ -90,6 +90,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     // XTAL freq determined by efuse, and can be directly informed from register field PCR_CLK_XTAL_FREQ
 
+    // No need to wait UART0 TX idle since its default clock source is XTAL, should not be affected by system clock configuration
+
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);
     uint32_t freq_before = old_config.freq_mhz;
