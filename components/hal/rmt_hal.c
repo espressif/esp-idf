@@ -10,7 +10,7 @@
 void rmt_hal_init(rmt_hal_context_t *hal)
 {
     hal->regs = &RMT;
-    rmt_ll_power_down_mem(hal->regs, false);               // turn on RMTMEM power domain
+    rmt_ll_mem_power_by_pmu(hal->regs);
     rmt_ll_enable_mem_access_nonfifo(hal->regs, true);     // APB access the RMTMEM in nonfifo mode
     rmt_ll_enable_interrupt(hal->regs, UINT32_MAX, false); // disable all interupt events
     rmt_ll_clear_interrupt_status(hal->regs, UINT32_MAX);  // clear all pending events
@@ -23,7 +23,7 @@ void rmt_hal_deinit(rmt_hal_context_t *hal)
 {
     rmt_ll_enable_interrupt(hal->regs, UINT32_MAX, false); // disable all interupt events
     rmt_ll_clear_interrupt_status(hal->regs, UINT32_MAX);  // clear all pending events
-    rmt_ll_power_down_mem(hal->regs, true);                // turn off RMTMEM power domain
+    rmt_ll_mem_force_power_off(hal->regs);                 // power off RMTMEM power domain forcefully
     hal->regs = NULL;
 }
 
