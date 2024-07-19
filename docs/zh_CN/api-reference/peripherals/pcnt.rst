@@ -163,6 +163,8 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
         当观察步进和观察点同时被触发时，回调函数只会被调用一次。
 
+        当计数达到上/下限值时，步进增量会被重置为 0，请勿过分依赖于精确的步进间隔。
+
     .. code:: c
 
         // add positive direction step notify with 100 step intervals
