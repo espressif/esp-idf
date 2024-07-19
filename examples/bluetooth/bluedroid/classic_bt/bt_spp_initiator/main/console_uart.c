@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "stdlib.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,7 +32,7 @@ extern void spp_msg_args_parser(char *buf, int len);
 
 void spp_msg_handler(char *buf, int len)
 {
-    ESP_LOGE(TAG_CNSL, "Command [%s]", buf);
+    ESP_LOGI(TAG_CNSL, "Command [%s]", buf);
     spp_msg_args_parser(buf, len);
 }
 
@@ -44,13 +45,18 @@ static void console_uart_task(void *pvParameters)
     spp_msg_parser_register_callback(parser, spp_msg_handler);
     spp_msg_show_usage();
 #define TMP_BUF_LEN 128
-    uint8_t tmp_buf[128] = {0};
+    uint8_t *tmp_buf = NULL;
+
+    if ((tmp_buf = (uint8_t *)calloc(TMP_BUF_LEN, sizeof(uint8_t))) == NULL) {
+        ESP_LOGE(TAG_CNSL,"temp buf malloc fail");
+        return;
+    }
 
     for (;;) {
         //Waiting for UART event.
         if (xQueueReceive(uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
-                //Event of UART receving data
+                //Event of UART receiving data
                 case UART_DATA:
                 {
                     len = uart_read_bytes(CONSOLE_UART_NUM, tmp_buf, TMP_BUF_LEN, 0);
@@ -95,6 +101,8 @@ static void console_uart_task(void *pvParameters)
             }
         }
     }
+
+    free(tmp_buf);
     vTaskDelete(NULL);
 }
 
