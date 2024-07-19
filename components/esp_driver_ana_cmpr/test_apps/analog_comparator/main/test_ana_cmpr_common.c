@@ -16,10 +16,10 @@ bool IRAM_ATTR test_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr, const ana
     return false;
 }
 
-int test_init_src_chan_gpio(void)
+int test_init_src_chan_gpio(int unit_id)
 {
     int src_chan_num = -1;
-    TEST_ESP_OK(ana_cmpr_get_gpio(0, ANA_CMPR_SOURCE_CHAN, &src_chan_num));
+    TEST_ESP_OK(ana_cmpr_get_gpio(unit_id, ANA_CMPR_SOURCE_CHAN, &src_chan_num));
     TEST_ASSERT(src_chan_num > 0);
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
