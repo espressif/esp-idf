@@ -353,9 +353,9 @@ Header J3
 
 Pin Layout
 """"""""""
-.. figure:: ../../../_static/esp32-pico-kit-1-pinout.png
+.. figure:: ../../../_static/esp32-pico-kit-1-pin-layout.png
     :align: center
-    :scale: 50%
+    :width: 95%
     :alt: ESP32-PICO-KIT-1 (click to enlarge)
     :figclass: align-center
 
