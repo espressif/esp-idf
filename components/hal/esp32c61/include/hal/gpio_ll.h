@@ -88,6 +88,15 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
+    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
+    // USB DP pin is default to PU enabled
+    // Note that esp32C61 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
+    // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
+    // TODO: read the specific efuse with efuse_ll.h
+    if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
+        USB_SERIAL_JTAG.conf0.exchg_pins_override = 1;
+        USB_SERIAL_JTAG.conf0.dp_pullup = 0;
+    }
     IO_MUX.gpion[gpio_num].gpion_fun_wpu = 0;
 }
 
@@ -111,15 +120,7 @@ static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
-    // USB DP pin is default to PU enabled
-    // Note that esp32C61 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
-    // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
-    // TODO: read the specific efuse with efuse_ll.h
-    if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-        USB_SERIAL_JTAG.conf0.exchg_pins_override = 1;
-        USB_SERIAL_JTAG.conf0.dp_pullup = 0;
-    }
+
     IO_MUX.gpion[gpio_num].gpion_fun_wpd = 0;
 }
 

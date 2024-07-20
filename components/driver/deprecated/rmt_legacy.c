@@ -139,6 +139,7 @@ static void rmt_module_enable(void)
 {
     RMT_ENTER_CRITICAL();
     if (rmt_contex.rmt_module_enabled == false) {
+        rmt_ll_mem_power_by_pmu(rmt_contex.hal.regs);
         RMT_RCC_ATOMIC() {
             rmt_ll_enable_bus_clock(0, true);
             rmt_ll_reset_register(0);
@@ -156,6 +157,7 @@ static void rmt_module_disable(void)
         RMT_RCC_ATOMIC() {
             rmt_ll_enable_bus_clock(0, false);
         }
+        rmt_ll_mem_force_power_off(rmt_contex.hal.regs);
         rmt_contex.rmt_module_enabled = false;
     }
     RMT_EXIT_CRITICAL();

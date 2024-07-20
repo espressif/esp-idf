@@ -21,7 +21,6 @@
 #define PMU_ICG_APB_ENA_PVT_MONITOR             27
 #define PMU_ICG_APB_ENA_PWM                     21
 #define PMU_ICG_APB_ENA_REGDMA                  24
-#define PMU_ICG_APB_ENA_RMT                     15
 #define PMU_ICG_APB_ENA_SARADC                  9
 #define PMU_ICG_APB_ENA_SEC                     0
 #define PMU_ICG_APB_ENA_SOC_ETM                 22
@@ -46,7 +45,6 @@
 #define PMU_ICG_FUNC_ENA_PARL_TX                24
 #define PMU_ICG_FUNC_ENA_PVT_MONITOR            23
 #define PMU_ICG_FUNC_ENA_PWM                    22
-#define PMU_ICG_FUNC_ENA_RMT                    21
 #define PMU_ICG_FUNC_ENA_SARADC                 20
 #define PMU_ICG_FUNC_ENA_SEC                    19
 #define PMU_ICG_FUNC_ENA_SPI2                   1

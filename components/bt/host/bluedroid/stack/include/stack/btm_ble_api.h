@@ -1100,46 +1100,58 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_SET_PERF_PHY_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_EXT_ADV_SET_RAND_ADDR_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_EXT_ADV_SET_PARAMS_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_EXT_ADV_DATA_SET_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_EXT_ADV_SCAN_RSP_DATA_SET_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance_num;
+    UINT8 instance[10];
 } tBTM_BLE_EXT_ADV_START_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_EXT_ADV_STOP_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_PERIOD_ADV_SET_PARAMS_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_PERIOD_ADV_DATA_SET_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_PERIOD_ADV_START_CMPL;
 
 typedef struct {
     UINT8 status;
+    UINT8 instance;
 } tBTM_BLE_PERIOD_ADV_STOP_CMPL;
 
 typedef struct {

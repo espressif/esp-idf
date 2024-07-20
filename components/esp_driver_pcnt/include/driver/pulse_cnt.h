@@ -66,9 +66,9 @@ typedef struct {
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
-        uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction*/
-        uint32_t en_step_notify_down: 1; /*!< Enable step notify in the negative direction*/
-#endif
+        uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction */
+        uint32_t en_step_notify_down: 1; /*!< Enable step notify in the negative direction */
+#endif // SOC_PCNT_SUPPORT_STEP_NOTIFY
     } flags;       /*!< Extra flags */
 } pcnt_unit_config_t;
 
@@ -169,7 +169,7 @@ typedef struct {
  *      - ESP_FAIL: Set clear signal failed because of other error
  */
 esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_signal_config_t *config);
-#endif
+#endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
 /**
  * @brief Enable the PCNT unit

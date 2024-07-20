@@ -75,6 +75,7 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
             break;
         case PPPERR_CONNECT: /* Connection lost */
             ESP_LOGI(TAG, "Connection lost");
+            esp_netif_update_default_netif(netif, ESP_NETIF_LOST_IP);
             err = esp_event_post(IP_EVENT, netif->lost_ip_event, &evt, sizeof(evt), 0);
 
             if (ESP_OK != err) {

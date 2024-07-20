@@ -59,7 +59,6 @@ components/json/cJSON/
 components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
-components/unity/unity/extras/
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
@@ -82,6 +81,7 @@ components/esp_hw_support/include/esp_private/esp_riscv_intr.h
 #
 components/esp_coex/include/private/esp_coexist_adapter.h
 components/esp_coex/include/esp_coex_i154.h
+
 ### To be fixed: headers that rely on implicit inclusion
 #
 components/esp_ringbuf/include/freertos/ringbuf.h
@@ -123,4 +123,3 @@ components/riscv/include/riscv/rvruntime-frames.h
 components/console/private_include/console_private.h
 
 # Missing extern "C"
-components/esp_driver_spi/include/esp_private/spi_master_internal.h

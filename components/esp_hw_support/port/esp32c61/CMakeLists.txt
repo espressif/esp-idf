@@ -25,7 +25,6 @@ if(CONFIG_IDF_TARGET_ESP32C61)
         "pmu_init.c"
         "pmu_sleep.c"
         "sar_periph_ctrl.c"
-        "esp_crypto_lock.c"
         "ocode_init.c"
     )
 endif()

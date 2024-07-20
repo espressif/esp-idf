@@ -21,6 +21,8 @@
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
 #include "soc/soc_caps.h"
+#include "bt_common.h"
+#include "hci_log/bt_hci_log.h"
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -61,6 +63,13 @@ void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
     ble_hci_rx_acl_hs_arg = acl_arg;
 }
 
+void esp_vhci_host_send_packet_wrapper(uint8_t *data, uint16_t len)
+{
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
+#endif
+    esp_vhci_host_send_packet(data, len);
+}
 
 int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
 {
@@ -75,7 +84,7 @@ int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
     }
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-        esp_vhci_host_send_packet(cmd, len);
+        esp_vhci_host_send_packet_wrapper(cmd, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
     }
@@ -112,7 +121,7 @@ int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
     len += OS_MBUF_PKTLEN(om);
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-        esp_vhci_host_send_packet(data, len);
+        esp_vhci_host_send_packet_wrapper(data, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
     }
@@ -181,11 +190,26 @@ static void controller_rcv_pkt_ready(void)
     }
 }
 
+void bt_record_hci_data(uint8_t *data, uint16_t len)
+{
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    if ((data[0] == BLE_HCI_UART_H4_EVT) && (data[1] == BLE_HCI_EVCODE_LE_META) && ((data[3] ==  BLE_HCI_LE_SUBEV_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_DIRECT_ADV_RPT)
+        || (data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_PERIODIC_ADV_RPT))) {
+        bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+    } else {
+        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+    }
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
+}
+
 /*
  * @brief: BT controller callback function, to transfer data packet to the host
  */
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
+    bt_record_hci_data(data, len);
+
     if(!ble_hs_enabled_state) {
         /* If host is not enabled, drop the packet */
         ESP_LOGE(TAG, "Host not enabled. Dropping the packet!");
@@ -217,7 +241,6 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
             evbuf = ble_transport_alloc_evt(1);
             /* Skip advertising report if we're out of memory */
             if (!evbuf) {
-                ESP_LOGI(TAG, "Skipping advertising report due to low memory");
                 return 0;
             }
         } else {

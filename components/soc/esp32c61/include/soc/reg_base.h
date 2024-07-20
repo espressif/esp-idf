@@ -26,7 +26,7 @@
 #define DR_REG_AHB_GDMA_BASE                    0x60080000
 #define DR_REG_GPSPI_BASE                       0x60081000
 #define DR_REG_SHA_BASE                         0x60089000
-#define DR_REG_ECC_BASE                         0x6008B000
+#define DR_REG_ECC_MULT_BASE                    0x6008B000
 #define DR_REG_ECDSA_BASE                       0x6008E000
 #define DR_REG_IO_MUX_BASE                      0x60090000
 #define DR_REG_GPIO_BASE                        0x60091000

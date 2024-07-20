@@ -148,6 +148,15 @@ static inline void lp_core_ll_request_sleep(void)
     PMU.lp_ext.pwr1.sleep_req = 1;
 }
 
+/**
+ * @brief Clear the ETM wakeup interrupt sources on the LP core
+ *
+ */
+static inline void lp_core_ll_clear_etm_wakeup_status(void)
+{
+    LP_SYS.sys_ctrl.lp_core_etm_wakeup_flag_clr = 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

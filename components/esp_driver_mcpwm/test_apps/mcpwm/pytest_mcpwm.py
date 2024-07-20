@@ -6,7 +6,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32s3
-# @pytest.mark.esp32c5  # TODO: [ESP32C5] IDF-10334
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4

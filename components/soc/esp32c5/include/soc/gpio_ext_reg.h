@@ -57,7 +57,7 @@ extern "C" {
 #define GPIO_EXT_SD0_PRESCALE_S  8
 
 /** GPIO_EXT_SIGMADELTA1_REG register
- *  Duty cycle configuration register for SDM channel 0
+ *  Duty cycle configuration register for SDM channel 1
  */
 #define GPIO_EXT_SIGMADELTA1_REG (DR_REG_GPIO_EXT_BASE + 0xc)
 /** GPIO_EXT_SD1_IN : R/W; bitpos: [7:0]; default: 0;
@@ -76,7 +76,7 @@ extern "C" {
 #define GPIO_EXT_SD1_PRESCALE_S  8
 
 /** GPIO_EXT_SIGMADELTA2_REG register
- *  Duty cycle configuration register for SDM channel 0
+ *  Duty cycle configuration register for SDM channel 2
  */
 #define GPIO_EXT_SIGMADELTA2_REG (DR_REG_GPIO_EXT_BASE + 0x10)
 /** GPIO_EXT_SD2_IN : R/W; bitpos: [7:0]; default: 0;
@@ -95,7 +95,7 @@ extern "C" {
 #define GPIO_EXT_SD2_PRESCALE_S  8
 
 /** GPIO_EXT_SIGMADELTA3_REG register
- *  Duty cycle configuration register for SDM channel 0
+ *  Duty cycle configuration register for SDM channel 3
  */
 #define GPIO_EXT_SIGMADELTA3_REG (DR_REG_GPIO_EXT_BASE + 0x14)
 /** GPIO_EXT_SD3_IN : R/W; bitpos: [7:0]; default: 0;

@@ -133,7 +133,6 @@ api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/uart.rst
 api-reference/peripherals/ecdsa.rst
 api-reference/peripherals/ldo_regulator.rst
-api-reference/peripherals/rmt.rst
 api-reference/peripherals/jpeg.rst
 api-reference/network/esp_openthread.rst
 api-reference/network/esp_eth.rst

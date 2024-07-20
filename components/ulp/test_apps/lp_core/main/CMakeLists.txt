@@ -12,6 +12,10 @@ if(CONFIG_SOC_LP_SPI_SUPPORTED)
     list(APPEND app_sources "test_lp_core_spi.c")
 endif()
 
+if(CONFIG_SOC_LP_CORE_SUPPORT_ETM AND CONFIG_SOC_ETM_SUPPORTED)
+    list(APPEND app_sources "test_lp_core_etm.c")
+endif()
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 

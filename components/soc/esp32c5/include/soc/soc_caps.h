@@ -41,7 +41,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-// #define SOC_SDM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8687
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
@@ -57,14 +57,14 @@
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
-// #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
+#define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
-// #define SOC_ULP_LP_UART_SUPPORTED       1  // TODO: [ESP32C5] IDF-8633
+#define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  // TODO: [ESP32C5] IDF-8663
 #define SOC_WDT_SUPPORTED               1
@@ -388,10 +388,10 @@
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-// #define SOC_SDM_GROUPS               1U
-// #define SOC_SDM_CHANNELS_PER_GROUP   4
-// #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
-// #define SOC_SDM_CLK_SUPPORT_XTAL     1
+#define SOC_SDM_GROUPS               1U
+#define SOC_SDM_CHANNELS_PER_GROUP   4
+#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
+#define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
@@ -424,7 +424,6 @@
 // #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 // #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 
-// TODO: [ESP32C5] IDF-8649
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
@@ -485,6 +484,10 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+
+/*-------------------------- APM CAPS-----------------------------------------*/
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED       1 /*!< Support for LP APM0 control filter */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
@@ -591,3 +594,4 @@
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR   (1) /*!< LP Core interrupts all map to a single entry in vector table */
+#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */

@@ -7,10 +7,6 @@ examples/system/app_trace_basic:
       reason: target esp32c6, esp32h2, esp32p4, esp32c5 is not supported yet
 
 examples/system/base_mac_address:
-  disable_test:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed  # TODO [ESP32C5] IDF-10347
   depends_components:
     - esp_hw_support
 
@@ -281,7 +277,7 @@ examples/system/ulp/lp_core/gpio:
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
   enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1)
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
   depends_components:
     - ulp
 
@@ -303,13 +299,13 @@ examples/system/ulp/lp_core/lp_i2c:
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
   disable:
-    - if: SOC_ULP_LP_UART_SUPPORTED != 1
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_print:
   disable:
-    - if: SOC_ULP_LP_UART_SUPPORTED != 1
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   depends_components:
     - ulp
 

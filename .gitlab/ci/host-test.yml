@@ -299,6 +299,7 @@ test_pytest_qemu:
     paths:
       - XUNIT_RESULT.xml
       - pytest-embedded/
+      - "**/build*/*.bin"
     reports:
       junit: XUNIT_RESULT.xml
   allow_failure: true # IDFCI-1752
@@ -308,7 +309,7 @@ test_pytest_qemu:
   variables:
     INSTALL_QEMU: 1
   script:
-    - run_cmd python tools/ci/ci_build_apps.py . -vv
+    - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
       --pytest-apps
       -m qemu
@@ -318,6 +319,7 @@ test_pytest_qemu:
     - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target $IDF_TARGET
+      --log-cli-level DEBUG
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
@@ -337,7 +339,7 @@ test_pytest_linux:
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
       -m host_test
@@ -348,6 +350,7 @@ test_pytest_linux:
     - run_cmd pytest
       --target linux
       -m host_test
+      --embedded-services idf
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"

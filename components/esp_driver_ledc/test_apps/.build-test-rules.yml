@@ -3,9 +3,5 @@
 components/esp_driver_ledc/test_apps/ledc:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: [ESP32P4] IDF-8969, [ESP32C5] IDF-10333
   depends_components:
     - esp_driver_ledc

@@ -7,6 +7,7 @@ Host-Based Security Workflows
 {IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
 {IDF_TARGET_CRYPT_CNT_MAX_VAL:default="7",esp32="127"}
 {IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (V2)"}
+{IDF_TARGET_FLASH_ENC_ARGS:default="--aes_xts", esp32=""}
 
 Introduction
 ------------
@@ -303,36 +304,13 @@ In this case, all the eFuses related to Flash Encryption are written with help o
 
   The binaries can be encrypted on the host machine by running:
 
-  .. only:: esp32
+  .. code-block:: bash
 
-    .. code-block:: bash
+    espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} --output bootloader-enc.bin build/bootloader/bootloader.bin
 
-      espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x1000 --output bootloader-enc.bin build/bootloader/bootloader.bin
+    espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
 
-      espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
-
-      espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
-
-  .. only:: not esp32 and not SOC_KEY_MANAGER_SUPPORTED
-
-    .. code-block:: bash
-
-       espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x1000 --output bootloader-enc.bin build/bootloader/bootloader.bin
-
-       espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
-
-       espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
-
-  .. only:: SOC_KEY_MANAGER_SUPPORTED
-
-    .. code-block:: bash
-
-       espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x2000 --output bootloader-enc.bin build/bootloader/bootloader.bin
-
-       espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
-
-       espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
-
+    espsecure.py encrypt_flash_data {IDF_TARGET_FLASH_ENC_ARGS} --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
   In the above command the offsets are used for a sample firmware, the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. Please note that not all the binaries need to be encrypted, the encryption applies only to those generated from the partitions which are marked as ``encrypted`` in the partition table definition file. Other binaries are flashed unencrypted, i.e., as a plain output of the build process.
 

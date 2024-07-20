@@ -179,10 +179,6 @@ config SOC_APM_SUPPORTED
     bool
     default y
 
-config SOC_APM_CTRL_FILTER_SUPPORTED
-    bool
-    default y
-
 config SOC_PMU_SUPPORTED
     bool
     default y
@@ -1219,6 +1215,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
 
+config SOC_APM_CTRL_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_LP_APM0_SUPPORTED
+    bool
+    default y
+
 config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
@@ -1500,5 +1504,9 @@ config SOC_CAPS_NO_RESET_BY_ANA_BOD
     default y
 
 config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
+    bool
+    default y
+
+config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y

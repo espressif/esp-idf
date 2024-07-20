@@ -14,6 +14,7 @@
 #include "soc/spi_periph.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
+#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
 #include "hal/spi_slave_hd_hal.h"
 #include "hal/assert.h"
 

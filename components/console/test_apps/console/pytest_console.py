@@ -6,47 +6,42 @@ from pytest_embedded import Dut
 
 def do_test_quit(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console repl test"')
+    dut.confirm_write('"esp console repl test"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
-    dut.write('quit')
-
-    dut.expect_exact('ByeBye', timeout=5)
+    dut.confirm_write('quit', expect_str='ByeBye')
 
 
 def do_test_help_generic(dut: Dut, registration_order: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - {} registration"'.format(registration_order))
+    dut.confirm_write('"esp console help command - {} registration"'.format(registration_order), expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
-    dut.write('help')
+    dut.confirm_write('help', expect_str='aaa')
 
-    dut.expect_exact('aaa', timeout=5)
-    dut.expect_exact('should appear first in help', timeout=5)
+    dut.expect_exact('should appear first in help')
 
-    dut.expect(r'help\s+\[<string>\]', timeout=5)
+    dut.expect(r'help\s+\[<string>\]')
 
     # Note: repl seems to do the line breaks by itself, this needs to be adjusted if repl changes its line width
-    dut.expect_exact('Print the summary of all registered commands if no arguments are given,', timeout=5)
-    dut.expect_exact('otherwise print summary of given command.', timeout=5)
-    dut.expect(r'<string>\s+Name of command', timeout=5)
+    dut.expect_exact('Print the summary of all registered commands if no arguments are given,')
+    dut.expect_exact('otherwise print summary of given command.')
+    dut.expect(r'<string>\s+Name of command')
 
-    dut.expect_exact('quit', timeout=5)
-    dut.expect_exact('Quit REPL environment', timeout=5)
+    dut.expect_exact('quit')
+    dut.expect_exact('Quit REPL environment')
 
-    dut.expect_exact('zzz', timeout=5)
-    dut.expect_exact('should appear last in help', timeout=5)
-    dut.expect_exact('esp>', timeout=5)
+    dut.expect_exact('zzz')
+    dut.expect_exact('should appear last in help')
+    dut.expect_exact('esp>')
 
 
 def do_test_help_quit(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - sorted registration"')
 
-    dut.expect_exact('esp>', timeout=5)
+    dut.confirm_write('"esp console help command - sorted registration"', expect_str='esp>')
+
     dut.write('help quit')
 
-    dut.expect(r'quit\s+Quit REPL environment\s+esp>', timeout=5)
+    dut.expect(r'quit\s+Quit REPL environment\s+esp>')
 
 
 @pytest.mark.parametrize(
@@ -63,9 +58,7 @@ def do_test_help_quit(dut: Dut) -> None:
     ]
 )
 def test_console(dut: Dut, test_on: str) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests.')
-    dut.write('![ignore]')
-    dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=120)
+    dut.run_all_single_board_cases(group='!ignore', timeout=120)
 
 
 @pytest.mark.parametrize(
@@ -117,27 +110,25 @@ def test_console_help_sorted_registration(dut: Dut, test_on: str) -> None:
 )
 def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - reverse registration"')
+    dut.confirm_write('"esp console help command - reverse registration"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
-    dut.write('help')
+    dut.confirm_write('help', expect_str='zzz')
 
-    dut.expect_exact('zzz', timeout=5)
-    dut.expect_exact('should appear last in help', timeout=5)
+    dut.expect_exact('should appear last in help')
 
-    dut.expect_exact('quit', timeout=5)
-    dut.expect_exact('Quit REPL environment', timeout=5)
+    dut.expect_exact('quit')
+    dut.expect_exact('Quit REPL environment')
 
-    dut.expect(r'help\s+\[<string>\]', timeout=5)
+    dut.expect(r'help\s+\[<string>\]')
 
     # Note: repl seems to do the line breaks by itself, this needs to be adjusted if repl changes its line width
-    dut.expect_exact('Print the summary of all registered commands if no arguments are given,', timeout=5)
-    dut.expect_exact('otherwise print summary of given command.', timeout=5)
-    dut.expect(r'<string>\s+Name of command', timeout=5)
+    dut.expect_exact('Print the summary of all registered commands if no arguments are given,')
+    dut.expect_exact('otherwise print summary of given command.')
+    dut.expect(r'<string>\s+Name of command')
 
-    dut.expect_exact('aaa', timeout=5)
-    dut.expect_exact('should appear first in help', timeout=5)
-    dut.expect_exact('esp>', timeout=5)
+    dut.expect_exact('aaa')
+    dut.expect_exact('should appear first in help')
+    dut.expect_exact('esp>')
 
 
 @pytest.mark.parametrize(
@@ -201,9 +192,8 @@ def test_console_help_quit(dut: Dut, test_on: str) -> None:
 def test_console_help_verbose_level_0(dut: Dut, test_on: str) -> None:
     help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - set verbose level = 0"')
+    dut.confirm_write('"esp console help command - set verbose level = 0"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
     # verify help command
     dut.write('help')
     dut.write('help')
@@ -226,9 +216,8 @@ def test_console_help_verbose_level_0(dut: Dut, test_on: str) -> None:
 def test_console_help_verbose_level_1(dut: Dut, test_on: str) -> None:
     help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - set verbose level = 1"')
+    dut.confirm_write('"esp console help command - set verbose level = 1"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
     # verify help command
     dut.write('help')
     dut.expect_exact(help_verbose_info)
@@ -250,9 +239,8 @@ def test_console_help_verbose_level_1(dut: Dut, test_on: str) -> None:
 def test_console_help_verbose_subcommand(dut: Dut, test_on: str) -> None:
     help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console help command - --verbose sub command"')
+    dut.confirm_write('"esp console help command - --verbose sub command"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
     # verify help --verbose=0 subcommand
     dut.write('help --verbose=0')
     dut.write('help --verbose=0')
@@ -277,9 +265,8 @@ def test_console_help_verbose_subcommand(dut: Dut, test_on: str) -> None:
 )
 def test_console_help_deregister(dut: Dut, test_on: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console deregister commands"')
+    dut.confirm_write('"esp console deregister commands"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
     dut.write('help')
 
     # in the test sequence, command a is registered before registering command z, then
@@ -302,10 +289,9 @@ def test_console_help_deregister(dut: Dut, test_on: str) -> None:
 )
 def test_console_help_re_register(dut: Dut, test_on: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"esp console re-register commands"')
+    dut.confirm_write('"esp console re-register commands"', expect_str='esp>')
 
-    dut.expect_exact('esp>', timeout=5)
     dut.write('help')
 
-    dut.expect_exact('should appear last in help', timeout=5)
-    dut.expect_exact('should appear first in help', timeout=5)
+    dut.expect_exact('should appear last in help')
+    dut.expect_exact('should appear first in help')

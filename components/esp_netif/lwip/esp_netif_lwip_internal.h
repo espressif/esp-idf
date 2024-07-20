@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,4 +117,19 @@ struct esp_netif_obj {
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
     // mldv6 timer
     bool mldv6_report_timer_started;
+
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+    ip_addr_t dns[DNS_MAX_SERVERS];
+#endif
 };
+
+typedef enum esp_netif_set_default_state {
+    ESP_NETIF_UNDEF,
+    ESP_NETIF_STARTED,
+    ESP_NETIF_GOT_IP,
+    ESP_NETIF_STOPPED,
+    ESP_NETIF_LOST_IP,
+    ESP_NETIF_SET_DEFAULT,
+} esp_netif_route_prio_action_t;
+
+esp_err_t esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_route_prio_action_t action);

@@ -35,15 +35,27 @@ extern "C" {
  *
  * @param enable    Enable/Disable
  */
-static inline void ledc_ll_enable_bus_clock(bool enable) {
+static inline void ledc_ll_enable_bus_clock(bool enable)
+{
     PCR.ledc_conf.ledc_clk_en = enable;
 }
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
  */
-static inline void ledc_ll_enable_reset_reg(bool enable) {
+static inline void ledc_ll_enable_reset_reg(bool enable)
+{
     PCR.ledc_conf.ledc_rst_en = enable;
+}
+
+/**
+ * @brief Enable the power for LEDC memory block
+ *
+ * Note. This function cannot overwrite the power control of the mem block in sleep mode
+ */
+static inline void ledc_ll_enable_mem_power(bool enable)
+{
+    PCR.ledc_pd_ctrl.ledc_mem_force_pd = !enable;
 }
 
 /**
@@ -54,7 +66,8 @@ static inline void ledc_ll_enable_reset_reg(bool enable) {
  *
  * @return None
  */
-static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en) {
+static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
+{
     (void)hw;
     PCR.ledc_sclk_conf.ledc_sclk_en = en;
 }

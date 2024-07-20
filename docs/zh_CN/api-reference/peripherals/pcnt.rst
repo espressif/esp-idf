@@ -162,7 +162,6 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
     .. note::
 
         当观察步进和观察点同时被触发时，回调函数只会被调用一次。
-        步进间隔必须是 :cpp:member:`pcnt_unit_config_t::low_limit` 或 :cpp:member:`pcnt_unit_config_t::high_limit` 的因数。
 
     .. code:: c
 

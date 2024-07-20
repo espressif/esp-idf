@@ -695,3 +695,6 @@
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
 #define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
 #define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
+
+/*------------------------------------- ULP CAPS -------------------------------------*/
+#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */

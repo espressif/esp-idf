@@ -793,7 +793,7 @@ typedef union {
          *  28: Select GPIO28\\
          *  Or\\
          *  0x40: A constantly high input\\
-         *  0x50: A constantly low input\\
+         *  0x60: A constantly low input\\
          */
         uint32_t in_sel:7;
         /** in_inv_sel : R/W; bitpos: [7]; default: 0;

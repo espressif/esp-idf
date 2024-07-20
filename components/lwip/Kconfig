@@ -135,13 +135,19 @@ menu "LWIP"
 
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
-        range 1 16
+        range 1 253
         default 10
         help
+            The practical maximum limit is
+            determined by available heap memory at runtime.
+
             Sockets take up a certain amount of memory, and allowing fewer
             sockets to be open at the same time conserves memory. Specify
             the maximum amount of sockets here. The valid value is from 1
-            to 16.
+            to 253. If using value above 61, update CMakeLists defining
+            FD_SETSIZE to the number of sockets used plus the
+            expected open files (minimum of +3 for stdout, stderr and stdin).
+
 
     config LWIP_USE_ONLY_LWIP_SELECT
         bool "Support LWIP socket select() only (DEPRECATED)"
@@ -1129,6 +1135,15 @@ menu "LWIP"
             depends on LWIP_FALLBACK_DNS_SERVER_SUPPORT
             help
                 This option allows you to config dns fallback server address.
+
+        config LWIP_DNS_SETSERVER_WITH_NETIF
+            bool "Enable DNS server settings with netif"
+            default n
+            help
+                This option allows collecting DNS server settings per netif using
+                configurable callback function.
+                It's typically used with CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+                which configures a callback to collect the DNS info on esp_netif layer.
 
     endmenu # DNS
 

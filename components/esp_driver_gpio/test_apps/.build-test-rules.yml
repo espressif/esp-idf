@@ -2,9 +2,9 @@
 
 components/esp_driver_gpio/test_apps:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: test not pass, should be re-enable # TODO: [ESP32P4] IDF-8968 [ESP32C5] IDF-10331
+      reason: test not pass, should be re-enable # TODO: [ESP32P4] IDF-8968
   depends_components:
     - esp_driver_gpio
 

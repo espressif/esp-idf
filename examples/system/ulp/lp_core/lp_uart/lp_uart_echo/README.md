@@ -13,7 +13,7 @@ This example demonstrates the usage of the LP UART driver from the LP core by re
 
 ### Hardware Required
 
-To run this example, you should have an ESP32-C6 based development board and a host machine with a serial input connection.
+To run this example, you should have an ESP based development board that supports the LP UART peripheral on the LP Core and a host machine with a serial input connection.
 
 #### Pin Assignment:
 
@@ -22,6 +22,7 @@ To run this example, you should have an ESP32-C6 based development board and a h
 |                         | Rx     | Tx     |
 | ----------------------- | -------| -------|
 | ESP32-C6                | GPIO4  | GPIO5  |
+| ESP32-C5                | GPIO4  | GPIO5  |
 | ESP32-P4                | GPIO15 | GPIO14 |
 | Host machine            | Tx     | Rx     |
 
