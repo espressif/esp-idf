@@ -11,7 +11,7 @@ For an ESP32 to join and work on a ESP-BLE-MESH network, it must be provisioned 
 
 Apart from ESP-BLE-MESH nodes, inside ESP-BLE-MESH network, there is also ESP32 that works as ESP-BLE-MESH provisioner, which could provision unprovisioned devices into ESP-BLE-MESH nodes and configure the nodes with various features.
 
-For information how to start using ESP32 and ESP-BLE-MESH, please see the Section :ref:`getting-started-with-ble-mesh`. If you are interested in information on ESP-BLE-MESH architecture, including some details of software implementation, please see Section :doc:`../../api-guides/esp-ble-mesh/ble-mesh-architecture`.
+For information how to start using ESP32 and ESP-BLE-MESH, please see the Section :ref:`getting-started-with-ble-mesh`. If you are interested in information on ESP-BLE-MESH architecture, including some details of software implementation, please see Section :doc:`../../api-guides/ble/esp-ble-mesh/ble-mesh-architecture`.
 
 
 Application Examples and Demos
@@ -225,4 +225,3 @@ Composition and Metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. include-build-file:: inc/esp_ble_mesh_cm_data_api.inc
-

@@ -1,10 +1,7 @@
-BluFi
-^^^^^
+Introduction
+==============
 
 :link_to_translation:`zh_CN:[中文]`
-
-Overview
---------
 
 The BluFi for {IDF_TARGET_NAME} is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to {IDF_TARGET_NAME}. Using this information, {IDF_TARGET_NAME} can then connect to an AP or establish a SoftAP.
 
@@ -13,7 +10,7 @@ Fragmenting, data encryption, and checksum verification in the BluFi layer are t
 You can customize symmetric encryption, asymmetric encryption, and checksum support customization. Here we use the DH algorithm for key negotiation, 128-AES algorithm for data encryption, and CRC16 algorithm for checksum verification.
 
 The BluFi Flow
----------------
+===============
 
 The BluFi networking flow includes the configuration of the SoftAP and Station.
 
@@ -46,7 +43,7 @@ The following uses Station as an example to illustrate the core parts of the pro
     2. The data lengths before and after symmetric encryption/decryption must stay the same. It also supports in-place encryption and decryption.
 
 The Flow Chart of BluFi
---------------------------
+========================
 
 .. seqdiag::
     :caption: BluFi Flow Chart
@@ -75,7 +72,7 @@ The Flow Chart of BluFi
 .. _frame_formats:
 
 The Frame Formats Defined in BluFi
------------------------------------
+===================================
 
 The frame formats for the communication between the mobile phone App and {IDF_TARGET_NAME} are defined as follows:
 
@@ -431,7 +428,7 @@ The format of ACK Frame:
    The **CheckSum** field takes two bytes, which is used to check "sequence + data length + clear text data".
 
 The Security Implementation of {IDF_TARGET_NAME}
-------------------------------------------------
+=================================================
 
 1. Securing Data
 
@@ -482,7 +479,7 @@ The data to be encrypted and decrypted must be in the same length. The IV8 is an
 This function is used to compute CheckSum and return a value of CheckSum. BluFi uses the returned value to compare the CheckSum of the frame.
 
 GATT Related Instructions
--------------------------
+==========================
 
 UUID
 >>>>>

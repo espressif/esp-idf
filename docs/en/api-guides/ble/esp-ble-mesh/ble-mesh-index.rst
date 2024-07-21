@@ -1,6 +1,5 @@
-************
-ESP-BLE-MESH
-************
+Introduction
+==============
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -12,7 +11,7 @@ Bluetooth mesh is not a wireless communications technology, but a networking tec
 
 Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
 
-Please see the :doc:`ble-mesh-architecture` for information about the implementation of ESP-BLE-MESH architecture and :doc:`ESP-BLE-MESH API Reference <../../api-reference/bluetooth/esp-ble-mesh>` for information about respective API.
+Please see the :doc:`ble-mesh-architecture` for information about the implementation of ESP-BLE-MESH architecture and :doc:`ESP-BLE-MESH API Reference <../../../api-reference/bluetooth/esp-ble-mesh>` for information about respective API.
 
 ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH.
 
@@ -20,19 +19,19 @@ ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.
 
     .. note::
 
-      If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIFI-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
+      If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIFI-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../../api-reference/network/esp-wifi-mesh>`.
 
 
 .. _getting-started-with-ble-mesh:
 
-Getting Started with ESP-BLE-MESH
-=================================
+Getting Started 
+=================
 
 This section is intended to help you get started with ESP-BLE-MESH for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
 We are going to demonstrate process of setting and operation of a small ESP-BLE-MESH network of three nodes. This process will cover device provisioning and node configuration, and then sending on/off commands to Generic OnOff Server Models on specific nodes.
 
-If you are new to ESP-IDF, please first set up development environment, compile , flash and run example application following top level ESP-IDF :doc:`../../get-started/index` documentation.
+If you are new to ESP-IDF, please first set up development environment, compile , flash and run example application following top level ESP-IDF :doc:`../../../get-started/index` documentation.
 
 
 What You Need
@@ -83,7 +82,7 @@ After the :example:`bluetooth/esp_ble_mesh/onoff_models/onoff_server` example is
 
 Once boards are powered on, the RGB LED on each board should turn **GREEN**.
 
-.. figure:: ../../../_static/ble-mesh-device-power-on.png
+.. figure:: ../../../../_static/ble-mesh-device-power-on.png
     :align: center
 
     ESP-BLE-MESH Devices Power On
@@ -98,7 +97,7 @@ In this section, we will use the **nRF Mesh Android** App to demonstrate how to 
 
 The Scanner is App's functionality to search for unprovisioned devices in range. Open the App, press **Scanner** at the bottom and the search will start. After a short while we should see three unprovisioned devices displayed.
 
-.. figure:: ../../../_static/ble-mesh-scanner.png
+.. figure:: ../../../../_static/ble-mesh-scanner.png
     :align: center
     :height: 370
 
@@ -114,7 +113,7 @@ Users can select any unprovisioned device, then the App will try to set up a con
 
 After the **IDENTIFY** interface button is pressed, users can see the **PROVISION** interface button.
 
-.. figure:: ../../../_static/ble-mesh-identify-provision.png
+.. figure:: ../../../../_static/ble-mesh-identify-provision.png
     :align: center
     :height: 370
 
@@ -132,7 +131,7 @@ Then, the App will try to provision the unprovisioned device. When the device is
 
 When all the procedures are finished, the node is configured properly. And after pressing **OK**, users can see that unicast address is assigned, and Composition Data of the node is decoded successfully.
 
-.. figure:: ../../../_static/ble-mesh-config-complete.png
+.. figure:: ../../../../_static/ble-mesh-config-complete.png
     :align: center
     :height: 370
 
@@ -140,7 +139,7 @@ When all the procedures are finished, the node is configured properly. And after
 
 Sometimes in procedure 2, the App may fail to reconnect with the node. In this case, after pressing **OK**, users can see that only unicast address of the node has been assigned, but no Composition Data has been got. Then users need to press **CONNECT** on the top right, and the previously provisioned node will be displayed on the screen, and users need to choose it and try to connect with the node.
 
-.. figure:: ../../../_static/ble-mesh-initial-config-fail.png
+.. figure:: ../../../../_static/ble-mesh-initial-config-fail.png
     :align: center
     :height: 370
 
@@ -148,7 +147,7 @@ Sometimes in procedure 2, the App may fail to reconnect with the node. In this c
 
 After connecting successfully, the App will show the interface buttons which can be used to get Composition Data and add AppKey.
 
-.. figure:: ../../../_static/ble-mesh-reconnect-initial-config.png
+.. figure:: ../../../../_static/ble-mesh-reconnect-initial-config.png
     :align: center
     :height: 370
 
@@ -161,7 +160,7 @@ Here an example of three devices listed.
 * The left picture shows that the third device is provisioned successfully, but the App failed to connect with it. When it tries to reconnect with the third node, three nodes are displayed on the App.
 * The right picture shows that after connecting with any node successfully, the App displays the information of the three nodes. Users can see that the App has got the Composition Data of the first and the second nodes, but for the third one, only the unicast address has been assigned to it while the Composition Data is unknown.
 
-.. figure:: ../../../_static/ble-mesh-reconnect-three.png
+.. figure:: ../../../../_static/ble-mesh-reconnect-three.png
     :align: center
     :height: 370
 
@@ -174,7 +173,7 @@ When provisioning and initial configuration are finished, users can start to con
 
 Example below shows how to bind AppKey with Generic OnOff Server Model within the Primary Element.
 
-.. figure:: ../../../_static/ble-mesh-model-bind-appkey.png
+.. figure:: ../../../../_static/ble-mesh-model-bind-appkey.png
     :align: center
     :height: 370
 
@@ -191,7 +190,7 @@ After all the Generic OnOff Server Models within the three elements are bound wi
 
 In the :example:`bluetooth/esp_ble_mesh/onoff_models/onoff_server` example, the first Generic OnOff Server Model is used to control the **RED** color, the second one is used to control the **GREEN** color and the third one is used to control the **BLUE** color.
 
-.. figure:: ../../../_static/ble-mesh-generic-onoff.png
+.. figure:: ../../../../_static/ble-mesh-generic-onoff.png
     :align: center
     :height: 370
 
@@ -199,7 +198,7 @@ In the :example:`bluetooth/esp_ble_mesh/onoff_models/onoff_server` example, the 
 
 The following screenshot shows different board with different color on.
 
-.. figure:: ../../../_static/ble-mesh-three-nodes-on.png
+.. figure:: ../../../../_static/ble-mesh-three-nodes-on.png
     :align: center
 
     Three ESP-BLE-MESH Nodes On
@@ -210,8 +209,8 @@ The following screenshot shows different board with different color on.
 
 .. _esp-ble-mesh-examples:
 
-ESP-BLE-MESH Examples
-=====================
+Examples
+=========
 
 * :example_file:`OnOff Server <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_server>`.
 
@@ -230,15 +229,15 @@ ESP-BLE-MESH Examples
 
 .. _esp-ble-mesh-demo-videos:
 
-ESP-BLE-MESH Demo Videos
-========================
+Demo Videos
+============
 
 * `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
 * `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
-ESP-BLE-MESH FAQ
-================
+FAQ
+====
 
 * :ref:`ble-mesh-faq-provisioner-development`
 * :ref:`ble-mesh-faq-node-development`
@@ -253,7 +252,7 @@ Related Documents
 =================
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     ble-mesh-feature-list
     ble-mesh-architecture

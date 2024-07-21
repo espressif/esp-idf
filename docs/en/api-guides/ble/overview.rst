@@ -1,5 +1,5 @@
 Introduction
-------------
+=============
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -175,7 +175,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
 
   Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
 
-  - :doc:`ESP-BLE-MESH documentation <../esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
+  - :doc:`ESP-BLE-MESH documentation <esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
   - :example:`Application examples <bluetooth/esp_ble_mesh>`
 
 
@@ -186,7 +186,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
 
   The BluFi for {IDF_TARGET_NAME} is a Wi-Fi network configuration function via Bluetooth channel. It provides a secure protocol to pass Wi-Fi configuration and credentials to {IDF_TARGET_NAME}. Using this information, {IDF_TARGET_NAME} can then connect to an AP or establish a softAP.
 
-  - :doc:`BluFi documentation <../blufi>`
+  - :doc:`BluFi documentation <blufi>`
   - :example:`Application examples <bluetooth/blufi>`
 
 
