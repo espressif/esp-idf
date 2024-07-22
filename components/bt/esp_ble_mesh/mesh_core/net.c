@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -967,18 +967,36 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
     }
 
     /* Deliver to local network interface if necessary */
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() &&
-        (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-            bt_mesh_elem_find(tx->ctx->addr))) {
-        if (cb && cb->start) {
-            cb->start(0, 0, cb_data);
+    if (((IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en())) &&
+        (bt_mesh_fixed_group_match(tx->ctx->addr) || bt_mesh_elem_find(tx->ctx->addr))) {
+        /**
+         * If the target address isn't a unicast address, then the callback function
+         * will be called by `adv task` in place of here, to avoid the callback function
+         * being called twice.
+         * See BLEMESH24-76 for more details.
+         */
+        if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+            if (cb && cb->start) {
+                cb->start(0, 0, cb_data);
+            }
+
+            net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
+
+            if (cb && cb->end) {
+                cb->end(0, cb_data);
+            }
+
+            k_work_submit(&bt_mesh.local_work);
+
+            goto done;
+        } else {
+            net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
+            k_work_submit(&bt_mesh.local_work);
         }
-        net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
-        if (cb && cb->end) {
-            cb->end(0, cb_data);
-        }
-        k_work_submit(&bt_mesh.local_work);
-    } else if (tx->ctx->send_ttl != 1U) {
+    }
+
+    if (tx->ctx->send_ttl != 1U) {
         /* Deliver to the advertising network interface. Mesh spec
          * 3.4.5.2: "The output filter of the interface connected to
          * advertising or GATT bearers shall drop all messages with
