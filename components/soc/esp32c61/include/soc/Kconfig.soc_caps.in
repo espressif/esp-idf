@@ -7,6 +7,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -388,6 +392,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     default 54
 
 config SOC_TIMER_GROUP_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_TIMER_GROUP_SUPPORT_RC_FAST
     bool
     default y
 

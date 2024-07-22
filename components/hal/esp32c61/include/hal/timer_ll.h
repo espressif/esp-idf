@@ -17,8 +17,6 @@
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_source.h"
 
-// TODO: [ESP32C61] IDF-9306, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -113,10 +111,10 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
     case GPTIMER_CLK_SRC_XTAL:
         clk_id = 0;
         break;
-    case GPTIMER_CLK_SRC_PLL_F80M:
+    case GPTIMER_CLK_SRC_RC_FAST:
         clk_id = 1;
         break;
-    case GPTIMER_CLK_SRC_RC_FAST:
+    case GPTIMER_CLK_SRC_PLL_F80M:
         clk_id = 2;
         break;
     default:
