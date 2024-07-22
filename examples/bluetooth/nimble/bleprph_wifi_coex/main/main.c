@@ -119,7 +119,7 @@ void wifi_init_sta(void)
             .ssid = EXAMPLE_ESP_WIFI_SSID,
             .password = EXAMPLE_ESP_WIFI_PASS,
             /* Setting a password implies station will connect to all security modes including WEP/WPA.
-             * However these modes are deprecated and not advisable to be used. Incase your Access point
+             * However these modes are deprecated and not advisable to be used. In case your Access point
              * doesn't support WPA2, these mode can be enabled by commenting below line */
              .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
@@ -389,7 +389,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         ESP_LOGI(TAG, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
