@@ -4,5 +4,5 @@ cmake_minimum_required(VERSION 3.16)
 
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/bluetooth/nimble/common/nimble_central_utils)
 
-include($ENV{IDF_PATH} / tools / cmake / project.cmake)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(phy_cent)
