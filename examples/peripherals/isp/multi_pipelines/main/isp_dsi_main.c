@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
@@ -16,6 +17,8 @@
 #include "esp_cache.h"
 #include "driver/i2c_master.h"
 #include "driver/isp.h"
+#include "driver/isp_gamma.h"
+#include "driver/isp_sharpen.h"
 #include "isp_af_scheme_sa.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
@@ -175,6 +178,15 @@ static void af_task(void *arg)
     }
 }
 
+/*---------------------------------------------------------------
+                      Gamma Correction
+---------------------------------------------------------------*/
+
+static uint32_t s_gamma_correction_curve(uint32_t x)
+{
+    return pow((double)x / 256, 0.7) * 256;
+}
+
 void app_main(void)
 {
     esp_err_t ret = ESP_FAIL;
@@ -294,6 +306,13 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
     ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
+
+    isp_gamma_curve_points_t pts = {};
+    ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_correction_curve, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_G, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_enable(isp_proc));
 
     esp_isp_sharpen_config_t sharpen_config = {
         .h_freq_coeff = {

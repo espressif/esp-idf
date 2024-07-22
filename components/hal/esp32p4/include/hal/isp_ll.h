@@ -1543,6 +1543,77 @@ static inline void isp_ll_yuv_set_std(isp_dev_t *hw, isp_yuv_conv_std_t std)
     hw->yuv_format.yuv_mode = std;
 }
 
+/*---------------------------------------------------------------
+                      Gamma Correction
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable gamma
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_gamma_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.gamma_en = enable;
+}
+
+/**
+ * @brief Set gamma correction curve for one of the R/G/B components
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] channel One of the R/G/B components, color_component_t
+ * @param[in] pts     Pointer to the structure that contains the information of the gamma curve
+ */
+__attribute__((always_inline))
+static inline void isp_ll_gamma_set_correction_curve(isp_dev_t *hw, color_component_t channel, const isp_gamma_curve_points_t *pts)
+{
+    int ch_index = -1;
+    switch (channel) {
+    case COLOR_COMPONENT_R:
+        ch_index = 0;
+        break;
+    case COLOR_COMPONENT_G:
+        ch_index = 1;
+        break;
+    case COLOR_COMPONENT_B:
+        ch_index = 2;
+        break;
+    default:
+        abort();
+    }
+
+    uint32_t x_prev = 0;
+    uint32_t gamma_x1 = 0, gamma_x2 = 0, gamma_y1 = 0, gamma_y2 = 0, gamma_y3 = 0, gamma_y4 = 0;
+    for (int i = 0; i < ISP_GAMMA_CURVE_POINTS_NUM; i++) {
+        uint32_t x_delta = (i == (ISP_GAMMA_CURVE_POINTS_NUM - 1) ? 256 : pts->pt[i].x) - x_prev;
+        uint32_t power = __builtin_ctz(x_delta);
+        HAL_ASSERT((x_delta & (x_delta - 1)) == 0 && power < 8);
+        if (i < 4) {
+            gamma_x1 |= (power << (21 - i * 3));
+            gamma_y1 |= (pts->pt[i].y << (24 - i * 8));
+        } else if (i < 8) {
+            gamma_x1 |= (power << (21 - i * 3));
+            gamma_y2 |= (pts->pt[i].y << (24 - (i - 4) * 8));
+        } else if (i < 12) {
+            gamma_x2 |= (power << (21 - (i - 8) * 3));
+            gamma_y3 |= (pts->pt[i].y << (24 - (i - 8) * 8));
+        } else {
+            gamma_x2 |= (power << (21 - (i - 8) * 3));
+            gamma_y4 |= (pts->pt[i].y << (24 - (i - 12) * 8));
+        }
+        x_prev = pts->pt[i].x;
+    }
+    hw->gamma_rgb_x[ch_index].gamma_x1.val = gamma_x1;
+    hw->gamma_rgb_x[ch_index].gamma_x2.val = gamma_x2;
+    hw->gamma_rgb_y[ch_index].gamma_y1.val = gamma_y1;
+    hw->gamma_rgb_y[ch_index].gamma_y2.val = gamma_y2;
+    hw->gamma_rgb_y[ch_index].gamma_y3.val = gamma_y3;
+    hw->gamma_rgb_y[ch_index].gamma_y4.val = gamma_y4;
+
+    hw->gamma_ctrl.gamma_update = 1;
+    while (hw->gamma_ctrl.gamma_update);
+}
+
 #ifdef __cplusplus
 }
 #endif

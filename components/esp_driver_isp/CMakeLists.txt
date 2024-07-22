@@ -13,7 +13,8 @@ if(CONFIG_SOC_ISP_SUPPORTED)
                      "src/isp_af.c"
                      "src/isp_ccm.c"
                      "src/isp_awb.c"
-                     "src/isp_ae.c")
+                     "src/isp_ae.c"
+                     "src/isp_gamma.c")
 endif()
 
 if(CONFIG_SOC_ISP_BF_SUPPORTED)
