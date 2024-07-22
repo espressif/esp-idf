@@ -35,7 +35,7 @@ extern "C" {
   *    - ESP_ERR_WIFI_TWT_FULL: no available flow id
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
-esp_err_t esp_wifi_sta_itwt_setup(wifi_twt_setup_config_t *setup_config);
+esp_err_t esp_wifi_sta_itwt_setup(wifi_itwt_setup_config_t *setup_config);
 
 /**
   * @brief     Tear down individual TWT agreements
@@ -181,7 +181,7 @@ esp_err_t esp_wifi_sta_btwt_setup(wifi_btwt_setup_config_t *config);
 esp_err_t esp_wifi_sta_btwt_teardown(uint8_t btwt_id);
 
 /**
-  * @brief     Get number of btwts supported by the connected AP
+  * @brief     Get number of broadcast TWTs supported by the connected AP
   *
   * @param[out] btwt_number  store number of btwts supported by the connected AP
   *
@@ -197,7 +197,7 @@ esp_err_t esp_wifi_sta_get_btwt_num(uint8_t *btwt_number);
   * @brief     Get broadcast TWT information
   *
   * @param[in]    btwt_number As input param, it stores max btwt number AP supported.
-  * @param[in]    btwt_info array to hold the btwt information supported by AP
+  * @param[in]    btwt_info array to hold the btwt information supported by AP, and the array size must be at least as large as the BTWT number.
   *
   * @return
   *    - ESP_OK: succeed
@@ -207,9 +207,9 @@ esp_err_t esp_wifi_sta_get_btwt_num(uint8_t *btwt_number);
 esp_err_t esp_wifi_sta_btwt_get_info(uint8_t btwt_number, esp_wifi_btwt_info_t *btwt_info);
 
 /**
-  * @brief     Set wifi TWT config
+  * @brief     Set WiFi TWT config
   *
-  * @param[in]    config pointer to the wifi TWT configure structure.
+  * @param[in]    config pointer to the WiFi TWT configure structure.
   *
   * @return
   *    - ESP_OK: succeed

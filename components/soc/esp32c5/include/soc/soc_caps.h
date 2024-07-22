@@ -31,7 +31,6 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
-#define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_LP_CORE_SUPPORTED           1
@@ -572,7 +571,7 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
+#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */ // TODO: [ESP32C5] WIFI-6426
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */

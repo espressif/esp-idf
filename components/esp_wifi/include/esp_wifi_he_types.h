@@ -120,27 +120,29 @@ typedef struct {
     uint8_t btwt_id;                  /**< When set up an broadcast TWT agreement, the broadcast twt id will be assigned by AP after a successful agreement setup.
                                          broadcast twt id could be specified to a value in the range of [1, 31], but it might be change by AP in the response.
                                          When change TWT parameters of the existing TWT agreement, broadcast twt id should be an existing one. The value range is [1, 31].*/
-    uint16_t timeout_time_ms;         /**< Timeout times of receving setup action frame response, default 5s*/
+    uint16_t timeout_time_ms;         /**< Timeout times of receiving setup action frame response, default 5s*/
 } wifi_btwt_setup_config_t;
 
 /**
-  * @brief TWT setup config
+  * @brief Individual TWT setup config
   */
 typedef struct {
     wifi_twt_setup_cmds_t setup_cmd;    /**< Indicates the type of TWT command */
-    uint16_t trigger : 1;               /**< 1: a trigger-enabled TWT, 0: a non-trigger-enabled TWT */
-    uint16_t flow_type : 1;             /**< 0: an announced TWT, 1: an unannounced TWT */
+    uint16_t trigger : 1;               /**< 1: a trigger-enabled individual TWT, 0: a non-trigger-enabled individual TWT */
+    uint16_t flow_type : 1;             /**< 0: an announced individual TWT, 1: an unannounced individual TWT */
     uint16_t flow_id : 3;                /**< When set up an individual TWT agreement, the flow id will be assigned by AP after a successful agreement setup.
                                              flow_id could be specified to a value in the range of [0, 7], but it might be changed by AP in the response.
                                              When change TWT parameters of the existing TWT agreement, flow_id should be an existing one. The value range is [0, 7]. */
-    uint16_t wake_invl_expn : 5;        /**< TWT Wake Interval Exponent. The value range is [0, 31]. */
-    uint16_t wake_duration_unit : 1;    /**< TWT Wake duration unit, 0: 256us 1: TU (TU = 1024us)*/
+    uint16_t wake_invl_expn : 5;        /**< Individual TWT Wake Interval Exponent. The value range is [0, 31]. */
+    uint16_t wake_duration_unit : 1;    /**< Individual TWT Wake duration unit, 0: 256us 1: TU (TU = 1024us)*/
     uint16_t reserved : 5;              /**< bit: 11.15 reserved */
-    uint8_t min_wake_dura;              /**< Nominal Minimum Wake Duration, indicates the minimum amount of time, in unit of 256 us, that the TWT requesting STA expects that it needs to be awake. The value range is [1, 255]. */
-    uint16_t wake_invl_mant;            /**< TWT Wake Interval Mantissa. The value range is [1, 65535]. */
-    uint16_t twt_id;                    /**< TWT connection id, the value range is [0, 32767]. */
+    uint8_t min_wake_dura;              /**< Nominal Minimum Wake Duration, indicates the minimum amount of time, in unit of 256 us, that the individual TWT requesting STA expects that it needs to be awake. The value range is [1, 255]. */
+    uint16_t wake_invl_mant;            /**< Individual TWT Wake Interval Mantissa. The value range is [1, 65535]. */
+    uint16_t twt_id;                    /**< Individual TWT connection id, the value range is [0, 32767]. */
     uint16_t timeout_time_ms;           /**< Timeout times of receiving setup action frame response, default 5s*/
 } wifi_twt_setup_config_t;
+
+typedef wifi_twt_setup_config_t wifi_itwt_setup_config_t;
 
 /**
   * @brief HE SU GI and LTF types
@@ -313,14 +315,14 @@ typedef enum {
     BTWT_SETUP_TXFAIL,       /**< station sends btwt setup request frame fail */
     BTWT_SETUP_SUCCESS,      /**< station receives btwt setup response frame and setup btwt sucessfully */
     BTWT_SETUP_TIMEOUT,      /**< timeout of receiving btwt setup response frame */
-    BTWT_SETUP_FULL,         /**< indicate there is no avaliable btwt id */
+    BTWT_SETUP_FULL,         /**< indicate there is no available btwt id */
     BTWT_SETUP_INVALID_ARG,  /**< indicate invalid argument to setup btwt */
     BTWT_SETUP_INTERNAL_ERR, /**< indicate internal error to setup btwt */
 } wifi_btwt_setup_status_t;
 
 /** Argument structure for WIFI_EVENT_TWT_SET_UP event */
 typedef struct {
-    wifi_twt_setup_config_t config;       /**< itwt setup config, this value is determined by the AP */
+    wifi_itwt_setup_config_t config;       /**< itwt setup config, this value is determined by the AP */
     esp_err_t status;                     /**< itwt setup status, 1: indicate setup success, others : indicate setup fail */
     uint8_t reason;                       /**< itwt setup frame tx fail reason */
     uint64_t target_wake_time;            /**< TWT SP start time */
