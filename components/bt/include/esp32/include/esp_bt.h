@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240315
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240722
 
 /**
  * @brief Bluetooth Controller mode
@@ -202,6 +202,7 @@ the advertising packet will be discarded until the memory is restored. */
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
+    .pcm_fsyncshp = CONFIG_BTDM_CTRL_PCM_FSYNCSHP_EFF,                     \
     .hli = BTDM_CTRL_HLI,                                                  \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
@@ -253,6 +254,7 @@ typedef struct {
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index. Configurable in menuconfig */
     uint8_t pcm_role;                       /*!< PCM role (master & slave). Configurable in menuconfig */
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge). Configurable in menuconfig */
+    uint8_t pcm_fsyncshp;                   /*!< Physical shape of the PCM Frame Synchronization signal (stereo mode & mono mode). Configurable in menuconfig */
     bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig */
     uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig */
     bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig */

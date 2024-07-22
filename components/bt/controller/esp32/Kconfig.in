@@ -67,7 +67,7 @@ config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
     default 0
 
 menuconfig BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
-    bool "PCM Signal Config (Role and Polar)"
+    bool "PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono)"
     depends on BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
     default y
 
@@ -95,6 +95,37 @@ choice BTDM_CTRL_PCM_POLAR
         bool "Rising Edge"
 endchoice
 
+choice BTDM_CTRL_PCM_FSYNCSHP
+    prompt "Channel Mode(Stereo/Mono)"
+    depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+    default BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+    help
+        PCM frame synchronization signal shape can be configured as Stereo Mode or Mono Mode.
+        (There are detailed instructions under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/README.md)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+        bool "Stereo Mode"
+        help
+            Stereo Mode(Dual channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK.
+            The FSYNC signal continues until the end of the current channel-data transmission.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_LF
+        bool "Mono Mode 1"
+        help
+            Mono Mode 1(Single channel): FSYNC signal starts to change a CLK clock cycle earlier than the DOUT signal.
+            The FSYNC signal continues for one extra CLK clock cycle.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_FF
+        bool "Mono Mode 2"
+        help
+            Mono Mode 2(Single channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK.
+            The FSYNC signal continues for one extra CLK clock cycle.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+endchoice
+
 config BTDM_CTRL_PCM_ROLE_EFF
     int
     default 0 if BTDM_CTRL_PCM_ROLE_MASTER
@@ -105,6 +136,13 @@ config BTDM_CTRL_PCM_POLAR_EFF
     int
     default 0 if BTDM_CTRL_PCM_POLAR_FALLING_EDGE
     default 1 if BTDM_CTRL_PCM_POLAR_RISING_EDGE
+    default 0
+
+config BTDM_CTRL_PCM_FSYNCSHP_EFF
+    int
+    default 0 if BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+    default 1 if BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_LF
+    default 2 if BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_FF
     default 0
 
 config BTDM_CTRL_AUTO_LATENCY
