@@ -27,7 +27,7 @@ ESP-IDF 应用程序通常在主机上进行构建（交叉编译），然后上
 1. 使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ 可以模拟 FreeRTOS 调度。在此模拟的基础上，在主机上运行应用程序时也会模拟或使用其他 API。
 2. 使用 `CMock <https://www.throwtheswitch.org/cmock>`_ 可以模拟所有依赖文件，并在完全独立的情况下运行代码。
 
-原则上，这两种方法（POSIX/Linux 模拟器和使用 CMock 模拟）可以混用，但此功能在 ESP-IDF 中尚未实现。注意，尽管名称中包含 POSIX/Linux，但目前的 FreeRTOS POSIX/Linux 模拟器也支持在 macOS 系统中运行。在主机上运行 ESP-IDF 应用程序通常用于测试，但模拟环境和模拟依赖文件并不能完全代表目标设备。因此，仍然需要在目标设备上测试，此时测试的侧重点通常在集成和系统测试上。
+注意，尽管名称中包含 POSIX/Linux，但目前的 FreeRTOS POSIX/Linux 模拟器也支持在 macOS 系统中运行。在主机上运行 ESP-IDF 应用程序通常用于测试，但模拟环境和模拟依赖文件并不能完全代表目标设备。因此，仍然需要在目标设备上测试，此时测试的侧重点通常在集成和系统测试上。
 
 .. note::
 
@@ -43,6 +43,18 @@ POSIX/Linux 模拟器的模拟
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ 预览应用程序在目标芯片上的运行效果。使用该模拟器可以在主机上运行 ESP-IDF 组件，并使这类组件可用于在主机上运行的 ESP-IDF 应用程序。目前，只有一部分组件可以在 Linux 上构建。此外，各组件移植到 Linux 上后，其功能可能也会受到限制，或与在芯片目标上构建该组件的功能有所不同。有关所需组件在 Linux 上是否受支持的更多信息，请参阅 :ref:`component-linux-mock-support`。
+
+注意，该模拟器在控制和中断线程时大量依赖于 POSIX 信号和信号处理程序。因此，它具有以下 *限制*：
+
+.. list::
+    - 避免使用不是 *async-signal-safe* 的函数，例如 ``printf()``。特别是，在多个优先级不同的任务中调用这些函数可能会导致崩溃和死锁。
+    - 不是由 FreeRTOS API 函数创建的线程，禁止从中调用任何 FreeRTOS 原语。
+    - 在 FreeRTOS 模拟器中，如果一个任务使用了像 ``select()`` 这样的原生阻塞或等待机制，模拟器可能会错误地将这些任务视为处于 *就绪状态*，然后尝试调度它们执行。实际上，这些任务可能仍然处于阻塞状态。FreeRTOS 对于那些使用了 FreeRTOS API 而被阻塞的任务，调度器只能识别出 *等待状态*。
+    - 当一个模拟的 FreeRTOS 任务调用可能被信号中断的 API 时，这些 API 将持续接收模拟的 FreeRTOS 时钟中断。因此，调用这些 API 的代码应设计为能够处理潜在的中断信号，或者通过链接器进行 API 的包装处理。
+
+由于测试和开发过程会受到这些限制影响，我们期望寻找到更好的解决方案用于在主机上运行 ESP-IDF 应用程序。
+
+此外，请注意，如果您使用的是 ESP-IDF 中的 FreeRTOS 模拟组件（``tools/mocks/freertos``），这些限制不会影响程序运行。但是，该模拟组件也无法执行任何调度。
 
 .. only:: not esp32p4
 
@@ -97,6 +109,7 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
   /lib/x86_64-linux-gnu/libc.so.6(+0x1097dc)[0x7f49f0ecd7dc]
 
 注意，这些地址 (``+0x...``) 是相对的二进制地址，仍然需要转换为源代码行号（见下文）。
+
 另外，回溯信息是由信号处理程序生成的，从回溯信息的第三行开始，才是问题发生的的堆栈帧，而最上面的两个堆栈帧不是导致错误的代码部分所以不重要。
 
 .. code-block::
