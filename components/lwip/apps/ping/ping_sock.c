@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,8 @@ const static char *TAG = "ping_sock";
 
 #define PING_FLAGS_INIT (1 << 0)
 #define PING_FLAGS_START (1 << 1)
+
+#define IP_ICMP_HDR_SIZE (64)   // 64 bytes are enough to cover IP header and ICMP header
 
 typedef struct {
     int sock;
@@ -85,19 +87,21 @@ static esp_err_t esp_ping_send(esp_ping_t *ep)
 
 static int esp_ping_receive(esp_ping_t *ep)
 {
-    char buf[64]; // 64 bytes are enough to cover IP header and ICMP header
+    char buf[IP_ICMP_HDR_SIZE];
     int len = 0;
     struct sockaddr_storage from;
     int fromlen = sizeof(from);
     uint16_t data_head = 0;
+    ip_addr_t recv_addr;
+    ip_addr_copy(recv_addr, *IP_ADDR_ANY);
 
     while ((len = recvfrom(ep->sock, buf, sizeof(buf), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen)) > 0) {
 #if CONFIG_LWIP_IPV4
         if (from.ss_family == AF_INET) {
             // IPv4
             struct sockaddr_in *from4 = (struct sockaddr_in *)&from;
-            inet_addr_to_ip4addr(ip_2_ip4(&ep->recv_addr), &from4->sin_addr);
-            IP_SET_TYPE_VAL(ep->recv_addr, IPADDR_TYPE_V4);
+            inet_addr_to_ip4addr(ip_2_ip4(&recv_addr), &from4->sin_addr);
+            IP_SET_TYPE_VAL(recv_addr, IPADDR_TYPE_V4);
             data_head = (uint16_t)(sizeof(struct ip_hdr) + sizeof(struct icmp_echo_hdr));
         }
 #endif
@@ -105,30 +109,32 @@ static int esp_ping_receive(esp_ping_t *ep)
         if (from.ss_family == AF_INET6) {
             // IPv6
             struct sockaddr_in6 *from6 = (struct sockaddr_in6 *)&from;
-            inet6_addr_to_ip6addr(ip_2_ip6(&ep->recv_addr), &from6->sin6_addr);
-            IP_SET_TYPE_VAL(ep->recv_addr, IPADDR_TYPE_V6);
+            inet6_addr_to_ip6addr(ip_2_ip6(&recv_addr), &from6->sin6_addr);
+            IP_SET_TYPE_VAL(recv_addr, IPADDR_TYPE_V6);
             data_head = (uint16_t)(sizeof(struct ip6_hdr) + sizeof(struct icmp6_echo_hdr));
         }
 #endif
         if (len >= data_head) {
 #if CONFIG_LWIP_IPV4
-            if (IP_IS_V4_VAL(ep->recv_addr)) {              // Currently we process IPv4
+            if (IP_IS_V4_VAL(recv_addr)) {              // Currently we process IPv4
                 struct ip_hdr *iphdr = (struct ip_hdr *)buf;
-                struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
+                struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL_BYTES(iphdr)));
                 if ((iecho->id == ep->packet_hdr->id) && (iecho->seqno == ep->packet_hdr->seqno)) {
+                    ip_addr_copy(ep->recv_addr, recv_addr);
                     ep->received++;
-                    ep->ttl = iphdr->_ttl;
-                    ep->tos = iphdr->_tos;
+                    ep->ttl = IPH_TTL(iphdr);
+                    ep->tos = IPH_TOS(iphdr);
                     ep->recv_len = lwip_ntohs(IPH_LEN(iphdr)) - data_head;  // The data portion of ICMP
                     return len;
                 }
             }
 #endif // CONFIG_LWIP_IPV4
 #if CONFIG_LWIP_IPV6
-            if (IP_IS_V6_VAL(ep->recv_addr)) {      // Currently we process IPv6
+            if (IP_IS_V6_VAL(recv_addr)) {      // Currently we process IPv6
                 struct ip6_hdr *iphdr = (struct ip6_hdr *)buf;
                 struct icmp6_echo_hdr *iecho6 = (struct icmp6_echo_hdr *)(buf + sizeof(struct ip6_hdr)); // IPv6 head length is 40
                 if ((iecho6->id == ep->packet_hdr->id) && (iecho6->seqno == ep->packet_hdr->seqno)) {
+                    ip_addr_copy(ep->recv_addr, recv_addr);
                     ep->received++;
                     ep->recv_len = IP6H_PLEN(iphdr) - sizeof(struct icmp6_echo_hdr); //The data portion of ICMPv6
                     return len;
