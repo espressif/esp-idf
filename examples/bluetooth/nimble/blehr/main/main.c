@@ -184,7 +184,7 @@ static int
 blehr_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed */
         MODLOG_DFLT(INFO, "connection %s; status=%d\n",
                     event->connect.status == 0 ? "established" : "failed",
