@@ -149,11 +149,9 @@ Deep-sleep 唤醒存根
 
 上述所有函数在 :component_file:`esp_hw_support/include/esp_sleep.h` 中声明。
 
-示例
-----
+应用示例
+---------------
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-ESP-IDF 提供了一个实现 Deep-sleep 唤醒存根的示例。
-
-- :example:`system/deep_sleep_wake_stub`
+    - :example:`system/deep_sleep_wake_stub` 演示如何使用 {IDF_TARGET_NAME} 上的深度睡眠唤醒存根，以便在唤醒后立即执行一些任务（唤醒存根代码），然后再返回睡眠状态。
