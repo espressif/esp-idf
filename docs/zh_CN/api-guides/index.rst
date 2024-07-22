@@ -29,6 +29,7 @@ API 指南
    :CONFIG_IDF_TARGET_ARCH_XTENSA: hlinterrupts
    jtag-debugging/index
    linker-script-generation
+   low-power-mode/index
    lwip
    memory-types
    openthread
@@ -45,5 +46,4 @@ API 指南
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security
-   low-power-mode
    :SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED: phy

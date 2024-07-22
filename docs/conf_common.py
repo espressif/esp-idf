@@ -56,7 +56,8 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
 BLUFI_DOCS = ['api-guides/blufi.rst',
               'api-reference/bluetooth/esp_blufi.rst']
 
-WIFI_DOCS = ['api-guides/wifi.rst',
+WIFI_DOCS = ['api-guides/low-power-mode/low-power-mode-wifi.rst',
+             'api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst',
              'api-reference/network/esp_now.rst',
