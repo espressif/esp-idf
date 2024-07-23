@@ -135,7 +135,7 @@ static esp_err_t s_f_mount(sdmmc_card_t *card, FATFS *fs, const char *drv, uint8
         }
 
         ESP_LOGW(TAG, "mounting again");
-        res = f_mount(fs, drv, 0);
+        res = f_mount(fs, drv, 1);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mount failed after formatting (%d)", res);
