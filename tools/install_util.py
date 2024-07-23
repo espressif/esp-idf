@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-
 # This script is used from the $IDF_PATH/install.* scripts. This way the argument parsing can be done at one place and
 # doesn't have to be implemented for all shells.
-
 import argparse
 import json
 import os
@@ -57,7 +54,7 @@ def action_print_help(script_extension: str) -> None:
 
     # extract the list of features from ./requirements.json
     thisdir = os.path.dirname(os.path.realpath(__file__))
-    with open(f'{thisdir}/requirements.json', 'r') as f:
+    with open(f'{thisdir}/requirements.json', 'r', encoding='utf-8') as f:
         json_data = json.load(f)
     features = [feat['name'] for feat in json_data['features']]
 

@@ -23,7 +23,7 @@ def create_temp_files(args):
 
 
 def strip_blank_lines(input_filename, output_filename):
-    with open(input_filename, 'r') as read_from, open(output_filename,'w', newline='') as write_to:
+    with open(input_filename, 'r', encoding='utf-8') as read_from, open(output_filename,'w', newline='', encoding='utf-8') as write_to:
         for line in read_from:
             if not line.isspace():
                 write_to.write(line)
@@ -32,7 +32,7 @@ def strip_blank_lines(input_filename, output_filename):
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
     """
-    with open(input_values_file, 'r') as values_file:
+    with open(input_values_file, 'r', encoding='utf-8') as values_file:
         values_file_reader = csv.reader(values_file, delimiter=',')
         next(values_file_reader)
 
@@ -48,7 +48,7 @@ def verify_keys_exist(values_file_keys, input_config_file):
     """
     keys_missing = []
 
-    with open(input_config_file,'r') as config_file:
+    with open(input_config_file,'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -74,7 +74,7 @@ def verify_datatype_encoding(input_config_file):
     valid_encodings = {'string', 'binary', 'hex2bin','u8', 'i8', 'u16', 'u32', 'i32', 'u64', 'i64','base64'}
     valid_datatypes = {'file','data','namespace'}
 
-    with open(input_config_file,'r') as config_file:
+    with open(input_config_file,'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -90,7 +90,7 @@ def verify_file_data_count(input_config_file, keys_repeat):
     """ Verify count of data on each line in config file is equal to 3
     (as format must be: <key,type and encoding>)
     """
-    with open(input_config_file, 'r') as config_file:
+    with open(input_config_file, 'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -136,7 +136,7 @@ def add_config_data_per_namespace(input_config_file):
     config_data_to_write = []
     config_data_per_namespace = []
 
-    with open(input_config_file,'r') as csv_config_file:
+    with open(input_config_file,'r', encoding='utf-8') as csv_config_file:
         config_file_reader = csv.reader(csv_config_file, delimiter=',')
 
         # `config_data_per_namespace` is added to `config_data_to_write` list after reading next namespace
@@ -182,7 +182,7 @@ def add_data_to_file(config_data_to_write, key_value_pair, output_csv_file):
     header = ['key', 'type', 'encoding', 'value']
     data_to_write = []
 
-    with open(output_csv_file, 'w', newline='') as target_csv_file:
+    with open(output_csv_file, 'w', newline='', encoding='utf-8') as target_csv_file:
         output_file_writer = csv.writer(target_csv_file, delimiter=',')
         output_file_writer.writerow(header)
 
@@ -214,7 +214,7 @@ def create_dir(filetype, output_dir_path):
 
 
 def set_repeat_value(total_keys_repeat, keys, csv_file, target_filename):
-    with open(csv_file, 'r') as read_from, open(target_filename,'w', newline='') as write_to:
+    with open(csv_file, 'r', encoding='utf-8') as read_from, open(target_filename,'w', newline='', encoding='utf-8') as write_to:
         csv_file_reader = csv.reader(read_from, delimiter=',')
         headers = next(csv_file_reader)
         values = next(csv_file_reader)
@@ -247,7 +247,7 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
     config_data_to_write = add_config_data_per_namespace(args.conf)
 
     try:
-        with open(args.values, 'r') as csv_values_file:
+        with open(args.values, 'r', encoding='utf-8') as csv_values_file:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             keys = next(values_file_reader)
 
@@ -258,7 +258,7 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
         else:
             target_values_file = args.values
 
-        with open(target_values_file, 'r') as csv_values_file:
+        with open(target_values_file, 'r', encoding='utf-8') as csv_values_file:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             next(values_file_reader)
 
@@ -341,7 +341,7 @@ def verify_file_format(args):
         raise SystemExit('Error: values file: %s is empty.' % args.values)
 
     # Extract keys from config file
-    with open(args.conf, 'r') as config_file:
+    with open(args.conf, 'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
         for config_data in config_file_reader:
             if 'namespace' not in config_data:
@@ -350,7 +350,7 @@ def verify_file_format(args):
                 keys_repeat.append(config_data[0])
 
     # Extract keys from values file
-    with open(args.values, 'r') as values_file:
+    with open(args.values, 'r', encoding='utf-8') as values_file:
         values_file_reader = csv.reader(values_file, delimiter=',')
         keys_in_values_file = next(values_file_reader)
 

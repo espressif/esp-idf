@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
-# for the linker and a header file.
-#
 # SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+#
+# esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
+# for the linker and a header file.
 import argparse
 import os
 import textwrap
@@ -64,7 +64,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    with open(args.outputfile + '.h', 'w') as f_h, open(args.outputfile + '.ld', 'w') as f_ld:
+    with open(args.outputfile + '.h', 'w', encoding='utf-8') as f_h, open(args.outputfile + '.ld', 'w', encoding='utf-8') as f_ld:
         gen_ld_h_from_sym(args.symfile, f_ld, f_h, int(args.base_addr, 0))
 
 

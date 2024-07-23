@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # Module was moved to the esptool in ESP-IDF v5.2 and relicensed under GPL v2.0 license.
-
-from __future__ import division
-
 import argparse
 import json
 import os
 import subprocess
 import sys
+from typing import List
+from typing import Tuple
 
 
 def main() -> None:
@@ -75,7 +74,7 @@ def main() -> None:
             raise RuntimeError('{} is not a regular file!'.format(file_name))
         return file_name
 
-    files = []
+    files: List[Tuple[int, str]] = []
     if args.files:
         files += [(addr, check_file(f_name)) for addr, f_name in zip(args.files[::2], args.files[1::2])]
 
@@ -89,7 +88,7 @@ def main() -> None:
             '''
             return check_file(os.path.abspath(os.path.join(json_dir, path)))
 
-        with open(args.json) as f:
+        with open(args.json, encoding='utf-8') as f:
             json_content = json.load(f)
 
         if args.bin:
@@ -107,10 +106,10 @@ def main() -> None:
         files += [(addr, process_json_file(f_name)) for addr, f_name in flash_dic.items()]
 
     # remove possible duplicates and sort based on the address
-    files = sorted([(addr, f_name) for addr, f_name in dict(files).items()], key=lambda x: x[0])  # type: ignore
+    files = sorted([(addr, f_name) for addr, f_name in dict(files).items()], key=lambda x: x[0])
 
     # list of tuples to simple list
-    files = [item for t in files for item in t]
+    files_flatten = [item for t in files for item in t]
 
     cmd = [
         sys.executable, '-m', 'esptool',
@@ -125,10 +124,10 @@ def main() -> None:
     if args.md5_disable:
         cmd.append('--md5-disable')
 
-    cmd_str = ' '.join(cmd + files)
+    cmd_str = ' '.join(cmd + files_flatten)
     print(f'Executing: {cmd_str}')
 
-    sys.exit(subprocess.run(cmd + files).returncode)
+    sys.exit(subprocess.run(cmd + files_flatten).returncode)
 
 
 if __name__ == '__main__':

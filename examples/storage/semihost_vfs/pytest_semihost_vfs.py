@@ -47,7 +47,7 @@ def test_semihost_vfs(dut: IdfDut) -> None:
         dut.expect_exact('example: Wrote 2776 bytes')
     dut.expect_exact('====================== HOST DATA START =========================')
 
-    with open(HOST_FILE_PATH) as f:
+    with open(HOST_FILE_PATH, encoding='utf-8') as f:
         for line in f:
             if line.strip():
                 dut.expect_exact(line.strip())
@@ -55,7 +55,7 @@ def test_semihost_vfs(dut: IdfDut) -> None:
     dut.expect_exact('====================== HOST DATA END =========================')
     dut.expect_exact('example: Read 6121 bytes')
 
-    with open(os.path.join(TEMP_DIR, 'esp32_stdout.txt')) as f:
+    with open(os.path.join(TEMP_DIR, 'esp32_stdout.txt'), encoding='utf-8') as f:
 
         def expected_content() -> t.Iterator[str]:
             yield 'example: Switched to semihosted stdout'
