@@ -1730,7 +1730,7 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 		unsigned int curr_chan, const u8 *hdr, const u8 *attr_start,
 		size_t attr_len)
 {
-	struct crypto_key *pi = NULL;
+	struct crypto_ec_key *pi = NULL;
 	size_t secret_len;
 	const u8 *addr[2];
 	size_t len[2];
@@ -2275,7 +2275,7 @@ struct wpabuf *
 dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 		 const u8 *attr_start, size_t attr_len)
 {
-	struct crypto_key *pr;
+	struct crypto_ec_key *pr;
 	size_t secret_len;
 	const u8 *addr[2];
 	size_t len[2];
@@ -3203,7 +3203,7 @@ dpp_build_conf_start(struct dpp_authentication *auth,
 	return buf;
 }
 
-static int dpp_build_jwk(struct wpabuf *buf, const char *name, struct crypto_key *key,
+static int dpp_build_jwk(struct wpabuf *buf, const char *name, struct crypto_ec_key *key,
 			 const char *kid, const struct dpp_curve_params *curve)
 {
 	struct wpabuf *pub;
@@ -3907,7 +3907,7 @@ static int dpp_parse_cred_legacy(struct dpp_config_obj *conf,
 	return 0;
 }
 
-static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
+static struct crypto_ec_key * dpp_parse_jwk(struct json_token *jwk,
 				const struct dpp_curve_params **key_curve)
 {
 	struct json_token *token;
@@ -3915,7 +3915,7 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 	struct wpabuf *x = NULL, *y = NULL;
 	unsigned char *a = NULL;
 	struct crypto_ec_group *group;
-	struct crypto_key *pkey = NULL;
+	struct crypto_ec_key *pkey = NULL;
 	size_t len;
 
 	token = json_get_member(jwk, "kty");
@@ -4077,7 +4077,7 @@ static int dpp_parse_connector(struct dpp_authentication *auth,
 {
 	struct json_token *root, *groups, *netkey, *token;
 	int ret = -1;
-	struct crypto_key *key = NULL;
+	struct crypto_ec_key *key = NULL;
 	const struct dpp_curve_params *curve;
 	unsigned int rules = 0;
 
@@ -4144,7 +4144,7 @@ skip_groups:
 		goto fail;
 	dpp_debug_print_key("DPP: Received netAccessKey", key);
 
-	if (crypto_key_compare(key, auth->own_protocol_key) != 1) {
+	if (crypto_ec_key_compare(key, auth->own_protocol_key) != 1) {
 		wpa_printf(MSG_DEBUG,
 			   "DPP: netAccessKey in connector does not match own protocol key");
 #ifdef CONFIG_TESTING_OPTIONS
@@ -4166,7 +4166,7 @@ fail:
 	return ret;
 }
 
-static void dpp_copy_csign(struct dpp_config_obj *conf, struct crypto_key *csign)
+static void dpp_copy_csign(struct dpp_config_obj *conf, struct crypto_ec_key *csign)
 {
 	unsigned char *der = NULL;
 	int der_len;
@@ -4200,7 +4200,7 @@ static int dpp_parse_cred_dpp(struct dpp_authentication *auth,
 	struct dpp_signed_connector_info info;
 	struct json_token *token, *csign;
 	int ret = -1;
-	struct crypto_key *csign_pub = NULL;
+	struct crypto_ec_key *csign_pub = NULL;
 	const struct dpp_curve_params *key_curve = NULL;
 	const char *signed_connector;
 
@@ -4836,7 +4836,7 @@ dpp_peer_intro(struct dpp_introduction *intro, const char *own_connector,
 	struct json_token *root = NULL, *netkey, *token;
 	struct json_token *own_root = NULL;
 	enum dpp_status_error ret = 255, res;
-	struct crypto_key *own_key = NULL, *peer_key = NULL;
+	struct crypto_ec_key *own_key = NULL, *peer_key = NULL;
 	struct wpabuf *own_key_pub = NULL;
 	const struct dpp_curve_params *curve, *own_curve;
 	struct dpp_signed_connector_info info;

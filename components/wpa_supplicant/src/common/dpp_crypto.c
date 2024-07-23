@@ -74,7 +74,7 @@ const struct dpp_curve_params * dpp_get_curve_group_id(int group_id)
 	return NULL;
 }
 
-void dpp_debug_print_key(const char *title, struct crypto_key *key)
+void dpp_debug_print_key(const char *title, struct crypto_ec_key *key)
 {
     crypto_ec_key_debug_print(title, key);
 }
@@ -146,11 +146,11 @@ int dpp_hmac(size_t hash_len, const u8 *key, size_t key_len,
 	return -1;
 }
 
-struct crypto_key * dpp_set_pubkey_point(struct crypto_key *group_key,
+struct crypto_ec_key * dpp_set_pubkey_point(struct crypto_ec_key *group_key,
 				       const u8 *buf, size_t len)
 {
 	const struct crypto_ec_group *group;
-	struct crypto_key *pkey = NULL;
+	struct crypto_ec_key *pkey = NULL;
 
 	if (len & 1)
 		return NULL;
@@ -165,9 +165,9 @@ struct crypto_key * dpp_set_pubkey_point(struct crypto_key *group_key,
 	return pkey;
 }
 
-struct crypto_key * dpp_gen_keypair(const struct dpp_curve_params *curve)
+struct crypto_ec_key * dpp_gen_keypair(const struct dpp_curve_params *curve)
 {
-	struct crypto_key *key = crypto_ec_key_gen(curve->ike_group);
+	struct crypto_ec_key *key = crypto_ec_key_gen(curve->ike_group);
 
 	wpa_printf(MSG_DEBUG, "DPP: Generating a keypair");
 	dpp_debug_print_key("Own generated key", key);
@@ -175,11 +175,11 @@ struct crypto_key * dpp_gen_keypair(const struct dpp_curve_params *curve)
 	return key;
 }
 
-struct crypto_key * dpp_set_keypair(const struct dpp_curve_params **curve,
+struct crypto_ec_key * dpp_set_keypair(const struct dpp_curve_params **curve,
 					   const u8 *privkey, size_t privkey_len)
 {
 	struct crypto_ec_group *group;
-	struct crypto_key *pkey = crypto_ec_key_parse_priv(privkey, privkey_len);
+	struct crypto_ec_key *pkey = crypto_ec_key_parse_priv(privkey, privkey_len);
 	int id;
 
 	if (!pkey) {
@@ -204,7 +204,7 @@ struct crypto_key * dpp_set_keypair(const struct dpp_curve_params **curve,
 	return pkey;
 }
 
-struct wpabuf * dpp_bootstrap_key_der(struct crypto_key *key)
+struct wpabuf * dpp_bootstrap_key_der(struct crypto_ec_key *key)
 {
 	unsigned char *der = NULL;
 	struct wpabuf *ret = NULL;
@@ -365,7 +365,7 @@ int dpp_derive_k2(const u8 *Nx, size_t Nx_len, u8 *k2,
 	return 0;
 }
 
-int dpp_ecdh(struct crypto_key *own, struct crypto_key *peer,
+int dpp_ecdh(struct crypto_ec_key *own, struct crypto_ec_key *peer,
 		    u8 *secret, size_t *secret_len)
 {
     return crypto_ecdh(own, peer, secret, secret_len);
@@ -442,7 +442,7 @@ fail:
 
 int dpp_get_subject_public_key(struct dpp_bootstrap_info *bi, const u8 *data, size_t data_len)
 {
-	struct crypto_key *pkey;
+	struct crypto_ec_key *pkey;
 	const unsigned char *p;
 	struct crypto_ec_group *group;
 	int id;
@@ -565,7 +565,7 @@ int dpp_derive_bk_ke(struct dpp_authentication *auth)
 	return 0;
 }
 
-struct wpabuf * dpp_get_pubkey_point(struct crypto_key *pkey, int prefix)
+struct wpabuf * dpp_get_pubkey_point(struct crypto_ec_key *pkey, int prefix)
 {
 	int len, res;
 	struct wpabuf *buf;
@@ -604,7 +604,7 @@ struct wpabuf * dpp_get_pubkey_point(struct crypto_key *pkey, int prefix)
 	return buf;
 }
 
-int dpp_check_pubkey_match(struct crypto_key *pub, struct wpabuf *r_hash)
+int dpp_check_pubkey_match(struct crypto_ec_key *pub, struct wpabuf *r_hash)
 {
 	struct wpabuf *uncomp;
 	int res;
@@ -637,7 +637,7 @@ int dpp_check_pubkey_match(struct crypto_key *pub, struct wpabuf *r_hash)
 
 enum dpp_status_error
 dpp_process_signed_connector(struct dpp_signed_connector_info *info,
-			     struct crypto_key *csign_pub, const char *connector)
+			     struct crypto_ec_key *csign_pub, const char *connector)
 {
 	enum dpp_status_error ret = 255;
 	const char *pos, *end, *signed_start, *signed_end;
@@ -776,7 +776,7 @@ dpp_check_signed_connector(struct dpp_signed_connector_info *info,
                            const u8 *csign_key, size_t csign_key_len,
                            const u8 *peer_connector, size_t peer_connector_len)
 {
-	struct crypto_key *csign;
+	struct crypto_ec_key *csign;
 	char *signed_connector = NULL;
 	enum dpp_status_error res = DPP_STATUS_INVALID_CONNECTOR;
 	const unsigned char *p;
@@ -1096,7 +1096,7 @@ int dpp_derive_pmk(const u8 *Nx, size_t Nx_len, u8 *pmk,
 }
 
 int dpp_derive_pmkid(const struct dpp_curve_params *curve,
-			    struct crypto_key *own_key, struct crypto_key *peer_key, u8 *pmkid)
+			    struct crypto_ec_key *own_key, struct crypto_ec_key *peer_key, u8 *pmkid)
 {
 	struct wpabuf *nkx, *pkx;
 	int ret = -1, res;
