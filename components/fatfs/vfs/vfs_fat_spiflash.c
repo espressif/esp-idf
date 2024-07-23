@@ -93,7 +93,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
         free(workbuf);
         workbuf = NULL;
         ESP_LOGI(TAG, "Mounting again");
-        fresult = f_mount(fs, drv, 0);
+        fresult = f_mount(fs, drv, 1);
         if (fresult != FR_OK) {
             result = ESP_FAIL;
             ESP_LOGE(TAG, "f_mount failed after formatting (%d)", fresult);
