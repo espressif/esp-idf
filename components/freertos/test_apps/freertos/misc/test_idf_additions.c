@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,17 @@ static void task_with_caps(void *arg)
     vTaskSuspend(NULL);
 }
 
-TEST_CASE("IDF additions: Task creation with memory caps", "[freertos]")
+static void task_with_caps_self_delete(void *arg)
+{
+    /* Wait for the unity task to indicate that this task should delete itself */
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /* Although it is not recommended to self-delete a task with memory caps but this
+     * is done intentionally to test for memory leaks */
+    vTaskDeleteWithCaps(NULL);
+}
+
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another task", "[freertos]")
 {
     TaskHandle_t task_handle = NULL;
     StackType_t *puxStackBuffer;
@@ -58,6 +68,57 @@ TEST_CASE("IDF additions: Task creation with memory caps", "[freertos]")
     // Delete the task
     vTaskDeleteWithCaps(task_handle);
 }
+
+TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[freertos]")
+{
+    TaskHandle_t task_handle = NULL;
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    // Create a task with caps
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(task_with_caps_self_delete, "task", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &task_handle, UNITY_FREERTOS_CPU, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+    // Get the task's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    // Notify the task to delete itself
+    xTaskNotifyGive(task_handle);
+}
+
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+
+static void task_with_caps_running_on_other_core(void *arg)
+{
+    /* Notify the unity task that this task is running on the other core */
+    xTaskNotifyGive((TaskHandle_t)arg);
+
+    /* We make sure that this task is running on the other core */
+    while (1) {
+        ;
+    }
+}
+
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another core", "[freertos]")
+{
+    TaskHandle_t task_handle = NULL;
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    // Create a task with caps on the other core
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(task_with_caps_running_on_other_core, "task", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &task_handle, !UNITY_FREERTOS_CPU, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+    // Get the task's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    // Wait for the created task to start running
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Delete the task from another core
+    vTaskDeleteWithCaps(task_handle);
+}
+
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos]")
 {
