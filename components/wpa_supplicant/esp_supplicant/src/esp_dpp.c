@@ -102,12 +102,12 @@ static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
     esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_AUTH_TIMEOUT);
 }
 
-void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
-                           uint8_t channel, uint32_t wait_time_ms)
+static esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
+                                           uint8_t channel, uint32_t wait_time_ms)
 {
     wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);;
     if (!req) {
-        return;
+        return ESP_FAIL;;
     }
 
     req->ifx = WIFI_IF_STA;
@@ -122,13 +122,15 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
 
     if (ESP_OK != esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_REQ, channel,
                                          wait_time_ms, req)) {
-        wpa_printf(MSG_ERROR, "DPP: Failed to perfrm offchannel operation");
+        wpa_printf(MSG_ERROR, "DPP: Failed to perform offchannel operation");
         esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         os_free(req);
-        return;
+        return ESP_FAIL;;
     }
 
     os_free(req);
+
+    return ESP_OK;
 }
 
 static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_data)
@@ -175,7 +177,7 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
                                          own_bi, rx_param->channel,
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
-    esp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
+    esp_dpp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                           wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                           rx_param->channel, OFFCHAN_TX_WAIT_TIME);
     eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL,NULL);
@@ -202,7 +204,7 @@ static void gas_query_req_tx(struct dpp_authentication *auth)
     wpa_printf(MSG_DEBUG, "DPP: GAS request to " MACSTR " (chan %u)",
                MAC2STR(auth->peer_mac_addr), auth->curr_chan);
 
-    esp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
+    esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
                           auth->curr_chan, OFFCHAN_TX_WAIT_TIME);
 }
 
