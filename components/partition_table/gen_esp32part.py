@@ -591,7 +591,7 @@ def main():
 
     if input_is_binary:
         output = table.to_csv()
-        with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
+        with sys.stdout if args.output == '-' else open(args.output, 'w', encoding='utf-8') as f:
             f.write(output)
     else:
         output = table.to_binary()

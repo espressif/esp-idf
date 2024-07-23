@@ -69,13 +69,13 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int, ser
 
     if server_file is None:
         server_file = os.path.join(ota_image_dir, 'server_cert.pem')
-        cert_file_handle = open(server_file, 'w+')
+        cert_file_handle = open(server_file, 'w+', encoding='utf-8')
         cert_file_handle.write(server_cert)
         cert_file_handle.close()
 
     if key_file is None:
         key_file = os.path.join(ota_image_dir, 'server_key.pem')
-        key_file_handle = open('server_key.pem', 'w+')
+        key_file_handle = open('server_key.pem', 'w+', encoding='utf-8')
         key_file_handle.write(server_key)
         key_file_handle.close()
 
@@ -90,12 +90,12 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int, ser
 def start_tls1_3_server(ota_image_dir: str, server_port: int) -> subprocess.Popen:
     os.chdir(ota_image_dir)
     server_file = os.path.join(ota_image_dir, 'server_cert.pem')
-    cert_file_handle = open(server_file, 'w+')
+    cert_file_handle = open(server_file, 'w+', encoding='utf-8')
     cert_file_handle.write(server_cert)
     cert_file_handle.close()
 
     key_file = os.path.join(ota_image_dir, 'server_key.pem')
-    key_file_handle = open('server_key.pem', 'w+')
+    key_file_handle = open('server_key.pem', 'w+', encoding='utf-8')
     key_file_handle.write(server_key)
     key_file_handle.close()
 

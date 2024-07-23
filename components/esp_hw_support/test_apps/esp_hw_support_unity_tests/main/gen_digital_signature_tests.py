@@ -67,7 +67,7 @@ def generate_tests_cases(target):  # type: (str) -> None
 
     messages = [random.randrange(0, 1 << max_key_size) for x in range(NUM_MESSAGES)]
 
-    with open('digital_signature_test_cases.h', 'w') as f:
+    with open('digital_signature_test_cases.h', 'w', encoding='utf-8') as f:
         f.write('/*\n')
         year = datetime.datetime.now().year
         f.write(' * SPDX-FileCopyrightText: {year} Espressif Systems (Shanghai) CO LTD\n'.format(year=year))

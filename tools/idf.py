@@ -465,7 +465,7 @@ def init_cli(verbose_output: Optional[List]=None) -> Any:
             # Otherwise, if we built any binaries print a message about
             # how to flash them
             def print_flashing_message(title: str, key: str) -> None:
-                with open(os.path.join(args.build_dir, 'flasher_args.json')) as file:
+                with open(os.path.join(args.build_dir, 'flasher_args.json'), encoding='utf-8') as file:
                     flasher_args: Dict[str, Any] = json.load(file)
 
                 def flasher_path(f: Union[str, 'os.PathLike[str]']) -> str:
@@ -773,7 +773,7 @@ def expand_file_arguments(argv: List[Any]) -> List[Any]:
                 visited.add(rel_path)
 
                 try:
-                    with open(rel_path, 'r') as f:
+                    with open(rel_path, 'r', encoding='utf-8') as f:
                         for line in f:
                             expanded_args.extend(expand_args(shlex.split(line), os.path.dirname(rel_path), file_stack + [file_name]))
                 except IOError:
