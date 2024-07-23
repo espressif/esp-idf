@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include <string.h>
+#include "sys/lock.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
@@ -58,6 +59,28 @@ static void s_c2m_ops(uint32_t vaddr, size_t size)
 }
 #endif
 
+//no ops if ISR context or critical section context
+static void s_acquire_mutex_from_task_context(void)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (xPortCanYield()) {
+        _lock_acquire(&s_mutex);
+        ESP_LOGD(TAG, "mutex is taken");
+    }
+#endif  //#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+}
+
+//no ops if ISR context or critical section context
+static void s_release_mutex_from_task_context(void)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (xPortCanYield()) {
+        _lock_release(&s_mutex);
+        ESP_LOGD(TAG, "mutex is free");
+    }
+#endif  //#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+}
+
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 {
     ESP_RETURN_ON_FALSE_ISR(addr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -88,6 +111,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%" PRIx32 ", or the size: 0x%" PRIx32 " is(are) not aligned with cache line size (0x%" PRIx32 ")B", (uint32_t)addr, (uint32_t)size, cache_line_size);
     }
 
+    s_acquire_mutex_from_task_context();
     if (flags & ESP_CACHE_MSYNC_FLAG_DIR_M2C) {
         ESP_EARLY_LOGV(TAG, "M2C DIR");
 
@@ -117,6 +141,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         assert(valid);
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
     }
+    s_release_mutex_from_task_context();
 
     return ESP_OK;
 }
