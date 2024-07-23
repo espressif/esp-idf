@@ -23,6 +23,7 @@
 #include "lib/spinel/spinel.h"
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
+#include "openthread/platform/time.h"
 #include "platform/exit_code.h"
 #include "spinel_driver.hpp"
 
@@ -443,3 +444,8 @@ void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
     s_radio.SetRxOnWhenIdle(aEnable);
 }
 #endif
+
+uint16_t otPlatTimeGetXtalAccuracy(void)
+{
+    return CONFIG_OPENTHREAD_XTAL_ACCURACY;
+}
