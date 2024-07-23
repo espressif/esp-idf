@@ -45,9 +45,10 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
 
 static esp_err_t lp_i2c_configure_io(gpio_num_t io_num, bool pullup_en)
 {
+    /* Set the IO pin to high to avoid them from toggling from Low to High state during initialization. This can register a spurious I2C start condition. */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_level(io_num, 1), LPI2C_TAG, "LP GPIO failed to set level to high for %d", io_num);
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), LPI2C_TAG, "LP GPIO Init failed for GPIO %d", io_num);
-
     /* Set direction to input+output open-drain mode */
     ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD), LPI2C_TAG, "LP GPIO Set direction failed for %d", io_num);
     /* Disable pulldown on the io pin */
@@ -72,11 +73,15 @@ static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
     /* Verify that the LP I2C GPIOs are valid */
     ESP_RETURN_ON_ERROR(lp_i2c_gpio_is_cfg_valid(sda_io_num, scl_io_num), LPI2C_TAG, "LP I2C GPIO config invalid");
 
-    /* Initialize SDA Pin */
-    ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
+    // NOTE: We always initialize the SCL pin first, then the SDA pin.
+    // This order of initialization is important to avoid any spurious
+    // I2C start conditions on the bus.
 
     /* Initialize SCL Pin */
     ESP_RETURN_ON_ERROR(lp_i2c_configure_io(scl_io_num, scl_pullup_en), LPI2C_TAG, "LP I2C SCL pin config failed");
+
+    /* Initialize SDA Pin */
+    ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
 
     /* Select LP I2C function for the SDA Pin */
     lp_io_dev->gpio[sda_io_num].mcu_sel = 1;
@@ -103,7 +108,7 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
         }
     }
 
-    /* Fetch the clock source fequency */
+    /* Fetch the clock source frequency */
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(source_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq), LPI2C_TAG, "Invalid LP I2C source clock selected");
 
     /* Verify that the I2C_SCLK operates at a frequency 20 times larger than the requested SCL bus frequency */
@@ -140,6 +145,9 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
 
     /* Initialize LP I2C HAL */
     i2c_hal_init(&i2c_hal, lp_i2c_num);
+
+    /* Clear any pending interrupts */
+    i2c_ll_clear_intr_mask(i2c_hal.dev, UINT32_MAX);
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);
