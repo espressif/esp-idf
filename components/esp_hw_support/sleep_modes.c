@@ -642,7 +642,7 @@ FORCE_INLINE_ATTR bool light_sleep_uart_prepare(uint32_t pd_flags, int64_t sleep
 /**
  * These save-restore workaround should be moved to lower layer
  */
-FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
+FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_sleep)
 {
     if (deep_sleep){
         for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
@@ -663,6 +663,13 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
         sleep_enable_cpu_retention();
+#endif
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW && SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN && CONFIG_SPIRAM
+    /* When using SPIRAM on the ESP32-C5, we need to use Cache_WriteBack_All to protect SPIRAM data
+        because the cache powers down when we power down the CPU */
+    if(pd_flags & PMU_SLEEP_PD_CPU) {
+        Cache_WriteBack_All();
+    }
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
@@ -843,7 +850,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     }
 #endif // CONFIG_ULP_COPROC_ENABLED
 
-    misc_modules_sleep_prepare(deep_sleep);
+    misc_modules_sleep_prepare(pd_flags, deep_sleep);
 
 #if SOC_TOUCH_SENSOR_VERSION >= 2
     if (deep_sleep) {
@@ -985,13 +992,20 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             suspend_cache();
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
-#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
-#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
-            if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO) && (pd_flags & PMU_SLEEP_PD_TOP)) {
+#if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
                 /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
-            }
 #endif
+#endif
+#if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
+                /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
+                gpio_ll_hold_en(&GPIO, SPI_CS1_GPIO_NUM);
+#endif
+            }
 #endif
 
 #if SOC_DCDC_SUPPORTED
@@ -1039,14 +1053,21 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
                 esp_sleep_mmu_retention(false);
             }
 #endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
             /* Unhold the SPI CS pin */
-#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+            if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO) && (pd_flags & PMU_SLEEP_PD_TOP)) {
+#if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
-            if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
                 gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
+#endif
+#endif
+#if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
+                gpio_ll_hold_dis(&GPIO, SPI_CS1_GPIO_NUM);
+#endif
             }
 #endif
-#endif
+
             /* Cache Resume 1: Resume cache for continue running*/
             resume_cache();
             resume_timers(pd_flags);

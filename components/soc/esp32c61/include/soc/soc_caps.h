@@ -444,7 +444,7 @@
 //  \#define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (0)
 #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
-
+#define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
 #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
