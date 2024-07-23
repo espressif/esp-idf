@@ -28,9 +28,11 @@ menu "Format"
 
         config BOOTLOADER_LOG_TIMESTAMP_SOURCE_NONE
             bool "None"
-            depends on No  # hide it now, turn it on final MR
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
         config BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS
             bool "Milliseconds Since Boot"
+
     endchoice # BOOTLOADER_LOG_TIMESTAMP_SOURCE
 
 endmenu
