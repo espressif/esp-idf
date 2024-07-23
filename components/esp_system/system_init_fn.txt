@@ -41,7 +41,12 @@ CORE: 100: init_heap in components/heap/heap_caps_init.c on BIT(0)
 CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
 
 CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
-CORE: 103: init_psram in components/esp_psram/esp_psram.c on BIT(0)
+
+# Add the psram to heap, psram vaddr region is reserved when initialising the heap, after
+# psram is initialised (and necessary reservation for psram usage), the rest of the psram
+# will be added to the heap
+CORE: 103: add_psram_to_heap in components/esp_psram/esp_psram.c on BIT(0)
+
 CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 
