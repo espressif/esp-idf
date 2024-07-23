@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import datetime
 import hashlib
@@ -9,11 +8,14 @@ import hmac
 import os
 import random
 import struct
+from typing import Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import _modinv as modinv  # type: ignore
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher
+from cryptography.hazmat.primitives.ciphers import modes
 from cryptography.utils import int_to_bytes
 
 supported_targets = {'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4'}
@@ -41,7 +43,7 @@ def number_as_bignum_words(number):  # type: (int) -> str
     return '{ ' + ', '.join(result) + ' }'
 
 
-def number_as_bytes(number, pad_bits=None):  # type: (int, int) -> bytes
+def number_as_bytes(number, pad_bits=None):  # type: (int, Optional[int]) -> bytes
     """
     Given a number, format as a little endian array of bytes
     """
@@ -67,7 +69,7 @@ def generate_tests_cases(target):  # type: (str) -> None
 
     messages = [random.randrange(0, 1 << max_key_size) for x in range(NUM_MESSAGES)]
 
-    with open('digital_signature_test_cases.h', 'w') as f:
+    with open('digital_signature_test_cases.h', 'w', encoding='utf-8') as f:
         f.write('/*\n')
         year = datetime.datetime.now().year
         f.write(' * SPDX-FileCopyrightText: {year} Espressif Systems (Shanghai) CO LTD\n'.format(year=year))

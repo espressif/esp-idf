@@ -188,7 +188,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r') as f:
+        with open(desc_path, 'r', encoding='utf-8') as f:
             project_desc = json.load(f)
         return project_desc
 

@@ -2,7 +2,6 @@
 #
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import http.client
 import logging
 import os
@@ -133,7 +132,7 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
     ssl_context.check_hostname = False
     ssl_context.load_verify_locations(cadata=server_cert_pem)
 
-    with open(CLIENT_CERT_FILE, 'w') as cert, open(CLIENT_KEY_FILE, 'w') as key:
+    with open(CLIENT_CERT_FILE, 'w', encoding='utf-8') as cert, open(CLIENT_KEY_FILE, 'w', encoding='utf-8') as key:
         cert.write(client_cert_pem)
         key.write(client_key_pem)
 

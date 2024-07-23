@@ -7,11 +7,8 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import argparse
 import binascii
 import errno
@@ -110,7 +107,7 @@ def get_alignment_size_for_type(ptype):
         else:
             # For no secure boot enabled case, app partition must be 4K aligned (min. flash erase size)
             return 0x1000
-    # No specific size alignement requirement as such
+    # No specific size alignment requirement as such
     return 0x1
 
 
@@ -595,7 +592,7 @@ def main():
 
     if input_is_binary:
         output = table.to_csv()
-        with sys.stdout if args.output == '-' else open(args.output, 'w') as f:
+        with sys.stdout if args.output == '-' else open(args.output, 'w', encoding='utf-8') as f:
             f.write(output)
     else:
         output = table.to_binary()

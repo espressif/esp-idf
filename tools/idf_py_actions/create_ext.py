@@ -1,14 +1,12 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import print_function
-
 import os
 import re
 import sys
-from distutils.dir_util import copy_tree
 from typing import Dict
 
 import click
+from distutils.dir_util import copy_tree
 from idf_py_actions.tools import PropertyDict
 
 
@@ -17,7 +15,7 @@ def get_type(action: str) -> str:
 
 
 def replace_in_file(filename: str, pattern: str, replacement: str) -> None:
-    with open(filename, 'r+') as f:
+    with open(filename, 'r+', encoding='utf-8') as f:
         content = f.read()
         overwritten_content = re.sub(pattern, replacement, content, flags=re.M)
         f.seek(0)

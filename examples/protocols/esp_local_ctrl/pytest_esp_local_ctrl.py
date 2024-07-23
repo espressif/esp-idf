@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import logging
 import os
 import re
@@ -22,7 +21,7 @@ def get_sdk_path() -> str:
 class CustomProcess(object):
     def __init__(self, cmd: str, logfile: str, verbose:bool =True) -> None:
         self.verbose = verbose
-        self.f = open(logfile, 'w')
+        self.f = open(logfile, 'w', encoding='utf-8')
         if self.verbose:
             logging.info('Starting {} > {}'.format(cmd, self.f.name))
         self.pexpect_proc = pexpect.spawn(cmd, timeout=60, logfile=self.f, encoding='utf-8', codec_errors='ignore')
