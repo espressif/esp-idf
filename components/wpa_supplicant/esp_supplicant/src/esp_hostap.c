@@ -220,6 +220,7 @@ void *hostap_init(void)
 #ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
+    auth_conf->rsn_override_omit_rsnxe = 1;
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);

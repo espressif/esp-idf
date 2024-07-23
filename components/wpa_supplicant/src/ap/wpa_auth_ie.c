@@ -462,6 +462,13 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 		if (res < 0)
 			return res;
 		pos += res;
+
+		if (wpa_auth->conf.rsn_override_omit_rsnxe)
+			res = 0;
+		else
+			res = wpa_write_rsnxe(&wpa_auth->conf, pos,
+						buf + sizeof(buf) - pos);
+
 		res = wpa_write_rsnxe(&wpa_auth->conf, pos,
 					buf + sizeof(buf) - pos);
 		if (res < 0)

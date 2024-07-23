@@ -171,6 +171,7 @@ struct wpa_auth_config {
 	enum sae_pwe sae_pwe;
 	struct rsn_sppamsdu_sup spp_sup;
 	u8 transition_disable;
+	int rsn_override_omit_rsnxe;
 };
 
 typedef enum {
