@@ -253,7 +253,7 @@ static inline uint32_t spimem_flash_ll_get_tsus_unit_in_cycles(spi_mem_dev_t *de
 {
     uint32_t tsus_unit = 0;
     if (dev->sus_status.flash_pes_dly_256 == 1) {
-        tsus_unit = 128;
+        tsus_unit = 256;
     } else {
         tsus_unit = 4;
     }
@@ -403,7 +403,8 @@ static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
  */
 static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
 {
-    return dev->fsm.st == 0;
+    // s3 has no cmd.mst_st, can use cmd.val instead
+    return dev->cmd.val == 0;
 }
 
 /**
