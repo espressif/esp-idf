@@ -469,7 +469,7 @@ IRAM_ATTR static bool s_dvp_dma_trans_done_callback(dw_gdma_channel_handle_t cha
     dw_gdma_channel_enable_ctrl(chan, true);
 
     if ((dvp_ctlr->trans.buffer != dvp_ctlr->backup_buffer) || dvp_ctlr->bk_buffer_exposed) {
-        esp_err_t ret = esp_cache_msync((void *)(dvp_ctlr->trans.buffer), dvp_ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        esp_err_t ret = esp_cache_msync((void *)(dvp_ctlr->trans.buffer), dvp_ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
         assert(dvp_ctlr->cbs.on_trans_finished);
         if (dvp_ctlr->cbs.on_trans_finished) {
