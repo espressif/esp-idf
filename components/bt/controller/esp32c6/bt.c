@@ -1281,6 +1281,9 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         esp_bt_controller_log_storage(len, addr, end);
 #endif //CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     } else {
+        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL_SAFE(&spinlock);
+        esp_panic_handler_reconfigure_wdts(1000);
         for (int i = 0; i < len; i++) {
             esp_rom_printf("%02x ", addr[i]);
         }
@@ -1288,6 +1291,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         if (end) {
             esp_rom_printf("\n");
         }
+        portEXIT_CRITICAL_SAFE(&spinlock);
     }
 }
 
