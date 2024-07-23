@@ -8,6 +8,7 @@ API Guides
    app_trace
    startup
    :SOC_BLE_SUPPORTED: ble/index
+   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    bootloader
    build-system
    :SOC_SUPPORT_COEXISTENCE: coexist

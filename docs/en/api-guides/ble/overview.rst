@@ -175,7 +175,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
 
   Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
 
-  - :doc:`ESP-BLE-MESH documentation <esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
+  - :doc:`ESP-BLE-MESH documentation <../esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
   - :example:`Application examples <bluetooth/esp_ble_mesh>`
 
 

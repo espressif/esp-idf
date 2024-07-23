@@ -186,7 +186,7 @@ ESP-NimBLE 仅支持低功耗蓝牙，不支持经典蓝牙。
 
   {IDF_TARGET_NAME} 的 BluFi 是通过蓝牙信道进行的 Wi-Fi 网络配置功能。BluFi 提供了将 Wi-Fi 配置和凭据传递给 {IDF_TARGET_NAME} 的安全协议，从而使 {IDF_TARGET_NAME} 连接到 AP 或搭建软 AP。
 
-  - :doc:`BluFi 文档 <../blufi>`
+  - :doc:`BluFi 文档 <blufi>`
   - :example:`应用示例 <bluetooth/blufi>`
 
 

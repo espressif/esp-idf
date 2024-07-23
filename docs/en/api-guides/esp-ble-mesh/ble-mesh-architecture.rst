@@ -22,7 +22,7 @@ This document introduces ESP-BLE-MESH architecture overview, ESP-BLE-MESH archit
 
 Currently ESP-BLE-MESH has implemented most functions of Mesh Profile and all the Client Models defined in Mesh Model specification. Those missing functions/models are under development and will be provided soon. ESP-BLE-MESH architecture has been granted the official Bluetooth `certification <https://launchstudio.bluetooth.com/ListingDetails/76255>`__.
 
-.. figure:: ../../../../_static/esp-ble-mesh-architecture.png
+.. figure:: ../../../_static/esp-ble-mesh-architecture.png
   :align: center
 
   Figure 1.1 ESP-BLE-MESH Architecture Diagram
@@ -217,7 +217,7 @@ The design and implementation of ESP-BLE-MESH architecture is based on layers an
 
 - **Module-based Approach**: Every file implements an independent function that can be called by other programs.
 
-.. figure:: ../../../../_static/esp-ble-mesh-interface.png
+.. figure:: ../../../_static/esp-ble-mesh-interface.png
   :align: center
 
   Figure 2.1 ESP-BLE-MESH Architecture Implementation Diagram

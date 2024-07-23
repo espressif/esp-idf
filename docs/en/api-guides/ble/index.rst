@@ -21,7 +21,7 @@ Profile
   ESP-BLE-MESH
   ^^^^^^^^^^^^^
 
-  - See the :ref:`ESP-BLE-MESH <mesh>` section.
+  - See the :doc:`ESP-BLE-MESH documentation <../esp-ble-mesh/ble-mesh-index>`.
 
 .. only:: SOC_BLUFI_SUPPORTED
 
@@ -32,17 +32,3 @@ Profile
      :maxdepth: 1
 
      blufi
-
-
-.. only:: SOC_BLE_MESH_SUPPORTED
-    
-    .. _mesh:
-       
-    *************
-    ESP-BLE-MESH
-    *************
-
-       .. toctree::
-          :maxdepth: 2
-   
-          esp-ble-mesh/ble-mesh-index

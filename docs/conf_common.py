@@ -34,11 +34,11 @@ BLE_DOCS = ['api-reference/bluetooth/bt_le.rst',
             'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
 
 
-BLE_MESH_DOCS = ['api-guides/ble/esp-ble-mesh/ble-mesh-index.rst',
-                 'api-guides/ble/esp-ble-mesh/ble-mesh-feature-list.rst',
-                 'api-guides/ble/esp-ble-mesh/ble-mesh-terminology.rst',
-                 'api-guides/ble/esp-ble-mesh/ble-mesh-architecture.rst',
-                 'api-guides/ble/esp-ble-mesh/ble-mesh-faq.rst',
+BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-terminology.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-architecture.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
                  'api-reference/bluetooth/esp-ble-mesh.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
