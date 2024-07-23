@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_caps.h"
 #include "soc/soc_caps.h"
@@ -26,6 +27,36 @@ static const char *TAG = "cache";
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+static _lock_t s_mutex;
+#endif
+
+#if SOC_CACHE_WRITEBACK_SUPPORTED
+static void s_c2m_ops(uint32_t vaddr, size_t size)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (!xPortInIsrContext()) {
+        bool valid = true;
+        size_t offset = 0;
+        while (offset < size) {
+            size_t chunk_len = ((size - offset) > CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN) ? CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN : (size - offset);
+            esp_os_enter_critical_safe(&s_spinlock);
+            valid &= cache_hal_writeback_addr(vaddr + offset, chunk_len);
+            esp_os_exit_critical_safe(&s_spinlock);
+            offset += chunk_len;
+        }
+        assert(valid);
+    } else
+#endif
+    {
+        bool valid = false;
+        esp_os_enter_critical_safe(&s_spinlock);
+        valid = cache_hal_writeback_addr(vaddr, size);
+        esp_os_exit_critical_safe(&s_spinlock);
+        assert(valid);
+    }
+}
+#endif
 
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 {
@@ -76,11 +107,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         }
 
 #if SOC_CACHE_WRITEBACK_SUPPORTED
-
-        esp_os_enter_critical_safe(&s_spinlock);
-        valid = cache_hal_writeback_addr(vaddr, size);
-        esp_os_exit_critical_safe(&s_spinlock);
-        assert(valid);
+        s_c2m_ops(vaddr, size);
 
         if (flags & ESP_CACHE_MSYNC_FLAG_INVALIDATE) {
             esp_os_enter_critical_safe(&s_spinlock);
@@ -88,7 +115,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
             esp_os_exit_critical_safe(&s_spinlock);
         }
         assert(valid);
-#endif
+#endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
     }
 
     return ESP_OK;
