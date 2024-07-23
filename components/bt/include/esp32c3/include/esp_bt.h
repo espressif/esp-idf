@@ -391,6 +391,18 @@ typedef enum {
 } esp_power_level_t;
 
 /**
+ * @brief The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ */
+typedef enum {
+    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
+    ESP_BLE_ENHANCED_PWR_TYPE_ADV,
+    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,
+    ESP_BLE_ENHANCED_PWR_TYPE_INIT,
+    ESP_BLE_ENHANCED_PWR_TYPE_CONN,
+    ESP_BLE_ENHANCED_PWR_TYPE_MAX,
+} esp_ble_enhanced_power_type_t;
+
+/**
  * @brief  Set BLE TX power
  *         Connection Tx power should only be set after connection created.
  * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
@@ -406,6 +418,25 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  * @return             >= 0 - Power level, < 0 - Invalid
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
+
+/**
+ * @brief  ENHANCED API for Setting BLE TX power
+ *         Connection Tx power should only be set after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level);
+
+/**
+ * @brief  ENHANCED API of Getting BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
+esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
 /**
  * @brief       Initialize BT controller to allocate task and other resource.
