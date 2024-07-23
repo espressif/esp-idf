@@ -138,7 +138,7 @@ def write_to_c_header(init_key: bytes, k1: bytes, k2_info: bytes, k1_encrypted_3
                       test_data_xts_aes_128: list, k1_encrypted_64: list,
                       xts_test_data_xts_aes_256: list, pubx: bytes,
                       puby: bytes, k1_G_0: bytes, k1_G_1: bytes) -> None:
-    with open('key_manager_test_cases.h', 'w') as file:
+    with open('key_manager_test_cases.h', 'w', encoding='utf-8') as file:
         header_content = """#include <stdint.h>
 
 #define TEST_COUNT 5

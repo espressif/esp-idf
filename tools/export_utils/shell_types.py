@@ -104,7 +104,7 @@ class UnixShell(Shell):
                   'Go to the project directory and run:\n\n  idf.py build"\n'))
 
     def export(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             self.export_file(fd)
         print(f'. {self.script_file_path}')
 
@@ -132,7 +132,7 @@ class BashShell(UnixShell):
         return autocom
 
     def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             # We will use the --init-file option to pass a custom rc file, which will ignore .bashrc,
             # so we need to source .bashrc first.
             bashrc_path = os.path.expanduser('~/.bashrc')
@@ -166,7 +166,7 @@ class ZshShell(UnixShell):
         # If ZDOTDIR is unset, HOME is used instead.
         # https://zsh.sourceforge.io/Doc/Release/Files.html#Startup_002fShutdown-Files
         zdotdir = os.environ.get('ZDOTDIR', str(Path.home()))
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             # We will use the ZDOTDIR env variable to load our custom script in the newly spawned shell
             # so we need to source .zshrc first.
             zshrc_path = Path(zdotdir) / '.zshrc'
@@ -210,7 +210,7 @@ class FishShell(UnixShell):
         return stdout
 
     def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             self.export_file(fd)
 
     def spawn(self) -> None:
@@ -248,7 +248,7 @@ class PowerShell(Shell):
         print(f'{self.script_file_path}')
 
     def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             # fd.write(f'{self.deactivate_cmd}\n')  TODO in upcoming task IDF-10292
             for var, value in self.new_esp_idf_env.items():
                 if var == 'PATH':
@@ -296,7 +296,7 @@ class WinCmd(Shell):
         print(f'call {self.script_file_path}')
 
     def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
+        with open(self.script_file_path, 'w', encoding='utf-8') as fd:
             fd.write('@echo off\n')
             # fd.write(f'{self.deactivate_cmd}\n')  TODO in upcoming task IDF-10292
             for var, value in self.new_esp_idf_env.items():
