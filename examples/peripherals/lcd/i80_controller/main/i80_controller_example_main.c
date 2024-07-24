@@ -9,36 +9,21 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_timer.h"
-#include "esp_heap_caps.h"
+#include "esp_err.h"
+#include "esp_log.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_lcd_touch.h"
 #include "esp_spiffs.h"
 #include "driver/gpio.h"
-#include "driver/i2c.h"
-#include "esp_err.h"
-#include "esp_log.h"
 #include "lvgl.h"
-#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
-#include "esp_lcd_touch_gt911.h"
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
-#include "esp_lcd_touch_tt21100.h"
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
-#include "esp_lcd_touch_ft5x06.h"
-#endif
 
 static const char *TAG = "example";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
-// PCLK frequency can't go too high as the limitation of PSRAM bandwidth
-#define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (2 * 1000 * 1000)
-#else
-#define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
-#endif // CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+#define EXAMPLE_LCD_PIXEL_CLOCK_HZ     CONFIG_EXAMPLE_LCD_PIXEL_CLOCK_HZ
 
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL  1
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
@@ -81,12 +66,6 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_PARAM_BITS         8
 #endif
 
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-#define EXAMPLE_I2C_NUM                 0   // I2C number
-#define EXAMPLE_I2C_SCL                 39
-#define EXAMPLE_I2C_SDA                 40
-#endif
-
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
 #define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
@@ -116,29 +95,6 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     // copy a buffer's content to a specific area of the display
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 }
-
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-static void example_lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
-{
-    uint16_t touchpad_x[1] = {0};
-    uint16_t touchpad_y[1] = {0};
-    uint8_t touchpad_cnt = 0;
-
-    /* Read touch controller data */
-    esp_lcd_touch_read_data(drv->user_data);
-
-    /* Get coordinates */
-    bool touchpad_pressed = esp_lcd_touch_get_coordinates(drv->user_data, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
-
-    if (touchpad_pressed && touchpad_cnt > 0) {
-        data->point.x = touchpad_x[0];
-        data->point.y = touchpad_y[0];
-        data->state = LV_INDEV_STATE_PRESSED;
-    } else {
-        data->state = LV_INDEV_STATE_RELEASED;
-    }
-}
-#endif
 
 static void example_increase_lvgl_tick(void *arg)
 {
@@ -342,64 +298,6 @@ void example_init_lcd_panel(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_h
     *panel = panel_handle;
 }
 
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-void example_init_lcd_touch(esp_lcd_touch_handle_t *tp_handle)
-{
-    esp_lcd_touch_handle_t tp = NULL;
-    esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-
-    const i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = EXAMPLE_I2C_SDA,
-        .scl_io_num = EXAMPLE_I2C_SCL,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 400000,
-    };
-    /* Initialize I2C */
-    ESP_ERROR_CHECK(i2c_param_config(EXAMPLE_I2C_NUM, &i2c_conf));
-    ESP_ERROR_CHECK(i2c_driver_install(EXAMPLE_I2C_NUM, i2c_conf.mode, 0, 0, 0));
-
-#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_TT21100_CONFIG();
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
-#endif
-
-    ESP_LOGI(TAG, "Initialize touch IO (I2C)");
-
-    /* Touch IO handle */
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)EXAMPLE_I2C_NUM, &tp_io_config, &tp_io_handle));
-
-    esp_lcd_touch_config_t tp_cfg = {
-        .x_max = EXAMPLE_LCD_V_RES,
-        .y_max = EXAMPLE_LCD_H_RES,
-        .rst_gpio_num = -1,
-        .int_gpio_num = -1,
-        .flags = {
-            .swap_xy = 1,
-            .mirror_x = 1,
-            .mirror_y = 0,
-        },
-    };
-
-    /* Initialize touch */
-#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
-    ESP_LOGI(TAG, "Initialize touch controller GT911");
-    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, &tp));
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
-    ESP_LOGI(TAG, "Initialize touch controller TT21100");
-    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_tt21100(tp_io_handle, &tp_cfg, &tp));
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
-    ESP_LOGI(TAG, "Initialize touch controller FT5X06");
-    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, &tp));
-#endif
-    *tp_handle = tp;
-}
-#endif // CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-
 void app_main(void)
 {
     static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
@@ -424,11 +322,6 @@ void app_main(void)
 
     esp_lcd_panel_handle_t panel_handle = NULL;
     example_init_lcd_panel(io_handle, &panel_handle);
-
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-    esp_lcd_touch_handle_t tp_handle = NULL;
-    example_init_lcd_touch(&tp_handle);
-#endif // CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
 
     // Stub: user can flush pre-defined pattern to the screen before we turn on the screen or backlight
 
@@ -473,16 +366,6 @@ void app_main(void)
     esp_timer_handle_t lvgl_tick_timer = NULL;
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
-
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-    static lv_indev_drv_t indev_drv;    // Input device driver (Touch)
-    lv_indev_drv_init(&indev_drv);
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.disp = disp;
-    indev_drv.read_cb = example_lvgl_touch_cb;
-    indev_drv.user_data = tp_handle;
-    lv_indev_drv_register(&indev_drv);
-#endif // CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
 
     lvgl_mux = xSemaphoreCreateRecursiveMutex();
     assert(lvgl_mux);

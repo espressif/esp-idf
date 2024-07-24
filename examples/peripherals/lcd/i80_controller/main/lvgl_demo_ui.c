@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -24,7 +24,6 @@ typedef struct {
 } my_timer_context_t;
 
 static my_timer_context_t my_tim_ctx;
-static lv_obj_t *btn;
 static lv_obj_t *arc[3];
 static lv_obj_t *img_logo = NULL;
 static lv_obj_t *img_text = NULL;
@@ -78,9 +77,6 @@ static void anim_timer_cb(lv_timer_t *timer)
     // Delete timer when all animation finished
     if ((count += 5) == 220) {
         lv_timer_del(timer);
-
-        // Enable button
-        lv_obj_clear_state(btn, LV_STATE_DISABLED);
     } else {
         timer_ctx->count_val = count;
     }
@@ -118,15 +114,6 @@ static void start_animation(lv_obj_t *scr)
     my_tim_ctx.count_val = -90;
     my_tim_ctx.scr = scr;
     lv_timer_create(anim_timer_cb, 20, &my_tim_ctx);
-
-    // Disable button
-    lv_obj_add_state(btn, LV_STATE_DISABLED);
-}
-
-static void btn_cb(lv_event_t *e)
-{
-    lv_obj_t *scr = lv_event_get_user_data(e);
-    start_animation(scr);
 }
 
 void example_lvgl_demo_ui(lv_disp_t *disp)
@@ -140,13 +127,6 @@ void example_lvgl_demo_ui(lv_disp_t *disp)
 #elif CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
     lv_img_set_src(img_logo, &esp_logo);
 #endif
-    btn = lv_btn_create(scr);
-    lv_obj_t *lbl = lv_label_create(btn);
-    lv_label_set_text_static(lbl, LV_SYMBOL_REFRESH" SHOW AGAIN");
-    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_20, 0);
-    lv_obj_align(btn, LV_ALIGN_BOTTOM_LEFT, 30, -30);
-    // Button event
-    lv_obj_add_event_cb(btn, btn_cb, LV_EVENT_CLICKED, scr);
 
     start_animation(scr);
 }

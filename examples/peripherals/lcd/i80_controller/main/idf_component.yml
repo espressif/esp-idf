@@ -1,6 +1,2 @@
 dependencies:
-  idf: ">=4.4"
-  lvgl/lvgl: "~8.3.0"
-  esp_lcd_touch_gt911: "^1.0"
-  esp_lcd_touch_tt21100: "^1.0"
-  esp_lcd_touch_ft5x06: "^1.0"
+  lvgl/lvgl: "~8.4.0"
