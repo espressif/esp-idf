@@ -267,3 +267,18 @@ examples/bluetooth/nimble/throughput_app:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
+
+# Remove this special case for esp32c5 after IDF-8638
+examples/bluetooth/nimble/throughput_app/blecent_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: c5 build failed. Fix in IDF-8638
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
