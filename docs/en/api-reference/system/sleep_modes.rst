@@ -466,18 +466,17 @@ Checking Sleep Wakeup Cause
 
     For ext1 wakeup sources, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_ext1_wakeup_status` functions.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
 .. list::
 
-    - :example:`protocols/sntp`: the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
-    - :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
-    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
-    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by various sources supported by the chip (RTC Timer, GPIO, EXT0, EXT1, Touch Sensor, etc.).
-    - :example:`system/light_sleep`: the usage of Light-sleep wakeup triggered by various sources supported by the chip (Timer, GPIO, Touch Sensor, etc.).
-
+    - :example:`protocols/sntp` demonstrates the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
+    - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` demonstrates the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, the touch sensor, supported by {IDF_TARGET_NAME}.
+    - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, the touch sensor, supported by {IDF_TARGET_NAME}.
 
 API Reference
 -------------
