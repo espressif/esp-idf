@@ -69,6 +69,7 @@ typedef struct _protocomm_ble {
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
     unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -135,6 +136,8 @@ typedef struct {
     uint8_t *ble_addr;
     /**  Flag to keep BLE on */
     unsigned keep_ble_on:1;
+    /** BLE Characteristic notify flag */
+    unsigned ble_notify:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -266,6 +269,14 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.channel_id,
                  event->mtu.value);
         transport_simple_ble_set_mtu(event, arg);
+        return 0;
+    case BLE_GAP_EVENT_NOTIFY_TX:
+        ESP_LOGI(TAG, "notify_tx event; conn_handle=%d attr_handle=%d "
+                    "status=%d is_indication=%d",
+                    event->notify_tx.conn_handle,
+                    event->notify_tx.attr_handle,
+                    event->notify_tx.status,
+                    event->notify_tx.indication);
         return 0;
     }
     return 0;
@@ -717,6 +728,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
                                         BLE_GATT_CHR_F_WRITE_ENC;
     }
 
+    if (protoble_internal->ble_notify) {
+        (characteristics + idx)->flags |= BLE_GATT_CHR_F_NOTIFY;
+    }
+
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently
@@ -974,6 +989,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
     protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
 
     simple_ble_cfg_t *ble_config = (simple_ble_cfg_t *) calloc(1, sizeof(simple_ble_cfg_t));
     if (ble_config == NULL) {
