@@ -105,17 +105,38 @@ menu "ESP System Settings"
             similar to that of DRAM region but without DMA. Speed wise RTC fast memory operates on
             APB clock and hence does not have much performance impact.
 
-    config ESP_SYSTEM_USE_EH_FRAME
-        bool "Generate and use eh_frame for backtracing"
-        default n
+    choice ESP_BACKTRACING_METHOD
+        prompt "Backtracing method"
+        default ESP_SYSTEM_NO_BACKTRACE
         depends on IDF_TARGET_ARCH_RISCV
         help
-            Generate DWARF information for each function of the project. These information will parsed and used to
-            perform backtracing when panics occur. Activating this option will activate asynchronous frame unwinding
-            and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary size (20% to
-            100% larger). The main purpose of this option is to be able to have a backtrace parsed and printed by
-            the program itself, regardless of the serial monitor used.
-            This option shall NOT be used for production.
+            Configure how backtracing will be performed at runtime when a panic occurs.
+
+        config ESP_SYSTEM_NO_BACKTRACE
+            bool "No backtracing"
+            help
+                When selected, no backtracing will be performed at runtime. By using idf.py monitor, it
+                is still possible to get a backtrace when a panic occurs.
+
+        config ESP_SYSTEM_USE_EH_FRAME
+            bool "Generate and use eh_frame for backtracing"
+            help
+                Generate DWARF information for each function of the project. These information will parsed and used to
+                perform backtracing when panics occur. Activating this option will activate asynchronous frame
+                unwinding and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary
+                size (20% to 100% larger). The main purpose of this option is to be able to have a backtrace parsed
+                and printed by the program itself, regardless of the serial monitor used.
+                This option shall NOT be used for production.
+
+        config ESP_SYSTEM_USE_FRAME_POINTER
+            bool "Use CPU Frame Pointer register"
+            help
+                This configuration allows the compiler to allocate CPU register s0 as the frame pointer. The main usage
+                of the frame pointer is to be able to generate a backtrace from the panic handler on exception.
+                Enabling this option results in bigger code and slower code since all functions will have to populate
+                this register and won't be able to use it as a general-purpose register anymore.
+
+    endchoice
 
     menu "Memory protection"
 

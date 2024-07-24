@@ -305,6 +305,7 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->addr = (void *) regs->mepc;
 }
 
+#if !CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
 static void panic_print_basic_backtrace(const void *frame, int core)
 {
     // Basic backtrace
@@ -322,6 +323,7 @@ static void panic_print_basic_backtrace(const void *frame, int core)
         }
     }
 }
+#endif
 
 void panic_print_backtrace(const void *frame, int core)
 {
@@ -333,6 +335,9 @@ void panic_print_backtrace(const void *frame, int core)
     } else {
         esp_eh_frame_print_backtrace(frame);
     }
+#elif CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+    extern void esp_fp_print_backtrace(const void*);
+    esp_fp_print_backtrace(frame);
 #else
     panic_print_basic_backtrace(frame, core);
 #endif

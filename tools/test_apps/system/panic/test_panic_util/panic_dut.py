@@ -81,7 +81,6 @@ class PanicTestDut(IdfDut):
             pass
 
     def expect_backtrace(self, corrupted: bool = False) -> None:
-        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
         match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
         if corrupted:
             assert match.group('corrupted')

@@ -75,6 +75,8 @@ void test_setup_coredump_summary(void);
 void test_coredump_summary(void);
 #endif
 
+void test_panic_print_backtrace(void);
+
 #ifdef __cplusplus
 }
 #endif

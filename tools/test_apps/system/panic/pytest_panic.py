@@ -59,6 +59,11 @@ CONFIGS = [
     pytest.param('panic', marks=TARGETS_ALL),
 ]
 
+CONFIGS_BACKTRACE = [
+    # One single-core target and one dual-core target is enough
+    pytest.param('framepointer', marks=[pytest.mark.esp32c3, pytest.mark.esp32p4]),
+]
+
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
@@ -1089,4 +1094,23 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
         config,
         expected_backtrace=None,
         expected_coredump=coredump_pattern
+    )
+
+
+@pytest.mark.parametrize('config', CONFIGS_BACKTRACE, indirect=True)
+@pytest.mark.generic
+def test_panic_print_backtrace(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
+    dut.expect(regex_pattern)
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=[coredump_pattern]
     )
