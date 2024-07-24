@@ -130,6 +130,7 @@ def get_all_apps(
     extra_default_build_targets: t.Optional[t.List[str]] = None,
     modified_components: t.Optional[t.List[str]] = None,
     modified_files: t.Optional[t.List[str]] = None,
+    ignore_app_dependencies_components: t.Optional[t.List[str]] = None,
     ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
 ) -> t.Tuple[t.Set[App], t.Set[App]]:
     """
@@ -165,6 +166,7 @@ def get_all_apps(
             default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
             modified_components=modified_components,
             modified_files=modified_files,
+            ignore_app_dependencies_components=ignore_app_dependencies_components,
             ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
             include_skipped_apps=True,
         ))
