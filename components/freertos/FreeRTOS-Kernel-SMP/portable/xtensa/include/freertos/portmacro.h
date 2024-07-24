@@ -95,6 +95,13 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
 
 BaseType_t xPortCheckIfInISR(void);
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortCheckIfInISR() internally
+ */
+void vPortAssertIfInISR(void);
+
 // ------------------ Critical Sections --------------------
 
 UBaseType_t uxPortEnterCriticalFromISR( void );
@@ -162,6 +169,14 @@ void vPortTCBPreDeleteHook( void *pxTCB );
     portbenchmarkINTERRUPT_RESTORE(0); \
     XTOS_SET_INTLEVEL(0); \
 })
+
+/**
+ * @brief Assert if in ISR context
+ *
+ * TODO: Enable once ISR safe version of vTaskEnter/ExitCritical() is implemented
+ * for single-core SMP FreeRTOS Kernel. (IDF-10540)
+ */
+// #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 /*
 Note: XTOS_RESTORE_INTLEVEL() will overwrite entire PS register on XEA2. So we need ot make the value INTLEVEL field ourselves

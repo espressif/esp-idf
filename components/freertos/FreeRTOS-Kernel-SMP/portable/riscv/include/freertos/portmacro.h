@@ -96,6 +96,13 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
 
 BaseType_t xPortCheckIfInISR(void);
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortCheckIfInISR() internally
+ */
+void vPortAssertIfInISR(void);
+
 // ------------------ Critical Sections --------------------
 
 /*
@@ -168,6 +175,15 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portDISABLE_INTERRUPTS()                    ulPortSetInterruptMask()
 #define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(1)
 #define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
+
+/**
+ * @brief Assert if in ISR context
+ *
+ * TODO: Enable once ISR safe version of vTaskEnter/ExitCritical() is implemented
+ * for single-core SMP FreeRTOS Kernel. (IDF-10540)
+ */
+// #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
 
 // ------------------ Critical Sections --------------------
 

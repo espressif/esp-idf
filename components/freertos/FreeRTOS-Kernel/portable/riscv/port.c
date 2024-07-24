@@ -459,6 +459,12 @@ BaseType_t xPortInIsrContext(void)
 #endif /* (configNUM_CORES > 1) */
 }
 
+void vPortAssertIfInISR(void)
+{
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
+}
+
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
     /* Return the interrupt nexting counter for this core */
