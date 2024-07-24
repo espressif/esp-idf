@@ -2,7 +2,7 @@
 低功耗蓝牙®
 ################
 
-:link_to_translation:`zh_CN:[中文]`
+:link_to_translation:`en:[English]`
 
 *****
 概览
@@ -16,19 +16,8 @@
 蓝牙规范
 **********
 
-.. only:: SOC_BLE_MESH_SUPPORTED
+.. toctree::
+   :maxdepth: 2
 
-  ESP-BLE-MESH
-  ^^^^^^^^^^^^^
-
-  - See the :doc:`ESP-BLE-MESH documentation <../esp-ble-mesh/ble-mesh-index>`.
-
-.. only:: SOC_BLUFI_SUPPORTED
-
-  BluFi
-  ^^^^^
-
-  .. toctree::
-     :maxdepth: 1
-
-     blufi
+   :SOC_BLE_MESH_SUPPORTED: ../esp-ble-mesh/ble-mesh-index
+   :SOC_BLUFI_SUPPORTED: blufi

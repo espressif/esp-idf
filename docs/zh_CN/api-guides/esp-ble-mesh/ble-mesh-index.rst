@@ -238,7 +238,7 @@ Step 5. 运行网络
 
 
 常见问题手册
-===========
+=============
 
 * :ref:`ble-mesh-faq-provisioner-development`
 * :ref:`ble-mesh-faq-node-development`
