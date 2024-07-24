@@ -166,15 +166,24 @@ typedef enum {
 /// Bluetooth peer irk
 #define ESP_PEER_IRK_LEN    16
 
-/// Bluetooth device address
-typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
+// Bluetooth device address
+typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN]; /*!< Bluetooth device address. Typically 6 bytes (48 bits). */
 
-/// BLE device address type
+/**
+ * @brief LE device address type
+ *        - More details in Spec BLUETOOTH CORE SPECIFICATION Version 5.4 Vol 4, Part E.
+ */
 typedef enum {
-    BLE_ADDR_TYPE_PUBLIC        = 0x00,     /*!< Public Device Address */
-    BLE_ADDR_TYPE_RANDOM        = 0x01,     /*!< Random Device Address. To set this address, use the function esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr) */
-    BLE_ADDR_TYPE_RPA_PUBLIC    = 0x02,     /*!< Resolvable Private Address (RPA) with public identity address */
-    BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,     /*!< Resolvable Private Address (RPA) with random identity address. To set this address, use the function esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr) */
+    BLE_ADDR_TYPE_PUBLIC        = 0x00,     /*!< Public Device Address. */
+    BLE_ADDR_TYPE_RANDOM        = 0x01,     /*!< Random Device Address. 
+                                                 - To set this address, use the function `esp_ble_gap_set_rand_addr`. */
+    BLE_ADDR_TYPE_RPA_PUBLIC    = 0x02,     /*!< Resolvable Private Address (RPA) with public identity address.
+                                                 - Controller generates Resolvable Private Address based on the local IRK from the resolving list.
+                                                   If the resolving list contains no matching entry, use the public address. */
+    BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,     /*!< Resolvable Private Address (RPA) with random identity address. 
+                                                 - To set this address, use the function `esp_ble_gap_set_rand_addr`.
+                                                 - Controller generates Resolvable Private Address based on the local IRK from the resolving list.
+                                                   If the resolving list contains no matching entry, use the random address from `esp_ble_gap_set_rand_addr`. */
 } esp_ble_addr_type_t;
 
 /// white list address type
