@@ -167,6 +167,13 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level);
 BaseType_t xPortInIsrContext(void);
 
 /**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortInIsrContext() internally
+ */
+void vPortAssertIfInISR(void);
+
+/**
  * @brief Check if in ISR context from High priority ISRs
  *
  * - Called from High priority ISR
@@ -477,6 +484,11 @@ void vPortTCBPreDeleteHook( void *pxTCB );
  */
 #define portSET_INTERRUPT_MASK_FROM_ISR()                   xPortSetInterruptMaskFromISR()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
+
+/**
+ * @brief Assert if in ISR context
+ */
+#define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 /**
  * @brief Used by FreeRTOS functions to call the correct version of critical section API
