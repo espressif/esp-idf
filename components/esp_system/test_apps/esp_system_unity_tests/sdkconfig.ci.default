@@ -1,5 +1,4 @@
 # Default configuration
 # Used for testing stack smashing protection
 CONFIG_COMPILER_STACK_CHECK=y
-CONFIG_ESP_SLEEP_DEBUG=y
 CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y

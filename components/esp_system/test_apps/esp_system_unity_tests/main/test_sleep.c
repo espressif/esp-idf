@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,6 +32,14 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_cpu.h"
+#endif
+
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #else
@@ -46,7 +55,6 @@ __attribute__((unused)) static struct timeval tv_start, tv_stop;
 TEST_CASE("wake up from light sleep using timer", "[lightsleep]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
-    struct timeval tv_start, tv_stop;
     gettimeofday(&tv_start, NULL);
     esp_light_sleep_start();
     gettimeofday(&tv_stop, NULL);
@@ -292,6 +300,43 @@ TEST_CASE("disable source trigger behavior", "[lightsleep]")
 }
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+#if CONFIG_SPIRAM
+static void test_psram_accessible_after_lightsleep(void)
+{
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+
+    esp_sleep_enable_timer_wakeup(100 * 1000);
+    esp_light_sleep_start();
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+
+    TEST_ASSERT_EQUAL(true, esp_psram_extram_test());
+
+    esp_sleep_set_sleep_context(NULL);
+    esp_restart();
+}
+
+static void restart_for_reinit_psram(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    printf("PSRAM survives after lightsleep test - OK\n");
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test PSRAM survives after lightsleep", "[lightsleep]",
+                          test_psram_accessible_after_lightsleep,
+                          restart_for_reinit_psram);
+#endif
+
 #endif // SOC_LIGHT_SLEEP_SUPPORTED
 
 /////////////////////////// Deep Sleep Test Cases ////////////////////////////////////
