@@ -1643,6 +1643,23 @@ CMake 中不可用的功能
 
 仍然可以使用 ``make flash`` 或者类似的目标来构建和烧录，但是项目 ``sdkconfig`` 不能再用来指定串口和波特率。可以使用环境变量来覆盖串口和波特率的设置，详情请参阅 :ref:`flash-with-ninja-or-make`。
 
+应用示例
+--------------------
+
+- :example:`build_system/wrappers` 演示了如何使用链接器功能在 ESP-IDF 和引导程序中重新定义或覆盖任何公共函数，以修改或扩展函数的默认行为。
+
+- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导程序，提供一个自定义引导程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 KConfig 选项）有条件地覆盖引导程序。
+
+- :example:`build_system/cmake/import_lib` 演示了如何使用 ExternalProject CMake 模块导入和使用第三方库。
+
+- :example:`build_system/cmake/import_prebuilt` 演示了如何将预构建的静态库导入到 ESP-IDF 构建系统中，构建具有依赖关系的组件，并将其链接到主组件，最终输出当前运行的分区。
+
+- :example:`build_system/cmake/idf_as_lib` 演示了如何使用自定义 CMake 项目创建与 :example:`hello world application <get-started/hello_world>` 类似的应用。
+
+- :example:`build_system/cmake/multi_config` 演示了如何从单个代码库构建单个应用的多个配置，这可以方便地为多个相似产品创建固件。
+
+- :example:`build_system/cmake/plugins` 演示了与插件的链接时注册相关的 ESP-IDF 构建系统功能，允许添加某个功能的多个实现，而无需让应用程序了解每个具体的实现。
+
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _Cmake: https://cmake.org
 .. _ninja: https://ninja-build.org

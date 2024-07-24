@@ -1643,6 +1643,23 @@ Flashing from Make
 
 ``make flash`` and similar targets still work to build and flash. However, project ``sdkconfig`` no longer specifies serial port and baud rate. Environment variables can be used to override these. See :ref:`flash-with-ninja-or-make` for more details.
 
+Application Examples
+--------------------
+
+- :example:`build_system/wrappers` demonstrates how to use a linker feature to redefine or override any public function in both ESP-IDF and the bootloader, allowing modification or extension of a function's default behavior.
+
+- :example:`custom_bootloader/bootloader_override` demonstrates how to override the second-stage bootloader from a regular project, providing a custom bootloader that prints an extra message on startup, with the ability to conditionally override the bootloader based on certain conditions like target-dependency or KConfig options.
+
+- :example:`build_system/cmake/import_lib` demonstrates how to import and use third-party libraries using ExternalProject CMake module.
+
+- :example:`build_system/cmake/import_prebuilt` demonstrates how to import a prebuilt static library into the ESP-IDF build system, build a component with dependencies, and link it to the main component, ultimately outputting the current running partition.
+
+- :example:`build_system/cmake/idf_as_lib` demonstrates the creation of an application equivalent to :example:`hello world application <get-started/hello_world>` using a custom CMake project.
+
+- :example:`build_system/cmake/multi_config` demonstrates how to build multiple configurations of a single application from a single codebase, it is useful for creating binaries for multiple similar products.
+
+- :example:`build_system/cmake/plugins` demonstrates features of the ESP-IDF build system related to link time registration of plugins, allowing you to add multiple implementations of a certain feature without the need to make the application aware of all these implementations.
+
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
