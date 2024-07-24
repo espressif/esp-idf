@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Multi Adv Example
 
@@ -11,7 +11,7 @@ It starts 4 types of advertising:
 * Non connectable extended
 * Connectable extended
 * Scannable legacy
-* Legacy withe specified duration(5 sec)
+* Legacy with specified duration(5 sec)
 
 ## How to Use Example
 

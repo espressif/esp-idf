@@ -218,7 +218,7 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst',
                 'api-guides/phy.rst']
 
-ESP32C5_DOCS = ['']
+ESP32C5_DOCS = ['api-guides/phy.rst']
 
 ESP32C61_DOCS = ['']
 

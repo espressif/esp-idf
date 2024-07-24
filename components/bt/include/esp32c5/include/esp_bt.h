@@ -75,6 +75,9 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
+    ESP_PWR_LVL_N24 = 0,              /*!< Corresponding to -24dbm */
+    ESP_PWR_LVL_N21 = 1,              /*!< Corresponding to -21dbm */
+    ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
     ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
     ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
     ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
