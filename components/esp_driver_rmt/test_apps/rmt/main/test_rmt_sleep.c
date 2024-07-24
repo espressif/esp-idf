@@ -115,6 +115,7 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
         TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
     }
 #endif
+    esp_sleep_set_sleep_context(NULL);
 
     TEST_ESP_OK(rmt_enable(tx_channel));
     TEST_ESP_OK(rmt_enable(rx_channel));
