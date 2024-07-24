@@ -494,6 +494,13 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
     if (xQueueReceive(i2c_master->event_queue, &event, ticks_to_wait) == pdTRUE) {
         if (event == I2C_EVENT_DONE) {
             atomic_store(&i2c_master->status, I2C_STATUS_DONE);
+        } else if (event == I2C_EVENT_NACK) {
+            // For i2c nack detected, the i2c transaction not finish.
+            // start->address->nack->stop
+            // So wait the whole transaction finishes, then quit the function.
+            while (i2c_ll_is_bus_busy(hal->dev)) {
+                __asm__ __volatile__("nop");
+            }
         }
         s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
     } else {
