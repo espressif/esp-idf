@@ -143,8 +143,15 @@ ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Blued
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`Bluetooth LE <../../api-reference/bluetooth/bt_le>`
-- :example:`Application examples <bluetooth/bluedroid>`
 
+.. only:: esp32
+
+    - :example:`Bluetooth LE 4.2 Application Examples <bluetooth/bluedroid/ble>`
+
+.. only:: not esp32
+
+    - :example:`Bluetooth LE 4.2 Application Examples <bluetooth/bluedroid/ble>`
+    - :example:`Bluetooth LE 5.0 Application Examples <bluetooth/bluedroid/ble_50>`
 
 ESP-NimBLE
 ^^^^^^^^^^

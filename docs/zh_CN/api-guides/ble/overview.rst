@@ -143,8 +143,15 @@ ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两�
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`低功耗蓝牙 <../../api-reference/bluetooth/bt_le>`
-- :example:`应用程序示例 <bluetooth/bluedroid>`
 
+.. only:: esp32
+
+    - :example:`低功耗蓝牙 4.2 应用程序示例 <bluetooth/bluedroid/ble>`
+
+.. only:: not esp32
+
+    - :example:`低功耗蓝牙 4.2 应用程序示例 <bluetooth/bluedroid/ble>`
+    - :example:`低功耗蓝牙 5.0 应用程序示例 <bluetooth/bluedroid/ble_50>`
 
 ESP-NimBLE
 ^^^^^^^^^^
