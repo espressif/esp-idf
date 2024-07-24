@@ -97,7 +97,9 @@ static void i2s_tx_channel_start(i2s_chan_handle_t handle)
     i2s_hal_tx_enable_dma(&(handle->controller->hal));
     i2s_hal_tx_start_link(&(handle->controller->hal), (uint32_t) handle->dma.desc[0]);
 #endif
-    i2s_hal_tx_start(&(handle->controller->hal));
+    if (!handle->is_etm_start) {
+        i2s_hal_tx_start(&(handle->controller->hal));
+    }
 }
 
 static void i2s_rx_channel_start(i2s_chan_handle_t handle)
@@ -117,12 +119,16 @@ static void i2s_rx_channel_start(i2s_chan_handle_t handle)
     i2s_hal_rx_enable_dma(&(handle->controller->hal));
     i2s_hal_rx_start_link(&(handle->controller->hal), (uint32_t) handle->dma.desc[0]);
 #endif
-    i2s_hal_rx_start(&(handle->controller->hal));
+    if (!handle->is_etm_start) {
+        i2s_hal_rx_start(&(handle->controller->hal));
+    }
 }
 
 static void i2s_tx_channel_stop(i2s_chan_handle_t handle)
 {
-    i2s_hal_tx_stop(&(handle->controller->hal));
+    if (!handle->is_etm_stop) {
+        i2s_hal_tx_stop(&(handle->controller->hal));
+    }
 #if SOC_GDMA_SUPPORTED
     gdma_stop(handle->dma.dma_chan);
 #else
@@ -135,7 +141,9 @@ static void i2s_tx_channel_stop(i2s_chan_handle_t handle)
 
 static void i2s_rx_channel_stop(i2s_chan_handle_t handle)
 {
-    i2s_hal_rx_stop(&(handle->controller->hal));
+    if (!handle->is_etm_stop) {
+        i2s_hal_rx_stop(&(handle->controller->hal));
+    }
 #if SOC_GDMA_SUPPORTED
     gdma_stop(handle->dma.dma_chan);
 #else
