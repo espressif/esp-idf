@@ -1,7 +1,8 @@
-/*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
+/**
+ * @file SPDX-License-Identifier: Apache-2.0
+ * 
+ * @brief SPDX-FileCopyrightText:
+ *        2015-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #ifndef __BTC_GAP_BLE_H__
@@ -12,95 +13,128 @@
 
 #if BTC_DYNAMIC_MEMORY == TRUE
 #include "bta/bta_api.h"
-extern tBTA_BLE_ADV_DATA *gl_bta_adv_data_ptr;
-extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
+extern tBTA_BLE_ADV_DATA *gl_bta_adv_data_ptr;      // Declaration of a pointer called Global Bluetooth Advanced Advertising Data Pointer to the structure Type of Bluetooth Advanced Advertising Data.
+extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;     // Declaration of a pointer called Global Bluetooth Scan Response Data Pointer to the structure Type of Bluetooth Advanced Advertising Data.
 #define gl_bta_adv_data     (*gl_bta_adv_data_ptr)
 #define gl_bta_scan_rsp_data    (*gl_bta_scan_rsp_data_ptr)
 #endif
 
+/**
+ * @brief Macro to check if a parameter x is within the range [min, max].
+ * 
+ * @param x   Parameter to be checked.
+ * @param min Minimum allowed value.
+ * @param max Maximum allowed value.
+ * @return true if x is within the range [min, max], false otherwise.
+ */
 #define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
 
+/**
+ * @brief Bluetooth Generic Access Profile (GAP) action types for Bluetooth Low Energy operations.
+ * 
+ * This enumeration defines various actions supported by BLE, including advertisement,
+ * scanning, connection parameter updates, security operations, and vendor-specific HCI commands.
+ */
 typedef enum {
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
-    BTC_GAP_BLE_ACT_SET_SCAN_PARAM,
-    BTC_GAP_BLE_ACT_START_SCAN,
-    BTC_GAP_BLE_ACT_STOP_SCAN,
-    BTC_GAP_BLE_ACT_START_ADV,
-    BTC_GAP_BLE_ACT_STOP_ADV,
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM = 6,
-    BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,
-    BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
-    BTC_GAP_BLE_ACT_CLEAR_RAND_ADDRESS,
-    BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
-    BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,
-    BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST,
-    BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST,
+    BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,       //Bluetooth GAP action type for configuring advertisement data.
+    BTC_GAP_BLE_ACT_SET_SCAN_PARAM,         //Bluetooth GAP action type for setting scan parameters.
+    BTC_GAP_BLE_ACT_START_SCAN,             //Bluetooth GAP action type for starting scanning.
+    BTC_GAP_BLE_ACT_STOP_SCAN,              //Bluetooth GAP action type for stopping scanning.
+    BTC_GAP_BLE_ACT_START_ADV,              //Bluetooth GAP action type for starting advertising.
+    BTC_GAP_BLE_ACT_STOP_ADV,               //Bluetooth GAP action type for stopping advertising.
+#endif
+//@}
+    BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM = 6,  //Bluetooth GAP action type for updating connection parameters.
+    BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN,       //Bluetooth GAP action type for setting packet data length.
+    BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,       //Bluetooth GAP action type for setting random address.
+    BTC_GAP_BLE_ACT_CLEAR_RAND_ADDRESS,     //Bluetooth GAP action type for clearing random address.
+    BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,   //Bluetooth GAP action type for configuring local privacy.
+    BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,      //Bluetooth GAP action type for configuring local icon.
+    BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST,      //Bluetooth GAP action type for updating white list.
+    BTC_GAP_BLE_ACT_CLEAR_WHITE_LIST,       // Bluetooth GAP action type for clearing white list.
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_SET_CONN_PARAMS,
+    BTC_GAP_BLE_ACT_SET_CONN_PARAMS,        //Bluetooth GAP action type for setting connection parameters.
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_SET_DEV_NAME = 15,
+//@}
+    BTC_GAP_BLE_ACT_SET_DEV_NAME = 15,      //Bluetooth GAP action type for setting device name.
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
-    BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,
+    BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,       //Bluetooth GAP action type for configuring raw advertisement data.
+    BTC_GAP_BLE_ACT_CFG_SCAN_RSP_DATA_RAW,  // Bluetooth GAP action type for configuring raw scan response data.
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_READ_RSSI = 18,
-    BTC_GAP_BLE_SET_ENCRYPTION_EVT,
-    BTC_GAP_BLE_SET_SECURITY_PARAM_EVT,
-    BTC_GAP_BLE_SECURITY_RSP_EVT,
-    BTC_GAP_BLE_PASSKEY_REPLY_EVT,
-    BTC_GAP_BLE_CONFIRM_REPLY_EVT,
-    BTC_GAP_BLE_DISCONNECT_EVT,
-    BTC_GAP_BLE_REMOVE_BOND_DEV_EVT,
-    BTC_GAP_BLE_OOB_REQ_REPLY_EVT,
-    BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT,
-    BTC_GAP_BLE_SC_CR_OOB_DATA_EVT,
-    BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST,
-    BTC_GAP_BLE_SET_AFH_CHANNELS,
+//@}
+    BTC_GAP_BLE_ACT_READ_RSSI = 18,         //Bluetooth GAP action type for reading Received Signal Strength Indication (RSSI).
+    BTC_GAP_BLE_SET_ENCRYPTION_EVT,         //Bluetooth GAP event for setting encryption.
+    BTC_GAP_BLE_SET_SECURITY_PARAM_EVT,     //Bluetooth GAP event for setting security parameters.
+    BTC_GAP_BLE_SECURITY_RSP_EVT,           //Bluetooth GAP event for security response.
+    BTC_GAP_BLE_PASSKEY_REPLY_EVT,          //Bluetooth GAP event for passkey reply.
+    BTC_GAP_BLE_CONFIRM_REPLY_EVT,          //Bluetooth GAP event for confirmation reply.
+    BTC_GAP_BLE_DISCONNECT_EVT,             //Bluetooth GAP event for disconnection.
+    BTC_GAP_BLE_REMOVE_BOND_DEV_EVT,        //Bluetooth GAP event for removing bonded device.
+    BTC_GAP_BLE_OOB_REQ_REPLY_EVT,          //Bluetooth GAP event for Out-of-Band (OOB) request reply.
+    BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT,       //Bluetooth GAP event for Secure Connections OOB request reply.
+    BTC_GAP_BLE_SC_CR_OOB_DATA_EVT,         //Bluetooth GAP event for Secure Connections OOB data.
+    BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST,     //Bluetooth GAP action type for updating duplicate scan exceptional list.
+    BTC_GAP_BLE_SET_AFH_CHANNELS,           //Bluetooth GAP action type for setting Adaptive Frequency Hopping (AFH) channels.
+//@{
+/** if Bluetooth Low Energy 5.0 Feature Support */
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_READ_PHY,
-    BTC_GAP_BLE_SET_PREFERED_DEF_PHY,
-    BTC_GAP_BLE_SET_DEF_PHY,
-    BTC_GAP_BLE_SET_EXT_ADV_RAND_ADDR,
-    BTC_GAP_BLE_SET_EXT_ADV_PARAMS,
-    BTC_GAP_BLE_CFG_EXT_ADV_DATA_RAW,
-    BTC_GAP_BLE_CFG_EXT_SCAN_RSP_DATA_RAW,
-    BTC_GAP_BLE_EXT_ADV_START,
-    BTC_GAP_BLE_EXT_ADV_STOP,
-    BTC_GAP_BLE_EXT_ADV_SET_REMOVE,
-    BTC_GAP_BLE_EXT_ADV_SET_CLEAR,
-    BTC_GAP_BLE_SET_PERIODIC_ADV_PARAMS,
-    BTC_GAP_BLE_CFG_PERIODIC_ADV_DATA_RAW,
-    BTC_GAP_BLE_PERIODIC_ADV_START,
-    BTC_GAP_BLE_PERIODIC_ADV_STOP,
-    BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC,
-    BTC_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL,
-    BTC_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE,
-    BTC_GAP_BLE_PERIODIC_ADV_ADD_DEV_TO_LIST,
-    BTC_GAP_BLE_PERIODIC_REMOVE_ADD_DEV_FROM_LIST,
-    BTC_GAP_BLE_PERIODIC_CLEAR_DEV,
-    BTC_GAP_BLE_SET_EXT_SCAN_PARAMS,
-    BTC_GAP_BLE_START_EXT_SCAN,
-    BTC_GAP_BLE_STOP_EXT_SCAN,
-    BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,
-    BTC_GAP_BLE_DTM_ENH_TX_START,
-    BTC_GAP_BLE_DTM_ENH_RX_START,
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_GET_DEV_NAME,
+    BTC_GAP_BLE_READ_PHY,                   //Bluetooth GAP action type for reading PHY (Physical Layer) information.
+    BTC_GAP_BLE_SET_PREFERED_DEF_PHY,       //Bluetooth GAP action type for setting preferred default PHY.
+    BTC_GAP_BLE_SET_DEF_PHY,                //Bluetooth GAP action type for setting default PHY.
+    BTC_GAP_BLE_SET_EXT_ADV_RAND_ADDR,      //Bluetooth GAP action type for setting extended advertising random address.
+    BTC_GAP_BLE_SET_EXT_ADV_PARAMS,         //Bluetooth GAP action type for setting extended advertising parameters.
+    BTC_GAP_BLE_CFG_EXT_ADV_DATA_RAW,       //Bluetooth GAP action type for configuring raw extended advertising data.
+    BTC_GAP_BLE_CFG_EXT_SCAN_RSP_DATA_RAW,  //Bluetooth GAP action type for configuring raw extended scan response data.
+    BTC_GAP_BLE_EXT_ADV_START,              //Bluetooth GAP action type for starting extended advertising.
+    BTC_GAP_BLE_EXT_ADV_STOP,               //Bluetooth GAP action type for stopping extended advertising.
+    BTC_GAP_BLE_EXT_ADV_SET_REMOVE,         //Bluetooth GAP action type for setting extended advertising set for removal.
+    BTC_GAP_BLE_EXT_ADV_SET_CLEAR,          //Bluetooth GAP action type for clearing extended advertising set.
+    BTC_GAP_BLE_SET_PERIODIC_ADV_PARAMS,    //Bluetooth GAP action type for setting periodic advertising parameters.
+    BTC_GAP_BLE_CFG_PERIODIC_ADV_DATA_RAW,  //Bluetooth GAP action type for configuring raw periodic advertising data.
+    BTC_GAP_BLE_PERIODIC_ADV_START,         //Bluetooth GAP action type for starting periodic advertising.
+    BTC_GAP_BLE_PERIODIC_ADV_STOP,          //Bluetooth GAP action type for stopping periodic advertising.
+    BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC,   //Bluetooth GAP action type for creating periodic advertising synchronization.
+    BTC_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL,   //Bluetooth GAP action type for canceling periodic advertising synchronization.
+    BTC_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE,                //Bluetooth GAP action type for terminating periodic advertising synchronization.
+    BTC_GAP_BLE_PERIODIC_ADV_ADD_DEV_TO_LIST,               //Bluetooth GAP action type for adding device to periodic advertising list.
+    BTC_GAP_BLE_PERIODIC_REMOVE_ADD_DEV_FROM_LIST,          //Bluetooth GAP action type for removing or adding device from/to periodic advertising list.
+    BTC_GAP_BLE_PERIODIC_CLEAR_DEV,         //Bluetooth GAP action type for clearing periodic advertising device.
+    BTC_GAP_BLE_SET_EXT_SCAN_PARAMS,        //Bluetooth GAP action type for setting extended scan parameters.
+    BTC_GAP_BLE_START_EXT_SCAN,             //Bluetooth GAP action type for starting extended scan.
+    BTC_GAP_BLE_STOP_EXT_SCAN,              //Bluetooth GAP action type for stopping extended scan.
+    BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,//Bluetooth GAP action type for setting extended preferred connection parameters.
+    BTC_GAP_BLE_DTM_ENH_TX_START,           //Bluetooth GAP action type for starting Enhanced Data Transmission (DTM) transmit.
+    BTC_GAP_BLE_DTM_ENH_RX_START,           //Bluetooth GAP action type for starting Enhanced Data Transmission (DTM) receive.
+#endif
+//@}
+    BTC_GAP_BLE_ACT_GET_DEV_NAME,           //Bluetooth GAP action type for getting device name.
+/** if Bluetooth Low Energy Periodic Advertising Sync Transfer Feature Support */
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
-    BTC_GAP_BLE_PERIODIC_ADV_RECV_ENABLE,
-    BTC_GAP_BLE_PERIODIC_ADV_SYNC_TRANS,
-    BTC_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS,
-    BTC_GAP_BLE_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS,
-#endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    BTC_GAP_BLE_PERIODIC_ADV_RECV_ENABLE,   //Bluetooth GAP action type for enabling periodic advertising receive.
+    BTC_GAP_BLE_PERIODIC_ADV_SYNC_TRANS,    //Bluetooth GAP action type for periodic advertising synchronization transfer.
+    BTC_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS,// Bluetooth GAP action type for periodic advertising set information transfer.
+    BTC_GAP_BLE_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS,         //Bluetooth GAP action type for setting periodic advertising sync transfer parameters.
+#endif
+//@}
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_DTM_TX_START,
-    BTC_GAP_BLE_DTM_RX_START,
+    BTC_GAP_BLE_DTM_TX_START,               //Bluetooth GAP action type for Data Transfer Mode (DTM) transmit start.
+    BTC_GAP_BLE_DTM_RX_START,               //Bluetooth GAP action type for Data Transfer Mode (DTM) receive start.
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_DTM_STOP,
+//@}
+    BTC_GAP_BLE_DTM_STOP,                   //Bluetooth GAP action type for Data Transfer Mode (DTM) stop.
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_CLEAR_ADV,
+    BTC_GAP_BLE_ACT_CLEAR_ADV,              //Bluetooth GAP action type for clearing advertisement.
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT,
     BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST,
@@ -108,40 +142,49 @@ typedef enum {
     BTC_GAP_BLE_SET_PRIVACY_MODE,
 } btc_gap_ble_act_t;
 
-/* btc_ble_gap_args_t */
+
+/**
+ * @brief Bluetooth Generic Access Profile (GAP) action types for BLE operations.
+ * 
+ * This union defines various structures for handling different BLE operations,
+ * including advertisement, scanning, connection parameter updates, security operations,
+ * and vendor-specific HCI commands.
+ */
 typedef union {
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    //BTC_GAP_BLE_ACT_CFG_ADV_DATA = 0,
+//Structure for configuring advertisement data.
     struct config_adv_data_args {
-        esp_ble_adv_data_t adv_data;
+        esp_ble_adv_data_t adv_data;        //Advertisement data
     } cfg_adv_data;
-    //BTC_GAP_BLE_ACT_SET_SCAN_PARAM,
+//Structure for setting scan parameters.
     struct set_scan_params_args {
-        esp_ble_scan_params_t  scan_params;
+        esp_ble_scan_params_t  scan_params;//Scan parameters
     } set_scan_param;
-    //BTC_GAP_BLE_ACT_START_SCAN,
+ //Structure for starting scanning.
     struct start_scan_args {
-        uint32_t duration;
+        uint32_t duration;                 //Duration of scanning
     } start_scan;
-    //BTC_GAP_BLE_ACT_STOP_SCAN, no args
-    //BTC_GAP_BLE_ACT_START_ADV,
+//Structure for starting advertising.
     struct start_adv_args {
-        esp_ble_adv_params_t adv_params;
+        esp_ble_adv_params_t adv_params;  //Advertising parameters
     } start_adv;
-    //BTC_GAP_BLE_ACT_STOP_ADV, no args
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    //BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM,
+#endif
+//@}
+//Structure for connection parameter update.
     struct conn_update_params_args {
-        esp_ble_conn_update_params_t conn_params;
+        esp_ble_conn_update_params_t conn_params;           //Connection update parameters 
     } conn_update_params;
-    //BTC_GAP_BLE_ACT_SET_PKT_DATA_LEN
+//Structure for setting packet data length.
     struct set_pkt_data_len_args {
-        esp_bd_addr_t remote_device;
-        uint16_t tx_data_length;
+        esp_bd_addr_t remote_device;      //Remote device address
+        uint16_t tx_data_length;          //Transmit data length,For BLE 4.x without Data Length Extension (DLE) support, common default maximum value is 27 bytes (if no negotiated MTU extension).
+                                          //With BLE 5.x and DLE support, common default maximum values can extend up to 251 bytes or more, based on the negotiated MTU (Maximum Transmission Unit) size.
     } set_pkt_data_len;
-    //BTC_GAP_BLE_ACT_SET_RAND_ADDRESS,
+//Structure for setting random address.
     struct set_rand_addr_args {
-        esp_bd_addr_t rand_addr;
+        esp_bd_addr_t rand_addr;          //Random address
     } set_rand_addr;
     // BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT
     struct set_rpa_timeout_args {
@@ -155,22 +198,24 @@ typedef union {
     } add_dev_to_resolving_list;
     //BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     struct cfg_local_privacy_args {
-        bool privacy_enable;
+        bool privacy_enable;            //Enable or disable local privacy.
     } cfg_local_privacy;
-    //BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON,
+//Structure for configuring local icon.
     struct cfg_local_icon_args {
-        uint16_t icon;
+        uint16_t icon;                //Local icon
     } cfg_local_icon;
-    //BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST
+//Structure for updating white list.
     struct update_white_list_args {
-        bool add_remove;
-        esp_bd_addr_t remote_bda;
-        esp_ble_wl_addr_type_t wl_addr_type;
+        bool add_remove;             //Add or remove from white list.
+        esp_bd_addr_t remote_bda;    //Remote device address.
+        esp_ble_wl_addr_type_t wl_addr_type;//White list address type
     } update_white_list;
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST
     struct update_duplicate_exceptional_list_args {
-        uint8_t  subcode;
+        update_duplicate_exceptional_event_type  subcode;
         uint32_t  info_type;
         esp_duplicate_info_t device_info;
     } update_duplicate_exceptional_list;
@@ -182,12 +227,15 @@ typedef union {
         uint16_t slave_latency;
         uint16_t supervision_tout;
     } set_conn_params;
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif
+//@}
     //BTC_GAP_BLE_ACT_SET_DEV_NAME,
     struct set_dev_name_args {
 #define ESP_GAP_DEVICE_NAME_MAX (32)
         char *device_name;
     } set_dev_name;
+//@{
+/** if Bluetooth Low Energy 4.2 Feature Support */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,
     struct config_adv_data_raw_args {
@@ -199,7 +247,8 @@ typedef union {
         uint8_t *raw_scan_rsp;
         uint32_t raw_scan_rsp_len;
     } cfg_scan_rsp_data_raw;
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif
+//@}
     //BTC_GAP_BLE_SET_ENCRYPTION_EVT
     struct set_encryption_args {
         esp_bd_addr_t bd_addr;

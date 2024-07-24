@@ -166,15 +166,42 @@ typedef enum {
 /// Bluetooth peer irk
 #define ESP_PEER_IRK_LEN    16
 
-/// Bluetooth device address
-typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
+// Bluetooth device address
+typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN]; /*!< Bluetooth device address. Typically 6 bytes (48 bits). */
 
-/// BLE device address type
+/**
+ * @brief LE device address type
+ *        - More details in Spec BLUETOOTH CORE SPECIFICATION Version 5.4 Vol 4, Part E.
+ *        - Public Device Address: A 48-bit extended unique identifier that remains constant after being set at the factory. It can be retrieved using `esp_bt_dev_get_address`.
+ *        - Static Random Address: Remains constant once initialized with `esp_ble_gap_set_rand_addr`, and only changes when the device is power cycled.
+ *        - Non-Resolvable Private Address (NRPA): Can be changed at any time using `esp_ble_gap_set_rand_addr`.
+ *        - Resolvable Private Address (RPA):
+ *           - The RPA will auto-update when `CONFIG_BT_BLE_RPA_TIMEOUT`.
+ *           - Using `esp_ble_gap_config_local_privacy` to enable RPA generation and resolution.
+ *           - The controller uses the Local IRK (Identity Resolving Key) to generate an RPA as the device's own address.
+ *           - The controller uses the peer address to find the corresponding Local IRK in the resolving list.
+ *           - To use a unique Local IRK for different peer devices, enable the `CONFIG_BT_BLE_SMP_ID_RESET_ENABLE` configuration and bond with the peer device, then specify the peer address.
+ *           - To use a fixed Local IRK, set the peer address to all zeros.
+ * 
+ *  | address [47:46] |                 Address Type                  |              Corresponding API              |
+ *  |-----------------|-----------------------------------------------|---------------------------------------------|
+ *  |      0b00       | Resolvable private address <br> Address (RPA) | setting `owner address type` to 0x02 or0x03 |
+ *  |      0b01       |  Non-Resolvable Private <br> Address (NRPA)   |        esp_ble_gap_addr_create_nrpa         |
+ *  |      0b11       |             Static Random Address             |       esp_ble_gap_addr_create_static        |
+ * - We use the Big-Endian form to store addresses, e.g.{0xc0, 0xde, 0x52, 0x00, 0x00, 0x01}, the first two bits are `11`.
+ */
 typedef enum {
-    BLE_ADDR_TYPE_PUBLIC        = 0x00,     /*!< Public Device Address */
-    BLE_ADDR_TYPE_RANDOM        = 0x01,     /*!< Random Device Address. To set this address, use the function esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr) */
-    BLE_ADDR_TYPE_RPA_PUBLIC    = 0x02,     /*!< Resolvable Private Address (RPA) with public identity address */
-    BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,     /*!< Resolvable Private Address (RPA) with random identity address. To set this address, use the function esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr) */
+    BLE_ADDR_TYPE_PUBLIC        = 0x00,     /*!< Public Device Address. */
+    BLE_ADDR_TYPE_RANDOM        = 0x01,     /*!< Random Device Address. 
+                                                 - Random Device Address contains Non-resolvable private address (NRPA) and Static random address.
+                                                 - To set this address, use the function `esp_ble_gap_set_rand_addr`. */
+    BLE_ADDR_TYPE_RPA_PUBLIC    = 0x02,     /*!< Resolvable Private Address (RPA) with public identity address.
+                                                 - Controller generates Resolvable Private Address based on the local IRK from the resolving list.
+                                                   If the resolving list contains no matching entry, use the public address. */
+    BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,     /*!< Resolvable Private Address (RPA) with random identity address. 
+                                                 - To set this address, use the function `esp_ble_gap_set_rand_addr`.
+                                                 - Controller generates Resolvable Private Address based on the local IRK from the resolving list.
+                                                   If the resolving list contains no matching entry, use the random address from `esp_ble_gap_set_rand_addr`. */
 } esp_ble_addr_type_t;
 
 /// white list address type

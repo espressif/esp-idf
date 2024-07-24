@@ -17,50 +17,50 @@ extern "C" {
 
 /// GATT Client callback function events
 typedef enum {
-    ESP_GATTC_REG_EVT                 = 0,        /*!< When GATT client is registered, the event comes */
-    ESP_GATTC_UNREG_EVT               = 1,        /*!< When GATT client is unregistered, the event comes */
-    ESP_GATTC_OPEN_EVT                = 2,        /*!< When GATT virtual connection is set up, the event comes */
-    ESP_GATTC_READ_CHAR_EVT           = 3,        /*!< When GATT characteristic is read, the event comes */
-    ESP_GATTC_WRITE_CHAR_EVT          = 4,        /*!< When GATT characteristic write operation completes, the event comes */
-    ESP_GATTC_CLOSE_EVT               = 5,        /*!< When GATT virtual connection is closed, the event comes */
-    ESP_GATTC_SEARCH_CMPL_EVT         = 6,        /*!< When GATT service discovery is completed, the event comes */
-    ESP_GATTC_SEARCH_RES_EVT          = 7,        /*!< When GATT service discovery result is got, the event comes */
-    ESP_GATTC_READ_DESCR_EVT          = 8,        /*!< When GATT characteristic descriptor read completes, the event comes */
-    ESP_GATTC_WRITE_DESCR_EVT         = 9,        /*!< When GATT characteristic descriptor write completes, the event comes */
-    ESP_GATTC_NOTIFY_EVT              = 10,       /*!< When GATT notification or indication arrives, the event comes */
-    ESP_GATTC_PREP_WRITE_EVT          = 11,       /*!< When GATT prepare-write operation completes, the event comes */
-    ESP_GATTC_EXEC_EVT                = 12,       /*!< When write execution completes, the event comes */
-    ESP_GATTC_ACL_EVT                 = 13,       /*!< When ACL connection is up, the event comes */
-    ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< When GATT client ongoing connection is cancelled, the event comes */
-    ESP_GATTC_SRVC_CHG_EVT            = 15,       /*!< When "service changed" occurs, the event comes */
-    ESP_GATTC_ENC_CMPL_CB_EVT         = 17,       /*!< When encryption procedure completes, the event comes */
-    ESP_GATTC_CFG_MTU_EVT             = 18,       /*!< When configuration of MTU completes, the event comes */
-    ESP_GATTC_ADV_DATA_EVT            = 19,       /*!< When advertising of data, the event comes */
-    ESP_GATTC_MULT_ADV_ENB_EVT        = 20,       /*!< When multi-advertising is enabled, the event comes */
-    ESP_GATTC_MULT_ADV_UPD_EVT        = 21,       /*!< When multi-advertising parameters are updated, the event comes */
-    ESP_GATTC_MULT_ADV_DATA_EVT       = 22,       /*!< When multi-advertising data arrives, the event comes */
-    ESP_GATTC_MULT_ADV_DIS_EVT        = 23,       /*!< When multi-advertising is disabled, the event comes */
-    ESP_GATTC_CONGEST_EVT             = 24,       /*!< When GATT connection congestion comes, the event comes */
-    ESP_GATTC_BTH_SCAN_ENB_EVT        = 25,       /*!< When batch scan is enabled, the event comes */
-    ESP_GATTC_BTH_SCAN_CFG_EVT        = 26,       /*!< When batch scan storage is configured, the event comes */
-    ESP_GATTC_BTH_SCAN_RD_EVT         = 27,       /*!< When Batch scan read event is reported, the event comes */
-    ESP_GATTC_BTH_SCAN_THR_EVT        = 28,       /*!< When Batch scan threshold is set, the event comes */
-    ESP_GATTC_BTH_SCAN_PARAM_EVT      = 29,       /*!< When Batch scan parameters are set, the event comes */
-    ESP_GATTC_BTH_SCAN_DIS_EVT        = 30,       /*!< When Batch scan is disabled, the event comes */
-    ESP_GATTC_SCAN_FLT_CFG_EVT        = 31,       /*!< When Scan filter configuration completes, the event comes */
-    ESP_GATTC_SCAN_FLT_PARAM_EVT      = 32,       /*!< When Scan filter parameters are set, the event comes */
-    ESP_GATTC_SCAN_FLT_STATUS_EVT     = 33,       /*!< When Scan filter status is reported, the event comes */
-    ESP_GATTC_ADV_VSC_EVT             = 34,       /*!< When advertising vendor spec content event is reported, the event comes */
-    ESP_GATTC_REG_FOR_NOTIFY_EVT      = 38,       /*!< When register for notification of a service completes, the event comes */
-    ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes */
-    ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the ble physical connection is set up, the event comes */
-    ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the ble physical connection disconnected, the event comes */
-    ESP_GATTC_READ_MULTIPLE_EVT       = 42,       /*!< When the ble characteristic or descriptor multiple complete, the event comes */
-    ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
-    ESP_GATTC_SET_ASSOC_EVT           = 44,       /*!< When the ble gattc set the associated address complete, the event comes */
-    ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the ble get gattc address list in cache finish, the event comes */
-    ESP_GATTC_DIS_SRVC_CMPL_EVT       = 46,       /*!< When the ble discover service complete, the event comes */
-    ESP_GATTC_READ_MULTI_VAR_EVT      = 47,       /*!< When read multiple variable characteristic complete, the event comes */
+    ESP_GATTC_REG_EVT                 = 0,        /*!< When GATT client is registered, the event comes. */
+    ESP_GATTC_UNREG_EVT               = 1,        /*!< When GATT client is unregistered, the event comes. */
+    ESP_GATTC_OPEN_EVT                = 2,        /*!< When GATT virtual connection is set up, the event comes. */
+    ESP_GATTC_READ_CHAR_EVT           = 3,        /*!< When GATT characteristic is read, the event comes. */
+    ESP_GATTC_WRITE_CHAR_EVT          = 4,        /*!< When GATT characteristic write operation completes, the event comes. */
+    ESP_GATTC_CLOSE_EVT               = 5,        /*!< When GATT virtual connection is closed, the event comes. */
+    ESP_GATTC_SEARCH_CMPL_EVT         = 6,        /*!< When GATT service discovery is completed, the event comes. */
+    ESP_GATTC_SEARCH_RES_EVT          = 7,        /*!< When GATT service discovery result is got, the event comes. */
+    ESP_GATTC_READ_DESCR_EVT          = 8,        /*!< When GATT characteristic descriptor read completes, the event comes. */
+    ESP_GATTC_WRITE_DESCR_EVT         = 9,        /*!< When GATT characteristic descriptor write completes, the event comes. */
+    ESP_GATTC_NOTIFY_EVT              = 10,       /*!< When GATT notification or indication arrives, the event comes. */
+    ESP_GATTC_PREP_WRITE_EVT          = 11,       /*!< When GATT prepare-write operation completes, the event comes. */
+    ESP_GATTC_EXEC_EVT                = 12,       /*!< When write execution completes, the event comes. */
+    ESP_GATTC_ACL_EVT                 = 13,       /*!< When ACL connection is up, the event comes. */
+    ESP_GATTC_CANCEL_OPEN_EVT         = 14,       /*!< When GATT client ongoing connection is cancelled, the event comes. */
+    ESP_GATTC_SRVC_CHG_EVT            = 15,       /*!< When `service changed` occurs, the event comes. */
+    ESP_GATTC_ENC_CMPL_CB_EVT         = 17,       /*!< When encryption procedure completes, the event comes. */
+    ESP_GATTC_CFG_MTU_EVT             = 18,       /*!< When configuration of MTU completes, the event comes. */
+    ESP_GATTC_ADV_DATA_EVT            = 19,       /*!< When advertising of data, the event comes. */
+    ESP_GATTC_MULT_ADV_ENB_EVT        = 20,       /*!< When multi-advertising is enabled, the event comes. */
+    ESP_GATTC_MULT_ADV_UPD_EVT        = 21,       /*!< When multi-advertising parameters are updated, the event comes. */
+    ESP_GATTC_MULT_ADV_DATA_EVT       = 22,       /*!< When multi-advertising data arrives, the event comes. */
+    ESP_GATTC_MULT_ADV_DIS_EVT        = 23,       /*!< When multi-advertising is disabled, the event comes. */
+    ESP_GATTC_CONGEST_EVT             = 24,       /*!< When GATT connection congestion comes, the event comes. */
+    ESP_GATTC_BTH_SCAN_ENB_EVT        = 25,       /*!< When batch scan is enabled, the event comes. */
+    ESP_GATTC_BTH_SCAN_CFG_EVT        = 26,       /*!< When batch scan storage is configured, the event comes. */
+    ESP_GATTC_BTH_SCAN_RD_EVT         = 27,       /*!< When batch scan read event is reported, the event comes. */
+    ESP_GATTC_BTH_SCAN_THR_EVT        = 28,       /*!< When batch scan threshold is set, the event comes. */
+    ESP_GATTC_BTH_SCAN_PARAM_EVT      = 29,       /*!< When batch scan parameters are set, the event comes. */
+    ESP_GATTC_BTH_SCAN_DIS_EVT        = 30,       /*!< When batch scan is disabled, the event comes. */
+    ESP_GATTC_SCAN_FLT_CFG_EVT        = 31,       /*!< When scan filter configuration completes, the event comes. */
+    ESP_GATTC_SCAN_FLT_PARAM_EVT      = 32,       /*!< When scan filter parameters are set, the event comes. */
+    ESP_GATTC_SCAN_FLT_STATUS_EVT     = 33,       /*!< When scan filter status is reported, the event comes. */
+    ESP_GATTC_ADV_VSC_EVT             = 34,       /*!< When advertising vendor SPEC content event is reported, the event comes. */
+    ESP_GATTC_REG_FOR_NOTIFY_EVT      = 38,       /*!< When register for notification of a service completes, the event comes. */
+    ESP_GATTC_UNREG_FOR_NOTIFY_EVT    = 39,       /*!< When unregister for notification of a service completes, the event comes. */
+    ESP_GATTC_CONNECT_EVT             = 40,       /*!< When the LE physical connection is set up, the event comes. */
+    ESP_GATTC_DISCONNECT_EVT          = 41,       /*!< When the LE physical connection disconnected, the event comes. */
+    ESP_GATTC_READ_MULTIPLE_EVT       = 42,       /*!< When the LE characteristic or descriptor multiple complete, the event comes. */
+    ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the GATTC command queue full, the event comes. */
+    ESP_GATTC_SET_ASSOC_EVT           = 44,       /*!< When the LE GATTC set the associated address complete, the event comes. */
+    ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the LE get GATTC address list in cache finish, the event comes. */
+    ESP_GATTC_DIS_SRVC_CMPL_EVT       = 46,       /*!< When the LE discover service complete, the event comes. */
+    ESP_GATTC_READ_MULTI_VAR_EVT      = 47,       /*!< When read multiple variable characteristic complete, the event comes. */
 } esp_gattc_cb_event_t;
 
 
@@ -72,257 +72,254 @@ typedef union {
      * @brief ESP_GATTC_REG_EVT
      */
     struct gattc_reg_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t app_id;                /*!< Application id which input in register API */
-    } reg;                              /*!< Gatt client callback param of ESP_GATTC_REG_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t app_id;                /*!< Application ID which input in register API. */
+    } reg;                              /*!< Gatt client callback param of `ESP_GATTC_REG_EVT`. */
 
     /**
      * @brief ESP_GATTC_OPEN_EVT
      */
     struct gattc_open_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        uint16_t mtu;                   /*!< MTU size */
-    } open;                             /*!< Gatt client callback param of ESP_GATTC_OPEN_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+        uint16_t mtu;                   /*!< MTU size. */
+    } open;                             /*!< Gatt client callback param of `ESP_GATTC_OPEN_EVT`. */
 
     /**
      * @brief ESP_GATTC_CLOSE_EVT
      */
     struct gattc_close_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        esp_gatt_conn_reason_t reason;  /*!< The reason of gatt connection close */
-    } close;                            /*!< Gatt client callback param of ESP_GATTC_CLOSE_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+        esp_gatt_conn_reason_t reason;  /*!< The reason of GATT connection close. */
+    } close;                            /*!< Gatt client callback param of `ESP_GATTC_CLOSE_EVT`. */
 
     /**
      * @brief ESP_GATTC_CFG_MTU_EVT
      */
     struct gattc_cfg_mtu_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-        uint16_t mtu;                   /*!< MTU size */
-    } cfg_mtu;                          /*!< Gatt client callback param of ESP_GATTC_CFG_MTU_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        uint16_t mtu;                   /*!< MTU size. */
+    } cfg_mtu;                          /*!< Gatt client callback param of `ESP_GATTC_CFG_MTU_EVT`. */
 
     /**
      * @brief ESP_GATTC_SEARCH_CMPL_EVT
      */
     struct gattc_search_cmpl_evt_param {
-        esp_gatt_status_t status;                     /*!< Operation status */
-        uint16_t conn_id;                             /*!< Connection id */
-        esp_service_source_t searched_service_source; /*!< The source of the service information */
-    } search_cmpl;                                    /*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
+        esp_gatt_status_t status;                     /*!< Operation status. */
+        uint16_t conn_id;                             /*!< Connection ID. */
+        esp_service_source_t searched_service_source; /*!< The source of the service information. */
+    } search_cmpl;                                    /*!< Gatt client callback param of `ESP_GATTC_SEARCH_CMPL_EVT`. */
 
     /**
      * @brief ESP_GATTC_SEARCH_RES_EVT
      */
     struct gattc_search_res_evt_param {
-        uint16_t conn_id;               /*!< Connection id */
-        uint16_t start_handle;          /*!< Service start handle */
-        uint16_t end_handle;            /*!< Service end handle */
-        esp_gatt_id_t srvc_id;          /*!< Service id, include service uuid and other information */
-        bool      is_primary;           /*!< True if this is the primary service */
-    } search_res;                       /*!< Gatt client callback param of ESP_GATTC_SEARCH_RES_EVT */
+        uint16_t conn_id;               /*!< Connection ID. */
+        uint16_t start_handle;          /*!< Service start handle. */
+        uint16_t end_handle;            /*!< Service end handle. */
+        esp_gatt_id_t srvc_id;          /*!< Service ID, include service uuid and other information. */
+        bool      is_primary;           /*!< True if this is the primary service. */
+    } search_res;                       /*!< Gatt client callback param of `ESP_GATTC_SEARCH_RES_EVT`. */
 
     /**
      * @brief ESP_GATTC_READ_CHAR_EVT, ESP_GATTC_READ_DESCR_EVT, ESP_GATTC_READ_MULTIPLE_EVT, ESP_GATTC_READ_MULTI_VAR_EVT
      */
     struct gattc_read_char_evt_param {
 
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-        uint16_t handle;                /*!< Characteristic handle */
-        uint8_t *value;                 /*!< Characteristic value */
-        uint16_t value_len;             /*!< Characteristic value length */
-    } read;                             /*!< Gatt client callback param of ESP_GATTC_READ_CHAR_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        uint16_t handle;                /*!< Characteristic handle. */
+        uint8_t *value;                 /*!< Characteristic value. */
+        uint16_t value_len;             /*!< Characteristic value length. */
+    } read;                             /*!< Gatt client callback param of `ESP_GATTC_READ_CHAR_EVT`. */
 
     /**
      * @brief ESP_GATTC_WRITE_CHAR_EVT, ESP_GATTC_PREP_WRITE_EVT, ESP_GATTC_WRITE_DESCR_EVT
      */
     struct gattc_write_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-        uint16_t handle;                /*!< The Characteristic or descriptor handle */
-        uint16_t offset;                /*!< The prepare write offset, this value is valid only when prepare write */
-    } write;                            /*!< Gatt client callback param of ESP_GATTC_WRITE_DESCR_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        uint16_t handle;                /*!< The Characteristic or descriptor handle. */
+        uint16_t offset;                /*!< The prepare write offset, this value is valid only when prepare write. */
+    } write;                            /*!< Gatt client callback param of `ESP_GATTC_WRITE_DESCR_EVT`. */
 
     /**
      * @brief ESP_GATTC_EXEC_EVT
      */
     struct gattc_exec_cmpl_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-    } exec_cmpl;                        /*!< Gatt client callback param of ESP_GATTC_EXEC_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t conn_id;               /*!< Connection ID. */
+    } exec_cmpl;                        /*!< Gatt client callback param of `ESP_GATTC_EXEC_EVT`. */
 
     /**
      * @brief ESP_GATTC_NOTIFY_EVT
      */
     struct gattc_notify_evt_param {
-        uint16_t conn_id;               /*!< Connection id */
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        uint16_t handle;                /*!< The Characteristic or descriptor handle */
-        uint16_t value_len;             /*!< Notify attribute value */
-        uint8_t *value;                 /*!< Notify attribute value */
-        bool is_notify;                 /*!< True means notify, false means indicate */
-    } notify;                           /*!< Gatt client callback param of ESP_GATTC_NOTIFY_EVT */
+        uint16_t conn_id;               /*!< Connection ID. */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+        uint16_t handle;                /*!< The Characteristic or descriptor handle. */
+        uint16_t value_len;             /*!< Notify attribute value. */
+        uint8_t *value;                 /*!< Notify attribute value. */
+        bool is_notify;                 /*!< True means notify, false means indicate. */
+    } notify;                           /*!< Gatt client callback param of `ESP_GATTC_NOTIFY_EVT`. */
 
     /**
      * @brief ESP_GATTC_SRVC_CHG_EVT
 	 */
     struct gattc_srvc_chg_evt_param {
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-    } srvc_chg;                         /*!< Gatt client callback param of ESP_GATTC_SRVC_CHG_EVT */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+    } srvc_chg;                         /*!< Gatt client callback param of `ESP_GATTC_SRVC_CHG_EVT`. */
 
     /**
      * @brief ESP_GATTC_CONGEST_EVT
      */
     struct gattc_congest_evt_param {
-        uint16_t conn_id;               /*!< Connection id */
-        bool congested;                 /*!< Congested or not */
-    } congest;                          /*!< Gatt client callback param of ESP_GATTC_CONGEST_EVT */
+        uint16_t conn_id;               /*!< Connection ID. */
+        bool congested;                 /*!< Congested or not. */
+    } congest;                          /*!< Gatt client callback param of `ESP_GATTC_CONGEST_EVT`. */
     /**
      * @brief ESP_GATTC_REG_FOR_NOTIFY_EVT
      */
     struct gattc_reg_for_notify_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t handle;                /*!< The characteristic or descriptor handle */
-    } reg_for_notify;                   /*!< Gatt client callback param of ESP_GATTC_REG_FOR_NOTIFY_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t handle;                /*!< The characteristic or descriptor handle. */
+    } reg_for_notify;                   /*!< Gatt client callback param of `ESP_GATTC_REG_FOR_NOTIFY_EVT`. */
 
     /**
      * @brief ESP_GATTC_UNREG_FOR_NOTIFY_EVT
      */
     struct gattc_unreg_for_notify_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t handle;                /*!< The characteristic or descriptor handle */
-    } unreg_for_notify;                 /*!< Gatt client callback param of ESP_GATTC_UNREG_FOR_NOTIFY_EVT */
+        esp_gatt_status_t status;       /*!< Operation status. */
+        uint16_t handle;                /*!< The characteristic or descriptor handle. */
+    } unreg_for_notify;                 /*!< Gatt client callback param of `ESP_GATTC_UNREG_FOR_NOTIFY_EVT`. */
 
     /**
      * @brief ESP_GATTC_CONNECT_EVT
      */
     struct gattc_connect_evt_param {
-        uint16_t conn_id;               /*!< Connection id */
-        uint8_t link_role;              /*!< Link role : master role = 0  ; slave role = 1*/
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-        esp_gatt_conn_params_t conn_params; /*!< current connection parameters */
-        esp_ble_addr_type_t ble_addr_type;  /*!< Remote BLE device address type */
-        uint16_t conn_handle;           /*!< HCI connection handle */
-    } connect;                          /*!< Gatt client callback param of ESP_GATTC_CONNECT_EVT */
+        uint16_t conn_id;               /*!< Connection ID. */
+        uint8_t link_role;              /*!< Link role : master role = 0; slave role = 1.*/
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+        esp_gatt_conn_params_t conn_params; /*!< Current connection parameters. */
+        esp_ble_addr_type_t ble_addr_type;  /*!< Remote LE device address type. */
+        uint16_t conn_handle;           /*!< HCI connection handle. */
+    } connect;                          /*!< Gatt client callback param of `ESP_GATTC_CONNECT_EVT`. */
 
     /**
      * @brief ESP_GATTC_DISCONNECT_EVT
      */
     struct gattc_disconnect_evt_param {
-        esp_gatt_conn_reason_t reason;  /*!< disconnection reason */
-        uint16_t conn_id;               /*!< Connection id */
-        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
-    } disconnect;                       /*!< Gatt client callback param of ESP_GATTC_DISCONNECT_EVT */
+        esp_gatt_conn_reason_t reason;  /*!< Disconnection reason. */
+        uint16_t conn_id;               /*!< Connection ID. */
+        esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address. */
+    } disconnect;                       /*!< Gatt client callback param of `ESP_GATTC_DISCONNECT_EVT`. */
     /**
      * @brief ESP_GATTC_SET_ASSOC_EVT
      */
     struct gattc_set_assoc_addr_cmp_evt_param {
-        esp_gatt_status_t status;      /*!< Operation status */
-    } set_assoc_cmp;                     /*!< Gatt client callback param of ESP_GATTC_SET_ASSOC_EVT */
+        esp_gatt_status_t status;      /*!< Operation status. */
+    } set_assoc_cmp;                     /*!< Gatt client callback param of `ESP_GATTC_SET_ASSOC_EVT`. */
     /**
      * @brief ESP_GATTC_GET_ADDR_LIST_EVT
      */
     struct gattc_get_addr_list_evt_param {
-        esp_gatt_status_t status;      /*!< Operation status */
-        uint8_t num_addr;              /*!< The number of address in the gattc cache address list */
-        esp_bd_addr_t *addr_list;      /*!< The pointer to the address list which has been get from the gattc cache */
-    } get_addr_list;                   /*!< Gatt client callback param of ESP_GATTC_GET_ADDR_LIST_EVT */
+        esp_gatt_status_t status;      /*!< Operation status. */
+        uint8_t num_addr;              /*!< The number of address in the GATTC cache address list. */
+        esp_bd_addr_t *addr_list;      /*!< The pointer to the address list which has been get from the gattc cache. */
+    } get_addr_list;                   /*!< Gatt client callback param of `ESP_GATTC_GET_ADDR_LIST_EVT`. */
 
     /**
      * @brief ESP_GATTC_QUEUE_FULL_EVT
      */
     struct gattc_queue_full_evt_param {
-        esp_gatt_status_t status;      /*!< Operation status */
-        uint16_t conn_id;              /*!< Connection id */
-        bool     is_full;              /*!< The gattc command queue is full or not */
-    } queue_full;                      /*!< Gatt client callback param of ESP_GATTC_QUEUE_FULL_EVT */
+        esp_gatt_status_t status;      /*!< Operation status. */
+        uint16_t conn_id;              /*!< Connection ID. */
+        bool     is_full;              /*!< The gattc command queue is full or not. */
+    } queue_full;                      /*!< Gatt client callback param of `ESP_GATTC_QUEUE_FULL_EVT`. */
 
     /**
      * @brief ESP_GATTC_DIS_SRVC_CMPL_EVT
      */
     struct gattc_dis_srvc_cmpl_evt_param {
-        esp_gatt_status_t status;      /*!< Operation status */
-        uint16_t conn_id;              /*!< Connection id */
-    } dis_srvc_cmpl;                   /*!< Gatt client callback param of ESP_GATTC_DIS_SRVC_CMPL_EVT */
+        esp_gatt_status_t status;      /*!< Operation status. */
+        uint16_t conn_id;              /*!< Connection ID. */
+    } dis_srvc_cmpl;                   /*!< Gatt client callback param of `ESP_GATTC_DIS_SRVC_CMPL_EVT`. */
 
-} esp_ble_gattc_cb_param_t;             /*!< GATT client callback parameter union type */
+} esp_ble_gattc_cb_param_t;
 
 /**
- * @brief GATT Client callback function type
- * @param event : Event type
- * @param gattc_if : GATT client access interface, normally
- *                   different gattc_if correspond to different profile
- * @param param : Point to callback parameter, currently is union type
+ * @brief GATT Client callback function type.
+ * @param event : Event type.
+ * @param gattc_if : GATT client access interface.
+ * @param param : Point to callback parameter, currently is union type.
  */
 typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 
 /**
- * @brief           This function is called to register application callbacks
- *                  with GATTC module.
+ * @brief  Register application callbacks.
  *
- * @param[in]       callback : pointer to the application callback function.
+ * @param[in]       callback : Pointer to the application callback function.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback);
 
 /**
- * @brief           This function is called to get the current application callbacks
- *                  with BTA GATTC module.
+ * @brief  This function is called to get the current application callbacks with BTA GATTC module.
  *
  * @return
  *                  - esp_gattC_cb_t : current callback
- *
  */
 esp_gattc_cb_t esp_ble_gattc_get_callback(void);
 
 /**
- * @brief           This function is called to register application callbacks
- *                  with GATTC module.
+ * @brief  This function is called to register application callbacks with GATTC module.
  *
- * @param[in]       app_id : Application Identify (UUID), for different application
+ * @param[in]       app_id : Application Identify (UUID), for different application.
  *
+ * @note            The function triggers `ESP_GATTC_REG_EVT`.
+ * 
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_app_register(uint16_t app_id);
 
-
 /**
- * @brief           This function is called to unregister an application
- *                  from GATTC module.
+ * @brief  This function is called to unregister an application from GATTC module.
  *
  * @param[in]       gattc_if: Gatt client access interface.
+ * 
+ * @note            The function triggers `ESP_GATTC_UNREG_EVT`.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
- * @brief           Open a direct connection or add a background auto connection
+ * @brief  Open a direct connection or add a background auto connection.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       remote_bda: remote device bluetooth device address.
- * @param[in]       remote_addr_type: remote device bluetooth device the address type.
- * @param[in]       is_direct: direct connection or background auto connection(by now, background auto connection is not supported).
+ * @param[in]       remote_bda: Remote device bluetooth device address.
+ * @param[in]       remote_addr_type: Remote device bluetooth device the address type.
+ * @param[in]       is_direct: True indicate direct connection, false indicate background auto connection (by now, background auto connection is not supported).
+ *
+ * @note
+ *                  - The function triggers `ESP_GATTC_OPEN_EVT`.
+ *                  - Establish a virtual connection, if no physical connection is established it will be established automatically.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
@@ -331,95 +328,93 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, e
 esp_err_t esp_ble_gattc_aux_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 /**
- * @brief           Close the virtual connection to the GATT server. gattc may have multiple virtual GATT server connections when multiple app_id registered,
- *                  this API only close one virtual GATT server connection. if there exist other virtual GATT server connections,
- *                  it does not disconnect the physical connection.
- *                  if you want to disconnect the physical connection directly, you can use esp_ble_gap_disconnect(esp_bd_addr_t remote_device).
+ * @brief  Close the virtual connection to the GATT server.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID to be closed.
+ * @param[in]       conn_id: Connection ID to be closed.
+ *
+ * @note
+ *                  - The function triggers `ESP_GATTC_CLOSE_EVT`.
+ *                  - GATTC may have multiple virtual GATT server connections when multiple `app_id` registered.
+ *                  - This API only close one virtual GATT server connection, if there exist other virtual GATT server connections, it does not disconnect the physical connection.
+ *                  - If you want to disconnect the physical connection directly, you can use `esp_ble_gap_disconnect`.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
-
 /**
- * @brief           Configure the MTU size in the GATT channel. This can be done
- *                  only once per connection. Before using, use esp_ble_gatt_set_local_mtu()
- *                  to configure the local MTU size.
+ * @brief  Configure the MTU size in the GATT channel.
  *
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID.
+ * @param[in]       conn_id: Connection ID.
+ *
+ * @note
+ *                  - The function may trigger `ESP_GATTC_CLOSE_EVT`.
+ *                  - This can be done only once per connection. Use `esp_ble_gatt_set_local_mtu` before to configure the local MTU size.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
-
 /**
- * @brief           This function is called to get service from local cache.
- *                  This function report service search result by a callback
- *                  event, and followed by a service search complete event.
- *                  Note: 128-bit base UUID will automatically be converted to a 16-bit UUID in the search results. Other types of UUID remain unchanged.
+ * @brief  This function is called to get service from local cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID.
- * @param[in]       filter_uuid: a UUID of the service application is interested in.
- *                  If Null, discover for all services.
+ * @param[in]       conn_id: Connection ID.
+ * @param[in]       filter_uuid: A UUID of the service application is interested in. If Null, discover for all services.
+ *
+ * @note
+ *                  - The function triggers `ESP_GATTC_SEARCH_CMPL_EVT`.
+ *                  - The 128-bit base UUID will automatically be converted to a 16-bit UUID in the search results. Other types of UUID remain unchanged.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *filter_uuid);
 
 /**
- * @brief           Find all the service with the given service uuid in the gattc cache, if the svc_uuid is NULL, find all the service.
- *                  Note: It just get service from local cache, won't get from remote devices. If want to get it from remote device, need
- *                  to used the esp_ble_gattc_cache_refresh, then call esp_ble_gattc_get_service again.
+ * @brief  Find all the service with the given service uuid in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       svc_uuid: the pointer to the service uuid.
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       svc_uuid: Pointer to the service uuid. If NULL, find all the service.
  * @param[out]      result: The pointer to the service which has been found in the gattc cache.
- * @param[inout]   count: input the number of service want to find,
- *                         it will output the number of service has been found in the gattc cache with the given service uuid.
+ * @param[inout]    count: Input the number of service want to find, it will output the number of service has been found.
  * @param[in]       offset: Offset of the service position to get.
  *
- * @return
- *                  - ESP_OK: success
- *                  - other: failed
+ * @note
+ *                  - The function triggers `ESP_GATTC_SEARCH_RES_EVT`.
+ *                  - It just get service from local cache. Get it from remote device, using `esp_ble_gattc_cache_refresh`, then call `esp_ble_gattc_get_service` again.
  *
+ * @return
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                             esp_gattc_service_elem_t *result, uint16_t *count, uint16_t offset);
 
 /**
- * @brief           Find all the characteristic with the given service in the gattc cache
- *                  Note: It just get characteristic from local cache, won't get from remote devices.
+ * @brief  Find all the characteristic with the given service in the GATTC cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       start_handle: the attribute start handle.
- * @param[in]       end_handle: the attribute end handle
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       start_handle: The attribute start handle.
+ * @param[in]       end_handle: The attribute end handle
  * @param[out]      result: The pointer to the characteristic in the service.
- * @param[inout]   count: input the number of characteristic want to find,
- *                         it will output the number of characteristic has been found in the gattc cache with the given service.
+ * @param[inout]    count: Input the number of characteristic you want to find, it will output the number of characteristic has been found.
  * @param[in]       offset: Offset of the characteristic position to get.
  *
+ * @note            It just get characteristic from local cache, won't get from remote devices.
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
                                              uint16_t conn_id,
@@ -429,21 +424,18 @@ esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
                                              uint16_t *count, uint16_t offset);
 
 /**
- * @brief           Find all the descriptor with the given characteristic in the gattc cache
- *                  Note: It just get descriptor from local cache, won't get from remote devices.
+ * @brief  Find all the descriptor with the given characteristic in the GATTC cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       char_handle: the given characteristic handle
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       char_handle: The given characteristic handle.
  * @param[out]      result: The pointer to the descriptor in the characteristic.
- * @param[inout]    count: input the number of descriptor want to find,
- *                         it will output the number of descriptor has been found in the gattc cache with the given characteristic.
+ * @param[inout]    count: Input the number of descriptor want to find, it will output the number of descriptor has been found.
  * @param[in]       offset: Offset of the descriptor position to get.
- *
+ * 
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
                                               uint16_t conn_id,
@@ -451,24 +443,20 @@ esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
                                               esp_gattc_descr_elem_t *result,
                                               uint16_t *count, uint16_t offset);
 
-
 /**
- * @brief           Find the characteristic with the given characteristic uuid in the gattc cache
- *                  Note: It just get characteristic from local cache, won't get from remote devices.
+ * @brief  Find the characteristic with the given characteristic uuid in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       start_handle: the attribute start handle
- * @param[in]       end_handle: the attribute end handle
- * @param[in]       char_uuid: the characteristic uuid
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       start_handle: The attribute start handle.
+ * @param[in]       end_handle: The attribute end handle.
+ * @param[in]       char_uuid: The characteristic uuid.
  * @param[out]      result: The pointer to the characteristic in the service.
- * @param[inout]   count: input the number of characteristic want to find,
- *                         it will output the number of characteristic has been found in the gattc cache with the given service.
+ * @param[inout]    count: Input the number of characteristic want to find, it will output the number of characteristic has been found.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
                                                  uint16_t conn_id,
@@ -479,23 +467,20 @@ esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
                                                  uint16_t *count);
 
 /**
- * @brief           Find the descriptor with the given characteristic uuid in the gattc cache
- *                  Note: It just get descriptor from local cache, won't get from remote devices.
+ * @brief  Find the descriptor with the given characteristic uuid in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       start_handle: the attribute start handle
- * @param[in]       end_handle: the attribute end handle
- * @param[in]       char_uuid: the characteristic uuid.
- * @param[in]       descr_uuid: the descriptor uuid.
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       start_handle: The attribute start handle.
+ * @param[in]       end_handle: The attribute end handle.
+ * @param[in]       char_uuid: The characteristic uuid.
+ * @param[in]       descr_uuid: The descriptor uuid.
  * @param[out]      result: The pointer to the descriptor in the given characteristic.
- * @param[inout]   count: input the number of descriptor want to find,
- *                         it will output the number of descriptor has been found in the gattc cache with the given characteristic.
+ * @param[inout]    count: input the number of descriptor want to find, it will output the number of descriptor.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
                                                   uint16_t conn_id,
@@ -507,21 +492,18 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
                                                   uint16_t *count);
 
 /**
- * @brief           Find the descriptor with the given characteristic handle in the gattc cache
- *                  Note: It just get descriptor from local cache, won't get from remote devices.
+ * @brief  Find the descriptor with the given characteristic handle in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       char_handle: the characteristic handle.
- * @param[in]       descr_uuid: the descriptor uuid.
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       char_handle: The characteristic handle.
+ * @param[in]       descr_uuid: The descriptor uuid.
  * @param[out]      result: The pointer to the descriptor in the given characteristic.
- * @param[inout]   count: input the number of descriptor want to find,
- *                         it will output the number of descriptor has been found in the gattc cache with the given characteristic.
+ * @param[inout]    count: Input the number of descriptor want to find, it will output the number of descriptor has been found.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
                                                          uint16_t conn_id,
@@ -531,22 +513,19 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
                                                          uint16_t *count);
 
 /**
- * @brief           Find the include service with the given service handle in the gattc cache
- *                  Note: It just get include service from local cache, won't get from remote devices.
+ * @brief  Find the include service with the given service handle in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       start_handle: the attribute start handle
- * @param[in]       end_handle: the attribute end handle
- * @param[in]       incl_uuid: the include service uuid
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       start_handle: The attribute start handle.
+ * @param[in]       end_handle: The attribute end handle.
+ * @param[in]       incl_uuid: The include service uuid.
  * @param[out]      result: The pointer to the include service in the given service.
- * @param[inout]   count: input the number of include service want to find,
- *                         it will output the number of include service has been found in the gattc cache with the given service.
+ * @param[inout]    count: Input the number of include service want to find, it will output the number of include service has been found.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
                                                     uint16_t conn_id,
@@ -556,23 +535,20 @@ esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
                                                     esp_gattc_incl_svc_elem_t *result,
                                                     uint16_t *count);
 
-
 /**
- * @brief           Find the attribute count with the given service or characteristic in the gattc cache
+ * @brief  Find the attribute count with the given service or characteristic in the gattc cache.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       type: the attribute type.
- * @param[in]       start_handle: the attribute start handle, if the type is ESP_GATT_DB_DESCRIPTOR, this parameter should be ignore
- * @param[in]       end_handle: the attribute end handle, if the type is ESP_GATT_DB_DESCRIPTOR, this parameter should be ignore
- * @param[in]       char_handle: the characteristic handle, this parameter valid when the type is ESP_GATT_DB_DESCRIPTOR. If the type
- *                               isn't ESP_GATT_DB_DESCRIPTOR, this parameter should be ignore.
- * @param[out]      count: output the number of attribute has been found in the gattc cache with the given attribute type.
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       type: The attribute type.
+ * @param[in]       start_handle: The attribute start handle, if the type is `ESP_GATT_DB_DESCRIPTOR`, this parameter should be ignore.
+ * @param[in]       end_handle: The attribute end handle, if the type is `ESP_GATT_DB_DESCRIPTOR`, this parameter should be ignore.
+ * @param[in]       char_handle: The characteristic handle, this parameter valid when the type is `ESP_GATT_DB_DESCRIPTOR`.
+ * @param[out]      count: Output the number of attribute has been found in the gattc cache with the given attribute type.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
                                                uint16_t conn_id,
@@ -584,37 +560,36 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
 
 /**
  * @brief           This function is called to get the GATT database.
- *                  Note: It just get attribute data base from local cache, won't get from remote devices.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       start_handle: the attribute start handle
- * @param[in]       end_handle: the attribute end handle
- * @param[in]       conn_id: connection ID which identify the server.
- * @param[in]       db: output parameter which will contain the GATT database copy.
+ * @param[in]       start_handle: The attribute start handle.
+ * @param[in]       end_handle: The attribute end handle.
+ * @param[in]       conn_id: Connection ID which identify the server.
+ * @param[in]       db: Output parameter which will contain the GATT database copy.
  *                      Caller is responsible for freeing it.
- * @param[in]       count: number of elements in database.
+ * @param[in]       count: Number of elements in database.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  *
  */
 esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t start_handle, uint16_t end_handle,
                                         esp_gattc_db_elem_t *db, uint16_t *count);
 
 /**
- * @brief           This function is called to read a service's characteristics of
- *                  the given characteristic handle
+ * @brief  This function is called to read a service's characteristics of the given characteristic handle.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id : connection ID.
- * @param[in]       handle : characteritic handle to read.
- * @param[in]       auth_req : authenticate request type
+ * @param[in]       conn_id : Connection ID.
+ * @param[in]       handle : Characteristic handle to read.
+ * @param[in]       auth_req : Authenticate request type.
+ * 
+ * @note            The function may trigger `ESP_GATTC_READ_CHAR_EVT`.
  *
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
                                    uint16_t conn_id,
@@ -700,20 +675,21 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
 
 
 /**
- * @brief           This function is called to write characteristic value.
+ * @brief  This function is called to write characteristic value.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       conn_id : connection ID.
- * @param[in]       handle : characteristic handle to write.
- * @param[in]       value_len: length of the value to be written.
- * @param[in]       value : the value to be written.
- * @param[in]       write_type : the type of attribute write operation.
- * @param[in]       auth_req : authentication request.
+ * @param[in]       conn_id : Connection ID.
+ * @param[in]       handle : Characteristic handle to write.
+ * @param[in]       value_len: Length of the value to be written.
+ * @param[in]       value : The value to be written.
+ * @param[in]       write_type : The type of attribute write operation.
+ * @param[in]       auth_req : Authentication request.
  *
+ * @note            The function may trigger `ESP_GATTC_WRITE_CHAR_EVT`.
+ * 
  * @return
- *                  - ESP_OK: success
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_write_char( esp_gatt_if_t gattc_if,
                                     uint16_t conn_id,
@@ -813,23 +789,22 @@ esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
  */
 esp_err_t esp_ble_gattc_execute_write (esp_gatt_if_t gattc_if, uint16_t conn_id, bool is_execute);
 
-
 /**
- * @brief           This function is called to register for notification of a service.
+ * @brief  This function is called to register for notification of a service.
  *
  * @param[in]       gattc_if: Gatt client access interface.
- * @param[in]       server_bda : target GATT server.
+ * @param[in]       server_bda : Target GATT server.
  * @param[in]       handle : GATT characteristic handle.
  *
+ * @note            This function triggers `ESP_GATTC_REG_FOR_NOTIFY_EVT`.
+ * 
  * @return
- *                  - ESP_OK: registration succeeds
- *                  - other: failed
- *
+ *                  - ESP_OK : Success.
+ *                  - ESP_FAIL : Failed.
  */
 esp_err_t esp_ble_gattc_register_for_notify (esp_gatt_if_t gattc_if,
                                              esp_bd_addr_t server_bda,
                                              uint16_t handle);
-
 
 /**
  * @brief           This function is called to de-register for notification of a service.
