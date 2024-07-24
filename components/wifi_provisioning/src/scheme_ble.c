@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,11 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
 #if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
     ble_config->ble_link_encryption = 1;
 #endif
+
+#if defined(CONFIG_WIFI_PROV_BLE_NOTIFY)
+    ble_config->ble_notify = 1;
+#endif
+
     /* Start protocomm as BLE service */
     if (protocomm_ble_start(pc, ble_config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start protocomm BLE service");

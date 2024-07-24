@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,6 +142,11 @@ typedef struct protocomm_ble_config {
      * BLE address
      */
     uint8_t *ble_addr;
+
+    /**
+     * BLE characteristic notify flag
+     */
+    unsigned ble_notify:1;
 } protocomm_ble_config_t;
 
 /**
