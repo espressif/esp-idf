@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stdbool.h>
 #include "hal/isp_types.h"
 #include "hal/color_types.h"
 
@@ -74,6 +75,38 @@ typedef struct isp_awb_controller_t *isp_awb_ctlr_t;
  * @brief Type of ISP AE controller handle
  */
 typedef struct isp_ae_controller_t *isp_ae_ctlr_t;
+
+/*---------------------------------------------
+                Event Callbacks
+----------------------------------------------*/
+/**
+ * @brief Event data structure
+ */
+typedef struct {
+    uint8_t high_freq_pixel_max;  ///< high freq pixel max value
+} esp_isp_sharpen_evt_data_t;
+
+/**
+ * @brief Prototype of ISP sharpen event callback
+ *
+ * @param[in] proc      Processor handle
+ * @param[in] edata     ISP sharpen event data
+ * @param[in] user_data User registered context, registered when in `esp_isp_register_event_callbacks()`
+ *
+ * @return Whether a high priority task is woken up by this function
+ */
+typedef bool (*esp_isp_sharpen_callback_t)(isp_proc_handle_t proc, const esp_isp_sharpen_evt_data_t *edata, void *user_data);
+
+/**
+ * @brief Group of ISP event callbacks
+ *
+ * @note These callbacks are all running in an ISR environment.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ *       Involved variables should be in internal RAM as well.
+ */
+typedef struct {
+    esp_isp_sharpen_callback_t on_sharpen_frame_done;       ///< Event callback, invoked when sharpen frame done
+} esp_isp_evt_cbs_t;
 
 #ifdef __cplusplus
 }

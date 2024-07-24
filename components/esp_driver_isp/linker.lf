@@ -1,0 +1,11 @@
+[mapping:isp_driver]
+archive: libesp_driver_isp.a
+entries:
+    if ISP_CTRL_FUNC_IN_IRAM = y:
+        isp_sharpen: esp_isp_sharpen_configure (noflash)
+
+[mapping:isp_hal]
+archive: libhal.a
+entries:
+    if ISP_CTRL_FUNC_IN_IRAM = y:
+        isp_hal: isp_hal_sharpen_config (noflash)

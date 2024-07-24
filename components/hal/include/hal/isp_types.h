@@ -64,13 +64,25 @@ typedef enum {
 } isp_color_t;
 
 /*---------------------------------------------------------------
-                      DVP
+                      AE
 ---------------------------------------------------------------*/
-#if SOC_ISP_DVP_DATA_WIDTH_MAX
-#define ISP_DVP_DATA_SIG_NUM   SOC_ISP_DVP_DATA_WIDTH_MAX // The ISP DVP data signal number
+
+#if (SOC_ISP_AE_BLOCK_X_NUMS && SOC_ISP_AE_BLOCK_Y_NUMS)
+#define ISP_AE_BLOCK_X_NUM   SOC_ISP_AE_BLOCK_X_NUMS      // The AF window number for sampling
+#define ISP_AE_BLOCK_Y_NUM   SOC_ISP_AE_BLOCK_Y_NUMS      // The AF window number for sampling
 #else
-#define ISP_DVP_DATA_SIG_NUM   0
+#define ISP_AE_BLOCK_X_NUM   0
+#define ISP_AE_BLOCK_Y_NUM   0
 #endif
+
+/**
+ * @brief ISP AE input data source
+ *
+ */
+typedef enum {
+    ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,          ///< AE input data after demosaic
+    ISP_AE_SAMPLE_POINT_AFTER_GAMMA,             ///< AE input data after gamma
+} isp_ae_sample_point_t;
 
 /*---------------------------------------------------------------
                       AF
@@ -80,6 +92,19 @@ typedef enum {
 #else
 #define ISP_AF_WINDOW_NUM   0
 #endif
+
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+
+/**
+ * @brief ISP AWB sample point in the ISP pipeline
+ *
+ */
+typedef enum {
+    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
+    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
+} isp_awb_sample_point_t;
 
 /*---------------------------------------------------------------
                       BF
@@ -110,38 +135,69 @@ typedef enum {
 #endif
 
 /*---------------------------------------------------------------
-                      AWB
+                      DVP
 ---------------------------------------------------------------*/
-
-/**
- * @brief ISP AWB sample point in the ISP pipeline
- *
- */
-typedef enum {
-    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
-    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
-} isp_awb_sample_point_t;
-
-/*---------------------------------------------------------------
-                      AE
----------------------------------------------------------------*/
-
-#if (SOC_ISP_AE_BLOCK_X_NUMS && SOC_ISP_AE_BLOCK_Y_NUMS)
-#define ISP_AE_BLOCK_X_NUM   SOC_ISP_AE_BLOCK_X_NUMS      // The AF window number for sampling
-#define ISP_AE_BLOCK_Y_NUM   SOC_ISP_AE_BLOCK_Y_NUMS      // The AF window number for sampling
+#if SOC_ISP_DVP_DATA_WIDTH_MAX
+#define ISP_DVP_DATA_SIG_NUM   SOC_ISP_DVP_DATA_WIDTH_MAX // The ISP DVP data signal number
 #else
-#define ISP_AE_BLOCK_X_NUM   0
-#define ISP_AE_BLOCK_Y_NUM   0
+#define ISP_DVP_DATA_SIG_NUM   0
 #endif
 
+/*---------------------------------------------------------------
+                      Sharpen
+---------------------------------------------------------------*/
+#if SOC_ISP_SHARPEN_SUPPORTED
+#define ISP_SHARPEN_TEMPLATE_X_NUMS         SOC_ISP_SHARPEN_TEMPLATE_X_NUMS         // Sharpen template x field nums
+#define ISP_SHARPEN_TEMPLATE_Y_NUMS         SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS         // Sharpen template y field nums
+#define ISP_SHARPEN_H_FREQ_COEF_INT_BITS    SOC_ISP_SHARPEN_H_FREQ_COEF_INT_BITS
+#define ISP_SHARPEN_H_FREQ_COEF_DEC_BITS    SOC_ISP_SHARPEN_H_FREQ_COEF_DEC_BITS
+#define ISP_SHARPEN_H_FREQ_COEF_RES_BITS    SOC_ISP_SHARPEN_H_FREQ_COEF_RES_BITS
+#define ISP_SHARPEN_M_FREQ_COEF_INT_BITS    SOC_ISP_SHARPEN_M_FREQ_COEF_INT_BITS
+#define ISP_SHARPEN_M_FREQ_COEF_DEC_BITS    SOC_ISP_SHARPEN_M_FREQ_COEF_DEC_BITS
+#define ISP_SHARPEN_M_FREQ_COEF_RES_BITS    SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS
+#else
+#define ISP_SHARPEN_TEMPLATE_X_NUMS         0
+#define ISP_SHARPEN_TEMPLATE_Y_NUMS         0
+#define ISP_SHARPEN_H_FREQ_COEF_INT_BITS    8
+#define ISP_SHARPEN_H_FREQ_COEF_DEC_BITS    8
+#define ISP_SHARPEN_H_FREQ_COEF_RES_BITS    16
+#define ISP_SHARPEN_M_FREQ_COEF_INT_BITS    8
+#define ISP_SHARPEN_M_FREQ_COEF_DEC_BITS    8
+#define ISP_SHARPEN_M_FREQ_COEF_RES_BITS    16
+#endif
+
+
 /**
- * @brief ISP AE input data source
- *
+ * @brief High freq pixel sharpeness coeff
+ */
+typedef union {
+    struct {
+        uint32_t decimal:ISP_SHARPEN_H_FREQ_COEF_DEC_BITS;    ///< Integer part
+        uint32_t integer:ISP_SHARPEN_H_FREQ_COEF_INT_BITS;    ///< Decimal part
+        uint32_t reserved:ISP_SHARPEN_H_FREQ_COEF_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;
+} isp_sharpen_h_freq_coeff;
+
+/**
+ * @brief Medium freq pixel sharpeness coeff
+ */
+typedef union {
+    struct {
+        uint32_t decimal:ISP_SHARPEN_M_FREQ_COEF_DEC_BITS;    ///< Integer part
+        uint32_t integer:ISP_SHARPEN_M_FREQ_COEF_INT_BITS;    ///< Decimal part
+        uint32_t reserved:ISP_SHARPEN_M_FREQ_COEF_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;
+} isp_sharpen_m_freq_coeff;
+
+/**
+ * @brief ISP Sharpen edge padding mode
  */
 typedef enum {
-    ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,          ///< AE input data after demosaic
-    ISP_AE_SAMPLE_POINT_AFTER_GAMMA,             ///< AE input data after gamma
-} isp_ae_sample_point_t;
+    ISP_SHARPEN_EDGE_PADDING_MODE_SRND_DATA,      ///< Fill Sharpen edge padding data with surrounding pixel data
+    ISP_SHARPEN_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill Sharpen edge padding data with custom pixel data
+} isp_sharpen_edge_padding_mode_t;
 
 #ifdef __cplusplus
 }
