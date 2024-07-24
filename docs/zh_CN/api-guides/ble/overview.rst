@@ -114,8 +114,8 @@ ESP 蓝牙控制器
 - :example:`应用示例 <bluetooth/hci>`
 
 
-主机
-----
+ESP 蓝牙主机
+-------------
 
 有 ESP-Bluedroid 和 ESP-NimBLE 两个主机，其主要区别如下：
 
