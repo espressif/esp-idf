@@ -127,7 +127,7 @@ examples/peripherals/i2s/i2s_recorder:
     - esp_driver_spi
     - esp_driver_i2s
 
-examples/peripherals/isp/auto_focus:
+examples/peripherals/isp/multi_pipelines:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1 or SOC_ISP_SUPPORTED != 1
   depends_components:

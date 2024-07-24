@@ -16,7 +16,6 @@
 #include "esp_cache.h"
 #include "driver/i2c_master.h"
 #include "driver/isp.h"
-#include "driver/isp_bf.h"
 #include "isp_af_scheme_sa.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
@@ -33,6 +32,9 @@ static const char *TAG = "isp_dsi";
 static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 
+/*---------------------------------------------------------------
+                      AF
+---------------------------------------------------------------*/
 typedef union {
     struct {
         uint16_t s    : 4;
@@ -47,7 +49,7 @@ typedef union {
     uint16_t val;
 } dw9714_reg_t;
 
-static bool IRAM_ATTR s_env_change_cb(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data)
+static bool IRAM_ATTR s_af_env_change_cb(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data)
 {
     BaseType_t mustYield = pdFALSE;
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
@@ -141,7 +143,7 @@ static void af_task(void *arg)
     ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector(af_ctrlr, &env_config));
 
     esp_isp_af_env_detector_evt_cbs_t cbs = {
-        .on_env_change = s_env_change_cb,
+        .on_env_change = s_af_env_change_cb,
     };
     ESP_ERROR_CHECK(esp_isp_af_env_detector_register_event_callbacks(af_ctrlr, &cbs, task_handle));
 
@@ -292,6 +294,29 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
     ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
+
+    esp_isp_sharpen_config_t sharpen_config = {
+        .h_freq_coeff = {
+            .integer = 2,
+            .decimal = 0,
+        },
+        .m_freq_coeff = {
+            .integer = 2,
+            .decimal = 0,
+        },
+        .h_thresh = 255,
+        .l_thresh = 0,
+        .padding_mode = ISP_SHARPEN_EDGE_PADDING_MODE_SRND_DATA,
+        .sharpen_template = {
+            {1, 2, 1},
+            {2, 4, 2},
+            {1, 2, 1},
+        },
+        .padding_line_tail_valid_start_pixel = 0,
+        .padding_line_tail_valid_end_pixel = 0,
+    };
+    ESP_ERROR_CHECK(esp_isp_sharpen_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_sharpen_enable(isp_proc));
 
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
