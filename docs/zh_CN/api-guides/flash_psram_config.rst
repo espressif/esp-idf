@@ -99,6 +99,10 @@ SPI Flash 和片外 SPI RAM 配置
 
     请注意，20 摄氏度并不是一个完全准确的数字，这个值在不同芯片间可能会有所不同。
 
+.. note::
+
+    PSRAM 在 120M 运行时需要相位点校准算法。相位点设置与启动时的温度有关。当芯片运行期间温度大幅上升（下降）时，PSRAM 可能会出现读写错误。为解决这一问题，可以使能 :ref:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`，根据温度值动态调整 PSRAM 相位点。这将创建一个任务，每隔 :ref:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` 秒测量一次温度，并相应调整 PSRAM 相位点。
+
 F8R8 硬件
 ^^^^^^^^^
 
