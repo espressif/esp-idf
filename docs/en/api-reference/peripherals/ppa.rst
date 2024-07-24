@@ -52,7 +52,7 @@ The following sections detail the design of the PPA driver:
 Register PPA Client
 ^^^^^^^^^^^^^^^^^^^
 
-Requests to perform PPA operations are made by PPA clients. Therefore, PPA clients need to be registered first before doing any PPA operations. Call :cpp:func:`ppa_register_client` function to register a new client. :cpp:type:`ppa_client_config_t` structure is used to specific the properties of the client.
+Requests to perform PPA operations are made by PPA clients. Therefore, PPA clients need to be registered first before doing any PPA operations. Call :cpp:func:`ppa_register_client` function to register a new client. :cpp:type:`ppa_client_config_t` structure is used to specify the properties of the client.
 
 - :cpp:member:`ppa_client_config_t::oper_type` - Each PPA operation type corresponds to one PPA client type, a registered PPA client can only request one specific type of PPA operations.
 - :cpp:member:`ppa_client_config_t::max_pending_trans_num` - Decides the maximum number of pending PPA transactions the client can hold.
@@ -66,7 +66,7 @@ If the task no longer needs to do PPA operations, the corresponding PPA clients 
 Register PPA Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When an event occurs (e.g., a PPA transaction is completed), the CPU is notified of this event via an interrupt. If some specific functions need to be called when a particular event occurs, a callback can be registered for that event  by calling :cpp:func:`ppa_client_register_event_callbacks`. This can be specifically useful when ``PPA_TRANS_MODE_NON_BLOCKING`` mode is selected to perform the PPA operations. It is worth noticing that the event callbacks are bound to PPA clients, but the user context is provided per transaction in the call to the PPA operation APIs. This allows the maximum flexibility in utilizing the event callbacks.
+When an event occurs (e.g., a PPA transaction is completed), the CPU is notified of this event via an interrupt. If some specific functions need to be called when a particular event occurs, a callback can be registered for that event by calling :cpp:func:`ppa_client_register_event_callbacks`. This can be specifically useful when ``PPA_TRANS_MODE_NON_BLOCKING`` mode is selected to perform the PPA operations. It is worth noticing that the event callbacks are bound to PPA clients, but the user context is provided per transaction in the call to the PPA operation APIs. This allows the maximum flexibility in utilizing the event callbacks.
 
 The registered callback functions are called in the interrupt context, therefore, the callback functions should follow common ISR (Interrupt Service Routine) rules.
 
@@ -87,6 +87,7 @@ Call :cpp:func:`ppa_do_scale_rotate_mirror` to apply one or more of the scaling,
 Some notes to avoid confusion in configuring :cpp:type:`ppa_srm_oper_config_t`:
 
 .. list::
+
     - :cpp:member:`ppa_in_pic_blk_config_t::buffer` and :cpp:member:`ppa_out_pic_blk_config_t::buffer` have to be the pointers to different picture buffers for a SRM operation.
     - The precision of :cpp:member:`ppa_srm_oper_config_t::scale_x` and :cpp:member:`ppa_srm_oper_config_t::scale_y` will be truncated to a step size of 1/16.
     - Output block's width/height is totally determined by the input block's width/height, scaling factor, and rotation angle, so output block's width/height does not need to be configured. However, please make sure the output block can fit at the offset location in the output picture.
@@ -107,11 +108,12 @@ where :math:`A_b` is the Alpha channel of the background layer, :math:`A_f` is t
 
 Note that this formula is not symmetric to FG and BG. When :math:`A_f = 1`, it calculates :math:`C_{out} = C_f`, :math:`A_{out} = 1`, which means if the color mode of the FG picture is ``PPA_BLEND_COLOR_MODE_RGB565`` or ``PPA_BLEND_COLOR_MODE_RGB888``, since a Alpha value of 255 will be filled by the PPA hardware (i.e. :math:`A_f = 1`), the blended result will be identical to the FG block.
 
-If :cpp:member:`ppa_blend_oper_config_t::bg_ck_en` or :cpp:member:`ppa_blend_oper_config_t::fg_ck_en` is set to ``true``, the pixels fall into the color-key (also known as Chroma-key) range does not follow Alpha Blending process. Please check **{IDF_TARGET_NAME} Technical Reference Manual** > **Pixel-Processing Accelerator (PPA)** > **Functional Description** > **Layer Blending (BLEND)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ppa>`__] for the detailed rules.
+If :cpp:member:`ppa_blend_oper_config_t::bg_ck_en` or :cpp:member:`ppa_blend_oper_config_t::fg_ck_en` is set to ``true``, the pixels that fall into the color-key (also known as Chroma-key) range do not follow the Alpha Blending process. Please check **{IDF_TARGET_NAME} Technical Reference Manual** > **Pixel-Processing Accelerator (PPA)** > **Functional Description** > **Layer Blending (BLEND)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ppa>`__] for the detailed rules.
 
 Similarly, some notes to avoid confusion in configuring :cpp:type:`ppa_blend_oper_config_t`:
 
 .. list::
+
     - :cpp:member:`ppa_out_pic_blk_config_t::buffer` can be the same pointer to one of the input's :cpp:member:`ppa_in_pic_blk_config_t::buffer` for a blend operation.
     - The blocks' width/height of FG and BG should be identical, and are the width/height values for the output block.
     - If the color mode of the input picture is ``PPA_BLEND_COLOR_MODE_A4``, then its ``block_w`` and ``block_offset_x`` fields must be even.
@@ -131,6 +133,7 @@ Thread Safety
 The PPA driver has guaranteed the thread safety of calling the PPA operation APIs in all following situations:
 
 .. list::
+
     - Among clients of different types in one task
     - Among clients of same type in different tasks
     - Among clients of different types in different tasks
@@ -145,7 +148,7 @@ The PPA operations are acted on the target block of an input picture. Therefore,
 Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
-* PPA with DSI display example: :example:`peripherals/ppa/ppa_dsi`. This example used image will be first scaled up, rotated at counter-clockwise direction and rotated back, mirrored and mirror back, and scaled down. Then the image will be blended with a whole red image with less transparency. Next the `ESP32` word will be color-keyed out. Lastly a frame will be filled around the `ESP32`.
+* :example:`peripherals/ppa/ppa_dsi` - PPA with DSI display example. The image used in this example will be first scaled up, rotated at counter-clockwise direction and rotated back, mirrored and mirror back, and scaled down. Then the image will be blended with a whole red image with less transparency. Next the `ESP32` word will be color-keyed out. Lastly a frame will be filled around the `ESP32`.
 
 API Reference
 -------------
