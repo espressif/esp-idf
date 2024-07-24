@@ -14,13 +14,20 @@
 #define ULP_MEM_START_ADDRESS (SOC_RTC_DRAM_LOW)
 #endif
 
+#define ALIGN_DOWN(SIZE, AL)   (SIZE & ~(AL - 1))
+/* Ensure the end where the shared memory starts is aligned to 8 bytes
+   if updating this also update the same in ulp_lp_core_memory_shared.c
+ */
+#define ALIGNED_COPROC_MEM ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)
+
 ENTRY(reset_vector)
 
 MEMORY
 {
     /*first 128byte for exception/interrupt vectors*/
     vector_table(RX) :   ORIGIN = ULP_MEM_START_ADDRESS , LENGTH = 0x80
-    ram(RWX) :           ORIGIN = ULP_MEM_START_ADDRESS + 0x80, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
+    ram(RWX) :           ORIGIN = ULP_MEM_START_ADDRESS + 0x80, LENGTH = ALIGNED_COPROC_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
+    shared_mem_ram(RW) : ORIGIN = ULP_MEM_START_ADDRESS + ALIGNED_COPROC_MEM - CONFIG_ULP_SHARED_MEM, LENGTH = CONFIG_ULP_SHARED_MEM
 }
 
 SECTIONS
@@ -65,4 +72,10 @@ SECTIONS
     } >ram
 
     __stack_top = ORIGIN(ram) + LENGTH(ram);
+
+    . = ORIGIN(shared_mem_ram);
+    .shared_mem (ALIGN(4)) :
+    {
+        KEEP(*(.shared_mem))
+    } > shared_mem_ram
 }
