@@ -28,7 +28,6 @@ extern "C" {
     #else
     #define BLE_LL_SCAN_PHY_NUMBER_N (1)
     #endif
-
     #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST MYNEWT_VAL(BLE_MAX_PERIODIC_ADVERTISER_LIST)
     #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS MYNEWT_VAL(BLE_MAX_PERIODIC_SYNCS)
     #define DEFAULT_BT_LE_MAX_CONNECTIONS MYNEWT_VAL(BLE_MAX_CONNECTIONS)
@@ -152,6 +151,20 @@ extern "C" {
     #else
         #define DEFAULT_BT_LE_ROLE_OBSERVER (0)
     #endif
+    #if defined (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #if DEFAULT_BT_LE_HCI_UART_FLOW_CTRL
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (CONFIG_BT_LE_HCI_UART_CTS_PIN)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (CONFIG_BT_LE_HCI_UART_RTS_PIN)
+        #else
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
+        #endif
+    #else
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
+        #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+        #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
+    #endif
 #endif
 
 #define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
@@ -192,8 +205,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (UART_DATA_8_BITS)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (UART_STOP_BITS_1)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (CONFIG_BT_LE_HCI_UART_TASK_STACK_SIZE)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #else
     #define DEFAULT_BT_LE_HCI_UART_TX_PIN (0)
     #define DEFAULT_BT_LE_HCI_UART_RX_PIN (0)
@@ -202,8 +213,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (0)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #endif
 
 /* Unchanged configuration */
@@ -232,7 +241,7 @@ extern "C" {
     #define RTC_FREQ_N                      (32000) /* in Hz */
 #endif // CONFIG_XTAL_FREQ_26
 
-#define BLE_LL_TX_PWR_DBM_N                 (9)
+#define BLE_LL_TX_PWR_DBM_N                 (CONFIG_BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF)
 
 
 #define RUN_BQB_TEST                        (0)

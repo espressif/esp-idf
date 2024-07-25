@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,11 +124,25 @@ extern "C" {
     #else
         #define DEFAULT_BT_LE_POWER_CONTROL_ENABLED (0)
     #endif
-
     #if defined(CONFIG_BT_LE_50_FEATURE_SUPPORT)
         #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (1)
     #else
         #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
+    #endif
+
+    #if defined (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #if DEFAULT_BT_LE_HCI_UART_FLOW_CTRL
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (CONFIG_BT_LE_HCI_UART_CTS_PIN)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (CONFIG_BT_LE_HCI_UART_RTS_PIN)
+        #else
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
+        #endif
+    #else
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
+        #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+        #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
     #endif
 #endif
 
@@ -170,8 +184,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (UART_DATA_8_BITS)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (UART_STOP_BITS_1)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (CONFIG_BT_LE_HCI_UART_TASK_STACK_SIZE)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #else
     #define DEFAULT_BT_LE_HCI_UART_TX_PIN (0)
     #define DEFAULT_BT_LE_HCI_UART_RX_PIN (0)
@@ -180,8 +192,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (0)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #endif
 
 /* Unchanged configuration */
@@ -206,8 +216,7 @@ extern "C" {
 
 #define RTC_FREQ_N                          (32768) /* in Hz */
 
-#define BLE_LL_TX_PWR_DBM_N                 (9)
-
+#define BLE_LL_TX_PWR_DBM_N                 (CONFIG_BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF)
 
 #define RUN_BQB_TEST                        (0)
 #define RUN_QA_TEST                         (0)
