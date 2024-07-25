@@ -394,6 +394,3 @@ examples/system/xip_from_psram:
   disable:
     - if: IDF_TARGET == "esp32"
       reason: target esp32 doesn't support this feature.
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 #TODO: IDF-7556
