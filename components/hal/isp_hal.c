@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -13,6 +14,7 @@
 #include "hal/isp_hal.h"
 #include "hal/isp_ll.h"
 #include "hal/isp_types.h"
+#include "hal/hal_utils.h"
 
 /**
  * ISP HAL layer
@@ -67,4 +69,72 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
     }
 
     return triggered_events;
+}
+/*---------------------------------------------------------------
+                            AWB
+---------------------------------------------------------------*/
+bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window_t *win)
+{
+    if (win->top_left.x > win->btm_right.x ||
+        win->top_left.y > win->btm_right.y ||
+        win->btm_right.x > ISP_LL_AWB_WINDOW_MAX_RANGE ||
+        win->btm_right.y > ISP_LL_AWB_WINDOW_MAX_RANGE) {
+        return false;
+    }
+    isp_ll_awb_set_window_range(hal->hw, win->top_left.x, win->top_left.y,
+                                win->btm_right.x, win->btm_right.y);
+    return true;
+}
+
+bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max)
+{
+    if (lum_min > lum_max || lum_max > ISP_LL_AWB_LUM_MAX_RANGE) {
+        return false;
+    }
+    isp_ll_awb_set_luminance_range(hal->hw, lum_min, lum_max);
+    return true;
+}
+
+bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, float rg_max)
+{
+    // Convert to fixed point
+    isp_ll_awb_rgb_ratio_t fp_rg_min = {};
+    isp_ll_awb_rgb_ratio_t fp_rg_max = {};
+    hal_utils_fixed_point_t fp_cfg = {
+        .int_bit = ISP_LL_AWB_RGB_RATIO_INT_BITS,
+        .frac_bit = ISP_LL_AWB_RGB_RATIO_FRAC_BITS,
+        .saturation = false,
+    };
+    if (hal_utils_float_to_fixed_point_32b(rg_min, &fp_cfg, &fp_rg_min.val) != 0) {
+        return false;
+    }
+    if (hal_utils_float_to_fixed_point_32b(rg_max, &fp_cfg, &fp_rg_max.val) != 0) {
+        return false;
+    }
+
+    // Set AWB white patch R/G ratio range
+    isp_ll_awb_set_rg_ratio_range(hal->hw, fp_rg_min, fp_rg_max);
+    return true;
+}
+
+bool isp_hal_awb_set_bg_ratio_range(const isp_hal_context_t *hal, float bg_min, float bg_max)
+{
+    // Convert to fixed point
+    isp_ll_awb_rgb_ratio_t fp_bg_min = {};
+    isp_ll_awb_rgb_ratio_t fp_bg_max = {};
+    hal_utils_fixed_point_t fp_cfg = {
+        .int_bit = ISP_LL_AWB_RGB_RATIO_INT_BITS,
+        .frac_bit = ISP_LL_AWB_RGB_RATIO_FRAC_BITS,
+        .saturation = false,
+    };
+    if (hal_utils_float_to_fixed_point_32b(bg_min, &fp_cfg, &fp_bg_min.val) != 0) {
+        return false;
+    }
+    if (hal_utils_float_to_fixed_point_32b(bg_max, &fp_cfg, &fp_bg_max.val) != 0) {
+        return false;
+    }
+
+    // Set AWB white patch B/G ratio range
+    isp_ll_awb_set_bg_ratio_range(hal->hw, fp_bg_min, fp_bg_max);
+    return true;
 }
