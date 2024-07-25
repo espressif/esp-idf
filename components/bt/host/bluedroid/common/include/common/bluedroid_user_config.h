@@ -218,7 +218,13 @@
 #define UC_BT_SMP_MAX_BONDS 8
 #endif
 
-//Device Nane Maximum Length
+#ifdef CONFIG_BT_BLE_SMP_ID_RESET_ENABLE
+#define UC_BT_BLE_SMP_ID_RESET_ENABLE CONFIG_BT_BLE_SMP_ID_RESET_ENABLE
+#else
+#define UC_BT_BLE_SMP_ID_RESET_ENABLE FALSE
+#endif
+
+//Device Name Maximum Length
 #ifdef CONFIG_BT_MAX_DEVICE_NAME_LEN
 #define UC_MAX_LOC_BD_NAME_LEN  CONFIG_BT_MAX_DEVICE_NAME_LEN
 #else
