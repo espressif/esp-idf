@@ -14,7 +14,7 @@ extern "C" {
 /** PMS_HP2LP_PERI_PMS_DATE_REG register
  *  Version control register
  */
-#define PMS_HP2LP_PERI_PMS_DATE_REG (DR_REG_PMS_BASE + 0x0)
+#define PMS_HP2LP_PERI_PMS_DATE_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x0)
 /** PMS_HP2LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294790;
  *  Version control register
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** PMS_HP2LP_PERI_PMS_CLK_EN_REG register
  *  Clock gating register
  */
-#define PMS_HP2LP_PERI_PMS_CLK_EN_REG (DR_REG_PMS_BASE + 0x4)
+#define PMS_HP2LP_PERI_PMS_CLK_EN_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x4)
 /** PMS_HP2LP_PERI_PMS_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: Enable automatic clock gating
@@ -40,7 +40,7 @@ extern "C" {
 /** PMS_HP_CORE0_MM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU0 in machine mode
  */
-#define PMS_HP_CORE0_MM_PMS_REG0_REG (DR_REG_PMS_BASE + 0x8)
+#define PMS_HP_CORE0_MM_PMS_REG0_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x8)
 /** PMS_HP_CORE0_MM_LP_SYSREG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access LP System
  *  Registers.
@@ -267,7 +267,7 @@ extern "C" {
 /** PMS_HP_CORE0_UM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU0 in user mode
  */
-#define PMS_HP_CORE0_UM_PMS_REG0_REG (DR_REG_PMS_BASE + 0xc)
+#define PMS_HP_CORE0_UM_PMS_REG0_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0xc)
 /** PMS_HP_CORE0_UM_LP_SYSREG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access LP System
  *  Registers.
@@ -492,7 +492,7 @@ extern "C" {
 /** PMS_HP_CORE1_MM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in machine mode
  */
-#define PMS_HP_CORE1_MM_PMS_REG0_REG (DR_REG_PMS_BASE + 0x10)
+#define PMS_HP_CORE1_MM_PMS_REG0_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x10)
 /** PMS_HP_CORE1_MM_LP_SYSREG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access LP System
  *  Registers.
@@ -719,7 +719,7 @@ extern "C" {
 /** PMS_HP_CORE1_UM_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in user mode
  */
-#define PMS_HP_CORE1_UM_PMS_REG0_REG (DR_REG_PMS_BASE + 0x14)
+#define PMS_HP_CORE1_UM_PMS_REG0_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x14)
 /** PMS_HP_CORE1_UM_LP_SYSREG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access LP System
  *  Registers.
@@ -944,7 +944,7 @@ extern "C" {
 /** PMS_REGDMA_LP_PERI_PMS_REG register
  *  LP Peripheral Permission register for REGDMA
  */
-#define PMS_REGDMA_LP_PERI_PMS_REG (DR_REG_PMS_BASE + 0x18)
+#define PMS_REGDMA_LP_PERI_PMS_REG (DR_REG_HP2LP_PERI_PMS_BASE + 0x18)
 /** PMS_REGDMA_PERI_LP_SRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether REGDMA has permission to access LP SRAM.
  *  0: Not allowed
