@@ -16,12 +16,26 @@
 #include "unity.h"
 #include "test_utils.h"
 
-#define NUMBER_OF_ITERATIONS 10
+#define NUMBER_OF_ITERATIONS 1023
+
+static int compare_uint32(const void *a, const void *b)
+{
+    return (*(uint32_t *)a - * (uint32_t *)b);
+}
+
+static uint32_t calculate_median(uint32_t *values, int size)
+{
+    /* Sort the array of values containing the scheduling time of each iteration */
+    qsort(values, size, sizeof(uint32_t), compare_uint32);
+
+    /* Return the median value. (size is an odd number) */
+    return values[size / 2];
+}
 
 typedef struct {
     SemaphoreHandle_t end_sema;
     uint32_t before_sched;
-    uint32_t cycles_to_sched;
+    uint32_t cycles_to_sched[NUMBER_OF_ITERATIONS];
     TaskHandle_t t1_handle;
 } test_context_t;
 
@@ -38,20 +52,18 @@ static void test_task_1(void *arg) {
 
 static void test_task_2(void *arg) {
     test_context_t *context = (test_context_t *)arg;
-    uint64_t accumulator = 0;
 
     vTaskPrioritySet(NULL, CONFIG_UNITY_FREERTOS_PRIORITY + 1);
     vTaskPrioritySet(context->t1_handle, CONFIG_UNITY_FREERTOS_PRIORITY + 1);
     vPortYield();
 
-    for(int i = 0; i < NUMBER_OF_ITERATIONS; i++) {
-        accumulator += (esp_cpu_get_cycle_count() - context->before_sched);
+    for (int i = 0; i < NUMBER_OF_ITERATIONS; i++) {
+        context->cycles_to_sched[i] = esp_cpu_get_cycle_count() - context->before_sched;
         vPortYield();
     }
 
-    context->cycles_to_sched = accumulator / NUMBER_OF_ITERATIONS;
-    vTaskDelete(context->t1_handle);
     xSemaphoreGive(context->end_sema);
+    vTaskDelete(context->t1_handle);
     vTaskDelete(NULL);
 }
 
@@ -72,5 +84,11 @@ TEST_CASE("scheduling time test", "[freertos]")
 
     BaseType_t result = xSemaphoreTake(context.end_sema, portMAX_DELAY);
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
-    TEST_PERFORMANCE_LESS_THAN(SCHEDULING_TIME , "%"PRIu32" cycles" ,context.cycles_to_sched);
+
+    /* We calculate the median instead of the average to avoid outliers which may occur due to cache speed variabilities */
+    uint32_t median_cycles = calculate_median(context.cycles_to_sched, NUMBER_OF_ITERATIONS);
+    TEST_PERFORMANCE_LESS_THAN(SCHEDULING_TIME, "%"PRIu32" cycles", median_cycles);
+
+    /* Cleanup */
+    vSemaphoreDelete(context.end_sema);
 }
