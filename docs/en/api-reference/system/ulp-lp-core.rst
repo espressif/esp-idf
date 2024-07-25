@@ -160,6 +160,7 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
     * LP IO
     * LP I2C
     * LP UART
+    :SOC_LP_SPI_SUPPORTED: * LP SPI
 
 .. only:: CONFIG_ESP_ROM_HAS_LP_ROM
 
@@ -232,6 +233,10 @@ Main CPU API Reference
 .. include-build-file:: inc/lp_core_i2c.inc
 .. include-build-file:: inc/lp_core_uart.inc
 
+.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+
+    .. include-build-file:: inc/lp_core_spi.inc
+
 LP Core API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -241,5 +246,9 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_uart.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
+
+.. only:: CONFIG_SOC_LP_SPI_SUPPORTED
+
+    .. include-build-file:: inc/ulp_lp_core_spi.inc
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor

@@ -114,7 +114,8 @@ elseif(ULP_COCPU_IS_LP_CORE)
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_panic.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
