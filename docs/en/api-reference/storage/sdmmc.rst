@@ -31,15 +31,15 @@ For functions used to initialize and configure:
 Pin Configurations
 ------------------
 
-..only:: SOC_SDMMC_USE_IOMUX and not SOC_SDMMC_USE_GPIO_MATRIX
+.. only:: SOC_SDMMC_USE_IOMUX and not SOC_SDMMC_USE_GPIO_MATRIX
 
     SDMMC pins are dedicated, you don't have to configure the pins.
 
-..only:: SOC_SDMMC_USE_GPIO_MATRIX and not SOC_SDMMC_USE_IOMUX
+.. only:: SOC_SDMMC_USE_GPIO_MATRIX and not SOC_SDMMC_USE_IOMUX
 
     SDMMC pin signals are routed via GPIO Matrix, so you will need to configure the pins in :cpp:type:`sdmmc_slot_config_t`.
 
-..only:: esp32p4
+.. only:: esp32p4
 
     SDMMC have two slots:
 
