@@ -22,7 +22,7 @@
 #define SOC_UART_SUPPORTED              1       //TODO: [ESP32C61] IDF-9320
 //  \#define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32C61] IDF-9310, IDF-9311
 //  \#define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32C61] IDF-9310, IDF-9311
-//  \#define SOC_GPTIMER_SUPPORTED           1    //TODO: [ESP32C61] IDF-9306
+#define SOC_GPTIMER_SUPPORTED           1
 //  \#define SOC_BT_SUPPORTED                1
 //  \#define SOC_IEEE802154_SUPPORTED        1
 //  \#define SOC_ASYNC_MEMCPY_SUPPORTED      1    //TODO: [ESP32C61] IDF-9315
@@ -378,7 +378,7 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-// #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
+#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 // #define SOC_TIMER_SUPPORT_ETM             (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
