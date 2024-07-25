@@ -35,7 +35,7 @@ For using NVS encryption using this scheme, the partition table must contain the
 NVS Key Partition
 ^^^^^^^^^^^^^^^^^
 
-An application requiring NVS encryption support (using the Flash Encryption-based scheme) needs to be compiled with a key-partition of the type ``data`` and subtype ``key``. This partition should be marked as ``encrypted`` and its size should be the minimum partition size (4 KB). Refer to :doc:`../../api-guides/partition-tables` for more details. Two additional partition tables which contain the :ref:`nvs_encr_key_partition` are provided under the partition table option (``menuconfig`` > ``Partition Table``). They can be directly used for NVS encryption. The structure of these partitions is depicted below:
+An application requiring NVS encryption support (using the Flash Encryption-based scheme) needs to be compiled with a key-partition of the type ``data`` and subtype ``nvs_keys``. This partition should be marked as ``encrypted`` and its size should be the minimum partition size (4 KB). Refer to :doc:`../../api-guides/partition-tables` for more details. Two additional partition tables which contain the :ref:`nvs_encr_key_partition` are provided under the partition table option (``menuconfig`` > ``Partition Table``). They can be directly used for NVS encryption. The structure of these partitions is depicted below:
 
 .. highlight:: none
 
