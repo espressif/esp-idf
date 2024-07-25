@@ -34,6 +34,7 @@ static void ecdsa_enable_and_reset(void)
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
+        ecc_ll_power_up();
         ecc_ll_reset_register();
     }
 
@@ -55,6 +56,7 @@ static void ecdsa_disable(void)
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
+        ecc_ll_power_down();
     }
 
     ECDSA_RCC_ATOMIC() {
