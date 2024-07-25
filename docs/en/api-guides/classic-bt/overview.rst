@@ -13,7 +13,7 @@ The Classic Bluetooth stack in ESP-IDF is a layered architecture that enables Bl
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/classic-bluetooth.png
+    .. figure:: ../../../_static/classic-bluetooth-architecture.png
         :align: center
         :scale: 90%
         :alt: {IDF_TARGET_NAME} Classic Bluetooth Stack Architecture

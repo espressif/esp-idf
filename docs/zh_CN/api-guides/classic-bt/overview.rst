@@ -13,7 +13,7 @@ ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NA
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/classic-bluetooth.png
+    .. figure:: ../../../_static/classic-bluetooth-architecture.png
         :align: center
         :scale: 90%
         :alt: {IDF_TARGET_NAME} 经典蓝牙协议栈架构
