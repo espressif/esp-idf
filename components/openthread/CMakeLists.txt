@@ -237,9 +237,9 @@ execute_process(
 
 string(TIMESTAMP OT_BUILD_TIMESTAMP " %Y-%m-%d %H:%M:%S UTC" UTC)
 string(CONCAT OT_FULL_VERSION_STRING
-       "openthread-esp32/"
+       "${CONFIG_OPENTHREAD_PACKAGE_NAME}/"
        "${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\; "
-       "${CONFIG_IDF_TARGET}\; ${OT_BUILD_TIMESTAMP}")
+       "${CONFIG_OPENTHREAD_PLATFORM_INFO}\; ${OT_BUILD_TIMESTAMP}")
 
 idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
