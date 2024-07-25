@@ -2872,7 +2872,8 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     struct wpa_sm *sm;
     sm = get_wpa_sm();
 
-    wpabuf_free(sm->owe_ie); //free the dh ie constructed in owe_build_assoc_req
+    /* Deallocate the dh ie buffer constructed in owe_build_assoc_req */
+    wpabuf_free(sm->owe_ie);
     sm->owe_ie = NULL;
 
     struct wpa_ie_data *parsed_rsn_data;
@@ -2886,121 +2887,129 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
         goto fail;
     }
 
-    if (dh_ie && MIN_DH_LEN(dh_len)) {
-        wpa_printf(MSG_ERROR, "OWE: Invalid Diffie Hellman IE");
-        goto fail;
-    }
     if (!dh_ie && parsed_rsn_data->num_pmkid == 0) {
         wpa_printf(MSG_ERROR, "OWE: Assoc response should either have pmkid or DH IE");
         goto fail;
     }
 
-    if (!sm->cur_pmksa) { /* No PMK caching */
-        if (dh_ie == NULL) {
-            goto fail;
+    /* Check for PMK caching */
+    if (sm->cur_pmksa && parsed_rsn_data && parsed_rsn_data->num_pmkid == 1 && parsed_rsn_data->pmkid) {
+        if (os_memcmp(parsed_rsn_data->pmkid, sm->cur_pmksa->pmkid, OWE_PMKID_LEN) == 0) {
+            wpa_printf(MSG_DEBUG, "OWE: Using PMK caching");
+            wpa_sm_set_pmk_from_pmksa(sm);
+            goto done;
+        } else {
+            /* If PMKID mismatches, derive keys again */
+            wpa_printf(MSG_DEBUG, "OWE : Invalid PMKID in response");
         }
-        dh_len += 2;
+    }
 
-        dh_ie += 3;
-        dh_len -=3;
-        group = WPA_GET_LE16(dh_ie);
+    if (dh_ie == NULL) {
+        wpa_printf(MSG_ERROR, "OWE: No Diffie Hellman IE in association response");
+        goto fail;
+    }
+    if (dh_ie && MIN_DH_LEN(dh_len)) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid Diffie Hellman IE");
+        goto fail;
+    }
 
-        /* Only group 19 is supported */
-        if ((group != sm->owe_group) || (group != OWE_DH_GRP19)) {
-            wpa_printf(MSG_ERROR, "OWE: Unexpected Diffie-Hellman group in response");
-            goto fail;
-        }
+    /* If STA or AP does not have PMKID, or PMKID mismatches, proceed with normal association */
+    dh_len += 2;
 
-        prime_len = OWE_PRIME_LEN;
+    dh_ie += 3;
+    dh_len -=3;
+    group = WPA_GET_LE16(dh_ie);
 
-        /* Set peer's public key point and calculate shared secret */
-        sh_secret = crypto_ecdh_set_peerkey(sm->owe_ecdh, 0, dh_ie+2, dh_len-2);
-        sh_secret = wpabuf_zeropad(sh_secret, prime_len);
-        if (!sh_secret) {
-            wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key");
-            goto fail;
-        }
+    /* Only group 19 is supported */
+    if ((group != sm->owe_group) || (group != OWE_DH_GRP19)) {
+        wpa_printf(MSG_ERROR, "OWE: Unexpected Diffie-Hellman group in response");
+        goto fail;
+    }
 
-        wpa_hexdump_buf_key(MSG_DEBUG, "OWE: DH shared secret", sh_secret);
-        pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
-        if (!pub) {
-            wpa_printf(MSG_ERROR, "No own public key");
-            wpabuf_free(sh_secret);
-            goto fail;
-        }
+    prime_len = OWE_PRIME_LEN;
 
-        /* PMKID = Truncate-128(Hash(C | A)) */
-        addr[0] = wpabuf_head(pub);
-        len[0] = wpabuf_len(pub);
-        addr[1] = dh_ie + 2;
-        len[1] = dh_len - 2;
+    /* Set peer's public key point and calculate shared secret */
+    sh_secret = crypto_ecdh_set_peerkey(sm->owe_ecdh, 0, dh_ie+2, dh_len-2);
+    sh_secret = wpabuf_zeropad(sh_secret, prime_len);
+    if (!sh_secret) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key");
+        goto fail;
+    }
 
-        int res = sha256_vector(2, addr, len, pmkid);
-        if (res < 0 ) {
-            goto fail;
-        }
+    wpa_hexdump_buf_key(MSG_DEBUG, "OWE: DH shared secret", sh_secret);
+    pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
+    if (!pub) {
+        wpa_printf(MSG_ERROR, "No own public key");
+        goto fail;
+    }
 
-        hash_len = SHA256_MAC_LEN;
+    /* PMKID = Truncate-128(Hash(C | A)) */
+    addr[0] = wpabuf_head(pub);
+    len[0] = wpabuf_len(pub);
+    addr[1] = dh_ie + 2;
+    len[1] = dh_len - 2;
 
-        pub = wpabuf_zeropad(pub, prime_len);
+    int res = sha256_vector(2, addr, len, pmkid);
+    if (res < 0 ) {
+        goto fail;
+    }
 
-        /* prk = HKDF-extract(C | A | group, z) */
-        hkey = wpabuf_alloc(wpabuf_len(pub) + dh_len - 2 + 2);
+    hash_len = SHA256_MAC_LEN;
 
-        wpabuf_put_buf(hkey, pub); /* C */
-        wpabuf_free(pub);
+    pub = wpabuf_zeropad(pub, prime_len);
+    if (!pub) {
+        goto fail;
+    }
 
-        wpabuf_put_data(hkey, dh_ie + 2, dh_len - 2); /* A */
-        wpabuf_put_le16(hkey, sm->owe_group); /* group */
+    /* prk = HKDF-extract(C | A | group, z) */
+    hkey = wpabuf_alloc(wpabuf_len(pub) + dh_len - 2 + 2);
+    if (!hkey) {
+        goto fail;
+    }
 
-        res = hmac_sha256(wpabuf_head(hkey), wpabuf_len(hkey), wpabuf_head(sh_secret), wpabuf_len(sh_secret), prk);
-        if (res < 0 ) {
-            goto fail;
-        }
+    wpabuf_put_buf(hkey, pub); /* C */
+    wpabuf_free(pub);
 
-        hash_len = SHA256_MAC_LEN;
+    wpabuf_put_data(hkey, dh_ie + 2, dh_len - 2); /* A */
+    wpabuf_put_le16(hkey, sm->owe_group); /* group */
 
-        wpabuf_free(hkey);
-        wpabuf_free(sh_secret);
+    res = hmac_sha256(wpabuf_head(hkey), wpabuf_len(hkey), wpabuf_head(sh_secret), wpabuf_len(sh_secret), prk);
+    if (res < 0 ) {
+        goto fail;
+    }
 
-        wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, hash_len);
+    hash_len = SHA256_MAC_LEN;
 
-        /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
-        res = hmac_sha256_kdf(prk, hash_len, NULL, (const u8 *)info,
-        os_strlen(info), pmk, hash_len);
-        if (res < 0 ) {
-            goto fail;
-        }
+    wpabuf_free(hkey);
+    wpabuf_clear_free(sh_secret);
 
-        forced_memzero(prk, SHA256_MAC_LEN);
-        wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, OWE_PMKID_LEN);
+    wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, hash_len);
 
-        os_memcpy(sm->pmk,pmk,hash_len);
-        sm->pmk_len = hash_len;
-        wpa_hexdump_key(MSG_DEBUG, "OWE: PMK", sm->pmk, sm->pmk_len);
+    /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
+    res = hmac_sha256_kdf(prk, hash_len, NULL, (const u8 *)info,
+    os_strlen(info), pmk, hash_len);
+    if (res < 0 ) {
+        goto fail;
+    }
 
-        pmksa_cache_add(sm->pmksa, sm->pmk, sm->pmk_len, pmkid, NULL, 0,
-                            sm->bssid, sm->own_addr, sm->network_ctx, sm->key_mgmt);
-        goto done;
-    } else { /* PMK caching */
-        if (parsed_rsn_data && sm->cur_pmksa) {
-            if (parsed_rsn_data->num_pmkid == 1 && parsed_rsn_data->pmkid) {
-                if (os_memcmp(parsed_rsn_data->pmkid, sm->cur_pmksa->pmkid, OWE_PMKID_LEN) == 0) {
-                    wpa_printf(MSG_DEBUG, "OWE: Using PMK caching");
-                    wpa_sm_set_pmk_from_pmksa(sm);
-                    goto done;
-                } else {
-                    wpa_printf(MSG_DEBUG, "OWE : Invalid PMKID in response");
-                    goto fail;
-                }
-            }
-        }
-     }
+    forced_memzero(prk, SHA256_MAC_LEN);
+    wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, OWE_PMKID_LEN);
+
+    os_memcpy(sm->pmk,pmk,hash_len);
+    sm->pmk_len = hash_len;
+    wpa_hexdump_key(MSG_DEBUG, "OWE: PMK", sm->pmk, sm->pmk_len);
+
+    pmksa_cache_add(sm->pmksa, sm->pmk, sm->pmk_len, pmkid, NULL, 0,
+                        sm->bssid, sm->own_addr, sm->network_ctx, sm->key_mgmt);
+
 done:
     os_free(parsed_rsn_data);
     return 0;
 fail:
     os_free(parsed_rsn_data);
+    wpabuf_free(pub);
+    wpabuf_free(hkey);
+    wpabuf_clear_free(sh_secret);
     return -1;
 }
 #endif // CONFIG_OWE_STA
