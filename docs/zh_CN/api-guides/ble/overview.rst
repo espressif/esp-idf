@@ -129,7 +129,7 @@ ESP 蓝牙主机
 ESP-Bluedroid
 ^^^^^^^^^^^^^
 
-ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两层组成：蓝牙上层 (BTU) 和蓝牙传输控制器层 (BTC)。BTU 层负责处理 L2CAP、GATT/ATT、SMP、GAP 等底层蓝牙协议以及其他配置文件，提供以 "bta" 为前缀的接口。BTC 层主要负责向应用层提供以 "esp" 为前缀的支持接口，并处理基于 GATT 的配置文件以及其他任务。所有的 API 都位于 ESP_API 层，开发者应使用以 "esp" 为前缀的蓝牙 API。
+ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两层组成：蓝牙上层 (BTU) 和蓝牙传输控制器层 (BTC)。BTU 层负责处理 L2CAP、GATT/ATT、SMP、GAP 等底层蓝牙协议以及其他配置文件，提供以 "bta" 为前缀的接口。BTC 层主要负责向应用层提供以 "esp" 为前缀的支持接口，并处理基于 GATT 的配置文件以及其他任务。所有的 API 都位于 ESP_API 层，开发者应使用以 "esp" 为前缀的低功耗蓝牙 API。
 
 .. only:: esp32
 

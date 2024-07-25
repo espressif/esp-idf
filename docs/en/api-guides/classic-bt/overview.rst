@@ -13,14 +13,14 @@ The Classic Bluetooth stack in ESP-IDF is a layered architecture that enables Bl
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/bluetooth-architecture-no-ble-mesh.png
+    .. figure:: ../../../_static/classic-bluetooth.png
         :align: center
         :scale: 90%
         :alt: {IDF_TARGET_NAME} Classic Bluetooth Stack Architecture
 
         {IDF_TARGET_NAME} Classic Bluetooth Stack Architecture
 
-The table below shows whether the Classic Bluetooth modules are supported in a specific chip series.
+The table below shows whether the Classic Bluetooth Controller are supported in a specific chip series.
 
 .. list-table::
     :width: 100%
@@ -29,27 +29,19 @@ The table below shows whether the Classic Bluetooth modules are supported in a s
 
     * - Chip Series
       - Controller
-      - ESP-Bluedroid
     * - ESP32
-      - Y
       - Y
     * - ESP32-S2
       - \–
-      - \–
     * - ESP32-S3
-      - \–
       - \–
     * - ESP32-C2
       - \–
-      - \–
     * - ESP32-C3
-      - \-
       - \-
     * - ESP32-C6
       - \-
-      - \-
     * - ESP32-H2
-      - \-
       - \-
 
 The following sections briefly describe each layer and provide quick links to the related documents and application examples.
@@ -67,24 +59,19 @@ At the bottom layer is ESP Bluetooth Controller, which encompasses various modul
 Hosts
 -----
 
-There are one host, ESP-Bluedroid, supporting Classic Bluetooth in IDF.
+There is one host, ESP-Bluedroid, supporting Classic Bluetooth in IDF.
 
 
 ESP-Bluedroid
 ^^^^^^^^^^^^^
 
-ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP, GATT/ATT, SMP, GAP, and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with "esp", to the application layer, processing GATT-based profiles and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Bluetooth APIs prefixed with "esp".
+ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with "esp", to the application layer and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Classic Bluetooth APIs prefixed with "esp".
 
 - API references
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`../../api-reference/bluetooth/classic_bt`
 - :example:`Application examples <bluetooth/bluedroid/classic_bt>`
-
-Profiles
---------
-
-Above the host stacks are the profile implementations by Espressif and some common profiles. Depending on your configuration, these profiles can run on ESP-Bluedroid.
 
 
 Applications

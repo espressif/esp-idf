@@ -13,14 +13,14 @@ ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NA
 
 .. only:: esp32
 
-    .. figure:: ../../../_static/bluetooth-architecture-no-ble-mesh.png
+    .. figure:: ../../../_static/classic-bluetooth.png
         :align: center
         :scale: 90%
         :alt: {IDF_TARGET_NAME} 经典蓝牙协议栈架构
 
         {IDF_TARGET_NAME} 经典蓝牙协议栈架构
 
-参考下表可知特定芯片是否支持经典蓝牙模块。
+参考下表可知特定芯片是否支持经典蓝牙控制器。
 
 .. list-table::
     :width: 100%
@@ -29,27 +29,19 @@ ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NA
 
     * - 芯片系列
       - 控制器
-      - ESP-Bluedroid
     * - ESP32
-      - Y
       - Y
     * - ESP32-S2
       - \–
-      - \–
     * - ESP32-S3
-      - \–
       - \–
     * - ESP32-C2
       - \-
-      - \-
     * - ESP32-C3
-      - \-
       - \-
     * - ESP32-C6
       - \-
-      - \-
     * - ESP32-H2
-      - \-
       - \-
 
 以下各节简要介绍了每个层，并提供了相关文档和应用示例的快速链接。
@@ -73,18 +65,13 @@ IDF 中的ESP-Bluedroid 主机支持经典蓝牙。
 ESP-Bluedroid
 ^^^^^^^^^^^^^
 
-ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两层组成：蓝牙上层 (BTU) 和蓝牙传输控制器层 (BTC)。BTU 层负责处理 L2CAP、GATT/ATT、SMP、GAP 等底层蓝牙协议以及其他配置文件，提供以 "bta" 为前缀的接口。BTC 层主要负责向应用层提供以 "esp" 为前缀的支持接口，并处理基于 GATT 的配置文件以及其他任务。所有的 API 都位于 ESP_API 层，开发者应使用以 "esp" 为前缀的蓝牙 API。
+ESP-Bluedroid 是原生 Android 蓝牙协议栈 Bluedroid 的修改版，由两层组成：蓝牙上层 (BTU) 和蓝牙传输控制器层 (BTC)。BTU 层负责处理 L2CAP 等底层蓝牙协议以及其他配置文件，提供以 "bta" 为前缀的接口。BTC 层主要负责向应用层提供以 "esp" 为前缀的支持接口，并处理其他任务。所有的 API 都位于 ESP_API 层，开发者应使用以 "esp" 为前缀的经典蓝牙 API。
 
 - API 参考
 
   - :doc:`../../api-reference/bluetooth/bt_common`
   - :doc:`经典蓝牙 <../../api-reference/bluetooth/classic_bt>`
 - :example:`应用程序示例 <bluetooth/bluedroid/classic_bt>`
-
-蓝牙规范
---------
-
-主机协议层之上是 Espressif 的蓝牙规范和一些常见的蓝牙规范。根据具体配置，这些规范可以在 ESP-Bluedroid 上运行。
 
 
 应用
