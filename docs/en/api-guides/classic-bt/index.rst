@@ -8,6 +8,6 @@ Classic Bluetooth®
 Overview
 *********
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    overview
