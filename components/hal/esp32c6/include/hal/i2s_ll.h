@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -36,6 +37,30 @@ extern "C" {
 
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
 #define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+
+#define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){{  \
+                                          [I2S_DIR_RX - 1] = {  \
+                                              [I2S_ETM_EVENT_DONE] = I2S_EVT_RX_DONE, \
+                                              [I2S_ETM_EVENT_REACH_THRESH] = I2S_EVT_X_WORDS_RECEIVED,  \
+                                          },  \
+                                          [I2S_DIR_TX - 1] = {  \
+                                              [I2S_ETM_EVENT_DONE] = I2S_EVT_TX_DONE,  \
+                                              [I2S_ETM_EVENT_REACH_THRESH] = I2S_EVT_X_WORDS_SENT, \
+                                          }}}[i2s_port][(chan_dir) - 1][event]
+
+
+#define I2S_LL_ETM_TASK_TABLE(i2s_port, chan_dir, task)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_TASK_MAX]){{  \
+                                         [I2S_DIR_RX - 1] = {  \
+                                             [I2S_ETM_TASK_START] = I2S_TASK_START_RX, \
+                                             [I2S_ETM_TASK_STOP] = I2S_TASK_STOP_RX, \
+                                         },  \
+                                         [I2S_DIR_TX - 1] = {  \
+                                             [I2S_ETM_TASK_START] = I2S_TASK_START_TX, \
+                                             [I2S_ETM_TASK_STOP] = I2S_TASK_STOP_TX, \
+                                         }}}[i2s_port][(chan_dir) - 1][task]
+#define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFUL)
 
 /**
  *
@@ -460,7 +485,7 @@ static inline void i2s_ll_rx_set_eof_num(i2s_dev_t *hw, int eof_num)
 }
 
 /**
- * @brief Congfigure TX chan bit and audio data bit
+ * @brief Configure TX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -473,7 +498,7 @@ static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
 }
 
 /**
- * @brief Congfigure RX chan bit and audio data bit
+ * @brief Configure RX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -873,11 +898,11 @@ static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t f
 }
 
 /**
- * @brief Get I2S TX PDM fp configuration paramater
+ * @brief Get I2S TX PDM fp configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fp configuration paramater
+ *        - fp configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
@@ -885,11 +910,11 @@ static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 }
 
 /**
- * @brief Get I2S TX PDM fs configuration paramater
+ * @brief Get I2S TX PDM fs configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fs configuration paramater
+ *        - fs configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
@@ -915,7 +940,7 @@ static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
  * @brief Configura TX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pcm_cfg PCM configuration paramater
+ * @param pcm_cfg PCM configuration parameter
  */
 static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
@@ -927,7 +952,7 @@ static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_
  * @brief Configure RX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pcm_cfg PCM configuration paramater
+ * @param pcm_cfg PCM configuration parameter
  */
 static inline void i2s_ll_rx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
@@ -1099,7 +1124,7 @@ static inline void i2s_ll_tx_pdm_dma_take_mode(i2s_dev_t *hw, bool is_mono, bool
  * @param is_mono   The DMA data only has one slot (mono) or contains two slots (stereo)
  * @param is_copy   Whether the un-selected slot copies the data from the selected one
  *                  If not, the un-selected slot will transmit the data from 'conf_single_data'
- * @param mask      The slot mask to selet the slot
+ * @param mask      The slot mask to select the slot
  */
 static inline void i2s_ll_tx_pdm_slot_mode(i2s_dev_t *hw, bool is_mono, bool is_copy, i2s_pdm_slot_mask_t mask)
 {
@@ -1130,6 +1155,28 @@ static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t
 {
     hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
     hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
+}
+
+/**
+ * @brief Set the TX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that send
+ */
+static inline void i2s_ll_tx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_tx_send_word_num = thresh;
+}
+
+/**
+ * @brief Set the RX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that received
+ */
+static inline void i2s_ll_rx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_rx_receive_word_num = thresh;
 }
 
 #ifdef __cplusplus
