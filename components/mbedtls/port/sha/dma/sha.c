@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <sys/lock.h>
 
-#include "esp_dma_utils.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_log.h"
