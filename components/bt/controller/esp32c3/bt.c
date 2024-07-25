@@ -495,7 +495,7 @@ static int interrupt_alloc_wrapper(int cpu_id, int source, intr_handler_t handle
 {
     btdm_isr_alloc_t p;
     p.source = source;
-    p.flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM;
+    p.flags = ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM;
     p.fn = handler;
     p.arg = arg;
     p.handle = (intr_handle_t *)ret_handle;
