@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,6 @@ static bool test_timer_group_isr_cb(void *arg)
     const timer_group_t timer_group = info->timer_group;
     const timer_idx_t timer_idx = info->timer_idx;
     uint64_t timer_val;
-    double time;
     uint64_t alarm_value;
     timer_event_t evt;
     alarm_flag = true;
@@ -70,13 +69,11 @@ static bool test_timer_group_isr_cb(void *arg)
         timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
         esp_rom_printf("This is TG%d timer[%d] reload-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
-        timer_get_counter_time_sec(timer_group, timer_idx, &time);
         evt.type = TIMER_AUTORELOAD_EN;
     } else {
         timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
         esp_rom_printf("This is TG%d timer[%d] count-up-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
-        timer_get_counter_time_sec(timer_group, timer_idx, &time);
         timer_get_alarm_value(timer_group, timer_idx, &alarm_value);
         timer_set_counter_value(timer_group, timer_idx, 0);
         evt.type = TIMER_AUTORELOAD_DIS;
@@ -363,7 +360,7 @@ TEST_CASE("Timer_read_counter_value", "[hw_timer]")
     timer_config_t config = {
         .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = clk_src_hz / TEST_TIMER_RESOLUTION_HZ,
-        .alarm_en = TIMER_ALARM_EN,
+        .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_START,
@@ -469,7 +466,7 @@ TEST_CASE("Timer_counter_direction", "[hw_timer]")
     timer_config_t config = {
         .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = clk_src_hz / TEST_TIMER_RESOLUTION_HZ,
-        .alarm_en = TIMER_ALARM_EN,
+        .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_START,
@@ -508,7 +505,7 @@ TEST_CASE("Timer_divider", "[hw_timer]")
     timer_config_t config = {
         .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = clk_src_hz / TEST_TIMER_RESOLUTION_HZ,
-        .alarm_en = TIMER_ALARM_EN,
+        .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_START,

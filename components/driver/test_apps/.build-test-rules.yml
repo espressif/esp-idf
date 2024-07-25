@@ -81,10 +81,6 @@ components/driver/test_apps/legacy_sigma_delta_driver:
 components/driver/test_apps/legacy_timer_driver:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8962
   depends_filepatterns:
     - components/driver/deprecated/**/*timer*
 
