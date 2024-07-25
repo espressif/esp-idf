@@ -287,6 +287,9 @@ static void s_select_best_tuning_config(mspi_timing_config_t *config, uint32_t c
     } else {
 #if MSPI_TIMING_PSRAM_DTR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, reference_data, IS_DDR);
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        mspi_timing_setting_temperature_adjustment_best_point(best_point);
+#endif
 #elif MSPI_TIMING_PSRAM_STR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
 #endif

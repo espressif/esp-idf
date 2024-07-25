@@ -27,6 +27,13 @@
 #include "bootloader_flash.h"
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+#include "mspi_timing_tuning_configs.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_private/cache_utils.h"
+#include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/startup_internal.h"
+#endif // CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
 
 #define OPI_PSRAM_SYNC_READ           0x0000
 #define OPI_PSRAM_SYNC_WRITE          0x8080
@@ -411,6 +418,12 @@ static bool get_working_pll_freq(const uint8_t *reference_data, bool is_flash, u
 }
 #endif  //Frequency Scanning
 
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+// These arrays store the frequency scan result of the timing points
+int psram_pass_freq_min[MSPI_TIMING_CONFIG_NUM_MAX] = {0};
+int psram_pass_freq_max[MSPI_TIMING_CONFIG_NUM_MAX] = {0};
+#endif // CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+
 static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *configs, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_flash)
 {
 #if (MSPI_TIMING_CORE_CLOCK_MHZ == 160)
@@ -441,10 +454,11 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
     bool ret = false;
 
     //This `max_freq` is the max pll frequency that per MSPI timing tuning config can work
-    uint32_t max_freq = 0;
     uint32_t temp_max_freq = 0;
     uint32_t temp_min_freq = 0;
 
+#if !CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+    uint32_t max_freq = 0;
     for (; current_point <= end; current_point++) {
         if (is_flash) {
             mspi_timing_config_flash_set_tuning_regs(configs, current_point);
@@ -465,6 +479,48 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
     } else {
         ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %" PRIu32 "mhz, best point is index %" PRIu32, max_freq, best_point);
     }
+#else
+    uint32_t freq_diff_min = 0xffffffff;
+    for (; current_point <= end; current_point++) {
+        if (is_flash) {
+            mspi_timing_config_flash_set_tuning_regs(configs, current_point);
+        } else {
+            mspi_timing_config_psram_set_tuning_regs(configs, current_point);
+        }
+
+        ret = get_working_pll_freq(reference_data, is_flash, &temp_max_freq, &temp_min_freq);
+        if (ret == true) {
+            if (temp_min_freq == MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MIN) {
+                // divided by 4 for mspi clk frequency
+                psram_pass_freq_min[current_point] = (temp_max_freq - MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ) / 4; // use MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ to calculate the real frequency
+                psram_pass_freq_max[current_point] = temp_max_freq / 4;
+            } else if (temp_max_freq == MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX) {
+                psram_pass_freq_min[current_point] = temp_min_freq / 4;
+                psram_pass_freq_max[current_point] = (temp_min_freq + MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ) / 4; // use MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ to calculate the real frequency
+            } else {
+                psram_pass_freq_min[current_point] = temp_min_freq / 4;
+                psram_pass_freq_max[current_point] = temp_max_freq / 4;
+            }
+            ESP_EARLY_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32 " mhz, max spi is %" PRIu32 " mhz, min spi is %" PRIu32 " mhz", current_point, temp_max_freq, temp_min_freq, psram_pass_freq_max[current_point], psram_pass_freq_min[current_point]);
+
+            // calculate the difference to psram_pass_freq and 120MHz
+            int temp_min_freq_diff = abs(120 - psram_pass_freq_min[current_point]);
+            int temp_max_freq_diff = abs(psram_pass_freq_max[current_point] - 120);
+
+            if (abs(temp_min_freq_diff - temp_max_freq_diff) < freq_diff_min) {
+                freq_diff_min = abs(temp_min_freq_diff - temp_max_freq_diff);
+                best_point = current_point;
+            }
+        }
+    }
+    if (freq_diff_min == 0xffffffff) {
+        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
+        best_point = end + 1 - consecutive_length;
+    } else {
+        ESP_EARLY_LOGD(TAG, "freq scan success, best point is index %" PRIu32, best_point);
+    }
+
+#endif
 
     return best_point;
 
@@ -630,3 +686,201 @@ uint8_t mspi_timing_config_get_flash_extra_dummy(void)
     return 0;
 #endif
 }
+
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+
+#define INTERVAL_IN_SECOND CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND
+
+// These arrays store the frequency scan result of the timing points
+static int s_point_temp_range_min[MSPI_TIMING_CONFIG_NUM_MAX] = {0};
+static int s_point_temp_range_max[MSPI_TIMING_CONFIG_NUM_MAX] = {0};
+static uint32_t s_psram_best_point_idx = 0;
+
+void mspi_timing_setting_temperature_adjustment_best_point(uint32_t best_point)
+{
+    s_psram_best_point_idx = best_point;
+}
+
+static void mspi_timing_set_psram_point_idx(uint32_t point_idx)
+{
+    mspi_timing_config_t timing_configs = {0};
+    s_psram_best_point_idx = point_idx;
+    mspi_timing_get_psram_tuning_configs(&timing_configs);
+
+    mspi_timing_psram_set_best_tuning_config(&timing_configs, point_idx);
+    mspi_timing_config_psram_set_tuning_regs(&timing_configs, point_idx);
+}
+
+static void set_timing_point(uint32_t point_idx)
+{
+    // Disable cache in order that cache would not touch psram
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    mspi_timing_set_psram_point_idx(point_idx);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+}
+
+// A mean filter with window to make the temperature value smoother
+static esp_err_t temperature_sensor_get_celsius_filtered(int16_t *temp_filtered)
+{
+    const int filter_window_len = 7;
+    int16_t temp_arr[filter_window_len];
+    int16_t temp_sum = 0;
+    uint8_t temp_min_idx = 0;
+    uint8_t temp_max_idx = 0;
+
+    for (uint8_t idx = 0; idx < filter_window_len; idx++) {
+        temp_arr[idx] = temp_sensor_get_raw_value(NULL);
+        // record the index of the max and min temperature value
+        if (temp_arr[idx] > temp_arr[temp_max_idx]) temp_max_idx = idx;
+        if (temp_arr[idx] < temp_arr[temp_min_idx]) temp_min_idx = idx;
+        temp_sum += temp_arr[idx];
+    }
+    // remove the max and min temperature value
+    temp_sum -= temp_arr[temp_max_idx];
+    temp_sum -= temp_arr[temp_min_idx];
+    *temp_filtered = temp_sum / (filter_window_len - 2); // Don't calculate the temp_max and temp_min
+
+    return ESP_OK;
+}
+
+/**
+ * This task will:
+ * 1. Calculate temperature ranges of timing points
+ * 2. Monitor current temperature
+ * 3. Switch timing point if temperature is beyond the range
+ */
+void adjust_psram_timing_point_task(void *arg)
+{
+    int16_t temp_refer = 0, temp_curr = 0;
+    (void)arg;
+    temperature_sensor_power_acquire();
+    temperature_sensor_get_celsius_filtered(&temp_refer); // get the refer temperature
+
+    int temperature_freq_radio = 5; // It means that the frequency will reduce by 1MHz when the temperature rises 5℃
+    const int temperature_safe_range = 5; // A temperature buffer zone to avoid switching timing points frequently
+    // make sure the frequency of current timing point is greater than freq_thres_max and less than freq_thres_min
+    const int freq_thres_max = 128; // threshold for maximum threshold frequency in specific temperature, should not change
+    const int freq_thres_min = 112; // threshold for minimum threshold frequency in specific temperature, should not change
+    int point_curr = s_psram_best_point_idx;
+    bool valid_point[MSPI_TIMING_CONFIG_NUM_MAX] = {false};
+
+    // 1. Get the delta of frequency we get at the specific temperature (freq_min) with the frequency min threshold (freq_diff = freq_thres_min - freq_min)
+    // 2. Convert frequency difference to temperature difference by radio (5), temperature_diff = freq_diff * radio
+    // 3. Calculate the range of temperature: temperature_thre_min =  freq_min - temperature_diff
+    // Same for the temperature_thre_max.
+
+    // calculate temperature ranges of the every timing point
+    for (uint32_t point = 0; point < MSPI_TIMING_CONFIG_NUM_MAX; point++) {
+        if (psram_pass_freq_min[point] == 0 && psram_pass_freq_max[point] == 0) {
+            continue;
+        }
+        valid_point[point] = true;
+        uint32_t pass_freq_min = psram_pass_freq_min[point];
+        uint32_t pass_freq_max = psram_pass_freq_max[point];
+
+        if (pass_freq_max >= freq_thres_max) {
+            // frequency pass_freq_max greater than freq_thres_max, it will decrease to freq_thres_max until temperature rise to s_point_temp_range_max
+            s_point_temp_range_max[point] = temp_refer + (pass_freq_max - freq_thres_max) * temperature_freq_radio;
+        } else {
+            // frequency pass_freq_max less than freq_thres_max, it will increase to freq_thres_max until temperature drop to s_point_temp_range_max
+            s_point_temp_range_max[point] = temp_refer - (freq_thres_max - pass_freq_max) * temperature_freq_radio;
+        }
+
+        if (pass_freq_min <= freq_thres_min) {
+            // frequency pass_freq_min less than freq_thres_min, it will increase to freq_thres_min until temperature drop to s_point_temp_range_min
+            s_point_temp_range_min[point] = temp_refer - (freq_thres_min - pass_freq_min) * temperature_freq_radio;
+        } else {
+            // frequency pass_freq_min greater than freq_thres_min, it will decrease to freq_thres_min until temperature rise to s_point_temp_range_min
+            s_point_temp_range_min[point] = temp_refer + (pass_freq_min - freq_thres_min) * temperature_freq_radio;
+        }
+    }
+
+    for (uint32_t point = 0; point < MSPI_TIMING_CONFIG_NUM_MAX - 1; point++) {
+        if (valid_point[point] && valid_point[point + 1]) {
+            // check temperature intersection
+            if (s_point_temp_range_max[point] <= s_point_temp_range_min[point + 1]) {
+                ESP_EARLY_LOGE(TAG, "no temperature intersection of neighboring phase points");
+                abort();
+            }
+        }
+    }
+
+    while (1) {
+        vTaskDelay(INTERVAL_IN_SECOND * 1000 / portTICK_PERIOD_MS);
+
+        point_curr = s_psram_best_point_idx;
+        temperature_sensor_get_celsius_filtered(&temp_curr);
+        ESP_EARLY_LOGD(TAG, "Getting current temperature value is: %d", temp_curr);
+
+        // Switch timing point if temperature is beyond the range
+        if (s_point_temp_range_max[point_curr] == 0 && s_point_temp_range_min[point_curr] == 0) {
+            // The current timing point has no frequency scan result (psram_pass_freq_min and psram_pass_freq_min equal to 0),
+            // use the previous or next timing point's temperature range to decide what temperature to switch timing point.
+
+            // Use previous timing point's temperature range
+
+            if (point_curr - 1 >= 0) {
+                if (s_point_temp_range_max[point_curr - 1] != 0 && s_point_temp_range_min[point_curr - 1] != 0) {
+                    if (temp_curr < (s_point_temp_range_max[point_curr - 1] - temperature_safe_range)) {
+                        int point_next = point_curr - 1;
+                        set_timing_point(point_next);
+                        ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                        continue;
+                    }
+                }
+            }
+
+            // Use next timing point's temperature range
+            if (point_curr + 1 < MSPI_TIMING_CONFIG_NUM_MAX) {
+                if (s_point_temp_range_max[point_curr + 1] != 0 && s_point_temp_range_min[point_curr + 1] != 0) {
+                    if (temp_curr > s_point_temp_range_min[point_curr + 1] + temperature_safe_range) {
+                        int point_next = point_curr + 1;
+                        set_timing_point(point_next);
+                        ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                        continue;
+                    }
+                }
+            }
+        } else {
+            // Current temperature is greater than the range, switch to next timing point
+            if (point_curr + 1 < MSPI_TIMING_CONFIG_NUM_MAX) {
+                if (temp_curr > s_point_temp_range_max[point_curr]) {
+                    int point_next = point_curr + 1;
+                    set_timing_point(point_next);
+                    ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                    continue;
+                }
+            }
+
+            // Current temperature is less than the range, switch to previous timing point
+            if (point_curr - 1  >= 0) {
+                if (temp_curr < s_point_temp_range_min[point_curr]) {
+                    int point_next = point_curr - 1;
+                    set_timing_point(point_next);
+                    ESP_EARLY_LOGD(TAG, "PSRAM set timing point from %d to %ld\n", point_curr, point_next);
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+static esp_err_t psram_adjust_timing_point_via_tsens(void)
+{
+    esp_rom_spiflash_chip_t *chip = &rom_spiflash_legacy_data->chip;
+    uint8_t vender_id = (chip->device_id >> 16) & 0xff;
+    if (vender_id == 0xC8 || vender_id == 0x20) {
+        xTaskCreatePinnedToCore(adjust_psram_timing_point_task, "adjust_psram_timing_point_task", 1024 * 5, NULL, configMAX_PRIORITIES - 2, NULL, 0);
+    } else {
+        ESP_EARLY_LOGE(TAG, "The flash model has not been verified support this feature, please contact espressif business support");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    return ESP_OK;
+}
+
+ESP_SYSTEM_INIT_FN(psram_adjust_timing_point_via_temperature, SECONDARY, BIT(0), 240)
+{
+    return psram_adjust_timing_point_via_tsens();
+}
+
+#endif //CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
