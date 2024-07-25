@@ -91,6 +91,7 @@ def main(arguments: argparse.Namespace) -> None:
             extra_default_build_targets=extra_default_build_targets,
             modified_components=arguments.modified_components,
             modified_files=arguments.modified_files,
+            ignore_app_dependencies_components=arguments.ignore_app_dependencies_components,
             ignore_app_dependencies_filepatterns=arguments.ignore_app_dependencies_filepatterns,
         )
 
@@ -216,11 +217,13 @@ if __name__ == '__main__':
         print('Build and run all test cases, and compile all cmake apps')
         args.modified_components = None
         args.modified_files = None
+        args.ignore_app_dependencies_components = None
         args.ignore_app_dependencies_filepatterns = None
     elif args.filter_expr is not None:
         print('Build and run only test cases matching "%s"' % args.filter_expr)
         args.modified_components = None
         args.modified_files = None
+        args.ignore_app_dependencies_components = None
         args.ignore_app_dependencies_filepatterns = None
     else:
         print(
