@@ -35,7 +35,7 @@ NVS 加密：基于 flash 加密的方案
 NVS 密钥分区
 ^^^^^^^^^^^^^^^^^
 
-应用如果要使用 NVS 加密（使用基于 flash 加密的方案）编译时，须使用类型为 ``data`` 和子类型为 ``key`` 的密钥分区。该分区应被标记为 ``encrypted`` 且最小为 4 KB （最小分区大小）。参考 :doc:`../../api-guides/partition-tables` 了解详情。在分区表选项 ( ``menuconfig`` > ``Partition Table``) 中，有两个包含 :ref:`nvs_encr_key_partition` 的额外分区表，可以直接用于 NVS 加密。分区的结构如下所示：
+应用如果要使用 NVS 加密（使用基于 flash 加密的方案）编译时，须使用类型为 ``data`` 和子类型为 ``nvs_keys`` 的密钥分区。该分区应被标记为 ``encrypted`` 且最小为 4 KB （最小分区大小）。参考 :doc:`../../api-guides/partition-tables` 了解详情。在分区表选项 ( ``menuconfig`` > ``Partition Table``) 中，有两个包含 :ref:`nvs_encr_key_partition` 的额外分区表，可以直接用于 NVS 加密。分区的结构如下所示：
 
 .. highlight:: none
 
