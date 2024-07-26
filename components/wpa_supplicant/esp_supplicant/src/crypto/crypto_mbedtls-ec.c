@@ -501,8 +501,8 @@ static struct crypto_ec_key *crypto_alloc_key(void)
     return (struct crypto_ec_key *)key;
 }
 
-struct crypto_ec_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *group,
-                                               const u8 *buf, size_t len)
+struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group,
+                                             const u8 *buf, size_t len)
 {
     mbedtls_ecp_point *point = NULL;
     struct crypto_ec_key *pkey = NULL;
@@ -555,13 +555,6 @@ fail:
     }
     pkey = NULL;
     return pkey;
-}
-
-void crypto_ec_free_key(struct crypto_ec_key *key)
-{
-    mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
-    mbedtls_pk_free(pkey);
-    os_free(key);
 }
 
 struct crypto_ec_point *crypto_ec_key_get_public_key(struct crypto_ec_key *key)
@@ -820,8 +813,10 @@ fail:
     return  ret;
 }
 
-int crypto_edcsa_sign_verify(const unsigned char *hash,
-                             const struct crypto_bignum *r, const struct crypto_bignum *s, struct crypto_ec_key *csign, int hlen)
+int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
+                                       const unsigned char *hash, int hlen,
+                                       const u8 *r, size_t r_len,
+                                       const u8 *s, size_t s_len)
 {
     /* (mbedtls_ecdsa_context *) */
     mbedtls_ecp_keypair *ecp_kp = mbedtls_pk_ec(*(mbedtls_pk_context *)csign);
@@ -829,35 +824,41 @@ int crypto_edcsa_sign_verify(const unsigned char *hash,
         return -1;
     }
 
+    struct crypto_bignum *rb = NULL, *sb = NULL;
+    rb = crypto_bignum_init_set(r, r_len);
+    sb = crypto_bignum_init_set(s, s_len);
+
     mbedtls_ecp_group *ecp_kp_grp = &ecp_kp->MBEDTLS_PRIVATE(grp);
     mbedtls_ecp_point *ecp_kp_q = &ecp_kp->MBEDTLS_PRIVATE(Q);
     int ret = mbedtls_ecdsa_verify(ecp_kp_grp, hash, hlen,
-                                   ecp_kp_q, (mbedtls_mpi *)r, (mbedtls_mpi *)s);
+                                   ecp_kp_q, (mbedtls_mpi *)rb, (mbedtls_mpi *)sb);
     if (ret != 0) {
         wpa_printf(MSG_ERROR, "ecdsa verification failed");
+        crypto_bignum_deinit(rb, 0);
+        crypto_bignum_deinit(sb, 0);
         return ret;
     }
 
     return ret;
 }
 
-void crypto_ec_key_debug_print(const char *title, struct crypto_ec_key *key)
+void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
 {
 #ifdef DEBUG_PRINT
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
     mbedtls_ecp_keypair *ecp = mbedtls_pk_ec(*pkey);
     u8 x[32], y[32], d[32];
-    wpa_printf(MSG_ERROR, "curve: %s",
+    wpa_printf(MSG_INFO, "curve: %s",
                mbedtls_ecp_curve_info_from_grp_id(ecp->MBEDTLS_PRIVATE(grp).id)->name);
     int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
 
-    wpa_printf(MSG_ERROR, "prime len is %d", len);
+    wpa_printf(MSG_INFO, "prime len is %d", len);
     crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_key_get_public_key(key), x, y);
     crypto_bignum_to_bin(crypto_ec_key_get_private_key(key),
-                d, len, len);
+                         d, len, len);
     wpa_hexdump(MSG_INFO, "Q_x:", x, 32);
     wpa_hexdump(MSG_INFO, "Q_y:", y, 32);
-    wpa_hexdump(MSG_INFO, "d:     ",  d , 32);
+    wpa_hexdump(MSG_INFO, "d:     ",  d, 32);
 #endif
 }
 
@@ -1036,6 +1037,23 @@ int crypto_ec_write_pub_key(struct crypto_ec_key *key, unsigned char **key_buf)
     return len;
 }
 
+struct wpabuf * crypto_ec_key_get_subject_public_key(struct crypto_ec_key *key)
+{
+    unsigned char *der = NULL;
+    struct wpabuf *ret = NULL;
+    int der_len;
+
+    der_len = crypto_ec_write_pub_key(key, &der);
+    if (!der) {
+        wpa_printf(MSG_ERROR, "failed to get der for bootstrapping key\n");
+        return NULL;
+    }
+    ret = wpabuf_alloc_copy(der, der_len);
+
+    os_free(der);
+    return ret;
+}
+
 int crypto_mbedtls_get_grp_id(int group)
 {
     switch (group) {
@@ -1188,7 +1206,7 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     os_memcpy(buf, px, len);
     os_memcpy(buf + len, py, len);
 
-    pkey = crypto_ec_set_pubkey_point((struct crypto_ec_group*)ACCESS_ECDH(&ctx, grp), buf, len);
+    pkey = crypto_ec_key_set_pub((struct crypto_ec_group*)ACCESS_ECDH(&ctx, grp), buf, len);
     if (!pkey) {
         wpa_printf(MSG_ERROR, "Failed to set point for peer's public key");
         goto cleanup;
@@ -1228,7 +1246,7 @@ cleanup:
     os_free(py);
     os_free(buf);
     os_free(secret);
-    crypto_ec_free_key(pkey);
+    crypto_ec_key_deinit(pkey);
     crypto_bignum_deinit(bn_x, 1);
     crypto_ec_point_deinit(ec_pt, 1);
     mbedtls_ctr_drbg_free(&ctr_drbg);

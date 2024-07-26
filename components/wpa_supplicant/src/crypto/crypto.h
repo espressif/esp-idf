@@ -1005,16 +1005,20 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
 		struct crypto_ec_key *csign, int hash_len);
 
 /**
- * crypto_edcsa_sign_verify: verify crypto ecdsa signed hash
+ * crypto_ec_key_verify_signature_r_s: verify ec key signature
+ * @csign: csign
  * @hash: signed hash
+ * @hlen: length of hash
  * @r: ecdsa r
  * @s: ecdsa s
- * @csign: csign
- * @hlen: length of hash
+ * @r_len: Length of @r buffer
+ * @s_len: Length of @s buffer
  * Return: 0 if success else negative value
  */
-int crypto_edcsa_sign_verify(const unsigned char *hash, const struct crypto_bignum *r,
-			const struct crypto_bignum *s, struct crypto_ec_key *csign, int hlen);
+int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
+		const unsigned char *hash, int hlen,
+		const u8 *r, size_t r_len,
+		const u8 *s, size_t s_len);
 
 /**
  * crypto_ec_parse_subpub_key: get EC key context from sub public key
@@ -1047,26 +1051,28 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group);
 int crypto_ec_write_pub_key(struct crypto_ec_key *key, unsigned char **key_buf);
 
 /**
- * crypto_ec_set_pubkey_point: set bignum point on ec curve
+ * crypto_ec_key_get_subject_public_key - Get SubjectPublicKeyInfo ASN.1 for an EC key
+ * @key: EC key from crypto_ec_key_parse/set_pub/priv() or crypto_ec_key_gen()
+ * Returns: Buffer with DER encoding of ASN.1 SubjectPublicKeyInfo or %NULL on failure
+ */
+struct wpabuf * crypto_ec_key_get_subject_public_key(struct crypto_ec_key *key);
+
+/**
+ * crypto_ec_key_set_pub: set bignum point on ec curve
  * @group: ec group
  * @buf: x,y coordinate
  * @len: length of x and y coordinate
- * Return : crypto key
+ * Return : crypto key or NULL on failure
  */
-struct crypto_ec_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *group,
+struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group,
 					     const u8 *buf, size_t len);
 /**
- * crypto_ec_free_key: free crypto key
- * Return : None
- */
-void crypto_ec_free_key(struct crypto_ec_key *key);
-/**
  * crypto_ec_key_debug_print: print ec key
- * @title: title
  * @key: crypto key
+ * @title: title
  * Return: None
  */
-void crypto_ec_key_debug_print(const char *title, struct crypto_ec_key *key);
+void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title);
 
 /**
  * crypto_ec_key_get_public_key: Public key from crypto key

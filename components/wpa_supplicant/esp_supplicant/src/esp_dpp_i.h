@@ -59,8 +59,7 @@ int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t chann
 esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data);
 
 #ifdef CONFIG_TESTING_OPTIONS
-int dpp_test_gen_invalid_key(struct wpabuf *msg,
-				    const struct dpp_curve_params *curve);
+int dpp_test_gen_invalid_key(struct wpabuf *msg, const struct dpp_curve_params *curve);
 char * dpp_corrupt_connector_signature(const char *connector);
 #endif /* CONFIG_TESTING_OPTIONS */
 
