@@ -20,6 +20,8 @@
 #include "crypto/aes_siv.h"
 #include "crypto/sha256.h"
 #include "dpp.h"
+#include "dpp_i.h"
+#include "esp_dpp_i.h"
 
 static const char * dpp_netrole_str(enum dpp_netrole netrole);
 
@@ -30,7 +32,7 @@ size_t dpp_protocol_key_override_len = 0;
 u8 dpp_nonce_override[DPP_MAX_NONCE_LEN];
 size_t dpp_nonce_override_len = 0;
 
-static int dpp_test_gen_invalid_key(struct wpabuf *msg,
+int dpp_test_gen_invalid_key(struct wpabuf *msg,
 				    const struct dpp_curve_params *curve);
 #endif /* CONFIG_TESTING_OPTIONS */
 
@@ -73,7 +75,7 @@ void dpp_debug_print_point(const char *title, struct crypto_ec *e,
 	u8 x[64], y[64];
 
 	if (crypto_ec_point_to_bin(e, point, x, y) < 0) {
-		printf("error: failed to get coordinates\n");
+		wpa_printf(MSG_ERROR, "Failed to get coordinates");
 		return;
 	}
 
@@ -198,7 +200,9 @@ void dpp_bootstrap_info_free(struct dpp_bootstrap_info *info)
 		return;
 	os_free(info->uri);
 	os_free(info->info);
-	crypto_ec_free_key(info->pubkey);
+	os_free(info->chan);
+	os_free(info->pk);
+	crypto_ec_key_deinit(info->pubkey);
 	os_free(info);
 }
 
@@ -349,68 +353,6 @@ static int dpp_parse_uri_pk(struct dpp_bootstrap_info *bi, const char *info)
 	res = dpp_get_subject_public_key(bi, data, data_len);
 	os_free(data);
 	return res;
-#if 0
-	if (sha256_vector(1, (const u8 **) &data, &data_len,
-			  bi->pubkey_hash) < 0) {
-		wpa_printf(MSG_DEBUG, "DPP: Failed to hash public key");
-		os_free(data);
-		return -1;
-	}
-	wpa_hexdump(MSG_DEBUG, "DPP: Public key hash",
-		    bi->pubkey_hash, SHA256_MAC_LEN);
-
-	/* DER encoded ASN.1 SubjectPublicKeyInfo
-	 *
-	 * SubjectPublicKeyInfo  ::=  SEQUENCE  {
-	 *      algorithm            AlgorithmIdentifier,
-	 *      subjectPublicKey     BIT STRING  }
-	 *
-	 * AlgorithmIdentifier  ::=  SEQUENCE  {
-	 *      algorithm               OBJECT IDENTIFIER,
-	 *      parameters              ANY DEFINED BY algorithm OPTIONAL  }
-	 *
-	 * subjectPublicKey = compressed format public key per ANSI X9.63
-	 * algorithm = ecPublicKey (1.2.840.10045.2.1)
-	 * parameters = shall be present and shall be OBJECT IDENTIFIER; e.g.,
-	 *       prime256v1 (1.2.840.10045.3.1.7)
-	 */
-
-	p = data;
-
-	pkey = crypto_ec_parse_subpub_key((unsigned char *)p, data_len);
-	os_free(data);
-
-	if (!pkey) {
-		wpa_printf(MSG_DEBUG,
-			   "DPP: Could not parse URI public-key SubjectPublicKeyInfo");
-		return -1;
-	}
-
-	if (!crypto_is_ec_key(pkey)) {
-		wpa_printf(MSG_DEBUG,
-				"DPP: SubjectPublicKeyInfo does not describe an EC key");
-		crypto_ec_free_key(pkey);
-		return -1;
-	}
-
-	group = crypto_ec_get_group_from_key(pkey);
-	if (!group) {
-		return -1;
-	}
-	id = crypto_ec_get_curve_id(group);
-	bi->curve = dpp_get_curve_group_id(id);
-	if (!bi->curve) {
-		wpa_printf(MSG_DEBUG,
-			   "DPP: Unsupported SubjectPublicKeyInfo curve");
-		goto fail;
-	}
-
-	bi->pubkey = pkey;
-	return 0;
-fail:
-	crypto_ec_free_key(pkey);
-	return -1;
-#endif
 }
 
 static struct dpp_bootstrap_info * dpp_parse_uri(const char *uri)
@@ -1073,11 +1015,40 @@ static int dpp_prepare_channel_list(struct dpp_authentication *auth,
 	return 0;
 }
 
+int dpp_gen_uri(struct dpp_bootstrap_info *bi)
+{
+	char macstr[ETH_ALEN * 2 + 10];
+	size_t len;
+
+	len = 4; /* "DPP:" */
+	if (bi->chan)
+		len += 3 + os_strlen(bi->chan); /* C:...; */
+	if (is_zero_ether_addr(bi->mac_addr))
+		macstr[0] = '\0';
+	else
+		os_snprintf(macstr, sizeof(macstr), "M:" MACSTR ";", MAC2STR(bi->mac_addr));
+	len += os_strlen(macstr); /* M:...; */
+	if (bi->info)
+		len += 3 + os_strlen(bi->info); /* I:...; */
+	len += 4 + os_strlen(bi->pk); /* K:...;; */
+
+	os_free(bi->uri);
+	bi->uri = os_malloc(len + 1);
+	if (!bi->uri)
+		return -1;
+	os_snprintf(bi->uri, len + 1, "DPP:%s%s%s%s%s%s%sK:%s;;",
+		    bi->chan ? "C:" : "", bi->chan ? bi->chan : "",
+		    bi->chan ? ";" : "",
+		    macstr,
+		    bi->info ? "I:" : "", bi->info ? bi->info : "",
+		    bi->info ? ";" : "",
+		    bi->pk);
+	return 0;
+}
+
 static int dpp_autogen_bootstrap_key(struct dpp_authentication *auth)
 {
 	struct dpp_bootstrap_info *bi;
-	char *pk = NULL;
-	size_t len;
 
 	if (auth->own_bi)
 		return 0; /* already generated */
@@ -1086,27 +1057,16 @@ static int dpp_autogen_bootstrap_key(struct dpp_authentication *auth)
 	if (!bi)
 		return -1;
 	bi->type = DPP_BOOTSTRAP_QR_CODE;
-	pk = dpp_keygen(bi, auth->peer_bi->curve->name, NULL, 0);
-	if (!pk)
+	if (dpp_keygen(bi, auth->peer_bi->curve->name, NULL, 0) < 0 ||
+	    dpp_gen_uri(bi) < 0)
 		goto fail;
-
-	len = 4; /* "DPP:" */
-	len += 4 + os_strlen(pk);
-	bi->uri = os_malloc(len + 1);
-	if (!bi->uri)
-		goto fail;
-	os_snprintf(bi->uri, len + 1, "DPP:K:%s;;", pk);
 	wpa_printf(MSG_DEBUG,
 		   "DPP: Auto-generated own bootstrapping key info: URI %s",
 		   bi->uri);
-
 	auth->tmp_own_bi = auth->own_bi = bi;
-
-	os_free(pk);
 
 	return 0;
 fail:
-	os_free(pk);
 	dpp_bootstrap_info_free(bi);
 	return -1;
 }
@@ -1517,7 +1477,7 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 #endif /* CONFIG_TESTING_OPTIONS */
 	wpa_hexdump(MSG_DEBUG, "DPP: R-nonce", auth->r_nonce, nonce_len);
 
-	crypto_ec_free_key(auth->own_protocol_key);
+	crypto_ec_key_deinit(auth->own_protocol_key);
 #ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_protocol_key_override_len) {
 		const struct dpp_curve_params *tmp_curve;
@@ -1973,7 +1933,7 @@ not_compatible:
 	return auth;
 fail:
 	bin_clear_free(unwrapped, unwrapped_len);
-	crypto_ec_free_key(pi);
+	crypto_ec_key_deinit(pi);
 	dpp_auth_deinit(auth);
 	return NULL;
 }
@@ -2411,7 +2371,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 		dpp_auth_fail(auth, "Failed to derive ECDH shared secret");
 		goto fail;
 	}
-	crypto_ec_free_key(auth->peer_protocol_key);
+	crypto_ec_key_deinit(auth->peer_protocol_key);
 	auth->peer_protocol_key = pr;
 	pr = NULL;
 
@@ -2581,7 +2541,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 fail:
 	bin_clear_free(unwrapped, unwrapped_len);
 	bin_clear_free(unwrapped2, unwrapped2_len);
-	crypto_ec_free_key(pr);
+	crypto_ec_key_deinit(pr);
 	return NULL;
 }
 
@@ -3135,8 +3095,8 @@ void dpp_auth_deinit(struct dpp_authentication *auth)
 	dpp_configuration_free(auth->conf2_ap);
 	dpp_configuration_free(auth->conf_sta);
 	dpp_configuration_free(auth->conf2_sta);
-	crypto_ec_free_key(auth->own_protocol_key);
-	crypto_ec_free_key(auth->peer_protocol_key);
+	crypto_ec_key_deinit(auth->own_protocol_key);
+	crypto_ec_key_deinit(auth->peer_protocol_key);
 	wpabuf_free(auth->req_msg);
 	wpabuf_free(auth->resp_msg);
 	wpabuf_free(auth->conf_req);
@@ -3979,7 +3939,7 @@ static struct crypto_ec_key * dpp_parse_jwk(struct json_token *jwk,
 	a = os_zalloc(len);
 	os_memcpy(a, wpabuf_head(x), wpabuf_len(x));
 	os_memcpy(a + wpabuf_len(x), wpabuf_head(y), wpabuf_len(y));
-	pkey = crypto_ec_set_pubkey_point(group, a, len);
+	pkey = crypto_ec_key_set_pub(group, a, len);
 
 	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
@@ -4161,7 +4121,7 @@ skip_groups:
 
 	ret = 0;
 fail:
-	crypto_ec_free_key(key);
+	crypto_ec_key_deinit(key);
 	json_free(root);
 	return ret;
 }
@@ -4262,7 +4222,7 @@ static int dpp_parse_cred_dpp(struct dpp_authentication *auth,
 
 	ret = 0;
 fail:
-	crypto_ec_free_key(csign_pub);
+	crypto_ec_key_deinit(csign_pub);
 	os_free(info.payload);
 	return ret;
 }
@@ -4582,7 +4542,7 @@ void dpp_configurator_free(struct dpp_configurator *conf)
 {
 	if (!conf)
 		return;
-	crypto_ec_free_key(conf->csign);
+	crypto_ec_key_deinit(conf->csign);
 	os_free(conf->kid);
 	os_free(conf);
 }
@@ -4944,9 +4904,9 @@ fail:
 		os_memset(intro, 0, sizeof(*intro));
 	forced_memzero(Nx, sizeof(Nx));
 	os_free(info.payload);
-	crypto_ec_free_key(own_key);
+	crypto_ec_key_deinit(own_key);
 	wpabuf_free(own_key_pub);
-	crypto_ec_free_key(peer_key);
+	crypto_ec_key_deinit(peer_key);
 	json_free(root);
 	json_free(own_root);
 	return ret;
@@ -5024,11 +4984,10 @@ struct dpp_bootstrap_info * dpp_add_nfc_uri(struct dpp_global *dpp,
 
 int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 {
-	char *chan = NULL, *mac = NULL, *info = NULL, *pk = NULL, *curve = NULL;
+	char *mac = NULL, *info = NULL, *curve = NULL;
 	char *key = NULL;
 	u8 *privkey = NULL;
 	size_t privkey_len = 0;
-	size_t len;
 	int ret = -1;
 	struct dpp_bootstrap_info *bi;
 
@@ -5048,7 +5007,7 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 	else
 		goto fail;
 
-	chan = get_param(cmd, " chan=");
+	bi->chan = get_param(cmd, " chan=");
 	mac = get_param(cmd, " mac=");
 	info = get_param(cmd, " info=");
 	curve = get_param(cmd, " curve=");
@@ -5063,35 +5022,12 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 	}
 	wpa_hexdump(MSG_DEBUG, "private key", privkey, privkey_len);
 
-	pk = dpp_keygen(bi, curve, privkey, privkey_len);
-	if (!pk)
+	if (dpp_keygen(bi, curve, privkey, privkey_len) < 0 ||
+	    dpp_parse_uri_chan_list(bi, bi->chan) < 0 ||
+	    dpp_parse_uri_mac(bi, mac) < 0 ||
+	    dpp_parse_uri_info(bi, info) < 0 ||
+	    dpp_gen_uri(bi) < 0)
 		goto fail;
-
-	len = 4; /* "DPP:" */
-	if (chan) {
-		if (dpp_parse_uri_chan_list(bi, chan) < 0)
-			goto fail;
-		len += 3 + os_strlen(chan); /* C:...; */
-	}
-	if (mac) {
-		if (dpp_parse_uri_mac(bi, mac) < 0)
-			goto fail;
-		len += 3 + os_strlen(mac); /* M:...; */
-	}
-	if (info) {
-		if (dpp_parse_uri_info(bi, info) < 0)
-			goto fail;
-		len += 3 + os_strlen(info); /* I:...; */
-	}
-	len += 4 + os_strlen(pk);
-	bi->uri = os_malloc(len + 1);
-	if (!bi->uri)
-		goto fail;
-	os_snprintf(bi->uri, len + 1, "DPP:%s%s%s%s%s%s%s%s%sK:%s;;",
-		    chan ? "C:" : "", chan ? chan : "", chan ? ";" : "",
-		    mac ? "M:" : "", mac ? mac : "", mac ? ";" : "",
-		    info ? "I:" : "", info ? info : "", info ? ";" : "",
-		    pk);
 
 	bi->id = dpp_next_id(dpp);
 	dl_list_add(&dpp->bootstrap, &bi->list);
@@ -5099,8 +5035,6 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 	bi = NULL;
 fail:
 	os_free(curve);
-	os_free(pk);
-	os_free(chan);
 	os_free(mac);
 	os_free(info);
 	str_clear_free(key);
