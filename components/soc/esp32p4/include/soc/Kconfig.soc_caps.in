@@ -883,10 +883,6 @@ config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     int
     default 10
 
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    bool
-    default n
-
 config SOC_MMU_PERIPH_NUM
     int
     default 2
