@@ -117,7 +117,8 @@ esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolutio
 /**
  * @brief Get GPTimer captured count value
  *
- * @note The capture action can be issued either by ETM event or by software (see also `gptimer_get_raw_count`).
+ * @note Different from `gptimer_get_raw_count`, this function won't trigger a software capture event. It just returns the last captured count value.
+ *       It's especially useful when the capture has already been triggered by an external event and you want to read the captured value.
  * @note This function is allowed to run within ISR context
  * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
  *       makes it possible to execute even when the Flash Cache is disabled.
