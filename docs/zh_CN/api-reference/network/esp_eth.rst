@@ -142,7 +142,7 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
     .. note::
         ESP-IDF 只支持 RMII 接口（即在 Kconfig 选项 :ref:`CONFIG_ETH_PHY_INTERFACE` 中始终选择 ``CONFIG_ETH_PHY_INTERFACE_RMII``）。
 
-        在数据平面使用的信号通过 MUX 连接至特定的 GPIO，这些信号无法配置至其他 GPIO。在控制平面使用的信号则可以通过 Matrix 矩阵路由到任何空闲 GPIO。相关的硬件设计示例，请参考 :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>`。
+        在数据平面使用的信号通过 MUX 连接至特定的 GPIO，这些信号无法配置至其他 GPIO。在控制平面使用的信号则可以通过 Matrix 矩阵路由到任何空闲 GPIO。相关的硬件设计示例，请参考 `ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-ethernet-kit/index.html>`_。
 
 根据您的以太网板设计，需要分别为 MAC 和 PHY 配置必要的参数，通过两者完成驱动程序的安装。
 
