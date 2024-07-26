@@ -5332,6 +5332,10 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
             status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
             p_data->ble_scan.p_stop_scan_cback(status);
         }
+
+        // reset BLE scan link state when stop scan
+        btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
+        btm_ble_clear_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
     }
 }
 
