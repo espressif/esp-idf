@@ -134,11 +134,12 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 .. code:: c
 
+    adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
         .max_store_buf_size = 1024,
-        .conv_frame_size = 100,
+        .conv_frame_size = 256,
     };
-    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config));
+    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config, &handle));
 
 
 回收 ADC 单元
@@ -146,7 +147,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_deinit());
+    ESP_ERROR_CHECK(adc_continuous_deinit(handle));
 
 
 .. _adc-continuous-adc-configurations:
@@ -200,11 +201,11 @@ ADC 控制
 
 .. code::c
 
-    ESP_ERROR_CHECK(adc_continuous_start());
+    ESP_ERROR_CHECK(adc_continuous_start(handle));
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_stop());
+    ESP_ERROR_CHECK(adc_continuous_stop(handle));
 
 
 .. _adc-continuous-register-event-callbacks:

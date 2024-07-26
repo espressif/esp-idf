@@ -134,11 +134,12 @@ Initialize the ADC Continuous Mode Driver
 
 .. code:: c
 
+    adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
         .max_store_buf_size = 1024,
-        .conv_frame_size = 100,
+        .conv_frame_size = 256,
     };
-    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config));
+    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config, &handle));
 
 
 Recycle the ADC Unit
@@ -146,7 +147,7 @@ Recycle the ADC Unit
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_deinit());
+    ESP_ERROR_CHECK(adc_continuous_deinit(handle));
 
 
 .. _adc-continuous-adc-configurations:
@@ -200,11 +201,11 @@ On the contrary, calling :cpp:func:`adc_continuous_stop` stops the ADC conversio
 
 .. code::c
 
-    ESP_ERROR_CHECK(adc_continuous_start());
+    ESP_ERROR_CHECK(adc_continuous_start(handle));
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_stop());
+    ESP_ERROR_CHECK(adc_continuous_stop(handle));
 
 
 .. _adc-continuous-register-event-callbacks:
