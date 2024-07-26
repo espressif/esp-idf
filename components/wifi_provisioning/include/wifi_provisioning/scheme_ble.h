@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -65,9 +57,9 @@ void wifi_prov_scheme_ble_event_cb_free_bt  (void *user_data, wifi_prov_cb_event
  * the default UUID will be used.
  *
  * @note    The data being pointed to by the argument must be valid
- *          atleast till provisioning is started. Upon start, the
+ *          at least till provisioning is started. Upon start, the
  *          manager will store an internal copy of this UUID, and
- *          this data can be freed or invalidated afterwords.
+ *          this data can be freed or invalidated afterwards.
  *
  * @param[in] uuid128  A custom 128 bit UUID
  *
@@ -99,6 +91,31 @@ esp_err_t wifi_prov_scheme_ble_set_service_uuid(uint8_t *uuid128);
  *  - ESP_ERR_INVALID_ARG : Null argument
  */
 esp_err_t wifi_prov_scheme_ble_set_mfg_data(uint8_t *mfg_data, ssize_t mfg_data_len);
+
+/**
+ * @brief   Set Bluetooth Random address
+ *
+ * This must be called before starting provisioning, i.e. before
+ * making a call to wifi_prov_mgr_start_provisioning().
+ *
+ * This API can be used in cases where a new identity address is to be used during
+ * provisioning. This will result in this device being treated as a new device by remote
+ * devices.
+ *
+ * @note    This API will change the existing BD address for the device. The address once
+ *          set will remain unchanged until BLE stack tear down happens when
+ *          wifi_prov_mgr_deinit is invoked.
+ *
+ *          This API is only to be called to set random address. Re-invoking this API
+ *          after provisioning is started will have no effect.
+ *
+ * @param[in] rand_addr     The static random address to be set of length 6 bytes.
+ *
+ * @return
+ *  - ESP_OK              : Success
+ *  - ESP_ERR_INVALID_ARG : Null argument
+ */
+esp_err_t wifi_prov_scheme_ble_set_random_addr(const uint8_t *rand_addr);
 
 #ifdef __cplusplus
 }
