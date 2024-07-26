@@ -20,15 +20,25 @@ extern "C" {
  * One can use these definitions to retrieve the start address and/or the size
  * of a specific region using the functions below.
  */
+
 typedef enum {
-    COREDUMP_MEMORY_DRAM,
     COREDUMP_MEMORY_IRAM,
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+    COREDUMP_MEMORY_DRAM_BSS,
+    COREDUMP_MEMORY_DRAM_DATA,
+#if CONFIG_IDF_TARGET_ESP32P4
+    COREDUMP_MEMORY_DRAM_BSS_HIGH,
+    COREDUMP_MEMORY_DRAM_DATA_HIGH,
+#endif
+#else
+    COREDUMP_MEMORY_DRAM,
+#endif
 #if SOC_RTC_MEM_SUPPORTED
     COREDUMP_MEMORY_RTC,
     COREDUMP_MEMORY_RTC_FAST,
 #endif
     COREDUMP_MEMORY_MAX,
-    COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
+    COREDUMP_MEMORY_START = COREDUMP_MEMORY_IRAM
 } coredump_region_t;
 
 /**
@@ -127,6 +137,12 @@ esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, 
 esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data);
 
 /**
+ * @brief Retrieve the stack information which will be used from the coredump module itself.
+ * It will show the whole stack boundaries in case the stack is shared with the crashed task.
+ */
+void esp_core_dump_get_own_stack_info(uint32_t *addr, uint32_t *size);
+
+/**
  * @brief Stores the core dump in either binary or ELF format.
  */
 esp_err_t esp_core_dump_store(void);
@@ -157,7 +173,7 @@ static inline core_dump_task_handle_t esp_core_dump_get_current_task_handle(void
  * @brief Get the length, in bytes, of a given memory location. Padding is
  * taken into account in this calculation.
  *
- * @param start Start address of the momery location.
+ * @param start Start address of the memory location.
  * @param end End address of the memory location.
  *
  * @return Size of the memory location, multiple of sizeof(uint32_t).

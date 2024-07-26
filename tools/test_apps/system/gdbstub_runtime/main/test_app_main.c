@@ -21,7 +21,7 @@ void foo(void)
 
 void app_main(void)
 {
-    printf("tested app is runnig.\n");
+    printf("tested app is running.\n");
 
     vTaskDelay(5000 / portTICK_PERIOD_MS);
 

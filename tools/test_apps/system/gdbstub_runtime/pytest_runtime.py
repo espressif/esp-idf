@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import os.path as path
 import sys
 
@@ -23,9 +22,9 @@ def get_line_number(lookup: str, offset: int = 0) -> int:
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
-    dut.expect_exact('tested app is runnig.')
+    dut.expect_exact('tested app is running.')
     dut.write(b'\x03')  # send Ctrl-C
-    dut.start_gdb()
+    dut.start_gdb_for_gdbstub()
 
     # Test breakpoint
     cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'
@@ -162,9 +161,9 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
 def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
-    dut.expect_exact('tested app is runnig.')
+    dut.expect_exact('tested app is running.')
     dut.write(b'\x03')  # send Ctrl-C
-    dut.start_gdb()
+    dut.start_gdb_for_gdbstub()
 
     # Test breakpoint
     cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'

@@ -17,7 +17,7 @@ if(CONFIG_TEST_MEMPROT)
     endif()
 endif()
 
-if(NOT CONFIG_TEST_MEMPROT)
+if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_CAPTURE_DRAM)
     # Enable UBSAN checks
     #
     # shift-base sanitizer is disabled due to the following pattern found in register header files:

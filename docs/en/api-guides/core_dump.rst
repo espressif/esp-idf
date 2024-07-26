@@ -56,8 +56,27 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
 
 .. note::
 
-   If a separate stack is used, the recommended stack size should be larger than 800 bytes to ensure that the core dump routines themselves do not cause a stack overflow.
+   If a separate stack is used, the recommended stack size should be larger than 1300 bytes to ensure that the core dump routines themselves do not cause a stack overflow.
 
+
+.. only:: not esp32c5
+
+    Core Dump Memory Regions
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+    By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
+
+    For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
+
+    .. only:: SOC_SPIRAM_SUPPORTED
+
+        .. note::
+
+            Apart from the crashed task's TCB and stack, data located in the external RAM will not be stored in the core dump file, this include variables defined with ``EXT_RAM_BSS_ATTR`` or ``EXT_RAM_NOINIT_ATTR`` attributes, as well as any data stored in the ``extram_bss`` section.
+
+    .. note::
+
+        This feature is only enabled when using the ELF file format.
 
 Core Dump to Flash
 ------------------
