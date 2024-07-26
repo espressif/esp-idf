@@ -3,24 +3,24 @@ Introduction
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides an architecture overview of the Classic Bluetooth stack in ESP-IDF and some quick links to related documents and application examples.
+This document provides an architecture overview of the Bluetooth Classic stack in ESP-IDF and some quick links to related documents and application examples.
 
 .. only:: esp32
 
     {IDF_TARGET_NAME} supports Dual-Mode Bluetooth 4.2.
 
-The Classic Bluetooth stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
+The Bluetooth Classic stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
 
 .. only:: esp32
 
     .. figure:: ../../../_static/classic-bluetooth-architecture.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Classic Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
 
-        {IDF_TARGET_NAME} Classic Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
 
-The table below shows whether the Classic Bluetooth Controller are supported in a specific chip series.
+The table below shows whether the Bluetooth Classic Controller are supported in a specific chip series.
 
 .. list-table::
     :width: 100%
@@ -77,4 +77,4 @@ ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Blued
 Applications
 ------------
 
-At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid stacks, leveraging the provided APIs and profiles to create Classic Bluetooth applications tailored to specific use cases.
+At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid stacks, leveraging the provided APIs and profiles to create Bluetooth Classic applications tailored to specific use cases.
