@@ -177,7 +177,7 @@ typedef struct {
 /**
  * @brief Prototype of ISP AWB event callback
  *
- * @param[in] handle    ISP AWB controller handle
+ * @param[in] awb_ctlr    ISP AWB controller handle
  * @param[in] edata     ISP AWB event data
  * @param[in] user_data User registered context, registered when in `esp_isp_awb_env_detector_register_event_callbacks()`
  *

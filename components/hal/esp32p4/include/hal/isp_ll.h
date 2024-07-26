@@ -100,6 +100,22 @@ typedef union {
     uint32_t val;
 } isp_ll_awb_rgb_ratio_t;
 
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+#define ISP_LL_CCM_MATRIX_INT_BITS      (2)
+#define ISP_LL_CCM_MATRIX_FRAC_BITS     (10)
+#define ISP_LL_CCM_MATRIX_TOT_BITS      (ISP_LL_CCM_MATRIX_INT_BITS + ISP_LL_CCM_MATRIX_FRAC_BITS + 1)  // including one sign bit
+
+typedef union {
+    struct {
+        uint32_t fraction: ISP_LL_AWB_RGB_RATIO_FRAC_BITS;
+        uint32_t integer: ISP_LL_AWB_RGB_RATIO_INT_BITS;
+        uint32_t sign: 1;
+    };
+    uint32_t val;
+} isp_ll_ccm_gain_t;
+
 /**
  * @brief Env monitor mode
  */
@@ -788,6 +804,25 @@ static inline void isp_ll_ccm_clk_enable(isp_dev_t *hw, bool enable)
 static inline void isp_ll_ccm_enable(isp_dev_t *hw, bool enable)
 {
     hw->cntl.ccm_en = enable;
+}
+
+/**
+ * @brief Set the Color Correction Matrix
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] fixed_point_matrix  Color Correction Matrix in fixed-point format
+ */
+static inline void isp_ll_ccm_set_matrix(isp_dev_t *hw, isp_ll_ccm_gain_t fixed_point_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
+{
+    hw->ccm_coef0.ccm_rr = fixed_point_matrix[0][0].val;
+    hw->ccm_coef0.ccm_rg = fixed_point_matrix[0][1].val;
+    hw->ccm_coef1.ccm_rb = fixed_point_matrix[0][2].val;
+    hw->ccm_coef1.ccm_gr = fixed_point_matrix[1][0].val;
+    hw->ccm_coef3.ccm_gg = fixed_point_matrix[1][1].val;
+    hw->ccm_coef3.ccm_gb = fixed_point_matrix[1][2].val;
+    hw->ccm_coef4.ccm_br = fixed_point_matrix[2][0].val;
+    hw->ccm_coef4.ccm_bg = fixed_point_matrix[2][1].val;
+    hw->ccm_coef5.ccm_bb = fixed_point_matrix[2][2].val;
 }
 
 /*---------------------------------------------------------------
