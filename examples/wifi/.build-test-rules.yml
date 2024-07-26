@@ -40,7 +40,7 @@ examples/wifi/iperf:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
       temporary: true
       reason: lack of runners
   depends_components:
