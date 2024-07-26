@@ -29,10 +29,10 @@ void lp_core_startup()
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();
 
 #if SOC_LP_TIMER_SUPPORTED
-    uint64_t sleep_duration = shared_mem->sleep_duration_us;
+    uint64_t sleep_duration_ticks = shared_mem->sleep_duration_ticks;
 
-    if (sleep_duration) {
-        ulp_lp_core_lp_timer_set_wakeup_time(sleep_duration);
+    if (sleep_duration_ticks) {
+        ulp_lp_core_lp_timer_set_wakeup_ticks(sleep_duration_ticks);
     }
 #endif //SOC_LP_TIMER_SUPPORTED
 

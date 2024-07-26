@@ -75,7 +75,7 @@ menu "Ultra Low Power (ULP) Co-processor"
     config ULP_SHARED_MEM
         depends on ULP_COPROC_TYPE_LP_CORE
         hex
-        default 0x8
+        default 0x10
         help
             Size of the shared memory defined in ulp_lp_core_memory_shared.c.
             Size should be kept in-sync with the size of the struct defined there.
