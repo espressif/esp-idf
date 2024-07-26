@@ -72,6 +72,10 @@ tools/test_apps/system/no_embedded_paths:
 tools/test_apps/system/panic:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+  disable:
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: not supported  # TODO: [ESP32c61] IDF-9268
 
 tools/test_apps/system/ram_loadable_app:
   disable:

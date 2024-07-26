@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,7 +109,7 @@ TEST_CASE("parallel_tx_unit_trans_done_event", "[parlio_tx]")
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    uint8_t payload[64] = {0};
+    __attribute__((aligned(64))) uint8_t payload[64] = {0};
     for (int i = 0; i < 64; i++) {
         payload[i] = i;
     }
@@ -155,7 +155,7 @@ TEST_CASE("parallel_tx_unit_enable_disable", "[parlio_tx]")
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    uint8_t payload[128] = {0};
+    __attribute__((aligned(64))) uint8_t payload[128] = {0};
     for (int i = 0; i < 128; i++) {
         payload[i] = i;
     }
@@ -210,8 +210,9 @@ TEST_CASE("parallel_tx_unit_idle_value", "[parlio_tx]")
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    uint8_t payload[8] = {0};
-    for (int i = 0; i < 8; i++) {
+    uint32_t size = 64;
+    __attribute__((aligned(64))) uint8_t payload[size];
+    for (int i = 0; i < size; i++) {
         payload[i] = i;
     }
     for (int j = 0; j < 16; j++) {
@@ -255,15 +256,16 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    uint8_t payload[8] = {0};
-    for (int i = 0; i < 8; i++) {
+    uint32_t size = 64;
+    __attribute__((aligned(64))) uint8_t payload[size];
+    for (int i = 0; i < size; i++) {
         payload[i] = 0x1B; // 8'b00011011, in PARLIO_BIT_PACK_ORDER_MSB, you should see 2'b00, 2'b01, 2'b10, 2'b11 on the data line
     }
-    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, 8 * sizeof(uint8_t) * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, size * sizeof(uint8_t) * 8, &transmit_config));
     TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
     // check if the level on the clock line is low
     TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));
-    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, 8 * sizeof(uint8_t) * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, size * sizeof(uint8_t) * 8, &transmit_config));
     TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
     TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));
     TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));

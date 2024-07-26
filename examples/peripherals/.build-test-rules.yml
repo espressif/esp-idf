@@ -281,6 +281,13 @@ examples/peripherals/pcnt:
   depends_components:
     - esp_driver_pcnt
 
+examples/peripherals/ppa/ppa_dsi:
+  disable:
+    - if: SOC_PPA_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_ppa
+    - esp_lcd
+
 examples/peripherals/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
@@ -392,13 +399,13 @@ examples/peripherals/timer_group/gptimer:
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
-    - if: SOC_TIMER_SUPPORT_ETM != 1
+    - if: SOC_GPTIMER_SUPPORTED != 1 or SOC_TIMER_SUPPORT_ETM != 1
   depends_components:
     - esp_driver_gptimer
 
 examples/peripherals/timer_group/wiegand_interface:
   disable:
-    - if: SOC_TIMER_GROUP_TOTAL_TIMERS < 2
+    - if: SOC_GPTIMER_SUPPORTED != 1 or SOC_TIMER_GROUP_TOTAL_TIMERS < 2
   depends_components:
     - esp_driver_gptimer
 

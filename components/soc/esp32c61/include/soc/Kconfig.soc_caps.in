@@ -191,6 +191,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
+    int
+    default 7
+
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000003FFF80
@@ -219,137 +223,13 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
-config SOC_I2C_NUM
-    int
-    default 1
-
-config SOC_HP_I2C_NUM
-    int
-    default 1
-
-config SOC_I2C_FIFO_LEN
-    int
-    default 32
-
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 8
-
-config SOC_I2C_SUPPORT_SLAVE
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_FSM_RST
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_RTC
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_10BIT_ADDR
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_BROADCAST
-    bool
-    default y
-
-config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
-    bool
-    default y
-
-config SOC_LP_I2C_NUM
-    int
-    default 1
-
-config SOC_LP_I2C_FIFO_LEN
-    int
-    default 16
-
-config SOC_I2S_NUM
-    int
-    default 1
-
-config SOC_I2S_HW_VERSION_2
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_XTAL
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PLL_F160M
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PCM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM_TX
-    bool
-    default y
-
-config SOC_I2S_PDM_MAX_TX_LINES
-    int
-    default 2
-
-config SOC_I2S_SUPPORTS_TDM
-    bool
-    default y
-
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-    bool
-    default y
-
-config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
 
 config SOC_LEDC_CHANNEL_NUM
     int
     default 6
-
-config SOC_LEDC_TIMER_BIT_WIDTH
-    int
-    default 20
-
-config SOC_LEDC_SUPPORT_FADE_STOP
-    bool
-    default y
-
-config SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-    bool
-    default y
-
-config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
-    int
-    default 16
-
-config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
-    int
-    default 10
 
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
@@ -387,78 +267,6 @@ config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
 
-config SOC_PCNT_GROUPS
-    int
-    default 1
-
-config SOC_PCNT_UNITS_PER_GROUP
-    int
-    default 4
-
-config SOC_PCNT_CHANNELS_PER_UNIT
-    int
-    default 2
-
-config SOC_PCNT_THRES_POINT_PER_UNIT
-    int
-    default 2
-
-config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
-    bool
-    default y
-
-config SOC_MCPWM_GROUPS
-    int
-    default 1
-
-config SOC_MCPWM_TIMERS_PER_GROUP
-    int
-    default 3
-
-config SOC_MCPWM_OPERATORS_PER_GROUP
-    int
-    default 3
-
-config SOC_MCPWM_COMPARATORS_PER_OPERATOR
-    int
-    default 2
-
-config SOC_MCPWM_GENERATORS_PER_OPERATOR
-    int
-    default 2
-
-config SOC_MCPWM_TRIGGERS_PER_OPERATOR
-    int
-    default 2
-
-config SOC_MCPWM_GPIO_FAULTS_PER_GROUP
-    int
-    default 3
-
-config SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP
-    bool
-    default y
-
-config SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER
-    int
-    default 3
-
-config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
-    int
-    default 3
-
-config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
-    bool
-    default y
-
-config SOC_MCPWM_SUPPORT_ETM
-    bool
-    default y
-
-config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
-    bool
-    default y
-
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4
@@ -471,34 +279,6 @@ config SOC_RSA_MAX_BIT_LEN
     int
     default 3072
 
-config SOC_SHA_DMA_MAX_BUFFER_SIZE
-    int
-    default 3968
-
-config SOC_SHA_SUPPORT_DMA
-    bool
-    default y
-
-config SOC_SHA_SUPPORT_RESUME
-    bool
-    default y
-
-config SOC_SHA_GDMA
-    bool
-    default y
-
-config SOC_SHA_SUPPORT_SHA1
-    bool
-    default y
-
-config SOC_SHA_SUPPORT_SHA224
-    bool
-    default y
-
-config SOC_SHA_SUPPORT_SHA256
-    bool
-    default y
-
 config SOC_SPI_PERIPH_NUM
     int
     default 2
@@ -507,45 +287,9 @@ config SOC_SPI_MAX_CS_NUM
     int
     default 6
 
-config SOC_SPI_MAXIMUM_BUFFER_SIZE
-    int
-    default 64
-
-config SOC_SPI_SUPPORT_DDRCLK
-    bool
-    default y
-
-config SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CD_SIG
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CLK_XTAL
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CLK_PLL_F80M
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CLK_RC_FAST
-    bool
-    default y
-
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
-
-config SOC_SPI_MAX_PRE_DIVIDER
-    int
-    default 16
 
 config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
@@ -619,10 +363,6 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
-config SOC_SYSTIMER_SUPPORT_ETM
-    bool
-    default y
-
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -639,47 +379,15 @@ config SOC_TIMER_GROUP_TIMERS_PER_GROUP
     int
     default 1
 
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 2
+
 config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     int
     default 54
 
 config SOC_TIMER_GROUP_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    bool
-    default y
-
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 2
-
-config SOC_TIMER_SUPPORT_ETM
-    bool
-    default y
-
-config SOC_MWDT_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TWAI_CONTROLLER_NUM
-    int
-    default 2
-
-config SOC_TWAI_CLK_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TWAI_BRP_MIN
-    int
-    default 2
-
-config SOC_TWAI_BRP_MAX
-    int
-    default 32768
-
-config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
@@ -879,10 +587,6 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
-config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-    bool
-    default y
-
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
@@ -900,42 +604,6 @@ config SOC_CLK_RC32K_SUPPORTED
     default y
 
 config SOC_RCC_IS_INDEPENDENT
-    bool
-    default y
-
-config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
-    bool
-    default y
-
-config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_HW_TSF
-    bool
-    default y
-
-config SOC_WIFI_FTM_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_WAPI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_CSI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_HE_SUPPORT
     bool
     default y
 

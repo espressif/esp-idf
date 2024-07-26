@@ -82,7 +82,7 @@ class IdfPytestEmbedded:
 
         self.apps_list = (
             [os.path.join(idf_relpath(app.app_dir), app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
-            if apps
+            if apps is not None
             else None
         )
 

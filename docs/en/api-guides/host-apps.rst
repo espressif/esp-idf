@@ -109,6 +109,7 @@ On Linux, applications prints an error message and a rudimentary backtrace once 
   /lib/x86_64-linux-gnu/libc.so.6(+0x1097dc)[0x7f49f0ecd7dc]
 
 Note that the addresses (``+0x...``) are relative binary addresses, which still need to be converted to the source code line numbers (see below).
+
 Note furthermore that the backtrace is created from the signal handler, which means that the two uppermost stack frames are not of interest. Instead, the third line is the uppermost stack frame where the issue occurred:
 
 .. code-block::

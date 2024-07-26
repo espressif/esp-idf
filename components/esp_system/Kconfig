@@ -315,7 +315,7 @@ menu "ESP System Settings"
         default -1 if ESP_CONSOLE_NONE
 
     config ESP_CONSOLE_UART_TX_GPIO
-        int "UART TX on GPIO#"
+        int "UART TX on GPIO<num>"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 SOC_GPIO_OUT_RANGE_MAX
         default 1 if IDF_TARGET_ESP32
@@ -323,6 +323,7 @@ menu "ESP System Settings"
         default 21 if IDF_TARGET_ESP32C3
         default 10 if IDF_TARGET_ESP32C5
         default 16 if IDF_TARGET_ESP32C6
+        default 5  if IDF_TARGET_ESP32C61
         default 37 if IDF_TARGET_ESP32P4
         default 24 if IDF_TARGET_ESP32H2
         default 43
@@ -334,7 +335,7 @@ menu "ESP System Settings"
              is reconfigured after the bootloader exits and the app starts.
 
     config ESP_CONSOLE_UART_RX_GPIO
-        int "UART RX on GPIO#"
+        int "UART RX on GPIO<num>"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 SOC_GPIO_IN_RANGE_MAX
         default 3 if IDF_TARGET_ESP32
@@ -342,6 +343,7 @@ menu "ESP System Settings"
         default 20 if IDF_TARGET_ESP32C3
         default 11 if IDF_TARGET_ESP32C5
         default 17 if IDF_TARGET_ESP32C6
+        default 4  if IDF_TARGET_ESP32C61
         default 38 if IDF_TARGET_ESP32P4
         default 23 if IDF_TARGET_ESP32H2
         default 44

@@ -2,9 +2,9 @@
 
 components/spi_flash/test_apps/esp_flash:
   disable:
-    - if: IDF_TARGET == "esp32c5"
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8715
+      reason: not support yet # TODO: [ESP32C5] IDF-8715, [esp32c61] IDF-9314
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
@@ -39,6 +39,9 @@ components/spi_flash/test_apps/flash_mmap:
 components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: not support yet # TODO: [ESP32C61] IDF-9255
   disable_test:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
@@ -49,9 +52,9 @@ components/spi_flash/test_apps/flash_suspend:
 
 components/spi_flash/test_apps/mspi_test:
   disable:
-    - if: IDF_TARGET == "esp32c5"
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8715
+      reason: not support yet # TODO: [ESP32C5] IDF-8715, [esp32c61] IDF9316
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "psram" and IDF_TARGET in ["esp32p4"]

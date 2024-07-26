@@ -5,8 +5,8 @@ project(${ULP_APP_NAME} ASM C)
 add_executable(${ULP_APP_NAME})
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
-option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
-option(ULP_COCPU_IS_LP_CORE "Use RISC-V based LP Core" OFF)
+# Import all sdkconfig variables into the cmake build
+include(${SDKCONFIG_CMAKE})
 
 function(create_arg_file arguments output_file)
     # Escape all spaces
@@ -20,13 +20,15 @@ endfunction()
 message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
 # Check the supported assembler version
-if(NOT (ULP_COCPU_IS_RISCV OR ULP_COCPU_IS_LP_CORE))
+if(CONFIG_ULP_COPROC_TYPE_FSM)
     check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
 endif()
 
 
 set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
 get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
+
+
 
 foreach(include ${COMPONENT_INCLUDES})
     list(APPEND component_includes -I${include})
@@ -41,9 +43,9 @@ list(APPEND ULP_PREPROCESSOR_ARGS -I${IDF_PATH}/components/esp_system/ld)
 target_include_directories(${ULP_APP_NAME} PRIVATE ${COMPONENT_INCLUDES})
 
 # Pre-process the linker script
-if(ULP_COCPU_IS_RISCV)
+if(CONFIG_ULP_COPROC_TYPE_RISCV)
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
-elseif(ULP_COCPU_IS_LP_CORE)
+elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld)
 else()
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
@@ -69,8 +71,7 @@ target_link_options(${ULP_APP_NAME} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}
 
 # To avoid warning "Manually-specified variables were not used by the project"
 set(bypassWarning "${IDF_TARGET}")
-set(bypassWarning "${CONFIG_ESP_ROM_HAS_LP_ROM}")
-if(ULP_COCPU_IS_RISCV)
+if(CONFIG_ULP_COPROC_TYPE_RISCV)
     #risc-v ulp uses extra files for building:
     list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_vectors.S"
@@ -98,7 +99,7 @@ if(ULP_COCPU_IS_RISCV)
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
     target_compile_definitions(${ULP_APP_NAME} PRIVATE ULP_RISCV_REGISTER_OPS)
 
-elseif(ULP_COCPU_IS_LP_CORE)
+elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     list(APPEND ULP_S_SOURCES
     "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
@@ -134,6 +135,8 @@ elseif(ULP_COCPU_IS_LP_CORE)
             PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.newlib.ld)
         target_link_options(${ULP_APP_NAME}
             PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.version.ld)
+        target_link_options(${ULP_APP_NAME}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.api.ld)
     endif()
 
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
@@ -168,7 +171,7 @@ else()
 
 endif()
 
-if(ULP_COCPU_IS_LP_CORE)
+if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     set(ULP_BASE_ADDR "0x0")
 else()
     set(ULP_BASE_ADDR "0x50000000")

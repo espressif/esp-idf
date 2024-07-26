@@ -126,7 +126,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
     } else {
-#if !CONFIG_IDF_TARGET_ESP32P4 // # TODO: IDF-7528, IDF-7529
+#if !CONFIG_IDF_TARGET_ESP32C5// # TODO: IDF-8638, IDF-8640
         esp_sleep_enable_adc_tsens_monitor(true);
 #endif
     }
@@ -229,7 +229,7 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     if (ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_release();
     } else {
-#if !CONFIG_IDF_TARGET_ESP32P4 // # TODO: IDF-7528, IDF-7529
+#if !CONFIG_IDF_TARGET_ESP32C5// # TODO: IDF-8638, IDF-8640
         esp_sleep_enable_adc_tsens_monitor(false);
 #endif
     }

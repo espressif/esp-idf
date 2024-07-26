@@ -3,5 +3,5 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-set(COMPONENTS main)
-project(cpp_pthread)
+# Note: not setting set(COMPONENTS main) here, this app should build all the components
+project(clang_build_test)

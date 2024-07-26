@@ -46,6 +46,17 @@ class TestReportGeneration(unittest.TestCase):
         self.addCleanup(self.gitlab_patcher.stop)
         self.addCleanup(self.env_patcher.stop)
         self.addCleanup(self.failure_rate_patcher.stop)
+        self.addCleanup(self.cleanup_files)
+
+    def cleanup_files(self) -> None:
+        files_to_delete = [
+            self.target_test_report_generator.skipped_test_cases_report_file,
+            self.target_test_report_generator.succeeded_cases_report_file,
+            self.target_test_report_generator.failed_cases_report_file,
+        ]
+        for file_path in files_to_delete:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
     def load_test_and_job_reports(self) -> None:
         self.expected_target_test_report_html = load_file(
@@ -62,9 +73,23 @@ class TestReportGeneration(unittest.TestCase):
         jobs = [GitlabJob.from_json_data(job_json, failure_rates.get(job_json['name'], {})) for job_json in json.loads(jobs_response_raw)['jobs']]
         test_cases = parse_testcases_from_filepattern(os.path.join(self.reports_sample_data_path, 'XUNIT_*.xml'))
         self.target_test_report_generator = TargetTestReportGenerator(
-            project_id=123, mr_iid=1, pipeline_id=456, title='Test Report', test_cases=test_cases)
+            project_id=123,
+            mr_iid=1,
+            pipeline_id=456,
+            job_id=0,
+            commit_id='cccc',
+            title='Test Report',
+            test_cases=test_cases
+        )
         self.job_report_generator = JobReportGenerator(
-            project_id=123, mr_iid=1, pipeline_id=456, title='Job Report', jobs=jobs)
+            project_id=123,
+            mr_iid=1,
+            pipeline_id=456,
+            job_id=0,
+            commit_id='cccc',
+            title='Job Report',
+            jobs=jobs
+        )
         self.target_test_report_generator._known_failure_cases_set = {
             '*.test_wpa_supplicant_ut',
             'esp32c3.release.test_esp_timer',
@@ -72,7 +97,7 @@ class TestReportGeneration(unittest.TestCase):
         }
         test_cases_failed = [tc for tc in test_cases if tc.is_failure]
         for index, tc in enumerate(test_cases_failed):
-            tc.latest_total_count = 20
+            tc.latest_total_count = 40
             if index % 3 == 0:
                 tc.latest_failed_count = 0
             else:

@@ -299,14 +299,12 @@ def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> Non
     if dut.target in ['esp32c3', 'esp32c2']:
         dut.expect_gme('Cache error')
         dut.expect_exact('Cached memory region accessed while ibus or cache is disabled')
-    elif dut.target in ['esp32c6', 'esp32h2']:
+    elif dut.target in ['esp32c6', 'esp32h2', 'esp32p4']:
         dut.expect_gme('Cache error')
         dut.expect_exact('Cache access error')
     elif dut.target in ['esp32s2']:
         # Cache error interrupt is not enabled, IDF-1558
         dut.expect_gme('IllegalInstruction')
-    elif dut.target in ['esp32p4']:  # TODO IDF-7515
-        dut.expect_gme('Instruction access fault')
     else:
         dut.expect_gme('Cache disabled but cached memory region accessed')
     dut.expect_reg_dump(0)

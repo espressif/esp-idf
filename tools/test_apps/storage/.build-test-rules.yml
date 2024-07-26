@@ -19,9 +19,9 @@ tools/test_apps/storage/partition_table_readonly:
 
 tools/test_apps/storage/sdmmc_console:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: Console component not supported on H2 yet
+      reason: Console component not supported on H2 yet, TODO [ESP32C61] IDF-9305 sdspi
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3"]
       temporary: true

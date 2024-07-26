@@ -181,6 +181,10 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
     TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
+
+    // test rmt receive with unaligned buffer
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, rmt_receive(rx_channel, remote_codes, 13, &receive_config));
+
     printf("disable tx and rx channels\r\n");
     TEST_ESP_OK(rmt_disable(tx_channel));
     TEST_ESP_OK(rmt_disable(rx_channel));

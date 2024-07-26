@@ -364,7 +364,9 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 
     err = sdmmc_send_cmd(card, &cmd);
 
-    if (arg & SD_ARG_CMD53_READ &&
+    // Cannot do a normal bitmask check (arg & SD_ARG_CMD53_READ)
+    // since SD_ARG_CMD53_READ (0<<31) is 0
+    if (!(arg & SD_ARG_CMD53_WRITE) &&
             datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
         assert(datalen <= SDMMC_IO_BLOCK_SIZE);
         memcpy(datap, card->host.dma_aligned_buffer, datalen);
@@ -672,7 +674,7 @@ static bool check_tuples_in_buffer(uint8_t* buf, int buffer_size, int* inout_cis
 esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t buffer_size, size_t* inout_cis_size)
 {
     esp_err_t ret = ESP_OK;
-    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE];
+    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE] = {0};
 
     /* Pointer to size is a mandatory parameter */
     assert(inout_cis_size);

@@ -231,7 +231,9 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
 #if PPP_NOTIFY_PHASE
     ppp_set_notify_phase_callback(ppp_obj->ppp, on_ppp_notify_phase);
 #endif
+#if PPP_IPV4_SUPPORT
     ppp_set_usepeerdns(ppp_obj->ppp, 1);
+#endif
 
     return (netif_related_data_t *)ppp_obj;
 }
@@ -269,7 +271,7 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
 #endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 
 #if ESP_IPV6_AUTOCONFIG
-    ppp_ctx->ppp->netif->ip6_autoconfig_enabled = 1;
+    ppp_ctx->ppp->netif->ip6_autoconfig_enabled = (esp_netif->flags & ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED) ? 1 : 0;
 #endif
 
     ESP_LOGD(TAG, "%s: Starting PPP connection: %p", __func__, ppp_ctx->ppp);

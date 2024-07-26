@@ -130,7 +130,7 @@ bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma
     int cache_flags = 0;
     size_t cache_alignment_bytes = 0;
     if (esp_ptr_external_ram(ptr)) {
-        cache_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
+        cache_flags |= MALLOC_CAP_SPIRAM;
     }
     esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);

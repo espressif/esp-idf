@@ -153,7 +153,8 @@ Enable and Disable ISP
 ^^^^^^^^^^^^^^^^^^^^^^
 
 ISP
----------
+~~~
+
 Before doing ISP pipeline, you need to enable the ISP processor first, by calling :cpp:func:`esp_isp_enable`. This function:
 
 * Switches the driver state from **init** to **enable**.
@@ -161,7 +162,7 @@ Before doing ISP pipeline, you need to enable the ISP processor first, by callin
 Calling :cpp:func:`esp_isp_disable` does the opposite, that is, put the driver back to the **init** state.
 
 ISP AF Processor
-----------------
+~~~~~~~~~~~~~~~~
 
 Before doing ISP AF, you need to enable the ISP AF processor first, by calling :cpp:func:`esp_isp_af_controller_enable`. This function:
 
@@ -231,7 +232,7 @@ Calling :cpp:func:`esp_isp_af_env_detector_set_threshold` to set the threshold o
     ESP_ERROR_CHECK(esp_isp_af_env_detector_set_threshold(env_detector, definition_thresh, luminance_thresh));
 
 ISP AWB Processor
------------------
+~~~~~~~~~~~~~~~~~
 
 Before doing ISP AWB, you need to enable the ISP AWB processor first, by calling :cpp:func:`esp_isp_awb_controller_enable`. This function:
 
@@ -244,7 +245,7 @@ Calling :cpp:func:`esp_isp_awb_controller_disable` does the opposite, that is, p
 AWB One-shot and Continuous Statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Calling :cpp:func:`esp_isp_awb_controller_get_oneshot_result` to get oneshot AWB statistics result of white patches. You can take following code as reference.
+Calling :cpp:func:`esp_isp_awb_controller_get_oneshot_statistics` to get oneshot AWB statistics result of white patches. You can take following code as reference.
 
 Aside from the above oneshot API, the ISP AWB driver also provides a way to start AWB statistics continuously. Calling :cpp:func:`esp_isp_awb_controller_start_continuous_statistics` starts the continuous statistics and :cpp:func:`esp_isp_awb_controller_stop_continuous_statistics` stops it.
 
@@ -292,7 +293,7 @@ Note that if you want to use the continuous statistics, you need to register the
 .. _isp_bf:
 
 ISP BF Processor
-----------------
+~~~~~~~~~~~~~~~~
 
 This pipeline is used for doing image input denoising under bayer mode.
 

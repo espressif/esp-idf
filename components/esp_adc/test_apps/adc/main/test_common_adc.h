@@ -94,6 +94,15 @@ extern "C" {
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_VAL_DMA    4095
 #define ADC_TEST_HIGH_THRESH     200
+
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define ADC_TEST_LOW_VAL         2169
+#define ADC_TEST_LOW_THRESH      200
+
+#define ADC_TEST_HIGH_VAL        4095
+#define ADC_TEST_HIGH_VAL_DMA    4095
+#define ADC_TEST_HIGH_THRESH     200
+
 #endif
 
 /*---------------------------------------------------------------

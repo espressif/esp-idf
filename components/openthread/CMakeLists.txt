@@ -266,6 +266,8 @@ if(CONFIG_OPENTHREAD_ENABLED OR CONFIG_OPENTHREAD_SPINEL_ONLY)
         PUBLIC
         "OPENTHREAD_CONFIG_FILE=\"openthread-core-esp32x-${CONFIG_FILE_TYPE}-config.h\""
             "${device_type}"
+        "OPENTHREAD_PROJECT_LIB_CONFIG_FILE=\"openthread-core-esp32x-${CONFIG_FILE_TYPE}-config.h\""
+            "${device_type}"
         PRIVATE
         "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\""
         "OPENTHREAD_BUILD_DATETIME=\"${OT_BUILD_TIMESTAMP}\""

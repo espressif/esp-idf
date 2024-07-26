@@ -39,14 +39,18 @@ menu "Format"
 
         config LOG_TIMESTAMP_SOURCE_NONE
             bool "None"
-            depends on No  # hide it now, turn it on final MR
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
         config LOG_TIMESTAMP_SOURCE_RTOS
             bool "Milliseconds Since Boot"
+
         config LOG_TIMESTAMP_SOURCE_SYSTEM
             bool "System Time (HH:MM:SS.sss)"
+
         config LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
             bool "System Time (YY-MM-DD HH:MM:SS.sss)"
-            depends on No  # hide it now, turn it on final MR
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
     endchoice # LOG_TIMESTAMP_SOURCE
 
 endmenu

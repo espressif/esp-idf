@@ -11,6 +11,7 @@
  * When we add more types of external RAM memory, this can be made into a more intelligent dispatcher.
  *----------------------------------------------------------------------------------------------------*/
 #include <sys/param.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -89,7 +90,7 @@ typedef struct {
 static psram_ctx_t s_psram_ctx;
 static const DRAM_ATTR char TAG[] = "esp_psram";
 
-ESP_SYSTEM_INIT_FN(init_psram, CORE, BIT(0), 103)
+ESP_SYSTEM_INIT_FN(add_psram_to_heap, CORE, BIT(0), 103)
 {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
     if (esp_psram_is_initialized()) {
@@ -520,4 +521,12 @@ bool esp_psram_extram_test(void)
     }
 
     return true;
+}
+
+void esp_psram_bss_init(void)
+{
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    size_t size = (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start);
+    memset(&_ext_ram_bss_start, 0, size);
+#endif
 }

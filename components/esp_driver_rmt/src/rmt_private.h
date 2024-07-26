@@ -53,9 +53,6 @@ extern "C" {
 
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-// DMA buffer size must align to `rmt_symbol_word_t`
-#define RMT_DMA_DESC_BUF_MAX_SIZE      (DMA_DESCRIPTOR_BUFFER_MAX_SIZE & ~(sizeof(rmt_symbol_word_t) - 1))
-
 #define RMT_DMA_NODES_PING_PONG               2  // two nodes ping-pong
 #define RMT_PM_LOCK_NAME_LEN_MAX              16
 #define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
@@ -205,6 +202,7 @@ struct rmt_rx_channel_t {
     void *user_data;                     // user context
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
+    size_t dma_int_mem_alignment;         // DMA buffer alignment (both in size and address) for internal RX memory
     rmt_dma_descriptor_t *dma_nodes;     // DMA link nodes
     rmt_dma_descriptor_t *dma_nodes_nc;  // DMA descriptor nodes accessed in non-cached way
 };

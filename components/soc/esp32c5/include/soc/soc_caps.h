@@ -17,8 +17,8 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-// #define SOC_ADC_SUPPORTED               1  // TODO: [ESP32C5] IDF-8701
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1  // TODO: [ESP32C5] IDF-8725
+#define SOC_ADC_SUPPORTED               1
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
@@ -26,7 +26,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 // #define SOC_TWAI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8691
-// #define SOC_ETM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8693
+#define SOC_ETM_SUPPORTED               1
 #define SOC_PARLIO_SUPPORTED            1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
@@ -94,32 +94,32 @@
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
-// #define SOC_ADC_DIG_CTRL_SUPPORTED              1
-// #define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
-// #define SOC_ADC_MONITOR_SUPPORTED               1
-// #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
-// #define SOC_ADC_DMA_SUPPORTED                   1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
+#define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (1U)
-// #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (7)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (7)
-// #define SOC_ADC_ATTEN_NUM                       (4)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (6)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (6)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
-// #define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
-// #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
-// #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-// #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
-// #define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
-// #define SOC_ADC_DIGI_MONITOR_NUM                (2)
-// #define SOC_ADC_DIGI_RESULT_BYTES               (4)
-// #define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
+#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
+#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
+#define SOC_ADC_DIGI_MONITOR_NUM                (2)
+#define SOC_ADC_DIGI_RESULT_BYTES               (4)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval <= 4095 */
-// #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
-// #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
 /*!< RTC */
-// #define SOC_ADC_RTC_MIN_BITWIDTH                (12)
-// #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 /*!< Calibration */
 // #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -127,10 +127,10 @@
 // #define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED (1) /*!< support channel compensation to the HW offset calibration */
 
 /*!< Interrupt */
-// #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
+// #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)  // TODO: [ESP32C5] IDF-8727
 
 /*!< ADC power control is shared by PWDET */
-// #define SOC_ADC_SHARED_POWER                    1
+#define SOC_ADC_SHARED_POWER                    1
 
 // ESP32C5-TODO: Copy from esp32C5, need check
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
@@ -177,23 +177,23 @@
 #define SOC_AHB_GDMA_VERSION            2
 #define SOC_GDMA_NUM_GROUPS_MAX         1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-// #define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule TODO: IDF-9224
+#define SOC_GDMA_SUPPORT_ETM            1
 // #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1  // TODO: IDF-9225
 
 /*-------------------------- ETM CAPS --------------------------------------*/
-// #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
-// #define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
+#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C5 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 29
-// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
-#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER      1
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
 // GPIO peripheral has the ETM extension
-// #define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
 // On ESP32-C5, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
@@ -210,6 +210,7 @@
 #define SOC_GPIO_OUT_RANGE_MAX          28
 
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_28)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000001FFFF00ULL
@@ -233,9 +234,9 @@
 #define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-// #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-// #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-// #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
+#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
+#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C5 has 1 I2C
@@ -338,7 +339,7 @@
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER     3  ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP        3  ///< The number of GPIO synchros that each group has
 #define SOC_MCPWM_SWSYNC_CAN_PROPAGATE           1  ///< Software sync event can be routed to its output
-// #define SOC_MCPWM_SUPPORT_ETM                    1  ///< Support ETM (Event Task Matrix)
+#define SOC_MCPWM_SUPPORT_ETM                    1  ///< Support ETM (Event Task Matrix)
 #define SOC_MCPWM_SUPPORT_EVENT_COMPARATOR       1  ///< Support event comparator (based on ETM)
 #define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP         1  ///< Capture timer shares clock with other PWM timers
 
@@ -438,7 +439,7 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
@@ -449,9 +450,9 @@
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-// #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
+#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_ETM             (1)
 // #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
@@ -474,7 +475,6 @@
 #define SOC_EFUSE_ECDSA_KEY 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
-#define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_SECURE_BOOT_V2_ECC              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1

@@ -10,7 +10,8 @@
 #include "sdkconfig.h"
 
 #include "soc/cache_reg.h"
-#define MTVT              (0x307)
+#define CACHE_MAP_L1_CACHE_MASK     (BIT(0) | BIT(1) | BIT(4))
+#define MTVT                        (0x307)
 
     .section    .tcm.data,"aw"
     .global     rv_core_critical_regs_frame
@@ -154,7 +155,7 @@ rv_core_critical_regs_restore:
 /* Core 0 is wakeup core, Invalidate L1 Cache here */
     /* Invalidate L1 cache is required here!!! */
     la      t0, CACHE_SYNC_MAP_REG
-    li      t1, 0x7                         /* map l1 i/dcache */
+    li      t1, CACHE_MAP_L1_CACHE_MASK     /* map l1 i/dcache */
     sw      t1, 0x0(t0)                     /* set EXTMEM_CACHE_SYNC_MAP_REG bit 4 */
     la      t2, CACHE_SYNC_ADDR_REG
     sw      zero, 0x0(t2)                   /* clear EXTMEM_CACHE_SYNC_ADDR_REG */

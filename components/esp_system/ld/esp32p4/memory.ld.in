@@ -103,6 +103,9 @@ MEMORY
      This segment is placed at the beginning of LP RAM, as the end of LP RAM is occupied by LP ROM stack/data
   */
   lp_reserved_seg(RW) :        org = 0x50108000, len = RESERVE_RTC_MEM
+
+  /* PSRAM seg */
+  extern_ram_seg(RWX) :        org = 0x48000000, len = IDROM_SEG_SIZE
 }
 
 /* Heap ends at top of dram0_0_seg */
@@ -134,6 +137,12 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
   REGION_ALIAS("rodata_seg_low", sram_low);
   REGION_ALIAS("rodata_seg_high", sram_high);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+  REGION_ALIAS("ext_ram_seg", drom_seg);
+#else
+  REGION_ALIAS("ext_ram_seg", extern_ram_seg);
+#endif //#if CONFIG_SPIRAM_XIP_FROM_PSRAM
 
 /**
  *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must

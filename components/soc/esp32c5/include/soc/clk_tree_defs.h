@@ -402,7 +402,7 @@ typedef enum {
  * @brief Glitch filter clock source
  */
 
-typedef enum {  // TODO: [ESP32C5] IDF-8718 (inherit from C6)
+typedef enum {
     GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
     GLITCH_FILTER_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
@@ -433,7 +433,7 @@ typedef enum {  // TODO: [ESP32C5] IDF-8691, IDF-8692 (inherit from C6)
 /**
  * @brief ADC digital controller clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8701, IDF-8702, IDF-8703 (inherit from C6)
+typedef enum {
     ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     ADC_DIGI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
     ADC_DIGI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */

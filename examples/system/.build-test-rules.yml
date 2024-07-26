@@ -39,9 +39,9 @@ examples/system/deep_sleep:
 
 examples/system/deep_sleep_wake_stub:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32c2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target(s) is not supported yet  # TODO: [ESP32C5] IDF-8638
+      reason: target(s) is not supported yet  # TODO: [ESP32C5] IDF-8638, [esp32c61] IDF-9245
 
 examples/system/efuse:
   enable:
@@ -141,9 +141,9 @@ examples/system/light_sleep:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5 is not supported yet, esp32p4 is not supported with bluedroid/nimble case
+      reason: target esp32h2, esp32c5 esp32c61 is not supported yet, esp32p4 is not supported with bluedroid/nimble case
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -161,9 +161,9 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c5"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5 is not supported yet
+      reason: target esp32h2, esp32c5, esp32c61 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
@@ -184,9 +184,9 @@ examples/system/ota/otatool:
 
 examples/system/ota/pre_encrypted_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c5"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5 is not supported yet
+      reason: target esp32h2, esp32c5, esp32c61 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -202,9 +202,9 @@ examples/system/ota/pre_encrypted_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32p4, esp32c5 is not supported yet
+      reason: target esp32h2, esp32p4, esp32c5 esp32c61 is not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
@@ -235,6 +235,13 @@ examples/system/pthread:
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
     - pthread
+
+examples/system/rt_mqueue:
+  disable_test:
+    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - rt
 
 examples/system/select:
   disable:

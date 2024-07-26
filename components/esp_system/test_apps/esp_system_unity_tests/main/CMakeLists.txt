@@ -8,7 +8,6 @@ set(requires "unity"
 
 set(SRC  "test_app_main.c"
          "test_backtrace.c"
-         "test_delay.c"
          "test_ipc.c"
          "test_reset_reason.c"
          "test_shared_stack_printf.c"
@@ -16,6 +15,14 @@ set(SRC  "test_app_main.c"
          "test_stack_check.c"
          "test_system_time.c"
          "test_task_wdt.c")
+
+if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
+    list(APPEND SRC "test_systick_etm.c")
+endif()
+
+if(CONFIG_SOC_GPTIMER_SUPPORTED)
+    list(APPEND SRC "test_delay.c")
+endif()
 
 if(CONFIG_ESP_IPC_ISR_ENABLE)
     list(APPEND SRC  "test_ipc_isr.c")

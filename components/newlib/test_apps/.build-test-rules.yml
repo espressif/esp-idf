@@ -1,3 +1,7 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/newlib/test_apps/newlib:
+  disable:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: not supported yet  # TODO: [esp32c61] IDF-9284

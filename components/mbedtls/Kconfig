@@ -246,11 +246,11 @@ menu "mbedTLS"
                 See mbedTLS documentation for required API and more details.
 
         config MBEDTLS_PKCS7_C
-            bool "Enable PKCS #7"
+            bool "Enable PKCS number 7"
             default y
             depends on MBEDTLS_X509_CRL_PARSE_C
             help
-                Enable PKCS #7 core for using PKCS #7-formatted signatures.
+                Enable PKCS number 7 core for using PKCS number 7-formatted signatures.
 
         config MBEDTLS_SSL_CID_PADDING_GRANULARITY
             int "Record plaintext padding"

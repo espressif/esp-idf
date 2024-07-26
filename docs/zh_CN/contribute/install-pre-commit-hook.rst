@@ -1,8 +1,7 @@
 为 ESP-IDF 安装 pre-commit 钩子
-==========================================
+===================================
 
 :link_to_translation:`en:[English]`
-
 
 安装 ``pre-commit`` 工具
 ---------------------------
@@ -23,7 +22,7 @@
 
 运行 ``pre-commit uninstall`` 。
 
-更多
+相关文档
 ---------
 
 更多详细使用方法，请参考 pre-commit_ 文档。
@@ -31,7 +30,7 @@
 .. _pre-commit: https://pre-commit.com/
 
 Windows 用户常见问题
---------------------------------
+-----------------------
 
 ``/usr/bin/env: python: Permission denied.``
 

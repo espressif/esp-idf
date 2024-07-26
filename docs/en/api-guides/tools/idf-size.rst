@@ -136,7 +136,7 @@ The table is sorted in descending order of the total contribution of the static 
 
 .. note::
 
-    The size of the ``.rodata`` section in the ``Flash Data`` memory type may appear very large for a single archive. This occurs due to linker relaxations. The linker may attempt to combine object file sections with ``MERGE`` and ``STRINGS`` flags from all archives into one to perform tail string optimization. Consequently, one archive may end up with a very large ``.rodata`` section, containing string literals from other archives. This is evident in the ``.rodata`` section of the ``libesp_app_format.a`` archive.
+    The size of the ``.rodata`` section in the ``Flash Data`` memory type may appear very large for a single archive. This occurs due to linker relaxations. The linker may attempt to combine object file sections with ``MERGE`` and ``STRINGS`` flags from all archives into one to perform tail string optimization. Consequently, one archive may end up with a very large ``.rodata`` section, containing string literals from other archives. This is evident in the ``.rodata`` section of the ``libesp_app_format.a`` archive. The specific compiler behavior here can be turned off by enabling :ref:`CONFIG_COMPILER_NO_MERGE_CONSTANTS` option (only for GCC toolchain), please read help for more details.
 
 
 Source File Usage Summary ``idf.py size-files``

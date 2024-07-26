@@ -24,8 +24,6 @@
 static const char *TAG = "sar_periph_ctrl";
 extern portMUX_TYPE rtc_spinlock;
 
-// TODO: [ESP32C5] IDF-8701, IDF-8703, IDF-8727
-
 void sar_periph_ctrl_init(void)
 {
     sar_ctrl_ll_force_power_ctrl_from_pwdet(true);

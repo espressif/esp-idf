@@ -22,26 +22,27 @@
 ::
 
     user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32c5-builtin.cfg
-    Open On-Chip Debugger v0.11.0-esp32-20221026-85-g0718fffd (2023-01-12-07:28)
+    Open On-Chip Debugger v0.12.0-esp32-20240318-139-g35ddcf93-dirty (2024-07-16-15:00)
     Licensed under GNU GPL v2
     For bug reports, read
             http://openocd.org/doc/doxygen/bugs.html
-    Info : only one transport option; autoselect 'jtag'
+    Info : only one transport option; autoselecting 'jtag'
     Info : esp_usb_jtag: VID set to 0x303a and PID to 0x1001
     Info : esp_usb_jtag: capabilities descriptor set to 0x2000
-    Warn : Transport "jtag" was already selected
     WARNING: ESP flash support is disabled!
     force hard breakpoints
     Info : Listening on port 6666 for tcl connections
     Info : Listening on port 4444 for telnet connections
-    Info : esp_usb_jtag: serial (60:55:F9:F6:03:3C)
+    Info : esp_usb_jtag: serial (60:55:F9:FF:FE:F9:54:A4)
     Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
     Info : clock speed 24000 kHz
-    Info : JTAG tap: esp32c5.cpu tap/device found: 0x0000dc25 (mfg: 0x612 (Espressif Systems), part: 0x000d, ver: 0x0)
-    Info : datacount=2 progbufsize=16
-    Info : Examined RISC-V core; found 2 harts
-    Info :  hart 0: XLEN=32, misa=0x40903105
-    Info : starting gdb server for esp32c5 on 3333
+    Info : JTAG tap: esp32c5.cpu0 tap/device found: 0x00017c25 (mfg: 0x612 (Espressif Systems), part: 0x0017, ver: 0x0)
+    Info : JTAG tap: esp32c5.cpu1 tap/device found: 0x00017c25 (mfg: 0x612 (Espressif Systems), part: 0x0017, ver: 0x0)
+    Info : [esp32c5.cpu1] datacount=1 progbufsize=2
+    Info : [esp32c5.cpu1] Examined RISC-V core; found 1 harts
+    Info : [esp32c5.cpu1]  XLEN=32, misa=0x40101105
+    Info : [esp32c5.cpu1] Examination succeed
+    Info : [esp32c5.cpu1] starting gdb server on 3333
     Info : Listening on port 3333 for gdb connections
 
 .. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32c5-builtin.cfg``
@@ -121,17 +122,17 @@
 
     * - ESP32-C5 Pin
       - JTAG Signal
-    * - MTDO / GPIO7
+    * - MTDO / GPIO5
       - TDO
-    * - MTDI / GPIO5
+    * - MTDI / GPIO3
       - TDI
-    * - MTCK / GPIO6
+    * - MTCK / GPIO4
       - TCK
-    * - MTMS / GPIO4
+    * - MTMS / GPIO2
       - TMS
 
-.. |jtag-sel-gpio| replace:: GPIO15
-.. |jtag-gpio-list| replace:: GPIO4-GPIO7
+.. |jtag-sel-gpio| replace:: GPIO7
+.. |jtag-gpio-list| replace:: GPIO2-GPIO5
 
 ---
 

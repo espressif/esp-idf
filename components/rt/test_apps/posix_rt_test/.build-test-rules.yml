@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/rt/test_apps/posix_rt_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32c3", "esp32p4"]
+      reason: covers all major arch types, xtensa vs riscv, single vs dual-core
+  depends_components:
+    - rt
+    - freertos

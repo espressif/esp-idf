@@ -6,25 +6,47 @@
 #include <stdarg.h>
 #include "sdkconfig.h"
 #include "ulp_lp_core_uart.h"
-
-#if !CONFIG_ULP_ROM_PRINT_ENABLE
+#include "hal/uart_hal.h"
+#include "esp_rom_uart.h"
 
 #define LP_UART_PORT_NUM LP_UART_NUM_0
 #define BINARY_SUPPORT 1
 
 #define is_digit(c) ((c >= '0') && (c <= '9'))
 
+#if CONFIG_ULP_HP_UART_CONSOLE_PRINT
+void __attribute__((alias("hp_uart_send_char"))) lp_core_print_char(char c);
+
+static void hp_uart_send_char(char t)
+{
+    uart_dev_t *uart = (uart_dev_t *)UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM);
+
+    while (uart_ll_get_txfifo_len(uart) < 2) {
+        ;
+    }
+    uart_ll_write_txfifo(uart, &t, 1);
+}
+#elif !CONFIG_ULP_ROM_PRINT_ENABLE
+void __attribute__((alias("lp_uart_send_char"))) lp_core_print_char(char c);
 static void lp_uart_send_char(char c)
 {
     int tx_len = 0;
     int loop_cnt = 0;
-
     /* Write one byte to LP UART. Break after few iterations if we are stuck for any reason. */
     while (tx_len != 1 && loop_cnt < 1000) {
         tx_len = lp_core_uart_tx_chars(LP_UART_PORT_NUM, (const void *)&c, 1);
         loop_cnt++;
     }
 }
+#else
+void __attribute__((alias("lp_rom_send_char"))) lp_core_print_char(char c);
+static void lp_rom_send_char(char c)
+{
+    esp_rom_output_putc(c);
+}
+#endif // CONFIG_ULP_HP_UART_CONSOLE_PRINT
+
+#if !CONFIG_ULP_ROM_PRINT_ENABLE
 
 // Ported over ROM function _cvt()
 static int lp_core_cvt(unsigned long long val, char *buf, long radix, char *digits)
@@ -268,7 +290,7 @@ int lp_core_printf(const char* format, ...)
     va_start(ap, format);
 
     /* Pass the input string and the argument list to ets_vprintf() */
-    int ret = lp_core_ets_vprintf(lp_uart_send_char, format, ap);
+    int ret = lp_core_ets_vprintf(lp_core_print_char, format, ap);
 
     va_end(ap);
 
@@ -276,3 +298,40 @@ int lp_core_printf(const char* format, ...)
 }
 
 #endif /* !CONFIG_ULP_ROM_PRINT_ENABLE */
+
+void lp_core_print_str(const char *str)
+{
+    for (int i = 0; str[i] != 0; i++) {
+        lp_core_print_char(str[i]);
+    }
+}
+
+void lp_core_print_hex(int h)
+{
+    int x;
+    int c;
+    // Does not print '0x', only the digits (8 digits to print)
+    for (x = 0; x < 8; x++) {
+        c = (h >> 28) & 0xf; // extract the leftmost byte
+        if (c < 10) {
+            lp_core_print_char('0' + c);
+        } else {
+            lp_core_print_char('a' + c - 10);
+        }
+        h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
+    }
+}
+
+void lp_core_print_dec_two_digits(int d)
+{
+    // can print at most 2 digits!
+    int n1, n2;
+    n1 = d % 10; // extract ones digit
+    n2 = d / 10; // extract tens digit
+    if (n2 == 0) {
+        lp_core_print_char(' ');
+    } else {
+        lp_core_print_char(n2 + '0');
+    }
+    lp_core_print_char(n1 + '0');
+}

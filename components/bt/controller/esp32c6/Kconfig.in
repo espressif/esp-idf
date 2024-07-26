@@ -2,17 +2,35 @@
 menu "HCI Config"
 
     choice BT_LE_HCI_INTERFACE
-        prompt "Select HCI interface"
+        prompt "HCI mode"
         default BT_LE_HCI_INTERFACE_USE_RAM
 
         config BT_LE_HCI_INTERFACE_USE_RAM
-            bool "ram"
+            bool "VHCI"
             help
                 Use RAM as HCI interface
         config BT_LE_HCI_INTERFACE_USE_UART
-            bool "uart"
+            bool "UART(H4)"
             help
                 Use UART as HCI interface
+    endchoice
+
+    choice BT_LE_UART_HCI_MODE_CHOICE
+        prompt "UART HCI mode"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default BT_LE_UART_HCI_NO_DMA_MODE
+        help
+            Specify UART HCI mode: DMA or No DMA
+
+        config BT_LE_UART_HCI_DMA_MODE
+            bool "UHCI(UART with DMA)(EXPERIMENTAL)"
+            help
+                UART HCI Mode with DMA functionality.
+
+        config BT_LE_UART_HCI_NO_DMA_MODE
+            bool "UART(NO DMA)"
+            help
+                UART HCI Mode without DMA functionality.
     endchoice
 
     config BT_LE_HCI_UART_PORT
@@ -73,12 +91,40 @@ menu "HCI Config"
                 UART_PARITY_ODD
     endchoice
 
-    config BT_LE_HCI_UART_TASK_STACK_SIZE
-        int "HCI uart task stack size"
-        depends on BT_LE_HCI_INTERFACE_USE_UART
-        default 1000
+    config BT_LE_HCI_UART_RX_BUFFER_SIZE
+        int "The size of rx ring buffer memory"
+        depends on BT_LE_UART_HCI_NO_DMA_MODE
+        default 512
         help
-            Set the size of uart task stack
+            The size of rx ring buffer memory
+
+    config BT_LE_HCI_UART_TX_BUFFER_SIZE
+        int "The size of tx ring buffer memory"
+        depends on BT_LE_UART_HCI_NO_DMA_MODE
+        default 256
+        help
+            The size of tx ring buffer memory
+
+    config BT_LE_HCI_TRANS_TASK_STACK_SIZE
+        int "HCI transport task stack size"
+        depends on !BT_LE_HCI_INTERFACE_USE_RAM
+        default 1024
+        help
+            This configures stack size of hci transport task
+
+    config BT_LE_HCI_TRANS_RX_MEM_NUM
+        int "The amount of rx memory received at the same time"
+        depends on BT_LE_UART_HCI_DMA_MODE
+        default 3
+        help
+            The amount of rx memory received at the same time
+
+    config BT_LE_HCI_LLDESCS_POOL_NUM
+        int "The amount of lldecs memory for driver dma mode"
+        depends on BT_LE_UART_HCI_DMA_MODE
+        default 20
+        help
+            The amount of lldecs memory for driver dma mode
 endmenu
 
 config BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT
@@ -575,3 +621,53 @@ config BT_LE_CCA_RSSI_THRESH
     default 20
     help
         Power threshold of CCA in unit of -1 dBm.
+
+choice BT_LE_DFT_TX_POWER_LEVEL_DBM
+    prompt "BLE default Tx power level(dBm)"
+    default BT_LE_DFT_TX_POWER_LEVEL_P9
+    help
+        Specify default Tx power level(dBm).
+    config BT_LE_DFT_TX_POWER_LEVEL_N15
+        bool "-15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N12
+        bool "-12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N9
+        bool "-9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N6
+        bool "-6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N3
+        bool "-3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N0
+        bool "0dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P3
+        bool "+3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P6
+        bool "+6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P9
+        bool "+9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P12
+        bool "+12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P15
+        bool "+15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P18
+        bool "+18dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P20
+        bool "+20dBm"
+endchoice
+
+config BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF
+    int
+    default -15 if BT_LE_DFT_TX_POWER_LEVEL_N15
+    default -12 if BT_LE_DFT_TX_POWER_LEVEL_N12
+    default -9 if BT_LE_DFT_TX_POWER_LEVEL_N9
+    default -6 if BT_LE_DFT_TX_POWER_LEVEL_N6
+    default -3 if BT_LE_DFT_TX_POWER_LEVEL_N3
+    default 0 if BT_LE_DFT_TX_POWER_LEVEL_N0
+    default 3 if BT_LE_DFT_TX_POWER_LEVEL_P3
+    default 6 if BT_LE_DFT_TX_POWER_LEVEL_P6
+    default 9 if BT_LE_DFT_TX_POWER_LEVEL_P9
+    default 12 if BT_LE_DFT_TX_POWER_LEVEL_P12
+    default 15 if BT_LE_DFT_TX_POWER_LEVEL_P15
+    default 18 if BT_LE_DFT_TX_POWER_LEVEL_P18
+    default 20 if BT_LE_DFT_TX_POWER_LEVEL_P20
+    default 0

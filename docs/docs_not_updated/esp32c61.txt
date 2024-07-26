@@ -96,10 +96,8 @@ api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/etm.rst
 api-reference/peripherals/i2s.rst
 api-reference/peripherals/gptimer.rst
-api-reference/peripherals/pcnt.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ppa.rst
-api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/ledc.rst

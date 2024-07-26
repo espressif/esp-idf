@@ -25,7 +25,7 @@ The bootloader does not support booting apps from older versions of ESP-IDF. Whe
 
 .. note::
 
-   If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
+    If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
 
 .. only:: esp32
 
@@ -54,7 +54,7 @@ The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader
 
 .. only:: esp32
 
-   Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
+    Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
 
 Log Level
 ---------

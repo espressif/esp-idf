@@ -6,16 +6,6 @@ contribute/style-guide.rst
 contribute/copyright-guide.rst
 contribute/install-pre-commit-hook.rst
 contribute/index.rst
-api-guides/jtag-debugging/debugging-examples.rst
-api-guides/jtag-debugging/configure-ft2232h-jtag.rst
-api-guides/jtag-debugging/tips-and-quirks.rst
-api-guides/jtag-debugging/using-debugger.rst
-api-guides/jtag-debugging/building-openocd-macos.rst
-api-guides/jtag-debugging/building-openocd-linux.rst
-api-guides/jtag-debugging/configure-other-jtag.rst
-api-guides/jtag-debugging/building-openocd-windows.rst
-api-guides/jtag-debugging/index.rst
-api-guides/jtag-debugging/configure-builtin-jtag.rst
 api-guides/tools/idf-tools.rst
 api-guides/tools/idf-clang-tidy.rst
 api-guides/tools/idf-component-manager.rst
@@ -76,8 +66,6 @@ api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/sdspi_share.rst
-api-reference/peripherals/adc_continuous.rst
-api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/twai.rst
 api-reference/peripherals/usb_host/usb_host_notes_arch.rst
@@ -90,7 +78,6 @@ api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
-api-reference/peripherals/etm.rst
 api-reference/peripherals/gptimer.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst

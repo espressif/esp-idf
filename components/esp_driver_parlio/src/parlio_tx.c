@@ -394,7 +394,7 @@ static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const 
 
     while (len) {
         assert(desc_nc);
-        mount_bytes = len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE ? DMA_DESCRIPTOR_BUFFER_MAX_SIZE : len;
+        mount_bytes = len > PARLIO_MAX_ALIGNED_DMA_BUF_SIZE ? PARLIO_MAX_ALIGNED_DMA_BUF_SIZE : len;
         len -= mount_bytes;
         desc_nc->dw0.suc_eof = (len == 0);    // whether the last frame
         desc_nc->dw0.size = mount_bytes;
@@ -404,11 +404,6 @@ static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const 
         desc_nc = PARLIO_GET_NON_CACHED_DESC_ADDR(desc_nc->next);
         prepared_length += mount_bytes;
     }
-
-#if CONFIG_IDF_TARGET_ESP32P4
-    // Write back to cache to synchronize the cache before DMA start
-    esp_cache_msync((void *)buffer, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-#endif  // CONFIG_IDF_TARGET_ESP32P4
 }
 
 esp_err_t parlio_tx_unit_wait_all_done(parlio_tx_unit_handle_t tx_unit, int timeout_ms)
@@ -572,6 +567,11 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     t->payload = payload;
     t->payload_bits = payload_bits;
     t->idle_value = config->idle_value & tx_unit->idle_value_mask;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // Write back to cache to synchronize the cache before DMA start
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, (payload_bits + 7) / 8,
+                                        ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
+#endif  // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
     // send the transaction descriptor to progress queue
     ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE,

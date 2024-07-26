@@ -3,6 +3,14 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_SUPPORTED
     bool
     default y
@@ -24,6 +32,10 @@ config SOC_PCNT_SUPPORTED
     default y
 
 config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
+config SOC_ETM_SUPPORTED
     bool
     default y
 
@@ -203,13 +215,85 @@ config SOC_AES_SUPPORT_AES_256
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_MONITOR_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 1
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
-    default 7
+    default 6
+
+config SOC_ADC_ATTEN_NUM
+    int
+    default 4
+
+config SOC_ADC_DIGI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_ADC_PATT_LEN_MAX
+    int
+    default 8
+
+config SOC_ADC_DIGI_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_IIR_FILTER_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_MONITOR_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
+
+config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+    int
+    default 83333
+
+config SOC_ADC_SAMPLE_FREQ_THRES_LOW
+    int
+    default 611
+
+config SOC_ADC_RTC_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_RTC_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_SHARED_POWER
+    bool
+    default y
 
 config SOC_SHARED_IDCACHE_SUPPORTED
     bool
@@ -295,6 +379,18 @@ config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 3
 
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
 config SOC_GPIO_PORT
     int
     default 1
@@ -303,7 +399,19 @@ config SOC_GPIO_PIN_COUNT
     int
     default 29
 
+config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    bool
+    default y
+
+config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    int
+    default 8
+
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
@@ -330,6 +438,10 @@ config SOC_GPIO_OUT_RANGE_MAX
 config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
+
+config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
+    int
+    default 8
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
@@ -360,6 +472,18 @@ config SOC_RTCIO_HOLD_SUPPORTED
     default y
 
 config SOC_RTCIO_WAKE_SUPPORTED
+    bool
+    default y
+
+config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
@@ -635,6 +759,10 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
     bool
     default y
@@ -831,6 +959,10 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
@@ -855,15 +987,19 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
+config SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    bool
+    default y
+
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
 
-config SOC_EFUSE_ECDSA_KEY
+config SOC_TIMER_SUPPORT_ETM
     bool
     default y
 
-config SOC_SECURE_BOOT_V2_RSA
+config SOC_EFUSE_ECDSA_KEY
     bool
     default y
 

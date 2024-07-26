@@ -212,6 +212,8 @@ When programming the LP-Core, it can sometimes be challenging to figure out why 
 
 * Use the LP-UART to print: the LP-Core has access to the LP-UART peripheral, which can be used for printing information independently of the main CPU sleep state. See :example:`system/ulp/lp_core/lp_uart/lp_uart_print` for an example of how to use this driver.
 
+* Routing :cpp:func:`lp_core_printf` to the HP-Core console UART with :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. This allows you to easily print LP-Core information to the already connected HP-Core console UART. The drawback of this approach is that it requires the main CPU to be awake and since there is no synchronization between the LP and HP cores, the output may be interleaved.
+
 * Share program state through shared variables: as described in :ref:`ulp-lp-core-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
 * Panic handler: the LP-Core has a panic handler that can dump the state of the LP-Core registers by the LP-UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP-Core application. To recover a backtrace from the panic dump, it is possible to use  esp-idf-monitor_., e.g.:

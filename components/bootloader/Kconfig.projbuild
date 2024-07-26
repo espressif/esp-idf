@@ -145,7 +145,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_FACTORY_RESET
         bool "GPIO triggers factory reset"
-        default N
+        default n
         select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             Allows to reset the device to factory settings:
@@ -200,7 +200,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_APP_TEST
         bool "GPIO triggers boot from test app partition"
-        default N
+        default n
         depends on !BOOTLOADER_APP_ANTI_ROLLBACK
         help
             Allows to run the test app from "TEST" partition.
@@ -763,7 +763,7 @@ menu "Security features"
     config SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
         bool "Enable Aggressive key revoke strategy"
         depends on SECURE_BOOT && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
-        default N
+        default n
         help
             If this option is set, ROM bootloader will revoke the public key digest burned in efuse block
             if it fails to verify the signature of software bootloader with it.
@@ -779,7 +779,7 @@ menu "Security features"
     config SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
         bool "Flash bootloader along with other artifacts when using the default flash command"
         depends on SECURE_BOOT_V2_ENABLED && SECURE_BOOT_BUILD_SIGNED_BINARIES
-        default N
+        default n
         help
             When Secure Boot V2 is enabled, by default the bootloader is not flashed along with other artifacts
             like the application and the partition table images, i.e. bootloader has to be separately flashed
@@ -819,7 +819,7 @@ menu "Security features"
     config SECURE_BOOT_INSECURE
         bool "Allow potentially insecure options"
         depends on SECURE_BOOT
-        default N
+        default n
         help
             You can disable some of the default protections offered by secure boot, in order to enable testing or a
             custom combination of security features.
@@ -830,7 +830,7 @@ menu "Security features"
 
     config SECURE_FLASH_ENC_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
-        default N
+        default n
         select SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
@@ -917,7 +917,7 @@ menu "Security features"
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
             depends on (SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT) && IDF_TARGET_ESP32
-            default N
+            default n
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is
                 read from the flash.
@@ -932,7 +932,7 @@ menu "Security features"
             bool "Allow JTAG Debugging"
             depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot
                 when either secure boot or flash encryption is enabled.
@@ -979,7 +979,7 @@ menu "Security features"
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
             depends on SECURE_BOOT_INSECURE && SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-            default N
+            default n
             help
                 If not set (default), during startup in the app all unused digest slots will be revoked.
                 To revoke unused slot will be called esp_efuse_set_digest_revoke(num_digest) for each digest.
@@ -998,7 +998,7 @@ menu "Security features"
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable UART bootloader encryption access on
                 first boot. If set, the UART bootloader will still be able to access hardware encryption.
@@ -1008,7 +1008,7 @@ menu "Security features"
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
             bool "Leave UART bootloader decryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && IDF_TARGET_ESP32
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable UART bootloader decryption access on
                 first boot. If set, the UART bootloader will still be able to access hardware decryption.
@@ -1020,7 +1020,7 @@ menu "Security features"
             bool "Leave UART bootloader flash cache enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && \
                 (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
-            default N
+            default n
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
@@ -1031,7 +1031,7 @@ menu "Security features"
         config SECURE_FLASH_REQUIRE_ALREADY_ENABLED
             bool "Require flash encryption to be already enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
-            default N
+            default n
             help
                 If not set (default), and flash encryption is not yet enabled in eFuses, the 2nd stage bootloader
                 will enable flash encryption: generate the flash encryption key and program eFuses.

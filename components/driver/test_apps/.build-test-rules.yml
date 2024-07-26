@@ -30,9 +30,9 @@ components/driver/test_apps/legacy_adc_driver:
 
 components/driver/test_apps/legacy_i2c_driver:
   disable:
-    - if: IDF_TARGET == "esp32c5"
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-10307
+      reason: not support yet # TODO: [ESP32C5] IDF-10307, [ESP32C61] IDF-9296
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
@@ -54,10 +54,6 @@ components/driver/test_apps/legacy_mcpwm_driver:
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: target test failed  # TODO [ESP32C5] IDF-10341
   depends_filepatterns:
     - components/driver/deprecated/**/*pcnt*
 

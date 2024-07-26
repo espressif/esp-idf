@@ -615,7 +615,8 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     }
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+    size_t output_desc_cache_line_size = get_cache_line_size(output_desc);
+    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
         ESP_LOGE(TAG, "Output DMA descriptor cache sync M2C failed");
         ret = -1;
         goto cleanup;
@@ -834,7 +835,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+    size_t output_desc_cache_line_size = get_cache_line_size(output_desc);
+    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
         ESP_LOGE(TAG, "Output DMA descriptor cache sync M2C failed");
         ret = -1;
         goto cleanup;
