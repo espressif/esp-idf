@@ -5084,8 +5084,8 @@ typedef struct soc_etm_dev_t {
     volatile soc_etm_ch_ena_ad1_set_reg_t ch_ena_ad1_set;
     volatile soc_etm_ch_ena_ad1_clr_reg_t ch_ena_ad1_clr;
     volatile struct {
-        soc_etm_chn_evt_id_reg_t evt_id;
-        soc_etm_chn_task_id_reg_t task_id;
+        soc_etm_chn_evt_id_reg_t eid;
+        soc_etm_chn_task_id_reg_t tid;
     } channel[50];
     volatile soc_etm_evt_st0_reg_t evt_st0;
     volatile soc_etm_evt_st0_clr_reg_t evt_st0_clr;
