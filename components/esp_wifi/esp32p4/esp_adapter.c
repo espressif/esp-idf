@@ -53,7 +53,9 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
+#if CONFIG_ESP_EXT_CONN_ENABLE
 extern uint8_t *esp_extconn_get_mac(void);
+#endif
 
 IRAM_ATTR void *wifi_malloc(size_t size)
 {
@@ -410,7 +412,12 @@ static esp_err_t esp_read_mac_wrapper(uint8_t *mac, unsigned int type)
     }
 
     // get mac address from target
+#if CONFIG_ESP_EXT_CONN_ENABLE
     memcpy(mac, esp_extconn_get_mac(), 6);
+#else
+    ESP_LOGE(TAG, "Not support read mac");
+    return ESP_FAIL;
+#endif
 
     if (type == ESP_MAC_WIFI_SOFTAP) {
         mac[5] += 1;
