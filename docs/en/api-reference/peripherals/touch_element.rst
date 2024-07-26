@@ -443,7 +443,7 @@ The Touch Element Wakeup example is available in `system/light_sleep` directory.
 
         // ESP_ERROR_CHECK(touch_element_enable_light_sleep(&sleep_config));
         ESP_ERROR_CHECK(touch_element_enable_deep_sleep(button_handle[0], &sleep_config));
-        // ESP_ERROR_CHECK(touch_element_sleep_enable_wakeup_calibration(button_handle[0], false)); // (optional) Disable wakeup calibration to prevent updating the baseline to a wrong value
+        // ESP_ERROR_CHECK(touch_element_sleep_enable_wakeup_calibration(button_handle[0], false)); // (optional) Disable wakeup calibration to prevent updating the benchmark to a wrong value
 
         touch_element_start();
 

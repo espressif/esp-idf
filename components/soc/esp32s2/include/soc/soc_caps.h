@@ -336,11 +336,14 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_VERSION            (2)     /*!<Hardware version of touch sensor */
-#define SOC_TOUCH_SENSOR_NUM                (15)    /*!<15 Touch channels */
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /*!<Support touch proximity channel number. */
+#define SOC_TOUCH_SENSOR_VERSION            (2)     /*!< Hardware version of touch sensor */
+#define SOC_TOUCH_SENSOR_NUM                (15)    /*!< 15 Touch channels */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP       (1)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_WATERPROOF        (1)     /*!< Touch sensor supports waterproof */
+#define SOC_TOUCH_SUPPORT_PROX_SENSING      (1)     /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /*!< Support touch proximity channel number. */
 
-#define SOC_TOUCH_SAMPLER_NUM               (1U)    /*!< The sampler number in total, each sampler can be used to sample on one frequency */
+#define SOC_TOUCH_SAMPLE_CFG_NUM            (1U)    /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL

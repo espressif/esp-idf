@@ -275,7 +275,7 @@ typedef enum {
     TOUCH_PAD_SMOOTH_MAX,
 } touch_smooth_mode_t;
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_TOUCH_SENSOR_VERSION == 3
 /**
  * @brief Touch channel counting mode of the binarized touch output
  *
@@ -283,9 +283,11 @@ typedef enum {
 typedef enum {
     TOUCH_PAD_OUT_AS_DATA,      /*!< Counting the output of touch channel as data.
                                  *   The value will be smaller than actual value but more sensitive when the frequency of touch_out is close to the source clock
+                                 *   Normally we treat the output as data when it is lower than the sample clock
                                  */
     TOUCH_PAD_OUT_AS_CLOCK,     /*!< Counting the output of touch channel as clock.
                                  *   The value is accurate but less sensitive when the frequency of touch_out is close to the source clock
+                                 *   Normally we treat the output as clock when it is higher than the sample clock
                                  */
 } touch_out_mode_t;
 #endif

@@ -692,7 +692,6 @@ components/soc/esp32s3/include/soc/rtc_io_reg.h
 components/soc/esp32s3/include/soc/rtc_io_struct.h
 components/soc/esp32s3/include/soc/sdmmc_pins.h
 components/soc/esp32s3/include/soc/sdmmc_reg.h
-components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
 components/soc/esp32s3/include/soc/soc_ulp.h

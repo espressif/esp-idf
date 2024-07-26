@@ -50,7 +50,7 @@ void example_deep_sleep_register_touch_wakeup(void)
     // If use touch pad wake up, should set touch sensor FSM mode at 'TOUCH_FSM_MODE_TIMER'.
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     // Set reference voltage for charging/discharging
-    // In this case, the high reference valtage will be 2.4V - 1V = 1.4V
+    // In this case, the high reference voltage will be 2.4V - 1V = 1.4V
     // The low reference voltage will be 0.5
     // The larger the range, the larger the pulse count value.
     touch_pad_set_voltage(TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
@@ -104,6 +104,8 @@ void example_deep_sleep_register_touch_wakeup(void)
 #endif
     printf("Enabling touch pad wakeup\n");
     ESP_ERROR_CHECK(esp_sleep_enable_touchpad_wakeup());
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
+#endif
 }
 #endif // CONFIG_EXAMPLE_TOUCH_WAKEUP
