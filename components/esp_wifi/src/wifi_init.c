@@ -196,7 +196,7 @@ static esp_err_t wifi_deinit_internal(void)
     esp_wifi_beacon_monitor_configure(&monitor_config);
 #endif
 
-#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+#if CONFIG_PM_ENABLE && CONFIG_ESP_WIFI_SLP_IRAM_OPT
     esp_pm_unregister_light_sleep_default_params_config_callback();
 #endif
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -321,7 +321,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
 #endif
 
-#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+#if CONFIG_PM_ENABLE && CONFIG_ESP_WIFI_SLP_IRAM_OPT
     int min_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_LIGHT_SLEEP);
     int max_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX);
     esp_wifi_internal_update_light_sleep_default_params(min_freq_mhz, max_freq_mhz);

@@ -397,7 +397,7 @@ esp_err_t esp_wifi_get_mode(wifi_mode_t *mode);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the wifi related config is correct
+  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the WiFi related config is correct
   *    - ESP_ERR_NO_MEM: out of memory
   *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
   *    - ESP_FAIL: other WiFi internal errors
@@ -511,7 +511,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
   *    - ESP_ERR_WIFI_TIMEOUT: blocking scan is timeout
-  *    - ESP_ERR_WIFI_STATE: wifi still connecting when invoke esp_wifi_scan_start
+  *    - ESP_ERR_WIFI_STATE: WiFi still connecting when invoke esp_wifi_scan_start
   *    - others: refer to error code in esp_err.h
   */
 esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
@@ -630,7 +630,7 @@ esp_err_t esp_wifi_scan_get_ap_record(wifi_ap_record_t *ap_record);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
-  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the wifi related config is correct
+  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the WiFi related config is correct
   */
 esp_err_t esp_wifi_clear_ap_list(void);
 
@@ -676,25 +676,34 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 /**
   * @brief     Set protocol type of specified interface
   *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band mode is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT_5G and band mode is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
   *
-  * @attention 2.4G: Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
-  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax
+  * @attention 1. When WiFi band mode is 2.4G only, support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
+  * @attention 2. When WiFi band mode is 5G only, support 802.11a or 802.11an or 802.11anac or 802.11anacax
+  * @attention 3. Can not set WiFi protocol under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_set_protocols instead
+  * @attention 4. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
-  * @param     ifx  interfaces
+  * @param     ifx  interface
   * @param     protocol_bitmap  WiFi protocol bitmap
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported when the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *    - others: refer to error codes in esp_err.h
   */
 esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 
 /**
   * @brief     Get the current protocol bitmap of the specified interface
+  *
+  * @attention 1. When WiFi band mode is 2.4G only, it will return the protocol supported in the 2.4G band
+  * @attention 2. When WiFi band mode is 5G only, it will return the protocol supported in the 5G band
+  * @attention 3. Can not get WiFi protocol under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_get_protocols instead
+  * @attention 4. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
   * @param     ifx  interface
   * @param[out] protocol_bitmap  store current WiFi protocol bitmap of interface ifx
@@ -704,6 +713,7 @@ esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_IF: invalid interface
   *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported when the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *    - others: refer to error codes in esp_err.h
   */
 esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
@@ -711,8 +721,10 @@ esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
 /**
   * @brief     Set the bandwidth of specified interface
   *
-  * @attention 1. API return false if try to configure an interface that is not enabled
-  * @attention 2. WIFI_BW_HT40 is supported only when the interface support 11N
+  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 3. Can not set WiFi bandwidth under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_set_bandwidths instead
+  * @attention 4. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
   * @param     ifx  interface to be configured
   * @param     bw  bandwidth
@@ -722,6 +734,7 @@ esp_err_t esp_wifi_get_protocol(wifi_interface_t ifx, uint8_t *protocol_bitmap);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_IF: invalid interface
   *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported when the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *    - others: refer to error codes in esp_err.h
   */
 esp_err_t esp_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw);
@@ -729,7 +742,8 @@ esp_err_t esp_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw);
 /**
   * @brief     Get the bandwidth of specified interface
   *
-  * @attention 1. API return false if try to get a interface that is not enable
+  * @attention 1. Can not get WiFi bandwidth under band mode 2.4G + 5G (WIFI_BAND_MODE_AUTO), you can use esp_wifi_get_bandwidths instead
+  * @attention 2. API return ESP_ERR_NOT_SUPPORTED if the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   *
   * @param     ifx interface to be configured
   * @param[out] bw  store bandwidth of interface ifx
@@ -739,6 +753,7 @@ esp_err_t esp_wifi_set_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t bw);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_IF: invalid interface
   *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported when the band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
   */
 esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
 
@@ -749,8 +764,8 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @attention 2. When device is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
   * @attention 3. When device is in softAP mode, this API should not be called when softAP has connected to external STAs
   * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
-  * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before wifi stop,
-  *               you need to call this API again after wifi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
+  * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before WiFi stop,
+  *               you need to call this API again after WiFi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
@@ -1089,7 +1104,7 @@ esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
 /**
   * @brief     Set maximum transmitting power after WiFi start.
   *
-  * @attention 1. Maximum power before wifi startup is limited by PHY init data bin.
+  * @attention 1. Maximum power before WiFi startup is limited by PHY init data bin.
   * @attention 2. The value set by this API will be mapped to the max_tx_power of the structure wifi_country_t variable.
   * @attention 3. Mapping Table {Power, max_tx_power} = {{8,   2}, {20,  5}, {28,  7}, {34,  8}, {44, 11},
   *                                                      {52, 13}, {56, 14}, {60, 15}, {66, 16}, {72, 18}, {80, 20}}.
@@ -1602,11 +1617,16 @@ esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
   */
 esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 
-#if SOC_WIFI_HE_SUPPORT_5G
 /**
-  * @brief     Set wifi band.
+  * @brief     Set WiFi current band.
   *
-  * @param[in]    band wifi band 2.4G / 5G / 2.4G + 5G
+  * @attention 1. This API is only operational when the WiFi band mode is configured to 2.4G + 5G (WIFI_BAND_MODE_AUTO)
+  * @attention 2. When device is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
+  * @attention 3. When device is in softAP mode, this API should not be called when softAP has connected to external STAs
+  * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
+  * @attention 5. It is recommended not to use this API. If you want to change the current band, you can use esp_wifi_set_channel instead.
+  *
+  * @param[in]    band WiFi band 2.4G / 5G
   *
     * @return
   *    - ESP_OK: succeed
@@ -1616,9 +1636,9 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi);
 esp_err_t esp_wifi_set_band(wifi_band_t band);
 
 /**
-  * @brief     Get wifi band.
+  * @brief     Get WiFi current band.
   *
-  * @param[in]    band store band of wifi
+  * @param[in]    band store current band of WiFi
   *
     * @return
   *    - ESP_OK: succeed
@@ -1626,7 +1646,39 @@ esp_err_t esp_wifi_set_band(wifi_band_t band);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_band(wifi_band_t* band);
-#endif /* SOC_WIFI_HE_SUPPORT_5G */
+
+/**
+  * @brief     Set WiFi band mode.
+  *
+  * @attention 1. When the WiFi band mode is set to 2.4G only, it operates exclusively on the 2.4GHz channels.
+  * @attention 2. When the WiFi band mode is set to 5G only, it operates exclusively on the 5GHz channels.
+  * @attention 3. When the WiFi band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO), it can operate on both the 2.4GHz and 5GHz channels.
+  * @attention 4. WiFi band mode can be set to 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO) if CONFIG_SOC_WIFI_HE_SUPPORT_5G is supported.
+  * @attention 5. If CONFIG_SOC_WIFI_HE_SUPPORT_5G is not supported, the API will return ESP_ERR_INVALID_ARG when the band mode is set to either 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO).
+  * @attention 6. When a WiFi band mode change triggers a band change, if no channel is set for the current band, a default channel will be assigned: channel 1 for 2.4G band and channel 36 for 5G band.
+  *
+  * @param[in]    band_mode store the band mode of WiFi
+  *
+    * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *
+  */
+esp_err_t esp_wifi_set_band_mode(wifi_band_mode_t band_mode);
+
+/**
+  * @brief     get WiFi band mode.
+  *
+  * @param[in]    band_mode store the band mode of WiFi
+  *
+    * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+
+esp_err_t esp_wifi_get_band_mode(wifi_band_mode_t* band_mode);
 
 #if CONFIG_ESP_COEX_POWER_MANAGEMENT
 /**
@@ -1642,6 +1694,81 @@ esp_err_t esp_wifi_get_band(wifi_band_t* band);
   */
 esp_err_t esp_wifi_coex_pwr_configure(bool enabled);
 #endif
+
+/**
+  * @brief     Set the supported WiFi protocols for the specified interface.
+  *
+  * @attention 1. When the WiFi band mode is set to 2.4G only, it will not set 5G protocol
+  * @attention 2. When the WiFi band mode is set to 5G only, it will not set 2.4G protocol
+  * @attention 3. This API supports setting the maximum protocol. For example, if the 2.4G protocol is set to 802.11n, it will automatically configure to 802.11b/g/n.
+  *
+  * @param     ifx  interface
+  * @param     protocols  WiFi protocols include 2.4G protocol and 5G protocol
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols);
+
+/**
+  * @brief     Get the current protocol of the specified interface and specified band
+  *
+  * @attention 1. The 5G protocol can only be read when CONFIG_SOC_WIFI_HE_SUPPORT_5G is enabled.
+  * @attention 2. When the WiFi band mode is set to 2.4G only, it will not get 5G protocol
+  * @attention 3. When the WiFi band mode is set to 5G only, it will not get 2.4G protocol
+  *
+  * @param     ifx  interface
+  * @param[out] protocols  store current WiFi protocols of interface ifx
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_get_protocols(wifi_interface_t ifx, wifi_protocols_t *protocols);
+
+/**
+  * @brief     Set the bandwidth of specified interface and specified band
+  *
+  * @attention 1. WIFI_BW_HT40 is supported only when the interface support 11N
+  * @attention 2. When the interface supports 11AX/11AC, it only supports setting WIFI_BW_HT20.
+  * @attention 3. When the WiFi band mode is set to 2.4G only, it will not set 5G bandwidth
+  * @attention 4. When the WiFi band mode is set to 5G only, it will not set 2.4G bandwidth
+  *
+  * @param     ifx  interface to be configured
+  * @param     bw  WiFi bandwidths include 2.4G bandwidth and 5G bandwidth
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t* bw);
+
+/**
+  * @brief     Get the bandwidth of specified interface and specified band
+  *
+  * @attention 1. The 5G bandwidth can only be read when CONFIG_SOC_WIFI_HE_SUPPORT_5G is enabled.
+  * @attention 2. When the WiFi band mode is set to 2.4G only, it will not get 5G bandwidth
+  * @attention 3. When the WiFi band mode is set to 5G only, it will not get 2.4G bandwidth
+  *
+  * @param     ifx interface to be configured
+  * @param[out] bw  store bandwidths of interface ifx
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
 
 #ifdef __cplusplus
 }

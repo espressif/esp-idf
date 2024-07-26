@@ -182,7 +182,6 @@ else() # Regular app build
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
-
     elseif(target STREQUAL "esp32c5")
         # esp32c5.rom.api.ld has been split to several lds by components.
         # esp32c5.rom.api.ld is still reserved to map the APIs

@@ -116,7 +116,7 @@ void app_main(void)
     esp_wifi_ap_get_sta_list_with_ip(NULL, NULL);
 
     esp_wifi_sta_itwt_setup_IgnoreAndReturn(ESP_OK);
-    esp_wifi_sta_itwt_setup((wifi_twt_setup_config_t*) NULL);
+    esp_wifi_sta_itwt_setup((wifi_itwt_setup_config_t*) NULL);
 
     sc_send_ack_stop_Ignore();
     sc_send_ack_stop();

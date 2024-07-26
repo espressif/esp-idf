@@ -3,6 +3,9 @@
 tools/test_apps/phy/phy_multi_init_data_test:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5"]
+      reason: lack of runner
 
 tools/test_apps/phy/phy_tsens:
   disable:

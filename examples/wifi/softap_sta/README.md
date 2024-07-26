@@ -1,12 +1,12 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Wi-Fi SoftAP & Station Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use the ESP Wi-Fi driver to act as both an Access Point and a Station simultaneously using the SoftAP and Station features.
-With NAPT enabled on the softAP interface and the station interface set as the defaut interface this example can be used as Wifi nat router.
+With NAPT enabled on the softAP interface and the station interface set as the default interface this example can be used as Wifi nat router.
 
 ## How to use example
 ### Configure the project

@@ -5,7 +5,7 @@ components/esp_wifi/test_apps/wifi_connect:
     - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c2"]
-      reason: leak of runner
+      reason: lack of runner
 
 components/esp_wifi/test_apps/wifi_function:
   disable:

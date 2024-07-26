@@ -291,6 +291,19 @@ typedef enum {
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
 
+/** Argument structure for WiFi band */
+typedef enum {
+    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
+    WIFI_BAND_5G = 2,                   /* Band is 5G */
+} wifi_band_t;
+
+/** Argument structure for WiFi band mode */
+typedef enum {
+    WIFI_BAND_MODE_2G_ONLY = 1,         /* WiFi band mode is 2.4G only */
+    WIFI_BAND_MODE_5G_ONLY = 2,         /* WiFi band mode is 5G only */
+    WIFI_BAND_MODE_AUTO = 3,            /* WiFi band mode is 2.4G + 5G */
+} wifi_band_mode_t;
+
 #define WIFI_PROTOCOL_11B         0x1
 #define WIFI_PROTOCOL_11G         0x2
 #define WIFI_PROTOCOL_11N         0x4
@@ -298,6 +311,12 @@ typedef enum {
 #define WIFI_PROTOCOL_11A         0x10
 #define WIFI_PROTOCOL_11AC        0x20
 #define WIFI_PROTOCOL_11AX        0x40
+
+/** @brief Description of a WiFi protocols */
+typedef struct {
+    uint16_t ghz_2g;            /**< Represents 2.4 GHz protocol, support 802.11b or 802.11g or 802.11n or 802.11ax or LR mode */
+    uint16_t ghz_5g;            /**< Represents 5 GHz protocol, support 802.11a or 802.11n or 802.11ac or 802.11ax */
+} wifi_protocols_t;
 
 typedef enum {
     WIFI_BW_HT20   = 1,       /* Bandwidth is HT20      */
@@ -308,6 +327,12 @@ typedef enum {
     WIFI_BW160     = 4,       /* Bandwidth is 160 MHz   */
     WIFI_BW80_BW80 = 5,       /* Bandwidth is 80+80 MHz */
 } wifi_bandwidth_t;
+
+/** @brief Description of a WiFi band bandwidths */
+typedef struct {
+    wifi_bandwidth_t ghz_2g;       /* Represents 2.4 GHz bandwidth */
+    wifi_bandwidth_t ghz_5g;       /* Represents 5 GHz bandwidth */
+} wifi_bandwidths_t;
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
@@ -356,7 +381,7 @@ typedef struct {
     wifi_scan_method_t scan_method;           /**< do all channel scan or fast scan */
     bool bssid_set;                           /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];                         /**< MAC address of target AP*/
-    uint8_t channel;                          /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint8_t channel;                          /**< channel of target AP. For 2.4G AP, set to 1~13 to scan starting from the specified channel before connecting to AP. For 5G AP, set to 36~177 (36, 40, 44 ... 177) to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;                 /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;           /**< sort the connect AP in the list by rssi or security mode */
     wifi_scan_threshold_t  threshold;         /**< When scan_threshold is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
@@ -715,19 +740,19 @@ typedef enum {
     WIFI_PHY_RATE_9M        = 0x0F, /**< 9 Mbps */
     /**< rate table and guard interval information for each MCS rate*/
     /*
-     -----------------------------------------------------------------------------------------------------------
-            MCS RATE             |          HT20           |          HT40           |          HE20           |
-     WIFI_PHY_RATE_MCS0_LGI      |     6.5 Mbps (800ns)    |    13.5 Mbps (800ns)    |     8.1 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS1_LGI      |      13 Mbps (800ns)    |      27 Mbps (800ns)    |    16.3 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS2_LGI      |    19.5 Mbps (800ns)    |    40.5 Mbps (800ns)    |    24.4 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS3_LGI      |      26 Mbps (800ns)    |      54 Mbps (800ns)    |    32.5 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS4_LGI      |      39 Mbps (800ns)    |      81 Mbps (800ns)    |    48.8 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS5_LGI      |      52 Mbps (800ns)    |     108 Mbps (800ns)    |      65 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS6_LGI      |    58.5 Mbps (800ns)    |   121.5 Mbps (800ns)    |    73.1 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS7_LGI      |      65 Mbps (800ns)    |     135 Mbps (800ns)    |    81.3 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS8_LGI      |          -----          |          -----          |    97.5 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS9_LGI      |          -----          |          -----          |   108.3 Mbps (1600ns)   |
-     -----------------------------------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |         VHT20           |
+     WIFI_PHY_RATE_MCS0_LGI      |     6.5 Mbps (800ns)    |    13.5 Mbps (800ns)    |     8.1 Mbps (1600ns)   |     6.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS1_LGI      |      13 Mbps (800ns)    |      27 Mbps (800ns)    |    16.3 Mbps (1600ns)   |      13 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS2_LGI      |    19.5 Mbps (800ns)    |    40.5 Mbps (800ns)    |    24.4 Mbps (1600ns)   |    19.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS3_LGI      |      26 Mbps (800ns)    |      54 Mbps (800ns)    |    32.5 Mbps (1600ns)   |      26 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS4_LGI      |      39 Mbps (800ns)    |      81 Mbps (800ns)    |    48.8 Mbps (1600ns)   |      39 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS5_LGI      |      52 Mbps (800ns)    |     108 Mbps (800ns)    |      65 Mbps (1600ns)   |      52 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS6_LGI      |    58.5 Mbps (800ns)    |   121.5 Mbps (800ns)    |    73.1 Mbps (1600ns)   |    58.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS7_LGI      |      65 Mbps (800ns)    |     135 Mbps (800ns)    |    81.3 Mbps (1600ns)   |      65 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS8_LGI      |          -----          |          -----          |    97.5 Mbps (1600ns)   |          -----          |
+     WIFI_PHY_RATE_MCS9_LGI      |          -----          |          -----          |   108.3 Mbps (1600ns)   |          -----          |
+     -------------------------------------------------------------------------------------------------------------------------------------
     */
     WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI */
     WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI */
@@ -742,19 +767,19 @@ typedef enum {
     WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 with long GI */
 #endif
     /*
-     -----------------------------------------------------------------------------------------------------------
-            MCS RATE             |          HT20           |          HT40           |          HE20           |
-     WIFI_PHY_RATE_MCS0_SGI      |     7.2 Mbps (400ns)    |      15 Mbps (400ns)    |      8.6 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS1_SGI      |    14.4 Mbps (400ns)    |      30 Mbps (400ns)    |     17.2 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS2_SGI      |    21.7 Mbps (400ns)    |      45 Mbps (400ns)    |     25.8 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS3_SGI      |    28.9 Mbps (400ns)    |      60 Mbps (400ns)    |     34.4 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS4_SGI      |    43.3 Mbps (400ns)    |      90 Mbps (400ns)    |     51.6 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS5_SGI      |    57.8 Mbps (400ns)    |     120 Mbps (400ns)    |     68.8 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS6_SGI      |      65 Mbps (400ns)    |     135 Mbps (400ns)    |     77.4 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS7_SGI      |    72.2 Mbps (400ns)    |     150 Mbps (400ns)    |       86 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS8_SGI      |          -----          |          -----          |    103.2 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS9_SGI      |          -----          |          -----          |    114.7 Mbps (800ns)   |
-     -----------------------------------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |         VHT20           |
+     WIFI_PHY_RATE_MCS0_SGI      |     7.2 Mbps (400ns)    |      15 Mbps (400ns)    |      8.6 Mbps (800ns)   |     7.2 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS1_SGI      |    14.4 Mbps (400ns)    |      30 Mbps (400ns)    |     17.2 Mbps (800ns)   |    14.4 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS2_SGI      |    21.7 Mbps (400ns)    |      45 Mbps (400ns)    |     25.8 Mbps (800ns)   |    21.7 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS3_SGI      |    28.9 Mbps (400ns)    |      60 Mbps (400ns)    |     34.4 Mbps (800ns)   |    28.9 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS4_SGI      |    43.3 Mbps (400ns)    |      90 Mbps (400ns)    |     51.6 Mbps (800ns)   |    43.3 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS5_SGI      |    57.8 Mbps (400ns)    |     120 Mbps (400ns)    |     68.8 Mbps (800ns)   |    57.8 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS6_SGI      |      65 Mbps (400ns)    |     135 Mbps (400ns)    |     77.4 Mbps (800ns)   |      65 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS7_SGI      |    72.2 Mbps (400ns)    |     150 Mbps (400ns)    |       86 Mbps (800ns)   |    72.2 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS8_SGI      |          -----          |          -----          |    103.2 Mbps (800ns)   |          -----          |
+     WIFI_PHY_RATE_MCS9_SGI      |          -----          |          -----          |    114.7 Mbps (800ns)   |          -----          |
+     -------------------------------------------------------------------------------------------------------------------------------------
     */
     WIFI_PHY_RATE_MCS0_SGI,         /**< MCS0 with short GI */
     WIFI_PHY_RATE_MCS1_SGI,         /**< MCS1 with short GI */
@@ -817,6 +842,8 @@ typedef enum {
     WIFI_EVENT_ITWT_PROBE,              /**< iTWT probe */
     WIFI_EVENT_ITWT_SUSPEND,            /**< iTWT suspend */
     WIFI_EVENT_TWT_WAKEUP,              /**< TWT wakeup */
+    WIFI_EVENT_BTWT_SETUP,              /**< bTWT setup */
+    WIFI_EVENT_BTWT_TEARDOWN,           /**< bTWT teardown*/
 
     WIFI_EVENT_NAN_STARTED,              /**< NAN Discovery has started */
     WIFI_EVENT_NAN_STOPPED,              /**< NAN Discovery has stopped */
@@ -1064,13 +1091,6 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
-
-/** Argument structure for wifi band */
-typedef enum {
-    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
-    WIFI_BAND_5G = 2,                   /* Band is 5G */
-    WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
-} wifi_band_t;
 
 #ifdef __cplusplus
 }
