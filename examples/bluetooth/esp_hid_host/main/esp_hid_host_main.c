@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -50,6 +50,18 @@
 #include "esp_hid_gap.h"
 
 static const char *TAG = "ESP_HIDH_DEMO";
+
+static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
@@ -165,6 +177,7 @@ void ble_store_config_init(void);
 #endif
 void app_main(void)
 {
+    char bda_str[18] = {0};
     esp_err_t ret;
 #if HID_HOST_MODE == HIDH_IDLE_MODE
     ESP_LOGE(TAG, "Please turn on BT HID host or BLE!");
@@ -188,6 +201,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK( esp_hidh_init(&config) );
 
+    ESP_LOGI(TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
 #if CONFIG_BT_NIMBLE_ENABLED
     /* XXX Need to have template for store */
     ble_store_config_init();
