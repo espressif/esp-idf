@@ -217,7 +217,7 @@ void BTM_BleLoadLocalKeys(UINT8 key_type, tBTM_BLE_LOCAL_KEYS *p_key)
             break;
 
         default:
-            BTM_TRACE_ERROR("unknow local key type: %d", key_type);
+            BTM_TRACE_ERROR("unknown local key type: %d", key_type);
             break;
         }
     }
@@ -694,7 +694,7 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
                 BTM_TRACE_DEBUG ("btm_find_dev_type - unknown device, BR/EDR assumed");
             }
         }
-    } else { /* there is a security device record exisitng */
+    } else { /* there is a security device record existing */
         /* new inquiry result, overwrite device type in security device record */
         if (p_inq_info) {
             p_dev_rec->device_type          = p_inq_info->results.device_type;
@@ -707,7 +707,7 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
         } else if (memcmp(p_dev_rec->ble.pseudo_addr, remote_bda, BD_ADDR_LEN) == 0) {
             *p_dev_type = BT_DEVICE_TYPE_BLE;
             *p_addr_type = p_dev_rec->ble.ble_addr_type;
-        } else { /* matching static adddress only */
+        } else { /* matching static address only */
             *p_dev_type = BT_DEVICE_TYPE_BREDR;
             *p_addr_type = BLE_ADDR_PUBLIC;
         }
@@ -1061,7 +1061,7 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
 **                  LE link for LE COC.
 **
 ** Parameter        bdaddr: remote device address.
-**                  psm : PSM of the LE COC sevice.
+**                  psm : PSM of the LE COC service.
 **                  is_originator: TRUE if outgoing connection.
 **                  p_callback : Pointer to the callback function.
 **                  p_ref_data : Pointer to be returned along with the callback.
@@ -1078,7 +1078,7 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
     /* If there is no application registered with this PSM do not allow connection */
     if (!p_serv_rec)
     {
-        BTM_TRACE_WARNING ("%s PSM: %d no application registerd", __func__, psm);
+        BTM_TRACE_WARNING ("%s PSM: %d no application registered", __func__, psm);
         (*p_callback) (bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
         return FALSE;
     }
@@ -1151,7 +1151,7 @@ void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_en
 
     /* If there was a callback address for vcs complete, call it */
     if (p_enc_cplt_cback && p) {
-        /* Pass paramters to the callback function */
+        /* Pass parameters to the callback function */
         STREAM_TO_UINT8(params.status, p); /* command status */
 
         if (params.status == HCI_SUCCESS) {
@@ -1208,7 +1208,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local )
 ** Function         btm_ble_get_enc_key_type
 **
 ** Description      This function is to get the BLE key type that has been exchanged
-**                  in betweem local device and peer device.
+**                  in between local device and peer device.
 **
 ** Returns          p_key_type: output parameter to carry the key type value.
 **
@@ -1235,7 +1235,7 @@ BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types)
 **
 ** Description      This function is called to read the local DIV
 **
-** Returns          TRUE - if a valid DIV is availavle
+** Returns          TRUE - if a valid DIV is available
 *******************************************************************************/
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div)
 {
@@ -1487,7 +1487,7 @@ void btm_ble_link_sec_check(BD_ADDR bd_addr, tBTM_LE_AUTH_REQ auth_req, tBTM_BLE
 
         BTM_TRACE_DEBUG ("dev_rec sec_flags=0x%x", p_dev_rec->sec_flags);
 
-        /* currently encrpted  */
+        /* currently encrypted  */
         if (p_dev_rec->sec_flags & BTM_SEC_LE_ENCRYPTED) {
             if (p_dev_rec->sec_flags & BTM_SEC_LE_AUTHENTICATED) {
                 cur_sec_level = BTM_LE_SEC_AUTHENTICATED;
@@ -1691,7 +1691,7 @@ tBTM_STATUS btm_ble_start_encrypt(BD_ADDR bda, BOOLEAN use_stk, BT_OCTET16 stk)
 **
 ** Function         btm_ble_link_encrypted
 **
-** Description      This function is called when LE link encrption status is changed.
+** Description      This function is called when LE link encryption status is changed.
 **
 ** Returns          void
 **
@@ -1949,7 +1949,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
 ** Function         btm_ble_connected
 **
 ** Description      This function is when a LE connection to the peer device is
-**                  establsihed
+**                  established
 **
 ** Returns          void
 **
@@ -2060,7 +2060,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         peer_addr_type = bda_type;
         match = btm_identity_addr_to_random_pseudo (bda, &bda_type, FALSE);
 
-        /* possiblly receive connection complete with resolvable random on
+        /* possibly receive connection complete with resolvable random on
            slave role while the device has been paired */
 
         /* It will cause that scanner doesn't send scan request to advertiser
@@ -2143,6 +2143,16 @@ void btm_ble_create_ll_conn_complete (UINT8 status)
     if (status != HCI_SUCCESS) {
         btm_ble_set_conn_st(BLE_CONN_IDLE);
         btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
+        if(l2cb.is_ble_connecting) {
+            /* see L2CA_CancelBleConnectReq() */
+            tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(l2cb.ble_connecting_bda, BT_TRANSPORT_LE);
+            /* Do not remove lcb if an LE link is already up as a peripheral */
+            if (p_lcb != NULL &&
+                    !(p_lcb->link_role == HCI_ROLE_SLAVE && BTM_ACL_IS_CONNECTED(l2cb.ble_connecting_bda))) {
+                p_lcb->disc_reason = L2CAP_CONN_CANCEL;
+                l2cu_release_lcb (p_lcb);
+            }
+        }
     }
 }
 
@@ -2300,7 +2310,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 ** Function         BTM_BleDataSignature
 **
 ** Description      This function is called to sign the data using AES128 CMAC
-**                  algorith.
+**                  algorithm.
 **
 ** Parameter        bd_addr: target device the data to be signed for.
 **                  p_text: singing data
@@ -2308,7 +2318,7 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 **                  signature: output parameter where data signature is going to
 **                             be stored.
 **
-** Returns          TRUE if signing sucessul, otherwise FALSE.
+** Returns          TRUE if signing successful, otherwise FALSE.
 **
 *******************************************************************************/
 #if (SMP_INCLUDED == TRUE)
@@ -2491,7 +2501,7 @@ BOOLEAN BTM_BleSecurityProcedureIsRunning(BD_ADDR bd_addr)
 ** Function         BTM_BleGetSupportedKeySize
 **
 ** Description      This function gets the maximum encryption key size in bytes
-**                  the local device can suport.
+**                  the local device can support.
 **                  record.
 **
 ** Returns          the key size or 0 if the size can't be retrieved.
