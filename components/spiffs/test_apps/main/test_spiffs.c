@@ -285,6 +285,37 @@ static void test_spiffs_ftruncate(const char *filename)
     TEST_ASSERT_EQUAL(0, close(fd));
 }
 
+static void test_spiffs_fsync(const char *filename)
+{
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    size_t expected_size = strlen(input);
+
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    ssize_t wr = write(fd, input, expected_size);
+    TEST_ASSERT_NOT_EQUAL(-1, wr);
+
+    TEST_ASSERT_EQUAL(0, fsync(fd));
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr, st.st_size);
+
+    ssize_t wr2 = write(fd, input, expected_size);
+    TEST_ASSERT_NOT_EQUAL(-1, wr2);
+
+    TEST_ASSERT_EQUAL(0, fsync(fd));
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr + wr2, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, wr));
+    TEST_ASSERT_EQUAL(0, fsync(fd));
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
 static void test_spiffs_can_opendir(const char* path)
 {
     char name_dir_file[64];
@@ -707,6 +738,13 @@ TEST_CASE("ftruncate a file", "[spiffs]")
 {
     test_setup();
     test_spiffs_ftruncate("/spiffs/ftrunc.txt");
+    test_teardown();
+}
+
+TEST_CASE("fsync works correctly", "[spiffs]")
+{
+    test_setup();
+    test_spiffs_fsync("/spiffs/fsync.txt");
     test_teardown();
 }
 

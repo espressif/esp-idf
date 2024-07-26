@@ -628,7 +628,7 @@ static int vfs_spiffs_fsync(void* ctx, int fd)
         SPIFFS_clearerr(efs->fs);
         return -1;
     }
-    return res;
+    return ESP_OK;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
