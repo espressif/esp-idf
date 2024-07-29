@@ -16,6 +16,10 @@ if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX
     list(APPEND srcs "test_esp_clock_output.c")
 endif()
 
+if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
+    list(APPEND srcs "test_debug_probe.c")
+endif()
+
 if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "test_etm_core.c")
 endif()
