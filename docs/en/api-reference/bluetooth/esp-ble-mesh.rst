@@ -225,4 +225,3 @@ Composition and Metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. include-build-file:: inc/esp_ble_mesh_cm_data_api.inc
-
