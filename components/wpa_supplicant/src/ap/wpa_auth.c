@@ -980,7 +980,8 @@ continue_processing:
     sm->EAPOLKeyReceived = TRUE;
     sm->EAPOLKeyPairwise = !!(key_info & WPA_KEY_INFO_KEY_TYPE);
     sm->EAPOLKeyRequest = !!(key_info & WPA_KEY_INFO_REQUEST);
-    memcpy(sm->SNonce, key->key_nonce, WPA_NONCE_LEN);
+    if (msg == PAIRWISE_2)
+        os_memcpy(sm->SNonce, key->key_nonce, WPA_NONCE_LEN);
     wpa_sm_step(sm);
 }
 
@@ -1764,7 +1765,9 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
     }
 
     /* Verify RSN Selection element for RSN overriding */
-    if ((sm->rsn_selection && !kde.rsn_selection) ||
+    if ((rsn_is_snonce_cookie(sm->SNonce) && !kde.rsn_selection) ||
+            (!rsn_is_snonce_cookie(sm->SNonce) && kde.rsn_selection) ||
+            (sm->rsn_selection && !kde.rsn_selection) ||
             (!sm->rsn_selection && kde.rsn_selection) ||
             (sm->rsn_selection && kde.rsn_selection &&
              (sm->rsn_selection_len != kde.rsn_selection_len ||
@@ -1772,6 +1775,9 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
                   sm->rsn_selection_len) != 0))) {
         wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_INFO,
                 "RSN Selection element from (Re)AssocReq did not match the one in EAPOL-Key msg 2/4");
+        wpa_printf(MSG_DEBUG,
+                "SNonce cookie for RSN overriding %sused",
+                rsn_is_snonce_cookie(sm->SNonce) ? "" : "not ");
         wpa_hexdump(MSG_DEBUG, "RSN Selection in AssocReq",
                 sm->rsn_selection, sm->rsn_selection_len);
         wpa_hexdump(MSG_DEBUG, "RSN Selection in EAPOL-Key msg 2/4",

@@ -499,4 +499,7 @@ unsigned int wpa_mic_len(int akmp, size_t pmk_len);
 int wpa_use_akm_defined(int akmp);
 int wpa_use_aes_key_wrap(int akmp);
 
+void rsn_set_snonce_cookie(u8 *snonce);
+bool rsn_is_snonce_cookie(const u8 *snonce);
+
 #endif /* WPA_COMMON_H */
