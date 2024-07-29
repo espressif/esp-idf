@@ -2436,29 +2436,29 @@ The parameters not mentioned in the following table should be set to the default
           - 12
           - 8
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - TCP TX throughput (Mbit/s)
           - 74.6
           - 50.8
@@ -2548,23 +2548,23 @@ The parameters not mentioned in the following table should be set to the default
           - 8
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 0
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 0
-          - 0
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - DISABLE
+          - DISABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
-          - 0
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
+          - DISABLE
+          - DISABLE
         * - INSTRUCTION_CACHE
           - 16
           - 16
@@ -2641,9 +2641,9 @@ The parameters not mentioned in the following table should be set to the default
           - 16
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - TCP TX throughput (Mbit/s)
           - 38.1
           - 27.2
@@ -2700,9 +2700,9 @@ The parameters not mentioned in the following table should be set to the default
           - 14
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - TCP TX throughput (Mbit/s)
           - 21.6
           - 21.4
@@ -2759,17 +2759,17 @@ The parameters not mentioned in the following table should be set to the default
           - 32
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - INSTRUCTION_CACHE
           - 32
           - 32
@@ -2929,20 +2929,20 @@ The parameters not mentioned in the following table should be set to the default
                - 65
                - 65
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - TCP TX throughput (Mbit/s)
                - 37.5
                - 31.7
@@ -3011,20 +3011,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - INSTRUCTION_CACHE
                - 16
                - 16
@@ -3118,20 +3118,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16
@@ -3235,20 +3235,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16
