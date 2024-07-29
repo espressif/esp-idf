@@ -833,6 +833,17 @@ esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip
 int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
 
 /**
+ * @brief  Get all preferred IPv6 addresses of the specified interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out] if_ip6 Array of IPv6 addresses will be copied to the argument
+ *
+ * @return
+ *      number of returned IPv6 addresses
+ */
+int esp_netif_get_all_preferred_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
+
+/**
  * @brief  Cause the TCP/IP stack to add an IPv6 address to the interface
  *
  * @param[in]  esp_netif Handle to esp-netif instance
