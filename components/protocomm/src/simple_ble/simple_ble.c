@@ -31,6 +31,11 @@ static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
+uint8_t get_keep_ble_on()
+{
+    return g_ble_cfg_p->keep_ble_on;
+}
+
 const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 {
     const uint8_t *uuid128_ptr;
