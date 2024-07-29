@@ -62,6 +62,7 @@ static const char* TAG = "quad_psram";
 #define PSRAM_IS_VALID(id)    (PSRAM_KGD(id) == PSRAM_ID_KGD)
 
 #define PSRAM_IS_64MBIT_TRIAL(id) (PSRAM_EID(id) == 0x26)
+#define PSRAM_IS_2T_APS3204(id)   ((((id) >> 21) && 0xfffff) == 1)
 
 // IO-pins for PSRAM.
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
@@ -327,6 +328,8 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
 
     if (PSRAM_IS_64MBIT_TRIAL(s_psram_id)) {
         s_psram_size = PSRAM_SIZE_8MB;
+    } else if (PSRAM_IS_2T_APS3204(s_psram_id)) {
+        s_psram_size = PSRAM_SIZE_4MB;
     } else {
         uint8_t density = PSRAM_SIZE_ID(s_psram_id);
         s_psram_size = density == 0x0 ? PSRAM_SIZE_2MB :
