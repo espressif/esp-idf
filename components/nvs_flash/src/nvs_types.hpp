@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,6 +108,14 @@ public:
         dst = *reinterpret_cast<T*>(data);
         return ESP_OK;
     }
+
+    // Returns true if item's header:
+    // crc32 matches the calculated crc32
+    // and datatype is one of the supported types
+    // and span is within the allowed range for the datatype and below the maximum calculated from the entryIndex
+    //
+    // Parameter entryIndex is used to calculate the maximum span for the given entry
+    bool checkHeaderConsistency(const uint8_t entryIndex) const;
 };
 
 } // namespace nvs
