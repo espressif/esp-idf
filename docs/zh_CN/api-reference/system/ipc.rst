@@ -146,6 +146,17 @@ IPC 功能提供了下列 API，以在高优先级中断的上下文中执行回
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - :cpp:func:`esp_ipc_isr_stall_other_cpu`：暂停目标内核。调用内核禁用 3 级及以下级别的中断，而目标内核将在 5 级及以下的中断被禁用的情况下进入忙等待。在调用 :cpp:func:`esp_ipc_isr_release_other_cpu` 前，目标内核会保持忙等待。
     - :cpp:func:`esp_ipc_isr_release_other_cpu`：恢复目标内核。
 
+应用示例
+--------------------
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    - :example:`system/ipc/ipc_isr/xtensa` 演示了如何在高优先级中断的上下文中使用 IPC ISR 功能运行 IPC，允许用户快速获取另一个 CPU 的状态，包括两个汇编回调函数，这些回调函数返回另一个核心的 PS 寄存器并在执行基于输入参数的任务时保存/恢复寄存器。
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    - :example:`system/ipc/ipc_isr/riscv` 演示了如何在 {IDF_TARGET_NAME} 上使用 IPC ISR 功能在高优先级中断的上下文中运行 IPC，包括如何快速获取另一个 CPU 的状态以及如何从回调函数返回多个值。
+
 API 参考
 -------------
 

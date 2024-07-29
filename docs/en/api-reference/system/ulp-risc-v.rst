@@ -243,11 +243,23 @@ Keeping this in mind, here are some ways that may help you debug your ULP RISC-V
 Application Examples
 --------------------
 
-* ULP RISC-V Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp/ulp_riscv/gpio`.
-* ULP RISC-V Coprocessor uses bit-banged UART driver to print: :example:`system/ulp/ulp_riscv/uart_print`.
-* ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp/ulp_riscv/ds18b20_onewire`.
-* ULP RISC-V Coprocessor reads external I2C temperature and humidity sensor (BMP180) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp/ulp_riscv/i2c`.
-* ULP RISC-V Coprocessor handles software interrupt and RTC IO interrupt: :example:`system/ulp/ulp_riscv/interrupts`.
+* :example:`system/ulp/ulp_riscv/gpio` demonstrates how to program the ULP-RISC-V coprocessor to monitor a GPIO pin and wake up the main CPU when its state changes.
+
+* :example:`system/ulp/ulp_riscv/uart_print` demonstrates how to program the ULP-RISC-V coprocessor on the development board to bitbang a UART TX line, allowing for output logging directly from the ULP-RISC-V coprocessor even when the main CPU is in deep sleep.
+
+.. only:: esp32s2
+
+    * :example:`system/ulp/ulp_riscv/ds18b20_onewire` demonstrates how to use the ULP-RISC-V co-processor to read temperature from a DS18B20 sensor over 1-Wire, and wake up the main CPU from deep-sleep when the temperature exceeds a set limit.
+
+* :example:`system/ulp/ulp_riscv/i2c` demonstrates how to use the RTC I2C peripheral from the ULP RISC-V coprocessor in deep sleep mode to periodically measure temperature and pressure values from the BMP180 sensor and wake up the main CPU when these values exceed a certain threshold.
+
+* :example:`system/ulp/ulp_riscv/interrupts` demonstrates how the ULP-RISC-V coprocessor can register and handle software and RTC IO triggered interrupts, keeping a count of the software interrupts and waking up the main processor from deep sleep after a certain threshold or when a button is pressed.
+
+* :example:`system/ulp/ulp_riscv/adc` demonstrates how to use the ULP-RISC-V coprocessor to periodically measure input voltage and wake up the system from deep sleep if the voltage exceeds a set threshold.
+
+* :example:`system/ulp/ulp_riscv/gpio_interrupt` demonstrates how to program the ULP-RISC-V coprocessor to wake up from a RTC IO interrupt using GPIO0 as the input signal, and how to configure and run the coprocessor, putting the chip into deep sleep mode until the wakeup source pin is pulled low.
+
+* :example:`system/ulp/ulp_riscv/touch` demonstrates how to program the ULP RISC-V coprocessor to periodically scan and read touch pad sensors, and wake up the main CPU when a touch pad is active.
 
 API Reference
 -------------

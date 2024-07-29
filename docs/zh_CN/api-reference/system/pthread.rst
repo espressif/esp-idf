@@ -195,12 +195,11 @@ ESP-IDF 扩展
 
 此配置的作用范围是调用线程或 FreeRTOS 任务，这意味着 :cpp:func:`esp_pthread_set_cfg` 可以在不同的线程或任务中独立调用。如果在当前配置中设置了 ``inherit_cfg`` 标志，那么当一个线程递归调用 ``pthread_create()`` 时，任何新创建的线程都会继承该线程的配置，否则新线程将采用默认配置。
 
-示例
---------
+应用示例
+-------------------
 
 - :example:`system/pthread` 演示了如何使用 pthread API 创建线程。
 - :example:`cxx/pthread` 演示了如何通过线程使用 C++ 标准库函数。
-
 
 API 参考
 -------------

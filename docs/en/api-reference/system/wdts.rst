@@ -174,13 +174,12 @@ JTAG & Watchdogs
 
 While debugging using OpenOCD, the CPUs are halted every time a breakpoint is reached. However if the watchdog timers continue to run when a breakpoint is encountered, they will eventually trigger a reset making it very difficult to debug code. Therefore OpenOCD will disable the hardware timers of both the interrupt and task watchdogs at every breakpoint. Moreover, OpenOCD will not re-enable them upon leaving the breakpoint. This means that interrupt watchdog and task watchdog functionality will essentially be disabled. No warnings or panics from either watchdogs will be generated when the {IDF_TARGET_NAME} is connected to OpenOCD via JTAG.
 
+Application Examples
+--------------------
+
+- :example:`system/task_watchdog` demonstrates how to initialize, subscribe and unsubscribe tasks and users to the task watchdog, and how tasks and users can reset (feed) the task watchdog.
 
 API Reference
 -------------
-
-Task Watchdog
-^^^^^^^^^^^^^
-
-A full example using the Task Watchdog is available in esp-idf: :example:`system/task_watchdog`
 
 .. include-build-file:: inc/esp_task_wdt.inc
