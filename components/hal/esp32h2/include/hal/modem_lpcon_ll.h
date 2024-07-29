@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,12 +68,6 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_clock(modem_lpcon_dev_t *hw, bool en)
-{
-    hw->clk_conf.clk_i2c_mst_en = en;
-}
-
-__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_fe_mem_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_fe_mem_en = en;
@@ -83,12 +77,6 @@ __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_force_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf_force_on.clk_coex_fo = en;
-}
-
-__attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_force_clock(modem_lpcon_dev_t *hw, bool en)
-{
-    hw->clk_conf_force_on.clk_i2c_mst_fo = en;
 }
 
 __attribute__((always_inline))
@@ -102,13 +90,6 @@ static inline void modem_lpcon_ll_reset_coex(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.rst_coex = 1;
     hw->rst_conf.rst_coex = 0;
-}
-
-__attribute__((always_inline))
-static inline void modem_lpcon_ll_reset_i2c_master(modem_lpcon_dev_t *hw)
-{
-    hw->rst_conf.rst_i2c_mst = 1;
-    hw->rst_conf.rst_i2c_mst = 0;
 }
 
 __attribute__((always_inline))

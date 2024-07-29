@@ -1,23 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
+#include "soc/pmu_reg.h" // TODO: IDF-9249 Can be removed
 #include "hal/regi2c_ctrl_ll.h"
-/**
- * BB    - 0x67 - BIT0
- * TXRF  - 0x6B - BIT1
- * SDM   - 0x63 - BIT2
- * PLL   - 0x62 - BIT3
- * BIAS  - 0x6A - BIT4
- * BBPLL - 0x66 - BIT5
- * ULP   - 0x61 - BIT6
- * SAR   - 0x69 - BIT7
- * PMU   - 0x6d - BIT8
-*/
 
 #define REGI2C_BIAS_MST_SEL    (BIT(8))
 #define REGI2C_BBPLL_MST_SEL   (BIT(9))
@@ -87,6 +77,8 @@ static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
     uint32_t i2c_sel = 0;
 
     regi2c_ctrl_ll_master_enable_clock(true);
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB); // TODO: IDF-9249 Move to pmu_init()
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C); // TODO: IDF-9249 Move to pmu_init()
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
@@ -159,7 +151,6 @@ void IRAM_ATTR regi2c_write_impl(uint8_t block, uint8_t host_id, uint8_t reg_add
                     | (((uint32_t)data & REGI2C_RTC_DATA_V) << REGI2C_RTC_DATA_S);
     REG_WRITE(I2C_ANA_MST_I2C_CTRL_REG(i2c_sel), temp);
     while (REG_GET_BIT(I2C_ANA_MST_I2C_CTRL_REG(i2c_sel), REGI2C_RTC_BUSY));
-
 }
 
 void IRAM_ATTR regi2c_write_mask_impl(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
