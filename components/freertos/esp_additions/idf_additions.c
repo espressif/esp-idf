@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,8 @@
 #include "freertos/timers.h"
 #include "freertos/idf_additions.h"
 #include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "freertos/portmacro.h"
 
 /* -------------------------------------------- Creation With Memory Caps ------------------------------------------- */
 
@@ -81,21 +83,128 @@ err:
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
+    static void prvTaskDeleteWithCapsTask( void * pvParameters )
+    {
+        TaskHandle_t xTaskToDelete = ( TaskHandle_t ) pvParameters;
+
+        /* The task to be deleted must not be running */
+        configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
+
+        /* Delete the WithCaps task */
+        vTaskDeleteWithCaps( xTaskToDelete );
+
+        /* Delete the temporary clean up task */
+        vTaskDelete( NULL );
+    }
+
     void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
     {
-        BaseType_t xResult;
-        StaticTask_t * pxTaskBuffer;
-        StackType_t * puxStackBuffer;
+        /* THIS FUNCTION SHOULD NOT BE CALLED FROM AN INTERRUPT CONTEXT. */
+        /*TODO: Update it to use portASSERT_IF_IN_ISR() instead. (IDF-10540) */
+        vPortAssertIfInISR();
 
-        xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
-        configASSERT( xResult == pdTRUE );
+        TaskHandle_t xCurrentTaskHandle = xTaskGetCurrentTaskHandle();
+        configASSERT( xCurrentTaskHandle != NULL );
 
-        /* Delete the task */
-        vTaskDelete( xTaskToDelete );
+        if( ( xTaskToDelete == NULL ) || ( xTaskToDelete == xCurrentTaskHandle ) )
+        {
+            /* The WithCaps task is deleting itself. While, the task can put itself on the
+             * xTasksWaitingTermination list via the vTaskDelete() call, the idle
+             * task will not free the task TCB and stack memories we created statically
+             * during xTaskCreateWithCaps() or xTaskCreatePinnedToCoreWithCaps(). This
+             * task will never be rescheduled once it is on the xTasksWaitingTermination
+             * list and will not be able to clear the memories. Therefore, it will leak memory.
+             *
+             * To avoid this, we create a new "temporary clean up" task to delete the current task.
+             * This task is created at the priority of the task to be deleted with the same core
+             * affitinty. Its limited purpose is to delete the self-deleting task created WithCaps.
+             *
+             * This approach has the following problems -
+             * 1. Once a WithCaps task deletes itself via vTaskDeleteWithCaps(), it may end up in the
+             *    suspended tasks lists for a short time before being deleted. This can give an incorrect
+             *    picture about the system state.
+             *
+             * 2. This approach is wasteful and can be error prone. The temporary clean up task will need
+             *    system resources to get scheduled and cleanup the WithCaps task. It can be a problem if the system
+             *    has several self-deleting WithCaps tasks.
+             *
+             * TODO: A better approach could be either -
+             *
+             * 1. Delegate memory management to the application/user. This way the kernel needn't bother about freeing
+             *    the memory (like other static memory task creation APIs like xTaskCreateStatic()) (IDF-10521)
+             *
+             * 2. Have a post deletion hook/callback from the IDLE task to notify higher layers when it is safe to
+             *    perform activities such as clearing up the TCB and stack memories. (IDF-10522) */
+            if( xTaskCreatePinnedToCore( ( TaskFunction_t ) prvTaskDeleteWithCapsTask, "prvTaskDeleteWithCapsTask", configMINIMAL_STACK_SIZE, xCurrentTaskHandle, uxTaskPriorityGet( xTaskToDelete ), NULL, xPortGetCoreID() ) != pdFAIL )
+            {
+                /* Although the current task should get preemted immediately when prvTaskDeleteWithCapsTask is created,
+                 * for safety, we suspend the current task and wait for prvTaskDeleteWithCapsTask to delete it. */
+                vTaskSuspend( xTaskToDelete );
 
-        /* Free the memory buffers */
-        heap_caps_free( puxStackBuffer );
-        vPortFree( pxTaskBuffer );
+                /* Should never reach here */
+                ESP_LOGE( "freertos_additions", "%s: Failed to suspend the task to be deleted", __func__ );
+                abort();
+            }
+            else
+            {
+                /* Failed to create the task to delete the current task. */
+                ESP_LOGE( "freertos_additions", "%s: Failed to create the task to delete the current task", __func__ );
+                abort();
+            }
+        }
+
+        #if ( configNUM_CORES > 1 )
+            else if( eRunning == eTaskGetState( xTaskToDelete ) )
+            {
+                /* The WithCaps task is running on another core.
+                 * We suspend the task first and then delete it. */
+                vTaskSuspend( xTaskToDelete );
+
+                /* Wait for the task to be suspended */
+                while( eRunning == eTaskGetState( xTaskToDelete ) )
+                {
+                    portYIELD_WITHIN_API();
+                }
+
+                BaseType_t xResult;
+                StaticTask_t * pxTaskBuffer;
+                StackType_t * puxStackBuffer;
+
+                xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
+                configASSERT( xResult == pdTRUE );
+                configASSERT( puxStackBuffer != NULL );
+                configASSERT( pxTaskBuffer != NULL );
+
+                /* Delete the task */
+                vTaskDelete( xTaskToDelete );
+
+                /* Free the memory buffers */
+                heap_caps_free( puxStackBuffer );
+                vPortFree( pxTaskBuffer );
+            }
+        #endif /* if ( configNUM_CORES > 1 ) */
+        else
+        {
+            /* The WithCaps task is not running and is being deleted
+             * from another task's context. */
+            configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
+
+            BaseType_t xResult;
+            StaticTask_t * pxTaskBuffer;
+            StackType_t * puxStackBuffer;
+
+            xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
+            configASSERT( xResult == pdTRUE );
+            configASSERT( puxStackBuffer != NULL );
+            configASSERT( pxTaskBuffer != NULL );
+
+            /* We can delete the task and free the memory buffers. */
+            vTaskDelete( xTaskToDelete );
+
+            /* Free the memory buffers */
+            heap_caps_free( puxStackBuffer );
+            vPortFree( pxTaskBuffer );
+        } /* if( ( xTaskToDelete == NULL ) || ( xTaskToDelete == xCurrentTaskHandle ) ) */
     }
 
 #endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
