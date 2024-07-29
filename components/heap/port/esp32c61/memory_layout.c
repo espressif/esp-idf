@@ -12,8 +12,6 @@
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
-//TODO: [ESP32C61] IDF-9253
-
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
  * Each type of memory map consists of one or more regions in the address space.
