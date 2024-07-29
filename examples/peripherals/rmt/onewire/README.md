@@ -7,9 +7,9 @@
 
 RMT peripheral has independent transmit and receive channels. We can simulate the [1-Wire](https://www.analog.com/en/technical-articles/guide-to-1wire-communication.html) bus by attaching a pair of transmit and receive channel to the same GPIO, and turning on the open-drain mode of the GPIO pad.
 
-We've made the 1-Wire protocol implementation into a component called `onewire_bus`, which has been uploaded to the [component registry](https://components.espressif.com/components/espressif/onewire_bus).
+We've made the 1-Wire protocol implementation into a component called `onewire_bus`, which has been uploaded to the [ESP Component Registry](https://components.espressif.com/components/espressif/onewire_bus).
 
-This example demonstrates how to use that `onewire_bus` library to read temperature from the [DS18B20](https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf) sensor. Likewise, the DS18B20 device is also made as a single component and pushed to the [component registry](https://components.espressif.com/components/espressif/ds18b20).
+This example demonstrates how to use that `onewire_bus` library to read temperature from the [DS18B20](https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf) sensor. Likewise, the DS18B20 device is also made as a single component and pushed to the [ESP Component Registry](https://components.espressif.com/components/espressif/ds18b20).
 
 One of the amazing feature that offered by the `onewire_bus` driver is that, is can support enumerate the devices on the bus, thus you can connect multiple DS18B20 sensors to the same bus and read their temperature one by one.
 

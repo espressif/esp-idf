@@ -175,7 +175,7 @@ ESP-IDF supports Python 3.8 or newer. It is recommended to upgrade your operatin
 
     A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
 
-    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `ESP Component Registry <https://components.espressif.com>`_.
 
     .. only:: esp32
 

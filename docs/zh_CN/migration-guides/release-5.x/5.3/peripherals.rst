@@ -54,7 +54,7 @@
 
 ATECC608A 安全元素接口示例现已移至 GitHub 上的 `esp-cryptoauthlib 仓库 <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ 中。
 
-该示例也是组件管理器注册表中 `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ 的一部分。
+该示例也是乐鑫组件注册表中 `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ 的一部分。
 
 I2S
 -------

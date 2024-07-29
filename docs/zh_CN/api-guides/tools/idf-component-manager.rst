@@ -4,7 +4,7 @@ IDF 组件管理器
 
 :link_to_translation:`en:[English]`
 
-IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下载在 CMake 运行期间自动完成。IDF 组件管理器可以从 `组件注册表 <https://components.espressif.com>`__ 或 Git 仓库获取组件。
+IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下载在 CMake 运行期间自动完成。IDF 组件管理器可以从 `乐鑫组件注册表 <https://components.espressif.com>`__ 或 Git 仓库获取组件。
 
 要获取组件列表，请参阅 `<https://components.espressif.com/>`__.
 
@@ -50,19 +50,19 @@ IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下�
 从示例创建项目
 ================================
 
-组件注册表中，部分组件包含示例项目。要从示例创建一个新项目，可以运行命令 ``idf.py create-project-from-example EXAMPLE``。``EXAMPLE`` 参数格式为 ``namespace/name=1.0.0:example``，`namespace/name` 代表组件名称，`=1.0.0` 是组件的版本范围（详情请参阅 `版本文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__），而 `example` 代表示例名称。在 `乐鑫组件注册表 <https://components.espressif.com/>`__ 中，可以找到各组件的示例列表，以及启动组件示例的相应命令。
+乐鑫组件注册表中，部分组件包含示例项目。要从示例创建一个新项目，可以运行命令 ``idf.py create-project-from-example EXAMPLE``。``EXAMPLE`` 参数格式为 ``namespace/name=1.0.0:example``，`namespace/name` 代表组件名称，`=1.0.0` 是组件的版本范围（详情请参阅 `版本文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__），而 `example` 代表示例名称。在 `乐鑫组件注册表 <https://components.espressif.com/>`__ 中，可以找到各组件的示例列表，以及启动组件示例的相应命令。
 
 在清单文件中定义依赖项
 =====================================
 
 通过在文本编辑器直接编辑，你可以轻松定义清单文件 ``idf_component.yml`` 中的依赖项。以下是有关定义依赖项的简单示例：
 
-你可以通过指定组件名称和版本范围，定义来自注册表的依赖项：
+你可以通过指定组件名称和版本范围，定义来自乐鑫组件注册表的依赖项：
 
 .. code-block:: yaml
 
     dependencies:
-      # 定义来自注册表 (https://components.espressif.com/component/example/cmp) 的依赖项
+      # 定义来自乐鑫组件注册表 (https://components.espressif.com/component/example/cmp) 的依赖项
       example/cmp: ">=1.0.0"
 
 要从 Git 仓库定义依赖关系，请提供组件在仓库中的路径和仓库的 URL：

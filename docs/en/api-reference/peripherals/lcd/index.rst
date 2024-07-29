@@ -35,7 +35,7 @@ This document will discuss how to create the control plane and data plane, as me
 
 .. note::
 
-    ESP-IDF provides only a limited number of LCD device controller drivers out of the box (e.g., ST7789). More drivers are available in the `Espressif Component Registry <https://components.espressif.com/components?q=esp_lcd>`__.
+    ESP-IDF provides only a limited number of LCD device controller drivers out of the box (e.g., ST7789). More drivers are available in the `ESP Component Registry <https://components.espressif.com/components?q=esp_lcd>`__.
 
 LCD Control Panel Operations
 ----------------------------

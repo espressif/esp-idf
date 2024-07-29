@@ -3,10 +3,10 @@ Removed or Deprecated Components
 
 :link_to_translation:`zh_CN:[中文]`
 
-Components Moved to ESP-IDF Component Registry
+Components Moved to ESP Component Registry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Following components are removed from ESP-IDF and moved to `ESP-IDF Component Registry <https://components.espressif.com/>`_:
+Following components are removed from ESP-IDF and moved to `ESP Component Registry <https://components.espressif.com/>`_:
 
 * `libsodium <https://components.espressif.com/component/espressif/libsodium>`_
 * `cbor <https://components.espressif.com/component/espressif/cbor>`_
@@ -47,7 +47,7 @@ The following components are removed since they were deprecated in ESP-IDF v4.x:
 
 .. note::
 
-    OpenSSL-API component is no longer supported. It is not available in the IDF Component Registry, either. Please use :doc:`ESP-TLS </api-reference/protocols/esp_tls>` or :component:`mbedtls` API directly.
+    OpenSSL-API component is no longer supported. It is not available in the ESP Component Registry, either. Please use :doc:`ESP-TLS </api-reference/protocols/esp_tls>` or :component:`mbedtls` API directly.
 
 .. note::
 
