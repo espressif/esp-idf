@@ -719,7 +719,6 @@ components/nvs_flash/src/nvs_partition.cpp
 components/nvs_flash/src/nvs_partition_lookup.cpp
 components/nvs_flash/src/nvs_partition_lookup.hpp
 components/nvs_flash/src/nvs_test_api.h
-components/nvs_flash/src/nvs_types.cpp
 components/nvs_flash/src/partition.hpp
 components/nvs_flash/test/test_nvs.c
 components/nvs_flash/test_nvs_host/esp_error_check_stub.cpp
