@@ -427,6 +427,13 @@ struct wpa_ft_ies {
 	size_t ric_len;
 };
 
+/* WPA3 specification - RSN Selection element */
+enum rsn_selection_variant {
+    RSN_SELECTION_RSNE = 0,
+    RSN_SELECTION_RSNE_OVERRIDE = 1,
+};
+
+
 int wpa_ft_parse_ies(const u8 *ies, size_t ies_len, struct wpa_ft_ies *parse);
 
 int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
@@ -465,6 +472,8 @@ struct wpa_eapol_ie_parse {
 	size_t transition_disable_len;
 	const u8 *rsnxe;
 	size_t rsnxe_len;
+	const u8 *rsn_selection;
+	size_t rsn_selection_len;
 };
 int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie);
 static inline int wpa_supplicant_parse_ies(const u8 *buf, size_t len,

@@ -197,10 +197,24 @@ static inline int wpa_auth_get_seqnum(struct wpa_authenticator *wpa_auth,
     return -1;
 }
 
-void wpa_auth_set_rsn_override(struct wpa_state_machine *sm, bool val)
+void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
+        size_t len)
 {
-    if (sm)
-        sm->rsn_override = val;
+    if (!sm)
+        return;
+    os_free(sm->rsn_selection);
+    sm->rsn_selection = NULL;
+    sm->rsn_selection_len = 0;
+    sm->rsn_override = false;
+    if (ie) {
+        if (len >=  1) {
+            if (ie[0] == RSN_SELECTION_RSNE_OVERRIDE)
+                sm->rsn_override = true;
+        }
+        sm->rsn_selection = os_memdup(ie, len);
+        if (sm->rsn_selection)
+            sm->rsn_selection_len = len;
+    }
 }
 
 /* fix buf for tx for now */
@@ -508,6 +522,7 @@ static void wpa_free_sta_sm(struct wpa_state_machine *sm)
     os_free(sm->last_rx_eapol_key);
     os_free(sm->wpa_ie);
     os_free(sm->rsnxe);
+    os_free(sm->rsn_selection);
     os_free(sm);
 }
 
@@ -1746,6 +1761,26 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         wpa_sta_disconnect(sm->wpa_auth, sm->addr,
                 WLAN_REASON_PREV_AUTH_NOT_VALID);
         return;
+    }
+
+    /* Verify RSN Selection element for RSN overriding */
+    if ((sm->rsn_selection && !kde.rsn_selection) ||
+            (!sm->rsn_selection && kde.rsn_selection) ||
+            (sm->rsn_selection && kde.rsn_selection &&
+             (sm->rsn_selection_len != kde.rsn_selection_len ||
+              os_memcmp(sm->rsn_selection, kde.rsn_selection,
+                  sm->rsn_selection_len) != 0))) {
+        wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_INFO,
+                "RSN Selection element from (Re)AssocReq did not match the one in EAPOL-Key msg 2/4");
+        wpa_hexdump(MSG_DEBUG, "RSN Selection in AssocReq",
+                sm->rsn_selection, sm->rsn_selection_len);
+        wpa_hexdump(MSG_DEBUG, "RSN Selection in EAPOL-Key msg 2/4",
+                kde.rsn_selection, kde.rsn_selection_len);
+        /* MLME-DEAUTHENTICATE.request */
+        wpa_sta_disconnect(sm->wpa_auth, sm->addr,
+                WLAN_REASON_PREV_AUTH_NOT_VALID);
+        return;
+
     }
 
     sm->pending_1_of_4_timeout = 0;

@@ -308,6 +308,7 @@ int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
 void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid);
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
 			    const u8 *sta_addr);
-void wpa_auth_set_rsn_override(struct wpa_state_machine *sm, bool val);
+void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
+                               size_t len);
 
 #endif /* WPA_AUTH_H */

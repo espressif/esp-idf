@@ -1653,7 +1653,11 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 					pos, dlen);
 		return 0;
 	}
-
+	if (selector == RSN_SELECTION_IE_VENDOR_TYPE) {
+		ie->rsn_selection = p;
+		ie->rsn_selection_len = left;
+		return 0;
+	}
 	return 2;
 }
 

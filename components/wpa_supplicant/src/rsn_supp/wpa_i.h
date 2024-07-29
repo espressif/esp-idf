@@ -22,6 +22,12 @@ struct install_key {
     u8 key[32];
 };
 
+enum wpa_rsn_override {
+    RSN_OVERRIDE_NOT_USED,
+    RSN_OVERRIDE_RSNE,
+    RSN_OVERRIDE_RSNE_OVERRIDE,
+};
+
 /**
  * struct wpa_sm - Internal WPA state machine data
  */
@@ -119,6 +125,8 @@ struct wpa_sm {
 #endif /* CONFIG_OWE_STA */
     int (*wpa_sm_wps_disable)(void);
     esp_err_t (*wpa_sm_eap_disable)(void);
+
+    enum wpa_rsn_override rsn_override;
 };
 
 /**

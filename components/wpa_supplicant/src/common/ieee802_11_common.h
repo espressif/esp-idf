@@ -72,7 +72,9 @@ struct ieee802_11_elems {
 #endif
 #ifdef CONFIG_WPA3_SAE
 	const u8 *rsne_override;
-	u8 rsne_override_len;
+	size_t rsne_override_len;
+	const u8 *rsn_selection;
+	size_t rsn_selection_len;
 #endif
 };
 

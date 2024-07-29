@@ -65,6 +65,8 @@ int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 void wpa_sm_drop_sa(struct wpa_sm *sm);
 
+int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
+		     unsigned int value);
 #ifdef CONFIG_IEEE80211R
 
 int wpa_sm_set_ft_params(struct wpa_sm *sm, const u8 *ies, size_t ies_len);

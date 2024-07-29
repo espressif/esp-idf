@@ -536,7 +536,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     size_t mic_len, hdrlen, rlen;
     struct wpa_eapol_key *reply;
     struct wpa_eapol_key_192 *reply192;
-    u8 *rsn_ie_buf = NULL;
+    u8 *rsn_ie_buf = NULL, *buf2 = NULL;
     u8 *rbuf, *key_mic;
 
     if (wpa_ie == NULL) {
@@ -582,6 +582,35 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         wpa_ie = rsn_ie_buf;
     }
 #endif /* CONFIG_IEEE80211R */
+    if (sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
+        u8 *pos;
+
+        buf2 = os_malloc(wpa_ie_len + 2 + 4 + 1);
+        if (!buf2) {
+            os_free(rsn_ie_buf);
+            return -1;
+        }
+        os_memcpy(buf2, wpa_ie, wpa_ie_len);
+        pos = buf2 + wpa_ie_len;
+        *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+        *pos++ = 4 + 1;
+        WPA_PUT_BE32(pos, RSN_SELECTION_IE_VENDOR_TYPE);
+        pos += 4;
+        if (sm->rsn_override == RSN_OVERRIDE_RSNE) {
+            *pos++ = RSN_SELECTION_RSNE;
+        } else if (sm->rsn_override == RSN_OVERRIDE_RSNE_OVERRIDE) {
+            *pos++ = RSN_SELECTION_RSNE_OVERRIDE;
+        } else {
+            os_free(rsn_ie_buf);
+            os_free(buf2);
+            return -1;
+        }
+
+        wpa_ie = buf2;
+        wpa_ie_len += 2 + 4 + 1;
+
+    }
+
     wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE for msg 2/4\n", wpa_ie, wpa_ie_len);
 
     mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
@@ -591,6 +620,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
                   &rlen, (void *) &reply);
     if (rbuf == NULL) {
         os_free(rsn_ie_buf);
+        os_free(buf2);
         return -1;
     }
     reply192 = (struct wpa_eapol_key_192 *) reply;
@@ -617,6 +647,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     }
 
     os_free(rsn_ie_buf);
+    os_free(buf2);
     os_memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 2/4");
@@ -2199,17 +2230,21 @@ void wpa_sm_deinit(void)
  * Returns: 0 on success, -1 on failure
  */
 int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
-		     unsigned int value)
+        unsigned int value)
 {
-	int ret = 0;
+    int ret = 0;
 
-	if (sm == NULL)
-		return -1;
-	switch (param) {
-	default:
-		break;
-	}
-	return ret;
+    if (sm == NULL)
+        return -1;
+
+    switch (param) {
+        case WPA_PARAM_RSN_OVERRIDE:
+            sm->rsn_override = value;
+            break;
+        default:
+            break;
+    }
+    return ret;
 }
 
 #ifdef ESP_SUPPLICANT
@@ -2488,22 +2523,32 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         return -1;
     }
     pos += assoc_ie_len;
-
+    wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
+            RSN_OVERRIDE_NOT_USED);
     ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
 
     if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) &&
-            ie) {
-        u32 type = 0;
-        if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4)
-            type = WPA_GET_BE32(&ie[2]);
+            ie && ie[0] != WLAN_EID_RSN) {
+        enum rsn_selection_variant variant = RSN_SELECTION_RSNE;
 
-        if (type) {
-            /* Indicate support for RSN overriding */
-            *pos++ = WLAN_EID_VENDOR_SPECIFIC;
-            *pos++ = 4;
-            WPA_PUT_BE32(pos, type);
-            assoc_ie_len += 2 + 4;
+        if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4) {
+            u32 type;
+
+            type = WPA_GET_BE32(&ie[2]);
+            if (type == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
+                variant = RSN_SELECTION_RSNE_OVERRIDE;
+                wpa_sm_set_param(sm,
+                        WPA_PARAM_RSN_OVERRIDE,
+                        RSN_OVERRIDE_RSNE_OVERRIDE);
+            }
         }
+        /* Indicate support for RSN overriding */
+        *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+        *pos++ = 4 + 1;
+        WPA_PUT_BE32(pos, RSN_SELECTION_IE_VENDOR_TYPE);
+        pos += 4;
+        *pos = variant;
+        assoc_ie_len += 2 + 4 + 1;
     }
 
     esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
