@@ -302,7 +302,6 @@ test_pytest_qemu:
       - "**/build*/*.bin"
     reports:
       junit: XUNIT_RESULT.xml
-  allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
