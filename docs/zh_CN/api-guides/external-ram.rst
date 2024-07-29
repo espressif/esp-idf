@@ -173,6 +173,8 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
         - 在进行 SPI1 flash 操作期间，cache 仍然保持启用状态，这样可以优化代码执行性能。由于无需把中断服务程序 (ISR)、ISR 回调和在此期间可能被访问的数据放置在片上 RAM 中，片上 RAM 可用于其他用途，从而提高了使用效率。这个特性适用于需要处理大量数据的高吞吐量外设应用，能显著提高 SPI1 flash 操作期间的性能。
 
+        :example:`system/xip_from_psram` 演示了如何从 PSRAM 直接执行代码，从而优化内部 RAM 的使用，并避免用户调用 flash 操作（例如闪存擦除/读取/写入操作）时关闭 cache。
+
     .. only:: esp32p4
 
         .. _external_ram_config_xip:

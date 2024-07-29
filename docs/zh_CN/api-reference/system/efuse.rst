@@ -566,5 +566,13 @@ esptool 中包含一个用于读取/写入 {IDF_TARGET_NAME} eFuse 位的有用�
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
+应用示例
+-----------------
+
+- :example:`system/efuse` 演示了如何在 {IDF_TARGET_NAME} 上使用 eFuse API，展示了从通用和自定义 eFuse 表中读取和写入字段的操作，并解释了虚拟 eFuse 在调试中的用途。
+
+API 参考
+----------------
+
 .. include-build-file:: inc/esp_efuse_chip.inc
 .. include-build-file:: inc/esp_efuse.inc

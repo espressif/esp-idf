@@ -224,6 +224,11 @@ To set the version in your project manually, you need to set the ``PROJECT_VER``
 
 If the :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if the ``PROJECT_VER`` variable is not set in the project, it will be retrieved either from the ``$(PROJECT_PATH)/version.txt`` file (if present) or using git command ``git describe``. If neither is available, ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_app_get_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
+Application Examples
+--------------------
+
+- :example:`system/base_mac_address` demonstrates how to retrieve, set, and derive the base MAC address for each network interface on {IDF_TARGET_NAME} from non-volatile memory, using either the eFuse blocks or external storage.
+
 API Reference
 -------------
 

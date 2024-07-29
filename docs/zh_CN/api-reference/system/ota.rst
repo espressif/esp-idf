@@ -341,10 +341,10 @@ Python API
 * :doc:`../peripherals/spi_flash/index`
 * :doc:`esp_https_ota`
 
-应用程序示例
+应用示例
 ------------
 
-端对端的 OTA 固件升级示例请参考 :example:`system/ota`。
+- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到出厂分区等操作。有关更多信息，请参考 :example_file:`system/ota/otatool/README.md`。
 
 API 参考
 --------

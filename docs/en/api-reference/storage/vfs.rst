@@ -192,6 +192,12 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
+Application Examples
+--------------------
+
+- :example:`system/eventfd` demonstrates how to use ``eventfd()`` to collect events from tasks and ISRs in a ``select()`` based main loop, using two tasks and a timer ISR (interrupt service routine) callback.
+
+- :example:`system/select` demonstrates how to use synchronous I/O multiplexing with the ``select()`` function, using UART and socket file descriptors, and configuring both to act as loopbacks to receive messages sent from other tasks.
 
 API Reference
 -------------
