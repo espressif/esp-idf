@@ -1915,49 +1915,8 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
             wpa_ie = wpa_ie + wpa_ie[1] + 2;
         wpa_ie_len = wpa_ie[1] + 2;
     }
-    if (sm->rsn_override &&
-        get_vendor_ie(wpa_ie, wpa_ie_len, RSNE_OVERRIDE_IE_VENDOR_TYPE)) {
-        const u8 *override_rsne = NULL, *override_rsnxe = NULL;
-        const struct element *elem;
-
-        wpa_printf(MSG_DEBUG,"RSN: Use RSNE/RSNXE override element contents");
-
-        for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC,
-                            wpa_ie, wpa_ie_len) {
-            if (elem->datalen >= 4) {
-                if (WPA_GET_BE32(elem->data) ==
-                    RSNE_OVERRIDE_IE_VENDOR_TYPE)
-                    override_rsne = &elem->id;
-                if (WPA_GET_BE32(elem->data) ==
-                    RSNXE_OVERRIDE_IE_VENDOR_TYPE)
-                    override_rsnxe = &elem->id;
-                }
-            }
-        wpa_hexdump(MSG_DEBUG, "EAPOL-Key msg 3/4 IEs before edits",
-                wpa_ie, wpa_ie_len);
-        wpa_ie_buf3 = os_malloc(wpa_ie_len);
-        if (!wpa_ie_buf3)
-            goto done;
-        pos = wpa_ie_buf3;
-        if (override_rsne) {
-            *pos++ = WLAN_EID_RSN;
-            *pos++ = override_rsne[1] - 4;
-            os_memcpy(pos, &override_rsne[2 + 4],
-                      override_rsne[1] - 4);
-            pos += override_rsne[1] - 4;
-        }
-        if (override_rsnxe) {
-            *pos++ = WLAN_EID_RSNX;
-            *pos++ = override_rsnxe[1] - 4;
-            os_memcpy(pos, &override_rsnxe[2 + 4],
-                      override_rsnxe[1] - 4);
-            pos += override_rsnxe[1] - 4;
-        }
-        wpa_ie = wpa_ie_buf3;
-        wpa_ie_len = pos - wpa_ie_buf3;
-        wpa_hexdump(MSG_DEBUG, "EAPOL-Key msg 3/4 IEs after edits",
-                    wpa_ie, wpa_ie_len);
-    } else if (conf->rsn_override_key_mgmt && !sm->rsn_override) {
+    if (conf->rsn_override_key_mgmt &&
+        !rsn_is_snonce_cookie(sm->SNonce)) {
         u8 *ie;
         size_t ie_len;
         u32 ids[] = {

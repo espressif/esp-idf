@@ -1215,6 +1215,48 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
+    if (sm->proto == WPA_PROTO_RSN &&
+            sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
+        if ((sm->ap_rsne_override && !ie->rsne_override) ||
+                (!sm->ap_rsne_override && ie->rsne_override) ||
+                (sm->ap_rsne_override && ie->rsne_override &&
+                 (sm->ap_rsne_override_len != ie->rsne_override_len ||
+                  os_memcmp(sm->ap_rsne_override, ie->rsne_override,
+                      sm->ap_rsne_override_len) != 0))) {
+            wpa_msg(sm->ctx->msg_ctx, MSG_INFO,
+                    "RSN: RSNE Override element mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+            wpa_hexdump(MSG_INFO,
+                    "RSNE Override element in Beacon/ProbeResp",
+                    sm->ap_rsne_override,
+                    sm->ap_rsne_override_len);
+            wpa_hexdump(MSG_INFO,
+                    "RSNE Override element in EAPOL-Key msg 3/4",
+                    ie->rsne_override, ie->rsne_override_len);
+            wpa_sm_deauthenticate(sm,
+                    WLAN_REASON_IE_IN_4WAY_DIFFERS);
+            return -1;
+        }
+
+        if ((sm->ap_rsnxe_override && !ie->rsnxe_override) ||
+                (!sm->ap_rsnxe_override && ie->rsnxe_override) ||
+                (sm->ap_rsnxe_override && ie->rsnxe_override &&
+                 (sm->ap_rsnxe_override_len != ie->rsnxe_override_len ||
+                  os_memcmp(sm->ap_rsnxe_override, ie->rsnxe_override,
+                      sm->ap_rsnxe_override_len) != 0))) {
+            wpa_msg(sm->ctx->msg_ctx, MSG_INFO,
+                    "RSN: RSNXE Override element mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+            wpa_hexdump(MSG_INFO,
+                    "RSNXE Override element in Beacon/ProbeResp",
+                    sm->ap_rsnxe_override,
+                    sm->ap_rsnxe_override_len);
+            wpa_hexdump(MSG_INFO,
+                    "RSNXE Override element in EAPOL-Key msg 3/4",
+                    ie->rsnxe_override, ie->rsnxe_override_len);
+            wpa_sm_deauthenticate(sm,
+                    WLAN_REASON_IE_IN_4WAY_DIFFERS);
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -2218,8 +2260,11 @@ void wpa_sm_deinit(void)
     sm->ap_rsn_ie = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
+    os_free(sm->ap_rsne_override);
+    sm->ap_rsne_override = NULL;
+    os_free(sm->ap_rsnxe_override);
+    sm->ap_rsnxe_override = NULL;
     wpa_sm_drop_sa(sm);
-    sm->assoc_rsnxe = NULL;
     memset(sm, 0, sizeof(*sm));
 }
 
@@ -2509,9 +2554,15 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
     sm->assoc_wpa_ie_len = res;
 
     ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
-    wpa_sm_set_ap_rsn_ie(sm, ie, ie[1]+2);
+    wpa_sm_set_ap_rsn_ie(sm, ie, ie ? (ie[1] + 2) : 0);
     ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSNX);
     wpa_sm_set_ap_rsnxe(sm, ie, ie ? (ie[1] + 2) : 0);
+    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA)) {
+        ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
+        wpa_sm_set_ap_rsne_override(sm, ie, ie ? (ie[1] + 2) : 0);
+        ie = esp_wifi_sta_get_ie(bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
+        wpa_sm_set_ap_rsnxe_override(sm, ie, ie ? (ie[1] + 2) : 0);
+    }
 
     pos = assoc_ie;
     res = wpa_gen_rsnxe(sm, pos, assoc_ie_len);
@@ -2846,38 +2897,25 @@ struct wpa_sm * get_wpa_sm(void)
  */
 int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
-	if (sm == NULL)
-		return -1;
+    if (sm == NULL)
+        return -1;
 
-	os_free(sm->ap_rsn_ie);
-	if (ie == NULL || len == 0) {
-		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
-			"WPA: clearing AP RSN IE");
-		sm->ap_rsn_ie = NULL;
-		sm->ap_rsn_ie_len = 0;
-	} else {
-		wpa_hexdump(MSG_DEBUG, "WPA: set AP RSN IE", ie, len);
-		if (ie[0] == WLAN_EID_VENDOR_SPECIFIC && len > 2 + 4) {
-			sm->ap_rsn_ie = os_malloc(len - 4);
-			if (!sm->ap_rsn_ie)
-				return -1;
-			sm->ap_rsn_ie[0] = WLAN_EID_RSN;
-			sm->ap_rsn_ie[1] = len - 2 - 4;
-			os_memcpy(&sm->ap_rsn_ie[2], ie + 2 + 4, len - 2 - 4);
-			sm->ap_rsn_ie_len = len - 4;
-			wpa_hexdump(MSG_DEBUG,
-				    "RSN: Converted RSNE override to RSNE",
-				    sm->ap_rsn_ie, sm->ap_rsn_ie_len);
-		} else {
-			sm->ap_rsn_ie = os_memdup(ie, len);
-			if (sm->ap_rsn_ie == NULL)
-				return -1;
+    os_free(sm->ap_rsn_ie);
+    if (ie == NULL || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "WPA: clearing AP RSN IE");
+        sm->ap_rsn_ie = NULL;
+        sm->ap_rsn_ie_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSN IE", ie, len);
+        sm->ap_rsn_ie = os_memdup(ie, len);
+        if (sm->ap_rsn_ie == NULL)
+            return -1;
 
-			sm->ap_rsn_ie_len = len;
-		}
-	}
+        sm->ap_rsn_ie_len = len;
+    }
 
-	return 0;
+    return 0;
 }
 
 /**
@@ -2892,46 +2930,73 @@ int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len)
  */
 int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
-	if (!sm)
-		return -1;
+    if (!sm)
+        return -1;
 
-	os_free(sm->ap_rsnxe);
-	if (!ie || len == 0) {
-		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: clearing AP RSNXE");
-		sm->ap_rsnxe = NULL;
-		sm->ap_rsnxe_len = 0;
-	} else {
-		wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
-		if (ie[0] == WLAN_EID_VENDOR_SPECIFIC && len > 2 + 4) {
-			sm->ap_rsnxe = os_malloc(len - 4);
-			if (!sm->ap_rsnxe)
-				return -1;
-			sm->ap_rsnxe[0] = WLAN_EID_RSNX;
-			sm->ap_rsnxe[1] = len - 2 - 4;
-			os_memcpy(&sm->ap_rsnxe[2], ie + 2 + 4, len - 2 - 4);
-			sm->ap_rsnxe_len = len - 4;
-			wpa_hexdump(MSG_DEBUG,
-				    "RSN: Converted RSNXE override to RSNXE",
-				    sm->ap_rsnxe, sm->ap_rsnxe_len);
-		} else {
-			sm->ap_rsnxe = os_memdup(ie, len);
-			if (!sm->ap_rsnxe)
-				return -1;
+    os_free(sm->ap_rsnxe);
+    if (!ie || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: clearing AP RSNXE");
+        sm->ap_rsnxe = NULL;
+        sm->ap_rsnxe_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        sm->ap_rsnxe = os_memdup(ie, len);
+        if (!sm->ap_rsnxe)
+            return -1;
 
-			sm->ap_rsnxe_len = len;
-		}
-	}
-
-    if (sm->ap_rsnxe != NULL) {
-        sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
-#ifdef CONFIG_SAE_PK
-        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
-        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
-                sae_pk_valid_password((const char*)pw)) {
-            sm->sae_pk = true;
-        }
-#endif /* CONFIG_SAE_PK */
+        sm->ap_rsnxe_len = len;
     }
+
+    return 0;
+}
+
+
+int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsne_override);
+    if (!ie || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "RSN: Clearing AP RSNE Override element");
+        sm->ap_rsne_override = NULL;
+        sm->ap_rsne_override_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: Set AP RSNE Override element",
+                ie, len);
+        sm->ap_rsne_override = os_memdup(ie, len);
+        if (!sm->ap_rsne_override)
+            return -1;
+
+        sm->ap_rsne_override_len = len;
+    }
+
+    return 0;
+}
+
+
+int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsnxe_override);
+    if (!ie || len == 0) {
+        wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+                "RSN: Clearing AP RSNXE Override element");
+        sm->ap_rsnxe_override = NULL;
+        sm->ap_rsnxe_override_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: Set AP RSNXE Override element",
+                ie, len);
+        sm->ap_rsnxe_override = os_memdup(ie, len);
+        if (!sm->ap_rsnxe_override)
+            return -1;
+
+        sm->ap_rsnxe_override_len = len;
+    }
+
     return 0;
 }
 

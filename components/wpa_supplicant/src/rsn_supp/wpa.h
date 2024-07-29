@@ -61,6 +61,10 @@ int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
+int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len);
+
+int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len);
+
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 void wpa_sm_drop_sa(struct wpa_sm *sm);
