@@ -148,6 +148,7 @@ typedef struct {
         SemaphoreHandle_t event_sem;
         SemaphoreHandle_t mux_lock;
         usb_phy_handle_t phy_handle;    // Will be NULL if host library is installed with skip_phy_setup
+        void *hub_client;   // Pointer to Hub driver (acting as a client). Used to reroute completed USBH control transfers
     } constant;
 } host_lib_t;
 
@@ -171,8 +172,15 @@ static inline void _clear_client_opened_device(client_t *client_obj, uint8_t dev
 
 static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    return (client_obj->dynamic.opened_dev_addr_map & (1 << (dev_addr - 1)));
+    bool ret;
+
+    if (dev_addr != 0) {
+        ret = client_obj->dynamic.opened_dev_addr_map & (1 << (dev_addr - 1));
+    } else {
+        ret = false;
+    }
+
+    return ret;
 }
 
 static bool _unblock_client(client_t *client_obj, bool in_isr)
@@ -268,14 +276,18 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
     case USBH_EVENT_CTRL_XFER: {
         assert(event_data->ctrl_xfer_data.urb != NULL);
         assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
-        // Redistribute done control transfer to the clients that submitted them
-        client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
-
-        HOST_ENTER_CRITICAL();
-        TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, event_data->ctrl_xfer_data.urb, tailq_entry);
-        client_obj->dynamic.num_done_ctrl_xfer++;
-        _unblock_client(client_obj, false);
-        HOST_EXIT_CRITICAL();
+        // Redistribute completed control transfers to the clients that submitted them
+        if (event_data->ctrl_xfer_data.urb->usb_host_client == p_host_lib_obj->constant.hub_client) {
+            // Redistribute to Hub driver. Simply call the transfer callback
+            event_data->ctrl_xfer_data.urb->transfer.callback(&event_data->ctrl_xfer_data.urb->transfer);
+        } else {
+            client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
+            HOST_ENTER_CRITICAL();
+            TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, event_data->ctrl_xfer_data.urb, tailq_entry);
+            client_obj->dynamic.num_done_ctrl_xfer++;
+            _unblock_client(client_obj, false);
+            HOST_EXIT_CRITICAL();
+        }
         break;
     }
     case USBH_EVENT_NEW_DEV: {
@@ -297,8 +309,8 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_DEV_FREE: {
-        // Let the Hub driver know that the device is free
-        ESP_ERROR_CHECK(hub_dev_is_free(event_data->dev_free_data.dev_addr));
+        // Let the Hub driver know that the device is free and its port can be recycled
+        ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.dev_uid));
         break;
     }
     case USBH_EVENT_ALL_FREE: {
@@ -420,7 +432,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         .enum_filter_cb = config->enum_filter_cb,
 #endif // ENABLE_ENUM_FILTER_CALLBACK
     };
-    ret = hub_install(&hub_config);
+    ret = hub_install(&hub_config, &host_lib_obj->constant.hub_client);
     if (ret != ESP_OK) {
         goto hub_err;
     }
@@ -574,7 +586,7 @@ esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret)
     HOST_CHECK_FROM_CRIT(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
     num_clients_temp = p_host_lib_obj->dynamic.flags.num_clients;
     HOST_EXIT_CRITICAL();
-    usbh_num_devs(&num_devs_temp);
+    usbh_devs_num(&num_devs_temp);
 
     // Write back return values
     info_ret->num_devices = num_devs_temp;
@@ -820,7 +832,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
 
     esp_err_t ret;
     usb_device_handle_t dev_hdl;
-    ret = usbh_dev_open(dev_addr, &dev_hdl);
+    ret = usbh_devs_open(dev_addr, &dev_hdl);
     if (ret != ESP_OK) {
         goto exit;
     }
@@ -841,7 +853,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
     return ret;
 
 already_opened:
-    ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
+    ESP_ERROR_CHECK(usbh_devs_close(dev_hdl));
 exit:
     return ret;
 }
@@ -883,7 +895,7 @@ esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_
     _clear_client_opened_device(client_obj, dev_addr);
     HOST_EXIT_CRITICAL();
 
-    ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
+    ESP_ERROR_CHECK(usbh_devs_close(dev_hdl));
     ret = ESP_OK;
 exit:
     xSemaphoreGive(p_host_lib_obj->constant.mux_lock);
@@ -896,7 +908,7 @@ esp_err_t usb_host_device_free_all(void)
     HOST_CHECK_FROM_CRIT(p_host_lib_obj->dynamic.flags.num_clients == 0, ESP_ERR_INVALID_STATE);    // All clients must have been deregistered
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
-    ret = usbh_dev_mark_all_free();
+    ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
 }
@@ -904,7 +916,7 @@ esp_err_t usb_host_device_free_all(void)
 esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
 {
     HOST_CHECK(dev_addr_list != NULL && num_dev_ret != NULL, ESP_ERR_INVALID_ARG);
-    return usbh_dev_addr_list_fill(list_len, dev_addr_list, num_dev_ret);
+    return usbh_devs_addr_list_fill(list_len, dev_addr_list, num_dev_ret);
 }
 
 // ------------------------------------------------- Device Requests ---------------------------------------------------

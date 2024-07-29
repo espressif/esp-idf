@@ -21,14 +21,14 @@ USB 主机维护者注意事项（简介）
     usb_host_notes_design
     usb_host_notes_arch
     usb_host_notes_dwc_otg
+    usb_host_notes_usbh
 
 待写章节：
 
 - USB 主机维护者注意事项（HAL 和 LL）
-- USB 主机维护者注意事项 (HCD)
-- USB 主机维护者注意事项 (USBH)
-- USB 主机维护者注意事项 (Hub)
-- USB 主机维护者注意事项 (USB Host Library)
+- USB 主机维护者注意事项（HCD）
+- USB 主机维护者注意事项（Hub）
+- USB 主机维护者注意事项（USB Host Library）
 
 .. -------------------------------------------------- Introduction -----------------------------------------------------
 

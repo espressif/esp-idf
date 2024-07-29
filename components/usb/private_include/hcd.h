@@ -419,36 +419,6 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
 esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr);
 
 /**
- * @brief Update a pipe's callback
- *
- * This function is intended to be called on default pipes at the end of enumeration to switch to a callback that
- * handles the completion of regular control transfer.
- * - Pipe is not current processing a command
- * - Pipe does not have any enqueued URBs
- * - Port cannot be resetting
- *
- * @param pipe_hdl Pipe handle
- * @param callback Callback
- * @param user_arg Callback argument
- * @return esp_err_t
- */
-esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback_t callback, void *user_arg);
-
-/**
- * @brief Make a pipe persist through a run time reset
- *
- * Normally when a HCD_PORT_CMD_RESET is called, all pipes should already have been freed. However There may be cases
- * (such as during enumeration) when a pipe must persist through a reset. This function will mark a pipe as
- * persistent allowing it to survive a reset. When HCD_PORT_CMD_RESET is called, the pipe can continue to be used after
- * the reset.
- *
- * @param pipe_hdl Pipe handle
- * @retval ESP_OK: Pipe successfully marked as persistent
- * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be made persistent
- */
-esp_err_t hcd_pipe_set_persist_reset(hcd_pipe_handle_t pipe_hdl);
-
-/**
  * @brief Get the context variable of a pipe from its handle
  *
  * @param pipe_hdl Pipe handle
