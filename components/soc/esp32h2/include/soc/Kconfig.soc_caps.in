@@ -411,6 +411,10 @@ config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
 
+config SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
+    bool
+    default y
+
 config SOC_MMU_PERIPH_NUM
     int
     default 1

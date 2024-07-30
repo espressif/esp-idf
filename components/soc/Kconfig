@@ -7,6 +7,11 @@ menu "SoC Settings"
         # Be configured based on flash size selection.
         # Invisible to users.
 
+        config MMU_PAGE_SIZE_8KB
+            bool
+            depends on SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
+            default n
+
         config MMU_PAGE_SIZE_16KB
             bool
             default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_1MB
