@@ -73,16 +73,6 @@ bool rtc_clk_32k_enabled(void)
     return clk_ll_xtal32k_is_enabled();
 }
 
-void rtc_clk_rc32k_enable(bool enable)
-{
-    if (enable) {
-        clk_ll_rc32k_enable();
-        esp_rom_delay_us(SOC_DELAY_RC32K_ENABLE);
-    } else {
-        clk_ll_rc32k_disable();
-    }
-}
-
 void rtc_clk_8m_enable(bool clk_8m_en)
 {
     if (clk_8m_en) {
@@ -114,7 +104,6 @@ uint32_t rtc_clk_slow_freq_get_hz(void)
     switch (rtc_clk_slow_src_get()) {
     case SOC_RTC_SLOW_CLK_SRC_RC_SLOW: return SOC_CLK_RC_SLOW_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K: return SOC_CLK_XTAL32K_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K: return SOC_CLK_RC32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW: return SOC_CLK_OSC_SLOW_FREQ_APPROX;
     default: return 0;
     }

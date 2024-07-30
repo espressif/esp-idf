@@ -78,8 +78,6 @@ __attribute__((weak)) void esp_clk_init(void)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
-#elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
-    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
@@ -155,8 +153,6 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
                 }
             }
-        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
 
@@ -200,9 +196,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
     modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(
                                                   (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
-                                                  : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)    ? MODEM_CLOCK_LPCLK_SRC_RC32K
                                                   : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K
-                                                  : MODEM_CLOCK_LPCLK_SRC_RC32K);
+                                                  : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 #endif
 

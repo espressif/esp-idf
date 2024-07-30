@@ -23,7 +23,7 @@ __attribute__((unused)) static const char *TAG = "rtc_time";
  * RTC_SLOW_CLK cycles.
  */
 
-#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
+#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
 
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
@@ -35,8 +35,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
             cal_clk = RTC_CAL_RC_SLOW;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             cal_clk = RTC_CAL_32K_XTAL;
-        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            cal_clk = RTC_CAL_RC32K;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             cal_clk = RTC_CAL_32K_OSC_SLOW;
         }
@@ -66,17 +64,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    bool rc32k_enabled = clk_ll_rc32k_is_enabled();
-    bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(true);
-        }
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_enable();
-        }
-    }
-
     /* There may be another calibration process already running during we call this function,
      * so we should wait the last process is done.
      */
@@ -102,7 +89,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     /* Set timeout reg and expect time delay*/
     REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk, slowclk_cycles));
     uint32_t expected_freq;
-    if (cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) {
+    if (cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) {
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
     } else if (cal_clk == RTC_CAL_RC_FAST) {
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
@@ -146,15 +133,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
         if (!rc_fast_enabled) {
             rtc_clk_8m_enable(false);
-        }
-    }
-
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_disable();
-        }
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(false);
         }
     }
 

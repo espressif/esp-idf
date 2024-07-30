@@ -65,20 +65,18 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 {
     rtc_cpu_freq_config_t old_config, new_config;
 
-    rtc_clk_modem_clock_domain_active_state_icg_map_preinit(); // TODO: comment?
+    rtc_clk_modem_clock_domain_active_state_icg_map_preinit();
 
-    /* Set tuning parameters for RC_FAST, RC_SLOW, and RC32K clocks.
+    /* Set tuning parameters for RC_FAST and RC_SLOW clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
      * Instead, we calibrate these clocks against XTAL frequency later, when necessary.
      * - SCK_DCAP value controls tuning of RC_SLOW clock.
      *   The higher the value of DCAP is, the lower is the frequency.
      * - CK8M_DFREQ value controls tuning of RC_FAST clock.
      *   CLK_8M_DFREQ constant gives the best temperature characteristics.
-     * - RC32K_DFREQ value controls tuning of RC32K clock.
      */
     REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, cfg.slow_clk_dcap);
-    REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
 
@@ -114,8 +112,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
         rtc_clk_32k_enable(true);
     } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
         rtc_clk_32k_enable_external();
-    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-       rtc_clk_rc32k_enable(true);
     }
     rtc_clk_8m_enable(need_rc_fast_en);
     rtc_clk_fast_src_set(cfg.fast_clk_src);

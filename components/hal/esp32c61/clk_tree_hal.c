@@ -53,8 +53,6 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
         return SOC_CLK_OSC_SLOW_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        return SOC_CLK_RC32K_FREQ_APPROX;
     default:
         // Unknown RTC_SLOW_CLK mux input
         HAL_ASSERT(false);
