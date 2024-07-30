@@ -44,7 +44,7 @@ Multithreading
 
 C++ threads, mutexes, and condition variables are supported. C++ threads are built on top of pthreads, which in turn wrap FreeRTOS tasks.
 
-See :example:`cxx/pthread` for an example of creating threads in C++.
+See :example:`cxx/pthread` for an example of creating threads in C++. Specifically, this example demonstrates how to use the ESP-pthread component to modify the stack sizes, priorities, names, and core affinities of C++ threads.
 
 .. note::
 
@@ -62,8 +62,7 @@ If an exception is thrown, but there is no ``catch`` block, the program is termi
 
 C++ Exceptions should **only** be used for exceptional cases, i.e., something happening unexpectedly and occurs rarely, such as events that happen less frequently than 1/100 times. **Do not** use them for control flow (see also the section about resource usage below). For more information on how to use C++ Exceptions, see the `ISO C++ FAQ <https://isocpp.org/wiki/faq/exceptions>`_ and `CPP Core Guidelines <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-errors>`_.
 
-See :example:`cxx/exceptions` for an example of C++ exception handling.
-
+See :example:`cxx/exceptions` for an example of C++ exception handling. Specifically, this example demonstrates how to enable and use C++ exceptions in {IDF_TARGET_NAME}, with a class that throws an exception from the constructor if the provided argument is equal to 0.
 
 C++ Exception Handling and Resource Usage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,8 +92,7 @@ Support for RTTI in ESP-IDF is disabled by default, but can be enabled using :re
 
 Enabling this option compiles all C++ files with RTTI support enabled, which allows using ``dynamic_cast`` conversion and ``typeid`` operator. Enabling this option typically increases the binary size by tens of kB.
 
-See :example:`cxx/rtti` for an example of using RTTI in ESP-IDF.
-
+See :example:`cxx/rtti` for an example of using RTTI in ESP-IDF. Specifically, this example demonstrates how to use the RTTI feature in ESP-IDF, enabling compile time support for RTTI, and showing how to print demangled type names of objects and functions, and how dynamic_cast behaves with objects of two classes derived from a common base class.
 
 Developing in C++
 -----------------
