@@ -160,7 +160,7 @@ UINT8 bta_gattc_num_reg_app(void)
 **
 ** Function         bta_gattc_find_clcb_by_cif
 **
-** Description      get clcb by client interface and remote bd adddress
+** Description      get clcb by client interface and remote bd address
 **
 ** Returns          pointer to the clcb
 **
@@ -322,12 +322,18 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
     }
 }
 
+extern void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg);
 void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id)
 {
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
     if (p_clcb) {
+        tBTA_GATTC_RCB      *p_clreg = p_clcb->p_rcb;
         bta_gattc_clcb_dealloc(p_clcb);
+        // there is a workaround: if there is no connect, we will reset it.
+        if (p_clreg && p_clreg->num_clcb == 0 && p_clreg->dereg_pending) {
+            bta_gattc_deregister_cmpl(p_clreg);
+        }
     }
 }
 
@@ -517,7 +523,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
 			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
             } else {
-                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                 return FALSE;
             }
         } else {
@@ -525,7 +531,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
                 memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
             } else {
-                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                 return FALSE;
             }
         }
@@ -919,7 +925,7 @@ BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda)
 **
 ** Function         bta_gattc_find_int_conn_clcb
 **
-** Description      try to locate a clcb when an internal connecion event arrives.
+** Description      try to locate a clcb when an internal connection event arrives.
 **
 ** Returns          pointer to the clcb
 **

@@ -63,7 +63,7 @@ static void bta_gattc_cmpl_sendmsg(UINT16 conn_id, tGATTC_OPTYPE op,
                                    tGATT_CL_COMPLETE *p_data);
 static void bta_gattc_pop_command_to_send(tBTA_GATTC_CLCB *p_clcb);
 
-static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg);
+void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg);
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda);
 static void bta_gattc_cong_cback (UINT16 conn_id, BOOLEAN congested);
 static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYPE type, tGATTS_DATA *p_data);
@@ -154,7 +154,7 @@ void bta_gattc_disable(tBTA_GATTC_CB *p_cb)
     APPL_TRACE_DEBUG("bta_gattc_disable");
 
     if (p_cb->state != BTA_GATTC_STATE_ENABLED) {
-        APPL_TRACE_ERROR("not enabled or disable in pogress");
+        APPL_TRACE_ERROR("not enabled or disable in progress");
         return;
     }
 
@@ -227,7 +227,7 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
                 if ((p_buf = (tBTA_GATTC_INT_START_IF *) osi_malloc(sizeof(tBTA_GATTC_INT_START_IF))) != NULL) {
                     p_buf->hdr.event    = BTA_GATTC_INT_START_IF_EVT;
                     p_buf->client_if    = p_cb->cl_rcb[i].client_if;
-                    APPL_TRACE_DEBUG("GATTC getbuf sucess.\n");
+                    APPL_TRACE_DEBUG("GATTC getbuf success.\n");
                     bta_sys_sendmsg(p_buf);
                     status = BTA_GATT_OK;
                 } else {
@@ -841,6 +841,9 @@ void bta_gattc_close(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         (* p_cback)(BTA_GATTC_CLOSE_EVT,   (tBTA_GATTC *)&cb_data);
     }
 
+    // Please note that BTA_GATTC_CLOSE_EVT will run in the BTC task.
+    // because bta_gattc_deregister_cmpl did not execute as expected(this is a known issue),
+    // we will run it again in bta_gattc_clcb_dealloc_by_conn_id.
     if (p_clreg->num_clcb == 0 && p_clreg->dereg_pending) {
         bta_gattc_deregister_cmpl(p_clreg);
     }
@@ -1672,7 +1675,7 @@ void bta_gattc_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg)
+void bta_gattc_deregister_cmpl(tBTA_GATTC_RCB *p_clreg)
 {
     tBTA_GATTC_CB       *p_cb = &bta_gattc_cb;
     tBTA_GATTC_IF       client_if = p_clreg->client_if;
@@ -2118,7 +2121,7 @@ void bta_gattc_process_indicate(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_CL_COMPL
                 bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify);
             }
         } else if (op == GATTC_OPTYPE_INDICATION) {
-            /* no one intersted and need ack? */
+            /* no one interested and need ack? */
             APPL_TRACE_DEBUG("%s no one interested, ack now", __func__);
             GATTC_SendHandleValueConfirm(conn_id, handle);
         }
@@ -2235,7 +2238,7 @@ static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYP
 **
 ** Function         bta_gattc_init_clcb_conn
 **
-** Description      Initaite a BTA CLCB connection
+** Description      Initiate a BTA CLCB connection
 **
 ** Returns          void
 **
@@ -2252,7 +2255,7 @@ void bta_gattc_init_clcb_conn(UINT8 cif, BD_ADDR remote_bda)
         return;
     }
 
-    /* initaite a new connection here */
+    /* initiate a new connection here */
     if ((p_clcb = bta_gattc_clcb_alloc(cif, remote_bda, BTA_GATT_TRANSPORT_LE)) != NULL) {
         gattc_data.hdr.layer_specific = p_clcb->bta_conn_id = conn_id;
 
