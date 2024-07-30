@@ -279,6 +279,9 @@ Aside from the above oneshot API, the ISP AE driver also provides a way to start
 
 Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_statistics_done` or :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_change` callback to get the statistics result. See how to register in `Register Event Callbacks <#isp-callback>`__
 
+.. note::
+    When using oneshot statistics, the AE Environment Detector will be temporarily disabled and will automatically recover once the oneshot is complete.
+
 .. code:: c
 
     esp_isp_ae_config_t ae_config = {

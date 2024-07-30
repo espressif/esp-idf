@@ -101,8 +101,8 @@ esp_err_t esp_isp_ae_controller_get_oneshot_statistics(isp_ae_ctlr_t ae_ctlr, in
  * @note  This function is an asynchronous and non-block function,
  *        it will start the continuous statistics and return immediately.
  *        You have to register the AE callback and get the result from the callback event data.
- *        When you call `esp_isp_ae_controller_get_oneshot_statistics` during continuous mode,
- *        continuous will be invalid, you need to restart continuous mode again.
+ * @note  When using oneshot statistics, the AE Environment Detector will be temporarily disabled
+ *        and will automatically recover once the oneshot is complete.
  * @param[in]  ae_ctlr  AE controller handle
  * @return
  *         - ESP_OK                On success

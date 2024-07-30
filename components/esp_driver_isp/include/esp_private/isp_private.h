@@ -40,9 +40,12 @@ extern "C" {
 #endif
 
 typedef enum {
-    ISP_FSM_INIT,
-    ISP_FSM_ENABLE,
-    ISP_FSM_START,
+    ISP_FSM_INIT,           // Controller is initialized, but not enabled
+    ISP_FSM_ENABLE,         // Controller is enabled, but is not running
+    ISP_FSM_START,          // Controller is in running
+
+    ISP_FSM_ONESHOT,        // Controller is in oneshot sampling
+    ISP_FSM_CONTINUOUS,     // Controller is in continuous sampling
 } isp_fsm_t;
 
 #if SOC_ISP_SUPPORTED

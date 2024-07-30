@@ -6,6 +6,7 @@
 
 #include <esp_types.h>
 #include <sys/lock.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -18,13 +19,12 @@ static const char *TAG = "ISP_AE";
 
 typedef struct isp_ae_controller_t {
     int                                id;
-    isp_fsm_t                          fsm;
+    _Atomic isp_fsm_t                  fsm;
     portMUX_TYPE                       spinlock;
     intr_handle_t                      intr_handle;
     int                                intr_priority;
     isp_proc_handle_t                  isp_proc;
     QueueHandle_t                      evt_que;
-    SemaphoreHandle_t                  stat_lock;
     int                                low_thresh;
     int                                high_thresh;
     esp_isp_ae_env_detector_evt_cbs_t  cbs;
@@ -67,9 +67,6 @@ static void s_isp_ae_free_controller(isp_ae_ctlr_t ae_ctlr)
         if (ae_ctlr->evt_que) {
             vQueueDeleteWithCaps(ae_ctlr->evt_que);
         }
-        if (ae_ctlr->stat_lock) {
-            vSemaphoreDeleteWithCaps(ae_ctlr->stat_lock);
-        }
         free(ae_ctlr);
     }
 }
@@ -90,10 +87,9 @@ esp_err_t esp_isp_new_ae_controller(isp_proc_handle_t isp_proc, const esp_isp_ae
     ESP_RETURN_ON_FALSE(ae_ctlr, ESP_ERR_NO_MEM, TAG, "no mem");
     ae_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_ae_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(ae_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for ae event queue");
-    ae_ctlr->stat_lock = xSemaphoreCreateBinaryWithCaps(ISP_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(ae_ctlr->stat_lock, ESP_ERR_NO_MEM, err1, TAG, "no mem for ae semaphore");
 
-    ae_ctlr->fsm = ISP_FSM_INIT;
+    atomic_init(&ae_ctlr->fsm, ISP_FSM_INIT);
+
     ae_ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ae_ctlr->isp_proc = isp_proc;
 
@@ -126,7 +122,7 @@ esp_err_t esp_isp_del_ae_controller(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && ae_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ae_ctlr->isp_proc->ae_ctlr == ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
-    ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&ae_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
     // Deregister the AE ISR
     ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(ae_ctlr->isp_proc, ISP_SUBMODULE_AE) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
@@ -140,23 +136,24 @@ esp_err_t esp_isp_del_ae_controller(isp_ae_ctlr_t ae_ctlr)
 esp_err_t esp_isp_ae_controller_enable(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && ae_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
+
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
     isp_ll_ae_clk_enable(ae_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(ae_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AE_MASK, true);
     isp_ll_ae_enable(ae_ctlr->isp_proc->hal.hw, true);
-    xSemaphoreGive(ae_ctlr->stat_lock);
 
-    ae_ctlr->fsm = ISP_FSM_ENABLE;
     return ESP_OK;
 }
 
 esp_err_t esp_isp_ae_controller_disable(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && ae_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
-    xSemaphoreTake(ae_ctlr->stat_lock, 0);
-    ae_ctlr->fsm = ISP_FSM_INIT;
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_INIT),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     isp_ll_ae_clk_enable(ae_ctlr->isp_proc->hal.hw, false);
     isp_ll_enable_intr(ae_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AE_MASK, false);
@@ -172,59 +169,52 @@ esp_err_t esp_isp_ae_controller_get_oneshot_statistics(isp_ae_ctlr_t ae_ctlr, in
 
     esp_err_t ret = ESP_OK;
     TickType_t ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    xSemaphoreTake(ae_ctlr->stat_lock, ticks);
-    ESP_GOTO_ON_FALSE(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "controller isn't in enable state");
 
-    // Reset the queue in case receiving the legacy data in the queue
-    xQueueReset(ae_ctlr->evt_que);
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_ONESHOT)) {
+        // Reset the queue in case receiving the legacy data in the queue
+        xQueueReset(ae_ctlr->evt_que);
 
-    // Disable the env detector when manual statistics.
-    // Otherwise, the env detector results may overwrite the manual statistics results when the statistics results are not read out in time
-    isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, 0, 0);
-    // Trigger the AE statistics manually
-    isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
-    // Wait the statistics to finish and receive the result from the queue
-    if ((ticks > 0) && xQueueReceive(ae_ctlr->evt_que, out_res, ticks) != pdTRUE) {
-        ret = ESP_ERR_TIMEOUT;
+        // Disable the env detector when manual statistics.
+        // Otherwise, the env detector results may overwrite the manual statistics results when the statistics results are not read out in time
+        isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, 0, 0);
+        // Trigger the AE statistics manually
+        isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
+        // Wait the statistics to finish and receive the result from the queue
+        if ((ticks > 0) && xQueueReceive(ae_ctlr->evt_que, out_res, ticks) != pdTRUE) {
+            ret = ESP_ERR_TIMEOUT;
+        }
+        // Re-enable the env detector after manual statistics.
+        isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
+    } else {
+        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
     }
-    // Re-enable the env detector after manual statistics.
-    isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
 
-    ae_ctlr->fsm = ISP_FSM_ENABLE;
-
-err:
-    xSemaphoreGive(ae_ctlr->stat_lock);
-
+    atomic_store(&ae_ctlr->fsm, ISP_FSM_ENABLE);
     return ret;
 }
 
 esp_err_t esp_isp_ae_controller_start_continuous_statistics(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    esp_err_t ret = ESP_OK;
-    if (xSemaphoreTake(ae_ctlr->stat_lock, 0) == pdFALSE) {
-        ESP_LOGW(TAG, "statistics lock is not acquired, controller is busy");
-        return ESP_ERR_INVALID_STATE;
+
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_CONTINUOUS)) {
+        isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
+    } else {
+        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
     }
-    ESP_GOTO_ON_FALSE(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "controller isn't in enable state");
 
-    ae_ctlr->fsm = ISP_FSM_START;
-
-    isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
-
-err:
-    xSemaphoreGive(ae_ctlr->stat_lock);
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t esp_isp_ae_controller_stop_continuous_statistics(isp_ae_ctlr_t ae_ctlr)
 {
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE_ISR(ae_ctlr->fsm == ISP_FSM_START, ESP_ERR_INVALID_STATE, TAG, "controller isn't in continuous state");
 
-    ae_ctlr->fsm = ISP_FSM_ENABLE;
-    xSemaphoreGive(ae_ctlr->stat_lock);
-
+    isp_fsm_t expected_fsm = ISP_FSM_CONTINUOUS;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE),
+                            ESP_ERR_INVALID_STATE, TAG, "controller is not running");
     return ESP_OK;
 }
 
@@ -234,8 +224,8 @@ esp_err_t esp_isp_ae_controller_stop_continuous_statistics(isp_ae_ctlr_t ae_ctlr
 esp_err_t esp_isp_ae_controller_set_env_detector(isp_ae_ctlr_t ae_ctlr, const esp_isp_ae_env_config_t *env_config)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && env_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "invalid fsm, should be called when in init state");
     ESP_RETURN_ON_FALSE(env_config->interval > 0, ESP_ERR_INVALID_STATE, TAG, "invalid interval, should be greater than 0");
+    ESP_RETURN_ON_FALSE(atomic_load(&ae_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
     isp_ll_clear_intr(ae_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AE_ENV);
     isp_ll_ae_env_detector_set_period(ae_ctlr->isp_proc->hal.hw, env_config->interval);
@@ -247,7 +237,7 @@ esp_err_t esp_isp_ae_controller_set_env_detector(isp_ae_ctlr_t ae_ctlr, const es
 esp_err_t esp_isp_ae_env_detector_register_event_callbacks(isp_ae_ctlr_t ae_ctlr, const esp_isp_ae_env_detector_evt_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(ae_ctlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ae_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&ae_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
 #if CONFIG_ISP_ISR_IRAM_SAEE
     if (cbs->on_env_statistics_done) {
@@ -270,8 +260,8 @@ esp_err_t esp_isp_ae_env_detector_register_event_callbacks(isp_ae_ctlr_t ae_ctlr
 esp_err_t esp_isp_ae_controller_set_env_detector_threshold(isp_ae_ctlr_t ae_ctlr, const esp_isp_ae_env_thresh_t *env_thresh)
 {
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE_ISR(ae_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "AE env detector isn't in enable state");
     ESP_RETURN_ON_FALSE_ISR((env_thresh->low_thresh != 0 && env_thresh->high_thresh != 0) && (env_thresh->low_thresh <= env_thresh->high_thresh), ESP_ERR_INVALID_STATE, TAG, "invalid AE env detector thresh");
+    ESP_RETURN_ON_FALSE(atomic_load(&ae_ctlr->fsm) == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     ae_ctlr->low_thresh = env_thresh->low_thresh;
     ae_ctlr->high_thresh = env_thresh->high_thresh;
@@ -307,7 +297,7 @@ bool IRAM_ATTR esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events)
         need_yield |= high_task_awake == pdTRUE;
 
         /* If started continuous sampling, then trigger the next AE sample */
-        if (ae_ctlr->fsm == ISP_FSM_START) {
+        if (atomic_load(&ae_ctlr->fsm) == ISP_FSM_START) {
             isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
         }
     }
