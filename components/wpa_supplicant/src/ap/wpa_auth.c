@@ -2671,12 +2671,6 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
     if (wpa_auth->wpa_ie != NULL) {
         os_free(wpa_auth->wpa_ie);
     }
-    if (wpa_auth->rsne_override != NULL) {
-	    os_free(wpa_auth->rsne_override);
-    }
-    if (wpa_auth->rsnxe_override != NULL) {
-	    os_free(wpa_auth->rsnxe_override);
-    }
     if (wpa_auth->group != NULL) {
         group = wpa_auth->group;
         while (group) {

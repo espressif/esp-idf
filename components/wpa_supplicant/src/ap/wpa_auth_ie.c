@@ -523,42 +523,6 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 	memcpy(wpa_auth->wpa_ie, buf, pos - buf);
 	wpa_auth->wpa_ie_len = pos - buf;
 
-	if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
-	    wpa_auth->conf.rsn_override_key_mgmt) {
-		res = wpa_write_rsne_override(&wpa_auth->conf, buf,
-					      sizeof(buf));
-		if (res < 0)
-			return res;
-		os_free(wpa_auth->rsne_override);
-		wpa_auth->rsne_override = os_malloc(res - 4);
-		if (!wpa_auth->rsne_override)
-			return -1;
-		pos = wpa_auth->rsne_override;
-		*pos++ = WLAN_EID_RSN;
-		*pos++ = res - 2 - 4;
-		os_memcpy(pos, &buf[2 + 4], res - 2 - 4);
-	}
-
-	if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
-	    (wpa_auth->conf.rsn_override_key_mgmt)) {
-		res = wpa_write_rsnxe_override(&wpa_auth->conf, buf,
-					       sizeof(buf));
-		if (res < 0)
-			return res;
-		os_free(wpa_auth->rsnxe_override);
-		if (res == 0) {
-			wpa_auth->rsnxe_override = NULL;
-			return 0;
-		}
-		wpa_auth->rsnxe_override = os_malloc(res - 4);
-		if (!wpa_auth->rsnxe_override)
-			return -1;
-		pos = wpa_auth->rsnxe_override;
-		*pos++ = WLAN_EID_RSNX;
-		*pos++ = res - 2 - 4;
-		os_memcpy(pos, &buf[2 + 4], res - 2 - 4);
-	}
-
 	return 0;
 }
 

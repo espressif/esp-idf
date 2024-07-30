@@ -186,8 +186,6 @@ struct wpa_authenticator {
 
 	u8 *wpa_ie;
 	size_t wpa_ie_len;
-	u8 *rsne_override; /* RSNE with overridden payload */
-	u8 *rsnxe_override; /* RSNXE with overridden payload */
 	struct rsn_pmksa_cache *pmksa;
 
 	u8 addr[ETH_ALEN];
