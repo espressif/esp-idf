@@ -123,7 +123,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
-static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
+static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool cs_use_iomux, int cs_id)
 {
     //Not using spicommon_cs_initialize since we don't want to put the whole
     //spi_periph_signal into the DRAM. Copy these data from flash before the
@@ -140,7 +140,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     gpio_hal_input_enable(&gpio_hal, cs_io_num);
-    if (use_iomux) {
+    if (cs_use_iomux) {
         gpio_hal_func_sel(&gpio_hal, cs_io_num, spics_func);
     } else {
         gpio_hal_output_enable(&gpio_hal, cs_io_num);
@@ -173,6 +173,16 @@ static bool bus_using_iomux(spi_host_device_t host)
     CHECK_IOMUX_PIN(host, spiwp);
     CHECK_IOMUX_PIN(host, spihd);
     return true;
+}
+
+static bool cs_using_iomux(const esp_flash_spi_device_config_t *config)
+{
+    bool use_iomux = true;
+    CHECK_IOMUX_PIN(config->host_id, spics);
+    if (config->cs_io_num != spi_periph_signal[config->host_id].spics_in) {
+        use_iomux = false;
+    }
+    return use_iomux;
 }
 
 static esp_err_t acquire_spi_device(const esp_flash_spi_device_config_t *config, int* out_dev_id, spi_bus_lock_dev_handle_t* out_dev_handle)
@@ -274,7 +284,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     }
 
     // The cs_id inside `config` is deprecated, use the `dev_id` provided by the bus lock instead.
-    cs_initialize(chip, config, use_iomux, dev_id);
+    cs_initialize(chip, config, cs_using_iomux(config), dev_id);
     *out_chip = chip;
     return ret;
 fail:

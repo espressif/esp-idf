@@ -68,7 +68,7 @@
 #define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C5
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C6
 #define SPI1_CS_IO          26  //the pin which is usually used by the PSRAM cs
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
@@ -88,14 +88,14 @@
 #define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2
 
-#define FSPI_PIN_NUM_MOSI   7
-#define FSPI_PIN_NUM_MISO   2
-#define FSPI_PIN_NUM_CLK    6
-#define FSPI_PIN_NUM_HD     4
-#define FSPI_PIN_NUM_WP     5
-#define FSPI_PIN_NUM_CS     17
+#define FSPI_PIN_NUM_MOSI   5
+#define FSPI_PIN_NUM_MISO   0
+#define FSPI_PIN_NUM_CLK    4
+#define FSPI_PIN_NUM_HD     3
+#define FSPI_PIN_NUM_WP     2
+#define FSPI_PIN_NUM_CS     1
 
 // Just use the same pins for HSPI
 #define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
