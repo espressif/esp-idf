@@ -3,10 +3,6 @@
 components/esp_driver_i2c/test_apps/i2c_test_apps:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
-      temporary: true
-      reason: lack of runners, c5 test failed  # TODO: [ESP32P4] IDF-8960, [ESP32C5] IDF-10332
   depends_components:
     - esp_driver_i2c
     # Following dependency is needed because they might increase lazy installed memory
