@@ -235,8 +235,8 @@ typedef struct {
     uint16_t addrBitLen;         /*!< Address byte length*/
     uint32_t *txData;            /*!< Point to send data buffer*/
     uint16_t txDataBitLen;       /*!< Send data byte length.*/
-    uint32_t *rxData;            /*!< Point to recevie data buffer*/
-    uint16_t rxDataBitLen;       /*!< Recevie Data byte length.*/
+    uint32_t *rxData;            /*!< Point to receive data buffer*/
+    uint16_t rxDataBitLen;       /*!< Receive Data byte length.*/
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
@@ -607,7 +607,7 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
 
     // setp3: keep cs as high level
     //        send 128 cycles clock
-    //        send 1 bit high levle in ninth clock from the back to PSRAM SIO1
+    //        send 1 bit high level in ninth clock from the back to PSRAM SIO1
     static gpio_hal_context_t _gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -955,7 +955,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
             /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
             We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
-            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
+            the GPIO matrix causes the delay. We use GPIO28/29 (which is not in any package but has pad logic in
             silicon) as a temporary pad for this. So the signal path is:
             SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
             */
