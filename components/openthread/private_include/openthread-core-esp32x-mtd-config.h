@@ -14,7 +14,7 @@
  * The platform-specific string to insert into the OpenThread version string.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_IDF_TARGET
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -131,7 +131,7 @@
  * Define to the full name of this package.
  *
  */
-#define PACKAGE_NAME "openthread-esp32"
+#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
 
 /**
  * @def PACKAGE_STRING
@@ -169,13 +169,13 @@
 #define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS 3
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE
+ * @def OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE
  *
  * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
  * `RadioSpinel` platform is used.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE 1024
+#define OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
