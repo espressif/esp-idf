@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,10 @@ esp_bluedroid_status_t esp_bluedroid_get_status(void);
 esp_err_t esp_bluedroid_enable(void);
 
 /**
- * @brief     Disable bluetooth, must prior to esp_bluedroid_deinit().
+ * @brief     Disable Bluetooth, must be called prior to esp_bluedroid_deinit().
+ *
+ * @note      Before calling this API, ensure that all activities related to
+ *            the application, such as connections, scans, etc., are properly closed.
  *
  * @return
  *            - ESP_OK : Succeed
