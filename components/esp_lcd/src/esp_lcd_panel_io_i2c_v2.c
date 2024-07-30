@@ -121,10 +121,10 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
     bool send_param = (lcd_cmd >= 0);
 
-    int write_size = 0;
-    uint8_t write_buffer[CONTROL_PHASE_LENGTH + CMD_LENGTH] = {0};
-
     if (send_param) {
+        int write_size = 0;
+        uint8_t write_buffer[CONTROL_PHASE_LENGTH + CMD_LENGTH] = {0};
+
         if (i2c_panel_io->control_phase_enabled) {
             write_buffer[0] = i2c_panel_io->control_phase_cmd;
             write_size += 1;
@@ -136,9 +136,12 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
             memcpy(write_buffer + write_size, cmds + (sizeof(cmds) - cmds_size), cmds_size);
             write_size += cmds_size;
         }
+
+        ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
+    } else {
+        ESP_GOTO_ON_ERROR(i2c_master_receive(i2c_panel_io->i2c_handle, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
     }
 
-    ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
     return ESP_OK;
 err:
     return ret;
