@@ -52,7 +52,8 @@ endif()
 if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     list(APPEND srcs
         "lp_core/lp_core.c"
-        "lp_core/shared/ulp_lp_core_memory_shared.c")
+        "lp_core/shared/ulp_lp_core_memory_shared.c"
+        "lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
     if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
         list(APPEND srcs "lp_core/lp_core_uart.c")
