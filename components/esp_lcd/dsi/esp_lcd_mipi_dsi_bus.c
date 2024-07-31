@@ -105,8 +105,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     // enable CRC reception and ECC reception, error correction, and reporting
     mipi_dsi_host_ll_enable_rx_crc(hal->host, true);
     mipi_dsi_host_ll_enable_rx_ecc(hal->host, true);
-    // enable sending the EoTp packet at the end of each transmission
-    mipi_dsi_host_ll_enable_tx_eotp(hal->host, true, true);
+    // enable sending the EoTp packet at the end of each transmission for HS mode
+    mipi_dsi_host_ll_enable_tx_eotp(hal->host, true, false);
 
     // Set the divider to get the Time Out clock, clock source is the high-speed byte clock
     mipi_dsi_host_ll_set_timeout_clock_division(hal->host, bus_config->lane_bit_rate_mbps / 8 / MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ);
