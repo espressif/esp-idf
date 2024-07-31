@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#ifdef __clang__ // TODO LLVM-330
 #pragma once
 
 #include <stddef.h>
@@ -63,3 +63,8 @@ int alphasort(const struct dirent **d1, const struct dirent **d2);
 #ifdef __cplusplus
 }
 #endif
+
+#else // __clang__ TODO: IDF-10675
+#include_next <sys/dirent.h>
+#include <dirent.h>
+#endif // __clang__
