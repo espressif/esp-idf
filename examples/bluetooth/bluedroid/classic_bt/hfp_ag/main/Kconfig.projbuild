@@ -1,0 +1,7 @@
+menu "HFP Example Configuration"
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_HFP_AG"
+        help
+            Use this option to set local device name.
+endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -25,11 +25,11 @@
 
 #define SPP_TAG "SPP_ACCEPTOR_DEMO"
 #define SPP_SERVER_NAME "SPP_SERVER"
-#define EXAMPLE_DEVICE_NAME "ESP_SPP_ACCEPTOR"
 #define SPP_SHOW_DATA 0
 #define SPP_SHOW_SPEED 1
 #define SPP_SHOW_MODE SPP_SHOW_SPEED    /*Choose show mode: show data or speed*/
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
 static const bool esp_spp_enable_l2cap_ertm = true;
 
@@ -90,7 +90,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         if (param->start.status == ESP_SPP_SUCCESS) {
             ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT handle:%"PRIu32" sec_id:%d scn:%d", param->start.handle, param->start.sec_id,
                      param->start.scn);
-            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(local_device_name);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_START_EVT status:%d", param->start.status);
