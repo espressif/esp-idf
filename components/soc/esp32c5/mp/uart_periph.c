@@ -41,7 +41,6 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             }
         },
         .irq = ETS_UART0_INTR_SOURCE,
-        .module = PERIPH_UART0_MODULE,
     },
 
     { // HP UART1
@@ -75,7 +74,6 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             },
         },
         .irq = ETS_UART1_INTR_SOURCE,
-        .module = PERIPH_UART1_MODULE,
     },
 
     { // LP UART0
@@ -109,6 +107,5 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             },
         },
         .irq = ETS_LP_UART_INTR_SOURCE,
-        .module = PERIPH_LP_UART0_MODULE,
     },
 };
