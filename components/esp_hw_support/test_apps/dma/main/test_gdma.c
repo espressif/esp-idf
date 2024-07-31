@@ -14,6 +14,7 @@
 #include "esp_heap_caps.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "hal/dma_types.h"
 #include "soc/soc_caps.h"
 #include "hal/gdma_ll.h"
@@ -21,6 +22,9 @@
 #include "hal/cache_hal.h"
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 TEST_CASE("GDMA channel allocation", "[GDMA]")
 {
@@ -147,22 +151,9 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 #endif // GDMA_LL_AXI_PAIRS_PER_GROUP >= 2
 }
 
-static bool test_gdma_m2m_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
+                                     gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, size_t sram_alignment, bool dma_link_in_ext_mem)
 {
-    BaseType_t task_woken = pdFALSE;
-    SemaphoreHandle_t done_sem = (SemaphoreHandle_t)user_data;
-    xSemaphoreGiveFromISR(done_sem, &task_woken);
-    return task_woken == pdTRUE;
-}
-
-static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan, bool dma_link_in_ext_mem)
-{
-    size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    gdma_rx_event_callbacks_t rx_cbs = {
-        .on_recv_eof = test_gdma_m2m_rx_eof_callback,
-    };
-    SemaphoreHandle_t done_sem = xSemaphoreCreateBinary();
-    TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, done_sem));
 
     gdma_strategy_config_t strategy = {
         .auto_update_desc = true,
@@ -189,24 +180,46 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
             .check_owner = true,
         }
     };
-    gdma_link_list_handle_t tx_link_list = NULL;
-    TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, &tx_link_list));
-    // allocate the source buffer from SRAM
-    uint8_t *src_data = heap_caps_calloc(1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    TEST_ASSERT_NOT_NULL(src_data);
-
+    TEST_ESP_OK(gdma_new_link_list(&tx_link_list_config, tx_link_list));
     // create DMA link list for RX channel
     gdma_link_list_config_t rx_link_list_config = {
         .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA
-        .num_items = 1,
+        .num_items = 5,
         .flags = {
             .items_in_ext_mem = dma_link_in_ext_mem,
             .check_owner = true,
         },
     };
+    TEST_ESP_OK(gdma_new_link_list(&rx_link_list_config, rx_link_list));
+}
+
+static bool test_gdma_m2m_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    BaseType_t task_woken = pdFALSE;
+    SemaphoreHandle_t done_sem = (SemaphoreHandle_t)user_data;
+    xSemaphoreGiveFromISR(done_sem, &task_woken);
+    return task_woken == pdTRUE;
+}
+
+static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan, bool dma_link_in_ext_mem)
+{
+    size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    gdma_rx_event_callbacks_t rx_cbs = {
+        .on_recv_eof = test_gdma_m2m_rx_eof_callback,
+    };
+    SemaphoreHandle_t done_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(done_sem);
+    TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, done_sem));
+
+    gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    TEST_ESP_OK(gdma_new_link_list(&rx_link_list_config, &rx_link_list));
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, dma_link_in_ext_mem);
+
+    // allocate the source buffer from SRAM
+    uint8_t *src_data = heap_caps_calloc(1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(src_data);
+
     // allocate the destination buffer from SRAM
     uint8_t *dst_data = heap_caps_calloc(1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(dst_data);
@@ -270,7 +283,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     TEST_ESP_OK(gdma_start(rx_chan, gdma_link_get_head_addr(rx_link_list)));
     TEST_ESP_OK(gdma_start(tx_chan, gdma_link_get_head_addr(tx_link_list)));
 
-    xSemaphoreTake(done_sem, portMAX_DELAY);
+    xSemaphoreTake(done_sem, 1000 / portTICK_PERIOD_MS);
 
     if (sram_alignment) {
         // the destination data are not reflected to the cache, so do an invalidate to ask the cache load new data
@@ -343,4 +356,147 @@ TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif // SOC_AXI_GDMA_SUPPORTED
+}
+
+typedef struct {
+    SemaphoreHandle_t done_sem;
+    dma_buffer_split_array_t *align_array;
+    size_t split_alignment;
+    bool need_invalidate;
+} test_gdma_context_t;
+
+static bool test_gdma_m2m_unalgined_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    BaseType_t task_woken = pdFALSE;
+    test_gdma_context_t *user_ctx = (test_gdma_context_t*)user_data;
+    for (int i = 0; i < 3; i++) {
+        if(user_ctx->align_array->aligned_buffer[i].aligned_buffer && user_ctx->need_invalidate) {
+            TEST_ESP_OK(esp_cache_msync(user_ctx->align_array->aligned_buffer[i].aligned_buffer, ALIGN_UP(user_ctx->align_array->aligned_buffer[i].length, user_ctx->split_alignment), ESP_CACHE_MSYNC_FLAG_DIR_M2C));
+        }
+    }
+    TEST_ESP_OK(esp_dma_merge_aligned_buffers(user_ctx->align_array));
+    xSemaphoreGiveFromISR(user_ctx->done_sem, &task_woken);
+    return task_woken == pdTRUE;
+}
+
+static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_data, size_t data_length, size_t offset_len, size_t split_alignment)
+{
+    TEST_ASSERT_NOT_NULL(src_data);
+    TEST_ASSERT_NOT_NULL(dst_data);
+    gdma_channel_handle_t tx_chan = NULL;
+    gdma_channel_handle_t rx_chan = NULL;
+    gdma_channel_alloc_config_t tx_chan_alloc_config = {};
+    gdma_channel_alloc_config_t rx_chan_alloc_config = {};
+    tx_chan_alloc_config = (gdma_channel_alloc_config_t) {
+        .direction = GDMA_CHANNEL_DIRECTION_TX,
+        .flags.reserve_sibling = true,
+    };
+    TEST_ESP_OK(gdma_new_ahb_channel(&tx_chan_alloc_config, &tx_chan));
+    rx_chan_alloc_config = (gdma_channel_alloc_config_t) {
+        .direction = GDMA_CHANNEL_DIRECTION_RX,
+        .sibling_chan = tx_chan,
+    };
+    TEST_ESP_OK(gdma_new_ahb_channel(&rx_chan_alloc_config, &rx_chan));
+    size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+
+    gdma_link_list_handle_t tx_link_list = NULL;
+    gdma_link_list_handle_t rx_link_list = NULL;
+    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, sram_alignment, false);
+
+    // prepare the source data
+    for (int i = 0; i < data_length; i++) {
+        src_data[i] = i;
+    }
+    if (sram_alignment) {
+        // do write-back for the source data because it's in the cache
+        TEST_ESP_OK(esp_cache_msync(src_data, ALIGN_UP(data_length, sram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+    }
+
+    gdma_buffer_mount_config_t tx_buf_mount_config[] = {
+        [0] = {
+            .buffer = src_data,
+            .length = data_length,
+            .flags = {
+                .mark_eof = true,
+                .mark_final = true, // using singly list, so terminate the link here
+            }
+        }
+    };
+    TEST_ESP_OK(gdma_link_mount_buffers(tx_link_list, 0, tx_buf_mount_config, sizeof(tx_buf_mount_config) / sizeof(gdma_buffer_mount_config_t), NULL));
+
+    // allocate stash_buffer, should be freed by the user
+    void *stash_buffer = heap_caps_aligned_calloc(split_alignment, 2, split_alignment, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    size_t stash_buffer_len = 2 * split_alignment;
+    dma_buffer_split_array_t align_array = {0};
+    gdma_buffer_mount_config_t rx_aligned_buf_mount_config[3] = {0};
+
+    TEST_ESP_OK(esp_dma_split_buffer_to_aligned(dst_data + offset_len, data_length, stash_buffer, stash_buffer_len, split_alignment, &align_array));
+    for (int i = 0; i < 3; i++) {
+        rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
+        rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
+    }
+    TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
+
+    gdma_rx_event_callbacks_t rx_cbs = {
+        .on_recv_eof = test_gdma_m2m_unalgined_rx_eof_callback,
+    };
+    SemaphoreHandle_t done_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(done_sem);
+    test_gdma_context_t user_ctx = {
+        .done_sem = done_sem,
+        .align_array = &align_array,
+        .split_alignment = split_alignment,
+        .need_invalidate = sram_alignment ? true : false,
+    };
+    TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, &user_ctx));
+
+    TEST_ESP_OK(gdma_start(rx_chan, gdma_link_get_head_addr(rx_link_list)));
+    TEST_ESP_OK(gdma_start(tx_chan, gdma_link_get_head_addr(tx_link_list)));
+
+    xSemaphoreTake(done_sem, 1000 / portTICK_PERIOD_MS);
+
+    // validate the destination data
+    for (int i = 0; i < data_length; i++) {
+        TEST_ASSERT_EQUAL(i % 256 , dst_data[i + offset_len]);
+    }
+
+    free(stash_buffer);
+    TEST_ESP_OK(gdma_del_link_list(tx_link_list));
+    TEST_ESP_OK(gdma_del_link_list(rx_link_list));
+    TEST_ESP_OK(gdma_del_channel(tx_chan));
+    TEST_ESP_OK(gdma_del_channel(rx_chan));
+    vSemaphoreDelete(done_sem);
+}
+
+TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
+{
+    uint8_t *sbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
+    size_t split_alignment = 64;
+    // case buffer len less than buffer alignment
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 0, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 4, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 2, split_alignment);
+
+    // case buffer head aligned
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 246, 0, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8182, 0, split_alignment);
+
+    // case buffer tail aligned
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 246, 10, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8182, 10, split_alignment);
+
+    // case buffer unaligned
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 100, 10, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 10, 60, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 256, 10, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8192, 10, split_alignment);
+
+    // case buffer full aligned
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 256, 0, split_alignment);
+    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8192, 0, split_alignment);
+
+    free(sbuf);
+    free(dbuf);
 }
