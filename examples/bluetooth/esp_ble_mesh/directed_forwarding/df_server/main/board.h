@@ -38,6 +38,8 @@ extern "C" {
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8
 #define LED_B GPIO_NUM_8
+#elif defined(CONFIG_BLE_MESH_ESP32C5_DEV)
+#define BLE_MESH_LED_STRIP_IO GPIO_NUM_8
 #endif
 
 #define LED_ON  1
