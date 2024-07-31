@@ -343,12 +343,12 @@ config BT_LE_CONTROLLER_LOG_DUMP_ONLY
             Only operate in dump mode
 
 config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    bool "Storage ble controller log to flash(experimental)"
+    bool "Store ble controller logs to flash(Experimental)"
     depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
     depends on BT_LE_CONTROLLER_LOG_ENABLED
     default n
     help
-            Storage ble controller log to flash.
+            Store ble controller logs to flash memory.
 
 config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
     int "size of ble controller log partition(Multiples of 4K)"
