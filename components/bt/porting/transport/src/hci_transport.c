@@ -72,6 +72,7 @@ hci_transport_controller_evt_tx(uint8_t *hci_ev, void *arg)
     uint32_t len;
 
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        r_ble_hci_trans_buf_free(hci_ev);
         return -1;
     }
 
@@ -85,6 +86,7 @@ hci_transport_controller_acl_tx(struct os_mbuf *om, void *arg)
 {
     uint16_t len;
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        os_mbuf_free_chain(om);
         return -1;
     }
 
