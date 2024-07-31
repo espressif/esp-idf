@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -29,12 +29,12 @@
 
 #define L2CAP_TAG                     "L2CAP_TAG"
 #define SDP_TAG                       "SDP_TAG"
-#define EXAMPLE_DEVICE_NAME           "ESP_BT_L2CAP_SERVER"
 #define L2CAP_DATA_LEN                100
 #define BT_UNUSED_RFCOMM              -1
 #define BT_L2CAP_DYNMIC_PSM           0x1001
 #define BT_UNKONWN_PROFILE_VERSION    0x0102
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 static esp_bt_l2cap_cntl_flags_t sec_mask = ESP_BT_L2CAP_SEC_AUTHENTICATE;
 static char *sdp_service_name = "Unknown_profile";
 static const uint8_t  UUID_UNKNOWN[] = {0x00, 0x00, 0x10, 0x10, 0x00, 0x00, 0x10, 0x00,
@@ -269,7 +269,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
         ESP_LOGI(SDP_TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d", sdp_param->create_record.status);
         if (sdp_param->create_record.status == ESP_SDP_SUCCESS) {
-            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(local_device_name);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         }
         break;
