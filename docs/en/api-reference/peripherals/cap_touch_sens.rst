@@ -14,7 +14,7 @@ The sensing pads can be arranged in different combinations (e.g., matrix, slider
 
 For design, operation, and control registers of a touch sensor, see **{IDF_TARGET_NAME} Technical Reference Manual** > **On-Chip Sensors and Analog Signal Processing** [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
 
-In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
+In-depth design details of touch sensors and firmware development guidelines for the {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
 Overview of Capacitive Touch Sensor Versions
 -----------------------------------------------
@@ -37,11 +37,57 @@ Overview of Touch Sensor Channels
 
 .. only:: esp32p4
 
-    ========= ===== ===== ===== ===== ===== ===== ===== ===== ====== ====== ====== ====== ====== ====== ==========
-     Channel   CH0   CH1   CH2   CH3   CH4   CH5   CH6   CH7   CH8    CH9    CH10   CH11   CH12   CH13    CH14
-    --------- ----- ----- ----- ----- ----- ----- ----- ----- ------ ------ ------ ------ ------ ------ ----------
-      GPIO     IO2   IO3   IO4   IO5   IO6   IO7   IO8   IO9   IO10   IO11   IO12   IO13   IO14   IO15   Internal
-    ========= ===== ===== ===== ===== ===== ===== ===== ===== ====== ====== ====== ====== ====== ====== ==========
+    .. list-table::
+      :header-rows: 1
+      :widths: 20  20
+
+      * - Channel
+        - GPIO
+
+      * - CH0
+        - IO2
+
+      * - CH1
+        - IO3
+
+      * - CH2
+        - IO4
+
+      * - CH3
+        - IO5
+
+      * - CH4
+        - IO6
+
+      * - CH5
+        - IO7
+
+      * - CH6
+        - IO8
+
+      * - CH7
+        - IO9
+
+      * - CH8
+        - IO10
+
+      * - CH9
+        - IO11
+
+      * - CH10
+        - IO12
+
+      * - CH11
+        - IO13
+
+      * - CH12
+        - IO14
+
+      * - CH13
+        - IO15
+
+      * - CH14
+        - Internal
 
 Terminology in the Driver
 ----------------------------
@@ -51,11 +97,11 @@ Terminology in the Driver
 
 .. only:: SOC_TOUCH_SUPPORT_FREQ_HOP
 
-  - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. {IDF_TARGET_NAME} supports multiple sets of sample configuration, which means it can support frequency hopping.
+  - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. The {IDF_TARGET_NAME} supports multiple sets of sample configuration, which means it can support frequency hopping.
 
 .. only:: not SOC_TOUCH_SUPPORT_FREQ_HOP
 
-  - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. {IDF_TARGET_NAME} only support one set of sample configuration, so it doesn't support frequency hopping.
+  - **Touch Sensor Sampling Configuration**: Touch sensor sampling configuration refers to all the hardware configurations that related to the sampling. It can  determine how the touch channels sample by setting the number of charging times, charging frequency, measurement interval, etc. The {IDF_TARGET_NAME} only support one set of sample configuration, so it doesn't support frequency hopping.
 
 File Structure
 -----------------
@@ -106,7 +152,7 @@ Categorized by functionality, the APIs of Capacitive Touch Sensor mainly include
 .. _touch-ctrl:
 
 Touch Sensor Controller Management
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Touch Sensor is controlled by controller handle  :cpp:type:`touch_sensor_handle_t`, it can be initialized and allocated by :cpp:func:`touch_sensor_new_controller`.
 
@@ -144,7 +190,7 @@ You can also update the configurations via :cpp:func:`touch_sensor_reconfig_cont
 .. _touch-chan:
 
 Touch Sensor Channel Management
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are multiple touch channels in the touch sensor module, the touch sensor channel is controlled by the channel handle :cpp:type:`touch_channel_handle_t`. It can be initialized and allocated by :cpp:func:`touch_sensor_new_channel`.
 
@@ -247,7 +293,7 @@ After finished the configuration of the touch controller and touch channels, :cp
 .. _touch-conti-scan:
 
 Continuous Scan
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 With the touch controller enabled, :cpp:func:`touch_sensor_start_continuous_scanning` can be called to start the continuous scanning to all the registered touch channels. The read data of these touch channels will be updated automatically in each scan. Calling :cpp:func:`touch_sensor_stop_continuous_scanning` can stop the continuous scan.
 
@@ -262,13 +308,13 @@ With the touch controller enabled, :cpp:func:`touch_sensor_start_continuous_scan
 .. _touch-oneshot-scan:
 
 Oneshot Scan
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 With the touch controller enabled, :cpp:func:`touch_sensor_trigger_oneshot_scanning` can be called to trigger an one-time scan to all the registered touch channels. Note that oneshot scan is a blocking function, it will keep blocking and only return when the scan is finished. Moreover, you can't trigger an oneshot scan after the continuous scan has started.
 
 .. code-block:: c
 
-    // Trigger an oneshot scan with timeout 1000ms
+    // Trigger an oneshot scan with timeout 1000 ms
     ESP_ERROR_CHECK(touch_sensor_trigger_oneshot_scanning(sens_handle, 1000));
 
 .. _touch-benchmark:
@@ -276,7 +322,7 @@ With the touch controller enabled, :cpp:func:`touch_sensor_trigger_oneshot_scann
 Benchmark Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Normally, you don't have to set the benchmark manually, but you can force reset the benchmark to the current smooth value by calling  :cpp:func:`touch_channel_config_benchmark` when necessary
+Normally, you don't have to set the benchmark manually, but you can force reset the benchmark to the current smooth value by calling  :cpp:func:`touch_channel_config_benchmark` when necessary.
 
 .. code-block:: c
 
@@ -289,13 +335,13 @@ Normally, you don't have to set the benchmark manually, but you can force reset 
 .. _touch-read:
 
 Read Measurement Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Call :cpp:func:`touch_channel_read_data` to read the data with different types. Like, benchmark, smooth data, etc. You can refer to :cpp:type:`touch_chan_data_type_t` for the supported data types.
 
 .. only:: SOC_TOUCH_SUPPORT_FREQ_HOP
 
-    {IDF_TARGET_NAME} supports frequency hopping by configuring multiple set of sample configurations, :cpp:func:`touch_channel_read_data` can read out the data of each sample configuration in a single call, you can determine the sample configuration number by  :cpp:member:`touch_sensor_config_t::sample_cfg_num`, and pass an array (which length is not smaller than the configuration number) to the third parameter ``*data``, so that all the measured data of this channel will be stored in the array.
+    The {IDF_TARGET_NAME} supports frequency hopping by configuring multiple set of sample configurations, :cpp:func:`touch_channel_read_data` can read out the data of each sample configuration in a single call, you can determine the sample configuration number by  :cpp:member:`touch_sensor_config_t::sample_cfg_num`, and pass an array (which length is not smaller than the configuration number) to the third parameter ``*data``, so that all the measured data of this channel will be stored in the array.
 
 .. code-block:: c
 
@@ -311,7 +357,7 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     Waterproof Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} supports waterproof. Waterproof can be registered by calling :cpp:func:`touch_sensor_config_waterproof` and specify the configurations :cpp:type:`touch_waterproof_config_t`. There are two parts of the waterproof function:
+    The {IDF_TARGET_NAME} supports waterproof. Waterproof can be registered by calling :cpp:func:`touch_sensor_config_waterproof` and specify the configurations :cpp:type:`touch_waterproof_config_t`. There are two parts of the waterproof function:
 
     - Immersion (in-water) proof: :cpp:member:`touch_waterproof_config_t::guard_chan` can be specified for detecting immersion. It is usually designed as a ring on the PCB, which surrounds all the other touch pads. When this guard ring channel is triggered, that means the touch panel is immersed by water, all the touch channels will stop measuring to avoid falsely triggering.
     - Moisture (water-drop) proof: :cpp:member:`touch_waterproof_config_t::shield_chan` can be specified for detecting moisture. It usually uses the grid layout on the PCB, which covers the whole touch panel. The shield channel will charge and discharge synchronously with the current touch channel, when there is a water droplet covers both shield channel and normal touch channel, :cpp:member:`touch_waterproof_config_t::shield_drv` can strengthen the electrical coupling caused by the water droplets, and then reconfigure the active threshold based on the disturbance to eliminate the influence that introduced by the water droplet.
@@ -337,7 +383,7 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     Proximity Sensing Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} supports proximity sensing. Proximity sensing can be registered by calling :cpp:func:`touch_sensor_config_proximity_sensing` and specify the configurations :cpp:type:`touch_proximity_config_t`.
+    The {IDF_TARGET_NAME} supports proximity sensing. Proximity sensing can be registered by calling :cpp:func:`touch_sensor_config_proximity_sensing` and specify the configurations :cpp:type:`touch_proximity_config_t`.
 
     Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times` and the charging times of the proximity channel in one scan can be determined by :cpp:member:`touch_proximity_config_t::charge_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
 
@@ -364,7 +410,7 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     Sleep Wake-up Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} supports waking-up the chip from light sleep or deep sleep with the touch sensor as a wake-up source. The wake-up functionality can be registered by calling  :cpp:func:`touch_sensor_config_sleep_wakeup` and specifying the configurations :cpp:type:`touch_sleep_config_t`.
+    The {IDF_TARGET_NAME} supports waking-up the chip from light sleep or deep sleep with the touch sensor as a wake-up source. The wake-up functionality can be registered by calling  :cpp:func:`touch_sensor_config_sleep_wakeup` and specifying the configurations :cpp:type:`touch_sleep_config_t`.
 
     After registering the touch sensor sleep wake-up, the chip will continue to sample the touch channels after sleep, which will increase the power consumption during the sleep. To reduce the sleep power consumption, you can reduce the number of charging and discharging times, increase the sampling interval, etc.
 
@@ -405,12 +451,11 @@ Application Examples
 
     - Touch sensor basic example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}`.
 
-API 参考
--------------
+API Reference
+---------------
 
 .. only:: esp32p4
 
     .. include-build-file:: inc/touch_sens.inc
     .. include-build-file:: inc/touch_sens_types.inc
     .. include-build-file:: inc/touch_version_types.inc
-
