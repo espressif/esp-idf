@@ -103,6 +103,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
 config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
