@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 // TODO: ZB-93, rewrite this file using regdesc tools when IEEE802154.csv is ready.
-#define IEEE802154_REG_BASE              0x600A3000
 
 #define IEEE802154_COMMAND_REG (IEEE802154_REG_BASE + 0x0000)
 #define IEEE802154_OPCODE 0x000000FF

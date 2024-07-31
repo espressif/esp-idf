@@ -15,11 +15,19 @@ examples/zigbee/esp_zigbee_gateway:
 examples/zigbee/esp_zigbee_rcp:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: Not supported yet
   <<: *zigbee_dependencies
 
 examples/zigbee/light_sample:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: Not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c6"
       temporary: true

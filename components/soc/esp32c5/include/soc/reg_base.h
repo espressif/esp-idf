@@ -78,6 +78,7 @@
 
 #define PWDET_CONF_REG                            0x600A0810
 #define DR_REG_I2C_ANA_MST_BASE                   0x600AF800
+#define IEEE802154_REG_BASE                       0x600A3000
 
 /**
  * @brief LP System (RTC) Modules
