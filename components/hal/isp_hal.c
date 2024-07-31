@@ -70,6 +70,31 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
 
     return triggered_events;
 }
+
+/*---------------------------------------------------------------
+                      Color Correction Matrix
+---------------------------------------------------------------*/
+bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
+{
+    isp_ll_ccm_gain_t fp_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION] = {};
+    hal_utils_fixed_point_t fp_cfg = {
+        .int_bit = ISP_LL_CCM_MATRIX_INT_BITS,
+        .frac_bit = ISP_LL_CCM_MATRIX_FRAC_BITS,
+        .saturation = saturation,
+    };
+    int err_level = saturation ? -1 : 0;
+    /* Transfer the float type to fixed point */
+    for (int i = 0; i < ISP_CCM_DIMENSION; i++) {
+        for (int j = 0; j < ISP_CCM_DIMENSION; j++) {
+            if (hal_utils_float_to_fixed_point_32b(flt_matrix[i][j], &fp_cfg, &fp_matrix[i][j].val) < err_level) {
+                return false;
+            }
+        }
+    }
+    isp_ll_ccm_set_matrix(hal->hw, fp_matrix);
+    return true;
+}
+
 /*---------------------------------------------------------------
                             AWB
 ---------------------------------------------------------------*/

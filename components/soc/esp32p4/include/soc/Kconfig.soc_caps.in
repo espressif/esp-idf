@@ -803,6 +803,10 @@ config SOC_ISP_BF_SUPPORTED
     bool
     default y
 
+config SOC_ISP_CCM_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_DVP_SUPPORTED
     bool
     default y
@@ -832,6 +836,10 @@ config SOC_ISP_BF_TEMPLATE_X_NUMS
     default 3
 
 config SOC_ISP_BF_TEMPLATE_Y_NUMS
+    int
+    default 3
+
+config SOC_ISP_CCM_DIMENSION
     int
     default 3
 
