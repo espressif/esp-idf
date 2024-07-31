@@ -102,3 +102,12 @@ Recommended Scenarios for Using Multiple Antennas
 1. Applications can either select specified antennas or implement their own antenna selection algorithms based on collected information, such as selecting antenna modes according to application-specific criteria. Refer to the IDF example :idf_file:`examples/phy/antenna/README.md` for designing antenna selection algorithms.
 
 2. Configure antenna modes for both receiving and sending data as ``ESP_PHY_ANT_MODE_ANT0`` or ``ESP_PHY_ANT_MODE_ANT1``.
+
+Application Examples
+--------------------
+
+.. only:: esp32c3 or esp32s3
+
+    - :example:`phy/cert_test` demonstrates how to use the Certification Test APIs on {IDF_TARGET_NAME}, including project configuration as well as executing RF, Wi-Fi, and Bluetooth certification tests.
+
+- :example:`phy/antenna` demonstrates how to use multi-antenna software switching for {IDF_TARGET_NAME}.

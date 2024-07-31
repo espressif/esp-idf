@@ -102,3 +102,12 @@ PHY
 1.应用程序可以始终选择指定的天线，也可以执行自身天线选择算法，如根据应用程序收集的信息来选择天线模式等。请参考 IDF 示例 :idf_file:`examples/phy/antenna/README.md` 来设计天线选择算法。
 
 2.接收/发送数据的天线模式均配置为 ``ESP_PHY_ANT_MODE_ANT0`` 或 ``ESP_PHY_ANT_MODE_ANT1``。
+
+应用示例
+--------------------
+
+.. only:: esp32c3 or esp32s3
+
+    - :example:`phy/cert_test` 演示了如何在 {IDF_TARGET_NAME} 上使用认证测试 API，包括项目配置以及进行 RF、Wi-Fi 和 Bluetooth 认证测试。
+
+- :example:`phy/antenna` 演示了如何在 {IDF_TARGET_NAME} 上进行多天线软件切换。
