@@ -21,3 +21,7 @@ def test_usb_serial_jtag_dev(dut: Dut) -> None:                # type: ignore
     dut.write('\"test print via usb_serial_jtag driver multiple times in different tasks\"')
     for i in range(300 * 2):
         dut.expect(r'Oh, hello world (\d), this test is for testing message and parse in python, time (\d+)', timeout=10)
+    dut.expect('PASS')
+    dut.expect_exact('Enter next test, or \'enter\' to see menu')
+    dut.write('\"see if fsync appears to work\"')
+    dut.expect('PASS')
