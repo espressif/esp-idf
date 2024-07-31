@@ -93,7 +93,7 @@ def test_bt_a2dp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "hfp_ag")}|{os.path.join(os.path.dirname(__file__), "hfp_hf")}',
-         'esp32|esp32', 'vohci'),
+         'esp32|esp32', 'all'),
     ],
     indirect=True,
 )
