@@ -1,0 +1,23 @@
+menu "HID Example Configuration"
+    config EXAMPLE_SSP_ENABLED
+        bool "Secure Simple Pairing"
+        depends on BT_CLASSIC_ENABLED
+        default y
+        help
+            This enables the Secure Simple Pairing. If disable this option,
+            Bluedroid will only support Legacy Pairing
+
+    config EXAMPLE_HID_HOST_ENABLED
+        bool "Enable Example HID Host"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        select BT_NIMBLE_HID_SERVICE
+        help
+            This enables Nimble HID Host
+
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target Device Name"
+        default "HID Mouse Example"
+        help
+            Use this option to set target device name to connect.
+endmenu
