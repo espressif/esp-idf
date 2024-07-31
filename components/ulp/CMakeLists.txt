@@ -69,6 +69,10 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     if(CONFIG_SOC_LP_SPI_SUPPORTED)
         list(APPEND srcs "lp_core/lp_core_spi.c")
     endif()
+
+    if(CONFIG_SOC_LP_CORE_SUPPORT_ETM)
+        list(APPEND srcs "lp_core/lp_core_etm.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
