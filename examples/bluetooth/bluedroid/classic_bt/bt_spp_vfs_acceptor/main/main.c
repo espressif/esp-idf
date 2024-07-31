@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,8 +37,8 @@
 
 #define SPP_TAG "SPP_ACCEPTOR_DEMO"
 #define SPP_SERVER_NAME "SPP_SERVER"
-#define EXAMPLE_DEVICE_NAME "ESP_SPP_ACCEPTOR"
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
@@ -121,7 +121,7 @@ static void esp_spp_cb(uint16_t e, void *p)
         if (param->start.status == ESP_SPP_SUCCESS) {
             ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT handle:%"PRIu32" sec_id:%d scn:%d", param->start.handle, param->start.sec_id,
                      param->start.scn);
-            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(local_device_name);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_START_EVT status:%d", param->start.status);

@@ -29,8 +29,7 @@
 esp_bd_addr_t peer_addr = {0};
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 static uint8_t peer_bdname_len;
-
-static const char remote_device_name[] = "ESP_HFP_AG";
+static const char remote_device_name[] = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
