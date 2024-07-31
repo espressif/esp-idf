@@ -5,9 +5,6 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(include_dirs "platform_include")
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")  # TODO LLVM-330
-    list(APPEND include_dirs "clang_include")
-endif()
 
 if(BOOTLOADER_BUILD)
     # Bootloader builds need the platform_include directory (for assert.h), but nothing else
