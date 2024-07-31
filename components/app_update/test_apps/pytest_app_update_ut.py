@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import re
 
@@ -22,11 +22,4 @@ def run_multiple_stages(dut: Dut, test_case_num: int, stages: int) -> None:
 @pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='C5 has not supported deep sleep')  # TODO: [ESP32C5] IDF-8640, IDF-10317
 @pytest.mark.generic
 def test_app_update(dut: Dut) -> None:
-    extra_data = dut.parse_test_menu()
-    for test_case in extra_data:
-        if test_case.type != 'multi_stage':
-            dut.write(str(test_case.index))
-        else:
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases))
-        dut.expect_unity_test_output(timeout=90)
-        dut.expect_exact("Enter next test, or 'enter' to see menu")
+    dut.run_all_single_board_cases(timeout=90)

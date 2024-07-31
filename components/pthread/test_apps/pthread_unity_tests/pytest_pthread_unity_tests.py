@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -15,9 +14,7 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_pthread(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![thread-specific]')
-    dut.expect_unity_test_output(timeout=300)
+    dut.run_all_single_board_cases(group='!thread-specific', timeout=300)
 
 
 @pytest.mark.generic
@@ -30,9 +27,7 @@ def test_pthread(dut: Dut) -> None:
     indirect=True,
 )
 def test_pthread_single_core(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![thread-specific]')
-    dut.expect_unity_test_output(timeout=300)
+    dut.run_all_single_board_cases(group='!thread-specific', timeout=300)
 
 
 @pytest.mark.generic
