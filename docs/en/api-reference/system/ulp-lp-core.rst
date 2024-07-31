@@ -262,6 +262,19 @@ For example, to override the handler for the LP IO interrupt, you can define the
 
 In addition to configuring the interrupt related registers for the interrupt source you want to handle, you also need to enable the interrupts globally in the LP-Core interrupt controller. This can be done using the :cpp:func:`ulp_lp_core_intr_enable` function.
 
+ULP LP-Core Clock Configuration
+-------------------------------
+{IDF_TARGET_XTAL_FREQ:default="Not updated", esp32c5="48 MHz", esp32p4="40 MHz"}
+
+The ULP LP-Core clock source is based on the system clock ``LP_FAST_CLK``, see `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``Reset and Clock`` for more details.
+
+.. only:: SOC_CLK_LP_FAST_SUPPORT_XTAL
+
+    On {IDF_TARGET_NAME} ``LP_FAST_CLK`` supports using the external {IDF_TARGET_XTAL_FREQ} crystal (XTAL) as the source for ``LP_FAST_CLK``, which allows the ULP LP-Core to run at a higher frequency than with the default ``RTC_FAST_CLOCK`` which runs at around 20 MHz. The drawback is that this clock is normally powered down during sleep to reduce power consumption, with it selected XTAL will also stay powered on during sleep, increasing power consumption. If you only plan to use the LP-Core as a co-processor while the HP-Core is active, then this option can be used to increase both the performance and the frequency stability of the LP-Core.
+
+    To enable this feature set :ref:`CONFIG_RTC_FAST_CLK_SRC` to ``CONFIG_RTC_FAST_CLK_SRC_XTAL``.
+
+
 Debugging ULP LP-Core Applications
 ----------------------------------
 

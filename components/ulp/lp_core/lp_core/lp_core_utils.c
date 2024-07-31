@@ -28,7 +28,17 @@
 #endif
 
 /* LP_FAST_CLK is not very accurate, for now use a rough estimate */
+#if CONFIG_RTC_FAST_CLK_SRC_RC_FAST
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000 // For P4 TRM says 20 MHz by default, but we tune it closer to 16 MHz
+#elif CONFIG_RTC_FAST_CLK_SRC_XTAL
+#if SOC_XTAL_SUPPORT_48M
+#define LP_CORE_CPU_FREQUENCY_HZ 48000000
+#else
+#define LP_CORE_CPU_FREQUENCY_HZ 40000000
+#endif
+#else  // Default value in chip without rtc fast clock sel option
+#define LP_CORE_CPU_FREQUENCY_HZ 16000000
+#endif
 
 static uint32_t lp_wakeup_cause = 0;
 

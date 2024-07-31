@@ -191,7 +191,7 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
     case SOC_RTC_FAST_CLK_SRC_LP_PLL:
         return clk_ll_lp_pll_get_freq_mhz() * MHZ;
 #endif
-#if SOC_CLK_LP_FAST_SUPPORT_XTAL
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL && !CONFIG_IDF_TARGET_ESP32P4 // On P4 SOC_RTC_FAST_CLK_SRC_XTAL is an alias for SOC_RTC_FAST_CLK_SRC_XTAL_DIV
     case SOC_RTC_FAST_CLK_SRC_XTAL:
         return clk_hal_xtal_get_freq_mhz() * MHZ;
 #endif

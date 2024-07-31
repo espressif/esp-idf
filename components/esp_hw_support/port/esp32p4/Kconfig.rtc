@@ -34,3 +34,24 @@ config RTC_CLK_CAL_CYCLES
         - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
             In case more value will help improve the definition of the launch of the crystal.
             If the crystal could not start, it will be switched to internal RC.
+
+choice RTC_FAST_CLK_SRC
+    depends on SOC_CLK_LP_FAST_SUPPORT_XTAL
+    prompt "RTC fast clock source"
+    default RTC_FAST_CLK_SRC_RC_FAST
+    help
+        Choose which clock is used as RTC fast clock source.
+
+        Choosing the faster 40 MHz XTAL can allow modules which depend on RTC_FAST
+        to work at a higher clock frequency. With this the ULP LP-Core will run with a
+        CPU frequency of 40 Mhz instead of the default 20 Mhz.
+
+        The drawback is that the XTAL is usually powered down during sleep, as
+        it draw a lot of power. Choosing this option will cause the XTAL to stay
+        powered on, increasing sleep power consumption.
+
+    config RTC_FAST_CLK_SRC_RC_FAST
+        bool "20 Mhz RC Fast Clock"
+    config RTC_FAST_CLK_SRC_XTAL
+        bool "40 Mhz crystal (increased power consumption during sleep)"
+endchoice
