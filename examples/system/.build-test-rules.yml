@@ -273,12 +273,17 @@ examples/system/task_watchdog:
   depends_components:
     - esp_system
 
+examples/system/ulp/lp_core/build_system:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/lp_core/gpio:
   disable:
     - if: SOC_DEEP_SLEEP_SUPPORTED != 1
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0)
-
   depends_components:
     - ulp
 
