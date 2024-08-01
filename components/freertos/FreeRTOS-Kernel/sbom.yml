@@ -7,3 +7,5 @@ description: An open-source, real-time operating system (RTOS) with additional f
 cve-exclude-list:
   - cve: CVE-2021-43997
     reason: This vulnerability only affects ARMv7-M and ARMv8-M ports of FreeRTOS and hence does not affect Espressif SoCs which are not based on these architectures.
+  - cve: CVE-2024-28115
+    reason: Affects only ARMv7-M MPU ports, and ARMv8-M ports with Memory Protected Unit (MPU) support enabled
