@@ -14,6 +14,11 @@
 extern "C" {
 #endif
 
+// this define will also be used for optimized websocket sends with the
+// optimized version to prepend the required space for the websocket
+// header
+#define MAX_WEBSOCKET_HEADER_SIZE   16
+
 typedef enum ws_transport_opcodes {
     WS_TRANSPORT_OPCODES_CONT =  0x00,
     WS_TRANSPORT_OPCODES_TEXT =  0x01,
@@ -138,6 +143,37 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
  *  - (-1) if there are any errors, should check errno
  */
 int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms);
+
+/**
+ * @brief               Sends websocket raw message with custom opcode and payload in a optimized way
+ *
+ * This method is similar to esp_transport_ws_send_raw(), but
+ * it assumes, that the first MAX_WEBSOCKET_HEADER_SIZE bytes
+ * of the buffer should not be sent and should rather be used
+ * for the required websocket header itself. This is done to
+ * have a single TCP packet for header and payload and to avoid
+ * copying and allocating additional resources. The first
+ * MAX_WEBSOCKET_HEADER_SIZE bytes should not be initialized in
+ * any specific way, and the return value (length) will also
+ * include the MAX_WEBSOCKET_HEADER_SIZE byte extra buffer.
+ *
+ * Note that generic esp_transport_write for ws handle sends
+ * binary massages by default if size is > 0 and
+ * ping message if message size is set to 0.
+ * This API is provided to support explicit messages with arbitrary opcode,
+ * should it be PING, PONG or TEXT message with arbitrary data.
+ *
+ * @param[in]  t           Websocket transport handle
+ * @param[in]  opcode      ws operation code
+ * @param[in]  buffer      The buffer
+ * @param[in]  len         The length
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates block forever)
+ *
+ * @return
+ *  - Number of bytes was written
+ *  - (-1) if there are any errors, should check errno
+ */
+int esp_transport_ws_send_raw_optimized(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms);
 
 /**
  * @brief               Returns websocket fin flag for last received data

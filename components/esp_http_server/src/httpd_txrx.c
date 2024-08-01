@@ -56,7 +56,7 @@ int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
     }
 
     struct httpd_req_aux *ra = r->aux;
-    int ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
+    int ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, MSG_MORE);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
         return ret;
@@ -70,7 +70,7 @@ static esp_err_t httpd_send_all(httpd_req_t *r, const char *buf, size_t buf_len)
     int ret;
 
     while (buf_len > 0) {
-        ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
+        ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, MSG_MORE);
         if (ret < 0) {
             ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
             return ESP_FAIL;
