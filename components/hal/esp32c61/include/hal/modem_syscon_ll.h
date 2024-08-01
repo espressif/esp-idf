@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-C5 MODEM SYSCON register operations
+// The LL layer for ESP32-C61 MODEM SYSCON register operations
 
 #pragma once
 

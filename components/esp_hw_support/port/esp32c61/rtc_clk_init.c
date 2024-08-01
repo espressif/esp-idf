@@ -22,7 +22,7 @@
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/pmu_ll.h"
-#if SOC_MODEM_CLOCK_SUPPORTED   //TODO: [ESP32C61] IDF-9513
+#if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
 #endif
@@ -48,7 +48,6 @@ static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
     /* Configure modem ICG code in PMU_ACTIVE state */
     pmu_ll_hp_set_icg_modem(&PMU, PMU_MODE_HP_ACTIVE, PMU_HP_ICG_MODEM_CODE_ACTIVE);
 
-// TODO: [ESP32C61] IDF-9513, modem support
 #if SOC_MODEM_CLOCK_SUPPORTED
     /* Disable clock gating for MODEM_APB, I2C_MST and LP_APB clock domains in PMU_ACTIVE state */
     modem_syscon_ll_set_modem_apb_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
