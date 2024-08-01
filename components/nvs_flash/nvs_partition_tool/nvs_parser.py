@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 from zlib import crc32
 
 
@@ -216,6 +219,7 @@ class NVS_Entry:
         self.state = entry_state
         self.is_empty = self.raw == bytearray({0xFF}) * nvs_const.entry_size
         self.index = index
+        self.page = None
 
         namespace = self.raw[0]
         entry_type = self.raw[1]
