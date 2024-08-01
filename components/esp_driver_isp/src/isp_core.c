@@ -89,6 +89,8 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz), err, TAG, "clock source setting fail");
     ESP_GOTO_ON_FALSE((proc_config->clk_hz > 0 && proc_config->clk_hz <= clk_src_freq_hz), ESP_ERR_INVALID_ARG, err, TAG, "clk hz not supported");
 
+    proc->intr_priority = (proc_config->intr_priority > 0 && proc_config->intr_priority <= 3) ? BIT(proc_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
+
     uint32_t out_clk_freq_hz = 0;
     hal_utils_clk_div_t clk_div = {};
     hal_utils_clk_info_t clk_info = {
@@ -102,7 +104,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     if (out_clk_freq_hz != proc_config->clk_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32"Hz", out_clk_freq_hz);
     }
-
+    ;
     isp_hal_init(&proc->hal, proc->proc_id);
     PERIPH_RCC_ATOMIC() {
         isp_ll_select_clk_source(proc->hal.hw, clk_src);
@@ -183,6 +185,140 @@ esp_err_t esp_isp_disable(isp_proc_handle_t proc)
 
     isp_ll_enable(proc->hal.hw, false);
     proc->isp_fsm = ISP_FSM_INIT;
+
+    return ESP_OK;
+}
+
+/*---------------------------------------------------------------
+                      INTR
+---------------------------------------------------------------*/
+static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
+{
+    isp_processor_t *proc = (isp_processor_t *)arg;
+    bool need_yield = false;
+
+    //Check and clear hw events
+    uint32_t af_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AF_MASK);
+    uint32_t awb_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AWB_MASK);
+    uint32_t ae_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AE_MASK);
+
+    bool do_dispatch = false;
+    //Deal with hw events
+    if (af_events) {
+        portENTER_CRITICAL_ISR(&proc->spinlock);
+        do_dispatch = proc->isr_users.af_isr_added;
+        portEXIT_CRITICAL_ISR(&proc->spinlock);
+
+        if (do_dispatch) {
+            need_yield |= esp_isp_af_isr(proc, af_events);
+        }
+        do_dispatch = false;
+    }
+    if (awb_events) {
+        portENTER_CRITICAL_ISR(&proc->spinlock);
+        do_dispatch = proc->isr_users.awb_isr_added;
+        portEXIT_CRITICAL_ISR(&proc->spinlock);
+
+        if (do_dispatch) {
+            need_yield |= esp_isp_awb_isr(proc, awb_events);
+        }
+        do_dispatch = false;
+    }
+    if (ae_events) {
+        portENTER_CRITICAL_ISR(&proc->spinlock);
+        do_dispatch = proc->isr_users.ae_isr_added;
+        portEXIT_CRITICAL_ISR(&proc->spinlock);
+
+        if (do_dispatch) {
+            need_yield |= esp_isp_ae_isr(proc, ae_events);
+        }
+        do_dispatch = false;
+    }
+    if (need_yield) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule)
+{
+    esp_err_t ret = ESP_FAIL;
+    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    bool do_alloc = false;
+    portENTER_CRITICAL(&proc->spinlock);
+    proc->isr_ref_counts++;
+    if (proc->isr_ref_counts == 1) {
+        assert(!proc->intr_hdl);
+        do_alloc = true;
+    }
+
+    switch (submodule) {
+    case ISP_SUBMODULE_AF:
+        proc->isr_users.af_isr_added = true;
+        break;
+    case ISP_SUBMODULE_AWB:
+        proc->isr_users.awb_isr_added = true;
+        break;
+    case ISP_SUBMODULE_AE:
+        proc->isr_users.ae_isr_added = true;
+        break;
+    default:
+        assert(false);
+    }
+    portEXIT_CRITICAL(&proc->spinlock);
+
+    if (do_alloc) {
+
+        uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(proc->hal.hw);
+        uint32_t intr_st_mask = ISP_LL_EVENT_AF_MASK | ISP_LL_EVENT_AE_MASK | ISP_LL_EVENT_AWB_MASK;
+        ret = esp_intr_alloc_intrstatus(isp_hw_info.instances[proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | proc->intr_priority, intr_st_reg_addr, intr_st_mask,
+                                        s_isp_isr_dispatcher, (void *)proc, &proc->intr_hdl);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "no intr source");
+            return ret;
+        }
+        esp_intr_enable(proc->intr_hdl);
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodule)
+{
+    esp_err_t ret = ESP_FAIL;
+    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    bool do_free = false;
+    portENTER_CRITICAL(&proc->spinlock);
+    proc->isr_ref_counts--;
+    assert(proc->isr_ref_counts >= 0);
+    if (proc->isr_ref_counts == 0) {
+        assert(proc->intr_hdl);
+        do_free = true;
+    }
+
+    switch (submodule) {
+    case ISP_SUBMODULE_AF:
+        proc->isr_users.af_isr_added = false;
+        break;
+    case ISP_SUBMODULE_AWB:
+        proc->isr_users.awb_isr_added = false;
+        break;
+    case ISP_SUBMODULE_AE:
+        proc->isr_users.ae_isr_added = false;
+        break;
+    default:
+        assert(false);
+    }
+    portEXIT_CRITICAL(&proc->spinlock);
+
+    if (do_free) {
+        esp_intr_disable(proc->intr_hdl);
+        ret = esp_intr_free(proc->intr_hdl);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+    }
 
     return ESP_OK;
 }

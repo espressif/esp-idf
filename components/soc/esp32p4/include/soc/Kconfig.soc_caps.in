@@ -843,6 +843,18 @@ config SOC_ISP_AF_WINDOW_NUMS
     int
     default 3
 
+config SOC_ISP_AE_CTLR_NUMS
+    int
+    default 1
+
+config SOC_ISP_AE_BLOCK_X_NUMS
+    int
+    default 5
+
+config SOC_ISP_AE_BLOCK_Y_NUMS
+    int
+    default 5
+
 config SOC_ISP_SHARE_CSI_BRG
     bool
     default y

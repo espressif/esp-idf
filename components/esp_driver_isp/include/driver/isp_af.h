@@ -21,7 +21,7 @@ extern "C" {
 typedef struct {
     isp_window_t window[ISP_AF_WINDOW_NUM];            ///< The sampling windows of AF
     int edge_thresh;                                   ///< Edge threshold, definition higher than this value will be counted as a valid pixel for calculating AF result
-    int intr_priority;                                 ///< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) otherwise the larger the higher, 7 is NMI
+    int intr_priority;                                 ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
 } esp_isp_af_config_t;
 
 /**
@@ -78,9 +78,6 @@ esp_err_t esp_isp_af_controller_disable(isp_af_ctlr_t af_ctrlr);
 
 /**
  * @brief Trigger AF luminance and definition statistics for one time and get the result
- * @note  This function is a synchronous and block function,
- *        it only returns when AF luminance and definition statistics is done or timeout.
- *        It's a simple method to get the result directly for one time.
  *
  * @param[in]  af_ctrlr   AF controller handle
  * @param[in]  timeout_ms Timeout in millisecond
@@ -109,6 +106,7 @@ esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctlr_t af_ctrlr, i
  * @note  This function is an asynchronous and non-block function,
  *        it will start the continuous statistics and return immediately.
  *        You have to register the AF callback and get the result from the callback event data.
+ * @note  When continuous mode start, AF environment detector will be invalid
  *
  * @param[in]  af_ctrlr  AF controller handle
  * @return
@@ -130,7 +128,7 @@ esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctlr_t af_ctr
 esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctlr_t af_ctrlr);
 
 /*---------------------------------------------
-                AF Env Monitor
+                AF Env Detector
 ----------------------------------------------*/
 /**
  * @brief AF environment detector config
@@ -147,6 +145,7 @@ typedef struct {
  * @param[in] af_ctrlr    AF controller handle
  * @param[in] env_config  AF Env detector configuration
  *
+ * @note    When continuous mode start, AF environment detector will be invalid
  * @return
  *         - ESP_OK                On success
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.

@@ -29,7 +29,7 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id)
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
-void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_window_t *window)
+void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_window_t *window)
 {
     isp_ll_af_set_window_range(hal->hw, window_id, window->top_left.x, window->top_left.y, window->btm_right.x, window->btm_right.y);
 }
@@ -57,10 +57,28 @@ void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config)
         isp_ll_bf_set_template(hal->hw, default_template);
     }
 }
+
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window)
+{
+    uint32_t ae_x_start = window->top_left.x;
+    uint32_t ae_x_bsize = (window->btm_right.x - window-> top_left.x) / SOC_ISP_AE_BLOCK_X_NUMS;
+
+    uint32_t ae_y_start = window->top_left.y;
+    uint32_t ae_y_bsize = (window->btm_right.y - window->top_left.y) / SOC_ISP_AE_BLOCK_Y_NUMS;
+
+    isp_ll_ae_set_window_range(hal->hw, ae_x_start, ae_x_bsize, ae_y_start, ae_y_bsize);
+
+    int ae_subwin_pixnum = ae_x_bsize * ae_y_bsize;
+    isp_ll_ae_set_subwin_pixnum_recip(hal->hw, ae_subwin_pixnum);
+}
+
 /*---------------------------------------------------------------
                       INTR, put in iram
 ---------------------------------------------------------------*/
-uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t mask)
+uint32_t isp_hal_check_clear_intr_event(isp_hal_context_t *hal, uint32_t mask)
 {
     uint32_t triggered_events = isp_ll_get_intr_status(hal->hw) & mask;
 
@@ -74,7 +92,7 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
 /*---------------------------------------------------------------
                       Color Correction Matrix
 ---------------------------------------------------------------*/
-bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
+bool isp_hal_ccm_set_matrix(isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
 {
     isp_ll_ccm_gain_t fp_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION] = {};
     hal_utils_fixed_point_t fp_cfg = {
@@ -98,7 +116,7 @@ bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const
 /*---------------------------------------------------------------
                             AWB
 ---------------------------------------------------------------*/
-bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window_t *win)
+bool isp_hal_awb_set_window_range(isp_hal_context_t *hal, const isp_window_t *win)
 {
     if (win->top_left.x > win->btm_right.x ||
         win->top_left.y > win->btm_right.y ||
@@ -111,7 +129,7 @@ bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window
     return true;
 }
 
-bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max)
+bool isp_hal_awb_set_luminance_range(isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max)
 {
     if (lum_min > lum_max || lum_max > ISP_LL_AWB_LUM_MAX_RANGE) {
         return false;
@@ -120,7 +138,7 @@ bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_
     return true;
 }
 
-bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, float rg_max)
+bool isp_hal_awb_set_rg_ratio_range(isp_hal_context_t *hal, float rg_min, float rg_max)
 {
     // Convert to fixed point
     isp_ll_awb_rgb_ratio_t fp_rg_min = {};
@@ -142,7 +160,7 @@ bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, 
     return true;
 }
 
-bool isp_hal_awb_set_bg_ratio_range(const isp_hal_context_t *hal, float bg_min, float bg_max)
+bool isp_hal_awb_set_bg_ratio_range(isp_hal_context_t *hal, float bg_min, float bg_max)
 {
     // Convert to fixed point
     isp_ll_awb_rgb_ratio_t fp_bg_min = {};

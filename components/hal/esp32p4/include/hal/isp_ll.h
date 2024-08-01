@@ -41,8 +41,8 @@ extern "C" {
 #define ISP_LL_EVENT_MIPI_HNUM_UNMATCH        (1<<5)
 #define ISP_LL_EVENT_DPC_CHECK_DONE           (1<<6)
 #define ISP_LL_EVENT_GAMMA_XCOORD_ERR         (1<<7)
-#define ISP_LL_EVENT_AE_MONITOR               (1<<8)
-#define ISP_LL_EVENT_AE_FRAME_DONE            (1<<9)
+#define ISP_LL_EVENT_AE_ENV                   (1<<8)
+#define ISP_LL_EVENT_AE_FDONE                 (1<<9)
 #define ISP_LL_EVENT_AF_FDONE                 (1<<10)
 #define ISP_LL_EVENT_AF_ENV                   (1<<11)
 #define ISP_LL_EVENT_AWB_FDONE                (1<<12)
@@ -65,12 +65,18 @@ extern "C" {
 
 #define ISP_LL_EVENT_ALL_MASK                 (0x1FFFFFFF)
 #define ISP_LL_EVENT_AF_MASK                  (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
+#define ISP_LL_EVENT_AE_MASK                  (ISP_LL_EVENT_AE_FDONE | ISP_LL_EVENT_AE_ENV)
 #define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE)
 
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
 #define ISP_LL_AF_WINDOW_MAX_RANGE            ((1<<12) - 1)
+
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+#define ISP_LL_AE_WINDOW_MAX_RANGE            ((1<<12) - 1)
 
 /*---------------------------------------------------------------
                       BF
@@ -117,20 +123,20 @@ typedef union {
 } isp_ll_ccm_gain_t;
 
 /**
- * @brief Env monitor mode
+ * @brief Env detector mode
  */
 typedef enum {
-    ISP_LL_AF_ENV_MONITOR_MODE_ABS,    ///< Use absolute val for threshold
-    ISP_LL_AF_ENV_MONITOR_MODE_RATIO,  ///< Use ratio val for threshold
-} isp_ll_af_env_monitor_mode_t;
+    ISP_LL_AF_ENV_DETECTOR_MODE_ABS,    ///< Use absolute val for threshold
+    ISP_LL_AF_ENV_DETECTOR_MODE_RATIO,  ///< Use ratio val for threshold
+} isp_ll_af_env_detector_mode_t;
 
 /**
- * @brief Edge monitor mode
+ * @brief Edge detector mode
  */
 typedef enum {
-    ISP_LL_AF_EDGE_MONITOR_MODE_AUTO,      ///< Auto set threshold
-    ISP_LL_AF_EDGE_MONITOR_MODE_MANUAL,    ///< Manual set threshold
-} isp_ll_af_edge_monitor_mode_t;
+    ISP_LL_AF_EDGE_DETECTOR_MODE_AUTO,      ///< Auto set threshold
+    ISP_LL_AF_EDGE_DETECTOR_MODE_MANUAL,    ///< Manual set threshold
+} isp_ll_af_edge_detector_mode_t;
 
 
 /*---------------------------------------------------------------
@@ -496,11 +502,11 @@ static inline void isp_ll_af_manual_update(isp_dev_t *hw)
  * @brief Set edge thresh mode
  *
  * @param[in] hw    Hardware instance address
- * @param[in] mode  See `isp_ll_af_edge_monitor_mode_t`
+ * @param[in] mode  See `isp_ll_af_edge_detector_mode_t`
  */
-static inline void isp_ll_af_set_edge_thresh_mode(isp_dev_t *hw, isp_ll_af_edge_monitor_mode_t mode)
+static inline void isp_ll_af_set_edge_thresh_mode(isp_dev_t *hw, isp_ll_af_edge_detector_mode_t mode)
 {
-    if (mode == ISP_LL_AF_EDGE_MONITOR_MODE_AUTO) {
+    if (mode == ISP_LL_AF_EDGE_DETECTOR_MODE_AUTO) {
         hw->af_threshold.af_threshold = 0;
     }
 }
@@ -622,43 +628,43 @@ static inline uint32_t isp_ll_af_get_window_lum(isp_dev_t *hw, uint32_t window_i
 }
 
 /*---------------------------------------------
-                AF Env Monitor
+                AF Env detector
 ----------------------------------------------*/
 /**
- * @brief Set env monitor period
+ * @brief Set env detector period
  *
  * @param[in] hw      Hardware instance address
- * @param[in] period  period of the env monitor, in frames
+ * @param[in] period  period of the env detector, in frames
  */
-static inline void isp_ll_af_env_monitor_set_period(isp_dev_t *hw, uint32_t period)
+static inline void isp_ll_af_env_detector_set_period(isp_dev_t *hw, uint32_t period)
 {
     hw->af_ctrl0.af_env_period = period;
 }
 
 /**
- * @brief Set env monitor mode
+ * @brief Set env detector mode
  *
  * @param[in] hw    Hardware instance address
- * @param[in] mode  See `isp_ll_af_env_monitor_mode_t`
+ * @param[in] mode  See `isp_ll_af_env_detector_mode_t`
  */
-static inline void isp_ll_af_env_monitor_set_mode(isp_dev_t *hw, isp_ll_af_env_monitor_mode_t mode)
+static inline void isp_ll_af_env_detector_set_mode(isp_dev_t *hw, isp_ll_af_env_detector_mode_t mode)
 {
-    if (mode == ISP_LL_AF_ENV_MONITOR_MODE_RATIO) {
+    if (mode == ISP_LL_AF_ENV_DETECTOR_MODE_RATIO) {
         hw->af_env_user_th_sum.af_env_user_threshold_sum = 0x0;
         hw->af_env_user_th_lum.af_env_user_threshold_lum = 0x0;
     }
 
-    //nothing to do to if using abs mode, it'll be enabled after `isp_ll_af_env_monitor_set_thresh()`
+    //nothing to do to if using abs mode, it'll be enabled after `isp_ll_af_env_detector_set_thresh()`
 }
 
 /**
- * @brief Set env monitor threshold
+ * @brief Set env detector threshold
  *
  * @param[in] hw          Hardware instance address
  * @param[in] sum_thresh  Threshold for definition
  * @param[in] lum_thresh  Threshold for luminance
  */
-static inline void isp_ll_af_env_monitor_set_thresh(isp_dev_t *hw, uint32_t sum_thresh, uint32_t lum_thresh)
+static inline void isp_ll_af_env_detector_set_thresh(isp_dev_t *hw, uint32_t sum_thresh, uint32_t lum_thresh)
 {
     HAL_ASSERT(sum_thresh != 0 || lum_thresh != 0);
 
@@ -667,12 +673,12 @@ static inline void isp_ll_af_env_monitor_set_thresh(isp_dev_t *hw, uint32_t sum_
 }
 
 /**
- * @brief Set env monitor ratio
+ * @brief Set env detector ratio
  *
  * @param[in] hw         Hardware instance address
  * @param[in] ratio_val  Threshold for ratio
  */
-static inline void isp_ll_af_env_monitor_set_ratio(isp_dev_t *hw, uint32_t ratio_val)
+static inline void isp_ll_af_env_detector_set_ratio(isp_dev_t *hw, uint32_t ratio_val)
 {
     HAL_ASSERT(hw->af_env_user_th_sum.af_env_user_threshold_sum == 0 &&
                hw->af_env_user_th_lum.af_env_user_threshold_lum == 0);
@@ -974,6 +980,122 @@ static inline void isp_ll_cam_enable(isp_dev_t *hw, bool enable)
         hw->cam_cntl.cam_en = 0;
     }
 }
+
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+
+/**
+ * @brief Enable / Disable AE clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_ae_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_ae_force_on = enable;
+}
+
+/**
+ * @brief Enable / Disable AE
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_ae_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.ae_en = enable;
+}
+
+/**
+ * @brief Manual aupdate AF once
+ *
+ * @param[in] hw  Hardware instance address
+ */
+static inline void isp_ll_ae_manual_update(isp_dev_t *hw)
+{
+    hw->ae_ctrl.ae_update = 1;
+}
+
+/**
+ * @brief Select AE input data source
+ *
+ * @param[in] hw                Hardware instance address
+ * @param[in] sample_point   0: AE input data after demosaic, 1: AE input data after gamma
+ */
+static inline void isp_ll_ae_set_sample_point(isp_dev_t *hw, isp_ae_sample_point_t sample_point)
+{
+    hw->ae_ctrl.ae_select = sample_point;
+}
+
+/**
+ * @brief Set AE window range
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] x_start   Top left pixel x axis value
+ * @param[in] x_bsize   Block size on x axis
+ * @param[in] y_start   Top left pixel y axis value
+ * @param[in] y_bsize   Block size on y axis
+ */
+static inline void isp_ll_ae_set_window_range(isp_dev_t *hw, int x_start, int x_bsize, int y_start, int y_bsize)
+{
+    hw->ae_bx.ae_x_start = x_start;
+    hw->ae_bx.ae_x_bsize = x_bsize;
+    hw->ae_by.ae_y_start = y_start;
+    hw->ae_by.ae_y_bsize = y_bsize;
+}
+
+/**
+ * @brief Get block mean luminance
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] block_id
+ *
+ * @return Mean luminance
+ */
+static inline int isp_ll_ae_get_block_mean_lum(isp_dev_t *hw, int block_id)
+{
+    HAL_ASSERT(block_id >=0 && block_id < (SOC_ISP_AE_BLOCK_X_NUMS * SOC_ISP_AE_BLOCK_Y_NUMS));
+    return hw->ae_block_mean[block_id / 4].ae_b_mean[3 - (block_id % 4)];
+}
+
+/**
+ * @brief AE set the pixel number of each subwin, and set the reciprocal of each subwin_pixnum, 20bit fraction
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] subwin_pixnum Pixel number
+ */
+static inline void isp_ll_ae_set_subwin_pixnum_recip(isp_dev_t *hw, int subwin_pixnum)
+{
+    hw->ae_winpixnum.ae_subwin_pixnum = subwin_pixnum;
+    int subwin_recip = (1 << 20) / subwin_pixnum;
+    hw->ae_win_reciprocal.ae_subwin_recip = subwin_recip;
+}
+
+/**
+ * @brief Set AE env detector threshold
+ *
+ * @param[in] hw          Hardware instance address
+ * @param[in] low_thresh  Lower lum threshold
+ * @param[in] high_thresh Higher lum threshold
+ */
+static inline void isp_ll_ae_env_detector_set_thresh(isp_dev_t *hw, uint32_t low_thresh, uint32_t high_thresh)
+{
+    hw->ae_monitor.ae_monitor_tl = low_thresh;
+    hw->ae_monitor.ae_monitor_th = high_thresh;
+}
+
+/**
+ * @brief Set AE env detector period
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] period  period of the AE env detector, in frames
+ */
+static inline void isp_ll_ae_env_detector_set_period(isp_dev_t *hw, uint32_t period)
+{
+    hw->ae_monitor.ae_monitor_period = period;
+}
+
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/

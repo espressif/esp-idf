@@ -28,8 +28,6 @@ typedef struct isp_af_controller_t {
     void                               *user_data;
 } isp_af_controller_t;
 
-static void s_isp_af_default_isr(void *arg);
-
 /*---------------------------------------------
                 AF
 ----------------------------------------------*/
@@ -72,7 +70,7 @@ static void s_isp_af_free_controller(isp_af_ctlr_t af_ctlr)
             esp_intr_free(af_ctlr->intr_handle);
         }
         if (af_ctlr->evt_que) {
-            vQueueDelete(af_ctlr->evt_que);
+            vQueueDeleteWithCaps(af_ctlr->evt_que);
         }
         free(af_ctlr);
     }
@@ -114,10 +112,9 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
     ESP_GOTO_ON_ERROR(s_isp_claim_af_controller(isp_proc, af_ctlr), err1, TAG, "no available controller");
 
     // Register the AF ISR
-    uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    int intr_priority = af_config->intr_priority > 0 && af_config->intr_priority <= 7 ? BIT(af_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AF_MASK,
-                                                s_isp_af_default_isr, af_ctlr, &af_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
+    int intr_priority = (af_config->intr_priority > 0 && af_config->intr_priority <= 3) ? BIT(af_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_GOTO_ON_ERROR(intr_priority != isp_proc->intr_priority, err2, TAG, "intr_priority error");
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(af_ctlr->isp_proc, ISP_SUBMODULE_AF), err2, TAG, "fail to register ISR");
 
     isp_ll_af_enable_auto_update(isp_proc->hal.hw, false);
     isp_ll_af_enable(isp_proc->hal.hw, false);
@@ -126,7 +123,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
         isp_hal_af_window_config(&isp_proc->hal, i, &af_config->window[i]);
     }
 
-    isp_ll_af_set_edge_thresh_mode(isp_proc->hal.hw, ISP_LL_AF_EDGE_MONITOR_MODE_MANUAL);
+    isp_ll_af_set_edge_thresh_mode(isp_proc->hal.hw, ISP_LL_AF_EDGE_DETECTOR_MODE_MANUAL);
     isp_ll_af_set_edge_thresh(isp_proc->hal.hw, af_config->edge_thresh);
     isp_ll_clear_intr(isp_proc->hal.hw, ISP_LL_EVENT_AF_MASK);
 
@@ -153,6 +150,10 @@ esp_err_t esp_isp_del_af_controller(isp_af_ctlr_t af_ctlr)
         }
     }
     ESP_RETURN_ON_FALSE(exist, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
+
+    // Deregister the AF ISR
+    ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(af_ctlr->isp_proc, ISP_SUBMODULE_AF) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
+
     s_isp_declaim_af_controller(af_ctlr);
     s_isp_af_free_controller(af_ctlr);
 
@@ -164,7 +165,6 @@ esp_err_t esp_isp_af_controller_enable(isp_af_ctlr_t af_ctlr)
     ESP_RETURN_ON_FALSE(af_ctlr && af_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(af_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
 
-    esp_intr_enable(af_ctlr->intr_handle);
     isp_ll_af_clk_enable(af_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(af_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_MASK, true);
     isp_ll_af_enable(af_ctlr->isp_proc->hal.hw, true);
@@ -229,7 +229,7 @@ esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctlr_t af_ctrl
 }
 
 /*---------------------------------------------
-                AF Env Monitor
+                AF Env Detector
 ----------------------------------------------*/
 esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config)
 {
@@ -238,11 +238,11 @@ esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const e
 
     af_ctrlr->config.interval = env_config->interval;
 
-    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, 0);
+    isp_ll_af_env_detector_set_period(af_ctrlr->isp_proc->hal.hw, 0);
     isp_ll_clear_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV);
 
-    isp_ll_af_env_monitor_set_mode(af_ctrlr->isp_proc->hal.hw, ISP_LL_AF_ENV_MONITOR_MODE_ABS);
-    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, af_ctrlr->config.interval);
+    isp_ll_af_env_detector_set_mode(af_ctrlr->isp_proc->hal.hw, ISP_LL_AF_ENV_DETECTOR_MODE_ABS);
+    isp_ll_af_env_detector_set_period(af_ctrlr->isp_proc->hal.hw, af_ctrlr->config.interval);
     isp_ll_enable_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV, true);
 
     return ESP_OK;
@@ -276,7 +276,7 @@ esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctlr_t af_ctrl
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
 
-    isp_ll_af_env_monitor_set_thresh(af_ctrlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
+    isp_ll_af_env_detector_set_thresh(af_ctrlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
 
     return ESP_OK;
 }
@@ -284,12 +284,9 @@ esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctlr_t af_ctrl
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_af_default_isr(void *arg)
+bool IRAM_ATTR esp_isp_af_isr(isp_proc_handle_t proc, uint32_t af_events)
 {
-    isp_af_ctlr_t af_ctrlr = (isp_af_ctlr_t)arg;
-    isp_proc_handle_t proc = af_ctrlr->isp_proc;
-
-    uint32_t af_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AF_MASK);
+    isp_af_ctlr_t af_ctrlr = proc->af_ctlr[0];
 
     bool need_yield = false;
     esp_isp_af_env_detector_evt_data_t edata = {};
@@ -323,8 +320,5 @@ static void IRAM_ATTR s_isp_af_default_isr(void *arg)
             need_yield |= af_ctrlr->cbs.on_env_change(af_ctrlr, &edata, af_ctrlr->user_data);
         }
     }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
+    return need_yield;
 }
