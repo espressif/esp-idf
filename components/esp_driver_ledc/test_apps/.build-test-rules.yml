@@ -6,9 +6,5 @@ components/esp_driver_ledc/test_apps/ledc:
     - if: IDF_TARGET == "esp32c5"
       temporary: true
       reason: build failed. track in IDFCI-2204
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8969
   depends_components:
     - esp_driver_ledc
