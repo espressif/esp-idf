@@ -18,7 +18,7 @@ API 指南
    code-quality/index
    core_dump
    current-consumption-measurement-modules
-   :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
+   :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED and not esp32p4: dfu
    error-handling
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh

@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9"}
+{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35"}
 
 开发功耗敏感型应用时，需要了解 `模组 <https://www.espressif.com/en/products/modules>`__ 在 Deep-sleep 模式、:doc:`其他节能模式 </api-reference/system/sleep_modes>` 和 Active 模式下的功耗。本节介绍如何测量运行此类应用程序时模组的功耗。
 
@@ -26,7 +26,7 @@
 
     使用上述开发板，可以烧写 :example:`deep_sleep <system/deep_sleep>` 示例来测量模组在 Deep-sleep 模式下的功耗。也可以使用以下方法来测量配有 {IDF_TARGET_NAME} 芯片的裸模组的电流。
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3 or esp32p4
 
     对于 {IDF_TARGET_NAME}，不建议直接使用开发板来测量相应模组的功耗，因为即使烧写 :example:`deep_sleep <system/deep_sleep>` 示例，板上的某些电路仍会产生功耗。因此，在测量模组的电流前需要先切断电源电路。这种方法非常不便，测量成本高。
 

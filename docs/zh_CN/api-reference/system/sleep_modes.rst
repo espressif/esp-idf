@@ -32,7 +32,7 @@
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC 高速内存
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC 低速内存
 
-.. only:: SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 和 Bluetooth 功能
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@
 
     如需保持 Wi-Fi 和 Bluetooth 连接，请启用 Wi-Fi 和 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式（请参阅 :doc:`电源管理 API <power_management>`）。在这两种模式下，Wi-Fi 和 Bluetooth 驱动程序发出请求时，系统将自动从睡眠中被唤醒，从而保持连接。
 
-.. only:: not SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and not SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 功能
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -227,7 +227,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当所有所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ALL_LOW)
 
-    .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
+    .. only:: not esp32
 
         - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当任意一个所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ANY_LOW)
@@ -344,7 +344,7 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
 使用 UART 唤醒之后，在芯片 Active 模式下需要让 UART 接受一些数据用来清零内部的唤醒指示信号。不然的话，下一次 UART 唤醒的触发将只需要比配置的阈值少两个上升沿的数量。
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
@@ -472,7 +472,7 @@ UART 输出处理
 .. list::
 
     - :example:`protocols/sntp` 演示如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
-    - :example:`wifi/power_save` 演示如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` 演示如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` 演示如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
     :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何通过 {IDF_TARGET_NAME} 的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。

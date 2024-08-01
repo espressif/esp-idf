@@ -3,7 +3,7 @@ Current Consumption Measurement of Modules
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9"}
+{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35"}
 
 You may want to know the current consumption of a `module <https://www.espressif.com/en/products/modules>`__ in Deep-sleep mode, :doc:`other power-saving modes </api-reference/system/sleep_modes>`, and Active mode to develop some applications sensitive to power consumption. This section introduces how to measure the current consumption of a module running such an application.
 
@@ -26,7 +26,7 @@ Can We Use a Development Board?
 
     With such development boards, you can measure current consumption of modules in Deep-sleep mode by flashing chips with the :example:`deep_sleep <system/deep_sleep>` example. However, you can also measure current of bare modules equipped with {IDF_TARGET_NAME} chip using the following method.
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3 or esp32p4
 
     For {IDF_TARGET_NAME}, using a development board directly to measure current consumption of the corresponding module is not recommended, as some circuits still consume power on the board even when you flash the chip with the :example:`deep_sleep <system/deep_sleep>` example. Therefore, you need to cut off the power supply circuit to the module to measure the module's current. This method is inconvenient and increases measurement costs.
 
