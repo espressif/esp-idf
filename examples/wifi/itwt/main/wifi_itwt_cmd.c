@@ -110,7 +110,7 @@ static int wifi_cmd_itwt(int argc, char **argv)
                 return 1;
             }
         }
-        wifi_twt_setup_config_t setup_config = {
+        wifi_itwt_setup_config_t setup_config = {
             .setup_cmd = (itwt_args.setup->ival[0] <= TWT_DEMAND) ? itwt_args.setup->ival[0] : TWT_REQUEST,
             .flow_id = 0,
             .twt_id = itwt_args.twtid->count ? itwt_args.twtid->ival[0] : 0,
