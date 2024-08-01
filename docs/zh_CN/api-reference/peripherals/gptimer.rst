@@ -25,7 +25,7 @@
     - :ref:`gptimer-register-event-callbacks` - 如何将用户的特定代码挂载到警报事件回调函数。
     - :ref:`enable-and-disable-timer` - 如何使能和禁用定时器。
     - :ref:`start-and-stop-timer` - 通过不同报警行为启动定时器的典型使用场景。
-    :SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
+    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
     - :ref:`gptimer-power-management` - 选择不同的时钟源将会如何影响功耗。
     - :ref:`gptimer-iram-safe` - 在 cache 禁用的情况下，如何更好地让定时器处理中断事务以及实现 IO 控制功能。
     - :ref:`gptimer-thread-safety` - 驱动程序保证哪些 API 线程安全。
@@ -261,7 +261,7 @@
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
 
-.. only:: SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
@@ -274,7 +274,7 @@
 
     .. _gptimer-power-management:
 
-.. only:: not SOC_ETM_SUPPORTED or not SOC_TIMER_SUPPORT_ETM
+.. only:: not SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-power-management:
 
@@ -348,9 +348,12 @@ API 参考
 -------------------
 
 .. include-build-file:: inc/gptimer.inc
-.. include-build-file:: inc/gptimer_etm.inc
 .. include-build-file:: inc/gptimer_types.inc
 .. include-build-file:: inc/timer_types.inc
+
+.. only:: SOC_TIMER_SUPPORT_ETM
+
+    .. include-build-file:: inc/gptimer_etm.inc
 
 .. [1]
    不同 ESP 芯片系列的通用定时器实例数量可能不同。了解详细信息，请参考《{IDF_TARGET_NAME} 技术参考手册》 > 章节定时器组 (TIMG) [`PDF <{IDF_TARGET_TRM_CN_URL}#timg>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。在分配资源时，请务必检查返回值（例如 :cpp:func:`gptimer_new_timer`）。
