@@ -605,7 +605,7 @@ macro(idf_build_process target)
         endforeach()
 
         if(NOT "${__components_with_manifests}" STREQUAL "")
-            message(WARNING "\"idf_component.yml\" file was found for components:\n${__components_with_manifests}"
+            message(NOTICE "\"idf_component.yml\" file was found for components:\n${__components_with_manifests}"
                     "However, the component manager is not enabled.")
         endif()
     endif()
