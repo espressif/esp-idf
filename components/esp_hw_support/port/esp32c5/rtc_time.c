@@ -15,8 +15,6 @@
 #include "soc/pcr_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
-#include "hal/efuse_hal.h"
-#include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 
 __attribute__((unused)) static const char *TAG = "rtc_time";
@@ -26,7 +24,7 @@ __attribute__((unused)) static const char *TAG = "rtc_time";
  * RTC_SLOW_CLK cycles.
  */
 
-#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
+#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
 
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
@@ -38,8 +36,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
             cal_clk = RTC_CAL_RC_SLOW;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             cal_clk = RTC_CAL_32K_XTAL;
-        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            cal_clk = RTC_CAL_RC32K;
         } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             cal_clk = RTC_CAL_32K_OSC_SLOW;
         }
@@ -69,17 +65,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    bool rc32k_enabled = clk_ll_rc32k_is_enabled();
-    bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(true);
-        }
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_enable();
-        }
-    }
-
     /* There may be another calibration process already running during we call this function,
      * so we should wait the last process is done.
      */
@@ -105,10 +90,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     /* Set timeout reg and expect time delay*/
     REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk, slowclk_cycles));
     uint32_t expected_freq;
-    if (cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) {
+    if (cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) {
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
     } else if (cal_clk == RTC_CAL_RC_FAST) {
-        expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+        expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     } else {
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
     }
@@ -127,7 +112,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
             /*The Fosc CLK of calibration circuit is divided by a factor, k.
               So we need to multiply the frequency of the FOSC by k times.*/
             if (cal_clk == RTC_CAL_RC_FAST) {
-                cal_val = cal_val >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+                cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
             }
             break;
         }
@@ -152,15 +137,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_disable();
-        }
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(false);
-        }
-    }
-
     return cal_val;
 }
 
@@ -173,15 +149,15 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-
     /*The Fosc CLK of calibration circuit is divided by a factor, k.
       So we need to divide the calibrate cycles of the FOSC by k to
       avoid excessive calibration time.*/
     if (cal_clk == RTC_CAL_RC_FAST) {
-        slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+        slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     }
+    assert(slowclk_cycles);
 
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
     if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
@@ -195,6 +171,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint64_t rtc_time_us_to_slowclk(uint64_t time_in_us, uint32_t period)
 {
+    assert(period);
     /* Overflow will happen in this function if time_in_us >= 2^45, which is about 400 days.
      * TODO: fix overflow.
      */

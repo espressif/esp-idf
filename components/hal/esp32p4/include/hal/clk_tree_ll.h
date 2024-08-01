@@ -765,7 +765,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {

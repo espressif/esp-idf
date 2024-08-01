@@ -41,7 +41,7 @@ extern "C" {
 }
 
 // Fix default division factor for the RC_FAST clock for calibration to be 32
-#define CLK_LL_RC_FAST_TICK_DIV_BITS        5
+#define CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS        5
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -130,34 +130,6 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
 }
 
 /**
- * @brief Enable the internal oscillator output for RC32K_CLK
- */
-static inline __attribute__((always_inline)) void clk_ll_rc32k_enable(void)
-{
-    // Enable rc32k xpd status
-    SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
-}
-
-/**
- * @brief Disable the internal oscillator output for RC32K_CLK
- */
-static inline __attribute__((always_inline)) void clk_ll_rc32k_disable(void)
-{
-    // Disable rc32k xpd status
-    CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
-}
-
-/**
- * @brief Get the state of the internal oscillator for RC32K_CLK
- *
- * @return True if the oscillator is enabled
- */
-static inline __attribute__((always_inline)) bool clk_ll_rc32k_is_enabled(void)
-{
-    return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K) == 1;
-}
-
-/**
  * @brief Enable the internal oscillator output for RC_FAST_CLK
  */
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
@@ -236,32 +208,6 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_digi_is_enabled
 }
 
 /**
- * @brief Enable the digital RC32K_CLK, which is used to support peripherals.
- */
-static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_enable(void)
-{
-    LP_CLKRST.clk_to_hp.icg_hp_osc32k = 1;
-}
-
-/**
- * @brief Disable the digital RC32K_CLK, which is used to support peripherals.
- */
-static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_disable(void)
-{
-    LP_CLKRST.clk_to_hp.icg_hp_osc32k = 0;
-}
-
-/**
- * @brief Get the state of the digital RC32K_CLK
- *
- * @return True if the digital RC32K_CLK is enabled
- */
-static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(void)
-{
-    return LP_CLKRST.clk_to_hp.icg_hp_osc32k;
-}
-
-/**
  * @brief Get XTAL_CLK frequency
  *
  * PCR_CLK_XTAL_FREQ updates its value based on EFUSE_XTAL_48M_SEL.
@@ -274,7 +220,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
 }
 
 /**
- * @brief Get PLL_CLK frequency
+ * @brief Get SPLL_CLK frequency
  *
  * @return PLL clock frequency, in MHz. Returns 0 if register field value is invalid.
  */
@@ -407,6 +353,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
 /**
  * @brief Set CPU_CLK's divider
  *
+ * SOC_ROOT_CLK ------> CPU_CLK
+ *
  * @param divider Divider. (PCR_CPU_DIV_NUM + 1) = divider.
  */
 static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_t divider)
@@ -428,6 +376,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
 /**
  * @brief Set AHB_CLK's divider
  *
+ * SOC_ROOT_CLK ------> AHB_CLK
  * Constraint: f_ahb <= 48 MHz, f_cpu = n * f_ahb
  *
  * @param divider Divider. (PCR_AHB_DIV_NUM + 1) = divider.
@@ -485,9 +434,6 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rt
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         LP_CLKRST.lp_clk_conf.slow_clk_sel = 1;
         break;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        LP_CLKRST.lp_clk_conf.slow_clk_sel = 2;
-        break;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
         LP_CLKRST.lp_clk_conf.slow_clk_sel = 3;
         break;
@@ -510,8 +456,6 @@ static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_s
         return SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
     case 1:
         return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
-    case 2:
-        return SOC_RTC_SLOW_CLK_SRC_RC32K;
     case 3:
         return SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
     default:
@@ -576,7 +520,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
@@ -589,7 +533,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider
  */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_TICK_DIV_BITS
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_32k_conf, fosc_tick_num, (1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS) - 1); // divider = 1 << CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS
 }
 
 /**

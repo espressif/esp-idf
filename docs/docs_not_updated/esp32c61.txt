@@ -103,7 +103,6 @@ api-reference/peripherals/ledc.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/sdio_slave.rst
-api-reference/peripherals/clk_tree.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst

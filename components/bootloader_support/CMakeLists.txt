@@ -15,7 +15,7 @@ set(srcs
     "src/secure_boot.c"
     )
 
-if(NOT CONFIG_IDF_ENV_FPGA)
+if(NOT CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
     # For FPGA ENV, bootloader_random implementation is implemented in `bootloader_random.c`
     list(APPEND srcs "src/bootloader_random_${IDF_TARGET}.c")
 endif()

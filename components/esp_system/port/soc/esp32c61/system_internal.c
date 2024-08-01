@@ -98,7 +98,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // Disable cache
     Cache_Disable_Cache();
 
-    //TODO: [ESP32C61] IDF-9249, inherit from verify code
+    //TODO: [ESP32C61] IDF-9553, inherit from verify code
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     // Moved to module internal
     // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,

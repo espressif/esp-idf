@@ -401,10 +401,7 @@ typedef union {
          *  1: periodic frequency calculation
          */
         uint32_t rtc_cali_start_cycling:1;
-        /** rtc_cali_clk_sel : R/W; bitpos: [14:13]; default: 0;
-         *  0:rtc slow clock. 1:clk_8m, 2:xtal_32k.
-         */
-        uint32_t rtc_cali_clk_sel:2;
+        uint32_t reserved_13: 2;
         /** rtc_cali_rdy : RO; bitpos: [15]; default: 0;
          *  Represents whether one-shot frequency calculation is done.
          *  0: Not done

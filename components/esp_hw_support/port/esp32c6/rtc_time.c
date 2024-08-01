@@ -141,7 +141,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
         if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-            expected_freq = expected_freq >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+            expected_freq = expected_freq >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
         }
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
@@ -166,7 +166,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
               calibration. */
             if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
                 if (cal_clk == RTC_CAL_RC_FAST) {
-                    cal_val = cal_val >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+                    cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
                     CLEAR_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
                 }
             }
@@ -227,7 +227,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
       avoid excessive calibration time.*/
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
         if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_TICK_DIV_BITS;
+            slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
             SET_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
         }
     }

@@ -1,5 +1,5 @@
 # TODO: IDF-9526, refactor this
-set(srcs
+set(srcs "clk.c"
          "reset_reason.c"
          "system_internal.c"
          "cache_err_int.c")

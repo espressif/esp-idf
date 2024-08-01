@@ -211,7 +211,7 @@ void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 static inline void rtc_suppress_rom_log(void)
 {
     /* To disable logging in the ROM, only the least significant bit of the register is used,
-     * but since this register is also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG),
+     * but this register was also used to store the frequency of the main crystal (RTC_XTAL_FREQ_REG) on old targets,
      * you need to write to this register in the same format.
      * Namely, the upper 16 bits and lower should be the same.
      */
