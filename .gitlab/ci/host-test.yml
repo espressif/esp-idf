@@ -388,3 +388,17 @@ test_idf_build_apps_load_soc_caps:
   extends: .host_test_template
   script:
     - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
+
+test_nvs_gen_check:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - components/nvs_flash/nvs_partition_tool
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
+    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml

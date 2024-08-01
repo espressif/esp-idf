@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Set
 
 from nvs_logger import NVS_Logger
 from nvs_parser import nvs_const
@@ -10,12 +12,10 @@ from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Page
 from nvs_parser import NVS_Partition
 
-#  from pprint import pprint
-
 
 EMPTY_ENTRY = NVS_Entry(-1, bytearray(32), 'Erased')
 
-used_namespaces: Dict[int, None] = {}
+used_namespaces: Dict[int, Optional[str]] = {}
 found_namespaces: Dict[int, str] = {}
 blobs: Dict = {}
 blob_chunks: List[NVS_Entry] = []
@@ -83,7 +83,7 @@ def check_page_crc(nvs_page: NVS_Page, nvs_log: NVS_Logger) -> bool:
         return False
 
 
-def identify_entry_duplicates(entry: NVS_Entry, seen_written_entires: Dict[str, list[NVS_Entry]]) -> Dict[str, list[NVS_Entry]]:
+def identify_entry_duplicates(entry: NVS_Entry, seen_written_entires: Dict[str, List[NVS_Entry]]) -> Dict[str, List[NVS_Entry]]:
     if entry.state == 'Written':
         if entry.key in seen_written_entires:
             seen_written_entires[entry.key].append(entry)
@@ -92,11 +92,12 @@ def identify_entry_duplicates(entry: NVS_Entry, seen_written_entires: Dict[str, 
     return seen_written_entires
 
 
-def check_page_entries(nvs_page: NVS_Page, nvs_log: NVS_Logger) -> Dict[str, list[NVS_Entry]]:
-    seen_written_entires: Dict[str, list[NVS_Entry]] = {}
+def check_page_entries(nvs_page: NVS_Page, nvs_log: NVS_Logger) -> Dict[str, List[NVS_Entry]]:
+    seen_written_entires: Dict[str, List[NVS_Entry]] = {}
 
     for entry in nvs_page.entries:
         # entry: NVS_Entry
+        entry.page = nvs_page
 
         # Entries stored in 'page.entries' are primitive data types, blob indexes or string/blob data
 
@@ -205,7 +206,7 @@ def filter_namespaces_fake_duplicates(duplicate_entries_dict: Dict[str, List[NVS
     new_duplicate_entries_dict: Dict[str, List[NVS_Entry]] = {}
     for key, duplicate_entries in duplicate_entries_dict.items():
         seen_entries: List[NVS_Entry] = []
-        entry_same_namespace_collisions_list: set[NVS_Entry] = set()
+        entry_same_namespace_collisions_list: Set[NVS_Entry] = set()
 
         # Search through the "duplicates" and see if there are real duplicates
         # E.g. the key can be the same if the namespace is different
@@ -241,8 +242,8 @@ def filter_blob_related_duplicates(duplicate_entries_dict: Dict[str, List[NVS_En
         seen_blob_index: List[NVS_Entry] = []
         seen_blob_data: List[NVS_Entry] = []
         seen_another_type_data: List[NVS_Entry] = []
-        blob_index_chunk_index_collisions_list: set[NVS_Entry] = set()
-        blob_data_chunk_index_collisions_list: set[NVS_Entry] = set()
+        blob_index_chunk_index_collisions_list: Set[NVS_Entry] = set()
+        blob_data_chunk_index_collisions_list: Set[NVS_Entry] = set()
 
         # Search through the "duplicates" and see if there are real duplicates
         # E.g. the key can be the same for blob_index and blob_data
@@ -297,26 +298,44 @@ def filter_blob_related_duplicates(duplicate_entries_dict: Dict[str, List[NVS_En
     return new_duplicate_entries_dict
 
 
-def filter_entry_duplicates(seen_written_entires: Dict[str, list[NVS_Entry]]) -> Dict[str, List[NVS_Entry]]:
+def filter_entry_duplicates(seen_written_entires: Dict[str, List[NVS_Entry]]) -> Dict[str, List[NVS_Entry]]:
     duplicate_entries_list = {key: v for key, v in seen_written_entires.items() if len(v) > 1}
     duplicate_entries_list_1 = filter_namespaces_fake_duplicates(duplicate_entries_list)
     duplicate_entries_list_2 = filter_blob_related_duplicates(duplicate_entries_list_1)
     return duplicate_entries_list_2
 
 
-def print_entry_duplicates(page: NVS_Page, duplicate_entries_list: Dict[str, List[NVS_Entry]], nvs_log: NVS_Logger) -> None:
+def print_entry_duplicates(duplicate_entries_list: Dict[str, List[NVS_Entry]], nvs_log: NVS_Logger) -> None:
+    if len(duplicate_entries_list) > 0:
+        nvs_log.info(nvs_log.red('Found duplicate entries:'))
+        nvs_log.info(nvs_log.red('Entry\tKey\t\t\tType\t\tNamespace idx\tPage\tPage status'))
+
     for _, duplicate_entries in duplicate_entries_list.items():
-        # duplicate_entries: list[NVS_Entry]
-        nvs_log.info(
-            nvs_log.red(
-                f'''Entry key {duplicate_entries[0].key} on page no. {page.header["page_index"]}
-with status {page.header["status"]} is used by the following entries:'''
-            )
-        )
+        # duplicate_entries: List[NVS_Entry]
         for entry in duplicate_entries:
+            # entry: NVS_Entry
+            if entry.metadata['namespace'] == 0:
+                entry_type = f'namespace ({entry.data["value"]})'
+            else:
+                entry_type = entry.metadata['type']
+
+            if entry.page is not None:
+                page_num = entry.page.header['page_index']
+                page_status = entry.page.header['status']
+            else:
+                page_num = 'Unknown'
+                page_status = 'Unknown'
+
+            entry_key_tab_cnt = len(entry.key) // 8
+            entry_key_tab = '\t' * (3 - entry_key_tab_cnt)
+
+            namespace_tab_cnt = len(entry_type) // 8
+            namepace_tab = '\t' * (2 - namespace_tab_cnt)
+            namespace_str = f'{entry.metadata["namespace"]}'
+
             nvs_log.info(
                 nvs_log.red(
-                    f'Entry #{entry.index:03d} {entry.key} is a duplicate!'
+                    f'#{entry.index:03d}\t{entry.key}{entry_key_tab}{entry_type}{namepace_tab}{namespace_str}\t\t{page_num}\t{page_status}'
                 )
             )
 
@@ -378,8 +397,8 @@ def check_blobs(nvs_log: NVS_Logger) -> None:
 def check_namespaces(nvs_log: NVS_Logger) -> None:
     # Undefined namespace index check
     for used_ns in used_namespaces:
-        key = found_namespaces.pop(used_ns, '')
-        if key == '':
+        key = found_namespaces.pop(used_ns, None)
+        if key is None:
             nvs_log.info(
                 nvs_log.red('Undefined namespace index!'),
                 f'Namespace index: {used_ns:03d}',
@@ -395,6 +414,14 @@ def check_namespaces(nvs_log: NVS_Logger) -> None:
         )
 
 
+def reset_global_variables() -> None:
+    global used_namespaces, found_namespaces, blobs, blob_chunks
+    used_namespaces = {}
+    found_namespaces = {}
+    blobs = {}
+    blob_chunks = []
+
+
 def integrity_check(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> None:
     # Partition size check
     check_partition_size(nvs_partition, nvs_log)
@@ -402,7 +429,7 @@ def integrity_check(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> None:
     # Free/empty page check
     check_empty_page_present(nvs_partition, nvs_log)
 
-    seen_written_entires_all: Dict[str, list[NVS_Entry]] = {}
+    seen_written_entires_all: Dict[str, List[NVS_Entry]] = {}
 
     for page in nvs_partition.pages:
         # page: NVS_Page
@@ -428,7 +455,7 @@ def integrity_check(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> None:
     # Duplicate entry check (2) - same key, different index
     duplicates = filter_entry_duplicates(seen_written_entires_all)
     # Print duplicate entries
-    print_entry_duplicates(page, duplicates, nvs_log)
+    print_entry_duplicates(duplicates, nvs_log)
 
     nvs_log.info()  # Empty line
 
@@ -437,3 +464,5 @@ def integrity_check(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> None:
 
     # Namespace checks
     check_namespaces(nvs_log)
+
+    reset_global_variables()

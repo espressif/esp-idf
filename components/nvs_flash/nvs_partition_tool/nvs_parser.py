@@ -219,6 +219,7 @@ class NVS_Entry:
         self.state = entry_state
         self.is_empty = self.raw == bytearray({0xFF}) * nvs_const.entry_size
         self.index = index
+        self.page = None
 
         namespace = self.raw[0]
         entry_type = self.raw[1]
