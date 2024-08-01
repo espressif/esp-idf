@@ -35,9 +35,11 @@ static void *scan_results_lock = NULL;
 #define ROAM_SCAN_RESULTS_LOCK() os_mutex_lock(scan_results_lock)
 #define ROAM_SCAN_RESULTS_UNLOCK() os_mutex_unlock(scan_results_lock)
 
+#if PERIODIC_RRM_MONITORING
 static void *neighbor_list_lock = NULL;
 #define ROAM_NEIGHBOR_LIST_LOCK() os_mutex_lock(neighbor_list_lock)
 #define ROAM_NEIGHBOR_LIST_UNLOCK() os_mutex_unlock(neighbor_list_lock)
+#endif /*PERIODIC_RRM_MONITORING*/
 
 static int wifi_post_roam_event(struct cand_bss *bss);
 static void determine_best_ap(int8_t rssi_threshold);
@@ -815,8 +817,15 @@ void deinit_roaming_app(void)
 #if PERIODIC_SCAN_MONITORING
     g_roaming_app.periodic_scan_active = false;
 #endif /*PERIODIC_SCAN_MONITORING*/
-    os_mutex_delete(neighbor_list_lock);
-    neighbor_list_lock = NULL;
-    os_mutex_delete(scan_results_lock);
-    scan_results_lock = NULL;
+
+#if PERIODIC_RRM_MONITORING
+    if (neighbor_list_lock) {
+        os_mutex_delete(neighbor_list_lock);
+        neighbor_list_lock = NULL;
+    }
+#endif /*PERIODIC_RRM_MONITORING*/
+    if (scan_results_lock) {
+        os_mutex_delete(scan_results_lock);
+        scan_results_lock = NULL;
+    }
 }
