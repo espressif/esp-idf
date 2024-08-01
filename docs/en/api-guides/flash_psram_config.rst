@@ -259,7 +259,7 @@ Error Handling
 
 Here is a method to burn the eFuse bit:
 
-.. code-block:: python
+.. code-block:: shell
 
     idf.py -p PORT efuse-burn --do-not-confirm FLASH_TYPE 1
 

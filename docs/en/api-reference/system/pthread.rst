@@ -244,6 +244,7 @@ ESP-IDF Extensions
 The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header offers custom extensions to control how subsequent calls to ``pthread_create()`` behaves. Currently, the following configuration can be set:
 
 .. list::
+
     - Default stack size of new threads, if not specified when calling ``pthread_create()`` (overrides :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`).
     - Stack memory capabilities determine which kind of memory is used for allocating pthread stacks. The field takes ESP-IDF heap capability flags, as defined in :component_file:`heap/include/esp_heap_caps.h`. The memory must be 8-bit accessible (MALLOC_CAP_8BIT), besides other custom flags the user can choose from. The user is responsible for ensuring the correctness of the stack memory capabilities. For more information about memory locations, refer to the documentation of :ref:`memory_capabilities`.
     - RTOS priority of new threads (overrides :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`).
