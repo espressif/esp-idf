@@ -113,8 +113,7 @@ _data_seg_org = ORIGIN(rtc_data_seg);
 
 /* The lines below define location alias for .rtc.data section based on Kconfig option.
    When the option is not defined then use slow memory segment
-   else the data will be placed in fast memory segment
-   TODO: check whether the rtc_data_location is correct for esp32s2 - IDF-761 */
+   else the data will be placed in fast memory segment */
 #ifndef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else

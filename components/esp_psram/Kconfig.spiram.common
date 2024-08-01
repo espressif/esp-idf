@@ -23,7 +23,8 @@ config SPIRAM_IGNORE_NOTFOUND
         ESP_WIFI_CACHE_TX_BUFFER_NUM and use static WiFi Tx buffer may cause potential memory exhaustion issues.
         Suggest disable SPIRAM_TRY_ALLOCATE_WIFI_LWIP.
         Suggest disable ESP_WIFI_AMSDU_TX_ENABLED.
-        Suggest disable ESP_WIFI_CACHE_TX_BUFFER_NUM, need clear CONFIG_FEATURE_CACHE_TX_BUF_BIT of config->feature_caps.
+        Suggest disable ESP_WIFI_CACHE_TX_BUFFER_NUM,
+        need clear CONFIG_FEATURE_CACHE_TX_BUF_BIT of config->feature_caps.
         Suggest change ESP_WIFI_TX_BUFFER from static to dynamic. Also suggest to adjust some buffer numbers to the
         values used without PSRAM case. Such as, ESP_WIFI_STATIC_TX_BUFFER_NUM, ESP_WIFI_DYNAMIC_TX_BUFFER_NUM.
 
@@ -109,7 +110,7 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
     bool "Allow .noinit segment placed in external memory"
     default n
-    depends on SPIRAM && IDF_TARGET_ESP32
+    depends on SPIRAM
     help
         If enabled, noinit variables can be placed in PSRAM using EXT_RAM_NOINIT_ATTR.
 
