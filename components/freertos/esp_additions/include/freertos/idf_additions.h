@@ -362,6 +362,11 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
  * @brief Deletes a task previously created using xTaskCreateWithCaps() or
  * xTaskCreatePinnedToCoreWithCaps()
  *
+ * @note It is recommended to use this API to delete tasks from another task's
+ * context, rather than self-deletion. When the task is being deleted, it is vital
+ * to ensure that it is not running on another core. This API must not be called
+ * from an interrupt context.
+ *
  * @param xTaskToDelete A handle to the task to be deleted
  */
     void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete );
