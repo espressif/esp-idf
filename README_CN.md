@@ -15,17 +15,17 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 ![alt text][supported] 代表已支持，![alt text][preview] 代表目前处于预览支持状态。预览支持状态通常有时间限制，而且仅适用于测试版芯片。请确保使用与芯片相匹配的 ESP-IDF 版本。
 
-|芯片         |          v4.4          |          v5.0          |          v5.1          |          v5.2          |          v5.3          |                                                                 |
-|:----------- | :---------------------:| :---------------------:| :--------------------: | :--------------------: | :--------------------: | :-------------------------------------------------------------- |
-|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
-|ESP32-S2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
-|ESP32-C3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
-|ESP32-S3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_S3) |
-|ESP32-C2     |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C2) |
-|ESP32-C6     |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_C6) |
-|ESP32-H2     |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_H2) |
-|ESP32-P4     |                        |                        |                        |                        | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/en/news/ESP32-P4)      |
-|ESP32-C5     |                        |                        |                        |                        | ![alt text][preview]   | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C5) |
+|芯片         |          v5.0          |          v5.1          |          v5.2          |          v5.3          |                                                                 |
+|:----------- | :---------------------:| :--------------------: | :--------------------: | :--------------------: | :-------------------------------------------------------------- |
+|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
+|ESP32-S2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
+|ESP32-C3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                 |
+|ESP32-S3     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_S3) |
+|ESP32-C2     | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C2) |
+|ESP32-C6     |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_C6) |
+|ESP32-H2     |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_H2) |
+|ESP32-P4     |                        |                        |                        | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-P4) |
+|ESP32-C5     |                        |                        |                        | ![alt text][preview]   | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32-C5) |
 
 [supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
 [preview]: https://img.shields.io/badge/-%E9%A2%84%E8%A7%88-orange "preview"
@@ -122,7 +122,7 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 * 最新版的文档：https://docs.espressif.com/projects/esp-idf/ ，该文档是由本仓库 [docs 目录](docs) 构建得到。
 
-* [初学者指南：主要概念和资源](https://www.bilibili.com/video/BV1114y1r7du/) 
+* [初学者指南：主要概念和资源](https://www.bilibili.com/video/BV1114y1r7du/)
 
 * 可以前往 [esp32.com 论坛](https://esp32.com/) 提问，挖掘社区资源。
 
