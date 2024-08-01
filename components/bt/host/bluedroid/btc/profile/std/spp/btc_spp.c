@@ -908,7 +908,12 @@ static void btc_spp_write(btc_spp_args_t *arg)
             }
         } else {
             if (fixed_queue_enqueue(slot->tx.queue, arg->write.p_data, 0)) {
-                BTA_JvRfcommWrite(arg->write.handle, slot->id, arg->write.len, arg->write.p_data);
+                if (BTA_JvRfcommWrite(arg->write.handle, slot->id, arg->write.len, arg->write.p_data) == BTA_JV_SUCCESS) {
+                    arg->write.p_data = NULL; // arg->write.p_data passed to tBTA_JV_API_RFCOMM_WRITE::p_data, set it to NULL to prevent freeing
+                } else {
+                    arg->write.p_data = fixed_queue_try_remove_from_queue(slot->tx.queue, arg->write.p_data);
+                    ret = ESP_SPP_FAILURE;
+                }
             } else {
                 ret = ESP_SPP_NO_RESOURCE;
             }
@@ -966,6 +971,12 @@ void btc_spp_arg_deep_free(btc_msg_t *msg)
     case BTC_SPP_ACT_START_DISCOVERY:
         if (arg->start_discovery.p_uuid_list) {
             osi_free(arg->start_discovery.p_uuid_list);
+        }
+        break;
+    case BTC_SPP_ACT_WRITE:
+        if (arg->write.p_data) {
+            osi_free(arg->write.p_data);
+            arg->write.p_data = NULL;
         }
         break;
     default:
