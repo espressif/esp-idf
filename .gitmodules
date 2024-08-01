@@ -55,6 +55,7 @@
 	sbom-url = https://github.com/DaveGamble/cJSON
 	sbom-description = Ultralightweight JSON parser in ANSI C
 	sbom-hash = acc76239bee01d8e9c858ae2cab296704e52d916
+	sbom-cve-exclude-list = CVE-2024-31755 Resolved in v1.7.18
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
