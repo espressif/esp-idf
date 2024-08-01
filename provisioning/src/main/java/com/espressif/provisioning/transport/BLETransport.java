@@ -403,9 +403,10 @@ public class BLETransport implements Transport {
                 }
 
                 for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
-
-                    Log.d(TAG, "Descriptor : " + descriptor.getUuid().toString());
-                    Log.d(TAG, "Des read : " + bluetoothGatt.readDescriptor(descriptor));
+                    String desUuid = descriptor.getUuid().toString();
+                    if (desUuid.contains(ESPConstants.USER_DESCRIPTION_UUID)) {
+                        Log.d(TAG, "Descriptor read : " + bluetoothGatt.readDescriptor(descriptor));
+                    }
                 }
                 found = true;
                 break;

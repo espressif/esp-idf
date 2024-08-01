@@ -20,6 +20,7 @@ package com.espressif.provisioning;
 public class ESPConstants {
 
     public static final String DEFAULT_WIFI_BASE_URL = "192.168.4.1:80";
+    public static final String USER_DESCRIPTION_UUID = "2901";
 
     public enum TransportType {
         TRANSPORT_BLE,
