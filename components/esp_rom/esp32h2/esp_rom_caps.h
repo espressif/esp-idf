@@ -19,6 +19,7 @@
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano versions of formatting functions
+#define ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG  (1) // ROM has the printf float bug with newlib nano version
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE    (1) // ROM needs to set cache MMU size according to instruction and rodata for flash mmap
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
