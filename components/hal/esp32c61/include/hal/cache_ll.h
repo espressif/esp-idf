@@ -15,8 +15,6 @@
 #include "hal/assert.h"
 #include "esp32c61/rom/cache.h"
 
-//TODO: [ESP32C61] IDF-9253, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -130,6 +128,23 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
 }
 
 /**
+ * @brief Writeback cache supported addr
+ *
+ * Writeback a cache item
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ * @param vaddr             start address of the region to be written back
+ * @param size              size of the region to be written back
+ */
+__attribute__((always_inline))
+static inline void cache_ll_writeback_addr(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size)
+{
+    Cache_WriteBack_Addr(vaddr, size);
+}
+
+/**
  * @brief Freeze Cache
  *
  * @param cache_level  level of the cache
@@ -192,7 +207,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_IRAM0_CACHE_ADDRESS_HIGH) {
-        //c6 the I/D bus memory are shared, so we always return `CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0`
+        //c61 the I/D bus memory are shared, so we always return `CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0`
         mask = (cache_bus_mask_t)(mask | (CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0));
     } else {
         HAL_ASSERT(0);          //Out of region
@@ -212,7 +227,6 @@ __attribute__((always_inline))
 #endif
 static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    //TODO: [ESP32C61] IDF-9253, inherit from c6
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32c61, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -235,7 +249,6 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    //TODO: [ESP32C61] IDF-9253, inherit from c6
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32c61, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -287,6 +300,7 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    // TODO: [ESP32C61] IDF-9252 (inherit from C6)
     SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG, mask);
 }
 
@@ -298,6 +312,7 @@ static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint3
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    // TODO: [ESP32C61] IDF-9252 (inherit from C6)
     SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG, mask);
 }
 
@@ -311,6 +326,7 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
+    // TODO: [ESP32C61] IDF-9252 (inherit from C6)
     return GET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ST_REG, mask);
 }
 
