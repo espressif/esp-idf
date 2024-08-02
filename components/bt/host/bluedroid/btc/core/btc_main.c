@@ -60,6 +60,7 @@ static void btc_init_bluetooth(void)
 #if (BLE_INCLUDED == TRUE)
     //load the ble local key which has been stored in the flash
     btc_dm_load_ble_local_keys();
+    bta_dm_co_security_param_init();
 #endif  ///BLE_INCLUDED == TRUE
 #endif /* #if (SMP_INCLUDED) */
 #if BTA_DYNAMIC_MEMORY
