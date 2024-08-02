@@ -1809,6 +1809,15 @@
 #define OBX_FCR_TX_POOL_ID                3
 #endif
 
+/* Maximum OBEX connection allowed */
+#ifndef OBEX_MAX_CONNECTION
+#define OBEX_MAX_CONNECTION               3
+#endif
+
+/* Maximum OBEX server allowed */
+#ifndef OBEX_MAX_SERVER
+#define OBEX_MAX_SERVER                   2
+#endif
 
 /******************************************************************************
 **
