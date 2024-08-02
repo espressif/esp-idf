@@ -106,6 +106,25 @@ menu "Ultra Low Power (ULP) Co-processor"
                 Disabling this option will reduce the LP core binary size by not
                 linking in panic handler functionality.
 
+        config ULP_HP_UART_CONSOLE_PRINT
+            depends on ULP_COPROC_TYPE_LP_CORE
+            bool
+            prompt "Route lp_core_printf to the console HP-UART"
+            help
+                Set this option to route lp_core_printf to the console HP-UART.
+                This allows you to easily view print outputs from the LP core, without
+                having to connect to the LP-UART. This option comes with the following
+                limitations:
+
+                1. There is no mutual exclusion between the HP-Core and the LP-Core accessing
+                the HP-UART, which means that if both cores are logging heavily the output
+                strings might get mangled together.
+                2. The HP-UART can only work while the HP-Core is running, which means that
+                if the HP-Core is in deep sleep, the LP-Core will not be able to print to the
+                console HP-UART.
+
+                Due to these limitations it is only recommended to use this option for easy debugging.
+                For more serious use-cases you should use the LP-UART.
     endmenu
 
 endmenu  # Ultra Low Power (ULP) Co-processor

@@ -11,4 +11,4 @@ set(EXTRA_COMPONENT_DIRS
 set(COMPONENTS main)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(lp_core_test)
+project(lp_core_basic_tests)

@@ -37,3 +37,10 @@ void lp_core_printf(const char* format, ...);
 extern void ets_install_uart_printf(void);
 #define lp_core_install_uart_print ets_install_uart_printf
 #endif /* CONFIG_ULP_ROM_PRINT_ENABLE */
+
+/**
+ * @brief Print a single character from the LP core
+ *
+ * @param c     character to be printed
+ */
+void lp_core_print_char(char c);
