@@ -1,2 +1,2 @@
 dependencies:
-  esp_lcd_ili9881c: ">=0.1.0"
+  esp_lcd_ili9881c: "~0.2.0"
