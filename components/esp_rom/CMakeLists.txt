@@ -236,6 +236,10 @@ else() # Regular app build
             rom_linker_script("newlib-nano")
         endif()
 
+        if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
+            rom_linker_script("eco4")
+        endif()
+
     elseif(target STREQUAL "esp32c6")
         rom_linker_script("newlib")
         rom_linker_script("version")
