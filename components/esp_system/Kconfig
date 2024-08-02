@@ -411,7 +411,7 @@ menu "ESP System Settings"
         default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
-            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
+            The timeout of the watchdog, in milliseconds. Make this higher than the FreeRTOS tick rate.
 
     config ESP_INT_WDT_CHECK_CPU1
         bool "Also watch CPU1 tick interrupt"
@@ -485,7 +485,7 @@ menu "ESP System Settings"
 
     config ESP_XT_WDT
         bool "Initialize XTAL32K watchdog timer on startup"
-        depends on !IDF_TARGET_ESP32 && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        depends on SOC_XT_WDT_SUPPORTED && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
         default n
         help
             This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
