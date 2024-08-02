@@ -344,7 +344,9 @@ Python API
 应用示例
 ------------
 
-- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到出厂分区等操作。有关更多信息，请参考 :example_file:`system/ota/otatool/README.md`。
+- :example:`system/ota/native_ota_example` 演示了如何在 {IDF_TARGET_NAME} 上使用 `app_update` 组件的 API 进行原生空中升级 (OTA)。适用的 SoC 请参阅 :example_file:`system/ota/native_ota_example/README.md`。
+
+- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到工厂分区等操作。详情请参阅 :example_file:`system/ota/otatool/README.md`。
 
 API 参考
 --------
