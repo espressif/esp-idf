@@ -166,6 +166,11 @@ else() # Regular app build
         # For ESP32S2, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
         rom_linker_script("spiflash_legacy")
 
+    elseif(target STREQUAL "esp32c2")
+        if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
+            rom_linker_script("eco4")
+        endif()
+
     elseif(target STREQUAL "esp32c3")
 
         if(CONFIG_ESP32C3_REV_MIN_FULL GREATER_EQUAL 3)
