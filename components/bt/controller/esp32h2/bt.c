@@ -129,6 +129,9 @@ extern void os_msys_deinit(void);
 extern sleep_retention_entries_config_t *r_esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
 extern void r_esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#if CONFIG_PM_ENABLE
+extern void esp_ble_stop_wakeup_timing(void);
+#endif // CONFIG_PM_ENABLE
 extern void r_esp_ble_change_rtc_freq(uint32_t freq);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
                                 const uint8_t *peer_pub_key_y,
@@ -613,6 +616,9 @@ esp_err_t controller_sleep_init(void)
     if (rc != ESP_OK) {
         goto error;
     }
+
+    rc = esp_deep_sleep_register_hook(&esp_ble_stop_wakeup_timing);
+    assert(rc == 0);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     /* Create a new regdma link for BLE related register restoration */
     rc = sleep_modem_ble_mac_modem_state_init(0);
@@ -633,6 +639,7 @@ error:
     esp_sleep_disable_bt_wakeup();
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+    esp_deep_sleep_deregister_hook(&esp_ble_stop_wakeup_timing);
     /*lock should release first and then delete*/
     if (s_pm_lock != NULL) {
         esp_pm_lock_delete(s_pm_lock);
@@ -652,6 +659,7 @@ void controller_sleep_deinit(void)
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #ifdef CONFIG_PM_ENABLE
+    esp_deep_sleep_deregister_hook(&esp_ble_stop_wakeup_timing);
     /* lock should be released first */
     esp_pm_lock_delete(s_pm_lock);
     s_pm_lock = NULL;
