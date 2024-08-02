@@ -267,6 +267,10 @@ config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
 
+config SOC_DEBUG_PROBE_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -639,6 +643,14 @@ config SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
     bool
     default y
 
+config SOC_DEBUG_PROBE_NUM_UNIT
+    int
+    default 1
+
+config SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH
+    int
+    default 16
+
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
@@ -752,6 +764,10 @@ config SOC_I2S_NUM
     default 3
 
 config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
     bool
     default y
 
@@ -878,10 +894,6 @@ config SOC_LEDC_SUPPORT_FADE_STOP
 config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     int
     default 10
-
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    bool
-    default n
 
 config SOC_MMU_PERIPH_NUM
     int

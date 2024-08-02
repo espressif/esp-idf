@@ -140,3 +140,10 @@ FreeRTOS 堆
 
     - 使用一个 ``...CreateWithCaps()`` API，如 :cpp:func:`xTaskCreateWithCaps` 和 :cpp:func:`xQueueCreateWithCaps` 来分配任务或对象（参见 :ref:`freertos-idf-additional-api` 获取更多详细信息）。
     - 使用 :cpp:func:`heap_caps_malloc` 为这些对象手动分配外部内存，然后使用 FreeRTOS 的一个 ``...CreateStatic()`` 函数从分配的内存中创建对象。
+
+应用示例
+--------------------
+
+- :example:`system/freertos/basic_freertos_smp_usage` 演示了如何在 {IDF_TARGET_NAME} 的 SMP 架构中使用基本的 FreeRTOS API 进行任务创建、通信、同步和批处理。
+
+- :example:`system/freertos/real_time_stats` 演示了如何使用 FreeRTOS 的 vTaskGetRunTimeStats() 函数来获取任务在指定时间段内的 CPU 使用统计信息，而不是整个 FreeRTOS 运行时间的统计信息。

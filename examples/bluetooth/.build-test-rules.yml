@@ -46,6 +46,9 @@ examples/bluetooth/bluedroid/classic_bt:
     - esp_driver_uart
   depends_filepatterns:
     - components/driver/dac/**/*
+    - examples/bluetooth/bluedroid/esp_hid_host/**/*
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
@@ -189,6 +192,10 @@ examples/bluetooth/nimble/blecent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5"]
+      temporary: true
+      reason: Not supported yet
   depends_components:
     - bt
     - esp_phy
@@ -237,6 +244,10 @@ examples/bluetooth/nimble/power_save:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5"]
+      temporary: true
+      reason: Not supported yet
   depends_components:
     - bt
     - esp_phy
@@ -253,6 +264,21 @@ examples/bluetooth/nimble/throughput_app:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
+
+# Remove this special case for esp32c5 after IDF-8638
+examples/bluetooth/nimble/throughput_app/blecent_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: c5 build failed. Fix in IDF-8638
   depends_components:
     - esp_driver_gpio
     - esp_driver_uart

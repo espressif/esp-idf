@@ -18,6 +18,9 @@ if(CONFIG_SOC_I2S_SUPPORTED)
     if(CONFIG_SOC_I2S_SUPPORTS_TDM)
         list(APPEND srcs "i2s_tdm.c")
     endif()
+    if(CONFIG_SOC_I2S_SUPPORTS_ETM)
+        list(APPEND srcs "i2s_etm.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

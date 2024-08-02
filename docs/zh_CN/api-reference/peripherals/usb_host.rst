@@ -367,7 +367,7 @@ USB 主机栈提供了大量示例，展示了如何通过使用主机库 API �
 CDC-ACM
 """""""
 
-* 通信设备 Class（抽象控制模型）的主机 Class 驱动程序通过 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__ 作为受管理的组件分发。
+* 通信设备 Class（抽象控制模型）的主机 Class 驱动程序通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__ 作为受管理的组件分发。
 * 示例 :example:`peripherals/usb/host/cdc/cdc_acm_host` 使用 CDC-ACM 主机驱动程序组件，与 CDC-ACM 设备通信。
 * 示例 :example:`peripherals/usb/host/cdc/cdc_acm_vcp` 展示了如何扩展 CDC-ACM 主机驱动程序，与虚拟串口设备交互。
 * 示例 `esp_modem <https://github.com/espressif/esp-protocols/tree/master/components/esp_modem/examples>`__ 中也使用了 CDC-ACM 驱动程序，该程序在这些示例中与蜂窝模块通信。
@@ -375,19 +375,19 @@ CDC-ACM
 MSC
 """
 
-* 大容量存储 Class（仅支持批量传输）的主机 Class 驱动程序已部署到 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_msc>`__。
+* 大容量存储 Class（仅支持批量传输）的主机 Class 驱动程序已部署到 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_msc>`__。
 * 示例 :example:`peripherals/usb/host/msc` 展示了如何使用 MSC 主机驱动程序读写 USB flash 驱动。
 
 HID
 """
 
-* HID（人机接口设备）的主机 class 驱动作为托管组件通过 `ESP-IDF 组件注册器 <https://components.espressif.com/components/espressif/usb_host_hid>`__ 分发。
+* HID（人机接口设备）的主机 class 驱动作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb_host_hid>`__ 分发。
 * 示例 :example:`peripherals/usb/host/hid` 展示了从具有多个接口的 USB HID 设备接收报告的可能性。
 
 UVC
 """
 
-* USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
+* USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
 * 示例 :example:`peripherals/usb/host/uvc` 展示了如何使用 UVC 主机驱动程序接收来自 USB 摄像头的视频流，并可选择将该流通过 Wi-Fi 转发。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------

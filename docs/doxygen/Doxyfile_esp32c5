@@ -10,3 +10,4 @@ INPUT += \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
         $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
+        $(PROJECT_PATH)/components/bt/include/esp32c5/include/esp_bt.h \

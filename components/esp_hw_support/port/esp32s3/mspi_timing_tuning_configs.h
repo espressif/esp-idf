@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #define MSPI_TIMING_PSRAM_TEST_DATA_ADDR             0
 #define MSPI_TIMING_FLASH_TEST_DATA_ADDR             ESP_BOOTLOADER_OFFSET
 /**
- * @note BACKGOURND:
+ * @note BACKGROUND:
  *
  * The SPI FLASH module clock and SPI PSRAM module clock is divided from the SPI core clock, core clock is from system clock:
  *
@@ -24,7 +24,7 @@
  * RTC8M  ----|                      |---- PSRAM Module Clock
  *
  *
- * DDR stands for double data rate, MSPI samples at both posedge and negedge. So the real spped will be doubled.
+ * DDR stands for double data rate, MSPI samples at both posedge and negedge. So the real speed will be doubled.
  * Speed from high to low: 120M DDR > 80M DDR > 120 SDR > 80M SDR > ...
  *
  * Module with speed lower than 120M SDR doesn't need to be tuned
@@ -249,11 +249,16 @@ ESP_STATIC_ASSERT(CHECK_POWER_OF_2(MSPI_TIMING_CORE_CLOCK_MHZ / MSPI_TIMING_PSRA
 //------------------------------------------Frequency Scanning Related-----------------------------------------------//
 /**
  * On ESP32S3, only module clock 120M, DDR mode needs frequency scan. Frequency scanning is to get the max workable PLL
- * frequency under each successfull timing tuning configuration. PLL frequency may fluctuate under high temperature,
+ * frequency under each successful timing tuning configuration. PLL frequency may fluctuate under high temperature,
  * this method is to get the tuning configuration that can work under higher PLL frequency.
  */
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+#define MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MIN                                      424
+#else
 #define MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MIN                                      440
+#endif
 #define MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX                                      600
 #define MSPI_TIMING_PLL_FREQ_SCAN_THRESH_MHZ_LOW                                     448
 #define MSPI_TIMING_PLL_FREQ_SCAN_THRESH_MHZ_HIGH                                    520
+#define MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ                                          160
 #define MSPI_TIMING_PLL_FREQ_SCAN_STEP_MHZ_MODULE_CLK_120M                           8

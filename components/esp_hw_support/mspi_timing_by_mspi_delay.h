@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,6 +247,13 @@ uint8_t mspi_timing_config_get_flash_extra_dummy(void);
 #endif  //#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
 
 #endif  //#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+/**
+ * @brief Set best point for psram timing tuning dynamic temperature scheme
+ */
+void mspi_timing_setting_temperature_adjustment_best_point(uint32_t best_point);
+#endif // CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
 
 #ifdef __cplusplus
 }

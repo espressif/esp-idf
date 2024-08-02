@@ -105,6 +105,10 @@ SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_system/port
 # This makes more sense to be done after esp_pm_impl_init (called from init_pm).
 SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_connection_monitor.c on BIT(0)
 
+# psram adjust timing point need a separate task which should be created at startup.
+# Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_by_mspi_delay.c on BIT(0)
+
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog
 SECONDARY: 999: init_disable_rtc_wdt in components/esp_system/startup_funcs.c on BIT(0)

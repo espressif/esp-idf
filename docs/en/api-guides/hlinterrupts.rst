@@ -77,8 +77,8 @@ Using these symbols is done by creating an assembly file with suffix ``.S`` and 
 .. code-block:: none
 
         .section .iram1,"ax"
-        .global     xt_highint5
-        .type       xt_highint5,@function
+        .global     xt_highint4
+        .type       xt_highint4,@function
         .align      4
     xt_highint5:
         ... your code here

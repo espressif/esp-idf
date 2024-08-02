@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
-#include "soc/lpperi_reg.h"
+#include "hal/regi2c_ctrl_ll.h"
 /**
  * DIG_REG      - 0x6D - BIT10
  * PLL_CPU      - 0x67 - BIT11
@@ -87,8 +87,8 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
 
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
-    REG_SET_BIT(LPPERI_CLK_EN_REG, LPPERI_CK_EN_LP_I2CMST);
-    SET_PERI_REG_MASK(I2C_ANA_MST_CLK160M_REG, I2C_ANA_MST_CLK_I2C_MST_SEL_160M);
+    int __DECLARE_RCC_RC_ATOMIC_ENV __attribute__ ((unused)); // Right now this patch in rom can not depend on esp_hw_support, after IDF-10110 is done, this should be removed, should have spinlock protection
+    regi2c_ctrl_ll_master_enable_clock(true);
     REG_SET_FIELD(I2C_ANA_MST_ANA_CONF2_REG, I2C_ANA_MST_ANA_CONF2, 0);
     REG_SET_FIELD(I2C_ANA_MST_ANA_CONF1_REG, I2C_ANA_MST_ANA_CONF1, 0);
 

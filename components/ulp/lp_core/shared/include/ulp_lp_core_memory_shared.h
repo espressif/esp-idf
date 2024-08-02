@@ -12,7 +12,8 @@ extern "C" {
 #endif
 
 typedef struct {
-    uint64_t sleep_duration_us;  /* Configured sleep duration for periodic wakeup, if set the ulp will automatically schedule the next wakeup */
+    uint64_t sleep_duration_us;     /* Configured sleep duration for periodic wakeup, if set the ulp will automatically schedule the next wakeup */
+    uint64_t sleep_duration_ticks;  /* Configured sleep duration, in LP-timer clock ticks, if set it allows us to skip doing integer division when configuring the timer  */
 } ulp_lp_core_memory_shared_cfg_t;
 
 /**

@@ -631,9 +631,11 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
     }
     memcpy(async_aux->resp_hdrs, r_aux->resp_hdrs, hd->config.max_resp_headers * sizeof(struct resp_hdr));
 
+    // Prevent the main thread from reading the rest of the request after the handler returns.
+    r_aux->remaining_len = 0;
+
     // mark socket as "in use"
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->for_async_req = true;
+    r_aux->sd->for_async_req = true;
 
     *out = async;
 

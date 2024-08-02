@@ -427,7 +427,7 @@ Now to Development
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
-A Board Support Package can be found in `IDF Component Registry <https://components.espressif.com/component/espressif/esp_wrover_kit>`_.
+A Board Support Package can be found in `ESP Component Registry <https://components.espressif.com/component/espressif/esp_wrover_kit>`_.
 
 The application examples that use some hardware specific to your ESP-WROVER-KIT can be found below.
 

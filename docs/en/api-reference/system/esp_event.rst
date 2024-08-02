@@ -212,14 +212,12 @@ Event Loop Profiling
 
 A configuration option :ref:`CONFIG_ESP_EVENT_LOOP_PROFILING` can be enabled in order to activate statistics collection for all event loops created. The function :cpp:func:`esp_event_dump` can be used to output the collected statistics to a file stream. More details on the information included in the dump can be found in the :cpp:func:`esp_event_dump` API Reference.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Examples of using the ``esp_event`` library can be found in :example:`system/esp_event`. The examples cover event declaration, loop creation, handler registration and deregistration, and event posting.
+- :example:`system/esp_event/default_event_loop` demonstrates how to use the default event loop system of {IDF_TARGET_NAME} to post and handle events, including declaring and defining events, creating the default event loop, posting events to the loop, and registering/unregistering event handlers.
 
-Other examples which also adopt ``esp_event`` library:
-
-    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`, which decodes the statements received from GPS.
+- :example:`system/esp_event/user_event_loops` demonstrates how to create and use user event loops on {IDF_TARGET_NAME}, including creating and running event loops, registering and unregistering handlers, and posting events, with the ability to handle different use cases beyond the default event loop.
 
 API Reference
 -------------

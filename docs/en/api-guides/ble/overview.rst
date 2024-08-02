@@ -1,9 +1,9 @@
-Bluetooth® Overview
-===================
+Introduction
+=============
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides an architecture overview of the Bluetooth stack in ESP-IDF and some quick links to related documents and application examples.
+This document provides an architecture overview of the Bluetooth Low Energy (Bluetooth LE) stack in ESP-IDF and some quick links to related documents and application examples.
 
 .. only:: esp32
 
@@ -17,36 +17,36 @@ This document provides an architecture overview of the Bluetooth stack in ESP-ID
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.3.
 
-The Bluetooth stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
+The Bluetooth LE stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
 
 .. only:: esp32 or esp32s3 or esp32c3 or esp32c6
 
-    .. figure:: ../../_static/bluetooth-architecture.png
+    .. figure:: ../../../_static/bluetooth-architecture.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
 .. only:: esp32c2
 
-    .. figure:: ../../_static/bluetooth-architecture-no-ble-mesh.png
+    .. figure:: ../../../_static/bluetooth-architecture-no-ble-mesh.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
 .. only:: esp32h2
 
-    .. figure:: ../../_static/bluetooth-architecture-no-blufi.png
+    .. figure:: ../../../_static/bluetooth-architecture-no-blufi.png
         :align: center
         :scale: 90%
-        :alt: {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        :alt: {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-        {IDF_TARGET_NAME} Bluetooth Stack Architecture
+        {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-The table below shows whether the Bluetooth modules are supported in a specific chip series.
+The table below shows whether the Bluetooth LE modules are supported in a specific chip series.
 
 .. list-table::
     :width: 100%
@@ -110,7 +110,7 @@ ESP Bluetooth Controller
 
 At the bottom layer is ESP Bluetooth Controller, which encompasses various modules such as PHY, Baseband, Link Controller, Link Manager, Device Manager, and HCI. It handles hardware interface management and link management. It provides functions in the form of libraries and is accessible through APIs. This layer directly interacts with the hardware and low-level Bluetooth protocols.
 
-- :doc:`API reference <../api-reference/bluetooth/controller_vhci>`
+- :doc:`API reference <../../api-reference/bluetooth/controller_vhci>`
 - :example:`Application examples <bluetooth/hci>`
 
 
@@ -129,7 +129,7 @@ There are two hosts, ESP-Bluedroid and ESP-NimBLE. The major difference between 
 ESP-Bluedroid
 ^^^^^^^^^^^^^
 
-ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP, GATT/ATT, SMP, GAP, and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with "esp", to the application layer, processing GATT-based profiles and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Bluetooth APIs prefixed with "esp".
+ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP, GATT/ATT, SMP, GAP, and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with "esp", to the application layer, processing GATT-based profiles and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Bluetooth Low Energy APIs prefixed with "esp".
 
 .. only:: esp32
 
@@ -141,15 +141,17 @@ ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Blued
 
 - API references
 
-  - :doc:`../api-reference/bluetooth/bt_common`
-  - :doc:`Bluetooth LE <../api-reference/bluetooth/bt_le>`
+  - :doc:`../../api-reference/bluetooth/bt_common`
+  - :doc:`Bluetooth LE <../../api-reference/bluetooth/bt_le>`
 
-  .. only:: esp32
+.. only:: esp32
 
-    - :doc:`../api-reference/bluetooth/classic_bt`
+    - :example:`Bluetooth LE 4.2 Application Examples <bluetooth/bluedroid/ble>`
 
-- :example:`Application examples <bluetooth/bluedroid>`
+.. only:: not esp32
 
+    - :example:`Bluetooth LE 4.2 Application Examples <bluetooth/bluedroid/ble>`
+    - :example:`Bluetooth LE 5.0 Application Examples <bluetooth/bluedroid/ble_50>`
 
 ESP-NimBLE
 ^^^^^^^^^^
@@ -162,7 +164,7 @@ ESP-NimBLE supports Bluetooth LE only. Classic Bluetooth is not supported.
 - API references
 
   - `NimBLE API references <https://mynewt.apache.org/latest/network/ble_hs/ble_hs.html>`__
-  - :doc:`ESP-NimBLE API references for initialization <../api-reference/bluetooth/nimble/index>`
+  - :doc:`ESP-NimBLE API references for initialization <../../api-reference/bluetooth/nimble/index>`
 
 - :example:`Application examples <bluetooth/nimble>`
 
@@ -180,7 +182,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
 
   Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
 
-  - :doc:`ESP-BLE-MESH documentation <esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
+  - :doc:`ESP-BLE-MESH documentation <../esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
   - :example:`Application examples <bluetooth/esp_ble_mesh>`
 
 
@@ -198,4 +200,4 @@ Above the host stacks are the profile implementations by Espressif and some comm
 Applications
 ------------
 
-At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid and ESP-NimBLE stacks, leveraging the provided APIs and profiles to create Bluetooth-enabled applications tailored to specific use cases.
+At the uppermost layer are applications. You can build your own applications on top of the ESP-Bluedroid and ESP-NimBLE stacks, leveraging the provided APIs and profiles to create Bluetooth LE-enabled applications tailored to specific use cases.

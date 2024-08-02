@@ -19,7 +19,7 @@ The following C++ features are supported:
 ``esp-idf-cxx`` Component
 -------------------------
 
-`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ component provides higher-level C++ APIs for some of the ESP-IDF features. This component is available from the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`_.
+`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ component provides higher-level C++ APIs for some of the ESP-IDF features. This component is available from the `ESP Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`_.
 
 
 C++ Language Standard

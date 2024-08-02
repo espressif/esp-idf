@@ -87,7 +87,7 @@ static uint8_t esp_dpp_deinit_auth(void)
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
 {
-    if (evt == ESP_SUPP_DPP_FAIL && s_dpp_ctx.dpp_auth) {
+    if (s_dpp_ctx.dpp_auth) {
         esp_dpp_deinit_auth();
     }
     s_dpp_ctx.dpp_event_cb(evt, data);
@@ -179,6 +179,7 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
 
+    wpa_printf(MSG_DEBUG, "DPP: Sending authentication response.");
     esp_dpp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                               wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                               rx_param->channel, OFFCHAN_TX_WAIT_TIME);
@@ -845,7 +846,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
         return ESP_FAIL;
     }
     if (s_dpp_ctx.dpp_global) {
-        wpa_printf(MSG_ERROR, "DPP: failed to init as init already done.");
+        wpa_printf(MSG_ERROR, "DPP: failed to init as init already done. Please deinit first and retry.");
         return ESP_FAIL;
     }
 

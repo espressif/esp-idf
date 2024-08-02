@@ -38,6 +38,7 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c"
                      "dma/esp_dma_utils.c"
+                     "dma/gdma_link.c"
                      "spi_share_hw_ctrl.c"
                      "spi_bus_lock.c")
 
@@ -82,6 +83,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GP_LDO_SUPPORTED)
         list(APPEND srcs "ldo/esp_ldo_regulator.c")
+    endif()
+
+    if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
+        list(APPEND srcs "debug_probe/debug_probe.c")
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
@@ -177,8 +182,11 @@ else()
     list(APPEND priv_requires "esp_system")
 endif()
 
+set(public_include_dirs "include" "include/soc" "include/soc/${target}"
+                        "dma/include" "ldo/include" "debug_probe/include")
+
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include include/soc include/soc/${target} dma/include ldo/include
+                       INCLUDE_DIRS ${public_include_dirs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"

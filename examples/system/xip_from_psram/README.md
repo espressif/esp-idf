@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- |
 
 # XIP (Execute-In-Place) From PSRAM Example
 
@@ -10,14 +10,14 @@ This example illustrates a typical usage of XIP (Execute-In-Place) From PSRAM. W
 ## Overview
 
 Here we define two sets of operations related to external memory:
-SET1:  Operations where CPU fetches data and instructions from external memory. 
+SET1:  Operations where CPU fetches data and instructions from external memory.
 SET2: `ESP Flash` driver operations and other operations from drivers based on `ESP Flash` (NVS, Partition drivers, etc.).
 
 By default, during `SET2` operations, concurrent access requests to the Flash and PSRAM (`SET1` operations) will be disabled otherwise both the `SET1` and `SET2` operations are not guaranteed to be safe (this is an undefined behaviour).
 
 Only ISRs in internal RAM will get executed during `SET2` operations. Besides, if any functions or data are accessed in these ISRs (usually this happens in ISR callbacks), they need to be placed into internal RAM as well. For interrupt handlers which need to execute when the cache is disabled (e.g., for low latency operations), you need to set the ESP_INTR_FLAG_IRAM flag when the interrupt handler is registered.
 
-When **CONFIG_SPIRAM_FETCH_INSTRUCTIONS** and **CONFIG_SPIRAM_RODATA** are both enabled,  the `flash.text` sections (for instructions) and the `.rodata` section (read only data) will be moved to PSRAM. Corresponding virtual memory range will be re-mapped to PSRAM. Under this condition, ESP-IDF won't disable concurrent accesses to external memory (`SET1` operations) anymore.
+When **CONFIG_SPIRAM_XIP_FROM_PSRAM** is enabled,  the `flash.text` sections (for instructions) and the `.rodata` section (read only data) will be moved to PSRAM. Corresponding virtual memory range will be mapped to PSRAM. Under this condition, ESP-IDF won't disable concurrent accesses to external memory (`SET1` operations) anymore.
 
 By using this feature, during `SET2` operations, placement of ISRs, ISR callbacks, and related data are no longer limited to internal RAM.
 
@@ -27,17 +27,17 @@ To show this feature, in this example we go through the following steps:
 
 `General Steps`:
 1. Create a partition for Flash Erase Operation
-2. Create an esp_timer in one-shot mode 
+2. Create an esp_timer in one-shot mode
 
 `PSRAM Steps`:
 3. Do a Flash erase operation, and start the timer
-4. ESP-Timer callback is dispatched and it calls a function in PSRAM during the flash erase operation 
+4. ESP-Timer callback is dispatched and it calls a function in PSRAM during the flash erase operation
 5. The Flash erase operation finishes
 6. Show the result about the callback(in PSRAM) response and execute time
 
 `IRAM Steps`:
 7. Do a Flash erase operation, and start the timer
-8. ESP-Timer callback is dispatched and it calls a function in IRAM during the flash erase operation 
+8. ESP-Timer callback is dispatched and it calls a function in IRAM during the flash erase operation
 9. The flash erase operation finishes
 10. Show the result about the callback(in IRAM) response and execute time
 
@@ -46,28 +46,28 @@ To show this feature, in this example we go through the following steps:
 Initialization and config -> Flash erase start -> ESP-Timer callback(in PSRAM) appear -> Flash erase finish -> Flash erase start -> ESP-Timer callback(in IRAM) appear -> Flash erase finish
 
                        ISR         CPU
-                        |           | 
                         |           |
-                        |           |           
-                        |           * <----flash operation starts 
+                        |           |
+                        |           |
+                        |           * <----flash operation starts
                         |           *
-      callback starts   * --------> *              
-         (in PSRAM)     *           *              
-      callback finishes * <-------- *       
+      callback starts   * --------> *
+         (in PSRAM)     *           *
+      callback finishes * <-------- *
                         |           *
                         |           *
                         |           * <----flash operation finishes
                         |           |
                         |           |
                         |           |
-                        |           | 
                         |           |
-                        |           |           
-                        |           * <----flash operation starts 
+                        |           |
+                        |           |
+                        |           * <----flash operation starts
                         |           *
-      callback starts   * --------> *              
-         (in IRAM)      *           *              
-      callback finishes * <-------- *       
+      callback starts   * --------> *
+         (in IRAM)      *           *
+      callback finishes * <-------- *
                         |           *
                         |           *
                         |           * <----flash operation finishes

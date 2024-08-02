@@ -224,11 +224,18 @@ ULP LP-Core 中断
 应用示例
 --------
 
-* 在示例 :example:`system/ulp/lp_core/gpio` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时轮询 GPIO。
-* 在示例 :example:`system/ulp/lp_core/lp_i2c` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时读取外部 I2C 环境光传感器 (BH1750)，并在达到阈值时唤醒主 CPU。
-* 在示例 :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` 中，低功耗内核上运行的 LP UART 驱动程序读取并回显写入串行控制台的数据。
+* :example:`system/ulp/lp_core/gpio` 展示了 ULP LP-Core 协处理器在主 CPU 深度睡眠时轮询 GPIO。
+
+.. only:: esp32c6
+
+    * :example:`system/ulp/lp_core/lp_i2c` 展示了 ULP LP-Core 协处理器在主 CPU 深度睡眠时读取外部 I2C 环境光传感器 (BH1750)，并在达到阈值时唤醒主 CPU。
+
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` 展示了低功耗内核上运行的 LP UART 驱动程序如何读取并回显写入串行控制台的数据。
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` 展示了如何在低功耗内核上使用串口打印功能。
+
 * :example:`system/ulp/lp_core/interrupt` 展示了如何在 LP 内核上注册中断处理程序，接收由主 CPU 触发的中断。
+
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` 展示了如何在主 CPU 处于 Deep-sleep 模式时，使用 GPIO 中断为脉冲计数。
 
 API 参考

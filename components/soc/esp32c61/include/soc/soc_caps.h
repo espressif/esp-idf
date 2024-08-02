@@ -22,7 +22,7 @@
 #define SOC_UART_SUPPORTED              1       //TODO: [ESP32C61] IDF-9320
 //  \#define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32C61] IDF-9310, IDF-9311
 //  \#define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32C61] IDF-9310, IDF-9311
-//  \#define SOC_GPTIMER_SUPPORTED           1    //TODO: [ESP32C61] IDF-9306
+#define SOC_GPTIMER_SUPPORTED           1
 //  \#define SOC_BT_SUPPORTED                1
 //  \#define SOC_IEEE802154_SUPPORTED        1
 //  \#define SOC_ASYNC_MEMCPY_SUPPORTED      1    //TODO: [ESP32C61] IDF-9315
@@ -61,7 +61,7 @@
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32C61] IDF-9314
 //  \#define SOC_RNG_SUPPORTED               1    //TODO: [ESP32C61] IDF-9236
 //  \#define SOC_MODEM_CLOCK_SUPPORTED       1
-//  \#define SOC_REG_I2C_SUPPORTED           1    //TODO: [ESP32C61] IDF-9276
+#define SOC_REG_I2C_SUPPORTED           1
 
 //  \#define SOC_TWAI_SUPPORTED              0    //TODO: [ESP32C61] IDF-9336
 //  \#define SOC_ETM_SUPPORTED               0
@@ -278,6 +278,7 @@
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
+#define SOC_MMU_PAGE_SIZE_8KB_SUPPORTED       (1)
 #define SOC_MMU_PERIPH_NUM                    (1U)
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (1U)
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
@@ -378,7 +379,7 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-// #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
+#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 // #define SOC_TIMER_SUPPORT_ETM             (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/

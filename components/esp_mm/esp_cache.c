@@ -7,9 +7,11 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include <string.h>
+#include "sys/lock.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_caps.h"
 #include "soc/soc_caps.h"
@@ -26,6 +28,58 @@ static const char *TAG = "cache";
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+static _lock_t s_mutex;
+#endif
+
+#if SOC_CACHE_WRITEBACK_SUPPORTED
+static void s_c2m_ops(uint32_t vaddr, size_t size)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (!xPortInIsrContext()) {
+        bool valid = true;
+        size_t offset = 0;
+        while (offset < size) {
+            size_t chunk_len = ((size - offset) > CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN) ? CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN : (size - offset);
+            esp_os_enter_critical_safe(&s_spinlock);
+            valid &= cache_hal_writeback_addr(vaddr + offset, chunk_len);
+            esp_os_exit_critical_safe(&s_spinlock);
+            offset += chunk_len;
+        }
+        assert(valid);
+    } else
+#endif
+    {
+        bool valid = false;
+        esp_os_enter_critical_safe(&s_spinlock);
+        valid = cache_hal_writeback_addr(vaddr, size);
+        esp_os_exit_critical_safe(&s_spinlock);
+        assert(valid);
+    }
+}
+#endif
+
+//no ops if ISR context or critical section context
+static void s_acquire_mutex_from_task_context(void)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (xPortCanYield()) {
+        _lock_acquire(&s_mutex);
+        ESP_LOGD(TAG, "mutex is taken");
+    }
+#endif  //#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+}
+
+//no ops if ISR context or critical section context
+static void s_release_mutex_from_task_context(void)
+{
+#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+    if (xPortCanYield()) {
+        _lock_release(&s_mutex);
+        ESP_LOGD(TAG, "mutex is free");
+    }
+#endif  //#if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+}
 
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 {
@@ -57,6 +111,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%" PRIx32 ", or the size: 0x%" PRIx32 " is(are) not aligned with cache line size (0x%" PRIx32 ")B", (uint32_t)addr, (uint32_t)size, cache_line_size);
     }
 
+    s_acquire_mutex_from_task_context();
     if (flags & ESP_CACHE_MSYNC_FLAG_DIR_M2C) {
         ESP_EARLY_LOGV(TAG, "M2C DIR");
 
@@ -76,11 +131,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         }
 
 #if SOC_CACHE_WRITEBACK_SUPPORTED
-
-        esp_os_enter_critical_safe(&s_spinlock);
-        valid = cache_hal_writeback_addr(vaddr, size);
-        esp_os_exit_critical_safe(&s_spinlock);
-        assert(valid);
+        s_c2m_ops(vaddr, size);
 
         if (flags & ESP_CACHE_MSYNC_FLAG_INVALIDATE) {
             esp_os_enter_critical_safe(&s_spinlock);
@@ -88,8 +139,9 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
             esp_os_exit_critical_safe(&s_spinlock);
         }
         assert(valid);
-#endif
+#endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
     }
+    s_release_mutex_from_task_context();
 
     return ESP_OK;
 }

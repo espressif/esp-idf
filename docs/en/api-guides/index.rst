@@ -7,8 +7,9 @@ API Guides
 
    app_trace
    startup
-   :SOC_BLUFI_SUPPORTED: blufi
-   :SOC_BT_SUPPORTED: bluetooth
+   :SOC_BT_CLASSIC_SUPPORTED: classic-bt/index
+   :SOC_BLE_SUPPORTED: ble/index
+   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    bootloader
    build-system
    :SOC_SUPPORT_COEXISTENCE: coexist
@@ -20,7 +21,6 @@ API Guides
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED and not esp32p4: dfu
    error-handling
-   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    :SOC_SPIRAM_SUPPORTED: external-ram
    fatal-errors

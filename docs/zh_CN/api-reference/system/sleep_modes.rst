@@ -471,13 +471,12 @@ UART 输出处理
 
 .. list::
 
-    - :example:`protocols/sntp`：如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
-    - :example:`wifi/power_save`：如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
-    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`：如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
-    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何通过多种芯片支持的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。
-    - :example:`system/light_sleep`: 如何使用多种芯片支持的唤醒源，如定时器，GPIO，触摸传感器等，触发 Light-sleep 唤醒。
-
+    - :example:`protocols/sntp` 演示如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
+    - :example:`wifi/power_save` 演示如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` 演示如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何通过 {IDF_TARGET_NAME} 的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。
+    - :example:`system/light_sleep` 演示如何使用  {IDF_TARGET_NAME} 的唤醒源，如定时器，GPIO，触摸传感器等，触发 Light-sleep 唤醒。
 
 API 参考
 -------------

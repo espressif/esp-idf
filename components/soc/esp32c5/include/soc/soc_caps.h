@@ -31,7 +31,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
-// #define SOC_WIFI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8851
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_LP_CORE_SUPPORTED           1
 #define SOC_ULP_SUPPORTED               1
@@ -78,6 +78,8 @@
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1  // TODO: [ESP32C5] IDF-8643
 #define SOC_SPIRAM_SUPPORTED            1
+#define SOC_BT_SUPPORTED                1
+#define SOC_PHY_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -267,6 +269,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_TX_SYNC_CNT (1)
 // #define SOC_I2S_SUPPORTS_RX_RECOMB  (1) //TODO[C5] IDF-9966
 #define SOC_I2S_SUPPORTS_XTAL       (1)
@@ -510,7 +513,7 @@
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
-// #define SOC_COEX_HW_PTI                 (1)
+#define SOC_COEX_HW_PTI                 (1)
 
 /*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
 // #define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
@@ -520,7 +523,7 @@
 // #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
-// #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
+#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 // #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
@@ -568,26 +571,24 @@
 // #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
-// #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-// #define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
-// #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
-// #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
-// #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
-// #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
-// #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
+#define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
+#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */ // TODO: [ESP32C5] WIFI-6426
+#define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
+#define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
+#define SOC_WIFI_HE_SUPPORT_5G              (1)    /*!< Support Wi-Fi 6 in 5G */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
-// #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
-// #define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
-// #define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */
-// #define SOC_BLE_50_SUPPORTED            (1)    /*!< Support Bluetooth 5.0 */
-// #define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)   /*!< Support BLE device privacy mode */
-// #define SOC_BLE_POWER_CONTROL_SUPPORTED (1)    /*!< Support Bluetooth Power Control */
-// #define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
-// #define SOC_BLUFI_SUPPORTED             (1)    /*!< Support BLUFI */
-// #define SOC_BLE_MULTI_CONN_OPTIMIZATION (1)    /*!< Support multiple connections optimization */
-
-// #define SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND (1)
+#define SOC_BLE_SUPPORTED                   (1)    /*!< Support Bluetooth Low Energy hardware */
+// #define SOC_BLE_MESH_SUPPORTED              (1)    /*!< Support BLE MESH */
+#define SOC_ESP_NIMBLE_CONTROLLER           (1)    /*!< Support BLE EMBEDDED controller V1 */
+#define SOC_BLE_50_SUPPORTED                (1)    /*!< Support Bluetooth 5.0 */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED    (1)    /*!< Support BLE device privacy mode */
+#define SOC_BLE_POWER_CONTROL_SUPPORTED     (1)    /*!< Support Bluetooth Power Control */
+#define SOC_BLE_MULTI_CONN_OPTIMIZATION     (1)    /*!< Support multiple connections optimization */
+#define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 // #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/

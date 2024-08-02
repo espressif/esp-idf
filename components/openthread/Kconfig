@@ -170,10 +170,26 @@ menu "OpenThread"
                 Select this to enable SPI connection to host.
     endchoice
 
+    menu "OpenThread version message"
+        depends on OPENTHREAD_ENABLED
+
+        config OPENTHREAD_PACKAGE_NAME
+            string "OpenThread package name"
+            default "openthread-esp32"
+            help
+                The OpenThread package name.
+
+        config OPENTHREAD_PLATFORM_INFO
+            string "platform information"
+            default IDF_TARGET
+            help
+                The OpenThread platform information.
+    endmenu
+
     config OPENTHREAD_NCP_VENDOR_HOOK
         bool "Enable vendor command for RCP"
         depends on OPENTHREAD_RADIO
-        default n
+        default y
         help
             Select this to enable OpenThread NCP vendor commands.
 

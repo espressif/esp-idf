@@ -243,11 +243,23 @@ ULP RISC-V 的中断处理尚在开发中，还不支持针对内部中断源的
 应用示例
 --------------------
 
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器轮询 GPIO：:example:`system/ulp/ulp_riscv/gpio`。
-* ULP RISC-V 协处理器使用 bit-banged UART 驱动程序打印：:example:`system/ulp/ulp_riscv/uart_print`.
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部温度传感器：:example:`system/ulp/ulp_riscv/ds18b20_onewire`。
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部 I2C 温度和湿度传感器 (BMP180)，达到阈值时唤醒主 CPU：:example:`system/ulp/ulp_riscv/i2c`.
-* 使用 ULP RISC-V 协处理器处理软件中断和 RTC IO 中断：:example:`system/ulp/ulp_riscv/interrupts`.
+* :example:`system/ulp/ulp_riscv/gpio` 演示了如何通过 ULP-RISC-V 协处理器监控 GPIO 引脚，并在其状态发生变化时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/uart_print` 演示了如何在开发板上使用 ULP-RISC-V 协处理器通过 bitbang 实现 UART 发射，即使在主 CPU 处于深度睡眠状态时也能直接从 ULP-RISC-V 协处理器输出日志。
+
+.. only:: esp32s2
+
+    * :example:`system/ulp/ulp_riscv/ds18b20_onewire` 演示了如何使用 ULP-RISC-V 协处理器通过 1-Wire 协议读取 DS18B20 传感器的温度，并在温度超过阈值时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/i2c` 演示了如何在深度睡眠模式下使用 ULP RISC-V 协处理器的 RTC I2C 外设定期测量 BMP180 传感器的温度和压力值，并在这些值超过阈值时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/interrupts` 演示了 ULP-RISC-V 协处理器如何注册和处理软件中断和 RTC IO 触发的中断，记录软件中断的计数，并在达到某个阈值后或按下按钮时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/adc` 演示了如何使用 ULP-RISC-V 协处理器定期测量输入电压，并在电压超过设定阈值时唤醒系统。
+
+* :example:`system/ulp/ulp_riscv/gpio_interrupt` 演示了如何使用 ULP-RISC-V 协处理器以通过 RTC IO 中断从深度睡眠中唤醒，使用 GPIO0 作为输入信号，并配置和运行协处理器，将芯片置于深度睡眠模式，直到唤醒源引脚被拉低。
+
+* :example:`system/ulp/ulp_riscv/touch` 演示了如何使用 ULP RISC-V 协处理器定期扫描和读取触摸传感器，并在触摸传感器被激活时唤醒主 CPU。
 
 API 参考
 -------------

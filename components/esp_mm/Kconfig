@@ -1,0 +1,31 @@
+menu "ESP-MM: Memory Management Configurations"
+
+    config ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+        depends on SOC_CACHE_WRITEBACK_SUPPORTED
+        bool "Enable esp_cache_msync C2M chunked operation"
+        help
+            `esp_cache_msync` C2M direction takes critical sections, which means during
+            the operation, the interrupts are disabled. Whereas Cache writebacks for
+            large buffers could be especially time intensive, and might cause interrupts
+            to be disabled for a significant amount of time.
+
+            Sometimes you want other ISRs to be responded during this C2M process.
+            This option is to slice one C2M operation into multiple chunks,
+            with CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN max len. This will give you
+            a breath during the C2M process as sometimes the C2M process is quite long.
+
+            Note if the buffer processed by the `esp_cache_msync` (C2M sliced) is interrupted by an ISR,
+            and this ISR also accesses this buffer, this may lead to data coherence issue.
+
+    config ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN
+        hex "Max len in bytes per C2M chunk"
+        depends on ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
+        range 0 0x80000
+        default 0x20000 if IDF_TARGET_ESP32P4
+        default 0x2000 if IDF_TARGET_ESP32S2
+        default 0x8000 if IDF_TARGET_ESP32S3
+        help
+            Max len in bytes per C2M chunk, operations with size over the max len will be
+            sliced into multiple chunks.
+
+endmenu

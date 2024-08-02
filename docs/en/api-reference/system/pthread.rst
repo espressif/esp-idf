@@ -252,12 +252,11 @@ The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header
 
 This configuration is scoped to the calling thread (or FreeRTOS task), meaning that :cpp:func:`esp_pthread_set_cfg` can be called independently in different threads or tasks. If the ``inherit_cfg`` flag is set in the current configuration then any new thread created will inherit the creator's configuration (if that thread calls ``pthread_create()`` recursively), otherwise the new thread will have the default configuration.
 
-Examples
---------
+Application Examples
+--------------------
 
 - :example:`system/pthread` demonstrates using the pthreads API to create threads.
 - :example:`cxx/pthread` demonstrates using C++ Standard Library functions with threads.
-
 
 API Reference
 -------------

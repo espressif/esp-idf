@@ -6,6 +6,23 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
+
+/**
+ * @def PACKAGE_NAME
+ *
+ * Define to the full name of this package.
+ *
+ */
+#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
+
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
  *
@@ -25,8 +42,10 @@
  */
 #ifndef OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT
 // TZ-567: Set OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT to 3 after adding rcp failure notification mechanism
-#define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 0
+#define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 3
 #endif
+
+#define OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE 1
 
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION

@@ -303,34 +303,34 @@ static int esp_intr_free_wrapper(void **ret_handle)
 void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
 {
     /* Select slow clock source for BT momdule */
-    // switch (slow_clk_src) {
-    //     case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
-    //         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
-    //         uint32_t chip_version = efuse_hal_chip_revision();
-    //         if (chip_version == 0) {
-    //             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (400 - 1));
-    //         } else{
-    //             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
-    //         }
-    //         break;
-    //     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
-    //         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    //         modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
-    //         break;
-    //     case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
-    //         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
-    //         modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
-    //         break;
-    //     case MODEM_CLOCK_LPCLK_SRC_RC32K:
-    //         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    //         modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
-    //         break;
-    //     case MODEM_CLOCK_LPCLK_SRC_EXT32K:
-    //         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    //         modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
-    //         break;
-    //     default:
-    // }
+    switch (slow_clk_src) {
+        case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
+            uint32_t chip_version = efuse_hal_chip_revision();
+            if (chip_version == 0) {
+                modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (400 - 1));
+            } else{
+                modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
+            }
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_RC32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_EXT32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        default:
+    }
 }
 
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)

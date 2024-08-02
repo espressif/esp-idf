@@ -79,20 +79,32 @@ extern "C" {
 /* Align the level to the left, and put 1 in the lowest bits */
 #define NLBITS_TO_BYTE(level)   (((level) << NLBITS_SHIFT) | ((1 << NLBITS_SHIFT) - 1))
 
+/**
+ * @brief In the minstatus CSR, the `mil` field is present from bit 24 to bit 31 (included)
+ */
+#define MINTSTATUS_MIL_S        24
+#define MINTSTATUS_MIL_V        0xFF
+
 
 #if INTTHRESH_STANDARD
-/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
-#define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel))
+    /* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
+    #define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel))
 
-/* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
-#define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel)))
+    /* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
+    #define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel)))
+
+    /* Helper macro to translate a CLIC status threshold bits to an absolute interrupt level */
+    #define CLIC_STATUS_TO_INT(status)      (BYTE_TO_NLBITS((status >> MINTSTATUS_MIL_S) & MINTSTATUS_MIL_V))
 #else
-/* For the non-standard intthresh implementation the threshold is stored in the upper 8 bits of CLIC_CPU_INT_THRESH reg */
-/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
-#define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel) << CLIC_CPU_INT_THRESH_S)
+    /* For the non-standard intthresh implementation the threshold is stored in the upper 8 bits of CLIC_CPU_INT_THRESH reg */
+    /* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
+    #define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel) << CLIC_CPU_INT_THRESH_S)
 
-/* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
-#define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel >> CLIC_CPU_INT_THRESH_S) & CLIC_CPU_INT_THRESH_V))
+    /* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
+    #define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel >> CLIC_CPU_INT_THRESH_S) & CLIC_CPU_INT_THRESH_V))
+
+    /* Helper macro to translate a CLIC status threshold bits to an absolute interrupt level */
+    #define CLIC_STATUS_TO_INT(status)      (BYTE_TO_NLBITS((status >> MINTSTATUS_MIL_S) & MINTSTATUS_MIL_V))
 #endif //INTTHRESH_STANDARD
 
 /* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
@@ -151,7 +163,7 @@ FORCE_INLINE_ATTR uint32_t rv_utils_get_interrupt_level(void)
 {
     const uint32_t mintstatus = RV_READ_CSR(MINTSTATUS_CSR);
     /* Extract the level from this field */
-    return CLIC_THRESH_TO_INT(mintstatus);
+    return CLIC_STATUS_TO_INT(mintstatus);
 }
 
 /**

@@ -1441,25 +1441,25 @@ if BLE_MESH
 
         config BLE_MESH_GENERIC_SERVER
             bool "Generic server models"
-            default y
+            default n
             help
                 Enable support for Generic server models.
 
         config BLE_MESH_SENSOR_SERVER
             bool "Sensor server models"
-            default y
+            default n
             help
                 Enable support for Sensor server models.
 
         config BLE_MESH_TIME_SCENE_SERVER
             bool "Time and Scenes server models"
-            default y
+            default n
             help
                 Enable support for Time and Scenes server models.
 
         config BLE_MESH_LIGHTING_SERVER
             bool "Lighting server models"
-            default y
+            default n
             help
                 Enable support for Lighting server models.
 

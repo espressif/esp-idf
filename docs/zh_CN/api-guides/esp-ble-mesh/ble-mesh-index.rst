@@ -25,8 +25,8 @@ ESP-BLE-MESH 的实现和认证基于最新的 `Mesh Profile v1.0.1 <https://www
 
 .. _getting-started-with-ble-mesh:
 
-ESP-BLE-MESH 快速入门
-=====================
+快速入门
+========
 
 该章节旨在帮助你基于乐鑫的 ESP32 开发板搭建 ESP-BLE-MESH 网络。
 
@@ -210,8 +210,8 @@ Step 5. 运行网络
 
 .. _esp-ble-mesh-examples:
 
-ESP-BLE-MESH 示例
-===================
+示例
+=====
 
 * :example_file:`开关节点 <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - 展示了将 ESP-BLE-MESH 作为拥有 Configuration Server model 和 Generic OnOff Server model 的节点设备的用法。然后，ESP-BLE-MESH Provisioner 可以配网设备，控制表示开/关状态的 RGB 灯，示例请见 :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_server>`。
 
@@ -230,15 +230,15 @@ ESP-BLE-MESH 示例
 
 .. _esp-ble-mesh-demo-videos:
 
-ESP-BLE-MESH 演示视频
-======================
+演示视频
+========
 
 * `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
 * `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
-ESP-BLE-MESH 常见问题手册
-=========================
+常见问题手册
+=============
 
 * :ref:`ble-mesh-faq-provisioner-development`
 * :ref:`ble-mesh-faq-node-development`

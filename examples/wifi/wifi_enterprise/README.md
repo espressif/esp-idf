@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 
 # Understanding different WiFi enterprise modes:
@@ -55,7 +55,7 @@ idf.py -p PORT flash monitor
 
 ## Steps to create enterprise openssl certs
 
-1. make directry tree
+1. make directory tree
 ```
   mkdir demoCA
   mkdir demoCA/newcerts
@@ -86,7 +86,7 @@ idf.py -p PORT flash monitor
   openssl req -new -key client.key -out client.csr
   openssl req -new -key server.key -out server.csr
 ```
-5. create certs (.crt) for client nd server
+5. create certs (.crt) for client and server
 ```
   openssl ca -batch -keyfile ca.key -cert ca.pem -in client.csr -key (password) -out client.crt -extensions xpclient_ext -extfile xpextensions
   openssl ca -batch -keyfile ca.key -cert ca.pem -in server.csr -key (password) -out server.crt -extensions xpserver_ext -extfile xpextensions
@@ -158,7 +158,7 @@ I (635) wifi:wifi driver task: 3ffbf930, prio:23, stack:6656, core=0
 I (635) wifi:wifi firmware version: e03c1ca
 I (635) wifi:wifi certification version: v7.0
 I (635) wifi:config NVS flash: enabled
-I (635) wifi:config nano formating: disabled
+I (635) wifi:config nano formatting: disabled
 I (645) wifi:Init data frame dynamic rx buffer num: 32
 I (645) wifi:Init management frame dynamic rx buffer num: 32
 I (655) wifi:Init management short buffer num: 32

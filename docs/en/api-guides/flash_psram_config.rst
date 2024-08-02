@@ -99,6 +99,10 @@ All Supported Modes and Speeds
 
     Note 20 celsius degree is not a totally correct number. This value may changes among chips.
 
+.. note::
+
+    The PSRAM requires a phase point calibration algorithm when operating at 120M. The phase point setting is related to the temperature at startup. When the temperature increases / decreases significantly during the operation of the chip, the PSRAM may experience read/write errors. To solve this problem, you can enable dynamic adjustment of the PSRAM phase point based on the temperature value with :ref:`CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR`. This creates a task that measures the temperature every :ref:`CONFIG_SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND` seconds and adjusts the PSRAM phase point accordingly.
+
 F8R8 Hardware
 ^^^^^^^^^^^^^
 

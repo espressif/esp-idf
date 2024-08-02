@@ -571,7 +571,7 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 3. Define chip-specific management call-back functions.
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.
 
-Once you finish the new custom PHY driver implementation, consider sharing it among other users via `IDF Component Registry <https://components.espressif.com/>`_.
+Once you finish the new custom PHY driver implementation, consider sharing it among other users via `ESP Component Registry <https://components.espressif.com/>`_.
 
 .. ---------------------------- API Reference ----------------------------------
 

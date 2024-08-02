@@ -72,6 +72,32 @@ extern "C" {
 #define DATA_OUT_IO 7
 #endif
 
+#define I2S_TEST_MASTER_DEFAULT_PIN { \
+        .mclk = MASTER_MCK_IO,  \
+        .bclk = MASTER_BCK_IO,  \
+        .ws = MASTER_WS_IO,     \
+        .dout = DATA_OUT_IO,    \
+        .din = DATA_IN_IO,      \
+        .invert_flags = {       \
+            .mclk_inv = false,  \
+            .bclk_inv = false,  \
+            .ws_inv = false,    \
+        },                      \
+    }
+
+#define I2S_TEST_SLAVE_DEFAULT_PIN { \
+        .mclk = -1,             \
+        .bclk = SLAVE_BCK_IO,   \
+        .ws = SLAVE_WS_IO,      \
+        .dout = DATA_OUT_IO,    \
+        .din = DATA_IN_IO,      \
+        .invert_flags = {       \
+            .mclk_inv = false,  \
+            .bclk_inv = false,  \
+            .ws_inv = false,    \
+        },                      \
+    }
+
 #ifdef __cplusplus
 }
 #endif

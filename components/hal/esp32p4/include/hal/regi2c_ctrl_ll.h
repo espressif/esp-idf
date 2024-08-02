@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,43 @@
 #include "soc/soc.h"
 #include "soc/regi2c_defs.h"
 #include "soc/hp_sys_clkrst_reg.h"
+#include "soc/lpperi_struct.h"
+#include "soc/i2c_ana_mst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable analog I2C master clock
+ */
+static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_enable_clock(bool en)
+{
+    LPPERI.clk_en.ck_en_lp_i2cmst = en;
+}
+
+// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
+#define regi2c_ctrl_ll_master_enable_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset analog I2C master
+ */
+static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_reset(void)
+{
+    LPPERI.reset_en.rst_en_lp_i2cmst = 1;
+    LPPERI.reset_en.rst_en_lp_i2cmst = 0;
+}
+
+// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
+#define regi2c_ctrl_ll_master_reset(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; regi2c_ctrl_ll_master_reset(__VA_ARGS__)
+
+/**
+ * @brief Configure analog I2C master clock
+ */
+static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_configure_clock(void)
+{
+    I2C_ANA_MST.clk160m.clk_i2c_mst_sel_160m = 1;
+}
 
 /**
  * @brief Start CPLL self-calibration

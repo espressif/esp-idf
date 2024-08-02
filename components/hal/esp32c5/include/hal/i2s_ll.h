@@ -19,6 +19,8 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/soc_etm_struct.h"
+#include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -28,6 +30,7 @@ extern "C" {
 #endif
 
 #define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : NULL)
+#define I2S_LL_GET_ID(hw)              (((hw) == &I2S0)? 0 : -1)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
@@ -37,6 +40,30 @@ extern "C" {
 
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
 #define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+
+#define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){{  \
+                                          [I2S_DIR_RX - 1] = {  \
+                                              [I2S_ETM_EVENT_DONE] = I2S0_EVT_RX_DONE, \
+                                              [I2S_ETM_EVENT_REACH_THRESH] = I2S0_EVT_X_WORDS_RECEIVED,  \
+                                          },  \
+                                          [I2S_DIR_TX - 1] = {  \
+                                              [I2S_ETM_EVENT_DONE] = I2S0_EVT_TX_DONE,  \
+                                              [I2S_ETM_EVENT_REACH_THRESH] = I2S0_EVT_X_WORDS_SENT, \
+                                          }}}[i2s_port][(chan_dir) - 1][event]
+
+
+#define I2S_LL_ETM_TASK_TABLE(i2s_port, chan_dir, task)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_TASK_MAX]){{  \
+                                         [I2S_DIR_RX - 1] = {  \
+                                             [I2S_ETM_TASK_START] = I2S0_TASK_START_RX, \
+                                             [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_RX, \
+                                         },  \
+                                         [I2S_DIR_TX - 1] = {  \
+                                             [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
+                                             [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_TX, \
+                                         }}}[i2s_port][(chan_dir) - 1][task]
+#define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFFUL)
 
 /**
  * @brief Enable the bus clock for I2S module
@@ -1189,6 +1216,104 @@ __attribute__((always_inline))
 static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
 {
     return hw->bck_cnt.tx_bck_cnt;
+}
+
+/**
+ * @brief Set the TX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that send, in words (4 bytes)
+ */
+static inline void i2s_ll_tx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_tx_send_word_num = thresh;
+}
+
+/**
+ * @brief Set the RX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that received, in words (4 bytes)
+ */
+static inline void i2s_ll_rx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_rx_receive_word_num = thresh;
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_tx_done_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st3.i2s0_evt_tx_done_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_rx_done_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st3.i2s0_evt_rx_done_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_tx_threshold_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st3.i2s0_evt_x_words_sent_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_rx_threshold_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st3.i2s0_evt_x_words_received_st;
+        default:
+            HAL_ASSERT(false);
+    }
 }
 
 #ifdef __cplusplus

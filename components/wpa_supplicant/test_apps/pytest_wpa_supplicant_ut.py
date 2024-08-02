@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.unity_tester import CaseTester
@@ -13,6 +12,7 @@ from pytest_embedded_idf.unity_tester import CaseTester
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
+@pytest.mark.esp32c5
 def test_wpa_supplicant_ut(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

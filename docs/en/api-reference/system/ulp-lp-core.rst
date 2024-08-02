@@ -16,7 +16,10 @@ The ULP LP-Core coprocessor has the following features:
 Compiling Code for the ULP LP-Core
 ----------------------------------
 
-The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. To achieve this do the following:
+The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. There are two ways to achieve this:
+
+Using ``ulp_embed_binary``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Place the ULP LP-Core code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 
@@ -33,6 +36,59 @@ The ULP LP-Core code is compiled together with your ESP-IDF project as a separat
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
 The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+
+
+Using a Custom CMake Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is also possible to create a custom CMake project for the LP-Core. This gives more control over the build process and allows you to set compile options, link external libraries and all other things that are possible with a regular CMake project.
+
+To do this add the ULP project as an external project in your component CMakeLists.txt file:
+
+.. code-block:: cmake
+
+    ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
+
+Create a folder which contains your ULP project files and a CMakeLists.txt file, located at the path given to ``ulp_add_project``. The CMakeLists.txt file should look like this:
+
+.. code-block:: cmake
+
+    cmake_minimum_required(VERSION 3.16)
+
+    # Project/target name is passed from the main project to allow IDF to have a dependency on this target
+    # as well as embed the binary into the main app
+    project(${ULP_APP_NAME})
+    add_executable(${ULP_APP_NAME} main.c)
+
+    # Import the ULP project helper functions
+    include(IDFULPProject)
+
+    # Apply default compile options
+    ulp_apply_default_options(${ULP_APP_NAME})
+
+    # Apply default sources provided by the IDF ULP component
+    ulp_apply_default_sources(${ULP_APP_NAME})
+
+    # Add targets for building the binary, as well as the linkerscript which exports ULP shared variables to the main app
+    ulp_add_build_binary_targets(${ULP_APP_NAME})
+
+    # Everything below this line is optional and can be used to customize the build process
+
+    # Create a custom library
+    set(lib_path "${CMAKE_CURRENT_LIST_DIR}/lib")
+    add_library(custom_lib STATIC "${lib_path}/lib_src.c")
+    target_include_directories(custom_lib PUBLIC "${lib_path}/")
+
+    # Link the library
+    target_link_libraries(${ULP_APP_NAME} PRIVATE custom_lib)
+
+    # Set custom compile flags
+    target_compile_options(${ULP_APP_NAME} PRIVATE -msave-restore)
+
+Building Your Project
+~~~~~~~~~~~~~~~~~~~~~~
+
+To compile and build your project:
 
 1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menuconfig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
@@ -53,6 +109,7 @@ During the build process, the following steps are taken to build ULP program:
     6. **Create an LD export script and a header file** ``ulp_app_name.ld`` and ``ulp_app_name.h`` containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
     7. **Add the generated binary to the list of binary files** to be embedded into the application.
+
 
 .. _ulp-lp-core-access-variables:
 
@@ -227,11 +284,19 @@ Application Examples
 --------------------
 
 * :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in Deep-sleep.
-* :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+
+.. only:: esp32c6
+
+    * :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
+
 * :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
+
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
+* :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom CMakeLists.txt file for the ULP app.
 
 API Reference
 -------------

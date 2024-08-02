@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # BLE Central PHY Example
 
@@ -197,7 +197,7 @@ I (10126) NimBLE:
 
 ```
 
-## Intiating connection on 2M / Coded Phy
+## Initiating connection on 2M / Coded Phy
 
 This example also provides a way to initiate connection directly on 2M / Coded PHY. For this, set the peripheral device address in EXAMPLE_PEER_ADDR setting via menuconfig. Also example needs to be modified to use the PHY that user needs to update.
 
@@ -209,7 +209,7 @@ To create direct connection on Coded Phy, set the s_current_phy to BLE_HCI_LE_PH
 
 Recompile application and flash the image.
 
-Note: For this setting to work ,the remote device too should be advertising with either 2M auxillary phy OR Coded phy.
+Note: For this setting to work ,the remote device too should be advertising with either 2M auxiliary phy OR Coded phy.
 
 Also, since this mode initiates direct connection, ensure that peripheral is already advertising, before executing this application.
 

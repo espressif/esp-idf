@@ -430,6 +430,7 @@ typedef struct {
     int mubar;
     int bfrp;
     int nfrp;
+    int bar;
 } esp_test_rx_ctrl_t;
 
 typedef enum {

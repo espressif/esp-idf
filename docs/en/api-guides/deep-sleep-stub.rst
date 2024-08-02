@@ -149,11 +149,9 @@ You can enable the Kconfig option :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_
 
 All of the above functions are declared in :component_file:`esp_hw_support/include/esp_sleep.h`.
 
-Example
--------
+Application Examples
+--------------------
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-ESP-IDF provides an example to show how to implement the Deep-sleep wake stub.
-
-- :example:`system/deep_sleep_wake_stub`
+    - :example:`system/deep_sleep_wake_stub` demonstrates how to use the Deep-sleep wake stub on {IDF_TARGET_NAME} to quickly perform some tasks (the wake stub code) immediately after wake-up before going back to sleep.

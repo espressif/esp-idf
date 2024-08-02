@@ -51,6 +51,10 @@ config SOC_USB_SERIAL_JTAG_SUPPORTED
     bool
     default y
 
+config SOC_WIFI_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -188,6 +192,14 @@ config SOC_MODEM_CLOCK_SUPPORTED
     default y
 
 config SOC_SPIRAM_SUPPORTED
+    bool
+    default y
+
+config SOC_BT_SUPPORTED
+    bool
+    default y
+
+config SOC_PHY_SUPPORTED
     bool
     default y
 
@@ -544,6 +556,10 @@ config SOC_I2S_NUM
     default 1
 
 config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ETM
     bool
     default y
 
@@ -1091,6 +1107,14 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
+config SOC_COEX_HW_PTI
+    bool
+    default y
+
+config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
+    int
+    default 12
+
 config SOC_PM_SUPPORT_MODEM_PD
     bool
     default y
@@ -1148,6 +1172,66 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_WIFI_HW_TSF
+    bool
+    default y
+
+config SOC_WIFI_FTM_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT_5G
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
+
+config SOC_BLE_50_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_POWER_CONTROL_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MULTI_CONN_OPTIMIZATION
+    bool
+    default y
+
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
     bool
     default y
 

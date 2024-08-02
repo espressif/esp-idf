@@ -41,7 +41,7 @@
 #define DR_REG_MODEM1_BASE                      0x600AC000
 #define DR_REG_MODEM_PWR0_BASE                  0x600AD000
 #define DR_REG_MODEM_PWR1_BASE                  0x600AF000
-#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800  //TODO: [ESP32C61] IDF-9276, from verify
+#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800
 #define DR_REG_PMU_BASE                         0x600B0000
 #define DR_REG_LP_CLKRST_BASE                   0x600B0400
 #define DR_REG_LP_TIMER_BASE                    0x600B0C00

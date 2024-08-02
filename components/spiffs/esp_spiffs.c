@@ -58,6 +58,7 @@ static ssize_t vfs_spiffs_read(void* ctx, int fd, void * dst, size_t size);
 static int vfs_spiffs_close(void* ctx, int fd);
 static off_t vfs_spiffs_lseek(void* ctx, int fd, off_t offset, int mode);
 static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st);
+static int vfs_spiffs_fsync(void* ctx, int fd);
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static int vfs_spiffs_stat(void* ctx, const char * path, struct stat * st);
 static int vfs_spiffs_unlink(void* ctx, const char *path);
@@ -426,6 +427,7 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
         .open_p = &vfs_spiffs_open,
         .close_p = &vfs_spiffs_close,
         .fstat_p = &vfs_spiffs_fstat,
+        .fsync_p = &vfs_spiffs_fsync,
 #ifdef CONFIG_VFS_SUPPORT_DIR
         .stat_p = &vfs_spiffs_stat,
         .link_p = &vfs_spiffs_link,
@@ -615,6 +617,18 @@ static int vfs_spiffs_fstat(void* ctx, int fd, struct stat * st)
     st->st_atime = 0;
     st->st_ctime = 0;
     return res;
+}
+
+static int vfs_spiffs_fsync(void* ctx, int fd)
+{
+    esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
+    int res = SPIFFS_fflush(efs->fs, fd);
+    if (res < 0) {
+        errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+        SPIFFS_clearerr(efs->fs);
+        return -1;
+    }
+    return ESP_OK;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR

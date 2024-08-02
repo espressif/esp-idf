@@ -182,14 +182,22 @@ else() # Regular app build
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
+    elseif(target STREQUAL "esp32c5")
+        # esp32c5.rom.api.ld has been split to several lds by components.
+        # esp32c5.rom.api.ld is still reserved to map the APIs
+        rom_linker_script("phy")
+        rom_linker_script("coexist")
+        rom_linker_script("net80211")
+        rom_linker_script("pp")
     endif()
+
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
         rom_linker_script("newlib")
 
         if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_NEWLIB_NANO_FORMAT)
-            if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME)
+            if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME AND NOT CONFIG_ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG)
                 # Newlib-nano functions contains time_t related functions
                 # and cannot be used if they were compiled with 32 bit time_t
                 rom_linker_script("newlib-nano")

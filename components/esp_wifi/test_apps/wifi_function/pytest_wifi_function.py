@@ -9,6 +9,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c5
 # @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 @pytest.mark.generic
 def test_wifi_unit_test(dut: Dut) -> None:

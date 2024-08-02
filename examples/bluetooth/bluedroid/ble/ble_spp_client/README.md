@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF SPP GATT CLIENT demo
 
@@ -49,7 +49,7 @@ idf.py set-target <chip_name>
 
   * `uart_task`            - process Uart
   * `spp_cmd_task`         - process command messages, the commands and processing were defined by customer
-  * `spp_heartbeat_task`   - if heartbeat is supported, the task will send a heatbeat packet to the remote device
+  * `spp_heartbeat_task`   - if heartbeat is supported, the task will send a heartbeat packet to the remote device
 
 ### Packet Structure
 
@@ -77,7 +77,7 @@ idf.py set-target <chip_name>
 
 ### GATT Server Attribute Table
 
-  charactertistic|UUID|Permissions
+  characteristic|UUID|Permissions
   :-:|:-:|:-:
   SPP_DATA_RECV_CHAR|0xABF1|READ&WRITE_NR
   SPP_DATA_NOTIFY_CHAR|0xABF2|READ&NOTIFY
@@ -95,7 +95,7 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 
-The spp cilent will auto connect to the spp server, do service search, exchange MTU size and register notification.
+The spp client will auto connect to the spp server, do service search, exchange MTU size and register notification.
 
 ### Client
 

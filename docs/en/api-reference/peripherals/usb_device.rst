@@ -14,7 +14,7 @@ Overview
 
 The ESP-IDF USB Device Stack (hereinafter referred to as the Device Stack) enables USB Device support on {IDF_TARGET_NAME}. By using the Device Stack, {IDF_TARGET_NAME} can be programmed with any well defined USB device functions (e.g., keyboard, mouse, camera), a custom function (aka vendor-specific class), or a combination of those functions (aka a composite device).
 
-The Device Stack is built around the TinyUSB stack, but extends TinyUSB with some minor features and modifications for better integration with ESP-IDF. The Device stack is distributed as a managed component via the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
+The Device Stack is built around the TinyUSB stack, but extends TinyUSB with some minor features and modifications for better integration with ESP-IDF. The Device stack is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
 
 Features
 --------
@@ -63,7 +63,7 @@ The basis of the Device Stack is TinyUSB, where the Device Stack implements the 
 Component Dependency
 ^^^^^^^^^^^^^^^^^^^^
 
-The Device Stack is distributed via the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
+The Device Stack is distributed via the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
 
 .. code:: bash
 

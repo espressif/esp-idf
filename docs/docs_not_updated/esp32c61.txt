@@ -95,7 +95,6 @@ api-reference/peripherals/dac.rst
 api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/etm.rst
 api-reference/peripherals/i2s.rst
-api-reference/peripherals/gptimer.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/ana_cmpr.rst
@@ -110,7 +109,6 @@ api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
 api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
 api-reference/peripherals/spi_flash/index.rst
-api-reference/peripherals/sdm.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
@@ -123,7 +121,6 @@ api-reference/peripherals/spi_slave_hd.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/ds.rst
 api-reference/peripherals/i2c.rst
-api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/spi_master.rst
 api-reference/peripherals/index.rst

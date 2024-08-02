@@ -1,5 +1,5 @@
-ESP-BLE-MESH Feature List
-=========================
+Feature List
+=============
 
 :link_to_translation:`zh_CN:[中文]`
 
