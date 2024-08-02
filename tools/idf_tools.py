@@ -2211,18 +2211,12 @@ def action_install_python_env(args):  # type: ignore
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))
         shutil.rmtree(idf_python_env_path)
 
-    venv_can_upgrade = False
-
     if os.path.exists(virtualenv_python):
         check_python_venv_compatibility(idf_python_env_path, idf_version)
     else:
         if subprocess.run([sys.executable, '-m', 'venv', '-h'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
             # venv available
             virtualenv_options = ['--clear']  # delete environment if already exists
-            if sys.version_info[:2] >= (3, 9):
-                # upgrade pip & setuptools
-                virtualenv_options += ['--upgrade-deps']
-                venv_can_upgrade = True
 
             info('Creating a new Python environment in {}'.format(idf_python_env_path))
 
@@ -2263,17 +2257,19 @@ def action_install_python_env(args):  # type: ignore
         warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')
         env_copy['PIP_USER'] = 'no'
 
-    if not venv_can_upgrade:
-        info('Upgrading pip and setuptools...')
-        subprocess.check_call([virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools'],
-                              stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
+    constraint_file = get_constraints(idf_version) if use_constraints else None
+
+    info('Upgrading pip and setuptools...')
+    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools']
+    if constraint_file:
+        run_args += ['--constraint', constraint_file]
+    subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
 
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
     requirements_file_list = get_requirements(args.features)
     for requirement_file in requirements_file_list:
         run_args += ['-r', requirement_file]
-    if use_constraints:
-        constraint_file = get_constraints(idf_version)
+    if constraint_file:
         run_args += ['--upgrade', '--constraint', constraint_file]
     if args.extra_wheels_dir:
         run_args += ['--find-links', args.extra_wheels_dir]
@@ -2287,8 +2283,8 @@ def action_install_python_env(args):  # type: ignore
         run_args += ['--find-links', wheels_dir]
 
     info('Installing Python packages')
-    if use_constraints:
-        info(' Constraint file: {}'.format(constraint_file))
+    if constraint_file:
+        info(f' Constraint file: {constraint_file}')
     info(' Requirement files:')
     info(os.linesep.join('  - {}'.format(path) for path in requirements_file_list))
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
