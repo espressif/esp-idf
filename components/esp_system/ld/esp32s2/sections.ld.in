@@ -353,7 +353,7 @@ SECTIONS
     __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
     *(.xt_except_desc_end)
 
-#if CONFIG_COMPILER_CXX_EXCEPTIONS
+#if EH_FRAME_LINKING_ENABLED
     ALIGNED_SYMBOL(4, __eh_frame)
     KEEP(*(.eh_frame))
     /**
@@ -361,7 +361,7 @@ SECTIONS
      * (see __FRAME_END__ in libgcc sources), it is manually provided here.
      */
     LONG(0);
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
+#endif // EH_FRAME_LINKING_ENABLED
 
     /**
      * C++ constructor tables.

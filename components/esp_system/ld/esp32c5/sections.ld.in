@@ -378,9 +378,9 @@ SECTIONS
     _esp_system_init_fn_array_end = ABSOLUTE(.);
 
     _rodata_end = ABSOLUTE(.);
-    . = ALIGN(ALIGNOF(.eh_frame_hdr));
+    . = ALIGN(ALIGNOF(SECTION_AFTER_FLASH_RODATA));
   } > default_rodata_seg
-  ASSERT_SECTIONS_GAP(.flash.rodata, .eh_frame_hdr)
+  ASSERT_SECTIONS_GAP(.flash.rodata, SECTION_AFTER_FLASH_RODATA)
 
   /* External RAM */
   /**
@@ -421,15 +421,14 @@ SECTIONS
   } > extern_ram_seg
 #endif //CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
+#if EH_FRAME_LINKING_ENABLED
   .eh_frame_hdr :
   {
-#if CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
     ALIGNED_SYMBOL(4, __eh_frame_hdr)
 
     KEEP (*(.eh_frame_hdr))
 
     __eh_frame_hdr_end = ABSOLUTE(.);
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
     . = ALIGN(ALIGNOF(.eh_frame));
   } > default_rodata_seg
@@ -437,7 +436,6 @@ SECTIONS
 
   .eh_frame :
   {
-#if CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
     ALIGNED_SYMBOL(4, __eh_frame)
 
     KEEP (*(.eh_frame))
@@ -448,11 +446,11 @@ SECTIONS
     LONG(0);
 
     __eh_frame_end = ABSOLUTE(.);
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
     . = ALIGN(ALIGNOF(.flash.tdata));
   } > default_rodata_seg
   ASSERT_SECTIONS_GAP(.eh_frame, .flash.tdata)
+#endif // EH_FRAME_LINKING_ENABLED
 
   .flash.tdata :
   {
