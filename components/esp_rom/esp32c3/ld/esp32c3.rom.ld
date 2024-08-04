@@ -934,7 +934,6 @@ r_llc_llcp_send = 0x40000f4c;
 r_llc_llcp_state_set = 0x40000f50;
 r_llc_llcp_trans_timer_set = 0x40000f54;
 r_llc_llcp_tx_check = 0x40000f58;
-r_llc_loc_ch_map_proc_continue = 0x40000f5c;
 r_llc_loc_con_upd_proc_err_cb = 0x40000f64;
 r_llc_loc_dl_upd_proc_continue = 0x40000f68;
 r_llc_loc_encrypt_proc_continue = 0x40000f6c;
