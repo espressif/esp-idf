@@ -29,7 +29,6 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .scl_in_sig = I2CEXT0_SCL_IN_IDX,
         .iomux_func = (uint8_t)LP_MUX_FUNC_NOT_USED,
         .irq = ETS_I2C_EXT0_INTR_SOURCE,
-        .module = PERIPH_I2C0_MODULE,
     },
     /* LP_I2C_NUM_0*/
     {
@@ -39,6 +38,5 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .scl_in_sig = 0,
         .iomux_func = (uint8_t)LP_I2C_MUX_FUNC,
         .irq = ETS_LP_I2C_INTR_SOURCE,
-        .module = PERIPH_LP_I2C0_MODULE,
     },
 };
