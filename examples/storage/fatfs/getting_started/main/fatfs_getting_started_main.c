@@ -31,8 +31,8 @@ void app_main(void)
             .use_one_fat = false, // Use only one FAT table (reduce memory usage), but decrease reliability of file system in case of power failure.
     };
 
+    // Mount FATFS filesystem located on "storage" partition in read-write mode
     esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(base_path, "storage", &mount_config, &s_wl_handle);
-
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return;
@@ -46,12 +46,12 @@ void app_main(void)
 
     FILE *f = fopen(filename, "wb");
     if (f == NULL) {
-        perror("fopen");
+        perror("fopen"); // Print reason why fopen failed
         ESP_LOGE(TAG, "Failed to open file for writing");
         return;
     }
 
-    fprintf(f, "This is written by the device");
+    fprintf(f, "Hello World!\n");
     fclose(f);
 
     ESP_LOGI(TAG, "File written");

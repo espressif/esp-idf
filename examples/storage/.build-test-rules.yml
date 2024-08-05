@@ -42,14 +42,6 @@ examples/storage/fatfs_advanced:
     - if: IDF_TARGET != "esp32"
       reason: only one target needed
 
-examples/storage/fatfs_basic:
-  depends_components:
-    - fatfs
-    - vfs
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only one target needed
-
 examples/storage/nvs_rw_blob:
   depends_components:
     - nvs_flash
