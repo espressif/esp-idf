@@ -165,12 +165,12 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP-WROVER-KIT
-.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT 开发板 <../../hw-reference/index>`
+.. |devkit-name-with-link| replace:: `ESP-WROVER-KIT 开发板 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp-wrover-kit/index.html>`__
 
 ---
 
 .. devkit-hw-config
 
-* 根据 :doc:`../../hw-reference/esp32/get-started-wrover-kit` 文档中 :ref:`get-started-esp-wrover-kit-v4.1-setup-options` 章节所描述的信息，设置 JP8 便可以启用 JTAG 功能。
+* 根据 `ESP-WROVER-KIT 开发板 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp-wrover-kit/index.html>`__ 文档中所描述的信息，设置 JP8 便可以启用 JTAG 功能。
 
 ---
