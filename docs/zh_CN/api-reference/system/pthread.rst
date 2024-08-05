@@ -187,6 +187,7 @@ ESP-IDF 扩展
 在 ``esp_pthreads.h`` 头文件中定义的 API :cpp:func:`esp_pthread_set_cfg` 提供了自定义扩展，能够对后续 ``pthread_create()`` 的调用行为进行控制。目前提供以下配置：
 
 .. list::
+
     - 如果调用 ``pthread_create()`` 时未指定默认堆栈大小，可设置新线程的默认堆栈大小（覆盖 :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`）。
     - 堆栈内存属性决定用于分配 pthread 堆栈的内存类型。该字段使用 ESP-IDF 堆属性标志，这一标志在 :component_file:`heap/include/esp_heap_caps.h` 文件中定义。为了确保分配的内存能够通过 8 位地址访问 (MALLOC_CAP_8BIT)，用户必须设置相应的标志，此外也可添加其他自定义标志。用户应当确保选择了正确的堆栈内存属性。了解内存位置的更多信息，请参考 :ref:`memory_capabilities` 文档。
     - 新线程的 RTOS 优先级（覆盖 :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`）。

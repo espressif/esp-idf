@@ -259,7 +259,7 @@ F4R4 硬件
 
 以下是烧录 eFuse 位的方法：
 
-.. code-block:: python
+.. code-block:: shell
 
     idf.py -p PORT efuse-burn --do-not-confirm FLASH_TYPE 1
 
