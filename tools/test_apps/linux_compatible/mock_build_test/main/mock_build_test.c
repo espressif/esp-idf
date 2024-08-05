@@ -30,6 +30,14 @@
 #include "Mockrmt_common.h"
 #include "Mockrmt_tx.h"
 #include "Mockrmt_rx.h"
+#include "Mockbootloader_clock.h"
+#include "Mockbootloader_common.h"
+#include "Mockbootloader_mem.h"
+#include "Mockbootloader_random.h"
+#include "Mockesp_flash_encrypt.h"
+#include "Mockesp_flash_partitions.h"
+#include "Mockesp_image_format.h"
+#include "Mockesp_secure_boot.h"
 
 /* Test that mock functions exist and that required definitions are available */
 void app_main(void)
@@ -102,9 +110,9 @@ void app_main(void)
     esp_wifi_set_mode_IgnoreAndReturn(ESP_OK);
     esp_wifi_set_config_IgnoreAndReturn(ESP_OK);
     esp_wifi_start_IgnoreAndReturn(ESP_OK);
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, NULL) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, NULL));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     esp_wifi_connect_IgnoreAndReturn(ESP_OK);
     esp_wifi_connect();
@@ -129,6 +137,35 @@ void app_main(void)
 
     esp_now_init_IgnoreAndReturn(ESP_OK);
     ESP_ERROR_CHECK(esp_now_init());
+
+    // Bootloader Support
+    bootloader_clock_configure_Ignore();
+    bootloader_clock_configure();
+
+    bootloader_configure_spi_pins_Ignore();
+    bootloader_configure_spi_pins(0);
+
+    bootloader_init_mem_Ignore();
+    bootloader_init_mem();
+
+    bootloader_random_enable_Ignore();
+    bootloader_random_enable();
+
+    esp_flash_encryption_enabled_IgnoreAndReturn(true);
+    bool flash_encrypted = esp_flash_encryption_enabled();
+    (void)flash_encrypted;
+
+    esp_partition_main_flash_region_safe_IgnoreAndReturn(true);
+    bool region_is_safe = esp_partition_main_flash_region_safe(0, 0);
+    (void) region_is_safe;
+
+    esp_image_verify_bootloader_IgnoreAndReturn(ESP_OK);
+    esp_err_t bootloader_is_ok = esp_image_verify_bootloader(NULL);
+    (void)bootloader_is_ok;
+
+    esp_secure_boot_cfg_verify_release_mode_IgnoreAndReturn(true);
+    bool release_mode_enabled = esp_secure_boot_cfg_verify_release_mode();
+    (void)release_mode_enabled;
 
     printf("Mock build test done\n");
 }
