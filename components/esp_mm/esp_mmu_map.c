@@ -187,7 +187,7 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
 #endif  //#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if SOC_MMU_PER_EXT_MEM_TARGET
-static inline uint32_t s_get_mmu_id_from_target(mmu_target_t target)
+FORCE_INLINE_ATTR uint32_t s_get_mmu_id_from_target(mmu_target_t target)
 {
     return (target == MMU_TARGET_FLASH0) ? MMU_LL_FLASH_MMU_ID : MMU_LL_PSRAM_MMU_ID;
 }
