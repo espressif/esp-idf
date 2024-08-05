@@ -167,7 +167,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
     int bus_id = -1;
     for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
-        if (i2s_platform_acquire_occupation(i, "esp_lcd_panel_io_i2s") == ESP_OK) {
+        if (i2s_platform_acquire_occupation(I2S_CTLR_HP, i, "esp_lcd_panel_io_i2s") == ESP_OK) {
             bus_id = i;
             break;
         }
@@ -231,7 +231,7 @@ err:
             esp_intr_free(bus->intr);
         }
         if (bus->bus_id >= 0) {
-            i2s_platform_release_occupation(bus->bus_id);
+            i2s_platform_release_occupation(I2S_CTLR_HP, bus->bus_id);
         }
         if (bus->format_buffer) {
             free(bus->format_buffer);
@@ -250,7 +250,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
-    i2s_platform_release_occupation(bus_id);
+    i2s_platform_release_occupation(I2S_CTLR_HP, bus_id);
     esp_intr_free(bus->intr);
     if (bus->pm_lock) {
         esp_pm_lock_delete(bus->pm_lock);

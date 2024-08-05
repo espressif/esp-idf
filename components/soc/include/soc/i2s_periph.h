@@ -56,6 +56,10 @@ typedef struct {
 
 extern const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM];
 
+#if SOC_LP_I2S_SUPPORTED
+extern const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM];
+#endif
+
 #endif // SOC_I2S_SUPPORTED
 
 #ifdef __cplusplus

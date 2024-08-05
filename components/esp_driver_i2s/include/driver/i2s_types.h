@@ -63,6 +63,15 @@ typedef enum {
 } i2s_mclk_multiple_t;
 
 /**
+ * @brief LP I2S transaction type
+ */
+typedef struct {
+    void   *buffer;           ///< Pointer to buffer
+    size_t  buflen;           ///< Buffer len, this should be in the multiple of 4
+    size_t  received_size;    ///< Received size
+} lp_i2s_trans_t;
+
+/**
  * @brief Event structure used in I2S event queue
  */
 typedef struct {
@@ -78,7 +87,15 @@ typedef struct {
                                   */
 } i2s_event_data_t;
 
-typedef struct i2s_channel_obj_t    *i2s_chan_handle_t; /*!< I2S channel object handle, the control unit of the I2S driver*/
+/**
+ * @brief Event data structure for LP I2S
+ */
+typedef struct {
+    lp_i2s_trans_t trans;    ///< LP I2S transaction
+} lp_i2s_evt_data_t;
+
+typedef struct i2s_channel_obj_t       *i2s_chan_handle_t;     /*!< I2S channel object handle, the control unit of the I2S driver*/
+typedef struct lp_i2s_channel_obj_t    *lp_i2s_chan_handle_t;  /*!< I2S channel object handle, the control unit of the I2S driver*/
 
 /**
  * @brief I2S event callback
@@ -89,6 +106,17 @@ typedef struct i2s_channel_obj_t    *i2s_chan_handle_t; /*!< I2S channel object 
  * @return Whether a high priority task has been waken up by this callback function
  */
 typedef bool (*i2s_isr_callback_t)(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx);
+
+/**
+ * @brief LP I2S event callback type
+ *
+ * @param[in] handle     LP I2S channel handle
+ * @param[in] event      Event data
+ * @param[in] user_ctx   User data
+ *
+ * @return Whether a high priority task has been waken up by this callback function
+ */
+typedef bool (*lp_i2s_callback_t)(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_t *event, void *user_ctx);
 
 #ifdef __cplusplus
 }

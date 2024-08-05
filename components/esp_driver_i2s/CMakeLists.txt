@@ -10,7 +10,6 @@ set(include "include")
 # I2S related source files
 if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "i2s_common.c"
-                     "i2s_platform.c"
                      "i2s_std.c")
     if(CONFIG_SOC_I2S_SUPPORTS_PDM)
         list(APPEND srcs "i2s_pdm.c")
@@ -21,6 +20,14 @@ if(CONFIG_SOC_I2S_SUPPORTED)
     if(CONFIG_SOC_I2S_SUPPORTS_ETM)
         list(APPEND srcs "i2s_etm.c")
     endif()
+endif()
+
+if(CONFIG_SOC_I2S_SUPPORTED OR CONFIG_SOC_LP_I2S_SUPPORTED)
+    list(APPEND srcs "i2s_platform.c")
+endif()
+
+if(CONFIG_SOC_LP_I2S_SUPPORTED)
+    list(APPEND srcs "lp_i2s.c" "lp_i2s_std.c" "lp_i2s_pdm.c")
 endif()
 
 idf_component_register(SRCS ${srcs}
