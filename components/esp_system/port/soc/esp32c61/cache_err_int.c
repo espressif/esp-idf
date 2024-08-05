@@ -60,10 +60,12 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
-    /* On the hardware side, start by clearing all the bits reponsible for cache access error */
+    /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* Then enable cache access error interrupts. */
     cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    /* Enable the fail tracer */
+    cache_ll_l1_enable_fail_tracer(0, true);
 
     /* Enable the interrupts for cache error. */
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
