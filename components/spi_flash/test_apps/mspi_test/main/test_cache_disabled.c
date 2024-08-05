@@ -96,7 +96,7 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
 #define CACHE_ERROR_REASON "Cache error,RTC_SW_CPU_RST"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define CACHE_ERROR_REASON "Cache disabled,RTC_SW_CPU_RST"
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#else
 #define CACHE_ERROR_REASON "Cache error,SW_CPU"
 #endif
 
