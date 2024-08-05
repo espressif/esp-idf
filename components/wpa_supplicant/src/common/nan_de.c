@@ -1358,6 +1358,17 @@ int nan_de_subscribe(struct nan_de *de, const char *service_name,
 	if (nan_de_derive_service_id(srv) < 0)
 		goto fail;
 	os_memcpy(&srv->subscribe, params, sizeof(*params));
+
+	if (params->freq_list) {
+		size_t len;
+
+		len = (int_array_len(params->freq_list) + 1) * sizeof(int);
+		srv->freq_list = os_memdup(params->freq_list, len);
+		if (!srv->freq_list)
+			goto fail;
+	}
+	srv->subscribe.freq_list = NULL;
+
 	srv->srv_proto_type = srv_proto_type;
 	if (ssi) {
 		srv->ssi = wpabuf_dup(ssi);

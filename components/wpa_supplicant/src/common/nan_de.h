@@ -125,6 +125,9 @@ struct nan_subscribe_params {
 	/* Selected frequency */
 	unsigned int freq;
 
+	/* Multi-channel frequencies (publishChannelList) */
+	const int *freq_list;
+
 	/* Query period in ms; 0 = use default */
 	unsigned int query_period;
 };
