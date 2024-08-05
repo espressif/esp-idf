@@ -34,7 +34,7 @@
     #define STACK_OVERHEAD_OPTIMIZATION    0
 #endif
 
-/* apptrace mdule increases minimum stack usage */
+/* apptrace module increases minimum stack usage */
 #if CONFIG_APPTRACE_ENABLE
     #define STACK_OVERHEAD_APPTRACE    1280
 #else

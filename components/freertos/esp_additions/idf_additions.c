@@ -17,8 +17,6 @@
 #include "freertos/semphr.h"
 #include "freertos/stream_buffer.h"
 #include "freertos/message_buffer.h"
-#include "freertos/event_groups.h"
-#include "freertos/timers.h"
 #include "freertos/idf_additions.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -436,59 +434,6 @@ err:
         /* Free the memory buffers */
         heap_caps_free( pxStaticStreamBuffer );
         heap_caps_free( pucStreamBufferStorageArea );
-    }
-
-#endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-/*----------------------------------------------------------*/
-
-/* ------------------------------ Event Groups ------------------------------ */
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    EventGroupHandle_t xEventGroupCreateWithCaps( UBaseType_t uxMemoryCaps )
-    {
-        EventGroupHandle_t xEventGroup;
-        StaticEventGroup_t * pxEventGroupBuffer;
-
-        /* Allocate memory for the event group using the provided memory caps */
-        pxEventGroupBuffer = heap_caps_malloc( sizeof( StaticEventGroup_t ), uxMemoryCaps );
-
-        if( pxEventGroupBuffer == NULL )
-        {
-            return NULL;
-        }
-
-        /* Create the event group using static creation API */
-        xEventGroup = xEventGroupCreateStatic( pxEventGroupBuffer );
-
-        if( xEventGroup == NULL )
-        {
-            heap_caps_free( pxEventGroupBuffer );
-        }
-
-        return xEventGroup;
-    }
-
-#endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-/*----------------------------------------------------------*/
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup )
-    {
-        BaseType_t xResult;
-        StaticEventGroup_t * pxEventGroupBuffer;
-
-        /* Retrieve the buffer used to create the event group before deleting it
-         * */
-        xResult = xEventGroupGetStaticBuffer( xEventGroup, &pxEventGroupBuffer );
-        configASSERT( xResult == pdTRUE );
-
-        /* Delete the event group */
-        vEventGroupDelete( xEventGroup );
-
-        /* Free the memory buffer */
-        heap_caps_free( pxEventGroupBuffer );
     }
 
 #endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
