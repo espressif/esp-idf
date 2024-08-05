@@ -100,7 +100,7 @@ static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_moun
         ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
 
         ESP_LOGI(TAG, "Mounting again");
-        fresult = f_mount(fs, drv, 0);
+        fresult = f_mount(fs, drv, 1);
         ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
     }
     return ESP_OK;
