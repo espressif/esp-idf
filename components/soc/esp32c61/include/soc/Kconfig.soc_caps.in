@@ -495,10 +495,6 @@ config SOC_UART_FIFO_LEN
     int
     default 128
 
-config SOC_LP_UART_FIFO_LEN
-    int
-    default 16
-
 config SOC_UART_BITRATE_MAX
     int
     default 5000000

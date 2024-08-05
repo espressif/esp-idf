@@ -19,8 +19,7 @@
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
 #include "esp_attr.h"
-
-// TODO: [ESP32C61] IDF-9320, inherit from c6
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +28,7 @@ extern "C" {
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
-#define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
+#define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (((num) == UART_NUM_1) ? (&UART1) : (&UART2)))
 
 #define UART_LL_MIN_WAKEUP_THRESH (2)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
@@ -40,24 +39,30 @@ extern "C" {
 #define UART_LL_PCR_REG_U32_SET(hw, reg_suffix, field_suffix, val)  \
     if ((hw) == &UART0) { \
         HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix, (val))  \
-    } else {  \
+    } else if ((hw) == &UART1) {  \
         HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix, (val))  \
+    } else { \
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart2_##reg_suffix, uart2_##field_suffix, (val))  \
     }
 
 #define UART_LL_PCR_REG_U32_GET(hw, reg_suffix, field_suffix)  \
-    (((hw) == &UART0) ? \
-    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix) : \
-    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix))
+    (((hw) == &UART0) ? HAL_FORCE_READ_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix) : \
+    ((hw) == &UART1) ? HAL_FORCE_READ_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix) : \
+    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart2_##reg_suffix, uart2_##field_suffix))
 
 #define UART_LL_PCR_REG_SET(hw, reg_suffix, field_suffix, val)    \
     if ((hw) == &UART0) { \
         PCR.uart0_##reg_suffix.uart0_##field_suffix = (val);  \
-    } else {  \
+    } else if ((hw) == &UART1) {  \
         PCR.uart1_##reg_suffix.uart1_##field_suffix = (val);  \
+    } else { \
+        PCR.uart2_##reg_suffix.uart2_##field_suffix = (val);  \
     }
 
 #define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
-    (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
+    (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : \
+    ((hw) == &UART1) ? PCR.uart1_##reg_suffix.uart1_##field_suffix : \
+    PCR.uart2_##reg_suffix.uart2_##field_suffix)
 
 // Define UART interrupts
 typedef enum {
@@ -92,14 +97,18 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1: // UART_1
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    case 2: // UART_2
+        return PCR.uart2_conf.uart2_clk_en && !PCR.uart2_conf.uart2_rst_en;
+    default:
+        HAL_ASSERT(false);
+        return false;
+    }
+
 }
 
 /**
@@ -115,6 +124,9 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
         break;
     case 1:
         PCR.uart1_conf.uart1_clk_en = enable;
+        break;
+    case 2:
+        PCR.uart2_conf.uart2_clk_en = enable;
         break;
     default:
         abort();
@@ -136,6 +148,10 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
     case 1:
         PCR.uart1_conf.uart1_rst_en = 1;
         PCR.uart1_conf.uart1_rst_en = 0;
+        break;
+    case 2:
+        PCR.uart2_conf.uart2_rst_en = 1;
+        PCR.uart2_conf.uart2_rst_en = 0;
         break;
     default:
         abort();
@@ -191,20 +207,22 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_clk)
 {
+    uint32_t sel_value = 0;
     switch (source_clk) {
-        case UART_SCLK_PLL_F80M:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 1);
+        case UART_SCLK_XTAL:
+            sel_value = 0;
             break;
         case UART_SCLK_RTC:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 2);
+            sel_value = 1;
             break;
-        case UART_SCLK_XTAL:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 3);
+        case UART_SCLK_PLL_F80M:
+            sel_value = 2;
             break;
         default:
             // Invalid UART clock source
             abort();
     }
+    UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, sel_value);
 }
 
 /**
@@ -219,14 +237,14 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 {
     switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
-        case 1:
-            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
+        case 0:
+            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
-        case 2:
+        case 1:
             *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
             break;
-        case 3:
-            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
+        case 2:
+            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
             break;
     }
 }
@@ -270,7 +288,8 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clkdiv_sync) div_reg;
     div_reg.val = hw->clkdiv_sync.val;
-    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1));
+    int sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
+    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * sclk_div);
 }
 
 /**
