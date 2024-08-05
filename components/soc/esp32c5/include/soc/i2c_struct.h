@@ -1103,6 +1103,7 @@ typedef struct {
 } i2c_dev_t;
 
 extern i2c_dev_t I2C0;
+extern i2c_dev_t LP_I2C;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2c_dev_t) == 0x200, "Invalid size of i2c_dev_t structure");

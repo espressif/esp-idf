@@ -63,7 +63,7 @@
 #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
-// #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
+#define SOC_LP_I2C_SUPPORTED            1
 #define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  // TODO: [ESP32C5] IDF-8663
@@ -243,8 +243,7 @@
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-C5 has 1 I2C
-#define SOC_I2C_NUM                 (1U)
+#define SOC_I2C_NUM                 (2U)
 #define SOC_HP_I2C_NUM              (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
@@ -264,9 +263,9 @@
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-C5 has 1 LP_I2C
-// #define SOC_LP_I2C_NUM              (1U)
+#define SOC_LP_I2C_NUM              (1U)
 
-// #define SOC_LP_I2C_FIFO_LEN         (16) /*!< LP_I2C hardware FIFO depth */
+#define SOC_LP_I2C_FIFO_LEN         (16) /*!< LP_I2C hardware FIFO depth */
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)

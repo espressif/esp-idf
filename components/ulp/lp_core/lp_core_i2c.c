@@ -14,12 +14,7 @@
 
 static const char *LPI2C_TAG = "lp_core_i2c";
 
-#if !SOC_LP_GPIO_MATRIX_SUPPORTED
-#include "soc/lp_io_struct.h"
-
-/* Use the register structure to access LP_IO module registers */
-lp_io_dev_t *lp_io_dev = &LP_IO;
-#else
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
 #include "soc/lp_gpio_sig_map.h"
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
@@ -94,11 +89,9 @@ static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
     ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    /* Select LP I2C function for the SDA Pin */
-    lp_io_dev->gpio[sda_io_num].mcu_sel = 1;
-
-    /* Select LP I2C function for the SCL Pin */
-    lp_io_dev->gpio[scl_io_num].mcu_sel = 1;
+    const i2c_signal_conn_t *p_i2c_pin = &i2c_periph_signal[LP_I2C_NUM_0];
+    ret = rtc_gpio_iomux_func_sel(sda_io_num, p_i2c_pin->iomux_func);
+    ret = rtc_gpio_iomux_func_sel(scl_io_num, p_i2c_pin->iomux_func);
 #else
     /* Connect the SDA pin of the LP_I2C peripheral to the LP_IO Matrix */
     ret = lp_gpio_connect_out_signal(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, 0, 0);
