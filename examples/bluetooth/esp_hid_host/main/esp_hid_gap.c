@@ -341,38 +341,39 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             uint8_t len = 0;
             uint8_t *data = 0;
 
-            data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_16BITS_UUID, &len);
-            if (data == NULL) {
-                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID, &len);
-            }
-            if (data && len == ESP_UUID_LEN_16) {
-                uuid.len = ESP_UUID_LEN_16;
-                uuid.uuid.uuid16 = data[0] + (data[1] << 8);
-                GAP_DBG_PRINTF(", "); print_uuid(&uuid);
-                continue;
-            }
+            do {
+                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_16BITS_UUID, &len);
+                if (data == NULL) {
+                    data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID, &len);
+                }
+                if (data && len == ESP_UUID_LEN_16) {
+                    uuid.len = ESP_UUID_LEN_16;
+                    uuid.uuid.uuid16 = data[0] + (data[1] << 8);
+                    GAP_DBG_PRINTF(", "); print_uuid(&uuid);
+                    break;
+                }
 
-            data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_32BITS_UUID, &len);
-            if (data == NULL) {
-                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID, &len);
-            }
-            if (data && len == ESP_UUID_LEN_32) {
-                uuid.len = len;
-                memcpy(&uuid.uuid.uuid32, data, sizeof(uint32_t));
-                GAP_DBG_PRINTF(", "); print_uuid(&uuid);
-                continue;
-            }
+                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_32BITS_UUID, &len);
+                if (data == NULL) {
+                    data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID, &len);
+                }
+                if (data && len == ESP_UUID_LEN_32) {
+                    uuid.len = len;
+                    memcpy(&uuid.uuid.uuid32, data, sizeof(uint32_t));
+                    GAP_DBG_PRINTF(", "); print_uuid(&uuid);
+                    break;
+                }
 
-            data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_128BITS_UUID, &len);
-            if (data == NULL) {
-                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID, &len);
-            }
-            if (data && len == ESP_UUID_LEN_128) {
-                uuid.len = len;
-                memcpy(uuid.uuid.uuid128, (uint8_t *)data, len);
-                GAP_DBG_PRINTF(", "); print_uuid(&uuid);
-                continue;
-            }
+                data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_CMPL_128BITS_UUID, &len);
+                if (data == NULL) {
+                    data = esp_bt_gap_resolve_eir_data((uint8_t *)prop->val, ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID, &len);
+                }
+                if (data && len == ESP_UUID_LEN_128) {
+                    uuid.len = len;
+                    memcpy(uuid.uuid.uuid128, (uint8_t *)data, len);
+                    GAP_DBG_PRINTF(", "); print_uuid(&uuid);
+                }
+            } while (0);
 
             //try to find a name
             if (name == NULL) {
