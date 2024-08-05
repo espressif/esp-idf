@@ -58,6 +58,7 @@ struct nan_de_service {
 	struct os_reltime next_publish_state;
 	struct os_reltime next_publish_chan;
 	unsigned int next_publish_duration;
+	bool is_p2p;
 };
 
 struct nan_de {
@@ -1218,7 +1219,7 @@ const u8 * nan_de_get_service_id(struct nan_de *de, int id)
 int nan_de_publish(struct nan_de *de, const char *service_name,
 		   enum nan_service_protocol_type srv_proto_type,
 		   const struct wpabuf *ssi, const struct wpabuf *elems,
-		   struct nan_publish_params *params)
+		   struct nan_publish_params *params, bool p2p)
 {
 	int publish_id;
 	struct nan_de_service *srv;
@@ -1280,6 +1281,7 @@ int nan_de_publish(struct nan_de *de, const char *service_name,
 	wpa_printf(MSG_DEBUG, "NAN: Assigned new publish handle %d for %s",
 		   publish_id, service_name);
 	srv->id = publish_id;
+	srv->is_p2p = p2p;
 	nan_de_add_srv(de, srv);
 	nan_de_run_timer(de);
 	return publish_id;
@@ -1331,7 +1333,7 @@ int nan_de_update_publish(struct nan_de *de, int publish_id,
 int nan_de_subscribe(struct nan_de *de, const char *service_name,
 		     enum nan_service_protocol_type srv_proto_type,
 		     const struct wpabuf *ssi, const struct wpabuf *elems,
-		     struct nan_subscribe_params *params)
+		     struct nan_subscribe_params *params, bool p2p)
 {
 	int subscribe_id;
 	struct nan_de_service *srv;
@@ -1371,6 +1373,7 @@ int nan_de_subscribe(struct nan_de *de, const char *service_name,
 	wpa_printf(MSG_DEBUG, "NAN: Assigned new subscribe handle %d for %s",
 		   subscribe_id, service_name);
 	srv->id = subscribe_id;
+	srv->is_p2p = p2p;
 	nan_de_add_srv(de, srv);
 	nan_de_run_timer(de);
 	return subscribe_id;

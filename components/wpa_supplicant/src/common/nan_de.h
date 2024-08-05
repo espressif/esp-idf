@@ -106,7 +106,7 @@ struct nan_publish_params {
 int nan_de_publish(struct nan_de *de, const char *service_name,
 		   enum nan_service_protocol_type srv_proto_type,
 		   const struct wpabuf *ssi, const struct wpabuf *elems,
-		   struct nan_publish_params *params);
+		   struct nan_publish_params *params, bool p2p);
 
 void nan_de_cancel_publish(struct nan_de *de, int publish_id);
 
@@ -133,7 +133,7 @@ struct nan_subscribe_params {
 int nan_de_subscribe(struct nan_de *de, const char *service_name,
 		     enum nan_service_protocol_type srv_proto_type,
 		     const struct wpabuf *ssi, const struct wpabuf *elems,
-		     struct nan_subscribe_params *params);
+		     struct nan_subscribe_params *params, bool p2p);
 
 void nan_de_cancel_subscribe(struct nan_de *de, int subscribe_id);
 
