@@ -55,7 +55,7 @@ struct nan_callbacks {
 			const u8 *peer_addr);
 };
 
-struct nan_de * nan_de_init(const u8 *nmi, bool ap,
+struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
 			    const struct nan_callbacks *cb);
 void nan_de_flush(struct nan_de *de);
 void nan_de_deinit(struct nan_de *de);
@@ -68,6 +68,7 @@ void nan_de_tx_wait_ended(struct nan_de *de);
 
 void nan_de_rx_sdf(struct nan_de *de, const u8 *peer_addr, unsigned int freq,
 		   const u8 *buf, size_t len);
+const u8 * nan_de_get_service_id(struct nan_de *de, int id);
 
 struct nan_publish_params {
 	/* configuration_parameters */

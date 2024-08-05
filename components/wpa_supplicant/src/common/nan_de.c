@@ -62,6 +62,7 @@ struct nan_de_service {
 
 struct nan_de {
 	u8 nmi[ETH_ALEN];
+	bool offload;
 	bool ap;
 	struct nan_callbacks cb;
 
@@ -77,7 +78,7 @@ struct nan_de {
 };
 
 
-struct nan_de * nan_de_init(const u8 *nmi, bool ap,
+struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
 			    const struct nan_callbacks *cb)
 {
 	struct nan_de *de;
@@ -87,6 +88,7 @@ struct nan_de * nan_de_init(const u8 *nmi, bool ap,
 		return NULL;
 
 	os_memcpy(de->nmi, nmi, ETH_ALEN);
+	de->offload = offload;
 	de->ap = ap;
 	os_memcpy(&de->cb, cb, sizeof(*cb));
 
@@ -590,7 +592,7 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 		if (srv_next >= 0 && (next == -1 || srv_next < next))
 			next = srv_next;
 
-		if (srv_next == 0 && !started &&
+		if (srv_next == 0 && !started && !de->offload &&
 		    de->listen_freq == 0 && de->ext_listen_freq == 0 &&
 		    de->tx_wait_end_freq == 0 &&
 		    nan_de_next_multicast(de, srv, &now) == 0) {
@@ -598,7 +600,7 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 			nan_de_tx_multicast(de, srv, 0);
 		}
 
-		if (!started && de->cb.listen &&
+		if (!started && !de->offload && de->cb.listen &&
 		    de->listen_freq == 0 && de->ext_listen_freq == 0 &&
 		    de->tx_wait_end_freq == 0 &&
 		    ((srv->type == NAN_DE_PUBLISH &&
@@ -787,13 +789,13 @@ static void nan_de_rx_publish(struct nan_de *de, struct nan_de_service *srv,
 		nan_de_run_timer(de);
 	}
 
-	if (srv->subscribe.active && req_instance_id == 0) {
+	if (!de->offload && srv->subscribe.active && req_instance_id == 0) {
 		/* Active subscriber replies with a Subscribe message if it
 		 * received a matching unsolicited Publish message. */
 		nan_de_tx_multicast(de, srv, instance_id);
 	}
 
-	if (!srv->subscribe.active && req_instance_id == 0) {
+	if (!de->offload && !srv->subscribe.active && req_instance_id == 0) {
 		/* Passive subscriber replies with a Follow-up message without
 		 * Service Specific Info field if it received a matching
 		 * unsolicited Publish message. */
@@ -873,6 +875,9 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 		return;
 	}
 
+	if (de->offload)
+		goto offload;
+
 	/* Reply with a solicited Publish message */
 	/* Service Descriptor attribute */
 	sda_len = NAN_SERVICE_ID_LEN + 1 + 1 + 1;
@@ -939,6 +944,7 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 
 	nan_de_pause_state(srv, peer_addr, instance_id);
 
+offload:
 	if (!srv->publish.disable_events && de->cb.replied)
 		de->cb.replied(de->cb.ctx, srv->id, peer_addr, instance_id,
 			       srv_proto_type, ssi, ssi_len);
@@ -1193,6 +1199,19 @@ static int nan_de_derive_service_id(struct nan_de_service *srv)
 		os_memcpy(srv->service_id, hash, NAN_SERVICE_ID_LEN);
 
 	return ret;
+}
+
+
+const u8 * nan_de_get_service_id(struct nan_de *de, int id)
+{
+	struct nan_de_service *srv;
+
+	if (id < 1 || id > NAN_DE_MAX_SERVICE)
+		return NULL;
+	srv = de->service[id - 1];
+	if (!srv)
+		return NULL;
+	return srv->service_id;
 }
 
 
