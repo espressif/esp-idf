@@ -878,3 +878,63 @@ TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
     TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO);
 }
 #endif
+
+#if SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+// Pick one digital IO for each target to test is enough
+static void gpio_deep_sleep_hold_test_first_stage(void)
+{
+    printf("configure a digital pin to hold during deep sleep");
+    int io_num = TEST_GPIO_DEEP_SLEEP_HOLD_PIN;
+    TEST_ASSERT(GPIO_IS_VALID_DIGITAL_IO_PAD(io_num));
+
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
+
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .pin_bit_mask = (1ULL << io_num),
+        .pull_down_en = 0,
+        .pull_up_en = 0,
+    };
+    TEST_ESP_OK(gpio_config(&io_conf));
+    TEST_ESP_OK(gpio_set_level(io_num, 0));
+
+    // Enable global persistence
+    TEST_ESP_OK(gpio_hold_en(io_num));
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    // On such target, digital IOs cannot be held individually in Deep-sleep
+    // Extra step is required, so that all digital IOs can automatically get held when entering Deep-sleep
+    gpio_deep_sleep_hold_en();
+#endif
+
+    esp_deep_sleep_start();
+}
+
+static void gpio_deep_sleep_hold_test_second_stage(void)
+{
+    int io_num = TEST_GPIO_DEEP_SLEEP_HOLD_PIN;
+    // Check reset reason is waking up from deepsleep
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+
+    // Pin should stay at low level after the deep sleep
+    TEST_ASSERT_EQUAL_INT(0, gpio_get_level(io_num));
+    // Set level should not take effect since hold is still active (and the INPUT_OUTPUT mode should still be held)
+    TEST_ESP_OK(gpio_set_level(io_num, 1));
+    TEST_ASSERT_EQUAL_INT(0, gpio_get_level(io_num));
+
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    gpio_deep_sleep_hold_dis();
+#endif
+    TEST_ESP_OK(gpio_hold_dis(io_num));
+}
+
+/*
+ * Test digital IOs hold function during deep sleep.
+ * This test case can only check the hold state after waking up from deep sleep
+ * If you want to check that the digital IO hold function works properly during deep sleep,
+ * please use logic analyzer or oscilloscope
+ */
+TEST_CASE_MULTIPLE_STAGES("GPIO_deep_sleep_output_hold_test", "[gpio]",
+                          gpio_deep_sleep_hold_test_first_stage,
+                          gpio_deep_sleep_hold_test_second_stage)
+#endif // SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
