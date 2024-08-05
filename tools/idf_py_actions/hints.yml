@@ -259,7 +259,7 @@
 
 -
     re: "`iram0_0_seg' overflowed"
-    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduce IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
 
 -
     re: "fatal error: (tinyusb.h): No such file or directory"
@@ -322,7 +322,7 @@
 
 -
     re: "-Werror=(address-of-packed-member|aggressive-loop-optimizations|attribute-warning|builtin-macro-redefined|cpp|designated-init|deprecated-declarations|discarded-array-qualifiers|discarded-qualifiers|div-by-zero|endif-labels|free-nonheap-object|if-not-aligned|ignored-attributes|incompatible-pointer-types|int-conversion|int-to-pointer-cast|lto-type-mismatch|multichar|overflow|override-init-side-effects|packed-bitfield-compat|pointer-compare|pointer-to-int-cast|return-local-addr|scalar-storage-order|shift-count-negative|shift-count-overflow|sizeof-array-argument|stringop-truncation| switch-bool|switch-outside-range|varargs)"
-    hint: "The error(s) '{}' may appear after IDF upgrade since previous versions were not considering those warnings as errors.\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disabe errors for default warnings'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
+    hint: "The error(s) '{}' may appear after IDF upgrade since previous versions were not considering those warnings as errors.\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable errors for default warnings'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
     match_to_output: True
 
 -
