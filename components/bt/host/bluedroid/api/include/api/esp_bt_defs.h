@@ -209,6 +209,8 @@ typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 #define ESP_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
+#define ESP_BLE_ADV_NAME_LEN_MAX 29
+
 #ifdef __cplusplus
 }
 #endif

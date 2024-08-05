@@ -69,6 +69,11 @@ esp_err_t esp_bluedroid_init(void);
  */
 esp_err_t esp_bluedroid_deinit(void);
 
+#if defined(CONFIG_EXAMPLE_CI_ID) && defined(CONFIG_EXAMPLE_CI_PIPELINE_ID)
+// Only for internal used (CI example test)
+char *esp_bluedroid_get_example_name(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
