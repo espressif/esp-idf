@@ -428,7 +428,7 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
                                &partition->pos,
                                &image_data);
         should_encrypt = (err == ESP_OK);
-#ifdef SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+#ifdef CONFIG_SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
         if (should_encrypt) {
             // Encrypt only the app image instead of encrypting the whole partition
             size = image_data.image_len;
