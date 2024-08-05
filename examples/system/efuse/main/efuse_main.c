@@ -15,8 +15,14 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
+
+#if CONFIG_SECURE_BOOT || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_secure_boot.h"
+#endif
+
+#if CONFIG_SECURE_FLASH_ENC_ENABLED || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_flash_encrypt.h"
+#endif
 #include "sdkconfig.h"
 
 static const char* TAG = "example";
