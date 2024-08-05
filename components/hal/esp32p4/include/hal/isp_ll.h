@@ -1635,43 +1635,13 @@ static inline void isp_ll_hist_clk_enable(isp_dev_t *hw, bool enable)
  * @param[in] hw Hardware instance address
  * @param[in] window_weight array for window weight
 */
-static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const uint32_t window_weight[SOC_ISP_HIST_WINDOW_NUMS])
+static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const uint32_t window_weight[SOC_ISP_HIST_BLOCK_X_NUMS][SOC_ISP_HIST_BLOCK_Y_NUMS])
 {
-    int idx = 0;
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight0, hist_weight_00, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight0, hist_weight_01, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight0, hist_weight_02, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight0, hist_weight_03, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight1, hist_weight_04, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight1, hist_weight_10, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight1, hist_weight_11, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight1, hist_weight_12, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight2, hist_weight_13, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight2, hist_weight_14, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight2, hist_weight_20, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight2, hist_weight_21, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight3, hist_weight_22, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight3, hist_weight_23, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight3, hist_weight_24, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight3, hist_weight_30, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight4, hist_weight_31, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight4, hist_weight_32, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight4, hist_weight_33, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight4, hist_weight_34, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight5, hist_weight_40, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight5, hist_weight_41, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight5, hist_weight_42, window_weight[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight5, hist_weight_43, window_weight[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight6, hist_weight_44, window_weight[idx++]);
-
-    HAL_ASSERT(idx == 25);
+    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS; i++) {
+        for (int j = 0; j < SOC_ISP_HIST_BLOCK_Y_NUMS; j++) {
+            hw->hist_weight[i / 4].hist_weight_b[3 - (i % 4)] = (window_weight[i][j] * 256) / 100;
+        }
+    }
 }
 
 /**
@@ -1680,78 +1650,33 @@ static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const uint32_
  * @param[in] hw Hardware instance address
  * @param[in] segment_threshold array for segment threshold
 */
-static inline void isp_ll_hist_set_segment_threshold(isp_dev_t *hw, const uint32_t segment_threshold[SOC_ISP_HIST_INTERVAL_NUMS - 1])
+static inline void isp_ll_hist_set_segment_threshold(isp_dev_t *hw, const uint32_t segment_threshold[SOC_ISP_HIST_INTERVAL_NUMS])
 {
-    int idx = 0;
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg0, hist_seg_0_1, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg0, hist_seg_1_2, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg0, hist_seg_2_3, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg0, hist_seg_3_4, segment_threshold[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg1, hist_seg_4_5, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg1, hist_seg_5_6, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg1, hist_seg_6_7, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg1, hist_seg_7_8, segment_threshold[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg2, hist_seg_8_9, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg2, hist_seg_9_10, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg2, hist_seg_10_11, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg2, hist_seg_11_12, segment_threshold[idx++]);
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg3, hist_seg_12_13, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg3, hist_seg_13_14, segment_threshold[idx++]);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg3, hist_seg_14_15, segment_threshold[idx++]);
-
-    HAL_ASSERT(idx == 15);
+    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++)
+    {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg[i / 4], hist_seg_b[3 - (i % 4)], segment_threshold[i])
+    }
 }
 
 /**
- * @brief Set histogram x offset
+ * @brief Set histogram window range
  *
- * @param[in] hw Hardware instance address
- * @param[in] x_offset value for x offset
-*/
-static inline void isp_ll_hist_set_x_offset(isp_dev_t *hw, uint32_t x_offset)
+ * @param[in] hw        Hardware instance address
+ * @param[in] x_start   Top left pixel x axis value
+ * @param[in] x_bsize   Block size on x axis
+ * @param[in] y_start   Top left pixel y axis value
+ * @param[in] y_bsize   Block size on y axis
+ */
+static inline void isp_ll_hist_set_window_range(isp_dev_t *hw, int x_start, int x_bsize, int y_start, int y_bsize)
 {
-    hw->hist_offs.hist_x_offs = x_offset;
+    hw->hist_offs.hist_x_offs = x_start;
+    hw->hist_offs.hist_y_offs = y_start;
+    hw->hist_size.hist_x_size = x_bsize;
+    hw->hist_size.hist_y_size = y_bsize;
 }
 
 /**
- * @brief Set histogram y offset
- *
- * @param[in] hw Hardware instance address
- * @param[in] y_offset value for y offset
-*/
-static inline void isp_ll_hist_set_y_offset(isp_dev_t *hw, uint32_t y_offset)
-{
-    hw->hist_offs.hist_y_offs = y_offset;
-}
-
-/**
- * @brief Set histogram x size
- *
- * @param[in] hw Hardware instance address
- * @param[in] x_size value for x size
-*/
-static inline void isp_ll_hist_set_window_x_size(isp_dev_t *hw, uint32_t x_size)
-{
-    hw->hist_size.hist_x_size = x_size;
-}
-
-/**
- * @brief Set histogram y size
- *
- * @param[in] hw Hardware instance address
- * @param[in] y_size value for y size
-*/
-static inline void isp_ll_hist_set_window_y_size(isp_dev_t *hw, uint32_t y_size)
-{
-    hw->hist_size.hist_y_size = y_size;
-}
-
-/**
- * @brief Start histogram statistic
+ * @brief Enable / Disable histogram statistic
  *
  * @param[in] hw Hardware instance address
  * @param[in] enable enable/disable
@@ -1759,16 +1684,6 @@ static inline void isp_ll_hist_set_window_y_size(isp_dev_t *hw, uint32_t y_size)
 static inline void isp_ll_hist_enable(isp_dev_t *hw, bool enable)
 {
     hw->cntl.hist_en = enable;
-}
-
-/**
- * @brief Stop histogram statistic
- *
- * @param[in] hw Hardware instance address
-*/
-static inline void isp_ll_hist_stop(isp_dev_t *hw)
-{
-    hw->cntl.hist_en = 1;
 }
 
 /**
@@ -1786,27 +1701,27 @@ static inline void isp_ll_hist_get_histogram_value(isp_dev_t *hw, uint32_t *hist
 }
 
 /**
- * @brief Get histogram value
+ * @brief Set histogram sampling mode
  *
  * @param[in] hw Hardware instance address
- * @param[out] histogram_value pointer to histogram result
+ * @param[in] hist_mode histogram mode
 */
-static inline void isp_ll_hist_set_mode(isp_dev_t *hw, isp_hist_mode_enum_t hist_mode)
+static inline void isp_ll_hist_set_mode(isp_dev_t *hw, isp_hist_sampling_mode_t hist_mode)
 {
     hw->hist_mode.hist_mode = hist_mode;
 }
 
 /**
- * @brief Get histogram value
+ * @brief Set histogram RGB coefficients, only effect when hist_mode is ISP_HIST_SAMPLING_RGB
  *
  * @param[in] hw Hardware instance address
- * @param[out] histogram_value pointer to histogram result
+ * @param[in] rgb_coeff RGB coefficients
 */
 static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist_rgb_coefficient *rgb_coeff)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_r, rgb_coeff->coeff_r);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, rgb_coeff->coeff_g);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, rgb_coeff->coeff_b);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_r, (rgb_coeff->coeff_r * 256) / 100);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, (rgb_coeff->coeff_g * 256) / 100);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, (rgb_coeff->coeff_b * 256) / 100);
 }
 
 #ifdef __cplusplus

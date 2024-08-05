@@ -16,16 +16,13 @@ extern "C" {
 #endif
 
 typedef struct {
-    uint32_t first_window_x_offs;                                       /*!< x offset for the first window */
-    uint32_t window_x_size;                                             /*!< x size for the window */
-    uint32_t first_window_y_offs;                                       /*!< y offset for the first window */
-    uint32_t window_y_size;                                             /*!< y size for the window */
-    isp_hist_mode_enum_t hist_mode;                                     /*!< ISP histogram mode */
-    uint32_t hist_windows_weight[ISP_HIST_WINDOW_NUM];                  /*!< Weight for histogram statistic windows */
-    uint32_t hist_segment_threshold[ISP_HIST_INTERVAL_NUMS - 1];         /*!< threshold for histogram */
-    isp_hist_rgb_coefficient rgb_coefficient;                           /*!< RGB coefficient for isp histogram */
-    int intr_priority;                                                  /*!< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with
-                                                                         *   a relative low priority (1,2,3) */
+    isp_window_t window;                                                      /*!< The sampling window of histogram, see `isp_window_t`*/
+    isp_hist_sampling_mode_t hist_mode;                                       /*!< ISP histogram sampling mode */
+    isp_hist_rgb_coefficient rgb_coefficient;                                 /*!< RGB coefficients, adjust the sensitivity to red, geen, and blue colors in the image,
+                                                                                only effect when hist_mode is ISP_HIST_SAMPLING_RGB, the sum of all coefficients should be 100**/
+    uint32_t windows_weight[ISP_HIST_BLOCK_X_NUM][ISP_HIST_BLOCK_Y_NUM];      /*!< Weights of histogram's each subwindows, the sum of all subwindows's weight should be 100*/
+    uint32_t segment_threshold[ISP_HIST_INTERVAL_NUMS];                       /*!< Threshold to segment the histogram into intervals, range 0~256 */
+
 } esp_isp_hist_config_t;
 
 /**
@@ -57,19 +54,6 @@ esp_err_t esp_isp_new_hist_controller(isp_proc_handle_t isp_proc, const esp_isp_
 esp_err_t esp_isp_del_hist_controller(isp_hist_ctlr_t hist_ctlr);
 
 /**
- * @brief Reconfigure the ISP histogram controller
- * @note  This function is allowed to be called no matter the awb controller is enabled or not.
- *
- * @param[in] hist_ctlr  hist controller handle
- * @param[in]  hist_cfg    Pointer to histogram config. Refer to ``esp_isp_hist_config_t``
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid
- */
-esp_err_t esp_isp_hist_controller_reconfig(isp_hist_ctlr_t hist_ctlr, const esp_isp_hist_config_t *hist_cfg);
-
-/**
  * @brief Enable an ISP hist controller
  *
  * @param[in] hist_ctlr  hist controller handle
@@ -95,9 +79,6 @@ esp_err_t esp_isp_hist_controller_disable(isp_hist_ctlr_t hist_ctlr);
 
 /**
  * @brief Trigger hist reference statistics for one time and get the result
- * @note  This function is a synchronous and block function,
- *        it only returns when hist reference statistics is done or timeout.
- *        It's a simple method to get the result directly for one time.
  *
  * @param[in]  hist_ctlr  hist controller handle
  * @param[in]  timeout_ms Timeout in millisecond
@@ -153,7 +134,7 @@ typedef struct {
  *
  * @param[in] handle    ISP hist controller handle
  * @param[in] edata     ISP hist event data
- * @param[in] user_data User registered context, registered when in `esp_isp_hist_env_detector_register_event_callbacks()`
+ * @param[in] user_data User registered context, registered when in `esp_isp_hist_register_event_callbacks()`
  *
  * @return Whether a high priority task is woken up by this function
  */

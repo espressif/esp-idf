@@ -923,9 +923,17 @@ config SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS
     int
     default 24
 
-config SOC_ISP_HIST_WINDOW_NUMS
+config SOC_ISP_HIST_CTLR_NUMS
     int
-    default 25
+    default 1
+
+config SOC_ISP_HIST_BLOCK_X_NUMS
+    int
+    default 5
+
+config SOC_ISP_HIST_BLOCK_Y_NUMS
+    int
+    default 5
 
 config SOC_ISP_HIST_SEGMENT_NUMS
     int

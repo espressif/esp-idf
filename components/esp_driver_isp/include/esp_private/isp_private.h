@@ -83,6 +83,7 @@ typedef struct isp_processor_t {
         uint32_t                ae_isr_added:    1;
         uint32_t                awb_isr_added:   1;
         uint32_t                sharp_isr_added: 1;
+        uint32_t                hist_isr_added: 1;
     } isr_users;
 
 } isp_processor_t;
@@ -93,6 +94,7 @@ typedef enum {
     ISP_SUBMODULE_AE,
     ISP_SUBMODULE_AWB,
     ISP_SUBMODULE_SHARPEN,
+    ISP_SUBMODULE_HIST,
 } isp_submodule_t;
 
 /*---------------------------------------------------------------
@@ -104,6 +106,7 @@ bool esp_isp_af_isr(isp_proc_handle_t proc, uint32_t af_events);
 bool esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events);
 bool esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events);
 bool esp_isp_sharpen_isr(isp_proc_handle_t proc, uint32_t sharp_events);
+bool esp_isp_hist_isr(isp_proc_handle_t proc, uint32_t hist_events);
 
 #ifdef __cplusplus
 }

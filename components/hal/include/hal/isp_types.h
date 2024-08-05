@@ -33,8 +33,7 @@ typedef struct {
 } isp_coordinate_t;
 
 /**
- * @brief ISP window type
- *
+ * @brief  The top left and bottom right coordinates of ISP full window
  */
 typedef struct {
     isp_coordinate_t top_left;       ///< The top left point coordinate
@@ -238,37 +237,35 @@ typedef struct {
 /*---------------------------------------------------------------
                       HIST
 ---------------------------------------------------------------*/
-#if SOC_ISP_HIST_WINDOW_NUMS
-#define ISP_HIST_WINDOW_NUM   SOC_ISP_HIST_WINDOW_NUMS      // The HIST window number for sampling
+#if (SOC_ISP_HIST_BLOCK_X_NUMS && SOC_ISP_HIST_BLOCK_Y_NUMS)
+#define ISP_HIST_BLOCK_X_NUM   SOC_ISP_HIST_BLOCK_X_NUMS      // The AF window number for sampling
+#define ISP_HIST_BLOCK_Y_NUM   SOC_ISP_HIST_BLOCK_Y_NUMS      // The AF window number for sampling
 #else
-#define ISP_HIST_WINDOW_NUM   0
+#define ISP_HIST_BLOCK_X_NUM   0
+#define ISP_HIST_BLOCK_Y_NUM   0
 #endif
 
-#if SOC_ISP_HIST_SEGMENT_NUMS
+#if (SOC_ISP_HIST_SEGMENT_NUMS && SOC_ISP_HIST_INTERVAL_NUMS)
 #define ISP_HIST_SEGMENT_NUMS   SOC_ISP_HIST_SEGMENT_NUMS      // The segment of histogram
+#define ISP_HIST_INTERVAL_NUMS  SOC_ISP_HIST_INTERVAL_NUMS     // The interval of histogram
 #else
 #define ISP_HIST_SEGMENT_NUMS   0
-#endif
-
-#if SOC_ISP_HIST_INTERVAL_NUMS
-#define ISP_HIST_INTERVAL_NUMS   SOC_ISP_HIST_INTERVAL_NUMS      // The segment of histogram
-#else
-#define ISP_HIST_INTERVAL_NUMS   0
+#define ISP_HIST_INTERVAL_NUMS  0
 #endif
 
 /**
  * @brief ISP histogram mode.
 */
 typedef enum {
-    ISP_HIST_RGB_B,            ///< histogram mode for B component for RGB
-    ISP_HIST_RGB_GB,           ///< histogram mode for GB component for RGB
-    ISP_HIST_RGB_GR,           ///< histogram mode for GR component for RGB
-    ISP_HIST_RGB_R,            ///< histogram mode for R component for RGB
-    ISP_HIST_RGB,              ///< histogram mode for RGB
-    ISP_HIST_YUV_Y,            ///< histogram mode for Y component for YUV
-    ISP_HIST_YUV_U,            ///< histogram mode for U component for YUV
-    ISP_HIST_YUV_V,            ///< histogram mode for V component for YUV
-} isp_hist_mode_enum_t;
+    ISP_HIST_SAMPLING_RAW_RGB_B,        ///< histogram mode for B component of raw image
+    ISP_HIST_SAMPLING_RAW_RGB_GB,       ///< histogram mode for GB component of raw image
+    ISP_HIST_SAMPLING_RAW_RGB_GR,       ///< histogram mode for GR component of raw image
+    ISP_HIST_SAMPLING_RAW_RGB_R,        ///< histogram mode for R component of raw image
+    ISP_HIST_SAMPLING_RGB,              ///< histogram mode for RGB
+    ISP_HIST_SAMPLING_YUV_Y,            ///< histogram mode for Y component for YUV
+    ISP_HIST_SAMPLING_YUV_U,            ///< histogram mode for U component for YUV
+    ISP_HIST_SAMPLING_YUV_V,            ///< histogram mode for V component for YUV
+} isp_hist_sampling_mode_t;
 
 /**
  * @brief ISP histogram r,g,b coefficient
@@ -283,7 +280,7 @@ typedef struct {
  * @brief ISP histogram result.
 */
 typedef struct {
-    uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];  ///< histogram value.
+    uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];  ///< Histogram value, represents the number of pixels that the histogram window's brightness results fall into the segment X.
 } isp_hist_result_t;
 
 

@@ -153,6 +153,28 @@ If the configurations in :cpp:type:`esp_isp_ae_config_t` is specified, users can
 
 You can use the created handle to do driver enable / disable the ISP AE driver and ISP AE environment detector setup.
 
+Install ISP histogram (HIST) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP histogram (HIST) driver requires the configuration that specified by :cpp:type:`esp_isp_hist_config_t`.
+
+If the configurations in :cpp:type:`esp_isp_hist_config_t` is specified, users can call :cpp:func:`esp_isp_new_hist_controller` to allocate and initialize an ISP HISTG processor. This function will return an ISP HIST processor handle if it runs correctly. You can take following code as reference.
+
+.. code:: c
+
+    esp_isp_hist_config_t hist_cfg = {
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .rgb_coefficient.coeff_r = 33,
+        .rgb_coefficient.coeff_g = 33,
+        .rgb_coefficient.coeff_b = 34,
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
+    };
+    isp_hist_ctlr_t hist_ctlr_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr));
+
+You can use the created handle to do driver enable / disable the ISP HIST driver setup.
+
 Uninstall ISP Driver
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -172,6 +194,11 @@ UnInstall ISP AE Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a previously installed ISP AE processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_ae_controller`, it will also release the underlying hardware.
+
+UnInstall ISP HIST Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a previously installed ISP HIST processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_hist_controller`, it will also release the underlying hardware.
 
 
 .. _isp-enable-disable:
@@ -417,6 +444,8 @@ Aside from the above oneshot API, the ISP histogram driver also provides a way t
 
 Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` callback to get the statistics result. See how to register it in `Register Event Callbacks <#isp-callback>`__
 
+Note that the sum of all subwindows's weight should be 100, the sum of all RGB coefficients should be 100, and segment_threshold must be 0 ~ 256.
+
 .. code:: c
 
     static bool s_hist_scheme_on_statistics_done_callback(isp_hist_ctlr_t awb_ctrlr, const esp_isp_hist_evt_data_t *edata, void *user_data)
@@ -427,29 +456,23 @@ Note that if you want to use the continuous statistics, you need to register the
         return true;
     }
 
-    isp_hist_ctlr_t hist_ctrlr = NULL;
+    isp_hist_ctlr_t hist_ctlr = NULL;
     esp_isp_hist_config_t hist_cfg = {
-        .first_window_x_offs = 0,
-        .first_window_y_offs = 0,
-        .window_x_size = 800 / 25,
-        .window_y_size = 640 / 25,
-        .rgb_coefficient = {
-            .coeff_b = 85,
-            .coeff_g = 85,
-            .coeff_r = 85,
-        },
-        .hist_windows_weight = {[0 ... ISP_HIST_WINDOW_NUM - 1] = 10},
-        .hist_segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
-        .hist_mode = ISP_HIST_RGB,
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .rgb_coefficient.coeff_r = 33,
+        .rgb_coefficient.coeff_g = 33,
+        .rgb_coefficient.coeff_b = 34,
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
     };
 
-    esp_isp_new_hist_controller(isp_proc, &hist_cfg, &hist_ctrlr);
+    esp_isp_new_hist_controller(isp_proc, &hist_cfg, &hist_ctlr);
     esp_isp_hist_cbs_t hist_cbs = {
         .on_statistics_done = s_hist_scheme_on_statistics_done_callback,
     };
 
-    esp_isp_hist_register_event_callbacks(hist_ctrlr, &hist_cbs, hist_ctrlr);
-    esp_isp_hist_controller_enable(hist_ctrlr);
+    esp_isp_hist_register_event_callbacks(hist_ctlr, &hist_cbs, hist_ctlr);
+    esp_isp_hist_controller_enable(hist_ctlr);
 
 
 .. _isp_bf:

@@ -188,6 +188,17 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
  */
 void isp_hal_sharpen_config(isp_hal_context_t *hal, isp_hal_sharpen_cfg_t *config);
 
+/*---------------------------------------------------------------
+                      Histogram
+---------------------------------------------------------------*/
+/**
+ * @brief Configure Histogram window
+ *
+ * @param[in] hal        Context of the HAL layer
+ * @param[in] window     Window info, see `isp_window_t`
+ */
+void isp_hal_hist_window_config(isp_hal_context_t *hal, const isp_window_t *window);
+
 #ifdef __cplusplus
 }
 #endif

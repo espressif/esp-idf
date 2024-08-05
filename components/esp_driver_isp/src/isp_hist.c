@@ -6,6 +6,7 @@
 
 #include <esp_types.h>
 #include <sys/lock.h>
+#include <stdatomic.h>
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
@@ -15,10 +16,9 @@
 #include "esp_private/isp_private.h"
 
 typedef struct isp_hist_controller_t {
-    isp_fsm_t                          fsm;
+    _Atomic isp_fsm_t                  fsm;
     portMUX_TYPE                       spinlock;
     intr_handle_t                      intr_handle;
-    int                                intr_priority;
     isp_proc_handle_t                  isp_proc;
     QueueHandle_t                      evt_que;
     esp_isp_hist_cbs_t                 cbs;
@@ -26,8 +26,6 @@ typedef struct isp_hist_controller_t {
 } isp_hist_controller_t;
 
 static const char *TAG = "ISP_hist";
-
-static void s_isp_hist_default_isr(void *arg);
 
 /*---------------------------------------------
                 hist
@@ -66,7 +64,7 @@ static void s_isp_hist_free_controller(isp_hist_ctlr_t hist_ctlr)
             esp_intr_free(hist_ctlr->intr_handle);
         }
         if (hist_ctlr->evt_que) {
-            vQueueDelete(hist_ctlr->evt_que);
+            vQueueDeleteWithCaps(hist_ctlr->evt_que);
         }
         free(hist_ctlr);
     }
@@ -81,27 +79,43 @@ esp_err_t esp_isp_new_hist_controller(isp_proc_handle_t isp_proc, const esp_isp_
     ESP_RETURN_ON_FALSE(hist_ctlr, ESP_ERR_NO_MEM, TAG, "no mem for hist controller");
     hist_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_hist_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(hist_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for hist event queue");
+
+    atomic_init(&hist_ctlr->fsm, ISP_FSM_INIT);
     hist_ctlr->fsm = ISP_FSM_INIT;
     hist_ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     hist_ctlr->isp_proc = isp_proc;
 
+    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++) {
+        ESP_GOTO_ON_FALSE((hist_cfg->segment_threshold[i] > 0 && hist_cfg->segment_threshold[i] < 256), ESP_ERR_INVALID_ARG, err1, TAG, "invalid segment threshold");
+    }
+
+    int weight_sum = 0;
+    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS; i++) {
+        for (int j = 0; j < SOC_ISP_HIST_BLOCK_Y_NUMS; j++) {
+            weight_sum = weight_sum + hist_cfg->windows_weight[i][j];
+        }
+    }
+    ESP_GOTO_ON_FALSE(weight_sum == 100, ESP_ERR_INVALID_ARG, err1, TAG, "The sum of all subwindow's weight is not 100");
+
+    if (hist_cfg->hist_mode ==  ISP_HIST_SAMPLING_RGB) {
+        int rgb_coefficient_sum = hist_cfg->rgb_coefficient.coeff_r + hist_cfg->rgb_coefficient.coeff_g + hist_cfg->rgb_coefficient.coeff_b;
+        ESP_GOTO_ON_FALSE(rgb_coefficient_sum == 100, ESP_ERR_INVALID_ARG, err1, TAG, "The sum of rgb_coefficient is not 100");
+    }
+
     // Claim an hist controller
     ESP_GOTO_ON_ERROR(s_isp_claim_hist_controller(isp_proc, hist_ctlr), err1, TAG, "no available controller");
-    // Register the hist ISR
-    uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    int intr_priority = hist_cfg->intr_priority > 0 && hist_cfg->intr_priority <= 7 ? BIT(hist_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | intr_priority, intr_st_reg_addr, ISP_LL_EVENT_HIST_MASK,
-                                                s_isp_hist_default_isr, hist_ctlr, &hist_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
+
+    // Register the HIGT ISR
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(hist_ctlr->isp_proc, ISP_SUBMODULE_HIST), err2, TAG, "fail to register ISR");
 
     // Configure the hardware
     isp_ll_hist_set_mode(isp_proc->hal.hw, hist_cfg->hist_mode);
-    isp_ll_hist_set_x_offset(isp_proc->hal.hw, hist_cfg->first_window_x_offs);
-    isp_ll_hist_set_y_offset(isp_proc->hal.hw, hist_cfg->first_window_y_offs);
-    isp_ll_hist_set_window_x_size(isp_proc->hal.hw, hist_cfg->window_x_size);
-    isp_ll_hist_set_window_y_size(isp_proc->hal.hw, hist_cfg->window_y_size);
-    isp_ll_hist_set_subwindow_weight(isp_proc->hal.hw, hist_cfg->hist_windows_weight);
-    isp_ll_hist_set_segment_threshold(isp_proc->hal.hw, hist_cfg->hist_segment_threshold);
-    if (hist_cfg->hist_mode == ISP_HIST_RGB) {
+    isp_hal_hist_window_config(&isp_proc->hal, &hist_cfg->window);
+
+    isp_ll_hist_set_subwindow_weight(isp_proc->hal.hw, hist_cfg->windows_weight);
+
+    isp_ll_hist_set_segment_threshold(isp_proc->hal.hw, hist_cfg->segment_threshold);
+    if (hist_cfg->hist_mode ==  ISP_HIST_SAMPLING_RGB) {
         isp_ll_hist_set_rgb_coefficient(isp_proc->hal.hw, &hist_cfg->rgb_coefficient);
     }
 
@@ -121,9 +135,13 @@ esp_err_t esp_isp_del_hist_controller(isp_hist_ctlr_t hist_ctlr)
 {
     ESP_RETURN_ON_FALSE(hist_ctlr && hist_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(hist_ctlr->isp_proc->hist_ctlr == hist_ctlr, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
-    ESP_RETURN_ON_FALSE(hist_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
-    s_isp_declaim_hist_controller(hist_ctlr);
 
+    ESP_RETURN_ON_FALSE(atomic_load(&hist_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
+
+    // Deregister the HIST ISR
+    ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(hist_ctlr->isp_proc, ISP_SUBMODULE_HIST) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
+
+    s_isp_declaim_hist_controller(hist_ctlr);
     s_isp_hist_free_controller(hist_ctlr);
 
     return ESP_OK;
@@ -132,49 +150,28 @@ esp_err_t esp_isp_del_hist_controller(isp_hist_ctlr_t hist_ctlr)
 esp_err_t esp_isp_hist_controller_enable(isp_hist_ctlr_t hist_ctlr)
 {
     ESP_RETURN_ON_FALSE(hist_ctlr && hist_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(hist_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
-    esp_err_t ret = ESP_OK;
 
-    ESP_GOTO_ON_ERROR(esp_intr_enable(hist_ctlr->intr_handle), err, TAG, "failed to enable the HIST interrupt");
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&hist_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
+
     isp_ll_hist_clk_enable(hist_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(hist_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_HIST_MASK, true);
-    hist_ctlr->fsm = ISP_FSM_ENABLE;
 
-err:
-    hist_ctlr->fsm = ISP_FSM_INIT;
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t esp_isp_hist_controller_disable(isp_hist_ctlr_t hist_ctlr)
 {
     ESP_RETURN_ON_FALSE(hist_ctlr && hist_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(hist_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
+
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&hist_ctlr->fsm, &expected_fsm, ISP_FSM_INIT),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     isp_ll_enable_intr(hist_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_HIST_MASK, false);
     isp_ll_hist_clk_enable(hist_ctlr->isp_proc->hal.hw, false);
     esp_intr_disable(hist_ctlr->intr_handle);
-    hist_ctlr->fsm = ISP_FSM_INIT;
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_hist_controller_reconfig(isp_hist_ctlr_t hist_ctlr, const esp_isp_hist_config_t *hist_cfg)
-{
-    ESP_RETURN_ON_FALSE(hist_ctlr && hist_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    int intr_priority = hist_cfg->intr_priority > 0 && hist_cfg->intr_priority <= 3 ? BIT(hist_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_RETURN_ON_FALSE(intr_priority == hist_ctlr->intr_priority, ESP_ERR_INVALID_ARG, TAG, "can't change interrupt priority after initialized");
-
-    // Configure the hardware
-    isp_ll_hist_set_mode(hist_ctlr->isp_proc->hal.hw, hist_cfg->hist_mode);
-    isp_ll_hist_set_x_offset(hist_ctlr->isp_proc->hal.hw, hist_cfg->first_window_x_offs);
-    isp_ll_hist_set_y_offset(hist_ctlr->isp_proc->hal.hw, hist_cfg->first_window_y_offs);
-    isp_ll_hist_set_window_x_size(hist_ctlr->isp_proc->hal.hw, hist_cfg->window_x_size);
-    isp_ll_hist_set_window_y_size(hist_ctlr->isp_proc->hal.hw, hist_cfg->window_y_size);
-    isp_ll_hist_set_subwindow_weight(hist_ctlr->isp_proc->hal.hw, hist_cfg->hist_windows_weight);
-    isp_ll_hist_set_segment_threshold(hist_ctlr->isp_proc->hal.hw, hist_cfg->hist_segment_threshold);
-    if (hist_cfg->hist_mode == ISP_HIST_RGB) {
-        isp_ll_hist_set_rgb_coefficient(hist_ctlr->isp_proc->hal.hw, &hist_cfg->rgb_coefficient);
-    }
 
     return ESP_OK;
 }
@@ -182,10 +179,13 @@ esp_err_t esp_isp_hist_controller_reconfig(isp_hist_ctlr_t hist_ctlr, const esp_
 esp_err_t esp_isp_hist_controller_get_oneshot_statistics(isp_hist_ctlr_t hist_ctlr, int timeout_ms, isp_hist_result_t *out_res)
 {
     ESP_RETURN_ON_FALSE_ISR(hist_ctlr && (out_res || timeout_ms == 0), ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE_ISR(hist_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
 
     esp_err_t ret = ESP_OK;
     TickType_t ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&hist_ctlr->fsm, &expected_fsm, ISP_FSM_ONESHOT), ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
+
     // Reset the queue in case receiving the legacy data in the queue
     xQueueReset(hist_ctlr->evt_que);
     // Start the histogram reference statistics and waiting it done
@@ -197,15 +197,16 @@ esp_err_t esp_isp_hist_controller_get_oneshot_statistics(isp_hist_ctlr_t hist_ct
     // Stop the histogram reference statistics
     isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, false);
 
+    atomic_store(&hist_ctlr->fsm, ISP_FSM_ENABLE);
     return ret;
 }
 
 esp_err_t esp_isp_hist_controller_start_continuous_statistics(isp_hist_ctlr_t hist_ctlr)
 {
     ESP_RETURN_ON_FALSE_ISR(hist_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE_ISR(hist_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
 
-    hist_ctlr->fsm = ISP_FSM_START;
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&hist_ctlr->fsm, &expected_fsm, ISP_FSM_CONTINUOUS), ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
     isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, true);
 
     return ESP_OK;
@@ -214,10 +215,11 @@ esp_err_t esp_isp_hist_controller_start_continuous_statistics(isp_hist_ctlr_t hi
 esp_err_t esp_isp_hist_controller_stop_continuous_statistics(isp_hist_ctlr_t hist_ctlr)
 {
     ESP_RETURN_ON_FALSE_ISR(hist_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE_ISR(hist_ctlr->fsm == ISP_FSM_START, ESP_ERR_INVALID_STATE, TAG, "controller isn't in continuous state");
 
+    isp_fsm_t expected_fsm = ISP_FSM_CONTINUOUS;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&hist_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE),
+                            ESP_ERR_INVALID_STATE, TAG, "controller is not running");
     isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, false);
-    hist_ctlr->fsm = ISP_FSM_ENABLE;
 
     return ESP_OK;
 }
@@ -225,18 +227,14 @@ esp_err_t esp_isp_hist_controller_stop_continuous_statistics(isp_hist_ctlr_t his
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_hist_default_isr(void *arg)
+
+bool IRAM_ATTR esp_isp_hist_isr(isp_proc_handle_t proc, uint32_t hist_events)
 {
-    isp_hist_ctlr_t hist_ctlr = (isp_hist_ctlr_t)arg;
-    isp_proc_handle_t proc = hist_ctlr->isp_proc;
-
-    uint32_t hist_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_HIST_MASK);
-
     bool need_yield = false;
 
-    if (hist_events & ISP_LL_EVENT_HIST_MASK) {
+    if (hist_events & ISP_LL_EVENT_HIST_FDONE) {
         isp_hist_ctlr_t hist_ctlr = proc->hist_ctlr;
-        uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];
+        uint32_t hist_value[ISP_HIST_SEGMENT_NUMS] = {};
         isp_ll_hist_get_histogram_value(proc->hal.hw, hist_value);
         // Get the statistics result
         esp_isp_hist_evt_data_t edata = {};
@@ -251,25 +249,20 @@ static void IRAM_ATTR s_isp_hist_default_isr(void *arg)
         // Send the event data to the queue, overwrite the legacy one if exist
         xQueueOverwriteFromISR(hist_ctlr->evt_que, &edata.hist_result, &high_task_awake);
         need_yield |= high_task_awake == pdTRUE;
-        /* If started continuous sampling, then trigger the next hist sample */
-        if (hist_ctlr->fsm == ISP_FSM_START) {
-            isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, false);
-            isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, true);
-        }
+
     }
 
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
+    return need_yield;
 }
 
 esp_err_t esp_isp_hist_register_event_callbacks(isp_hist_ctlr_t hist_ctlr, const esp_isp_hist_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(hist_ctlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(hist_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
+
+    ESP_RETURN_ON_FALSE(atomic_load(&hist_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 #if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_statistics_done) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_env_change), ESP_ERR_INVALID_ARG, TAG, "on_env_change callback not in IRAM");
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_env_change), ESP_ERR_INVALID_ARG, TAG, "on_statistics_done callback not in IRAM");
     }
     if (user_data) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");

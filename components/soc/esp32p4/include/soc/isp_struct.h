@@ -1821,6 +1821,25 @@ typedef union {
     uint32_t val;
 } isp_hist_size_reg_t;
 
+/** Type of hist_seg register
+ *  histogram bin control register
+ */
+typedef union {
+    struct {
+        /** hist_seg: R/W;
+         * default:
+         * 16, 32, 48, 64,
+         * 80, 96, 112, 128,
+         * 144, 160, 176, 192,
+         * 208, 224, 240
+         *  this field configures threshold of histogram
+         */
+        uint8_t hist_seg_b[4];
+    };
+    uint32_t val;
+} isp_hist_seg_reg_t;
+
+
 /** Type of hist_seg0 register
  *  histogram bin control register 0
  */
@@ -1917,6 +1936,20 @@ typedef union {
     };
     uint32_t val;
 } isp_hist_seg3_reg_t;
+
+/** Type of hist_weight register
+ *  histogram sub-window weight register 0
+ */
+typedef union {
+    struct {
+        /** histogram weight : RO; bitpos: [31:0];
+         *  weight[12] default 232, others default 1
+         *  this field represents the weight of histogram subwindow, sum of all weight should be 256
+         */
+        uint8_t hist_weight_b[4];
+    };
+    uint32_t val;
+} isp_hist_weight_reg_t;
 
 /** Type of hist_weight0 register
  *  histogram sub-window weight register 0
@@ -3227,17 +3260,8 @@ typedef struct {
     volatile isp_hist_coeff_reg_t hist_coeff;
     volatile isp_hist_offs_reg_t hist_offs;
     volatile isp_hist_size_reg_t hist_size;
-    volatile isp_hist_seg0_reg_t hist_seg0;
-    volatile isp_hist_seg1_reg_t hist_seg1;
-    volatile isp_hist_seg2_reg_t hist_seg2;
-    volatile isp_hist_seg3_reg_t hist_seg3;
-    volatile isp_hist_weight0_reg_t hist_weight0;
-    volatile isp_hist_weight1_reg_t hist_weight1;
-    volatile isp_hist_weight2_reg_t hist_weight2;
-    volatile isp_hist_weight3_reg_t hist_weight3;
-    volatile isp_hist_weight4_reg_t hist_weight4;
-    volatile isp_hist_weight5_reg_t hist_weight5;
-    volatile isp_hist_weight6_reg_t hist_weight6;
+    volatile isp_hist_seg_reg_t hist_seg[4];
+    volatile isp_hist_weight_reg_t hist_weight[7];
     volatile isp_hist_binn_reg_t hist_binn[16];
     volatile isp_mem_aux_ctrl_0_reg_t mem_aux_ctrl_0;
     volatile isp_mem_aux_ctrl_1_reg_t mem_aux_ctrl_1;
