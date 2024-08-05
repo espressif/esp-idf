@@ -171,24 +171,22 @@ esp_err_t esp_isp_ae_controller_get_oneshot_statistics(isp_ae_ctlr_t ae_ctlr, in
     TickType_t ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
 
     isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_ONESHOT)) {
-        // Reset the queue in case receiving the legacy data in the queue
-        xQueueReset(ae_ctlr->evt_que);
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_ONESHOT), ESP_ERR_INVALID_STATE, TAG, "controller isn't enabled or continuous statistics has started");
 
-        // Disable the env detector when manual statistics.
-        // Otherwise, the env detector results may overwrite the manual statistics results when the statistics results are not read out in time
-        isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, 0, 0);
-        // Trigger the AE statistics manually
-        isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
-        // Wait the statistics to finish and receive the result from the queue
-        if ((ticks > 0) && xQueueReceive(ae_ctlr->evt_que, out_res, ticks) != pdTRUE) {
-            ret = ESP_ERR_TIMEOUT;
-        }
-        // Re-enable the env detector after manual statistics.
-        isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
-    } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
+    // Reset the queue in case receiving the legacy data in the queue
+    xQueueReset(ae_ctlr->evt_que);
+
+    // Disable the env detector when manual statistics.
+    // Otherwise, the env detector results may overwrite the manual statistics results when the statistics results are not read out in time
+    isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, 0, 0);
+    // Trigger the AE statistics manually
+    isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
+    // Wait the statistics to finish and receive the result from the queue
+    if ((ticks > 0) && xQueueReceive(ae_ctlr->evt_que, out_res, ticks) != pdTRUE) {
+        ret = ESP_ERR_TIMEOUT;
     }
+    // Re-enable the env detector after manual statistics.
+    isp_ll_ae_env_detector_set_thresh(ae_ctlr->isp_proc->hal.hw, ae_ctlr->low_thresh, ae_ctlr->high_thresh);
 
     atomic_store(&ae_ctlr->fsm, ISP_FSM_ENABLE);
     return ret;
@@ -199,11 +197,8 @@ esp_err_t esp_isp_ae_controller_start_continuous_statistics(isp_ae_ctlr_t ae_ctl
     ESP_RETURN_ON_FALSE_ISR(ae_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_CONTINUOUS)) {
-        isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
-    } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
-    }
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&ae_ctlr->fsm, &expected_fsm, ISP_FSM_CONTINUOUS), ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
+    isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
 
     return ESP_OK;
 }
@@ -297,7 +292,7 @@ bool IRAM_ATTR esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events)
         need_yield |= high_task_awake == pdTRUE;
 
         /* If started continuous sampling, then trigger the next AE sample */
-        if (atomic_load(&ae_ctlr->fsm) == ISP_FSM_START) {
+        if (atomic_load(&ae_ctlr->fsm) == ISP_FSM_CONTINUOUS) {
             isp_ll_ae_manual_update(ae_ctlr->isp_proc->hal.hw);
         }
     }
