@@ -1,6 +1,6 @@
 dependencies:
   espressif/esp_cam_sensor: "^0.5.*"
-  espressif/esp_lcd_ili9881c: "*"
+  espressif/esp_lcd_ili9881c: "~0.2.0"
   idf:
     version: ">=5.3.0"
   isp_af_schemes:
