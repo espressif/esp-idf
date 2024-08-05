@@ -103,6 +103,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+#ifndef GPSPI_BUILD
 #if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
     spi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
@@ -130,6 +131,9 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
         spi_flash_ll_set_extra_address(dev, 0);
     }
+#endif
+#else
+    gpspi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4

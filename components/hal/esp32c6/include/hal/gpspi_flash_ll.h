@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -364,6 +364,20 @@ static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
+}
+
+/**
+ * Set D/Q output level during dummy phase
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param out_en whether to enable IO output for dummy phase
+ * @param out_level dummy output level
+ */
+static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en, uint32_t out_lev)
+{
+    dev->ctrl.dummy_out = out_en;
+    dev->ctrl.q_pol = out_lev;
+    dev->ctrl.d_pol = out_lev;
 }
 
 /**
