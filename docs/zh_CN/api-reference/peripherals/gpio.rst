@@ -145,7 +145,11 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
 应用示例
 -------------------
 
-* GPIO 输出和输入中断示例：:example:`peripherals/gpio/generic_gpio`。
+.. list::
+
+    * :example:`peripherals/gpio/generic_gpio` 演示了如何配置 GPIO 以生成脉冲，触发中断。
+    :esp32s2: * :example:`peripherals/gpio/matrix_keyboard` 演示了如何使用专用 GPIO API 驱动常见的矩阵键盘，包括控制一组 GPIO 的电平、触发边沿中断以及读取一组 GPIO 的电平。
+
 
 API 参考 - 普通 GPIO
 ---------------------------

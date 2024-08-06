@@ -145,7 +145,11 @@ Do not rely on the default configurations values in the Technical Reference Manu
 Application Example
 -------------------
 
-* GPIO output and input interrupt example: :example:`peripherals/gpio/generic_gpio`.
+.. list::
+
+    * :example:`peripherals/gpio/generic_gpio` demonstrates how to configure GPIO to generate pulses and use it with interruption.
+    :esp32s2: * :example:`peripherals/gpio/matrix_keyboard` demonstrates how to drive a common matrix keyboard using the dedicated GPIO APIs, including manipulating the level on a group of GPIOs, triggering edge interrupt, and reading level on a group of GPIOs.
+
 
 API Reference - Normal GPIO
 ---------------------------
