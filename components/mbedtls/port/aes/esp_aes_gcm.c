@@ -211,23 +211,28 @@ static void gcm_mult( esp_gcm_context *ctx, const unsigned char x[16],
     uint64_t zh, zl;
 
     lo = x[15] & 0xf;
+    hi = x[15] >> 4;
 
     zh = ctx->HH[lo];
     zl = ctx->HL[lo];
 
-    for ( i = 15; i >= 0; i-- ) {
+    rem = (unsigned char) zl & 0xf;
+    zl = ( zh << 60 ) | ( zl >> 4 );
+    zh = ( zh >> 4 );
+    zh ^= (uint64_t) last4[rem] << 32;
+    zh ^= ctx->HH[hi];
+    zl ^= ctx->HL[hi];
+
+    for ( i = 14; i >= 0; i-- ) {
         lo = x[i] & 0xf;
         hi = x[i] >> 4;
 
-        if ( i != 15 ) {
-            rem = (unsigned char) zl & 0xf;
-            zl = ( zh << 60 ) | ( zl >> 4 );
-            zh = ( zh >> 4 );
-            zh ^= (uint64_t) last4[rem] << 32;
-            zh ^= ctx->HH[lo];
-            zl ^= ctx->HL[lo];
-
-        }
+        rem = (unsigned char) zl & 0xf;
+        zl = ( zh << 60 ) | ( zl >> 4 );
+        zh = ( zh >> 4 );
+        zh ^= (uint64_t) last4[rem] << 32;
+        zh ^= ctx->HH[lo];
+        zl ^= ctx->HL[lo];
 
         rem = (unsigned char) zl & 0xf;
         zl = ( zh << 60 ) | ( zl >> 4 );
