@@ -380,16 +380,15 @@ LED PWM 控制器 API 会在设定的频率和占空比分辨率超过 LED PWM �
 占空比分辨率通常用 :cpp:type:`ledc_timer_bit_t` 设置，范围是 10 至 15 位。如需较低的占空比分辨率（上至 10，下至 1），可直接输入相应数值。
 
 
-应用实例
+应用示例
 -------------------
 
-使用 LEDC 基本实例请参照 :example:`peripherals/ledc/ledc_basic`。
+.. list::
 
-使用 LEDC 改变占空比和渐变控制的实例请参照 :example:`peripherals/ledc/ledc_fade`。
+    * :example:`peripherals/ledc/ledc_basic` 演示了如何使用 LEDC 生成低速模式的 PWM 信号。
+    * :example:`peripherals/ledc/ledc_fade` 演示了如何使用 LEDC 实现 LED 亮度的渐变控制。
+    :SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED: * :example:`peripherals/ledc/ledc_gamma_curve_fade` 演示了如何使用 LEDC 对 RGB LED 实现带伽马校正的颜色控制。
 
-.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-
-    使用 LEDC 对 RGB LED 实现带伽马校正的颜色控制实例请参照 :example:`peripherals/ledc/ledc_gamma_curve_fade`。
 
 API 参考
 -------------

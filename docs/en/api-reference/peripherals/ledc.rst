@@ -383,13 +383,12 @@ The duty resolution is normally set using :cpp:type:`ledc_timer_bit_t`. This enu
 Application Example
 -------------------
 
-The LEDC basic example: :example:`peripherals/ledc/ledc_basic`.
+.. list::
 
-The LEDC change duty cycle and fading control example: :example:`peripherals/ledc/ledc_fade`.
+    * :example:`peripherals/ledc/ledc_basic` demonstrates how to use the LEDC to generate a PWM signal in LOW SPEED mode.
+    * :example:`peripherals/ledc/ledc_fade` demonstrates how to control the intensity of LEDs using the LEDC fade functionality.
+    :SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED: * :example:`peripherals/ledc/ledc_gamma_curve_fade` demonstrates how to use the LEDC for color control of RGB LEDs with gamma correction.
 
-.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-
-    The LEDC color control with Gamma correction on RGB LED example: :example:`peripherals/ledc/ledc_gamma_curve_fade`.
 
 API Reference
 -------------
