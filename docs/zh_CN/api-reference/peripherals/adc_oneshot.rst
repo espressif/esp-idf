@@ -86,7 +86,7 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 创建 ADC 单元实例后，请设置 :cpp:type:`adc_oneshot_chan_cfg_t` 配置 ADC IO 以测量模拟信号，具体如下：
 
-- :cpp:member:`adc_oneshot_chan_cfg_t::atten`，ADC 衰减。请参阅 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`__ > ``片上传感器与模拟信号处理``。
+- :cpp:member:`adc_oneshot_chan_cfg_t::atten`，ADC 衰减。请参阅 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`__ > ``ADC 特性``。
 - :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`，原始转换结果的位宽。
 
 .. note::

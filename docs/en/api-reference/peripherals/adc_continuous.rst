@@ -277,7 +277,7 @@ where:
     * - Dout
       - ADC raw digital reading result.
     * - Vmax
-      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `TRM <{IDF_TARGET_TRM_EN_URL}>`__.
+      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
     * - Dmax
       - Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where the bitwidth is the :cpp:member:`adc_digi_pattern_config_t::bit_width` configured before.
 

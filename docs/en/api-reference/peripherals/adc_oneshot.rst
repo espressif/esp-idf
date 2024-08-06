@@ -86,7 +86,7 @@ Unit Configuration
 
 After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` to configure ADC IOs to measure analog signal:
 
-- :cpp:member:`adc_oneshot_chan_cfg_t::atten`, ADC attenuation. Refer to `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``On-Chip Sensor and Analog Signal Processing``.
+- :cpp:member:`adc_oneshot_chan_cfg_t::atten`, ADC attenuation. Refer to `Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > ``ADC Characteristics``.
 - :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`, the bitwidth of the raw conversion result.
 
 .. note::
