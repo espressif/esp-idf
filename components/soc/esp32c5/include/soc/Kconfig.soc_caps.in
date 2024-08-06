@@ -1419,6 +1419,10 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_RCC_IS_INDEPENDENT
     bool
     default y

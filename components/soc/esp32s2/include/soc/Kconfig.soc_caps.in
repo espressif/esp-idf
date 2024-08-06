@@ -1151,6 +1151,10 @@ config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D4
+    bool
+    default y
+
 config SOC_COEX_HW_PTI
     bool
     default y

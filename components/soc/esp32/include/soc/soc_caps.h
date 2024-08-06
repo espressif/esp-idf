@@ -426,6 +426,8 @@
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D4           (1)     /*!< Support XTAL_D4 clock as the LP_FAST clock source */
+
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 
 /* On ESP32, clock/cmd/data pins use IO MUX.

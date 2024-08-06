@@ -103,9 +103,12 @@ typedef enum {
 typedef enum {
     SOC_RTC_FAST_CLK_SRC_RC_FAST = 0,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_XTAL = 1,         /*!< Select XTAL_CLK as RTC_FAST_CLK source */
-    SOC_RTC_FAST_CLK_SRC_XTAL_DIV = SOC_RTC_FAST_CLK_SRC_XTAL, /*!< Alias name for `SOC_RTC_FAST_CLK_SRC_XTAL` */
     SOC_RTC_FAST_CLK_SRC_LP_PLL = 2,       /*!< Select LP_PLL_CLK as RTC_FAST_CLK source (LP_PLL_CLK is a 8MHz clock sourced from RC32K or XTAL32K) */
     SOC_RTC_FAST_CLK_SRC_INVALID,          /*!< Invalid RTC_FAST_CLK source */
+
+    SOC_RTC_FAST_CLK_SRC_DEFAULT = SOC_RTC_FAST_CLK_SRC_XTAL, /*!< XTAL_CLK is the default clock source for RTC_FAST_CLK */
+
+    SOC_RTC_FAST_CLK_SRC_XTAL_DIV __attribute__((deprecated)) = SOC_RTC_FAST_CLK_SRC_XTAL, /*!< Alias name for `SOC_RTC_FAST_CLK_SRC_XTAL` */
 } soc_rtc_fast_clk_src_t;
 
 /**
@@ -159,8 +162,8 @@ typedef enum {
     SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 40MHz crystal, passing a div of 2 to the LP peripherals */
     SOC_MOD_CLK_LP_PLL,                        /*!< LP_PLL is from 32kHz XTAL oscillator frequency multipliers, it has a fixed frequency of 8MHz */
     SOC_MOD_CLK_LP_DYN_FAST,                   /*!< LP_DYN_FAST can be derived from RTC_SLOW_CLK or RTC_FAST_CLK depending on the chip’s power mode:
-                                                    in active mode, select RTC_FAST_CLK as the clock source;
-                                                    in light/deep sleep mode, select RTC_SLOW_CLK as the clock source */
+                                                    Only in LP_SLEEP mode, select RTC_SLOW_CLK as the clock source;
+                                                    In other non-LP_SLEEP mode, select RTC_FAST_CLK as the clock source; */
     SOC_MOD_CLK_LP_PERI,                       /*!< LP_PERI_CLK is derived from LP_DYN_FAST (configurable divider) */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
