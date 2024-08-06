@@ -192,11 +192,11 @@ static int gcm_gen_table( esp_gcm_context *ctx )
  *      last4[x] = x times P^128
  * where x and last4[x] are seen as elements of GF(2^128) as in [MGV]
  */
-static const uint64_t last4[16] = {
-    0x0000, 0x1c20, 0x3840, 0x2460,
-    0x7080, 0x6ca0, 0x48c0, 0x54e0,
-    0xe100, 0xfd20, 0xd940, 0xc560,
-    0x9180, 0x8da0, 0xa9c0, 0xb5e0
+static const uint32_t last4[16] = {
+    0x00000000, 0x1c200000, 0x38400000, 0x24600000,
+    0x70800000, 0x6ca00000, 0x48c00000, 0x54e00000,
+    0xe1000000, 0xfd200000, 0xd9400000, 0xc5600000,
+    0x91800000, 0x8da00000, 0xa9c00000, 0xb5e00000
 };
 /* Based on MbedTLS's implemenation
  *
@@ -211,28 +211,33 @@ static void gcm_mult( esp_gcm_context *ctx, const unsigned char x[16],
     uint64_t zh, zl;
 
     lo = x[15] & 0xf;
+    hi = x[15] >> 4;
 
     zh = ctx->HH[lo];
     zl = ctx->HL[lo];
 
-    for ( i = 15; i >= 0; i-- ) {
+    rem = (unsigned char) zl & 0xf;
+    zl = ( zh << 60 ) | ( zl >> 4 );
+    zh = ( zh >> 4 );
+    zh ^= (uint64_t) last4[rem] << 32;
+    zh ^= ctx->HH[hi];
+    zl ^= ctx->HL[hi];
+
+    for ( i = 14; i >= 0; i-- ) {
         lo = x[i] & 0xf;
         hi = x[i] >> 4;
-
-        if ( i != 15 ) {
-            rem = (unsigned char) zl & 0xf;
-            zl = ( zh << 60 ) | ( zl >> 4 );
-            zh = ( zh >> 4 );
-            zh ^= (uint64_t) last4[rem] << 48;
-            zh ^= ctx->HH[lo];
-            zl ^= ctx->HL[lo];
-
-        }
 
         rem = (unsigned char) zl & 0xf;
         zl = ( zh << 60 ) | ( zl >> 4 );
         zh = ( zh >> 4 );
-        zh ^= (uint64_t) last4[rem] << 48;
+        zh ^= (uint64_t) last4[rem] << 32;
+        zh ^= ctx->HH[lo];
+        zl ^= ctx->HL[lo];
+
+        rem = (unsigned char) zl & 0xf;
+        zl = ( zh << 60 ) | ( zl >> 4 );
+        zh = ( zh >> 4 );
+        zh ^= (uint64_t) last4[rem] << 32;
         zh ^= ctx->HH[hi];
         zl ^= ctx->HL[hi];
     }
