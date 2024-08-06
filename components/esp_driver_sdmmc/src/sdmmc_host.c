@@ -6,6 +6,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -45,22 +46,6 @@
 #define SDMMC_CLK_SRC_ATOMIC()
 #endif
 
-/* Default disabled interrupts (on init):
- *  SDMMC_INTMASK_RXDR,
- *  SDMMC_INTMASK_TXDR,
- *  SDMMC_INTMASK_BCI,
- *  SDMMC_INTMASK_ACD,
- *  SDMMC_INTMASK_IO_SLOT1,
- *  SDMMC_INTMASK_IO_SLOT0
- */
-// Default enabled interrupts (sdio is enabled only when use):
-#define SDMMC_INTMASK_DEFAULT \
-    (SDMMC_INTMASK_CD | SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER | \
-    SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | \
-    SDMMC_INTMASK_HLE | \
-    SDMMC_INTMASK_SBE | \
-    SDMMC_INTMASK_EBE)
-
 #define SLOT_CHECK(slot_num) \
 if (slot_num < 0 || slot_num >= SOC_SDMMC_NUM_SLOTS) { \
     return ESP_ERR_INVALID_ARG; \
@@ -75,6 +60,11 @@ typedef struct slot_ctx_t {
     size_t slot_width;
     sdmmc_slot_io_info_t slot_gpio_num;
     bool use_gpio_matrix;
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    int slot_host_div;
+    uint32_t slot_freq_khz;
+    sdmmc_ll_delay_phase_t slot_ll_delay_phase;
+#endif
 } slot_ctx_t;
 
 /**
@@ -86,13 +76,24 @@ typedef struct host_ctx_t {
     SemaphoreHandle_t    io_intr_event;
     sdmmc_hal_context_t  hal;
     slot_ctx_t           slot_ctx[SOC_SDMMC_NUM_SLOTS];
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    uint8_t              num_of_init_slots;
+    int8_t               active_slot_num;
+#endif
 } host_ctx_t;
 
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static host_ctx_t s_host_ctx = {.active_slot_num = -1};
+#else
 static host_ctx_t s_host_ctx = {0};
+#endif
 
 static void sdmmc_isr(void *arg);
 static void sdmmc_host_dma_init(void);
 static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static void sdmmc_host_change_to_slot(int slot);
+#endif
 
 esp_err_t sdmmc_host_reset(void)
 {
@@ -298,7 +299,12 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     sdmmc_host_set_data_timeout(freq_khz);
     // always set response timeout to highest value, it's small enough anyway
     sdmmc_ll_set_response_timeout(s_host_ctx.hal.dev, 255);
-
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // save the current frequency
+    s_host_ctx.slot_ctx[slot].slot_freq_khz = freq_khz;
+    // save host_div value
+    s_host_ctx.slot_ctx[slot].slot_host_div = host_div;
+#endif
     return ESP_OK;
 }
 
@@ -360,6 +366,10 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     int phase_diff_ps = src_clk_period_ps * sdmmc_ll_get_clock_div(s_host_ctx.hal.dev) / SOC_SDMMC_DELAY_PHASE_NUM;
     ESP_LOGD(TAG, "difference between input delay phases is %d ps", phase_diff_ps);
     ESP_LOGI(TAG, "host sampling edge is delayed by %d ps", phase_diff_ps * delay_phase_num);
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // save the current phase delay setting
+    s_host_ctx.slot_ctx[slot].slot_ll_delay_phase = phase;
+#endif
 #endif
 
     return ESP_OK;
@@ -368,6 +378,11 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
 esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
 {
     SLOT_CHECK(slot);
+
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // change the host settings to the appropriate slot before starting the transaction
+    sdmmc_host_change_to_slot(slot);
+#endif
 
     // if this isn't a clock update command, check the card detect status
     if (!sdmmc_ll_is_card_detected(s_host_ctx.hal.dev, slot) && !cmd.update_clk_reg) {
@@ -401,15 +416,16 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
 
 static void sdmmc_host_intmask_clear_disable(void)
 {
-    SDMMC.rintsts.val = 0xffffffff;
-    SDMMC.intmask.val = 0;
-    SDMMC.ctrl.int_enable = 0;
+    sdmmc_ll_clear_interrupt(s_host_ctx.hal.dev, 0xffffffff);
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, 0xffffffff, false);
+    sdmmc_ll_enable_global_interrupt(s_host_ctx.hal.dev, false);
 }
 
-static void sdmmc_host_intmask_set_enable(uint32_t mask)
+static void sdmmc_host_intmask_set_enable(void)
 {
-    SDMMC.intmask.val = mask;
-    SDMMC.ctrl.int_enable = 1;
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, 0xffffffff, false);
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, SDMMC_LL_INTMASK_DEFAULT, true);
+    sdmmc_ll_enable_global_interrupt(s_host_ctx.hal.dev, true);
 }
 
 esp_err_t sdmmc_host_init(void)
@@ -464,7 +480,7 @@ esp_err_t sdmmc_host_init(void)
         return ret;
     }
     // Enable interrupts
-    sdmmc_host_intmask_set_enable(SDMMC_INTMASK_DEFAULT);
+    sdmmc_host_intmask_set_enable();
 
     // Disable generation of Busy Clear Interrupt
     SDMMC.cardthrctl.busy_clr_int_en = 0;
@@ -562,6 +578,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ESP_ERR_INVALID_ARG;
     }
     s_host_ctx.slot_ctx[slot].slot_width = slot_width;
+    s_host_ctx.slot_ctx[slot].slot_gpio_num.cd = gpio_cd;
+    s_host_ctx.slot_ctx[slot].slot_gpio_num.wp = gpio_wp;
 
     bool pin_not_set = s_check_pin_not_set(slot_config);
     //SD driver behaviour is: all pins not defined == using iomux
@@ -615,7 +633,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 
     bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
     if (pullup) {
-        sdmmc_host_pullup_en_internal(slot, slot_config->width);
+        sdmmc_host_pullup_en_internal(slot, s_host_ctx.slot_ctx[slot].slot_width);
     }
 
     configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.clk, sdmmc_slot_gpio_sig[slot].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
@@ -689,14 +707,17 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ret;
     }
 
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    if (s_host_ctx.num_of_init_slots < SOC_SDMMC_NUM_SLOTS && s_host_ctx.active_slot_num != slot) {
+        s_host_ctx.num_of_init_slots += 1;
+    }
+    s_host_ctx.active_slot_num = slot;
+#endif
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_deinit(void)
+static void sdmmc_host_deinit_internal(void)
 {
-    if (!s_host_ctx.intr_handle) {
-        return ESP_ERR_INVALID_STATE;
-    }
     esp_intr_free(s_host_ctx.intr_handle);
     s_host_ctx.intr_handle = NULL;
     vQueueDelete(s_host_ctx.event_queue);
@@ -709,9 +730,109 @@ esp_err_t sdmmc_host_deinit(void)
     SDMMC_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(s_host_ctx.hal.dev, false);
     }
+    ESP_LOGD(TAG, "SDMMC host deinitialized");
+}
+
+static int sdmmc_host_decrease_init_slot_num(void)
+{
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    s_host_ctx.active_slot_num = -1; // Reset the active slot number, will be set again before the next transaction
+    if (s_host_ctx.num_of_init_slots > 0) {
+        s_host_ctx.num_of_init_slots -= 1;
+    }
+    return s_host_ctx.num_of_init_slots;
+#else
+    return 0;
+#endif
+}
+
+static void sdmmc_host_deinit_slot_internal(int slot)
+{
+    int8_t gpio_pin_num;
+    sdmmc_slot_io_info_t* gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
+    // Disconnect signals and reset used GPIO pins
+    for (size_t i = 0; i < (sizeof(gpio->val) / (sizeof(gpio->val[0]))); i++) {
+        gpio_pin_num = gpio->val[i];
+        if (gpio_pin_num != GPIO_NUM_NC && GPIO_IS_VALID_GPIO(gpio_pin_num)) {
+            gpio_reset_pin(gpio_pin_num);
+        }
+    }
+    // Reset the slot context
+    memset(&(s_host_ctx.slot_ctx[slot]), 0, sizeof(slot_ctx_t));
+}
+
+esp_err_t sdmmc_host_deinit_slot(int slot)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!s_host_ctx.intr_handle) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    sdmmc_host_deinit_slot_internal(slot);
+    int num_of_init_slots = sdmmc_host_decrease_init_slot_num();
+    if (num_of_init_slots != 0) {
+        ESP_LOGD(TAG, "SDMMC host not deinitialized yet, number of initialized slots: %d",
+                 num_of_init_slots);
+        return ESP_OK;
+    }
+    sdmmc_host_deinit_internal();
 
     return ESP_OK;
 }
+
+esp_err_t sdmmc_host_deinit(void)
+{
+    if (!s_host_ctx.intr_handle) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    for (int slot = 0; slot < SOC_SDMMC_NUM_SLOTS; slot++) {
+        sdmmc_host_deinit_slot_internal(slot);
+    }
+    sdmmc_host_deinit_internal();
+
+    return ESP_OK;
+}
+
+static bool sdmmc_host_slot_initialized(int slot)
+{
+    // slot_host_div is initialized to 0 and is set in sdmmc_host_set_card_clk during card initialization
+    // during card deinitialization it is set back to 0
+    // should not be 0 if the slot is initialized
+    if (s_host_ctx.slot_ctx[slot].slot_host_div == 0) {
+        return false;
+    }
+    return true;
+}
+
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static void sdmmc_host_change_to_slot(int slot)
+{
+    // If the slot is not initialized (slot_host_div not set) or already active, do nothing
+    if (s_host_ctx.active_slot_num == slot || sdmmc_host_slot_initialized(slot) == false) {
+        return;
+    }
+    s_host_ctx.active_slot_num = slot;
+
+    // Clear interrupt status and set interrupt mask to known state
+    sdmmc_host_intmask_clear_disable();
+
+    // Apply the appropriate saved host settings for the new slot before starting the transaction
+    SDMMC_CLK_SRC_ATOMIC() {
+        sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_host_div);
+#if !CONFIG_IDF_TARGET_ESP32
+        sdmmc_ll_set_din_delay(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_ll_delay_phase);
+#endif
+    }
+    sdmmc_host_set_data_timeout(s_host_ctx.slot_ctx[slot].slot_freq_khz);
+
+    // Wait for the clock to propagate
+    esp_rom_delay_us(10);
+
+    // Enable interrupts again
+    sdmmc_host_intmask_set_enable();
+}
+#endif  // SOC_SDMMC_NUM_SLOTS >= 2
 
 esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t *out_event)
 {
@@ -955,5 +1076,24 @@ esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
     }
     dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
     dma_mem_info->dma_alignment_bytes = 4;
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_host_get_state(sdmmc_host_state_t* state)
+{
+    if (state == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (s_host_ctx.intr_handle) {
+        state->host_initialized = true;
+        state->num_of_init_slots = 1;
+    } else {
+        state->host_initialized = false;
+        state->num_of_init_slots = 0;
+    }
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    state->num_of_init_slots = s_host_ctx.num_of_init_slots;
+#endif
     return ESP_OK;
 }
