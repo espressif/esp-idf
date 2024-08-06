@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 #if SOC_SHA_SUPPORT_SHA1
         mbedtls_sha1_context sha1;
 #endif
-#if SOC_SHA_SUPPORT_SHA256
+#if SOC_SHA_SUPPORT_SHA224 || SOC_SHA_SUPPORT_SHA256
         mbedtls_sha256_context sha256;
 #endif
 #if SOC_SHA_SUPPORT_SHA384 || SOC_SHA_SUPPORT_SHA512
@@ -55,6 +55,19 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
         return;
     }
 #endif //SOC_SHA_SUPPORT_SHA1
+
+#if SOC_SHA_SUPPORT_SHA224
+    if (sha_type == SHA2_224) {
+        mbedtls_sha256_init(&ctx.sha256);
+        mbedtls_sha256_starts(&ctx.sha256, 1);
+        ret = mbedtls_sha256_update(&ctx.sha256, input, ilen);
+        assert(ret == 0);
+        ret = mbedtls_sha256_finish(&ctx.sha256, output);
+        assert(ret == 0);
+        mbedtls_sha256_free(&ctx.sha256);
+        return;
+    }
+#endif //SOC_SHA_SUPPORT_SHA224
 
 #if SOC_SHA_SUPPORT_SHA256
     if (sha_type == SHA2_256) {

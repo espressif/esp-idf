@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +40,9 @@ extern "C" {
  * @param ilen Length of input data in bytes.
  *
  * @param output Buffer for output SHA digest. Output is 20 bytes for
- * sha_type SHA1, 32 bytes for sha_type SHA2_256, 48 bytes for
- * sha_type SHA2_384, 64 bytes for sha_type SHA2_512.
+ * sha_type SHA1, 28 bytes for sha_type SHA2_224, 32 bytes for
+ * sha_type SHA2_256, 48 bytes for sha_type SHA2_384, 64 bytes for
+ * sha_type SHA2_512.
  */
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
 
