@@ -445,11 +445,9 @@
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
 应用示例
-----------
+--------
 
-.. only:: esp32p4
-
-    - 触摸传感器基础例程: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}`.
+    - :example:`peripherals/touch_sensor/touch_sensor_v3` 演示了如何注册触摸通道并读取数据，并说明了硬件要求及项目配置。
 
 API 参考
 ----------
