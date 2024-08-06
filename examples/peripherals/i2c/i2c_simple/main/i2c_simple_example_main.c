@@ -1,4 +1,9 @@
-/* i2c - Simple example
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/* i2c - Simple Example
 
    Simple I2C example that shows how to initialize I2C
    as well as reading and writing from and to registers for a sensor connected over I2C.
@@ -64,7 +69,7 @@ static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle, i2c_master
 
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, bus_handle));
     ESP_ERROR_CHECK(i2c_master_bus_add_device(*bus_handle, &dev_config, dev_handle));
-    
+
     return ESP_OK;
 }
 
