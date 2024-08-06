@@ -486,6 +486,8 @@ ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset);
  */
 void esp_vfs_dump_fds(FILE *fp);
 
+void esp_vfs_dump_registered_paths(FILE *fp);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

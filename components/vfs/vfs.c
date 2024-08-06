@@ -77,7 +77,7 @@ static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNU
 static _lock_t s_fd_table_lock;
 
 static ssize_t esp_get_free_index(void) {
-    for (ssize_t i = 0; i < MAX_FDS; i++) {
+    for (ssize_t i = 0; i < VFS_MAX_COUNT; i++) {
         if (s_vfs[i] == NULL) {
             return i;
         }
@@ -294,7 +294,7 @@ static esp_err_t esp_vfs_register_minified_common(const char* base_path, size_t 
     } else {
         bzero(entry->path_prefix, sizeof(entry->path_prefix));
     }
-    entry->path_prefix_len = strlen(base_path);
+    entry->path_prefix_len = len;
     entry->vfs = vfs;
     entry->ctx = ctx;
     entry->offset = index;
@@ -326,6 +326,7 @@ esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minifie
     esp_err_t ret = esp_vfs_register_minified_common(base_path, strlen(base_path), _vfs, flags, ctx, NULL);
     if (ret != ESP_OK) {
         esp_free_minified_vfs(_vfs);
+        return ret;
     }
 
     return ESP_OK;
@@ -354,6 +355,7 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
     esp_err_t ret = esp_vfs_register_minified_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
     if (ret != ESP_OK) {
         esp_free_minified_vfs(_vfs);
+        return ret;
     }
 
     return ESP_OK;
@@ -540,6 +542,16 @@ void esp_vfs_dump_fds(FILE *fp)
         }
     }
     _lock_release(&s_fd_table_lock);
+}
+
+void esp_vfs_dump_registered_paths(FILE *fp)
+{
+    fprintf(fp, "------------------------------------------------------\n");
+    fprintf(fp, "<index>:<VFS Path Prefix> -> <VFS entry ptr>\n");
+    fprintf(fp, "------------------------------------------------------\n");
+    for (size_t i = 0; i < VFS_MAX_COUNT; ++i) {
+        fprintf(fp, "%d:%s -> %p\n", i, s_vfs[i] ? s_vfs[i]->path_prefix : "NULL", s_vfs[i]);
+    }
 }
 
 /*
