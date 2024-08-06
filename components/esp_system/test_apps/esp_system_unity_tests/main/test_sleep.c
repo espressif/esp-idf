@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,7 +32,14 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
-#if SOC_DEEP_SLEEP_SUPPORTED
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_cpu.h"
+#endif
+
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #else
@@ -42,6 +50,297 @@
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
+/////////////////////////// Light Sleep Test Cases ////////////////////////////////////
+#if SOC_LIGHT_SLEEP_SUPPORTED
+TEST_CASE("wake up from light sleep using timer", "[lightsleep]")
+{
+    esp_sleep_enable_timer_wakeup(2000000);
+    gettimeofday(&tv_start, NULL);
+    esp_light_sleep_start();
+    gettimeofday(&tv_stop, NULL);
+    float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
+               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
+    TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
+}
+
+//NOTE: Explained in IDF-1445 | MR !14996
+#if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
+static void test_light_sleep(void* arg)
+{
+    vTaskDelay(2);
+    for (int i = 0; i < 1000; ++i) {
+        printf("%d %d\n", xPortGetCoreID(), i);
+        fflush(stdout);
+        esp_light_sleep_start();
+    }
+    SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
+    xSemaphoreGive(done);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("light sleep stress test", "[lightsleep]")
+{
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
+    esp_sleep_enable_timer_wakeup(1000);
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls0", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
+#endif
+    xSemaphoreTake(done, portMAX_DELAY);
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
+    xSemaphoreTake(done, portMAX_DELAY);
+#endif
+    vSemaphoreDelete(done);
+}
+
+static void timer_func(void* arg)
+{
+    esp_rom_delay_us(50);
+}
+
+TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
+{
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
+    esp_sleep_enable_timer_wakeup(1000);
+    esp_timer_handle_t timer;
+    esp_timer_create_args_t config = {
+        .callback = &timer_func,
+    };
+    TEST_ESP_OK(esp_timer_create(&config, &timer));
+    esp_timer_start_periodic(timer, 500);
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
+    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
+#endif
+    xSemaphoreTake(done, portMAX_DELAY);
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
+    xSemaphoreTake(done, portMAX_DELAY);
+#endif
+    vSemaphoreDelete(done);
+    esp_timer_stop(timer);
+    esp_timer_delete(timer);
+}
+#endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
+
+#if defined(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL)
+#define MAX_SLEEP_TIME_ERROR_US 200
+#else
+#define MAX_SLEEP_TIME_ERROR_US 100
+#endif
+
+TEST_CASE("light sleep duration is correct", "[lightsleep][ignore]")
+{
+    // don't power down XTAL — powering it up takes different time on
+    // different boards
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+
+    // run one light sleep without checking timing, to warm up the cache
+    esp_sleep_enable_timer_wakeup(1000);
+    esp_light_sleep_start();
+
+    const int sleep_intervals_ms[] = {
+        1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 15,
+        20, 25, 50, 100, 200, 500,
+    };
+
+    const int sleep_intervals_count = sizeof(sleep_intervals_ms) / sizeof(sleep_intervals_ms[0]);
+    for (int i = 0; i < sleep_intervals_count; ++i) {
+        uint64_t sleep_time = sleep_intervals_ms[i] * 1000;
+        esp_sleep_enable_timer_wakeup(sleep_time);
+        for (int repeat = 0; repeat < 5; ++repeat) {
+            uint64_t start = esp_clk_rtc_time();
+            int64_t start_hs = esp_timer_get_time();
+            esp_light_sleep_start();
+            int64_t stop_hs = esp_timer_get_time();
+            uint64_t stop = esp_clk_rtc_time();
+
+            int diff_us = (int)(stop - start);
+            int diff_hs_us = (int)(stop_hs - start_hs);
+            printf("%lld %d\n", sleep_time, (int)(diff_us - sleep_time));
+            int32_t threshold = MAX(sleep_time / 100, MAX_SLEEP_TIME_ERROR_US);
+            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_us);
+            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_hs_us);
+            fflush(stdout);
+        }
+
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
+TEST_CASE("light sleep and frequency switching", "[lightsleep]")
+{
+#ifndef CONFIG_PM_ENABLE
+    uart_sclk_t clk_source = UART_SCLK_DEFAULT;
+#if SOC_UART_SUPPORT_REF_TICK
+    clk_source = UART_SCLK_REF_TICK;
+#elif SOC_UART_SUPPORT_XTAL_CLK
+    clk_source = UART_SCLK_XTAL;
+#endif
+    HP_UART_SRC_CLK_ATOMIC() {
+        uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
+    }
+    uint32_t sclk_freq;
+    TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
+    HP_UART_SRC_CLK_ATOMIC() {
+        uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
+    }
+#endif
+
+    rtc_cpu_freq_config_t config_xtal, config_default;
+    rtc_clk_cpu_freq_get_config(&config_default);
+    rtc_clk_cpu_freq_mhz_to_config(esp_clk_xtal_freq() / MHZ, &config_xtal);
+
+    esp_sleep_enable_timer_wakeup(1000);
+    for (int i = 0; i < 1000; ++i) {
+        if (i % 2 == 0) {
+            rtc_clk_cpu_freq_set_config_fast(&config_xtal);
+        } else {
+            rtc_clk_cpu_freq_set_config_fast(&config_default);
+        }
+        printf("%d\n", i);
+        fflush(stdout);
+        esp_light_sleep_start();
+    }
+}
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+__attribute__((unused)) static float get_time_ms(void)
+{
+    gettimeofday(&tv_stop, NULL);
+
+    float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
+               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
+    return fabs(dt);
+}
+
+__attribute__((unused)) static uint32_t get_cause(void)
+{
+#if SOC_PMU_SUPPORTED
+    uint32_t wakeup_cause = pmu_ll_hp_get_wakeup_cause(&PMU);
+#else
+    uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
+#endif
+    return wakeup_cause;
+}
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) && SOC_PM_SUPPORT_EXT0_WAKEUP
+// Fails on S2 IDF-2903
+
+// This test case verifies deactivation of trigger for wake up sources
+TEST_CASE("disable source trigger behavior", "[lightsleep]")
+{
+    float dt = 0;
+
+    printf("Setup timer and ext0 to wake up immediately from GPIO_13 \n");
+
+    // Setup ext0 configuration to wake up almost immediately
+    // The wakeup time is proportional to input capacitance * pullup resistance
+    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
+    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
+    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
+
+    // Setup timer to wakeup with timeout
+    esp_sleep_enable_timer_wakeup(2000000);
+
+    // Save start time
+    gettimeofday(&tv_start, NULL);
+    esp_light_sleep_start();
+
+    dt = get_time_ms();
+    printf("Ext0 sleep time = %d \n", (int) dt);
+
+    // Check wakeup from Ext0 using time measurement because wakeup cause is
+    // not available in light sleep mode
+    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
+
+    TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
+
+    // Disable Ext0 source. Timer source should be triggered
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
+    printf("Disable ext0 trigger and leave timer active.\n");
+
+    gettimeofday(&tv_start, NULL);
+    esp_light_sleep_start();
+
+    dt = get_time_ms();
+    printf("Timer sleep time = %d \n", (int) dt);
+
+    TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
+
+    // Additionally check wakeup cause
+    TEST_ASSERT((get_cause() & RTC_TIMER_TRIG_EN) != 0);
+
+    // Disable timer source.
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER));
+
+    // Setup ext0 configuration to wake up immediately
+    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
+    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
+    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
+
+    printf("Disable timer trigger to wake up from ext0 source.\n");
+
+    gettimeofday(&tv_start, NULL);
+    esp_light_sleep_start();
+
+    dt = get_time_ms();
+    printf("Ext0 sleep time = %d \n", (int) dt);
+
+    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
+    TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
+
+    // Check error message when source is already disabled
+    esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+    TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
+
+    // Disable ext0 wakeup source, as this might interfere with other tests
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
+}
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+#if CONFIG_SPIRAM
+static void test_psram_accessible_after_lightsleep(void)
+{
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+
+    esp_sleep_enable_timer_wakeup(100 * 1000);
+    esp_light_sleep_start();
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+
+    TEST_ASSERT_EQUAL(true, esp_psram_extram_test());
+
+    esp_sleep_set_sleep_context(NULL);
+    esp_restart();
+}
+
+static void restart_for_reinit_psram(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    printf("PSRAM survives after lightsleep test - OK\n");
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test PSRAM survives after lightsleep", "[lightsleep]",
+                          test_psram_accessible_after_lightsleep,
+                          restart_for_reinit_psram);
+#endif
+
+#endif // SOC_LIGHT_SLEEP_SUPPORTED
+
+/////////////////////////// Deep Sleep Test Cases ////////////////////////////////////
+#if SOC_DEEP_SLEEP_SUPPORTED
 static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
@@ -98,158 +397,6 @@ static void do_light_sleep_deep_sleep_timer(void)
 TEST_CASE_MULTIPLE_STAGES("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]",
                           do_light_sleep_deep_sleep_timer,
                           check_sleep_reset)
-
-TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
-{
-    esp_sleep_enable_timer_wakeup(2000000);
-    struct timeval tv_start, tv_stop;
-    gettimeofday(&tv_start, NULL);
-    esp_light_sleep_start();
-    gettimeofday(&tv_stop, NULL);
-    float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
-               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
-    TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
-}
-
-//NOTE: Explained in IDF-1445 | MR !14996
-#if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
-static void test_light_sleep(void* arg)
-{
-    vTaskDelay(2);
-    for (int i = 0; i < 1000; ++i) {
-        printf("%d %d\n", xPortGetCoreID(), i);
-        fflush(stdout);
-        esp_light_sleep_start();
-    }
-    SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
-    xSemaphoreGive(done);
-    vTaskDelete(NULL);
-}
-
-TEST_CASE("light sleep stress test", "[deepsleep]")
-{
-    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
-    esp_sleep_enable_timer_wakeup(1000);
-    xTaskCreatePinnedToCore(&test_light_sleep, "ls0", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
-#endif
-    xSemaphoreTake(done, portMAX_DELAY);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    xSemaphoreTake(done, portMAX_DELAY);
-#endif
-    vSemaphoreDelete(done);
-}
-
-static void timer_func(void* arg)
-{
-    esp_rom_delay_us(50);
-}
-
-TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
-{
-    SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
-    esp_sleep_enable_timer_wakeup(1000);
-    esp_timer_handle_t timer;
-    esp_timer_create_args_t config = {
-        .callback = &timer_func,
-    };
-    TEST_ESP_OK(esp_timer_create(&config, &timer));
-    esp_timer_start_periodic(timer, 500);
-    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
-#endif
-    xSemaphoreTake(done, portMAX_DELAY);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    xSemaphoreTake(done, portMAX_DELAY);
-#endif
-    vSemaphoreDelete(done);
-    esp_timer_stop(timer);
-    esp_timer_delete(timer);
-}
-#endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
-
-#if defined(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL)
-#define MAX_SLEEP_TIME_ERROR_US 200
-#else
-#define MAX_SLEEP_TIME_ERROR_US 100
-#endif
-
-TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
-{
-    // don't power down XTAL — powering it up takes different time on
-    // different boards
-    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
-
-    // run one light sleep without checking timing, to warm up the cache
-    esp_sleep_enable_timer_wakeup(1000);
-    esp_light_sleep_start();
-
-    const int sleep_intervals_ms[] = {
-        1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 15,
-        20, 25, 50, 100, 200, 500,
-    };
-
-    const int sleep_intervals_count = sizeof(sleep_intervals_ms) / sizeof(sleep_intervals_ms[0]);
-    for (int i = 0; i < sleep_intervals_count; ++i) {
-        uint64_t sleep_time = sleep_intervals_ms[i] * 1000;
-        esp_sleep_enable_timer_wakeup(sleep_time);
-        for (int repeat = 0; repeat < 5; ++repeat) {
-            uint64_t start = esp_clk_rtc_time();
-            int64_t start_hs = esp_timer_get_time();
-            esp_light_sleep_start();
-            int64_t stop_hs = esp_timer_get_time();
-            uint64_t stop = esp_clk_rtc_time();
-
-            int diff_us = (int)(stop - start);
-            int diff_hs_us = (int)(stop_hs - start_hs);
-            printf("%lld %d\n", sleep_time, (int)(diff_us - sleep_time));
-            int32_t threshold = MAX(sleep_time / 100, MAX_SLEEP_TIME_ERROR_US);
-            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_us);
-            TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_hs_us);
-            fflush(stdout);
-        }
-
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
-}
-
-TEST_CASE("light sleep and frequency switching", "[deepsleep]")
-{
-#ifndef CONFIG_PM_ENABLE
-    uart_sclk_t clk_source = UART_SCLK_DEFAULT;
-#if SOC_UART_SUPPORT_REF_TICK
-    clk_source = UART_SCLK_REF_TICK;
-#elif SOC_UART_SUPPORT_XTAL_CLK
-    clk_source = UART_SCLK_XTAL;
-#endif
-    HP_UART_SRC_CLK_ATOMIC() {
-        uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
-    }
-    uint32_t sclk_freq;
-    TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    HP_UART_SRC_CLK_ATOMIC() {
-        uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
-    }
-#endif
-
-    rtc_cpu_freq_config_t config_xtal, config_default;
-    rtc_clk_cpu_freq_get_config(&config_default);
-    rtc_clk_cpu_freq_mhz_to_config(esp_clk_xtal_freq() / MHZ, &config_xtal);
-
-    esp_sleep_enable_timer_wakeup(1000);
-    for (int i = 0; i < 1000; ++i) {
-        if (i % 2 == 0) {
-            rtc_clk_cpu_freq_set_config_fast(&config_xtal);
-        } else {
-            rtc_clk_cpu_freq_set_config_fast(&config_default);
-        }
-        printf("%d\n", i);
-        fflush(stdout);
-        esp_light_sleep_start();
-    }
-}
 
 static void do_deep_sleep(void)
 {
@@ -381,106 +528,6 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
 
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
-
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-
-__attribute__((unused)) static float get_time_ms(void)
-{
-    gettimeofday(&tv_stop, NULL);
-
-    float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
-               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
-    return fabs(dt);
-}
-
-__attribute__((unused)) static uint32_t get_cause(void)
-{
-#if SOC_PMU_SUPPORTED
-    uint32_t wakeup_cause = pmu_ll_hp_get_wakeup_cause(&PMU);
-#else
-    uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
-#endif
-    return wakeup_cause;
-}
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) && SOC_PM_SUPPORT_EXT0_WAKEUP
-// Fails on S2 IDF-2903
-
-// This test case verifies deactivation of trigger for wake up sources
-TEST_CASE("disable source trigger behavior", "[deepsleep]")
-{
-    float dt = 0;
-
-    printf("Setup timer and ext0 to wake up immediately from GPIO_13 \n");
-
-    // Setup ext0 configuration to wake up almost immediately
-    // The wakeup time is proportional to input capacitance * pullup resistance
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
-
-    // Setup timer to wakeup with timeout
-    esp_sleep_enable_timer_wakeup(2000000);
-
-    // Save start time
-    gettimeofday(&tv_start, NULL);
-    esp_light_sleep_start();
-
-    dt = get_time_ms();
-    printf("Ext0 sleep time = %d \n", (int) dt);
-
-    // Check wakeup from Ext0 using time measurement because wakeup cause is
-    // not available in light sleep mode
-    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
-
-    TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-
-    // Disable Ext0 source. Timer source should be triggered
-    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
-    printf("Disable ext0 trigger and leave timer active.\n");
-
-    gettimeofday(&tv_start, NULL);
-    esp_light_sleep_start();
-
-    dt = get_time_ms();
-    printf("Timer sleep time = %d \n", (int) dt);
-
-    TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
-
-    // Additionally check wakeup cause
-    TEST_ASSERT((get_cause() & RTC_TIMER_TRIG_EN) != 0);
-
-    // Disable timer source.
-    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER));
-
-    // Setup ext0 configuration to wake up immediately
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
-
-    printf("Disable timer trigger to wake up from ext0 source.\n");
-
-    gettimeofday(&tv_start, NULL);
-    esp_light_sleep_start();
-
-    dt = get_time_ms();
-    printf("Ext0 sleep time = %d \n", (int) dt);
-
-    TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
-    TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-
-    // Check error message when source is already disabled
-    esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
-    TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
-
-    // Disable ext0 wakeup source, as this might interfere with other tests
-    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
-}
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-
-#endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 static void trigger_deepsleep(void)
 {

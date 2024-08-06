@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,11 +63,17 @@ void esp_sleep_config_gpio_isolate(void)
     }
 
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
-    gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS1), GPIO_PULLUP_ONLY);
+    int32_t mspi_io_cs1_io_num = esp_mspi_get_io(ESP_MSPI_IO_CS1);
+    if (GPIO_IS_VALID_GPIO(mspi_io_cs1_io_num)) {
+        gpio_sleep_set_pull_mode(mspi_io_cs1_io_num, GPIO_PULLUP_ONLY);
+    }
 #endif // CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
 
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-    gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS0), GPIO_PULLUP_ONLY);
+    int32_t mspi_io_cs0_io_num = esp_mspi_get_io(ESP_MSPI_IO_CS0);
+    if (GPIO_IS_VALID_GPIO(mspi_io_cs0_io_num)) {
+        gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS0), GPIO_PULLUP_ONLY);
+    }
 #endif // CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
 
 #if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU

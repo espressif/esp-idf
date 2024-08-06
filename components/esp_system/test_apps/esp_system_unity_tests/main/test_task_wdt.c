@@ -68,6 +68,7 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
 
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+    esp_sleep_set_sleep_context(NULL);
 
     // Short delay to allow timeout to occur
     esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);
