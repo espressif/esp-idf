@@ -13,7 +13,7 @@ examples/ieee802154/ieee802154_cli:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET not in ["esp32c6"]
       temporary: true
       reason: only test on esp32c6
   <<: *ieee802154_dependencies

@@ -69,3 +69,4 @@
 #define DR_REG_CACHE_BASE                       0x600C8000
 
 #define PWDET_CONF_REG                          0x600A0810
+#define IEEE802154_REG_BASE                     0x600A3000
