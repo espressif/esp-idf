@@ -351,7 +351,7 @@ ADC 连续转换模式驱动的 API 不一定线程安全，但驱动程序提�
 应用示例
 --------------------
 
-* ADC 连续转换模式示例：:example:`peripherals/adc/continuous_read`。
+* :example:`peripherals/adc/continuous_read` 演示了如何在 {IDF_TARGET_NAME} 开发板上使用 ADC 连续读取模式（DMA 模式），通过片上 ADC 模块从 GPIO 管脚读取数据。
 
 
 API 参考
