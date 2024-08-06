@@ -600,6 +600,8 @@ Kconfig 选项
 应用示例
 --------
 
+- :example:`peripherals/i2c/i2c_basic` 演示了初始化 I2C 主机驱动程序并从 MPU9250 传感器读取数据的基本步骤。
+
 - :example:`peripherals/i2c/i2c_eeprom` 演示了如何使用 I2C 主机模式从连接的 EEPROM 读取和写入数据。
 
 - :example:`peripherals/i2c/i2c_tools` 演示了如何使用 I2C 工具开发 I2C 相关的应用程序，提供了用于配置 I2C 总线、扫描设备、读取、设置和检查寄存器的命令行工具。
