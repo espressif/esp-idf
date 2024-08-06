@@ -600,12 +600,16 @@ Kconfig Options
 Application Examples
 --------------------
 
-* RMT-based RGB LED strip customized encoder: :example:`peripherals/rmt/led_strip`
-* RMT IR NEC protocol encoding and decoding: :example:`peripherals/rmt/ir_nec_transceiver`
-* RMT transactions in queue: :example:`peripherals/rmt/musical_buzzer`
-* RMT-based stepper motor with S-curve algorithm: : :example:`peripherals/rmt/stepper_motor`
-* RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
-* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire`
+.. list::
+
+    - :example:`peripherals/rmt/led_strip` demonstrates how to use the RMT peripheral to drive a WS2812 LED strip, which is able to change the number of LEDs and the chasing effect.
+    - :example:`peripherals/rmt/led_strip_simple_encoder` demonstrates how to use the RMT peripheral to drive a WS2812 LED strip by implementing a callback that converts RGB pixels into a format recognized by the hardware.
+    - :example:`peripherals/rmt/ir_nec_transceiver` demonstrates how to use the RMT peripheral to implement the encoding and decoding of remote IR NEC protocol.
+    - :example:`peripherals/rmt/dshot_esc` demonstrates how to use the RMT TX channel to achieve infinite loop transmission. It constructs an RMT encoder for the DShot digital protocol. This protocol is primarily used for communication between flight controllers and electronic speed controllers, offering greater resistance to electrical noise compared to traditional analog protocols.
+    - :example:`peripherals/rmt/onewire` demonstrates how to simulate the 1-wire hardware protocol by using the `onewire_bus` library, and read data from multiple DS18B20 temperature sensors on the bus. This library is built upon a pair of transmit and receive channels of the RMT peripheral.
+    :SOC_RMT_SUPPORT_TX_LOOP_COUNT: - :example:`peripherals/rmt/musical_buzzer` demonstrates how to use the RMT TX channel to drive a passive buzzer to play simple music. Each musical note is represented by a constant frequency of PWM signal with a fixed duration.
+    :SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP: - :example:`peripherals/rmt/stepper_motor` demonstrates how to use the RMT peripheral to drive a STEP/DIR interfaced stepper motor controller (such as DRV8825). After programming the RMT encoder, S-curve profile can be implemented for desired acceleration, constant speed, and deceleration phases, thereby smoothly driving the stepper motor.
+
 
 FAQ
 ---
