@@ -41,7 +41,7 @@
         *(uint64_t*)(a) = __builtin_bswap64( (uint64_t)(val) ); \
     } while (0)
 
-/* For simplicity limit the maxium amount of aad bytes to a single DMA descriptor
+/* For simplicity limit the maximum amount of aad bytes to a single DMA descriptor
    This should cover all normal, e.g. mbedtls, use cases */
 #define ESP_AES_GCM_AAD_MAX_BYTES 4080
 
@@ -131,7 +131,7 @@ static void xor_data(uint8_t *d, const uint8_t *s)
 }
 #endif
 
-/* Based on MbedTLS's implemenation
+/* Based on MbedTLS's implementation
  *
  * Precompute small multiples of H, that is set
  *      HH[i] || HL[i] = H times i,
@@ -198,7 +198,7 @@ static const uint64_t last4[16] = {
     0xe100, 0xfd20, 0xd940, 0xc560,
     0x9180, 0x8da0, 0xa9c0, 0xb5e0
 };
-/* Based on MbedTLS's implemenation
+/* Based on MbedTLS's implementation
  *
  * Sets output to x times H using the precomputed tables.
  * x and output are seen as elements of GF(2^128) as in [MGV].
@@ -670,7 +670,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     int ret;
     size_t remainder_bit;
 
-    /* Due to hardware limition only certain cases are fully supported in HW */
+    /* Due to hardware limitation only certain cases are fully supported in HW */
     if (!esp_aes_gcm_input_support_hw_accel(length, aad, aad_len, input, output)) {
         return esp_aes_gcm_crypt_and_tag_partial_hw(ctx, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
