@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,7 +120,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
-static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
+static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool cs_use_iomux, int cs_id)
 {
     //Not using spicommon_cs_initialize since we don't want to put the whole
     //spi_periph_signal into the DRAM. Copy these data from flash before the
@@ -137,9 +137,9 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
-    PIN_INPUT_ENABLE(iomux_reg);
-    if (use_iomux) {
-        gpio_hal_iomux_func_sel(iomux_reg, spics_func);
+    gpio_hal_input_enable(&gpio_hal, cs_io_num);
+    if (cs_use_iomux) {
+        gpio_hal_func_sel(&gpio_hal, cs_io_num, spics_func);
     } else {
         gpio_hal_output_enable(&gpio_hal, cs_io_num);
         gpio_hal_od_disable(&gpio_hal, cs_io_num);
@@ -162,6 +162,17 @@ static bool use_bus_lock(int host_id)
 #else
     return false;
 #endif
+}
+
+static bool cs_using_iomux(const esp_flash_spi_device_config_t *config)
+{
+#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
+    bool use_iomux = true;
+    CHECK_IOMUX_PIN(config->host_id, spics);
+    if (config->cs_io_num != spi_periph_signal[config->host_id].spics0_iomux_pin) {
+        use_iomux = false;
+    }
+    return use_iomux;
 }
 
 static esp_err_t acquire_spi_device(const esp_flash_spi_device_config_t *config, int* out_dev_id, spi_bus_lock_dev_handle_t* out_dev_handle)
@@ -263,7 +274,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     }
 
     // The cs_id inside `config` is deprecated, use the `dev_id` provided by the bus lock instead.
-    cs_initialize(chip, config, use_iomux, dev_id);
+    cs_initialize(chip, config, cs_using_iomux(config), dev_id);
     *out_chip = chip;
     return ret;
 fail:
@@ -306,14 +317,14 @@ static void s_esp_flash_choose_correct_mode(memspi_host_config_t *cfg)
     static const char *mode = FLASH_MODE_STRING;
     if (bootloader_flash_is_octal_mode_enabled()) {
     #if !CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically swich to Octal mode", mode);
+        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically switch to Octal mode", mode);
         cfg->octal_mode_en = 1;
         cfg->default_io_mode = SPI_FLASH_OPI_STR;
         default_chip.read_mode = SPI_FLASH_OPI_STR;
     #endif
     } else {
     #if CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically swich to DIO mode", mode);
+        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically switch to DIO mode", mode);
         cfg->octal_mode_en = 0;
         cfg->default_io_mode = SPI_FLASH_DIO;
         default_chip.read_mode = SPI_FLASH_DIO;
@@ -346,7 +357,7 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
 
-    // For chips need time tuning, get value directely from system here.
+    // For chips need time tuning, get value directly from system here.
     #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (spi_timing_is_tuned()) {
         cfg.using_timing_tuning = 1;
