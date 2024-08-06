@@ -282,6 +282,12 @@ static void bt_hidd_init_app(void)
     s_hidd_param.app_param.subclass = get_subclass_by_appearance(s_hidd_param.dev->appearance);
     s_hidd_param.app_param.desc_list = (uint8_t *)s_hidd_param.dev->devices[0].reports_map.data;
     s_hidd_param.app_param.desc_list_len = s_hidd_param.dev->devices[0].reports_map.len;
+
+    // Information SDP 
+    s_hidd_param.app_param.vendor_id = p_config->vendor_id;
+    s_hidd_param.app_param.product_id = p_config->product_id;
+    s_hidd_param.app_param.version = p_config->version;
+    s_hidd_param.app_param.vendor_id_source = s_hidd_param.app_param.vendor_id_source;
 }
 
 static void bt_hidd_init_qos(void)
@@ -637,7 +643,7 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->get_report.report_id, param->get_report.report_type,
                                           &map_index);
         if (p_rpt == NULL) {
-            ESP_LOGE(TAG, "Can not find report!");
+            ESP_LOGE(TAG, "Can not find report EVT: %d", param->get_report.report_id);
             esp_bt_hid_device_report_error(ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID);
             break;
         }
@@ -678,7 +684,7 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->set_report.report_id, param->set_report.report_type,
                                           &map_index);
         if (p_rpt == NULL) {
-            ESP_LOGE(TAG, "Can not find report!");
+            ESP_LOGE(TAG, "Can not find report SET: %d", param->set_report.report_type);
             esp_bt_hid_device_report_error(ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID);
             break;
         }
@@ -715,6 +721,9 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         break;
     }
     case ESP_HIDD_SET_PROTOCOL_EVT: {
+        ESP_LOGI(TAG, "Ignoring protocol mode change.");
+        break;
+        
         if (param->set_protocol.protocol_mode != ESP_HIDD_UNSUPPORTED_MODE) {
             if (s_hidd_param.dev->protocol_mode == param->set_protocol.protocol_mode) {
                 break;
@@ -724,7 +733,7 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
             osi_mutex_unlock(&s_hidd_param.mutex);
             cb_param.protocol_mode.dev = s_hidd_param.dev->dev;
             cb_param.protocol_mode.protocol_mode = s_hidd_param.dev->protocol_mode;
-            cb_param.protocol_mode.map_index = 0;
+            //cb_param.protocol_mode.map_index = 0;
             esp_event_post_to(s_hidd_param.dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_PROTOCOL_MODE_EVENT,
                               &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
         } else {
@@ -737,7 +746,7 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->intr_data.report_id, ESP_HID_REPORT_TYPE_OUTPUT,
                                           &map_index);
         if (p_rpt == NULL) {
-            ESP_LOGE(TAG, "Can not find report!");
+            ESP_LOGE(TAG, "Can not find report INTR: %d", param->intr_data.report_id);
             break;
         }
 
@@ -812,7 +821,7 @@ esp_err_t esp_bt_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_confi
         .queue_size = 5,
         .task_name = "bt_hidd_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = BT_HID_DEVICE_TASK_SIZE,
         .task_core_id = tskNO_AFFINITY
     };
     ret = esp_event_loop_create(&event_task_args, &s_hidd_param.dev->event_loop_handle);

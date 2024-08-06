@@ -749,6 +749,15 @@ BOOLEAN btsnd_hcic_hold_mode (UINT16 handle, UINT16 max_hold_period,
     return (TRUE);
 }
 
+__attribute__((weak))
+void btsnd_hcic_sniff_mode_cb(BOOLEAN sniff, UINT16 tx_lat, UINT16 rx_lat)
+{
+    // This is the weak implementation, which will be overwritten
+    (void) sniff;
+    (void) tx_lat;
+    (void) rx_lat;
+}
+
 BOOLEAN btsnd_hcic_sniff_mode (UINT16 handle, UINT16 max_sniff_period,
                                UINT16 min_sniff_period, UINT16 sniff_attempt,
                                UINT16 sniff_timeout)
@@ -774,6 +783,12 @@ BOOLEAN btsnd_hcic_sniff_mode (UINT16 handle, UINT16 max_sniff_period,
     UINT16_TO_STREAM (pp, sniff_attempt);
     UINT16_TO_STREAM (pp, sniff_timeout);
 
+    // HHL Custom Code
+    btsnd_hcic_sniff_mode_cb(true, min_sniff_period, max_sniff_period);
+
+    // Try ignoring the commands for now
+    return (TRUE);
+    // End custom code
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     HCI_TRACE_WARNING("hci cmd send: sniff: hdl 0x%x, intv(%d %d)",
                     handle, min_sniff_period, max_sniff_period);
@@ -801,6 +816,10 @@ BOOLEAN btsnd_hcic_exit_sniff_mode (UINT16 handle)
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     HCI_TRACE_WARNING("hci cmd send: unsniff: hdl 0x%x", handle);
+
+    // HHL Custom Code
+    btsnd_hcic_sniff_mode_cb(false, 0, 0);
+
     return TRUE;
 }
 
