@@ -4,17 +4,6 @@
    as well as reading and writing from and to registers for a sensor connected over I2C.
 
    The sensor used in this example is a MPU9250 inertial measurement unit.
-
-   For other examples please check:
-   https://github.com/espressif/esp-idf/tree/master/examples
-
-   See README.md file to get detailed usage of this example.
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
 #include "esp_log.h"
@@ -31,7 +20,7 @@ static const char *TAG = "i2c-simple-example";
 #define I2C_MASTER_RX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_TIMEOUT_MS       1000
 
-#define MPU9250_SENSOR_ADDR         0x68        /*!< Slave address of the MPU9250 sensor */
+#define MPU9250_SENSOR_ADDR         0x68        /*!< Address of the MPU9250 sensor */
 #define MPU9250_WHO_AM_I_REG_ADDR   0x75        /*!< Register addresses of the "who am I" register */
 #define MPU9250_PWR_MGMT_1_REG_ADDR 0x6B        /*!< Register addresses of the power management register */
 #define MPU9250_RESET_BIT           7
