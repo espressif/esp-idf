@@ -19,7 +19,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 //  \#define SOC_ADC_SUPPORTED               1    //TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
 //  \#define SOC_DEDICATED_GPIO_SUPPORTED    1    //TODO: [ESP32C61] IDF-9321
-#define SOC_UART_SUPPORTED              1       //TODO: [ESP32C61] IDF-9320
+#define SOC_UART_SUPPORTED              1
 //  \#define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32C61] IDF-9310, IDF-9311
 //  \#define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32C61] IDF-9310, IDF-9311
 #define SOC_GPTIMER_SUPPORTED           1
@@ -70,7 +70,6 @@
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
 //  \#define SOC_PAU_SUPPORTED               0
 //  \#define SOC_LP_I2C_SUPPORTED            0    //TODO: [ESP32C61] IDF-9330, IDF-9337
-//  \#define SOC_ULP_LP_UART_SUPPORTED       0    //TODO: [ESP32C61] IDF-9329, IDF-9341
 //  \#define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
@@ -422,9 +421,7 @@
 // ESP32-C61 has 3 UARTs (3 HP UART)
 #define SOC_UART_NUM                    (3)
 #define SOC_UART_HP_NUM                 (3)
-//  \#define SOC_UART_LP_NUM                 (1U) //TODO: IDF-9341
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
-#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */

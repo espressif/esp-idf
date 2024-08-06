@@ -75,38 +75,36 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         },
         .irq = ETS_UART1_INTR_SOURCE,
     },
-#if 0   //TODO: [ESP32C61] IDF-9329, IDF-9341
-    { // LP UART0
+    { // HP UART2
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
-                .default_gpio = LP_U0TXD_GPIO_NUM,
-                .iomux_func = LP_U0TXD_MUX_FUNC,
+                .default_gpio = U2TXD_GPIO_NUM,
+                .iomux_func = U2TXD_MUX_FUNC,
                 .input = 0,
-                .signal = UINT8_MAX, // Signal not available in signal map
+                .signal = U2TXD_OUT_IDX,
             },
 
             [SOC_UART_RX_PIN_IDX] = {
-                .default_gpio = LP_U0RXD_GPIO_NUM,
-                .iomux_func = LP_U0RXD_MUX_FUNC,
+                .default_gpio = U2RXD_GPIO_NUM,
+                .iomux_func = U2RXD_MUX_FUNC,
                 .input = 1,
-                .signal = UINT8_MAX, // Signal not available in signal map
+                .signal = U2RXD_IN_IDX,
             },
 
             [SOC_UART_RTS_PIN_IDX] = {
-                .default_gpio = LP_U0RTS_GPIO_NUM,
-                .iomux_func = LP_U0RTS_MUX_FUNC,
+                .default_gpio = U2RTS_GPIO_NUM,
+                .iomux_func = U2RTS_MUX_FUNC,
                 .input = 0,
-                .signal = UINT8_MAX, // Signal not available in signal map
+                .signal = U2RTS_OUT_IDX,
             },
 
             [SOC_UART_CTS_PIN_IDX] = {
-                .default_gpio = LP_U0CTS_GPIO_NUM,
-                .iomux_func = LP_U0CTS_MUX_FUNC,
+                .default_gpio = U2CTS_GPIO_NUM,
+                .iomux_func = U2CTS_MUX_FUNC,
                 .input = 1,
-                .signal = UINT8_MAX, // Signal not available in signal map
+                .signal = U2CTS_IN_IDX,
             },
         },
-        .irq = ETS_LP_UART_INTR_SOURCE,
+        .irq = ETS_UART2_INTR_SOURCE,
     },
-#endif
 };
