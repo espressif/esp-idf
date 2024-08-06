@@ -63,6 +63,10 @@ config SOC_REG_I2C_SUPPORTED
     bool
     default y
 
+config SOC_ECDSA_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -302,6 +306,14 @@ config SOC_MPI_OPERATIONS_NUM
 config SOC_RSA_MAX_BIT_LEN
     int
     default 3072
+
+config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
 
 config SOC_SPI_PERIPH_NUM
     int

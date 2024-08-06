@@ -16,7 +16,9 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
+#ifdef SOC_MPI_SUPPORTED
 #include "hal/mpi_ll.h"
+#endif
 #include "soc/soc_caps.h"
 
 #include "memory_checks.h"

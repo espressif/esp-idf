@@ -71,7 +71,7 @@
 //  \#define SOC_PAU_SUPPORTED               0
 //  \#define SOC_LP_I2C_SUPPORTED            0    //TODO: [ESP32C61] IDF-9330, IDF-9337
 //  \#define SOC_PM_SUPPORTED                1
-
+#define SOC_ECDSA_SUPPORTED             1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 
@@ -321,6 +321,10 @@
 // #define SOC_SHA_SUPPORT_SHA1            (1)
 // #define SOC_SHA_SUPPORT_SHA224          (1)
 // #define SOC_SHA_SUPPORT_SHA256          (1)
+
+/*--------------------------- ECDSA CAPS ---------------------------------------*/
+#define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
+#define SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE   (1)
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

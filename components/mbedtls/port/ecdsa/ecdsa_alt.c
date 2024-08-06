@@ -7,7 +7,9 @@
 #include "hal/ecc_ll.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#ifdef SOC_MPI_SUPPORTED
 #include "hal/mpi_ll.h"
+#endif
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
 #include "esp_private/esp_crypto_lock_internal.h"
