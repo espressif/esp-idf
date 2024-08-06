@@ -383,7 +383,7 @@ Kconfig Options
 Application Examples
 --------------------
 
-* Decode the quadrature signals from rotary encoder: :example:`peripherals/pcnt/rotary_encoder`.
+* :example:`peripherals/pcnt/rotary_encoder` demonstrates how to use the PCNT peripheral to decode the differential signals generated from a common rotary encoder, EC11, and how to configure the rotary encoder to wake the system from light-sleep.
 
 
 API Reference

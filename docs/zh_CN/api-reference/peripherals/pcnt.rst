@@ -380,10 +380,10 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 - :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 用于控制当缓存禁用时，默认的 ISR 句柄是否可以工作，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
 - :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` 用于使能调试日志输出，而这会增大固件二进制文件。
 
-应用实例
+应用示例
 ------------
 
-* 对旋转编码器的正交信号进行解码的实例请参考：:example:`peripherals/pcnt/rotary_encoder`。
+* :example:`peripherals/pcnt/rotary_encoder` 演示了如何使用 PCNT 外设来解码由常见的旋转编码器 EC11 生成的差分信号，以及如何配置旋转编码器将系统从 light-sleep 状态唤醒。
 
 
 API 参考
