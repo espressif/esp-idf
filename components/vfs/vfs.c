@@ -1169,7 +1169,11 @@ static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple, 
     for (int i = 0; i < end_index; ++i) {
         const vfs_entry_t *vfs = get_vfs_for_index(i);
         const fds_triple_t *item = &vfs_fds_triple[i];
-        if (vfs && vfs->vfs->select->end_select && item->isset) {
+        if (vfs != NULL
+            && vfs->vfs->select != NULL
+            && vfs->vfs->select->end_select != NULL
+            && item->isset
+        ) {
             esp_err_t err = vfs->vfs->select->end_select(driver_args[i]);
             if (err != ESP_OK) {
                 ESP_LOGD(TAG, "end_select failed: %s", esp_err_to_name(err));
@@ -1457,7 +1461,10 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem)
             // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
-            if (vfs != NULL && vfs->vfs->select->stop_socket_select != NULL) {
+            if (vfs != NULL
+                && vfs->vfs->select != NULL
+                && vfs->vfs->select->stop_socket_select != NULL
+            ) {
                 vfs->vfs->select->stop_socket_select(sem.sem);
                 break;
             }
@@ -1477,7 +1484,10 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
             // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
-            if (vfs != NULL && vfs->vfs->select->stop_socket_select_isr != NULL) {
+            if (vfs != NULL
+                && vfs->vfs->select != NULL
+                && vfs->vfs->select->stop_socket_select_isr != NULL
+            ) {
                 // Note: If the UART ISR resides in IRAM, the function referenced by stop_socket_select_isr should also be placed in IRAM.
                 vfs->vfs->select->stop_socket_select_isr(sem.sem, woken);
                 break;
