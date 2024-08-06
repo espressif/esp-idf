@@ -49,6 +49,7 @@
 #include "soc/regi2c_bias.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "hal/brownout_ll.h"
 
 static const char *TAG = "boot.esp32p4";
 
@@ -120,8 +121,8 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset
-    bootloader_ana_bod_reset_config(true);
+    //Enable BOD reset (mode1)
+    brownout_ll_ana_reset_enable(true);
 }
 
 esp_err_t bootloader_init(void)

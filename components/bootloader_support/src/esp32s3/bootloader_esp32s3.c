@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/rwdt_ll.h"
+#include "hal/brownout_ll.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 
@@ -133,7 +134,7 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable WDT, BOD, and GLITCH reset
     bootloader_ana_super_wdt_reset_config(true);
-    bootloader_ana_bod_reset_config(true);
+    brownout_ll_ana_reset_enable(true);
     bootloader_ana_clock_glitch_reset_config(true);
 }
 
@@ -204,7 +205,7 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
+    // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();

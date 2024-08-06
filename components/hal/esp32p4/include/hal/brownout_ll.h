@@ -12,20 +12,24 @@
 
 #pragma once
 #include <stdbool.h>
+#include "esp_bit_defs.h"
 #include "soc/lp_analog_peri_struct.h"
 #include "hal/regi2c_ctrl.h"
+#include "hal/psdet_types.h"
 #include "soc/regi2c_brownout.h"
+
+#define BROWNOUT_DETECTOR_LL_FIB_ENABLE       (BIT(1))
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief power down the flash when a brown out happens.
+ * @brief suspend the flash when a brown out happens.
  *
- * @param enable true: power down flash. false: not power down
+ * @param enable true: suspend flash. false: not suspend
  */
-static inline void brownout_ll_enable_flash_power_down(bool enable)
+static inline void brownout_ll_enable_flash_suspend(bool enable)
 {
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_close_flash_ena = enable;
 }
@@ -33,7 +37,7 @@ static inline void brownout_ll_enable_flash_power_down(bool enable)
 /**
  * @brief power down the RF circuits when a brown out happens
  *
- * @param enable true: power down. false: not power done.
+ * @param enable true: power down. false: not power down.
  */
 static inline void brownout_ll_enable_rf_power_down(bool enable)
 {
@@ -41,22 +45,24 @@ static inline void brownout_ll_enable_rf_power_down(bool enable)
 }
 
 /**
- * @brief Enable this to reset brown out
+ * @brief Configure the brown out detector to do a hardware reset
  *
- * @note: If brown out interrupt is used, this should be disabled.
+ * @note: If brown out interrupt is also used, the hardware reset can be disabled,
+ *        because we can call software reset in the interrupt handler.
  *
  * @param reset_ena true: enable reset. false: disable reset.
  * @param reset_wait brown out reset wait cycles
- * @param select 1: chip reset, 0: system reset
+ * @param reset_level reset level
  */
-static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait, uint8_t select)
+static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait, brownout_reset_level_t reset_level)
 {
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_wait = reset_wait;
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_ena = reset_ena;
-    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_sel = select;
+    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_sel = reset_level;
 }
+
 /**
- * @brief Set brown out threshold
+ * @brief Set brown out threshold voltage
  *
  * @param threshold brownout threshold
  */
@@ -96,12 +102,15 @@ static inline void brownout_ll_intr_enable(bool enable)
 }
 
 /**
- * @brief Enable brownout hardware reset
+ * @brief Enable brownout hardware reset (mode1)
  *
- * @param enable
+ * @param enable true: enable, false: disable
  */
 static inline void brownout_ll_ana_reset_enable(bool enable)
 {
+    // give BOD mode1 control permission to the software
+    LP_ANA_PERI.fib_enable.val &= ~BROWNOUT_DETECTOR_LL_FIB_ENABLE;
+    // then we can enable or disable if we want the BOD mode1 to reset the system
     LP_ANA_PERI.bod_mode1_cntl.bod_mode1_reset_ena = enable;
 }
 
