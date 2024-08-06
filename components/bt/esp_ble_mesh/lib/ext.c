@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+
+#include "esp_log.h"
 
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "bta/bta_api.h"
@@ -188,6 +190,11 @@ void bt_mesh_ext_memcpy_swap(void *dst, const void *src, size_t length)
 void bt_mesh_ext_mem_swap(void *buf, size_t length)
 {
     sys_mem_swap(buf, length);
+}
+
+uint32_t bt_mesh_ext_log_timestamp(void)
+{
+    return esp_log_timestamp();
 }
 
 /* Net buf */
@@ -496,6 +503,11 @@ int32_t bt_mesh_ext_ceil(float num)
 float bt_mesh_ext_log2(float num)
 {
     return bt_mesh_log2(num);
+}
+
+const char *bt_mesh_ext_hex(const void *buf, size_t len)
+{
+    return bt_hex(buf, len);
 }
 
 /* Crypto */
@@ -3954,6 +3966,8 @@ void bt_mesh_ext_mbt_server_cb_evt_to_btc(uint8_t event, void *model, void *ctx)
 }
 
 typedef struct {
+    uint64_t config_ble_mesh_stack_trace_level : 3;
+
     uint64_t config_ble_mesh_use_duplicate_scan : 1;
     uint64_t config_ble_mesh_pb_adv : 1;
     uint64_t config_ble_mesh_pb_gatt : 1;
@@ -4116,6 +4130,8 @@ typedef struct {
 } bt_mesh_ext_config_t;
 
 static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
+    .config_ble_mesh_stack_trace_level              = BLE_MESH_LOG_LEVEL,
+
     .config_ble_mesh_use_duplicate_scan             = IS_ENABLED(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN),
     .config_ble_mesh_pb_adv                         = IS_ENABLED(CONFIG_BLE_MESH_PB_ADV),
     .config_ble_mesh_pb_gatt                        = IS_ENABLED(CONFIG_BLE_MESH_PB_GATT),

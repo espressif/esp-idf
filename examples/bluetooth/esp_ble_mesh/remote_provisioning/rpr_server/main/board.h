@@ -32,6 +32,8 @@ extern "C" {
 #define BLE_MESH_LED_STRIP_IO GPIO_NUM_8
 #elif defined(CONFIG_BLE_MESH_ESP32H2_DEV)
 #define BLE_MESH_LED_STRIP_IO GPIO_NUM_8
+#elif defined(CONFIG_BLE_MESH_ESP32C5_DEV)
+#define BLE_MESH_LED_STRIP_IO GPIO_NUM_8
 #endif
 
 #define BUTTON_IO_NUM           GPIO_NUM_9
