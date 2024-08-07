@@ -38,7 +38,7 @@ struct l2_ethhdr {
 
 void wpa_sm_set_state(enum wpa_states state);
 
-void wpa_set_pmk(uint8_t *pmk, const u8 *pmkid, bool cache_pmksa);
+void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pmksa);
 
 int wpa_michael_mic_failure(u16 isunicast);
 
