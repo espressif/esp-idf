@@ -76,6 +76,9 @@ SECONDARY: 101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.
 # RNG module clock was disabled in `esp_perip_clk_init`, if hw_random is used, need to re-ebnabled it in startup
 SECONDARY: 102: init_rng_clock in components/esp_hw_support/hw_random.c on BIT(0)
 
+# Security specific initializations
+SECONDARY: 103: esp_security_init in components/esp_security/src/init.c on BIT(0)
+
 # esp_sleep doesn't have init dependencies
 SECONDARY: 105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
 SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/sleep_clock.c on BIT(0)

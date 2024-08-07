@@ -23,8 +23,8 @@ endif()
 
 if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
    list(APPEND srcs "key_manager/test_key_manager.c"
-                    "$ENV{IDF_PATH}/components/esp_hw_support/esp_key_mgr.c")
-   list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/esp_hw_support/include")
+                    "$ENV{IDF_PATH}/components/esp_security/src/esp_key_mgr.c")
+   list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/esp_security/include")
 endif()
 
 if(CONFIG_SOC_AES_SUPPORTED)
@@ -74,7 +74,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES efuse mbedtls esp_mm bootloader_support spi_flash
+                       PRIV_REQUIRES efuse mbedtls esp_security esp_mm bootloader_support spi_flash
                        REQUIRES test_utils unity
                        WHOLE_ARCHIVE
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"

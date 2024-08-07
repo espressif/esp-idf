@@ -44,14 +44,6 @@ void esp_clk_init(void);
  */
 void esp_perip_clk_init(void);
 
-/**
- * @brief Initialize the crypto clock
- *
- * Called from cpu_start.c, not intended to be called from other places.
- * This function configures the crypto clock.
- */
-void esp_crypto_clk_init(void);
-
 #if !CONFIG_IDF_TARGET_ESP32C2
 /* Selects an external clock source (32 kHz) for RTC.
  * Only internal use in unit test.

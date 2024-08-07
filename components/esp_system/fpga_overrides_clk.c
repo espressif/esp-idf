@@ -78,10 +78,6 @@ void esp_perip_clk_init(void)
 {
 }
 
-void esp_crypto_clk_init(void)
-{
-}
-
 /**
  * @brief No-op function, used to force linking this file
  *
