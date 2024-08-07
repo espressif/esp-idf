@@ -268,8 +268,8 @@ static void burn_hmac_keys(void)
 
         // starting from block 1, block 0 occupied with HMAC upstream test key
         int __attribute__((unused)) ets_status = ets_efuse_write_key(ETS_EFUSE_BLOCK_KEY1 + i,
-                purpose,
-                test_hmac_keys[i], 32);
+                                                                     purpose,
+                                                                     test_hmac_keys[i], 32);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         if (ets_status == ESP_OK) {

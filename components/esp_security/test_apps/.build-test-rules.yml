@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_security/test_apps/crypto_drivers:
+  disable:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: Support for ESP32C6 is yet to be added.
