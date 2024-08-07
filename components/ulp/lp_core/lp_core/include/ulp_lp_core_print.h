@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "sdkconfig.h"
 
 /**
@@ -67,3 +71,7 @@ void lp_core_print_hex(int h);
  * @param d     integer to be printed
  */
 void lp_core_print_dec_two_digits(int d);
+
+#ifdef __cplusplus
+}
+#endif
