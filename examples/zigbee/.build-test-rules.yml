@@ -6,11 +6,6 @@ examples/zigbee/esp_zigbee_gateway:
       temporary: true
       reason: target(s) not supported yet
 
-examples/zigbee/esp_zigbee_rcp:
-  enable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
-      reason: should able to run on esp32h2 and esp32c6
-
 examples/zigbee/light_sample:
   enable:
     - if: IDF_TARGET in ["esp32c6", "esp32h2"]

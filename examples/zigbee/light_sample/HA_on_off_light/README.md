@@ -34,24 +34,28 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 ```
-I (394) main_task: Calling app_main()
-I (404) gpio: GPIO[8]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (404) phy_init: phy_version 220,2dbbbe7,Sep 25 2023,20:39:25
-I (464) phy: libbtbb version: 90c587c, Sep 25 2023, 20:39:57
-I (474) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
-I (474) ESP_ZB_COLOR_DIMM_LIGHT: Zigbee stack initialized
-I (484) ESP_ZB_COLOR_DIMM_LIGHT: Start network steering
-I (484) main_task: Returned from app_main()
-I (9614) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
-I (9834) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
-I (9834) ESP_ZB_COLOR_DIMM_LIGHT: Joined network successfully (Extended PAN ID: 60:55:f9:00:00:f6:07:b4, PAN ID: 0x2a74, Channel:13)
-I (32944) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (32944) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to On
-I (33984) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (33984) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to Off
-I (35304) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NLME Status Indication (0x32), status: ESP_OK
-I (35534) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (35534) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to On
+I (403) app_start: Starting scheduler on CPU0
+I (408) main_task: Started on CPU0
+I (408) main_task: Calling app_main()
+I (428) phy: phy_version: 230,2, 9aae6ea, Jan 15 2024, 11:17:12
+I (428) phy: libbtbb version: 944f18e, Jan 15 2024, 11:17:25
+I (438) main_task: Returned from app_main()
+I (548) ESP_ZB_ON_OFF_LIGHT: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
+I (548) ESP_ZB_ON_OFF_LIGHT: Initialize Zigbee stack
+W (548) rmt: channel resolution loss, real=10666666
+I (558) gpio: GPIO[8]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+I (548) ESP_ZB_ON_OFF_LIGHT: Deferred driver initialization successful
+I (568) ESP_ZB_ON_OFF_LIGHT: Device started up in  factory-reset mode
+I (578) ESP_ZB_ON_OFF_LIGHT: Start network steering
+I (3558) ESP_ZB_ON_OFF_LIGHT: Joined network successfully (Extended PAN ID: 74:4d:bd:ff:fe:63:f7:30, PAN ID: 0x13af, Channel:13, Short Address: 0x7c16)
+I (10238) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (10238) ESP_ZB_ON_OFF_LIGHT: Light sets to On
+I (10798) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (10798) ESP_ZB_ON_OFF_LIGHT: Light sets to Off
+I (11228) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (11228) ESP_ZB_ON_OFF_LIGHT: Light sets to On
+I (11618) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (11618) ESP_ZB_ON_OFF_LIGHT: Light sets to Off
 ```
 
 ## Light Control Functions

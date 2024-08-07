@@ -19,6 +19,17 @@
 #define MAX_CHILDREN                    10          /* the max amount of connected devices */
 #define INSTALLCODE_POLICY_ENABLE       false       /* enable the install code policy for security */
 #define ESP_ZB_PRIMARY_CHANNEL_MASK     (1l << 13)  /* Zigbee primary channel mask use in the example */
+#define ESP_ZB_GATEWAY_ENDPOINT         1           /* Gateway endpoint identifier */
+#define APP_PROD_CFG_CURRENT_VERSION    0x0001      /* Production configuration version */
+
+/* Basic manufacturer information */
+#define ESP_MANUFACTURER_CODE 0x131B                 /* Customized manufacturer code */
+#define ESP_MANUFACTURER_NAME "\x09""ESPRESSIF"      /* Customized manufacturer name */
+#define ESP_MODEL_IDENTIFIER "\x07"CONFIG_IDF_TARGET /* Customized model identifier */
+
+/* RCP connection pins */
+#define HOST_RX_PIN_TO_RCP_TX 4
+#define HOST_TX_PIN_TO_RCP_RX 5
 
 #define ESP_ZB_ZC_CONFIG()                                                              \
     {                                                                                   \
@@ -32,17 +43,17 @@
 #if CONFIG_ZB_RADIO_NATIVE
 #define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
-        .radio_mode = RADIO_MODE_NATIVE,                        \
+        .radio_mode = ZB_RADIO_MODE_NATIVE,                     \
     }
 #else
 #define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
-        .radio_mode = RADIO_MODE_UART_RCP,                      \
+        .radio_mode = ZB_RADIO_MODE_UART_RCP,                   \
             .radio_uart_config = {                              \
             .port = 1,                                          \
             .uart_config =                                      \
                 {                                               \
-                    .baud_rate = 115200,                        \
+                    .baud_rate = 460800,                        \
                     .data_bits = UART_DATA_8_BITS,              \
                     .parity = UART_PARITY_DISABLE,              \
                     .stop_bits = UART_STOP_BITS_1,              \
@@ -50,13 +61,13 @@
                     .rx_flow_ctrl_thresh = 0,                   \
                     .source_clk = UART_SCLK_DEFAULT,            \
                 },                                              \
-            .rx_pin = 4,                                        \
-            .tx_pin = 5,                                        \
+            .rx_pin = HOST_RX_PIN_TO_RCP_TX,                    \
+            .tx_pin = HOST_TX_PIN_TO_RCP_RX,                    \
         },                                                      \
     }
 #endif
 
 #define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
     {                                                           \
-        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+        .host_connection_mode = ZB_HOST_CONNECTION_MODE_NONE,   \
     }
