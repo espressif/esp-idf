@@ -17,9 +17,11 @@
 #include "freertos/task.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_coexist.h"
+#include "esp_check.h"
 #include "esp_log.h"
 #include "esp_netif.h"
-#include "esp_spiffs.h"
+#include "esp_vfs_dev.h"
+#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_usb_serial_jtag.h"
@@ -27,10 +29,7 @@
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_zigbee_gateway.h"
-
-#if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
-#error Only Zigbee gateway host device should be defined
-#endif
+#include "zb_config_platform.h"
 
 static const char *TAG = "ESP_ZB_GATEWAY";
 
@@ -61,7 +60,7 @@ esp_err_t esp_zb_gateway_console_init(void)
 
 static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
 {
-    ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(mode_mask));
+    ESP_RETURN_ON_FALSE(esp_zb_bdb_start_top_level_commissioning(mode_mask) == ESP_OK, , TAG, "Failed to start Zigbee bdb commissioning");
 }
 
 void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
@@ -70,17 +69,18 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
     esp_err_t err_status = signal_struct->esp_err_status;
     esp_zb_app_signal_type_t sig_type = *p_sg_p;
     esp_zb_zdo_signal_device_annce_params_t *dev_annce_params = NULL;
-    esp_zb_zdo_signal_macsplit_dev_boot_params_t *rcp_version = NULL;
 
     switch (sig_type) {
     case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:
-        ESP_LOGI(TAG, "Zigbee stack initialized");
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
+        esp_coex_wifi_i154_enable();
+#endif /* CONFIG_ESP_COEX_SW_COEXIST_ENABLE */
+        ESP_RETURN_ON_FALSE(example_connect() == ESP_OK, , TAG, "Failed to connect to Wi-Fi");
+        ESP_RETURN_ON_FALSE(esp_wifi_set_ps(WIFI_PS_MIN_MODEM) == ESP_OK, , TAG, "Failed to set Wi-Fi minimum modem power save type");
+#endif /* CONFIG_EXAMPLE_CONNECT_WIFI */
+        ESP_LOGI(TAG, "Initialize Zigbee stack");
         esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION);
-        break;
-    case ESP_ZB_MACSPLIT_DEVICE_BOOT:
-        ESP_LOGI(TAG, "Zigbee rcp device booted");
-        rcp_version = (esp_zb_zdo_signal_macsplit_dev_boot_params_t *)esp_zb_app_signal_get_params(p_sg_p);
-        ESP_LOGI(TAG, "Running RCP Version: %s", rcp_version->version_str);
         break;
     case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
     case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
@@ -90,6 +90,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
                 ESP_LOGI(TAG, "Start network formation");
                 esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_FORMATION);
             } else {
+                esp_zb_bdb_open_network(180);
                 ESP_LOGI(TAG, "Device rebooted");
             }
         } else {
@@ -128,6 +129,10 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
             }
         }
         break;
+    case ESP_ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY:
+        ESP_LOGI(TAG, "Production configuration is %s", err_status == ESP_OK ? "ready" : "not present");
+        esp_zb_set_node_descriptor_manufacturer_code(ESP_MANUFACTURER_CODE);
+        break;
     default:
         ESP_LOGI(TAG, "ZDO signal: %s (0x%x), status: %s", esp_zb_zdo_signal_to_string(sig_type), sig_type,
                  esp_err_to_name(err_status));
@@ -141,8 +146,25 @@ static void esp_zb_task(void *pvParameters)
     esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZC_CONFIG();
     esp_zb_init(&zb_nwk_cfg);
     esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
+    esp_zb_ep_list_t *ep_list = esp_zb_ep_list_create();
+    esp_zb_cluster_list_t *cluster_list = esp_zb_zcl_cluster_list_create();
+    esp_zb_endpoint_config_t endpoint_config = {
+        .endpoint = ESP_ZB_GATEWAY_ENDPOINT,
+        .app_profile_id = ESP_ZB_AF_HA_PROFILE_ID,
+        .app_device_id = ESP_ZB_HA_REMOTE_CONTROL_DEVICE_ID,
+        .app_device_version = 0,
+    };
+
+    esp_zb_attribute_list_t *basic_cluser = esp_zb_basic_cluster_create(NULL);
+    esp_zb_basic_cluster_add_attr(basic_cluser, ESP_ZB_ZCL_ATTR_BASIC_MANUFACTURER_NAME_ID, ESP_MANUFACTURER_NAME);
+    esp_zb_basic_cluster_add_attr(basic_cluser, ESP_ZB_ZCL_ATTR_BASIC_MODEL_IDENTIFIER_ID, ESP_MODEL_IDENTIFIER);
+    esp_zb_cluster_list_add_basic_cluster(cluster_list, basic_cluser, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
+    esp_zb_cluster_list_add_identify_cluster(cluster_list, esp_zb_identify_cluster_create(NULL), ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
+    esp_zb_ep_list_add_gateway_ep(ep_list, cluster_list, endpoint_config);
+    esp_zb_device_register(ep_list);
     ESP_ERROR_CHECK(esp_zb_start(false));
-    esp_zb_main_loop_iteration();
+    esp_zb_stack_main_loop();
+    vTaskDelete(NULL);
 }
 
 void app_main(void)
@@ -159,14 +181,5 @@ void app_main(void)
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     ESP_ERROR_CHECK(esp_zb_gateway_console_init());
 #endif
-#if CONFIG_EXAMPLE_CONNECT_WIFI
-    ESP_ERROR_CHECK(example_connect());
-#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
-    esp_coex_wifi_i154_enable();
-#else
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-#endif
-#endif
-    xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
+    xTaskCreate(esp_zb_task, "Zigbee_main", 8192, NULL, 5, NULL);
 }
