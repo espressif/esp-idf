@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "sdkconfig.h"
 
 /**
@@ -44,3 +48,7 @@ extern void ets_install_uart_printf(void);
  * @param c     character to be printed
  */
 void lp_core_print_char(char c);
+
+#ifdef __cplusplus
+}
+#endif
