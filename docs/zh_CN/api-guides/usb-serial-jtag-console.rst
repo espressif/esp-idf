@@ -19,8 +19,8 @@ ESP 芯片通常使用 UART 实现串口，并可以通过外部 USB-UART 桥接
 硬件要求
 =====================
 
-{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27"}
-{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26"}
+{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13"}
+{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12"}
 
 将 {IDF_TARGET_NAME} 连接到 USB 端口，连接方式如下：
 

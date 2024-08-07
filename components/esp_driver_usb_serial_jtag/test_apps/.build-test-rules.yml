@@ -4,7 +4,7 @@ components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"]
       temporary: true
       reason: No runners.
   depends_components:
