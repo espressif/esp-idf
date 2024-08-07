@@ -26,11 +26,6 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
-
-#if SPI_LL_MOSI_FREE_LEVEL
-    // Change default data line level to low which same as esp32
-    spi_ll_set_mosi_free_level(hw, 0);
-#endif
     spi_ll_master_init(hw);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
@@ -41,6 +36,17 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     spi_ll_set_int_stat(hw);
     spi_ll_set_mosi_delay(hw, 0, 0);
     spi_ll_apply_config(hw);
+}
+
+void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level)
+{
+#if SPI_LL_MOSI_FREE_LEVEL
+    // Config default output data line level when don't have transaction
+    spi_ll_set_mosi_free_level(hal->hw, level);
+    spi_ll_apply_config(hal->hw);
+#else
+    HAL_LOGW(SPI_HAL_TAG, "The target don't support this config")
+#endif
 }
 
 void spi_hal_deinit(spi_hal_context_t *hal)
