@@ -44,14 +44,10 @@ esp_err_t lp_i2s_new_channel(const lp_i2s_chan_config_t *chan_cfg, lp_i2s_chan_h
     ESP_RETURN_ON_FALSE(chan_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(chan_cfg->id < SOC_LP_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid LP I2S port id");
     ESP_RETURN_ON_FALSE(chan_cfg->role == I2S_ROLE_SLAVE, ESP_ERR_INVALID_ARG, TAG, "invalid argument: LP I2S not support master");
-#if LP_I2S_LL_TX_SUPPORTED
-    ESP_RETURN_ON_FALSE(ret_tx_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-#else
+#if !LP_I2S_LL_TX_SUPPORTED
     ESP_RETURN_ON_FALSE(!ret_tx_handle, ESP_ERR_INVALID_ARG, TAG, "tx not supported");
 #endif
-#if LP_I2S_LL_RX_SUPPORTED
-    ESP_RETURN_ON_FALSE(ret_rx_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-#else
+#if !LP_I2S_LL_RX_SUPPORTED
     ESP_RETURN_ON_FALSE(!ret_rx_handle, ESP_ERR_INVALID_ARG, TAG, "rx not supported");
 #endif
     ESP_RETURN_ON_FALSE(chan_cfg->threshold % 4 == 0, ESP_ERR_INVALID_ARG, TAG, "threshold must be in multiple of 4");
@@ -67,8 +63,12 @@ esp_err_t lp_i2s_new_channel(const lp_i2s_chan_config_t *chan_cfg, lp_i2s_chan_h
     ESP_GOTO_ON_ERROR(esp_intr_alloc(lp_i2s_periph_signal[ctlr->id].irq, ESP_INTR_FLAG_IRAM, s_i2s_default_isr, ctlr, &ctlr->intr), err1, TAG, "allocate interrupt failed");
 
     uint8_t chan_search_mask = 0;
+#if LP_I2S_LL_TX_SUPPORTED
     chan_search_mask |= ret_tx_handle ? I2S_DIR_TX : 0;
+#endif
+#if LP_I2S_LL_RX_SUPPORTED
     chan_search_mask |= ret_rx_handle ? I2S_DIR_RX : 0;
+#endif
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     g_i2s.lp_controller[chan_cfg->id] = ctlr;

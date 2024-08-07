@@ -165,7 +165,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 按照以下步骤设置 :cpp:type:`adc_digi_pattern_config_t`：
 
-- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}#sensor>`__ 中的片上传感器与模拟信号处理章节。
+- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}#sensor>`__ 中的 ``ADC 特性`` 章节。
 - :cpp:member:`adc_digi_pattern_config_t::channel`：IO 对应的 ADC 通道号，请参阅下文注意事项。
 - :cpp:member:`adc_digi_pattern_config_t::unit`：IO 所属的 ADC 单元。
 - :cpp:member:`adc_digi_pattern_config_t::bit_width`：原始转换结果的位宽。

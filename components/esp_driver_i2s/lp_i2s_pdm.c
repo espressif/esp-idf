@@ -53,7 +53,7 @@ esp_err_t lp_i2s_channel_init_pdm_rx_mode(lp_i2s_chan_handle_t handle, const lp_
             lp_i2s_ll_select_rx_clk_source(handle->ctlr->id, LP_I2S_CLK_SRC_XTAL_D2);
         }
         lp_i2s_ll_clk_source_div_num(handle->ctlr->id, 2);
-        lp_i2s_ll_rx_set_raw_clk_div(handle->ctlr->id, 0, 0);
+        lp_i2s_ll_rx_set_raw_clk_div(handle->ctlr->id, 0, 1);
         lp_i2s_ll_rx_set_bck_div_num(handle->ctlr->hal.dev, 1);
     }
     // TODO: make this divisions configurable when support master mode.
