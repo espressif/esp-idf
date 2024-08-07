@@ -7,3 +7,7 @@ dependencies:
     version: "~0.1.0"
   esp-qa/ping-cmd:
     version: "~0.0.1"
+  espressif/esp-extconn:
+    version: "~0.1.0"
+    rules:
+      - if: "target in [esp32p4]"
