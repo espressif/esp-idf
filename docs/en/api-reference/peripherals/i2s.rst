@@ -990,6 +990,79 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
         i2s_channel_enable(rx_handle);
 
+.. only:: SOC_I2S_SUPPORTS_ETM
+
+    I2S ETM Usage
+    ^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports I2S ETM (Event Task Matrix), which allows to trigger other ETM tasks via I2S ETM events, or to control the start/stop by I2S ETM tasks.
+
+    The I2S ETM APIs can be found in ``driver/i2s_etm.h``, the following example shows how to use GPIO to start/stop I2S channel via ETM:
+
+    .. code-block:: c
+
+        #include "driver/i2s_etm.h"
+        // ...
+        i2s_chan_handle_t tx_handle;
+        // Initialize I2S channel
+        // ......
+        int ctrl_gpio = 4;
+        // Initialize GPIO
+        // ......
+        /* Register GPIO ETM events */
+        gpio_etm_event_config_t gpio_event_cfg = {
+            .edges = {GPIO_ETM_EVENT_EDGE_POS, GPIO_ETM_EVENT_EDGE_NEG},
+        };
+        esp_etm_event_handle_t gpio_pos_event_handle;
+        esp_etm_event_handle_t gpio_neg_event_handle;
+        gpio_new_etm_event(&gpio_event_cfg, &gpio_pos_event_handle, &gpio_neg_event_handle);
+        gpio_etm_event_bind_gpio(gpio_pos_event_handle, ctrl_gpio);
+        gpio_etm_event_bind_gpio(gpio_neg_event_handle, ctrl_gpio);
+        /* Register I2S ETM tasks */
+        i2s_etm_task_config_t i2s_start_task_cfg = {
+            .task_type = I2S_ETM_TASK_START,
+        };
+        esp_etm_task_handle_t i2s_start_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_start_task_cfg, &i2s_start_task_handle);
+        i2s_etm_task_config_t i2s_stop_task_cfg = {
+            .task_type = I2S_ETM_TASK_STOP,
+        };
+        esp_etm_task_handle_t i2s_stop_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_stop_task_cfg, &i2s_stop_task_handle);
+        /* Bind GPIO events to I2S ETM tasks */
+        esp_etm_channel_config_t etm_config = {};
+        esp_etm_channel_handle_t i2s_etm_start_chan = NULL;
+        esp_etm_channel_handle_t i2s_etm_stop_chan = NULL;
+        esp_etm_new_channel(&etm_config, &i2s_etm_start_chan);
+        esp_etm_new_channel(&etm_config, &i2s_etm_stop_chan);
+        esp_etm_channel_connect(i2s_etm_start_chan, gpio_pos_event_handle, i2s_start_task_handle);
+        esp_etm_channel_connect(i2s_etm_stop_chan, gpio_neg_event_handle, i2s_stop_task_handle);
+        esp_etm_channel_enable(i2s_etm_start_chan);
+        esp_etm_channel_enable(i2s_etm_stop_chan);
+        /* Enable I2S channel first before starting I2S channel */
+        i2s_channel_enable(tx_handle);
+        // (Optional) Able to load the data into the internal DMA buffer here,
+        // but tx_channel does not start yet, will timeout when the internal buffer is full
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 0);
+        /* Start I2S channel by setting the GPIO to high */
+        gpio_set_level(ctrl_gpio, 1);
+        // Write data ......
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 1000);
+        /* Stop I2S channel by setting the GPIO to low */
+        gpio_set_level(ctrl_gpio, 0);
+
+        /* Free resources */
+        i2s_channel_disable(tx_handle);
+        esp_etm_channel_disable(i2s_etm_start_chan);
+        esp_etm_channel_disable(i2s_etm_stop_chan);
+        esp_etm_del_event(gpio_pos_event_handle);
+        esp_etm_del_event(gpio_neg_event_handle);
+        esp_etm_del_task(i2s_start_task_handle);
+        esp_etm_del_task(i2s_stop_task_handle);
+        esp_etm_del_channel(i2s_etm_start_chan);
+        esp_etm_del_channel(i2s_etm_stop_chan);
+        // De-initialize I2S and GPIO
+        // ......
 
 Application Notes
 -----------------

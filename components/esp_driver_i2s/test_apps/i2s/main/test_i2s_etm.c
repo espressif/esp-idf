@@ -46,7 +46,7 @@ static void s_i2s_etm_check_status(void)
 }
 #endif  // ETM_LL_SUPPORT_STATUS
 
-static void s_i2s_init(uint8_t *buf)
+static void s_i2s_init(void *buf)
 {
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num = TEST_DESC_NUM;
@@ -92,9 +92,11 @@ static void s_gpio_init(void)
 
 TEST_CASE("i2s_etm_event_test", "[etm]")
 {
-    uint8_t *buf = calloc(1, TEST_BUFF_SIZE);
+    uint32_t *buf = calloc(1, TEST_BUFF_SIZE);
     assert(buf);
-    memset(buf, 0x3C, TEST_BUFF_SIZE);
+    for (int i = 0; i < TEST_BUFF_SIZE / 4; i++) {
+        buf[i] = i;
+    }
 
     /* I2S init */
     s_i2s_init(buf);
@@ -153,9 +155,11 @@ TEST_CASE("i2s_etm_event_test", "[etm]")
 
 TEST_CASE("i2s_etm_task_test", "[etm]")
 {
-    uint8_t *buf = calloc(1, TEST_BUFF_SIZE);
+    uint32_t *buf = calloc(1, TEST_BUFF_SIZE);
     assert(buf);
-    memset(buf, 0x3C, TEST_BUFF_SIZE);
+    for (int i = 0; i < TEST_BUFF_SIZE / 4; i++) {
+        buf[i] = i;
+    }
 
     /* I2S init */
     s_i2s_init(buf);
@@ -165,39 +169,55 @@ TEST_CASE("i2s_etm_task_test", "[etm]")
 
     /* GPIO ETM event */
     gpio_etm_event_config_t gpio_event_cfg = {
-        .edge = GPIO_ETM_EVENT_EDGE_POS,
+        .edges = {GPIO_ETM_EVENT_EDGE_POS, GPIO_ETM_EVENT_EDGE_NEG},
     };
-    esp_etm_event_handle_t gpio_event_handle;
-    TEST_ESP_OK(gpio_new_etm_event(&gpio_event_cfg, &gpio_event_handle));
-    TEST_ESP_OK(gpio_etm_event_bind_gpio(gpio_event_handle, TEST_GPIO_ETM_NUM));
+    esp_etm_event_handle_t gpio_pos_event_handle;
+    esp_etm_event_handle_t gpio_neg_event_handle;
+    TEST_ESP_OK(gpio_new_etm_event(&gpio_event_cfg, &gpio_pos_event_handle, &gpio_neg_event_handle));
+    TEST_ESP_OK(gpio_etm_event_bind_gpio(gpio_pos_event_handle, TEST_GPIO_ETM_NUM));
+    TEST_ESP_OK(gpio_etm_event_bind_gpio(gpio_neg_event_handle, TEST_GPIO_ETM_NUM));
 
     /* I2S Task init */
-    i2s_etm_task_config_t i2s_task_cfg = {
+    i2s_etm_task_config_t i2s_start_task_cfg = {
+        .task_type = I2S_ETM_TASK_START,
+    };
+    esp_etm_task_handle_t i2s_start_task_handle;
+    TEST_ESP_OK(i2s_new_etm_task(s_tx_handle, &i2s_start_task_cfg, &i2s_start_task_handle));
+    i2s_etm_task_config_t i2s_stop_task_cfg = {
         .task_type = I2S_ETM_TASK_STOP,
     };
-    esp_etm_task_handle_t i2s_task_handle;
-    TEST_ESP_OK(i2s_new_etm_task(s_tx_handle, &i2s_task_cfg, &i2s_task_handle));
+    esp_etm_task_handle_t i2s_stop_task_handle;
+    TEST_ESP_OK(i2s_new_etm_task(s_tx_handle, &i2s_stop_task_cfg, &i2s_stop_task_handle));
 
     /* ETM connect */
     esp_etm_channel_config_t etm_config = {};
-    esp_etm_channel_handle_t etm_channel = NULL;
-    TEST_ESP_OK(esp_etm_new_channel(&etm_config, &etm_channel));
-    TEST_ESP_OK(esp_etm_channel_connect(etm_channel, gpio_event_handle, i2s_task_handle));
-    TEST_ESP_OK(esp_etm_channel_enable(etm_channel));
+    esp_etm_channel_handle_t i2s_etm_start_chan = NULL;
+    esp_etm_channel_handle_t i2s_etm_stop_chan = NULL;
+    TEST_ESP_OK(esp_etm_new_channel(&etm_config, &i2s_etm_start_chan));
+    TEST_ESP_OK(esp_etm_new_channel(&etm_config, &i2s_etm_stop_chan));
+    TEST_ESP_OK(esp_etm_channel_connect(i2s_etm_start_chan, gpio_pos_event_handle, i2s_start_task_handle));
+    TEST_ESP_OK(esp_etm_channel_connect(i2s_etm_stop_chan, gpio_neg_event_handle, i2s_stop_task_handle));
+    TEST_ESP_OK(esp_etm_channel_enable(i2s_etm_start_chan));
+    TEST_ESP_OK(esp_etm_channel_enable(i2s_etm_stop_chan));
     esp_etm_dump(stdout);
 
     TEST_ESP_OK(i2s_channel_enable(s_tx_handle));
     TEST_ESP_OK(i2s_channel_enable(s_rx_handle));
 
     /* Test */
-    // receive normally
-    i2s_channel_read(s_rx_handle, buf, TEST_BUFF_SIZE, NULL, portMAX_DELAY);
-    // Set the GPIO to stop the I2S TX via ETM
+    // TX not started, read timeout
+    TEST_ESP_ERR(ESP_ERR_TIMEOUT, i2s_channel_read(s_rx_handle, buf, TEST_BUFF_SIZE, NULL, 100));
+    // start TX via GPIO pos event
     TEST_ESP_OK(gpio_set_level(TEST_GPIO_ETM_NUM, 1));
+    // RX can receive data normally
+    TEST_ESP_OK(i2s_channel_read(s_rx_handle, buf, TEST_BUFF_SIZE, NULL, 100));
+    // Stop TX via GPIO neg event
+    TEST_ESP_OK(gpio_set_level(TEST_GPIO_ETM_NUM, 0));
+    // TX stopped, read will timeout when no legacy data in the queue
     esp_err_t ret = ESP_OK;
     // Receive will timeout after TX stopped
     for (int i = 0; i < 20 && ret == ESP_OK; i++) {
-        ret = i2s_channel_read(s_rx_handle, buf, TEST_BUFF_SIZE, NULL, 1000);
+        ret = i2s_channel_read(s_rx_handle, buf, TEST_BUFF_SIZE, NULL, 100);
     }
     TEST_ESP_ERR(ESP_ERR_TIMEOUT, ret);
 
@@ -206,10 +226,14 @@ TEST_CASE("i2s_etm_task_test", "[etm]")
     TEST_ESP_OK(i2s_channel_disable(s_tx_handle));
     free(buf);
 
-    TEST_ESP_OK(esp_etm_channel_disable(etm_channel));
-    TEST_ESP_OK(esp_etm_del_event(gpio_event_handle));
-    TEST_ESP_OK(esp_etm_del_task(i2s_task_handle));
-    TEST_ESP_OK(esp_etm_del_channel(etm_channel));
+    TEST_ESP_OK(esp_etm_channel_disable(i2s_etm_start_chan));
+    TEST_ESP_OK(esp_etm_channel_disable(i2s_etm_stop_chan));
+    TEST_ESP_OK(esp_etm_del_event(gpio_pos_event_handle));
+    TEST_ESP_OK(esp_etm_del_event(gpio_neg_event_handle));
+    TEST_ESP_OK(esp_etm_del_task(i2s_start_task_handle));
+    TEST_ESP_OK(esp_etm_del_task(i2s_stop_task_handle));
+    TEST_ESP_OK(esp_etm_del_channel(i2s_etm_start_chan));
+    TEST_ESP_OK(esp_etm_del_channel(i2s_etm_stop_chan));
 
     s_i2s_deinit();
 }

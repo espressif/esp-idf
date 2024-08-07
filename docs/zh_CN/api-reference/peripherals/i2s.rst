@@ -990,6 +990,79 @@ STD RX 模式
         i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
         i2s_channel_enable(rx_handle);
 
+.. only:: SOC_I2S_SUPPORTS_ETM
+
+    I2S ETM 用法
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持 I2S ETM （Event Task Matrix，事件任务矩阵）。 它可以通过 I2S 事件触发一个其他的 ETM 任务，或者通过其他的 ETM 事件来控制 I2S 的启停任务。
+
+    头文件 ``driver/i2s_etm.h`` 中可以找到 I2S ETM 所需的接口函数，下面示例代码将展示如何通过 GPIO 的 ETM 事件控制 I2S 的启停。
+
+    .. code-block:: c
+
+        #include "driver/i2s_etm.h"
+        // ...
+        i2s_chan_handle_t tx_handle;
+        // 初始化 I2S 通道
+        // ......
+        int ctrl_gpio = 4;
+        // 初始化 GPIO 用于控制
+        // ......
+        /* 注册 GPIO ETM 事件 */
+        gpio_etm_event_config_t gpio_event_cfg = {
+            .edges = {GPIO_ETM_EVENT_EDGE_POS, GPIO_ETM_EVENT_EDGE_NEG},
+        };
+        esp_etm_event_handle_t gpio_pos_event_handle;
+        esp_etm_event_handle_t gpio_neg_event_handle;
+        gpio_new_etm_event(&gpio_event_cfg, &gpio_pos_event_handle, &gpio_neg_event_handle);
+        gpio_etm_event_bind_gpio(gpio_pos_event_handle, ctrl_gpio);
+        gpio_etm_event_bind_gpio(gpio_neg_event_handle, ctrl_gpio);
+        /* 注册 I2S ETM 任务 */
+        i2s_etm_task_config_t i2s_start_task_cfg = {
+            .task_type = I2S_ETM_TASK_START,
+        };
+        esp_etm_task_handle_t i2s_start_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_start_task_cfg, &i2s_start_task_handle);
+        i2s_etm_task_config_t i2s_stop_task_cfg = {
+            .task_type = I2S_ETM_TASK_STOP,
+        };
+        esp_etm_task_handle_t i2s_stop_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_stop_task_cfg, &i2s_stop_task_handle);
+        /* 绑定 GPIO 事件和 I2S ETM 任务 */
+        esp_etm_channel_config_t etm_config = {};
+        esp_etm_channel_handle_t i2s_etm_start_chan = NULL;
+        esp_etm_channel_handle_t i2s_etm_stop_chan = NULL;
+        esp_etm_new_channel(&etm_config, &i2s_etm_start_chan);
+        esp_etm_new_channel(&etm_config, &i2s_etm_stop_chan);
+        esp_etm_channel_connect(i2s_etm_start_chan, gpio_pos_event_handle, i2s_start_task_handle);
+        esp_etm_channel_connect(i2s_etm_stop_chan, gpio_neg_event_handle, i2s_stop_task_handle);
+        esp_etm_channel_enable(i2s_etm_start_chan);
+        esp_etm_channel_enable(i2s_etm_stop_chan);
+        /* 通过 ETM 启动 I2S 前需要先使能这个通道 */
+        i2s_channel_enable(tx_handle);
+        // （可选）这里可以把要发送的数据先加载到内部的发送缓冲区中
+        // 但是由于 tx_channel 还没有启动，所以当内部缓冲区加载满后，再写入会超时
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 0);
+        /* 通过拉高 GPIO 启动 I2S tx 通道 */
+        gpio_set_level(ctrl_gpio, 1);
+        // 写数据 ......
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 1000);
+        /* 通过拉低 GPIO 停止 I2S tx 通道 */
+        gpio_set_level(ctrl_gpio, 0);
+
+        /* 释放 ETM 相关资源 */
+        i2s_channel_disable(tx_handle);
+        esp_etm_channel_disable(i2s_etm_start_chan);
+        esp_etm_channel_disable(i2s_etm_stop_chan);
+        esp_etm_del_event(gpio_pos_event_handle);
+        esp_etm_del_event(gpio_neg_event_handle);
+        esp_etm_del_task(i2s_start_task_handle);
+        esp_etm_del_task(i2s_stop_task_handle);
+        esp_etm_del_channel(i2s_etm_start_chan);
+        esp_etm_del_channel(i2s_etm_stop_chan);
+        // 去初始化 I2S 和 GPIO
+        // ......
 
 应用注意事项
 ------------

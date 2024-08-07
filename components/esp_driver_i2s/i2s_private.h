@@ -147,6 +147,8 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
+    bool                    is_etm_start;   /*!< Whether start by etm tasks */
+    bool                    is_etm_stop;    /*!< Whether stop by etm tasks */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
