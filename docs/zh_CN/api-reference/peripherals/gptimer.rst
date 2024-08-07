@@ -258,7 +258,7 @@
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
-    ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_start(gptimer));
 
 
 .. only:: SOC_TIMER_SUPPORT_ETM
