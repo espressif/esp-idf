@@ -10,10 +10,49 @@
 #include "sdkconfig.h"
 #include "esp_rom_regi2c.h"
 #include "soc/regi2c_defs.h"
+#include "soc/soc_caps.h"
+#include "esp_private/periph_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef BOOTLOADER_BUILD
+
+// For bootloader, the strategy is to keep the analog i2c master clock always enabled if SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE (in bootloader_hardware_init())
+#define ANALOG_CLOCK_ENABLE()
+#define ANALOG_CLOCK_DISABLE()
+
+#else // !BOOTLOADER_BUILD
+
+#if SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
+// This clock needs to be enabled for regi2c write/read, pll calibaration, PHY, RNG, ADC, etc.
+// Use reference count to manage the analog i2c master clock
+#define ANALOG_CLOCK_ENABLE() \
+      PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_ANA_I2C_MASTER_MODULE, ref_count) { \
+            if (ref_count == 0) { \
+                  regi2c_ctrl_ll_master_enable_clock(true); \
+            } \
+      }
+
+#define ANALOG_CLOCK_DISABLE() \
+      PERIPH_RCC_RELEASE_ATOMIC(PERIPH_ANA_I2C_MASTER_MODULE, ref_count) { \
+            if (ref_count == 0) { \
+                  regi2c_ctrl_ll_master_enable_clock(false); \
+            } \
+      }
+
+#else
+#define ANALOG_CLOCK_ENABLE()
+#define ANALOG_CLOCK_DISABLE()
+#endif
+
+#endif // BOOTLOADER_BUILD
+
+// regi2c write/read requires analog i2c master clock enabled
+#define REGI2C_CLOCK_ENABLE()      ANALOG_CLOCK_ENABLE()
+#define REGI2C_CLOCK_DISABLE()     ANALOG_CLOCK_DISABLE()
 
 
 #define regi2c_read_reg_raw        esp_rom_regi2c_read

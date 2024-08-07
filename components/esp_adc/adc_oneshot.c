@@ -23,6 +23,7 @@
 #include "esp_clk_tree.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -192,6 +193,7 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
 #endif
+    ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
@@ -200,6 +202,7 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
 #endif  // SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool valid = false;
     valid = adc_oneshot_hal_convert(&(handle->hal), out_raw);
+    ANALOG_CLOCK_DISABLE();
 
     portEXIT_CRITICAL(&rtc_spinlock);
     adc_lock_release(handle->unit_id);
@@ -218,6 +221,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
 #endif
+    ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
@@ -225,6 +229,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
     adc_set_hw_calibration_code(handle->unit_id, atten);
 #endif
     adc_oneshot_hal_convert(&(handle->hal), out_raw);
+    ANALOG_CLOCK_DISABLE();
 
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 

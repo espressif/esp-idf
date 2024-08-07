@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,9 @@ void bootloader_random_enable(void)
 
     // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+
+    // enable analog i2c master clock for RNG runtime
+    ANALOG_CLOCK_ENABLE();
 
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_DTEST, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_ENT_SAR, 1);
@@ -79,6 +82,9 @@ void bootloader_random_disable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_DTEST, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_ENT_SAR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_EN_TOUT_SAR1_BUS, 0);
+
+    // disable analog i2c master clock
+    ANALOG_CLOCK_DISABLE();
 
     // disable ADC_CTRL_CLK (SAR ADC function clock)
     REG_WRITE(PCR_SARADC_CLKM_CONF_REG, 0x00404000);

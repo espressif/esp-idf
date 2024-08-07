@@ -1935,10 +1935,6 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 
-config SOC_MODEM_CLOCK_IS_INDEPENDENT
-    bool
-    default n
-
 config SOC_CLK_APLL_SUPPORTED
     bool
     default y
@@ -1964,6 +1960,10 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     default y
 
 config SOC_PERIPH_CLK_CTRL_SHARED
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 
