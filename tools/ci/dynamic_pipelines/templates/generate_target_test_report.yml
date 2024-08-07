@@ -12,3 +12,4 @@ generate_pytest_report:
   script:
       - python tools/ci/get_known_failure_cases_file.py
       - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type target_test
+      - python tools/ci/previous_stage_job_status.py --stage target_test

@@ -13,6 +13,7 @@ tools/ci/astyle-rules.yml
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
+tools/ci/ci_process_description.py
 tools/ci/configure_ci_environment.sh
 tools/ci/generate_rules.py
 tools/ci/deploy_docs.py
@@ -50,3 +51,4 @@ tools/ci/python_packages/idf_iperf_test_util/**/*
 tools/esp_prov/**/*
 tools/ci/sort_yaml.py
 tools/ci/sg_rules/*
+tools/ci/previous_stage_job_status.py
