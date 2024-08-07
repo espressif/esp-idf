@@ -1657,18 +1657,27 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 	if (selector == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
 		ie->rsne_override = pos;
 		ie->rsne_override_len = dlen;
+		wpa_hexdump(MSG_DEBUG,
+			    "RSN: RSNE Override element in EAPOL-Key",
+			    ie->rsne_override, ie->rsne_override_len);
 		return 0;
 	}
 
 	if (selector == RSNXE_OVERRIDE_IE_VENDOR_TYPE) {
 		ie->rsnxe_override = pos;
 		ie->rsnxe_override_len = dlen;
+		wpa_hexdump(MSG_DEBUG,
+			    "RSN: RSNXE Override element in EAPOL-Key",
+			    ie->rsnxe_override, ie->rsnxe_override_len);
 		return 0;
 	}
 
 	if (selector == RSN_SELECTION_IE_VENDOR_TYPE) {
 		ie->rsn_selection = p;
 		ie->rsn_selection_len = left;
+		wpa_hexdump(MSG_DEBUG,
+			    "RSN: RSN Selection element in EAPOL-Key",
+			    ie->rsn_selection, ie->rsn_selection_len);
 		return 0;
 	}
 	return 2;
