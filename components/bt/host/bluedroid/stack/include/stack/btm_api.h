@@ -469,7 +469,7 @@ typedef enum {
 
 /* the COD masks */
 #define BTM_COD_FORMAT_TYPE_MASK      0x03
-#define BTM_COD_MINOR_CLASS_MASK      0xFC
+#define BTM_COD_MINOR_CLASS_MASK      0xFF
 #define BTM_COD_MAJOR_CLASS_MASK      0x1F
 #define BTM_COD_SERVICE_CLASS_LO_B    0x00E0
 #define BTM_COD_SERVICE_CLASS_MASK    0xFFE0
