@@ -32,6 +32,12 @@ extern "C" {
 #define SOC_DRAM_FLASH_ADDRESS_LOW                   SOC_DRAM0_CACHE_ADDRESS_LOW
 #define SOC_DRAM_FLASH_ADDRESS_HIGH                  SOC_DRAM0_CACHE_ADDRESS_HIGH
 
+#define SOC_IRAM_PSRAM_ADDRESS_LOW                   SOC_IRAM0_CACHE_ADDRESS_LOW
+#define SOC_IRAM_PSRAM_ADDRESS_HIGH                  SOC_IRAM0_CACHE_ADDRESS_HIGH
+
+#define SOC_DRAM_PSRAM_ADDRESS_LOW                   SOC_DRAM0_CACHE_ADDRESS_LOW
+#define SOC_DRAM_PSRAM_ADDRESS_HIGH                  SOC_DRAM0_CACHE_ADDRESS_HIGH
+
 #define SOC_BUS_SIZE(bus_name)                       (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)          ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
@@ -127,26 +133,6 @@ extern "C" {
 #ifndef __cplusplus
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
 #endif
-
-
-/**
- * ROM flash mmap driver needs below definitions
- */
-#define CACHE_IROM_MMU_START            0
-#define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
-#define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
-
-#define CACHE_DROM_MMU_START            CACHE_IROM_MMU_END
-#define CACHE_DROM_MMU_END              Cache_Get_DROM_MMU_End()
-#define CACHE_DROM_MMU_SIZE             (CACHE_DROM_MMU_END - CACHE_DROM_MMU_START)
-
-#define CACHE_DROM_MMU_MAX_END          0x400
-
-#define ICACHE_MMU_SIZE                 0x200
-#define DCACHE_MMU_SIZE                 0x200
-
-#define MMU_BUS_START(i)                0
-#define MMU_BUS_SIZE(i)                 0x200
 
 #ifdef __cplusplus
 }

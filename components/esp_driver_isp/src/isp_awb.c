@@ -6,6 +6,7 @@
 
 #include <esp_types.h>
 #include <sys/lock.h>
+#include <stdatomic.h>
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
@@ -15,20 +16,16 @@
 #include "esp_private/isp_private.h"
 
 typedef struct isp_awb_controller_t {
-    isp_fsm_t                          fsm;
+    _Atomic isp_fsm_t                  fsm;
     portMUX_TYPE                       spinlock;
     intr_handle_t                      intr_handle;
-    int                                intr_priority;
     isp_proc_handle_t                  isp_proc;
     QueueHandle_t                      evt_que;
-    SemaphoreHandle_t                  stat_lock;
     esp_isp_awb_cbs_t                  cbs;
     void                               *user_data;
 } isp_awb_controller_t;
 
 static const char *TAG = "ISP_AWB";
-
-static void s_isp_awb_default_isr(void *arg);
 
 /*---------------------------------------------
                 AWB
@@ -64,10 +61,7 @@ static void s_isp_awb_free_controller(isp_awb_ctlr_t awb_ctlr)
             esp_intr_free(awb_ctlr->intr_handle);
         }
         if (awb_ctlr->evt_que) {
-            vQueueDelete(awb_ctlr->evt_que);
-        }
-        if (awb_ctlr->stat_lock) {
-            vSemaphoreDelete(awb_ctlr->stat_lock);
+            vQueueDeleteWithCaps(awb_ctlr->evt_que);
         }
         free(awb_ctlr);
     }
@@ -101,19 +95,17 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
     ESP_RETURN_ON_FALSE(awb_ctlr, ESP_ERR_NO_MEM, TAG, "no mem for awb controller");
     awb_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_awb_stat_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(awb_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for awb event queue");
-    awb_ctlr->stat_lock = xSemaphoreCreateBinaryWithCaps(ISP_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(awb_ctlr->stat_lock, ESP_ERR_NO_MEM, err1, TAG, "no mem for awb semaphore");
-    awb_ctlr->fsm = ISP_FSM_INIT;
+    atomic_init(&awb_ctlr->fsm, ISP_FSM_INIT);
     awb_ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     awb_ctlr->isp_proc = isp_proc;
 
     // Claim an AWB controller
     ESP_GOTO_ON_ERROR(s_isp_claim_awb_controller(isp_proc, awb_ctlr), err1, TAG, "no available controller");
+
     // Register the AWB ISR
-    uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    awb_ctlr->intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | awb_ctlr->intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AWB_MASK,
-                                                s_isp_awb_default_isr, awb_ctlr, &awb_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
+    int intr_priority = (awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3) ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_GOTO_ON_ERROR(intr_priority != isp_proc->intr_priority, err2, TAG, "intr_priority error");
+    ESP_GOTO_ON_ERROR(esp_isp_register_isr(awb_ctlr->isp_proc, ISP_SUBMODULE_AWB), err2, TAG, "fail to register ISR");
 
     // Configure the hardware
     isp_ll_awb_enable(isp_proc->hal.hw, false);
@@ -136,7 +128,9 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(awb_ctlr->isp_proc->awb_ctlr == awb_ctlr, ESP_ERR_INVALID_ARG, TAG, "controller isn't in use");
-    ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&awb_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
+
+    ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(awb_ctlr->isp_proc, ISP_SUBMODULE_AWB) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
     s_isp_declaim_awb_controller(awb_ctlr);
 
     isp_ll_awb_enable_algorithm_mode(awb_ctlr->isp_proc->hal.hw, false);
@@ -148,8 +142,7 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
 esp_err_t esp_isp_awb_controller_reconfig(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_config_t *awb_cfg)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    int intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_RETURN_ON_FALSE(intr_priority == awb_ctlr->intr_priority, ESP_ERR_INVALID_ARG, TAG, "can't change interrupt priority after initialized");
+    ESP_RETURN_ON_FALSE(atomic_load(&awb_ctlr->fsm) == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     return s_esp_isp_awb_config_hardware(awb_ctlr->isp_proc, awb_cfg);
 }
@@ -157,27 +150,23 @@ esp_err_t esp_isp_awb_controller_reconfig(isp_awb_ctlr_t awb_ctlr, const esp_isp
 esp_err_t esp_isp_awb_controller_enable(isp_awb_ctlr_t awb_ctlr)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
-    awb_ctlr->fsm = ISP_FSM_ENABLE;
+    isp_fsm_t expected_fsm = ISP_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&awb_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_ERROR(esp_intr_enable(awb_ctlr->intr_handle), err, TAG, "failed to enable the AWB interrupt");
     isp_ll_awb_clk_enable(awb_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(awb_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AWB_MASK, true);
-    xSemaphoreGive(awb_ctlr->stat_lock);
 
-    return ret;
-err:
-    awb_ctlr->fsm = ISP_FSM_INIT;
     return ret;
 }
 
 esp_err_t esp_isp_awb_controller_disable(isp_awb_ctlr_t awb_ctlr)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && awb_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
-    xSemaphoreTake(awb_ctlr->stat_lock, 0);
-    awb_ctlr->fsm = ISP_FSM_INIT;
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&awb_ctlr->fsm, &expected_fsm, ISP_FSM_INIT),
+                        ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     isp_ll_enable_intr(awb_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AWB_MASK, false);
     isp_ll_awb_clk_enable(awb_ctlr->isp_proc->hal.hw, false);
@@ -191,10 +180,10 @@ esp_err_t esp_isp_awb_controller_get_oneshot_statistics(isp_awb_ctlr_t awb_ctlr,
     ESP_RETURN_ON_FALSE(awb_ctlr && (out_res || timeout_ms == 0), ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     esp_err_t ret = ESP_OK;
     TickType_t ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    xSemaphoreTake(awb_ctlr->stat_lock, ticks);
-    ESP_GOTO_ON_FALSE(awb_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "controller isn't in enable state");
-    // Update state to avoid race condition
-    awb_ctlr->fsm = ISP_FSM_START;
+
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&awb_ctlr->fsm, &expected_fsm, ISP_FSM_ONESHOT), ESP_ERR_INVALID_STATE, TAG, "controller isn't enabled or continuous statistics has starte");
+
     // Reset the queue in case receiving the legacy data in the queue
     xQueueReset(awb_ctlr->evt_que);
     // Start the AWB white patch statistics and waiting it done
@@ -205,9 +194,8 @@ esp_err_t esp_isp_awb_controller_get_oneshot_statistics(isp_awb_ctlr_t awb_ctlr,
     }
     // Stop the AWB white patch statistics
     isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, false);
-    awb_ctlr->fsm = ISP_FSM_ENABLE;
-err:
-    xSemaphoreGive(awb_ctlr->stat_lock);
+
+    atomic_store(&awb_ctlr->fsm, ISP_FSM_ENABLE);
     return ret;
 }
 
@@ -215,29 +203,21 @@ esp_err_t esp_isp_awb_controller_start_continuous_statistics(isp_awb_ctlr_t awb_
 {
     ESP_RETURN_ON_FALSE(awb_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(awb_ctlr->cbs.on_statistics_done, ESP_ERR_INVALID_STATE, TAG, "invalid state: on_statistics_done callback not registered");
-    esp_err_t ret = ESP_OK;
-    if (xSemaphoreTake(awb_ctlr->stat_lock, 0) == pdFALSE) {
-        ESP_LOGW(TAG, "statistics lock is not acquired, controller is busy");
-        return ESP_ERR_INVALID_STATE;
-    }
-    ESP_GOTO_ON_FALSE(awb_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "controller isn't in enable state");
-    awb_ctlr->fsm = ISP_FSM_START;
+
+    isp_fsm_t expected_fsm = ISP_FSM_ENABLE;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&awb_ctlr->fsm, &expected_fsm, ISP_FSM_CONTINUOUS), ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
     isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, true);
 
-    return ret;
-err:
-    xSemaphoreGive(awb_ctlr->stat_lock);
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t esp_isp_awb_controller_stop_continuous_statistics(isp_awb_ctlr_t awb_ctlr)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_START, ESP_ERR_INVALID_STATE, TAG, "controller isn't in continuous state");
 
+    isp_fsm_t expected_fsm = ISP_FSM_CONTINUOUS;
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&awb_ctlr->fsm, &expected_fsm, ISP_FSM_ENABLE), ESP_ERR_INVALID_STATE, TAG, "controller is not enabled yet");
     isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, false);
-    awb_ctlr->fsm = ISP_FSM_ENABLE;
-    xSemaphoreGive(awb_ctlr->stat_lock);
 
     return ESP_OK;
 }
@@ -245,13 +225,8 @@ esp_err_t esp_isp_awb_controller_stop_continuous_statistics(isp_awb_ctlr_t awb_c
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_awb_default_isr(void *arg)
+bool IRAM_ATTR esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events)
 {
-    isp_awb_ctlr_t awb_ctlr = (isp_awb_ctlr_t)arg;
-    isp_proc_handle_t proc = awb_ctlr->isp_proc;
-
-    uint32_t awb_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AWB_MASK);
-
     bool need_yield = false;
 
     if (awb_events & ISP_LL_EVENT_AWB_FDONE) {
@@ -274,21 +249,18 @@ static void IRAM_ATTR s_isp_awb_default_isr(void *arg)
         xQueueOverwriteFromISR(awb_ctlr->evt_que, &edata.awb_result, &high_task_awake);
         need_yield |= high_task_awake == pdTRUE;
         /* If started continuous sampling, then trigger the next AWB sample */
-        if (awb_ctlr->fsm == ISP_FSM_START) {
+        if (atomic_load(&awb_ctlr->fsm) == ISP_FSM_CONTINUOUS) {
             isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, false);
             isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, true);
         }
     }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
+    return need_yield;
 }
 
 esp_err_t esp_isp_awb_register_event_callbacks(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(awb_ctlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(awb_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
+    ESP_RETURN_ON_FALSE(atomic_load(&awb_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 #if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_statistics_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_env_change), ESP_ERR_INVALID_ARG, TAG, "on_env_change callback not in IRAM");

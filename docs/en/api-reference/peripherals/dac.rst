@@ -130,11 +130,10 @@ Kconfig Options
 Application Example
 -------------------
 
-The basic examples for the ``One-shot Mode``, ``Continuous Mode``, and ``Cosine Mode`` can be found in:
-
-- :example:`peripherals/dac/dac_oneshot`
-- :example:`peripherals/dac/dac_continuous`
-- :example:`peripherals/dac/dac_cosine_wave`
+- :example:`peripherals/dac/dac_continuous/signal_generator` demonstrates how to use the DAC driver on {IDF_TARGET_NAME} to output continuous voltage in two ways: by DMA transmission and by timer interrupt, generating different waveforms such as sine, triangle, saw tooth and square wave.
+- :example:`peripherals/dac/dac_continuous/dac_audio` demonstrates how to use the DAC driver on {IDF_TARGET_NAME} to play a piece of audio stored in a buffer, with the audio being played every one second from a speaker or earphone.
+- :example:`peripherals/dac/dac_cosine_wave` demonstrates how to use the DAC driver on an {IDF_TARGET_NAME} board to output a cosine wave on both channels, which can be monitored using an oscilloscope or the ADC channels internally.
+- :example:`peripherals/dac/dac_oneshot` demonstrates how to use the DAC driver on {IDF_TARGET_NAME} to output a voltage that increases stepwise every 500 ms and resets to 0 periodically, with the output monitored via ADC or an optional oscilloscope.
 
 API Reference
 -------------

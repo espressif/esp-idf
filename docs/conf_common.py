@@ -169,7 +169,7 @@ I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
 ISP_DOCS = ['api-reference/peripherals/isp.rst']
 
-RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
+DSLP_STUB_DOCS = ['api-guides/deep-sleep-stub.rst']
 
 ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
             'api-reference/peripherals/adc_calibration.rst']
@@ -280,7 +280,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_GPSPI_SUPPORTED':SPI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
                             'SOC_ISP_SUPPORTED':ISP_DOCS,
-                            'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
+                            'ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB': DSLP_STUB_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
                             'SOC_ANA_CMPR_SUPPORTED': ANA_CMPR_DOCS,

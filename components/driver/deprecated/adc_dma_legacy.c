@@ -101,7 +101,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define adc_dma_disable_intr(adc_dma)   i2s_ll_enable_intr(s_adc_digi_ctx->adc_i2s_dev, ADC_DMA_INTR_MASK, false);
 #define adc_dma_deinit(adc_dma)         do { \
                                             esp_intr_free(s_adc_digi_ctx->intr_hdl); \
-                                            i2s_platform_release_occupation(ADC_DMA_I2S_HOST); \
+                                            i2s_platform_release_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST); \
                                         } while (0)
 #endif
 
@@ -328,7 +328,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     s_adc_digi_ctx->adc_spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
 #elif CONFIG_IDF_TARGET_ESP32
     //ADC utilises I2S0 DMA on ESP32
-    ret = i2s_platform_acquire_occupation(ADC_DMA_I2S_HOST, "adc");
+    ret = i2s_platform_acquire_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST, "adc");
     if (ret != ESP_OK) {
         ret = ESP_ERR_NOT_FOUND;
         goto cleanup;

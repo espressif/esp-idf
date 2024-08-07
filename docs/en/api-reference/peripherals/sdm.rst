@@ -142,11 +142,11 @@ For example, you can take the following `Sallen-Key topology Low Pass Filter`_ a
     Sallen-Key Low Pass Filter
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-* 100 Hz sine wave that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_dac`.
-* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_led`.
+* :example:`peripherals/sigma_delta/sdm_dac` demonstrates how to use the sigma-delta driver to act as an 8-bit DAC, and output a 100 Hz sine wave.
+* :example:`peripherals/sigma_delta/sdm_led` demonstrates how to use the sigma-delta driver to control the brightness of an LED or LCD backlight.
 
 API Reference
 -------------

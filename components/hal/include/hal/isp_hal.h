@@ -64,7 +64,18 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
  * @param[in] window_id  Window ID
  * @param[in] window     Window info, see `isp_window_t`
  */
-void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_window_t *window);
+void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_window_t *window);
+
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+/**
+ * @brief Configure AE window
+ *
+ * @param[in] hal        Context of the HAL layer
+ * @param[in] window     Window info, see `isp_window_t`
+ */
+void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window);
 
 /*---------------------------------------------------------------
                       INTR
@@ -75,7 +86,7 @@ void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const
  * @param[in] hal   Context of the HAL layer
  * @param[in] mask  HW event mask
  */
-uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t mask);
+uint32_t isp_hal_check_clear_intr_event(isp_hal_context_t *hal, uint32_t mask);
 
 /*---------------------------------------------------------------
                       BF
@@ -101,7 +112,7 @@ void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config);
  *      - true      Set success
  *      - false     Invalid argument
  */
-bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION]);
+bool isp_hal_ccm_set_matrix(isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION]);
 
 /*---------------------------------------------------------------
                             AWB
@@ -115,7 +126,7 @@ bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const
  *      - true      Set success
  *      - false     Invalid arg
  */
-bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window_t *win);
+bool isp_hal_awb_set_window_range(isp_hal_context_t *hal, const isp_window_t *win);
 
 /**
  * @brief   Set the luminance range of the white patch
@@ -127,7 +138,7 @@ bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window
  *      - true      Set success
  *      - false     Invalid arg
  */
-bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max);
+bool isp_hal_awb_set_luminance_range(isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max);
 
 /**
  * @brief   Set the R/G ratio of the white patch
@@ -138,7 +149,7 @@ bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_
  *      - true      Set success
  *      - false     Invalid arg
  */
-bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, float rg_max);
+bool isp_hal_awb_set_rg_ratio_range(isp_hal_context_t *hal, float rg_min, float rg_max);
 
 /**
  * @brief   Set the B/R ratio of the white patch
@@ -149,7 +160,7 @@ bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, 
  *      - true      Set success
  *      - false     Invalid arg
  */
-bool isp_hal_awb_set_bg_ratio_range(const isp_hal_context_t *hal, float bg_min, float bg_max);
+bool isp_hal_awb_set_bg_ratio_range(isp_hal_context_t *hal, float bg_min, float bg_max);
 
 #ifdef __cplusplus
 }

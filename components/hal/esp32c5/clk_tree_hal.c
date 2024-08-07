@@ -10,7 +10,6 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/gpio_ll.h"
 #include "hal/log.h"
-#include "sdkconfig.h"
 
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {
@@ -58,8 +57,6 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:
         return SOC_CLK_OSC_SLOW_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        return SOC_CLK_RC32K_FREQ_APPROX;
     default:
         // Unknown RTC_SLOW_CLK mux input
         HAL_ASSERT(false);

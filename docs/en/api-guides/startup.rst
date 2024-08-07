@@ -32,7 +32,7 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 .. list::
 
-    :SOC_RTC_MEM_SUPPORTED: #. Reset from deep sleep: if the value in ``RTC_CNTL_STORE6_REG`` is non-zero, and CRC value of RTC memory in ``RTC_CNTL_STORE7_REG`` is valid, use ``RTC_CNTL_STORE6_REG`` as an entry point address and jump immediately to it. If ``RTC_CNTL_STORE6_REG`` is zero, or ``RTC_CNTL_STORE7_REG`` contains invalid CRC, or once the code called via ``RTC_CNTL_STORE6_REG`` returns, proceed with boot as if it was a power-on reset. **Note**: to run customized code at this point, a deep sleep stub mechanism is provided. Please see :doc:`deep sleep <deep-sleep-stub>` documentation for this.
+    :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: #. Reset from deep sleep: if the value in ``RTC_CNTL_STORE6_REG`` is non-zero, and CRC value of RTC memory in ``RTC_CNTL_STORE7_REG`` is valid, use ``RTC_CNTL_STORE6_REG`` as an entry point address and jump immediately to it. If ``RTC_CNTL_STORE6_REG`` is zero, or ``RTC_CNTL_STORE7_REG`` contains invalid CRC, or once the code called via ``RTC_CNTL_STORE6_REG`` returns, proceed with boot as if it was a power-on reset. **Note**: to run customized code at this point, a deep sleep stub mechanism is provided. Please see :doc:`deep sleep <deep-sleep-stub>` documentation for this.
 
     #. For power-on reset, software SoC reset, and watchdog SoC reset: check the ``GPIO_STRAP_REG`` register if a custom boot mode (such as UART Download Mode) is requested. If this is the case, this custom loader mode is executed from ROM. Otherwise, proceed with boot as if it was due to software CPU reset. Consult {IDF_TARGET_NAME} datasheet for a description of SoC boot modes and how to execute them.
 

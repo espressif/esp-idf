@@ -191,7 +191,7 @@
     .. only:: not SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
-            数据平面中使用的信号通过 IO_MUX 连接至特定的 GPIO，这些信号无法配置到其他 GPIO 上。控制平面中使用的信号可以通过矩阵路由到任何空闲的 GPIO 上。相关硬件设计示例，请参阅 :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>`。
+            数据平面中使用的信号通过 IO_MUX 连接至特定的 GPIO，这些信号无法配置到其他 GPIO 上。控制平面中使用的信号可以通过矩阵路由到任何空闲的 GPIO 上。相关硬件设计示例，请参阅 `ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-ethernet-kit/index.html>`_。
 
     .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 

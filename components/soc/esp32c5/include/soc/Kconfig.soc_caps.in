@@ -151,6 +151,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_APM_SUPPORTED
     bool
     default y
@@ -164,6 +168,10 @@ config SOC_LP_TIMER_SUPPORTED
     default y
 
 config SOC_LP_PERIPHERALS_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_I2C_SUPPORTED
     bool
     default y
 
@@ -184,6 +192,10 @@ config SOC_SPI_FLASH_SUPPORTED
     default y
 
 config SOC_ECDSA_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
     bool
     default y
 
@@ -308,6 +320,10 @@ config SOC_ADC_SHARED_POWER
     default y
 
 config SOC_SHARED_IDCACHE_SUPPORTED
+    bool
+    default y
+
+config SOC_CACHE_WRITEBACK_SUPPORTED
     bool
     default y
 
@@ -501,7 +517,7 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 
 config SOC_I2C_NUM
     int
-    default 1
+    default 2
 
 config SOC_HP_I2C_NUM
     int
@@ -550,6 +566,14 @@ config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
 config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
+
+config SOC_LP_I2C_NUM
+    int
+    default 1
+
+config SOC_LP_I2C_FIFO_LEN
+    int
+    default 16
 
 config SOC_I2S_NUM
     int
@@ -1123,10 +1147,6 @@ config SOC_PM_SUPPORT_XTAL32K_PD
     bool
     default y
 
-config SOC_PM_SUPPORT_RC32K_PD
-    bool
-    default y
-
 config SOC_PM_SUPPORT_RC_FAST_PD
     bool
     default y
@@ -1160,10 +1180,6 @@ config SOC_CLK_XTAL32K_SUPPORTED
     default y
 
 config SOC_CLK_OSC_SLOW_SUPPORTED
-    bool
-    default y
-
-config SOC_CLK_RC32K_SUPPORTED
     bool
     default y
 

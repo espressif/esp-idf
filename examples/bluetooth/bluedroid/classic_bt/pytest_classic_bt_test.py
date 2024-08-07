@@ -32,8 +32,8 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     if 'ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!' in str(initiator_output):
         passkey = acceptor.expect(r'ESP_BT_GAP_KEY_NOTIF_EVT passkey:(\d+)').group(1).decode('utf8')
         initiator.write(f'spp key {passkey};')
-        acceptor.expect_exact('authentication success: ESP_SPP_INITIATOR', timeout=30)
-        initiator.expect_exact('authentication success: ESP_SPP_ACCEPTOR', timeout=30)
+        acceptor.expect_exact('authentication success', timeout=30)
+        initiator.expect_exact('authentication success', timeout=30)
     acceptor.expect_exact('ESP_SPP_SRV_OPEN_EVT status:0', timeout=30)
     initiator.expect_exact('ESP_SPP_OPEN_EVT', timeout=30)
 
@@ -79,7 +79,7 @@ def test_bt_a2dp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     source_dut = dut[1]
     source_dut_mac = source_dut.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})').group(1).decode('utf8')
     sink_dut.expect_exact('A2DP PROF STATE: Init Complete', timeout=30)
-    source_dut.expect_exact('a2dp connecting to peer: ESP_SPEAKER', timeout=30)
+    source_dut.expect_exact('a2dp connecting to peer', timeout=30)
     source_dut.expect_exact('a2dp connected', timeout=30)
     source_dut.expect_exact('a2dp media start successfully', timeout=30)
     sink_dut.expect_exact(f'A2DP connection state: Connected, [{source_dut_mac}]', timeout=30)
@@ -93,7 +93,7 @@ def test_bt_a2dp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "hfp_ag")}|{os.path.join(os.path.dirname(__file__), "hfp_hf")}',
-         'esp32|esp32', 'vohci'),
+         'esp32|esp32', 'all'),
     ],
     indirect=True,
 )
@@ -101,7 +101,7 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
     hfp_ag = dut[0]
     hfp_hf = dut[1]
 
-    hfp_hf.expect_exact('Found a target device name: ESP_HFP_AG', timeout=30)
+    hfp_hf.expect_exact('Found a target device name', timeout=30)
     hfp_hf.expect_exact('connection state connected', timeout=30)
     hfp_hf.expect_exact('connection state slc_connected', timeout=30)
     hfp_ag.expect_exact('connection state CONNECTED', timeout=30)

@@ -78,6 +78,7 @@
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
+#define SOC_LP_I2S_SUPPORTED            1
 #define SOC_LP_SPI_SUPPORTED            1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
@@ -325,6 +326,9 @@
 #define SOC_I2S_PDM_MAX_RX_LINES    (4)     // On I2S0
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
+/*-------------------------- LP_I2S CAPS -------------------------------------*/
+#define SOC_LP_I2S_NUM              (1U)
+
 /*-------------------------- ISP CAPS ----------------------------------------*/
 #define SOC_ISP_BF_SUPPORTED            1
 #define SOC_ISP_CCM_SUPPORTED           1
@@ -334,6 +338,9 @@
 #define SOC_ISP_DVP_CTLR_NUMS           1U
 #define SOC_ISP_AF_CTLR_NUMS            1U
 #define SOC_ISP_AF_WINDOW_NUMS          3
+#define SOC_ISP_AE_CTLR_NUMS            1U
+#define SOC_ISP_AE_BLOCK_X_NUMS         5
+#define SOC_ISP_AE_BLOCK_Y_NUMS         5
 #define SOC_ISP_SHARE_CSI_BRG           1
 #define SOC_ISP_BF_TEMPLATE_X_NUMS      3
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS      3

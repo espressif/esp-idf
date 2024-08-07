@@ -11,10 +11,9 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/timer_ll.h"
 #include "soc/timer_group_reg.h"
+#include "soc/pcr_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
-#include "hal/efuse_hal.h"
-#include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 
 __attribute__((unused)) static const char *TAG = "rtc_time";
@@ -22,61 +21,28 @@ __attribute__((unused)) static const char *TAG = "rtc_time";
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
  * RTC_SLOW_CLK cycles.
- *
- * Slow clock calibration feature has two modes of operation: one-off and cycling.
- * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
- * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
- * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
- * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
- * enabled using TIMG_RTC_CALI_START bit.
  */
 
-/* On ESP32C61, TIMG_RTC_CALI_CLK_SEL can config to 0, 1, 2, 3
- * 0 or 3: calibrate RC_SLOW clock
- * 1: calibrate RC_FAST clock
- * 2: calibrate 32K clock, which 32k depends on reg_32k_sel: 0: Internal 32 kHz RC oscillator, 1: External 32 kHz XTAL, 2: External 32kHz clock input by lp_pad_gpio0
- */
-#define TIMG_RTC_CALI_CLK_SEL_RC_SLOW 0
-#define TIMG_RTC_CALI_CLK_SEL_RC_FAST 1
-#define TIMG_RTC_CALI_CLK_SEL_32K     2
+#define CLK_CAL_TIMEOUT_THRES(cal_clk, cycles) ((cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) ? (cycles << 12) : (cycles << 10))
 
-/**
- * @brief Clock calibration function used by rtc_clk_cal
- *
- * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * RTC_SLOW_CLK cycles.
- *
- * Slow clock calibration feature has two modes of operation: one-off and cycling.
- * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
- * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
- * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
- * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
- * enabled using TIMG_RTC_CALI_START bit.
- *
- * @param cal_clk which clock to calibrate
- * @param slowclk_cycles number of slow clock cycles to count
- * @return number of XTAL clock cycles within the given number of slow clock cycles
- */
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles < TIMG_RTC_CALI_MAX_V);
 
-    uint32_t cali_clk_sel = 0;
-    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
-    soc_rtc_slow_clk_src_t old_32k_cal_clk_sel = clk_ll_32k_calibration_get_target();
     if (cal_clk == RTC_CAL_RTC_MUX) {
-        cal_clk = (rtc_cal_sel_t)slow_clk_src;
+        soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
+        if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+            cal_clk = RTC_CAL_RC_SLOW;
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+            cal_clk = RTC_CAL_32K_XTAL;
+        } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+            cal_clk = RTC_CAL_32K_OSC_SLOW;
+        }
     }
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_FAST;
-    } else if (cal_clk == RTC_CAL_RC_SLOW) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_SLOW;
-    } else {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_32K;
-        clk_ll_32k_calibration_set_target((soc_rtc_slow_clk_src_t)cal_clk);
+    if (cal_clk < 0 || cal_clk >= RTC_CAL_INVALID_CLK) {
+        ESP_EARLY_LOGE(TAG, "clock not supported to be calibrated");
+        return 0;
     }
-
 
     /* Enable requested clock (150k clock is always on) */
     // All clocks on/off takes time to be stable, so we shouldn't frequently enable/disable the clock
@@ -98,17 +64,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    bool rc32k_enabled = clk_ll_rc32k_is_enabled();
-    bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(true);
-        }
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_enable();
-        }
-    }
-
     /* There may be another calibration process already running during we call this function,
      * so we should wait the last process is done.
      */
@@ -123,21 +78,22 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
 
     /* Prepare calibration */
-    REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
+    REG_SET_FIELD(PCR_CTRL_32K_CONF_REG, PCR_32K_SEL, cal_clk);
+    if (cal_clk == RTC_CAL_RC_FAST) {
+        clk_ll_rc_fast_tick_conf();
+    }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
 
     /* Set timeout reg and expect time delay*/
+    REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, CLK_CAL_TIMEOUT_THRES(cal_clk, slowclk_cycles));
     uint32_t expected_freq;
-    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_32K) {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(slowclk_cycles));
+    if (cal_clk == RTC_CAL_32K_XTAL || cal_clk == RTC_CAL_32K_OSC_SLOW) {
         expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX;
-    } else if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(slowclk_cycles));
-        expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
+    } else if (cal_clk == RTC_CAL_RC_FAST) {
+        expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     } else {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
@@ -152,13 +108,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
             cal_val = REG_GET_FIELD(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_VALUE);
 
-            /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
-              So we need to multiply the frequency of the Fosc for ECO1 and above chips by 32 times.
-              And ensure that this modification will not affect ECO0.*/
-            if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-                if (cal_clk == RTC_CAL_RC_FAST) {
-                    cal_val = cal_val >> 5;
-                }
+            /*The Fosc CLK of calibration circuit is divided by a factor, k.
+              So we need to multiply the frequency of the FOSC by k times.*/
+            if (cal_clk == RTC_CAL_RC_FAST) {
+                cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
             }
             break;
         }
@@ -183,20 +136,6 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         }
     }
 
-    if (cal_clk == RTC_CAL_RC32K) {
-        if (!dig_rc32k_enabled) {
-            clk_ll_rc32k_digi_disable();
-        }
-        if (!rc32k_enabled) {
-            rtc_clk_rc32k_enable(false);
-        }
-    }
-
-    // Always set back the calibration 32kHz clock selection
-    if (old_32k_cal_clk_sel != SOC_RTC_SLOW_CLK_SRC_INVALID) {
-        clk_ll_32k_calibration_set_target(old_32k_cal_clk_sel);
-    }
-
     return cal_val;
 }
 
@@ -209,18 +148,15 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    assert(slowclk_cycles);
-    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-
-    /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
-      So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
+    /*The Fosc CLK of calibration circuit is divided by a factor, k.
+      So we need to divide the calibrate cycles of the FOSC by k to
       avoid excessive calibration time.*/
-    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-        if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> 5;
-        }
+    if (cal_clk == RTC_CAL_RC_FAST) {
+        slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
     }
+    assert(slowclk_cycles);
 
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 
     if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
@@ -250,7 +186,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 uint64_t rtc_time_get(void)
 {
     // return lp_timer_hal_get_cycle_count();
-    ESP_EARLY_LOGW(TAG, "rtc_timer has not been implemented yet");
+    ESP_EARLY_LOGW(TAG, "rtc_timer has not been implemented yet"); // TODO: IDF-9244
     return 0;
 }
 

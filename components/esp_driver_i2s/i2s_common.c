@@ -164,7 +164,7 @@ static esp_err_t i2s_destroy_controller_obj(i2s_controller_t **i2s_obj)
 #endif
     free(*i2s_obj);
     *i2s_obj = NULL;
-    return i2s_platform_release_occupation(id);
+    return i2s_platform_release_occupation(I2S_CTLR_HP, id);
 }
 
 /**
@@ -196,7 +196,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
 
     i2s_controller_t *i2s_obj = NULL;
     /* Try to occupy this i2s controller */
-    if (i2s_platform_acquire_occupation(id, "i2s_driver") == ESP_OK) {
+    if (i2s_platform_acquire_occupation(I2S_CTLR_HP, id, "i2s_driver") == ESP_OK) {
         portENTER_CRITICAL(&g_i2s.spinlock);
         i2s_obj = pre_alloc;
         g_i2s.controller[id] = i2s_obj;

@@ -32,6 +32,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_awb.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ccm.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_bf.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_core.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
     $(PROJECT_PATH)/components/esp_driver_ppa/include/driver/ppa.h \

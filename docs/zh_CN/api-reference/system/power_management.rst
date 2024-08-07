@@ -55,7 +55,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 电源管理锁
 ----------------------
-{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz"}
+{IDF_TARGET_MAX_CPU_FREQ: default="Not updated yet", esp32="80 MHz, 160 MHz, or 240 MHz", esp32s2="80 MHz, 160 MHz, 或 240 MHz", esp32s3="80 MHz, 160 MHz, 或 240 MHz", esp32c2="80 MHz 或 120 MHz", esp32c3="80 MHz 或 160 MHz", esp32c6="80 MHz 或 160 MHz", esp32p4="360 MHz"}
 
 应用程序可以通过获取或释放管理锁来控制电源管理算法。应用程序获取电源管理锁后，电源管理算法的操作将受到下面的限制。释放电源管理锁后，限制解除。
 
@@ -114,7 +114,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     - **SPI slave**：从调用 :cpp:func:`spi_slave_initialize` 至 :cpp:func:`spi_slave_free` 期间。
     - **GPTimer**：从调用 :cpp:func:`gptimer_enable` 至 :cpp:func:`gptimer_disable` 期间。
     - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
-    - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
+    :SOC_WIFI_SUPPORTED: - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
     :SOC_TWAI_SUPPORTED: - **TWAI**：从调用 :cpp:func:`twai_driver_install` 至 :cpp:func:`twai_driver_uninstall` 期间 (只有在 TWAI 时钟源选择为 :cpp:enumerator:`TWAI_CLK_SRC_APB` 的时候生效)。
     :SOC_BT_SUPPORTED and esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁，除非将 :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` 选项设置为 “外部 32 kHz 晶振”。
     :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
@@ -129,46 +129,53 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
 
-Light-sleep 外设下电
--------------------------
+.. only:: SOC_PM_SUPPORT_TOP_PD
 
-.. only:: esp32c6 or esp32h2
+    Light-sleep 外设下电
+    -------------------------
 
-    {IDF_TARGET_NAME} 支持在 Light-sleep 时掉电外设的电源域.
+        {IDF_TARGET_NAME} 支持在 Light-sleep 时掉电外设的电源域.
 
-    如果在 menuconfig 中启用了 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，在进入休眠前，``REG_DMA`` 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，``REG_DMA`` 也会在唤醒时将上下文从内存恢复到外设寄存中。
+        如果在 menuconfig 中启用了 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，在进入休眠前，``REG_DMA`` 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，``REG_DMA`` 也会在唤醒时将上下文从内存恢复到外设寄存中。
 
-    目前 IDF 支持以下外设的 Light-sleep 上下文备份：
-    - INT_MTX
-    - TEE/APM
-    - IO_MUX / GPIO
-    - UART0/1
-    - GPTimer
-    - SPI0/1
-    - SYSTIMER
-    - RMT
+        目前 IDF 支持以下外设的 Light-sleep 上下文备份：
 
-    以下外设尚未支持：
-    - ETM
-    - ASSIST_DEBUG
-    - Trace
-    - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-    - SPI2
-    - I2S
-    - PCNT
-    - USB-Serial-JTAG
-    - TWAI
-    - LEDC
-    - MCPWM
-    - SARADC
-    - SDIO
-    - PARL_IO
+        .. list::
 
-    对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
+            - INT_MTX
+            - TEE/APM
+            - IO_MUX / GPIO
+            - Timer Group 0 & Timer Group 1
+            - SPI0/1
+            - SYSTIMER
+            :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
+            :SOC_I2C_SUPPORT_SLEEP_RETENTION:- I2C
+            :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
 
-    .. note::
+        以下外设尚未支持：
 
-        当外设电源域在睡眠期间断电时，IO_MUX 和 GPIO 模块都处于下电状态，这意味着芯片引脚的状态不会受这些模块控制。要在休眠期间保持 IO 的状态，需要在配置 GPIO 状态前后调用 :cpp:func:`gpio_hold_dis` 和 :cpp:func:`gpio_hold_en`。此操作可确保 IO 配置被锁存，防止 IO 在睡眠期间浮空。
+        .. list::
+
+            - ETM
+            - ASSIST_DEBUG
+            - Trace
+            - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
+            - SPI2
+            - I2S
+            - PCNT
+            - USB-Serial-JTAG
+            - TWAI
+            - LEDC
+            - MCPWM
+            - SARADC
+            - SDIO
+            - PARL_IO
+
+        对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
+
+        .. note::
+
+            当外设电源域在睡眠期间断电时，IO_MUX 和 GPIO 模块都处于下电状态，这意味着芯片引脚的状态不会受这些模块控制。要在休眠期间保持 IO 的状态，需要在配置 GPIO 状态前后调用 :cpp:func:`gpio_hold_dis` 和 :cpp:func:`gpio_hold_en`。此操作可确保 IO 配置被锁存，防止 IO 在睡眠期间浮空。
 
 
 API 参考

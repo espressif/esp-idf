@@ -113,7 +113,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
 #endif
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
-    ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
+    ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
     /* Allocate DAC DMA peripheral object */
     s_ddp = (dac_dma_periph_i2s_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_i2s_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
@@ -150,7 +150,7 @@ err:
 esp_err_t dac_dma_periph_deinit(void)
 {
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
-    ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
+    ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
     i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, false);
     if (s_ddp) {
         if (s_ddp->use_apll) {

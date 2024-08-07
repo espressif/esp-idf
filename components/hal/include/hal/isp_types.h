@@ -122,6 +122,26 @@ typedef enum {
     ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
 } isp_awb_sample_point_t;
 
+/*---------------------------------------------------------------
+                      AE
+---------------------------------------------------------------*/
+
+#if (SOC_ISP_AE_BLOCK_X_NUMS && SOC_ISP_AE_BLOCK_Y_NUMS)
+#define ISP_AE_BLOCK_X_NUM   SOC_ISP_AE_BLOCK_X_NUMS      // The AF window number for sampling
+#define ISP_AE_BLOCK_Y_NUM   SOC_ISP_AE_BLOCK_Y_NUMS      // The AF window number for sampling
+#else
+#define ISP_AE_BLOCK_X_NUM   0
+#define ISP_AE_BLOCK_Y_NUM   0
+#endif
+
+/**
+ * @brief ISP AE input data source
+ *
+ */
+typedef enum {
+    ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,          ///< AE input data after demosaic
+    ISP_AE_SAMPLE_POINT_AFTER_GAMMA,             ///< AE input data after gamma
+} isp_ae_sample_point_t;
 
 #ifdef __cplusplus
 }

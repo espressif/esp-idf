@@ -100,13 +100,13 @@ TEST_CASE("DAC_API_basic_logic_test", "[dac]")
     };
     /* DMA peripheral availability test */
 #if CONFIG_IDF_TARGET_ESP32
-    TEST_ESP_OK(i2s_platform_acquire_occupation(0, "dac_test"));
+    TEST_ESP_OK(i2s_platform_acquire_occupation(I2S_CTLR_HP, 0, "dac_test"));
 #elif CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT(spicommon_periph_claim(SPI3_HOST, "dac_test"));
 #endif
     TEST_ASSERT(dac_continuous_new_channels(&cont_cfg, &cont_handle) == ESP_ERR_NOT_FOUND);
 #if CONFIG_IDF_TARGET_ESP32
-    TEST_ESP_OK(i2s_platform_release_occupation(0));
+    TEST_ESP_OK(i2s_platform_release_occupation(I2S_CTLR_HP, 0));
 #elif CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT(spicommon_periph_free(SPI3_HOST));
 #endif

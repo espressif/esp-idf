@@ -51,11 +51,11 @@
 //  \#define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32C61] IDF-9233
 //  \#define SOC_BOD_SUPPORTED               1    //TODO: [ESP32C61] IDF-9254
 //  \#define SOC_APM_SUPPORTED               1    //TODO: [ESP32C61] IDF-9230
-//  \#define SOC_PMU_SUPPORTED               1    //TODO: [ESP32C61] IDf-9250
+#define SOC_PMU_SUPPORTED               1    //TODO: [ESP32C61] IDF-9250
 //  \#define SOC_LP_TIMER_SUPPORTED          1    //TODO: [ESP32C61] IDF-9244
 //  \#define SOC_LP_AON_SUPPORTED            1
 //  \#define SOC_LP_PERIPHERALS_SUPPORTED    1
-//  \#define SOC_CLK_TREE_SUPPORTED          1    //TODO: [ESP32C61] IDF-9249
+ #define SOC_CLK_TREE_SUPPORTED          1
 //  \#define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32C61] IDF-9270
 //  \#define SOC_WDT_SUPPORTED               1    //TODO: [ESP32C61] IDF-9257
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32C61] IDF-9314
@@ -134,6 +134,7 @@
 
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_CACHE_WRITEBACK_SUPPORTED           1
 #define SOC_CACHE_FREEZE_SUPPORTED              1
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
@@ -458,7 +459,7 @@
 //  \#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
-#define SOC_PM_SUPPORT_RC32K_PD         (1)
+// \#define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 //  \#define SOC_PM_SUPPORT_TOP_PD           (1)
@@ -480,12 +481,12 @@
 #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)    //TODO: [ESP32C61] IDF-9249
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
-#define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL              (1)     /*!< Support XTAL clock as the LP_FAST clock source */
 
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 

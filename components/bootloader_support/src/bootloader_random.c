@@ -83,10 +83,10 @@
 }
 #endif // BOOTLOADER_BUILD
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
 static void s_non_functional(const char *func)
 {
-    ESP_EARLY_LOGW("rand", "%s non-functional for FPGA builds", func);
+    ESP_EARLY_LOGW("rand", "%s non-functional as RNG has not been supported yet", func);
 }
 
 void bootloader_random_enable()
@@ -98,4 +98,4 @@ void bootloader_random_disable()
 {
     s_non_functional(__func__);
 }
-#endif // CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING

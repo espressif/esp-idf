@@ -49,6 +49,13 @@ typedef struct {
 } isp_awb_stat_result_t;
 
 /**
+ * @brief ISP AE result
+ */
+typedef struct {
+    int luminance[ISP_AE_BLOCK_X_NUM][ISP_AE_BLOCK_Y_NUM];     ///< Luminance, it refers how luminant an image is
+} isp_ae_result_t;
+
+/**
  * @brief Type of ISP processor handle
  */
 typedef struct isp_processor_t *isp_proc_handle_t;
@@ -62,6 +69,11 @@ typedef struct isp_af_controller_t *isp_af_ctlr_t;
  * @brief Type of ISP AWB controller handle
  */
 typedef struct isp_awb_controller_t *isp_awb_ctlr_t;
+
+/**
+ * @brief Type of ISP AE controller handle
+ */
+typedef struct isp_ae_controller_t *isp_ae_ctlr_t;
 
 #ifdef __cplusplus
 }

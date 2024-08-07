@@ -1,13 +1,11 @@
 api-guides/partition-tables.rst
 api-guides/RF_calibration.rst
-api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
 api-guides/flash_psram_config.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/dfu.rst
-api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
 api-reference/peripherals/adc_continuous.rst
 api-reference/peripherals/adc_oneshot.rst
@@ -33,6 +31,3 @@ api-reference/network/esp_smartconfig.rst
 api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
-api-reference/system/sleep_modes.rst
-api-reference/system/power_management.rst
-api-reference/system/inc/power_management_esp32p4.rst

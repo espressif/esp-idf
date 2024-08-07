@@ -67,18 +67,16 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     rtc_clk_modem_clock_domain_active_state_icg_map_preinit();
 
-    /* Set tuning parameters for RC_FAST, RC_SLOW, and RC32K clocks.
+    /* Set tuning parameters for RC_FAST and RC_SLOW clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
      * Instead, we calibrate these clocks against XTAL frequency later, when necessary.
      * - SCK_DCAP value controls tuning of RC_SLOW clock.
      *   The higher the value of DCAP is, the lower is the frequency.
      * - CK8M_DFREQ value controls tuning of RC_FAST clock.
      *   CLK_8M_DFREQ constant gives the best temperature characteristics.
-     * - RC32K_DFREQ value controls tuning of RC32K clock.
      */
     REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, cfg.slow_clk_dcap);
-    REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
 
@@ -89,16 +87,9 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     SET_PERI_REG_BITS(PMU_HP_MODEM_HP_REGULATOR0_REG, PMU_HP_MODEM_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
     SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
 
-    clk_ll_rc_fast_tick_conf();
+    // XTAL freq can be directly informed from register field PCR_CLK_XTAL_FREQ
 
-    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_output_tx_wait_idle(0);
-    rtc_clk_xtal_freq_update(xtal_freq);
-
-    // On ESP32C61, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration
-    // Therefore, before switching SOC_ROOT_CLK to HS, we need to set MSPI source clock HS divider to make it run at
-    // 80MHz after the switch. PLL = 480MHz, so divider is 6.
-    clk_ll_mspi_fast_set_hs_divider(6);
+    // No need to wait UART0 TX idle since its default clock source is XTAL, should not be affected by system clock configuration
 
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);
@@ -121,8 +112,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
         rtc_clk_32k_enable(true);
     } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
         rtc_clk_32k_enable_external();
-    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-       rtc_clk_rc32k_enable(true);
     }
     rtc_clk_8m_enable(need_rc_fast_en);
     rtc_clk_fast_src_set(cfg.fast_clk_src);

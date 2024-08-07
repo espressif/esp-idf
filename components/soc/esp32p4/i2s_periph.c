@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/i2s_periph.h"
 #include "soc/gpio_sig_map.h"
+#include "soc/lp_gpio_sig_map.h"
 
 /*
  Bunch of constants for every I2S peripheral: GPIO signals, irqs, hw addr of registers etc
@@ -82,5 +83,31 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
 
         .irq          = ETS_I2S2_INTR_SOURCE,
         .module       = PERIPH_I2S2_MODULE,
+    },
+};
+
+const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM] = {
+   [0] = {
+        .mck_out_sig  = -1,
+        .mck_in_sig   = -1,
+
+        .m_tx_bck_sig = LP_I2S_O_BCK_PAD_OUT_IDX,
+        .m_rx_bck_sig = LP_I2S_I_BCK_PAD_OUT_IDX,
+        .m_tx_ws_sig  = LP_I2S_O_WS_PAD_OUT_IDX,
+        .m_rx_ws_sig  = LP_I2S_I_WS_PAD_OUT_IDX,
+
+        .s_tx_bck_sig = LP_I2S_O_BCK_PAD_IN_IDX,
+        .s_rx_bck_sig = LP_I2S_I_BCK_PAD_IN_IDX,
+        .s_tx_ws_sig  = LP_I2S_O_WS_PAD_IN_IDX,
+        .s_rx_ws_sig  = LP_I2S_I_WS_PAD_IN_IDX,
+
+        .data_out_sigs[0] = LP_I2S_O_SD_PAD_OUT_IDX,
+        .data_out_sigs[1] = -1,
+        .data_in_sigs[0]  = LP_I2S_I_SD_PAD_IN_IDX,
+        .data_in_sigs[1]  = -1,
+        .data_in_sigs[2]  = -1,
+        .data_in_sigs[3]  = -1,
+
+        .irq          = ETS_LP_I2S_INTR_SOURCE,
     },
 };

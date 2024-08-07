@@ -17,7 +17,7 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
-#include "soc/io_mux_reg.h"
+#include "hal/gpio_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 
@@ -54,7 +54,7 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
+    gpio_ll_input_enable(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
     REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
 }
@@ -71,16 +71,6 @@ void rtc_clk_32k_bootstrap(uint32_t cycle)
 bool rtc_clk_32k_enabled(void)
 {
     return clk_ll_xtal32k_is_enabled();
-}
-
-void rtc_clk_rc32k_enable(bool enable)
-{
-    if (enable) {
-        clk_ll_rc32k_enable();
-        esp_rom_delay_us(SOC_DELAY_RC32K_ENABLE);
-    } else {
-        clk_ll_rc32k_disable();
-    }
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en)
@@ -114,7 +104,6 @@ uint32_t rtc_clk_slow_freq_get_hz(void)
     switch (rtc_clk_slow_src_get()) {
     case SOC_RTC_SLOW_CLK_SRC_RC_SLOW: return SOC_CLK_RC_SLOW_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K: return SOC_CLK_XTAL32K_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K: return SOC_CLK_RC32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW: return SOC_CLK_OSC_SLOW_FREQ_APPROX;
     default: return 0;
     }
@@ -334,32 +323,28 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     uint32_t source_freq_mhz;
-    uint32_t freq_mhz;
-    uint32_t div = clk_ll_cpu_get_divider();        // div = freq of SOC_ROOT_CLK / freq of CPU_CLK
     switch (source) {
     case SOC_CPU_CLK_SRC_XTAL: {
         source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
-        freq_mhz = source_freq_mhz / div;
         break;
     }
     case SOC_CPU_CLK_SRC_PLL_F160M: {
         source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
-        freq_mhz = source_freq_mhz / div;
         break;
     }
     case SOC_CPU_CLK_SRC_PLL_F240M: {
         source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
-        freq_mhz = source_freq_mhz / div;
         break;
     }
     case SOC_CPU_CLK_SRC_RC_FAST:
         source_freq_mhz = 20;
-        freq_mhz = source_freq_mhz / div;
         break;
     default:
         ESP_HW_LOGE(TAG, "unsupported frequency configuration");
         abort();
     }
+    uint32_t div = clk_ll_cpu_get_divider();
+    uint32_t freq_mhz = source_freq_mhz / div; // freq of CPU_CLK = freq of SOC_ROOT_CLK / cpu_div
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
         .source_freq_mhz = source_freq_mhz,
@@ -420,32 +405,26 @@ static uint32_t rtc_clk_ahb_freq_get(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     uint32_t soc_root_freq_mhz;
-    uint32_t divider;
     switch (source) {
     case SOC_CPU_CLK_SRC_XTAL:
         soc_root_freq_mhz = rtc_clk_xtal_freq_get();
-        divider = clk_ll_ahb_get_divider();
         break;
     case SOC_CPU_CLK_SRC_PLL_F160M:
         soc_root_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
-        divider = clk_ll_ahb_get_divider();
         break;
     case SOC_CPU_CLK_SRC_PLL_F240M:
         soc_root_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
-        divider = clk_ll_ahb_get_divider();
         break;
     case SOC_CPU_CLK_SRC_RC_FAST:
         soc_root_freq_mhz = 20;
-        divider = clk_ll_ahb_get_divider();
         break;
     default:
         // Unknown SOC_ROOT clock source
         soc_root_freq_mhz = 0;
-        divider = 1;
         ESP_HW_LOGE(TAG, "Invalid SOC_ROOT_CLK");
         break;
     }
-    return soc_root_freq_mhz / divider;
+    return soc_root_freq_mhz / clk_ll_ahb_get_divider();
 }
 
 uint32_t rtc_clk_apb_freq_get(void)

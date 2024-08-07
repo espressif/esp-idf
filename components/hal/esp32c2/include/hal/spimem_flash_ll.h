@@ -398,7 +398,7 @@ static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
  */
 static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
 {
-    return dev->fsm.spi0_mst_st == 0;
+    return dev->cmd.mst_st == 0;
 }
 
 /**

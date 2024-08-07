@@ -420,13 +420,6 @@ extern "C" {
 #define TIMG_RTC_CALI_START_CYCLING_M  (TIMG_RTC_CALI_START_CYCLING_V << TIMG_RTC_CALI_START_CYCLING_S)
 #define TIMG_RTC_CALI_START_CYCLING_V  0x00000001U
 #define TIMG_RTC_CALI_START_CYCLING_S  12
-/** TIMG_RTC_CALI_CLK_SEL : R/W; bitpos: [14:13]; default: 0;
- *  0:rtc slow clock. 1:clk_8m, 2:xtal_32k.
- */
-#define TIMG_RTC_CALI_CLK_SEL    0x00000003U
-#define TIMG_RTC_CALI_CLK_SEL_M  (TIMG_RTC_CALI_CLK_SEL_V << TIMG_RTC_CALI_CLK_SEL_S)
-#define TIMG_RTC_CALI_CLK_SEL_V  0x00000003U
-#define TIMG_RTC_CALI_CLK_SEL_S  13
 /** TIMG_RTC_CALI_RDY : RO; bitpos: [15]; default: 0;
  *  Represents whether one-shot frequency calculation is done.
  *  0: Not done

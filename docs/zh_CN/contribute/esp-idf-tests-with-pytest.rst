@@ -362,16 +362,32 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 此代码会触发模块包含 ``[psram]`` tag 的所有测试用例。
 
-.. warning::
+如需除了某个特定组之外执行测试用例，可运行：
 
-    你可能还会看到一些包含以下语句的测试脚本，这些脚本已被弃用。请使用上述建议的方法。
+.. code-block:: python
 
-    .. code-block:: python
+    def test_unity_single_dut(dut: IdfDut):
+        dut.run_all_single_board_cases(group='!psram')
 
-        def test_unity_single_dut(dut: IdfDut):
-            dut.expect_exact('Press ENTER to see the list of tests')
-            dut.write('*')
-            dut.expect_unity_test_output()
+此代码会触发模块包含 ``[psram]`` tag 以外的所有测试用例。
+
+如需按特定属性执行测试用例，可运行：
+
+.. code-block:: python
+
+  def test_rtc_xtal32k(dut: Dut) -> None:
+      dut.run_all_single_board_cases(attributes={'test_env': 'xtal32k'})
+
+这此代码会触发模块包含具有属性 ``test_env`` 等于 ``xtal32k`` 的测试用例。
+
+如需按特定名称执行测试用例，可运行：
+
+.. code-block:: python
+
+  def test_dut_run_all_single_board_cases(dut):
+      dut.run_all_single_board_cases(name=["normal_case1", "multiple_stages_test"])
+
+这此代码会触发模块包含具有 ``normal_case1`` 和 ``multiple_stages_test`` 名称的测试用例。
 
 我们的 ``case_tester`` 夹具让执行各种测试用例更加简便。例如：
 

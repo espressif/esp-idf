@@ -6,7 +6,7 @@
 {IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32p4="v3"}
 
 概述
-------------
+------
 
 触摸传感器系统由保护覆盖层、触摸电极、绝缘基板和走线组成，保护覆盖层位于最上层，绝缘基板上设有电极及走线。触摸覆盖层将引起电容变化，根据电容变化，可以判断此次触摸是否为有效触摸行为。
 
@@ -37,11 +37,57 @@
 
 .. only:: esp32p4
 
-    ====== ===== ===== ===== ===== ===== ===== ===== ===== ====== ====== ====== ====== ====== ====== ==========
-     通道    CH0   CH1   CH2   CH3   CH4   CH5   CH6   CH7   CH8    CH9    CH10   CH11   CH12   CH13    CH14
-    ------ ----- ----- ----- ----- ----- ----- ----- ----- ------ ------ ------ ------ ------ ------ ----------
-     GPIO   IO2   IO3   IO4   IO5   IO6   IO7   IO8   IO9   IO10   IO11   IO12   IO13   IO14   IO15   未引出
-    ====== ===== ===== ===== ===== ===== ===== ===== ===== ====== ====== ====== ====== ====== ====== ==========
+    .. list-table::
+      :header-rows: 1
+      :widths: 20  20
+
+      * - 通道
+        - GPIO
+
+      * - CH0
+        - IO2
+
+      * - CH1
+        - IO3
+
+      * - CH2
+        - IO4
+
+      * - CH3
+        - IO5
+
+      * - CH4
+        - IO6
+
+      * - CH5
+        - IO7
+
+      * - CH6
+        - IO8
+
+      * - CH7
+        - IO9
+
+      * - CH8
+        - IO10
+
+      * - CH9
+        - IO11
+
+      * - CH10
+        - IO12
+
+      * - CH11
+        - IO13
+
+      * - CH12
+        - IO14
+
+      * - CH13
+        - IO15
+
+      * - CH14
+        - 未引出
 
 驱动中的术语介绍
 -------------------------
@@ -84,7 +130,7 @@
     :cpp:func:`touch_channel_read_data` 可在获取触摸通道句柄后（即 ``INIT`` 后）任意状态调用，但请注意读数值的有效性。
 
 功能介绍
-------------------
+----------
 
 {IDF_TARGET_NAME} 的电容式触摸传感器驱动提供的 API 按功能主要可分为：
 
@@ -106,7 +152,7 @@
 .. _touch-ctrl:
 
 触摸传感器控制器管理
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 触摸传感器驱动通过触摸传感器控制器句柄 :cpp:type:`touch_sensor_handle_t` 控制。调用 :cpp:func:`touch_sensor_new_controller` 函数即可初始化触摸传感器控制器并得到控制器句柄。
 
@@ -144,7 +190,7 @@
 .. _touch-chan:
 
 触摸传感器通道管理
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 一个触摸传感器具有多个测量通道，每个触摸传感器通道由句柄 :cpp:type:`touch_channel_handle_t` 控制。调用 :cpp:func:`touch_sensor_new_channel` 函数即可初始化触摸传感器通道并得到通道句柄。
 
@@ -209,7 +255,7 @@
 
 .. note::
 
-    为保证触发和释放事件的稳定性，触摸传感器可配置 ``触发阈值`` 的迟滞比较裕量和 ``去抖动计数`` 来避免短时间内由噪声和读数抖动引起的反复触发和释放
+    为保证触发和释放事件的稳定性，触摸传感器可配置 ``触发阈值`` 的迟滞比较裕量和 ``去抖动计数`` 来避免短时间内由噪声和读数抖动引起的反复触发和释放。
 
 具体可注册的回调时间请参考 :cpp:type:`touch_event_callbacks_t`。
 
@@ -234,7 +280,7 @@
 启用和禁用
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-配置完成触摸传感器控制器以及通道后，可调用 :cpp:func:`touch_sensor_enable` 函数启用该控制器，启用后控制器处于 ``就绪``  状态，会对注册的通道上电，可以开始扫描并采集触摸数据。注意，控制器启用后无法更新配置，只能进行扫描采样和读数操作。若要更新配置，需先调用 :cpp:func:`touch_sensor_disable` 函数禁用控制器，方可重新配置控制器、通道等。
+配置完成触摸传感器控制器以及通道后，可调用 :cpp:func:`touch_sensor_enable` 函数启用该控制器，启用后控制器处于 ``就绪`` 状态，会对注册的通道上电，可以开始扫描并采集触摸数据。注意，控制器启用后无法更新配置，只能进行扫描采样和读数操作。若要更新配置，需先调用 :cpp:func:`touch_sensor_disable` 函数禁用控制器，方可重新配置控制器、通道等。
 
 .. code-block:: c
 
@@ -247,7 +293,7 @@
 .. _touch-conti-scan:
 
 连续扫描
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
 在控制器启用后，调用 :cpp:func:`touch_sensor_start_continuous_scanning` 函数可开始对所有已注册的触摸通道进行连续扫描，每次扫描都会更新对应通道的测量值。调用 :cpp:func:`touch_sensor_stop_continuous_scanning` 函数后则停止扫描。
 
@@ -262,19 +308,19 @@
 .. _touch-oneshot-scan:
 
 单次扫描
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
 在控制器启用后，调用 :cpp:func:`touch_sensor_trigger_oneshot_scanning` 函数可触发一次对所有已注册的触摸通道的扫描。注意，单次扫描为阻塞函数，调用后会保持阻塞直到扫描结束后返回。此外在开始连续扫描后，无法再触发单次扫描。
 
 .. code-block:: c
 
-    // 触发单次扫描，并设置超时时间为 1000ms
+    // 触发单次扫描，并设置超时时间为 1000 ms
     ESP_ERROR_CHECK(touch_sensor_trigger_oneshot_scanning(sens_handle, 1000));
 
 .. _touch-benchmark:
 
 基线值配置
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 一般情况下，不需要额外设置触摸传感器的基线值，若有必要强制复位基线值到当前平滑值，可调用 :cpp:func:`touch_channel_config_benchmark`。
 
@@ -289,7 +335,7 @@
 .. _touch-read:
 
 测量值读数
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 调用 :cpp:func:`touch_channel_read_data` 可读取每个通道不同种类的数据，例如基线值、经过滤波后的平滑值等。支持的数据类型请参考 :cpp:type:`touch_chan_data_type_t`。
 
@@ -309,7 +355,7 @@
 .. only:: SOC_TOUCH_SUPPORT_WATERPROOF
 
     防水防潮配置
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} 支持防水防潮功能。可通过调用 :cpp:func:`touch_sensor_config_waterproof` 并配置 :cpp:type:`touch_waterproof_config_t` 来注册防水防潮功能。防水防潮功能主要包含两部分：
 
@@ -362,7 +408,7 @@
 .. only:: SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
 
     睡眠唤醒配置
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} 支持触摸传感器将芯片从浅睡眠或深睡眠状态中唤醒。可通过调用 :cpp:func:`touch_sensor_config_sleep_wakeup` 并配置 :cpp:type:`touch_sleep_config_t` 来注册接近感应功能。
 
@@ -399,14 +445,14 @@
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
 应用示例
---------------------
+----------
 
 .. only:: esp32p4
 
     - 触摸传感器基础例程: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}`.
 
 API 参考
--------------
+----------
 
 .. only:: esp32p4
 

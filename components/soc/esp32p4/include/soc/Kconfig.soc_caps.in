@@ -243,6 +243,10 @@ config SOC_LP_I2C_SUPPORTED
     bool
     default y
 
+config SOC_LP_I2S_SUPPORTED
+    bool
+    default y
+
 config SOC_LP_SPI_SUPPORTED
     bool
     default y
@@ -815,6 +819,10 @@ config SOC_I2S_TDM_FULL_DATA_WIDTH
     bool
     default y
 
+config SOC_LP_I2S_NUM
+    int
+    default 1
+
 config SOC_ISP_BF_SUPPORTED
     bool
     default y
@@ -842,6 +850,18 @@ config SOC_ISP_AF_CTLR_NUMS
 config SOC_ISP_AF_WINDOW_NUMS
     int
     default 3
+
+config SOC_ISP_AE_CTLR_NUMS
+    int
+    default 1
+
+config SOC_ISP_AE_BLOCK_X_NUMS
+    int
+    default 5
+
+config SOC_ISP_AE_BLOCK_Y_NUMS
+    int
+    default 5
 
 config SOC_ISP_SHARE_CSI_BRG
     bool

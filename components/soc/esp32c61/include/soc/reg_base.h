@@ -30,6 +30,7 @@
 #define DR_REG_ECDSA_BASE                       0x6008E000
 #define DR_REG_IO_MUX_BASE                      0x60090000
 #define DR_REG_GPIO_BASE                        0x60091000
+#define DR_REG_GPIO_EXT_BASE                    0x60091E00
 #define DR_REG_TCM_MEM_MONITOR_BASE             0x60092000
 #define DR_REG_PAU_BASE                         0x60093000
 #define DR_REG_HP_SYSTEM_BASE                   0x60095000

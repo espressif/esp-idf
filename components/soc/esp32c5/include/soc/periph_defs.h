@@ -67,6 +67,7 @@ typedef enum {
     /* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_WIFI_MODULE,
     PERIPH_BT_MODULE,
+    PERIPH_IEEE802154_MODULE,
     PERIPH_COEX_MODULE,
     PERIPH_PHY_MODULE,
     PERIPH_ANA_I2C_MASTER_MODULE,

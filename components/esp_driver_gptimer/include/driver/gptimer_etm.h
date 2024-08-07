@@ -9,10 +9,13 @@
 #include "esp_err.h"
 #include "esp_etm.h"
 #include "driver/gptimer_types.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_TIMER_SUPPORT_ETM
 
 /**
  * @brief GPTimer ETM event configuration
@@ -58,6 +61,7 @@ typedef struct {
  */
 esp_err_t gptimer_new_etm_task(gptimer_handle_t timer, const gptimer_etm_task_config_t *config, esp_etm_task_handle_t *out_task);
 
+#endif // SOC_TIMER_SUPPORT_ETM
 #ifdef __cplusplus
 }
 #endif

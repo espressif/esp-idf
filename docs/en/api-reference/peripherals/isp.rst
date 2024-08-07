@@ -131,6 +131,24 @@ If an :cpp:type:`esp_isp_awb_config_t` configuration is specified, you can call 
 
 The AWB handle created in this step is required by other AWB APIs and AWB scheme.
 
+Install ISP Auto-Exposure (AE) Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ISP auto-exposure (AE) driver requires the configuration that specified by :cpp:type:`esp_isp_ae_config_t`.
+
+If the configurations in :cpp:type:`esp_isp_ae_config_t` is specified, users can call :cpp:func:`esp_isp_new_ae_controller` to allocate and initialize an ISP AE processor. This function will return an ISP AE processor handle if it runs correctly. You can take following code as reference.
+
+.. code:: c
+
+    esp_isp_ae_config_t ae_config = {
+        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+        ...
+    };
+    isp_ae_ctlr_t ae_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_ae_controller(isp_proc, &ae_config, &ae_ctlr));
+
+You can use the created handle to do driver enable / disable the ISP AE driver and ISP AE environment detector setup.
+
 Uninstall ISP Driver
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -145,6 +163,11 @@ UnInstall ISP AWB Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a previously installed ISP AWB processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_awb_controller`, it will also release the underlying hardware.
+
+UnInstall ISP AE Driver
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a previously installed ISP AE processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_ae_controller`, it will also release the underlying hardware.
 
 
 .. _isp-enable-disable:
@@ -180,6 +203,9 @@ Calling :cpp:func:`esp_isp_af_controller_get_oneshot_statistics` to get oneshot 
 Aside from the above oneshot API, the ISP AF driver also provides a way to start AF statistics continuously. Calling :cpp:func:`esp_isp_af_controller_start_continuous_statistics` to start the continuous statistics and :cpp:func:`esp_isp_af_controller_stop_continuous_statistics` to stop it.
 
 Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` or :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` callback to get the statistics result. See how to register in `Register Event Callbacks <#isp-callback>`__
+
+.. note::
+    When you use the continuous statistics, AF Environment Detector will be invalid.
 
 .. code:: c
 
@@ -230,6 +256,81 @@ Calling :cpp:func:`esp_isp_af_env_detector_set_threshold` to set the threshold o
     int definition_thresh = 0;
     int luminance_thresh = 0;
     ESP_ERROR_CHECK(esp_isp_af_env_detector_set_threshold(env_detector, definition_thresh, luminance_thresh));
+
+ISP AE Processor
+----------------
+
+Before doing ISP AE, you need to enable the ISP AE processor first, by calling :cpp:func:`esp_isp_ae_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_ae_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-ae-statistics:
+
+AE One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_get_oneshot_statistics` to get oneshot AE statistics result. You can take following code as reference.
+
+When you use AE oneshot statistics, the AE continuous mode need to be disabled otherwise the result may be overwritten by the environment detector. After oneshot operation finishes, you need to restart continuous mode again.
+
+Aside from the above oneshot API, the ISP AE driver also provides a way to start AE statistics continuously. Calling :cpp:func:`esp_isp_ae_controller_start_continuous_statistics` to start the continuous statistics and :cpp:func:`esp_isp_ae_controller_stop_continuous_statistics` to stop it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_statistics_done` or :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_change` callback to get the statistics result. See how to register in `Register Event Callbacks <#isp-callback>`__
+
+.. note::
+    When using oneshot statistics, the AE Environment Detector will be temporarily disabled and will automatically recover once the oneshot is complete.
+
+.. code:: c
+
+    esp_isp_ae_config_t ae_config = {
+        .sample_point = ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC,
+    };
+    isp_ae_ctlr_t ae_ctlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_ae_controller(isp_proc, &ae_config, &ae_ctlr));
+    ESP_ERROR_CHECK(esp_isp_ae_controller_enable(ae_ctlr));
+    isp_ae_result_t result = {};
+    /* Trigger the AE statistics and get its result for one time with timeout value 2000ms. */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_get_oneshot_statistics(ae_ctlr, 2000, &result));
+
+    /* Start continuous AE statistics */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_start_continuous_statistics(ae_ctlr));
+    // You can do other stuffs here, the statistics result can be obtained in the callback
+    // ......
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    /* Stop continuous AE statistics */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_stop_continuous_statistics(ae_ctlr));
+
+    /* Disable the ae controller */
+    ESP_ERROR_CHECK(esp_isp_ae_controller_disable(ae_ctlr));
+    /* Delete the ae controller and free the resources */
+    ESP_ERROR_CHECK(esp_isp_del_ae_controller(ae_ctlr));
+
+Set AE Environment Detector
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_set_env_detector` to set an ISP AE environment detector. You can take following code as reference.
+
+.. code:: c
+
+    esp_isp_ae_env_config_t env_config = {
+        .interval = 10,
+    };
+    ESP_ERROR_CHECK(esp_isp_ae_controller_set_env_detector(ae_ctlr, &env_config));
+
+Set AE Environment Detector Threshold
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_ae_controller_set_env_detector_threshold` to set the thresholds(1-255) of an ISP AE environment detector.
+
+.. code:: c
+
+    esp_isp_ae_env_thresh_t env_thresh = {
+        .low_thresh = 110,
+        .high_thresh = 130,
+    };
+    ESP_ERROR_CHECK(esp_isp_ae_controller_set_env_detector_threshold(ae_ctlr, env_thresh));
 
 ISP AWB Processor
 ~~~~~~~~~~~~~~~~~
@@ -385,7 +486,7 @@ You can save your own context via the parameter ``user_data`` of :cpp:func:`esp_
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`esp_isp_new_processor`, :cpp:func:`esp_isp_del_processor`, :cpp:func:`esp_isp_new_af_controller`, :cpp:func:`esp_isp_del_af_controller`, :cpp:func:`esp_isp_new_af_env_detector`, and :cpp:func:`esp_isp_del_af_env_detector` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
+The factory function :cpp:func:`esp_isp_new_processor`, :cpp:func:`esp_isp_del_processor`, :cpp:func:`esp_isp_new_af_controller`, :cpp:func:`esp_isp_del_af_controller`, :cpp:func:`esp_isp_new_ae_controller` and :cpp:func:`esp_isp_del_ae_controller` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks. Other APIs are not guaranteed to be thread-safe
 
 .. _isp-kconfig-options:
 

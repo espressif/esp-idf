@@ -23,7 +23,6 @@ api-guides/lwip.rst
 api-guides/coexist.rst
 api-guides/flash_psram_config.rst
 api-guides/wifi.rst
-api-guides/usb-otg-console.rst
 api-guides/bluetooth.rst
 api-guides/wireshark-user-guide.rst
 api-guides/esp-wifi-mesh.rst
@@ -66,16 +65,7 @@ api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/sdspi_share.rst
-api-reference/peripherals/usb_host.rst
 api-reference/peripherals/twai.rst
-api-reference/peripherals/usb_host/usb_host_notes_arch.rst
-api-reference/peripherals/usb_host/usb_host_notes_index.rst
-api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
-api-reference/peripherals/usb_host/usb_host_notes_design.rst
-api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
-api-reference/peripherals/usb_host/usb_host_notes_enum.rst
-api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst
-api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/gptimer.rst

@@ -163,8 +163,10 @@
 /**
  * @brief: Special memory address
  */
+#define LP_I2S_RAM_BASE               0x50125c00
 #define MIPI_CSI_BRG_MEM_BASE         0x50104000
 #define MIPI_DSI_BRG_MEM_BASE         0x50105000
+
 
 /**
  * This are module helper MACROs for quick module reference
