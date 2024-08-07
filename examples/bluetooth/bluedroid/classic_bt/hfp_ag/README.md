@@ -43,6 +43,19 @@ The default configuration is `PCM`, if you want to use `vHCI` you should configu
 
     `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
 
+#### PCM Signal Configurations
+
+PCM Signal supports two configurations in menuconfig: PCM Role, PCM Polar.
+
+- PCM Role: PCM role can be configured as PCM master or PCM slave. The default configuration is `Master`, you can change the PCM role in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Config(Role and Polar) --> PCM Role`
+
+- PCM Polar: PCM polarity can be configured as Falling Edge or Rising Edge. The default configuration is `Falling Edge`, you can change the PCM polar in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Config(Role and Polar) --> PCM Polar`
+
+The default configuration of PCM frame synchronization signal is `Stereo mode(Dual channel)`. FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues until the end of the current channel-data transmission. As is shown in the figure ![Stereo](image/Channel_Mode.png)
+The latest version of esp-idf master branch can configure three different forms(Stereo mode, Mono mode 1, Mono mode 2).
+
 ### Codec Choice
 
 ESP32 supports two types of codec for HFP audio data: `CVSD` and `mSBC`.
@@ -75,7 +88,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-When you flash and monitor this example, the commands help table prints the following log at the very begining:
+When you flash and monitor this example, the commands help table prints the following log at the very beginning:
 
 ```
 Type 'help' to get the list of commands.
