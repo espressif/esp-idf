@@ -108,6 +108,7 @@
 /components/esp_psram/                @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/esp_ringbuf/              @esp-idf-codeowners/system
 /components/esp_rom/                  @esp-idf-codeowners/system @esp-idf-codeowners/bluetooth @esp-idf-codeowners/wifi
+/components/esp_security/             @esp-idf-codeowners/security
 /components/esp_system/               @esp-idf-codeowners/system
 /components/esp_timer/                @esp-idf-codeowners/system
 /components/esp-tls/                  @esp-idf-codeowners/app-utilities
