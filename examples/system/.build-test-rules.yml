@@ -141,9 +141,9 @@ examples/system/light_sleep:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5 esp32c61 is not supported yet, esp32p4 is not supported with bluedroid/nimble case
+      reason: target esp32h2 esp32c61 is not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -161,9 +161,9 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5, esp32c61 is not supported yet
+      reason: target esp32h2, esp32c61 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
@@ -178,15 +178,19 @@ examples/system/ota/native_ota_example:
 
 examples/system/ota/otatool:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c5"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: target esp32h2, esp32c61 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5"]
+      reason: incomplete esptool support for esp32c5 # IDF-10915
+
 
 examples/system/ota/pre_encrypted_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32c5, esp32c61 is not supported yet
+      reason: target esp32h2, esp32c61 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -202,9 +206,9 @@ examples/system/ota/pre_encrypted_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32h2", "esp32c61"]
       temporary: true
-      reason: target esp32h2, esp32p4, esp32c5 esp32c61 is not supported yet
+      reason: target esp32h2, esp32c61 is not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
