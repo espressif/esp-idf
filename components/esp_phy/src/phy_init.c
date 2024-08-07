@@ -313,6 +313,8 @@ void esp_phy_disable(esp_phy_modem_t modem)
         phy_digital_regs_store();
 #endif
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        extern void pm_mac_modem_clear_rf_power_state(void);
+        pm_mac_modem_clear_rf_power_state();
         if (sleep_modem_wifi_modem_state_enabled()) {
             sleep_modem_wifi_do_phy_retention(false);
         } else
