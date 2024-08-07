@@ -78,6 +78,12 @@ test_multi_heap_host
 *.sublime-project
 *.sublime-workspace
 
+# nano file
+*.tmp
+
+# Notepad++ file
+*.bak
+
 # Clion IDE CMake build & config
 .idea/
 cmake-build-*/
