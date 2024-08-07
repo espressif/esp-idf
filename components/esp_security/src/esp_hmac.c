@@ -163,7 +163,8 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     return ESP_OK;
 }
 
-static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id) {
+static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id)
+{
     return ETS_EFUSE_BLOCK_KEY0 + (ets_efuse_block_t) key_id;
 }
 
@@ -172,8 +173,9 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
     int ets_status;
     esp_err_t err = ESP_OK;
 
-    if ((!token) || (key_id >= HMAC_KEY_MAX))
+    if ((!token) || (key_id >= HMAC_KEY_MAX)) {
         return ESP_ERR_INVALID_ARG;
+    }
 
     /* Check if JTAG is permanently disabled by HW Disable eFuse */
     if (esp_efuse_read_field_bit(JTAG_STATUS_BIT)) {
@@ -224,18 +226,23 @@ esp_err_t esp_hmac_jtag_disable()
 }
 #else /* !CONFIG_IDF_TARGET_ESP32S2 */
 
-static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id) {
+static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id)
+{
     return ETS_EFUSE_BLOCK_KEY0 + (ets_efuse_block_t) key_id;
 }
 
 esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
-        const void *message,
-        size_t message_len,
-        uint8_t *hmac)
+                             const void *message,
+                             size_t message_len,
+                             uint8_t *hmac)
 {
     int hmac_ret;
-    if (!message || !hmac) return ESP_ERR_INVALID_ARG;
-    if (key_id >= HMAC_KEY_MAX) return ESP_ERR_INVALID_ARG;
+    if (!message || !hmac) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (key_id >= HMAC_KEY_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     esp_crypto_dma_lock_acquire();
 
@@ -257,8 +264,9 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
     int ets_status;
     esp_err_t err = ESP_OK;
 
-    if ((!token) || (key_id >= HMAC_KEY_MAX))
+    if ((!token) || (key_id >= HMAC_KEY_MAX)) {
         return ESP_ERR_INVALID_ARG;
+    }
 
     /* Check if JTAG is permanently disabled by HW Disable eFuse */
     if (esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG)) {

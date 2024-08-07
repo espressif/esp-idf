@@ -8,9 +8,10 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(requires soc esp_security) # TODO: remove esp_security from REQUIRES in ESP-IDF v6.0
+set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support)
+# TODO: remove esp_security from REQUIRES in ESP-IDF v6.0 (see IDF-10733)
+set(priv_requires efuse spi_flash bootloader_support esp_security)
 
 if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)
@@ -186,8 +187,5 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
-    endif()
-    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_crypto_dpa_prot_include_impl")
     endif()
 endif()

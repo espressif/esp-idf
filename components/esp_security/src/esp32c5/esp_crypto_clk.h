@@ -3,10 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "soc/soc.h"
 #include "soc/pcr_reg.h"
 
-__attribute__((weak)) void esp_crypto_clk_init(void)
+#pragma once
+
+static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 480M SPLL clock
     REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x2);

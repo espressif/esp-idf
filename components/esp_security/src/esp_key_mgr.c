@@ -366,8 +366,7 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
     }
     ESP_LOGD(TAG, "HUK info valid");
 
-    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_recovered))
-    {
+    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_recovered)) {
         check_huk_risk_level();
         esp_err_t esp_ret = huk_hal_configure(ESP_HUK_MODE_RECOVERY, config->key_recovery_info->huk_info.info);
         if (esp_ret != ESP_OK) {

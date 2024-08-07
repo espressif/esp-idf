@@ -132,9 +132,9 @@ typedef struct {
  *        since the message digest matches.
  */
 esp_err_t esp_ds_sign(const void *message,
-        const esp_ds_data_t *data,
-        hmac_key_id_t key_id,
-        void *signature);
+                      const esp_ds_data_t *data,
+                      hmac_key_id_t key_id,
+                      void *signature);
 
 /**
  * @brief Start the signing process.
@@ -172,9 +172,9 @@ esp_err_t esp_ds_sign(const void *message,
  *      - ESP_ERR_HW_CRYPTO_DS_INVALID_KEY if there's a problem with passing the HMAC key to the DS component
  */
 esp_err_t esp_ds_start_sign(const void *message,
-        const esp_ds_data_t *data,
-        hmac_key_id_t key_id,
-        esp_ds_context_t **esp_ds_ctx);
+                            const esp_ds_data_t *data,
+                            hmac_key_id_t key_id,
+                            esp_ds_context_t **esp_ds_ctx);
 
 /**
  * Return true if the DS peripheral is busy, otherwise false.
@@ -227,9 +227,9 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx);
  *      - ESP_ERR_INVALID_ARG if one of the parameters is NULL or p_data->rsa_length is too long
  */
 esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
-        const void *iv,
-        const esp_ds_p_data_t *p_data,
-        const void *key);
+                                const void *iv,
+                                const esp_ds_p_data_t *p_data,
+                                const void *key);
 
 #ifdef __cplusplus
 }
