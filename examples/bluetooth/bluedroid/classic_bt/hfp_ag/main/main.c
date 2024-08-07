@@ -27,6 +27,8 @@
 
 #define BT_HF_AG_TAG    "HF_AG_DEMO_MAIN"
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
+
 /* event for handler "hf_ag_hdl_stack_up */
 enum {
     BT_APP_EVT_STACK_UP = 0,
@@ -52,9 +54,7 @@ static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
     {
         case BT_APP_EVT_STACK_UP:
         {
-            /* set up device name */
-            char *dev_name = "ESP_HFP_AG";
-            esp_bt_gap_set_device_name(dev_name);
+            esp_bt_gap_set_device_name(local_device_name);
 
             esp_hf_ag_register_callback(bt_app_hf_cb);
 

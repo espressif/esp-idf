@@ -6,4 +6,10 @@ menu "HID Example Configuration"
         help
             This enables the Secure Simple Pairing. If disable this option,
             Bluedroid will only support Legacy Pairing
+
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "HID Mouse Example"
+        help
+            Use this option to set local device name.
 endmenu
