@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import random
 import string
 from typing import Tuple

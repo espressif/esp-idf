@@ -218,7 +218,7 @@ typedef enum {
 /**
  * @brief Type of Temp Sensor clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8727 (inherit from C6)
+typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
     TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
