@@ -485,7 +485,6 @@ components/mbedtls/port/include/esp32s2/aes.h
 components/mbedtls/port/include/esp32s2/gcm.h
 components/mbedtls/port/include/esp32s2/sha.h
 components/mbedtls/port/include/mbedtls/esp_debug.h
-components/mbedtls/port/include/sha/sha_dma.h
 components/mbedtls/port/include/sha/sha_parallel_engine.h
 components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h

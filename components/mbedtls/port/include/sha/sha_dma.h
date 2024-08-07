@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -51,8 +43,9 @@ extern "C" {
  * @param ilen Length of input data in bytes.
  *
  * @param output Buffer for output SHA digest. Output is 20 bytes for
- * sha_type SHA1, 32 bytes for sha_type SHA2_256, 48 bytes for
- * sha_type SHA2_384, 64 bytes for sha_type SHA2_512.
+ * sha_type SHA1, 28 bytes for sha_type SHA2_224, 32 bytes for
+ * sha_type SHA2_256, 48 bytes for sha_type SHA2_384, 64 bytes for
+ * sha_type SHA2_512.
  */
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
 
@@ -87,7 +80,7 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
  * SHA engine will be used.
  *
  * @param t The number of bits for the SHA512/t hash function, with
- * output truncated to t bits. Used for calculating the inital hash.
+ * output truncated to t bits. Used for calculating the initial hash.
  * t is any positive integer between 1 and 512, except 384.
  *
  * @return 0 if successful
