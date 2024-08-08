@@ -236,7 +236,7 @@ menu "Example Connection Configuration"
                 int "SMI MDIO GPIO number"
                 range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
                 default 18 if IDF_TARGET_ESP32
-                default 27 if IDF_TARGET_ESP32P4
+                default 52 if IDF_TARGET_ESP32P4
                 help
                     Set the GPIO number used by SMI MDIO.
         endif
@@ -295,7 +295,7 @@ menu "Example Connection Configuration"
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
-            default 26 if IDF_TARGET_ESP32P4
+            default 51 if IDF_TARGET_ESP32P4
             default 5
             help
                 Set the GPIO number used to reset PHY chip.
