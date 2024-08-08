@@ -3856,7 +3856,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
             prvAddCurrentTaskToDelayedList( xTicksToWait, xWaitIndefinitely );
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* configUSE_TIMERS */
