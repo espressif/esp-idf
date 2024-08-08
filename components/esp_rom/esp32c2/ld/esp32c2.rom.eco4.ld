@@ -220,7 +220,7 @@ g_ble_ll_ctrl_pkt_lengths_ro = 0x3ff4fd8c;
 
 
 /***************************************
- Group rom_net80211
+ Group rom_pp
  ***************************************/
 
 /* Functions */
