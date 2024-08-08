@@ -22,6 +22,8 @@ Notes
 Tools
 -----
 
+.. _spiffs-generator:
+
 ``spiffsgen.py``
 ^^^^^^^^^^^^^^^^
 
