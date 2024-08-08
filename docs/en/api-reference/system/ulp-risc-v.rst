@@ -26,7 +26,7 @@ Using ``ulp_embed_binary``
 
 1. Place the ULP RISC-V code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 
-2. After registering the component in the CMakeLists.txt file, call the ``ulp_embed_binary`` function. Here is an example:
+2. After registering the component in the ``CMakeLists.txt`` file, call the ``ulp_embed_binary`` function. Here is an example:
 
 .. code-block:: cmake
 
@@ -46,13 +46,13 @@ Using a Custom CMake Project
 
 It is also possible to create a custom CMake project for the ULP RISC-V. This gives more control over the build process and allows you to set compile options, link external libraries and all other things that are possible with a regular CMake project.
 
-To do this add the ULP project as an external project in your component CMakeLists.txt file:
+To do this, add the ULP project as an external project in your component ``CMakeLists.txt`` file:
 
 .. code-block:: cmake
 
     ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
 
-Create a folder which contains your ULP project files and a CMakeLists.txt file, located at the path given to ``ulp_add_project``. The CMakeLists.txt file should look like this:
+Create a folder which contains your ULP project files and a ``CMakeLists.txt`` file, located at the path given to ``ulp_add_project``. The ``CMakeLists.txt`` file should look like this:
 
 .. code-block:: cmake
 
