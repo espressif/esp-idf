@@ -59,13 +59,20 @@ typedef struct {
 } sdmmc_slot_config_t;
 
 /**
+ * SD/MMC host state structure
+ */
+typedef struct {
+    bool host_initialized;  ///< Whether the host is initialized
+    int num_of_init_slots;  ///< Number of initialized slots
+} sdmmc_host_state_t;
+
+/**
  * @brief Initialize SDMMC host peripheral
  *
  * @note This function is not thread safe
  *
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if sdmmc_host_init was already called
+ *      - ESP_OK on success or if sdmmc_host_init was already initialized with this function
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  */
 esp_err_t sdmmc_host_init(void);
@@ -201,13 +208,31 @@ esp_err_t sdmmc_host_io_int_enable(int slot);
 esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
 
 /**
- * @brief Disable SDMMC host and release allocated resources
+ * @brief Disable SDMMC host and release allocated resources gracefully
+ *
+ * @note If there are more than 1 active slots, this function will just decrease the reference count
+ *       and won't actually disable the host until the last slot is disabled
+ *
+ * @note This function is not thread safe
+ *
+ * @param slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if SDMMC host has not been initialized
+ *      - ESP_ERR_INVALID_ARG if invalid slot number is used
+ */
+esp_err_t sdmmc_host_deinit_slot(int slot);
+
+/**
+ * @brief Disable SDMMC host and release allocated resources forcefully
+ *
+ * @note This function will deinitialize the host immediately, regardless of the number of active slots
  *
  * @note This function is not thread safe
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if sdmmc_host_init function has not been called
+ *      - ESP_ERR_INVALID_STATE if SDMMC host has not been initialized
  */
 esp_err_t sdmmc_host_deinit(void);
 
@@ -257,6 +282,17 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
  *        - ESP_ERR_INVALID_ARG:   Invalid argument.
  */
 esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
+
+/**
+ * @brief Get the state of SDMMC host
+ *
+ * @param[out] state output parameter for SDMMC host state structure
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG on invalid argument
+ */
+esp_err_t sdmmc_host_get_state(sdmmc_host_state_t* state);
 
 #ifdef __cplusplus
 }
