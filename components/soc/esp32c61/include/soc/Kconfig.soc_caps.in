@@ -75,22 +75,6 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
-config SOC_AES_SUPPORT_DMA
-    bool
-    default y
-
-config SOC_AES_GDMA
-    bool
-    default y
-
-config SOC_AES_SUPPORT_AES_128
-    bool
-    default y
-
-config SOC_AES_SUPPORT_AES_256
-    bool
-    default y
-
 config SOC_ADC_PERIPH_NUM
     int
     default 1
@@ -178,18 +162,6 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
 config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 128
-
-config SOC_DS_SIGNATURE_MAX_BIT_LEN
-    int
-    default 3072
-
-config SOC_DS_KEY_PARAM_MD_IV_LENGTH
-    int
-    default 16
-
-config SOC_DS_KEY_CHECK_MAX_WAIT_US
-    int
-    default 1100
 
 config SOC_ETM_GROUPS
     int
@@ -302,18 +274,6 @@ config SOC_MPU_REGION_RO_SUPPORTED
 config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
-
-config SOC_MPI_MEM_BLOCKS_NUM
-    int
-    default 4
-
-config SOC_MPI_OPERATIONS_NUM
-    int
-    default 3
-
-config SOC_RSA_MAX_BIT_LEN
-    int
-    default 3072
 
 config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     bool

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
 
 static SemaphoreHandle_t done_sem;
 
@@ -77,11 +76,11 @@ static void tskRunAES256Test(void *pvParameters)
         memcpy(nonce, iv, 16);
 
         // allocate internal memory
-        uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+        uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
         uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
         uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
-        TEST_ASSERT_NOT_NULL(chipertext);
+        TEST_ASSERT_NOT_NULL(ciphertext);
         TEST_ASSERT_NOT_NULL(plaintext);
         TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -92,19 +91,19 @@ static void tskRunAES256Test(void *pvParameters)
         memset(decryptedtext, 0x0, SZ);
 
         // Encrypt
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, chipertext);
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, chipertext + SZ - 32, 32);
+        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, SZ, nonce, plaintext, ciphertext);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_end, ciphertext + SZ - 32, 32);
 
         // Decrypt
         memcpy(nonce, iv, 16);
         mbedtls_aes_setkey_dec(&ctx, key_256, 256);
-        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, chipertext, decryptedtext);
+        mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, SZ, nonce, ciphertext, decryptedtext);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
         mbedtls_aes_free(&ctx);
         free(plaintext);
-        free(chipertext);
+        free(ciphertext);
         free(decryptedtext);
     }
     xSemaphoreGive(done_sem);

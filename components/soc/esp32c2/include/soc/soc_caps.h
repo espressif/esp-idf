@@ -196,9 +196,6 @@
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
 #define SOC_RTCIO_PIN_COUNT    (0U)
 
-/*--------------------------- RSA CAPS ---------------------------------------*/
-#define SOC_RSA_MAX_BIT_LEN    (3072)
-
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
 /* Due to very limited availability of the DMA channels, DMA support for the SHA peripheral is disabled */
