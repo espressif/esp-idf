@@ -8,7 +8,8 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3  # no runner available at the moment
+@pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.sdcard_spimode
 def test_examples_sd_card_sdspi(dut: Dut) -> None:
     dut.expect('example: Initializing SD card', timeout=20)
