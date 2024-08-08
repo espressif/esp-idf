@@ -1,3 +1,7 @@
 libc
 sha256_coredump
 gcc
+freertos_idf
+freertos_smp
+freertos_common
+esp_ringbuf
