@@ -8,19 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
-
-#include <unity.h>
-#include <spi_flash_mmap.h>
-#include <esp_attr.h>
-#include <esp_flash_encrypt.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "unity.h"
+#include "esp_attr.h"
 #include "esp_memory_utils.h"
-
 #include "esp_private/cache_utils.h"
-
-//TODO: IDF-6730, migrate this test to test_app
 
 static QueueHandle_t result_queue;
 
@@ -28,7 +22,7 @@ static IRAM_ATTR void cache_test_task(void *arg)
 {
     bool do_disable = (bool)arg;
     bool result;
-    if(do_disable) {
+    if (do_disable) {
         spi_flash_disable_interrupts_caches_and_other_cpu();
     }
     result = spi_flash_cache_enabled();
@@ -36,7 +30,7 @@ static IRAM_ATTR void cache_test_task(void *arg)
         spi_flash_enable_interrupts_caches_and_other_cpu();
     }
 
-    TEST_ASSERT( xQueueSendToBack(result_queue, &result, 0) );
+    TEST_ASSERT(xQueueSendToBack(result_queue, &result, 0));
     vTaskDelete(NULL);
 }
 
@@ -44,16 +38,16 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 {
     result_queue = xQueueCreate(1, sizeof(bool));
 
-    for(int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES; cpu++) {
-        for(int disable = 0; disable <= 1; disable++) {
+    for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES; cpu++) {
+        for (int disable = 0; disable <= 1; disable++) {
             bool do_disable = disable;
             bool result;
             printf("Testing cpu %d disabled %d\n", cpu, do_disable);
 
             xTaskCreatePinnedToCore(cache_test_task, "cache_check_task",
-                                    2048, (void *)do_disable, configMAX_PRIORITIES-1, NULL, cpu);
+                                    2048, (void *)do_disable, configMAX_PRIORITIES - 1, NULL, cpu);
 
-            TEST_ASSERT( xQueueReceive(result_queue, &result, 2) );
+            TEST_ASSERT(xQueueReceive(result_queue, &result, 2));
             TEST_ASSERT_EQUAL(!do_disable, result);
         }
     }
@@ -63,7 +57,6 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 }
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-
 
 // This needs to sufficiently large array, otherwise it may end up in
 // DRAM (e.g. size <= 8 bytes && ARCH == RISCV)
@@ -96,17 +89,16 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
 #define CACHE_ERROR_REASON "Cache error,RTC_SW_CPU_RST"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define CACHE_ERROR_REASON "Cache disabled,RTC_SW_CPU_RST"
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#else
 #define CACHE_ERROR_REASON "Cache error,SW_CPU"
 #endif
-
 
 // These tests works properly if they resets the chip with the
 // "Cache disabled but cached memory region accessed" reason and the correct CPU is logged.
 static void invalid_access_to_cache_pro_cpu(void)
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 0);
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
 TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (PRO CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_pro_cpu, reset_after_invalid_cache);
@@ -116,7 +108,7 @@ TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (PRO CPU)", "[sp
 static void invalid_access_to_cache_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 1);
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
 TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="CACHE_ERROR_REASON"]", invalid_access_to_cache_app_cpu, reset_after_invalid_cache);

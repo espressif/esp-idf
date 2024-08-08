@@ -1,5 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/esp_system/test_apps/cache_panic:
+  depends_components:
+    - spi_flash  # esp_system is included by default
+
 components/esp_system/test_apps/console:
   disable:
     - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
