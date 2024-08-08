@@ -689,7 +689,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     if (!new_speed_mode_ctx_created && !p_ledc_obj[speed_mode]) {
         return ESP_ERR_NO_MEM;
     }
-#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5)
+#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61)
     // On such targets, the default ledc core(global) clock does not connect to any clock source
     // Set channel configurations and update bits before core clock is on could lead to error
     // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
