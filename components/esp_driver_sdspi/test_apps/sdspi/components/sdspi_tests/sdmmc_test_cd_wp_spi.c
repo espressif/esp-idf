@@ -49,7 +49,9 @@ TEST_CASE("CD input works in SPI mode", "[sdspi]")
     TEST_ESP_OK(sdspi_host_deinit());
     TEST_ESP_OK(spi_bus_free(SDSPI_DEFAULT_HOST));
     sdmmc_test_board_card_power_set(false);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
     TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle));
+#endif
 }
 
 TEST_CASE("WP input works in SPI mode", "[sdspi]")
@@ -85,5 +87,7 @@ TEST_CASE("WP input works in SPI mode", "[sdspi]")
     TEST_ESP_OK(sdspi_host_deinit());
     TEST_ESP_OK(spi_bus_free(SDSPI_DEFAULT_HOST));
     sdmmc_test_board_card_power_set(false);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
     TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle));
+#endif
 }

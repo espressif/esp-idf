@@ -9,6 +9,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
+@pytest.mark.esp32p4
 @pytest.mark.esp32c5
 @pytest.mark.sdcard_spimode
 def test_examples_sd_card_sdspi(dut: Dut) -> None:
@@ -16,7 +17,7 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
     dut.expect('example: Using SPI peripheral', timeout=20)
 
     # Provide enough time for possible SD card formatting
-    dut.expect('Filesystem mounted', timeout=60)
+    dut.expect('Filesystem mounted', timeout=180)
 
     # These lines are matched separately because of ASCII color codes in the output
     name = dut.expect(re.compile(rb'Name: (\w+)\r'), timeout=20).group(1).decode()
@@ -43,4 +44,4 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
         dut.expect_exact(msg, timeout=30)
     dut.expect(sd_card_format, timeout=180)  # Provide enough time for SD card FATFS format operation
     for msg in message_list2:
-        dut.expect_exact(msg, timeout=30)
+        dut.expect_exact(msg, timeout=180)

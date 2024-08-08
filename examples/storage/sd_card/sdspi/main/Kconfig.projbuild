@@ -19,7 +19,7 @@ menu "SD SPI Example Configuration"
         default 35 if IDF_TARGET_ESP32S2
         default 35 if IDF_TARGET_ESP32S3
         default 5  if IDF_TARGET_ESP32H2
-        default 48 if IDF_TARGET_ESP32P4
+        default 36 if IDF_TARGET_ESP32P4
         default 4  # C3 and others
 
     config EXAMPLE_PIN_MISO

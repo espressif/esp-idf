@@ -72,7 +72,7 @@ typedef struct {
 typedef struct {
     spi_ll_clock_val_t clock_reg;       ///< Register value used by the LL layer
     spi_clock_source_t clock_source;    ///< Clock source of each device used by LL layer
-    uint32_t source_pre_div;            ///< Pre divider befor enter SPI peripheral
+    uint32_t source_pre_div;            ///< Pre divider before enter SPI peripheral
     int real_freq;                      ///< Output of the actual frequency
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing
@@ -129,7 +129,7 @@ typedef struct {
 #if SOC_SPI_AS_CS_SUPPORTED
         uint32_t as_cs  : 1;            ///< Whether to toggle the CS while the clock toggles, device specific
 #endif
-        uint32_t positive_cs : 1;       ///< Whether the postive CS feature is abled, device specific
+        uint32_t positive_cs : 1;       ///< Whether the positive CS feature is abled, device specific
     };//boolean configurations
 } spi_hal_dev_config_t;
 
