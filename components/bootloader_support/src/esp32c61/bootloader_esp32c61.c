@@ -94,8 +94,8 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset
-    bootloader_ana_bod_reset_config(true);
+    //Enable BOD reset TODO: IDF-9254 BOD support
+    // brownout_ll_ana_reset_enable(true);
 }
 
 esp_err_t bootloader_init(void)

@@ -16,12 +16,6 @@ void bootloader_ana_super_wdt_reset_config(bool enable)
     ESP_EARLY_LOGW("bootloader", "bootloader_ana_super_wdt_reset_config() has not been implemented on C5 yet");
 }
 
-void bootloader_ana_bod_reset_config(bool enable)
-{
-     // TODO: [ESP32C5] IDF-8667
-    ESP_EARLY_LOGW("bootloader", "bootloader_ana_bod_reset_config() has not been implemented on C5 yet");
-}
-
 //Not supported but common bootloader calls the function. Do nothing
 void bootloader_ana_clock_glitch_reset_config(bool enable)
 {

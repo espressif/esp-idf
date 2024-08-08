@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/rwdt_ll.h"
+#include "hal/brownout_ll.h"
 
 static const char *TAG = "boot.esp32c2";
 
@@ -81,8 +82,8 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset
-    bootloader_ana_bod_reset_config(true);
+    //Enable BOD reset (mode1)
+    brownout_ll_ana_reset_enable(true);
 }
 
 esp_err_t bootloader_init(void)
@@ -138,7 +139,7 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
+    // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();
