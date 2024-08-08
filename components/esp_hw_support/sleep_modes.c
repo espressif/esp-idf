@@ -2292,9 +2292,13 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 #if SOC_PM_SUPPORT_RC32K_PD
+#if !SOC_CLK_RC32K_NOT_TO_USE
     if (s_config.domain[ESP_PD_DOMAIN_RC32K].pd_option != ESP_PD_OPTION_ON) {
         pd_flags |= PMU_SLEEP_PD_RC32K;
     }
+#else
+    pd_flags |= PMU_SLEEP_PD_RC32K;
+#endif
 #endif
 #if SOC_PM_SUPPORT_RC_FAST_PD
     if (s_config.domain[ESP_PD_DOMAIN_RC_FAST].pd_option != ESP_PD_OPTION_ON) {
