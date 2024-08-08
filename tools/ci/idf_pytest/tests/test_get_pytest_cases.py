@@ -14,6 +14,13 @@ import pytest
 def test_foo_single(dut):
     pass
 
+@pytest.mark.parametrize('target', [
+    'esp32',
+    'esp32c3',
+])
+def test_foo_single_with_param(dut):
+    pass
+
 @pytest.mark.parametrize(
     'count, target', [
         (2, 'esp32|esp32s2'),
@@ -38,8 +45,11 @@ def test_get_pytest_cases_single_specific(work_dirpath: Path) -> None:
     script.write_text(TEMPLATE_SCRIPT)
     cases = get_pytest_cases([str(work_dirpath)], 'esp32')
 
-    assert len(cases) == 1
+    assert len(cases) == 2
     assert cases[0].targets == ['esp32']
+    assert cases[0].name == 'test_foo_single'
+    assert cases[1].targets == ['esp32']
+    assert cases[1].name == 'test_foo_single_with_param'
 
 
 def test_get_pytest_cases_multi_specific(work_dirpath: Path) -> None:
@@ -69,7 +79,7 @@ def test_get_pytest_cases_all(work_dirpath: Path) -> None:
     script.write_text(TEMPLATE_SCRIPT)
     cases = get_pytest_cases([str(work_dirpath)], CollectMode.ALL)
 
-    assert len(cases) == 6
+    assert len(cases) == 8
     assert cases[0].targets == ['esp32', 'esp32s2']
     assert cases[0].name == 'test_foo_multi'
 
@@ -87,6 +97,12 @@ def test_get_pytest_cases_all(work_dirpath: Path) -> None:
 
     assert cases[5].targets == ['esp32s2']
     assert cases[5].name == 'test_foo_single'
+
+    assert cases[6].targets == ['esp32']
+    assert cases[6].name == 'test_foo_single_with_param'
+
+    assert cases[7].targets == ['esp32c3']
+    assert cases[7].name == 'test_foo_single_with_param'
 
 
 def test_multi_with_marker_and_app_path(work_dirpath: Path) -> None:
