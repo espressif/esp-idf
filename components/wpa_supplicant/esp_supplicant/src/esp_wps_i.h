@@ -91,6 +91,7 @@ struct wps_sm {
 #endif
     u8 discover_ssid_cnt;
     bool ignore_sel_reg;
+    bool wps_pbc_overlap;
     struct discard_ap_list_t dis_ap_list[WPS_MAX_DIS_AP_NUM];
     u8 discard_ap_cnt;
 };
