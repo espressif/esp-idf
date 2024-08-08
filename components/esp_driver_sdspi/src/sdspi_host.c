@@ -57,6 +57,7 @@ typedef struct {
     uint8_t* block_buf;
     /// semaphore of gpio interrupt
     SemaphoreHandle_t   semphr_int;
+    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
 } slot_info_t;
 
 // Reserved for old API to be back-compatible
@@ -215,6 +216,7 @@ static esp_err_t configure_spi_dev(slot_info_t *slot, int clock_speed_hz)
         // rather than a single SPI transaction.
         .spics_io_num = GPIO_NUM_NC,
         .queue_size = SDSPI_TRANSACTION_COUNT,
+        .duty_cycle_pos = slot->duty_cycle_pos,
     };
     return spi_bus_add_device(slot->host_id, &devcfg, &slot->spi_handle);
 }
@@ -337,6 +339,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
     *slot = (slot_info_t) {
         .host_id = slot_config->host_id,
         .gpio_cs = slot_config->gpio_cs,
+        .duty_cycle_pos = slot_config->duty_cycle_pos,
     };
 
     // Attach the SD card to the SPI bus

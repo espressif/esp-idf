@@ -44,8 +44,6 @@ void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level)
     // Config default output data line level when don't have transaction
     spi_ll_set_mosi_free_level(hal->hw, level);
     spi_ll_apply_config(hal->hw);
-#else
-    HAL_LOGW(SPI_HAL_TAG, "The target don't support this config")
 #endif
 }
 
@@ -63,7 +61,7 @@ void spi_hal_sct_init(spi_hal_context_t *hal)
 {
     spi_ll_conf_state_enable(hal->hw, true);
     spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
-    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode shoud use sct_trans_done only
+    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode should use sct_trans_done only
     spi_ll_enable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
     spi_ll_set_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
 }
