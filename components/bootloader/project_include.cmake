@@ -59,7 +59,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
             # If the signing key is not found, create a phony gen_secure_boot_signing_key target that
             # fails the build. fail_at_build_time causes a cmake run next time
             # (to pick up a new signing key if one exists, etc.)
-            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
                     "\tidf.py secure-generate-signing-key ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
