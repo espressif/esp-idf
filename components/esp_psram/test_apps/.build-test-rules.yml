@@ -3,6 +3,10 @@
 components/esp_psram/test_apps/psram:
   disable:
     - if: SOC_SPIRAM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: No runner
   depends_components:
     - esp_psram
     - esp_mm

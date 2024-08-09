@@ -1,0 +1,48 @@
+config SPIRAM
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM
+
+    choice SPIRAM_MODE
+        prompt "Mode of SPI RAM chip in use"
+        default SPIRAM_MODE_QUAD
+
+        config SPIRAM_MODE_QUAD
+            bool "Quad Mode PSRAM"
+
+    endchoice
+
+    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+        bool "Allow external memory as an argument to xTaskCreateStatic"
+        default y
+        help
+            Accessing memory in SPIRAM has certain restrictions, so task stacks allocated by xTaskCreate
+            are by default allocated from internal RAM.
+
+            This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
+            This should only be used for tasks where the stack is never accessed while the cache is disabled.
+
+    choice SPIRAM_SPEED
+        prompt "Set RAM clock speed"
+        default SPIRAM_SPEED_40M
+        help
+            Select the speed for the SPI RAM chip.
+
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
+        config SPIRAM_SPEED_40M
+            bool "40Mhz clock speed"
+    endchoice
+
+    config SPIRAM_SPEED
+        int
+        default 80 if SPIRAM_SPEED_80M
+        default 40 if SPIRAM_SPEED_40M
+
+    source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
+endmenu

@@ -68,6 +68,7 @@
 //  \#define SOC_LP_I2C_SUPPORTED            0    //TODO: [ESP32C61] IDF-9330, IDF-9337
 //  \#define SOC_PM_SUPPORTED                1
 #define SOC_ECDSA_SUPPORTED             1
+#define SOC_SPIRAM_SUPPORTED            1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 
