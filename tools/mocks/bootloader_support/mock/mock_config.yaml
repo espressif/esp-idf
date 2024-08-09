@@ -1,0 +1,12 @@
+:cmock:
+  :plugins:
+    - expect
+    - expect_any_args
+    - return_thru_ptr
+    - array
+    - ignore
+    - ignore_arg
+    - callback
+  :strippables:
+    # esp_secure_boot_verify_sbv2_signature_block uses an ets type that is not yet available
+    - ['(?:esp_secure_boot_verify_sbv2_signature_block\s*\(+.*?\)+)']
