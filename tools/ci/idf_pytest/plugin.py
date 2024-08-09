@@ -233,6 +233,12 @@ class IdfPytestEmbedded:
             if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
+
+            # add single-dut "target" as param
+            _item_target_param = self.get_param(item, 'target', None)
+            if case.is_single_dut_test_case and _item_target_param and _item_target_param not in case.all_markers:
+                item.add_marker(_item_target_param)
+
         items[:] = [_item for _item in items if _item in item_to_case_dict]
 
         # 3.1. CollectMode.SINGLE_SPECIFIC, like `pytest --target esp32`
