@@ -95,7 +95,9 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
     # by default, use hello_world app and copy it to a temporary directory with
     # the name resembling that of the test
     copy_from = 'tools/test_build_system/build_test_app'
-    copy_to = request.node.name + '_app'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_app'
 
     # allow overriding source and destination via pytest.mark.test_app_copy()
     mark = request.node.get_closest_marker('test_app_copy')

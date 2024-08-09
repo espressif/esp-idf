@@ -68,22 +68,6 @@ test_ldgen_on_host:
   variables:
     LC_ALL: C.UTF-8
 
-test_reproducible_build:
-  extends: .host_test_template
-  script:
-    - ./tools/ci/test_reproducible_build.sh
-  artifacts:
-    when: on_failure
-    paths:
-      - "**/sdkconfig"
-      - "**/build*/*.bin"
-      - "**/build*/*.elf"
-      - "**/build*/*.map"
-      - "**/build*/flasher_args.json"
-      - "**/build*/*.bin"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-
 test_spiffs_on_host:
   extends: .host_test_template
   script:
