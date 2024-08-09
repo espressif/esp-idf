@@ -84,10 +84,10 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
         ESP32-DevKitC <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/index.html>
         ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html>
-        ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+        ESP32-PICO-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-pico-kit/index.html>
         ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
-        ESP32-PICO-KIT-1 <../hw-reference/esp32/get-started-pico-kit-1>
+        ESP32-PICO-KIT-1 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-pico-kit-1/index.html>
         ESP32-PICO-DevKitM-2 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-pico-devkitm-2/index.html>
         ESP32-DevKitM-1 <../hw-reference/esp32/user-guide-devkitm-1>
 
