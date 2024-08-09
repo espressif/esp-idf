@@ -1,14 +1,13 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
-import re
 import shutil
 import subprocess
 import sys
 import typing
-from pathlib import Path, WindowsPath
-from typing import Pattern, Union
+from pathlib import Path
+from typing import Union
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
@@ -135,34 +134,3 @@ def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) 
     """
     run_cmake(*cmake_args, env=env)
     run_cmake('--build', '.')
-
-
-def file_contains(filename: Union[str, Path], what: Union[Union[str, Path], Pattern]) -> bool:
-    """
-    Returns true if file contains required object
-    :param filename: path to file where lookup is executed
-    :param what: searched substring or regex object
-    """
-    with open(filename, 'r', encoding='utf-8') as f:
-        data = f.read()
-        if isinstance(what, Pattern):
-            return re.search(what, data) is not None
-        else:
-            what_str = str(what)
-            # In case of windows path, try both single-slash `\` and double-slash '\\' paths
-            if isinstance(what, WindowsPath):
-                what_double_slash = what_str.replace('\\', '\\\\')
-                return what_str in data or what_double_slash in data
-
-            return what_str in data
-
-
-def bin_file_contains(filename: Union[str, Path], what: bytearray) -> bool:
-    """
-    Returns true if the binary file contains the given string
-    :param filename: path to file where lookup is executed
-    :param what: searched bytes
-    """
-    with open(filename, 'rb') as f:
-        data = f.read()
-        return data.find(what) != -1
