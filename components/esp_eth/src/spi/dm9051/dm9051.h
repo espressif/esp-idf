@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -148,6 +148,16 @@ extern "C" {
 #define IMR_PTI (1 << 1)     // Enable Packet Transmitted Interrupt
 #define IMR_PRI (1 << 0)     // Enable Packet Received Interrupt
 #define IMR_ALL (IMR_PAR | IMR_LNKCHGI | IMR_ROOI | IMR_ROI | IMR_PTI | IMR_PRI)
+
+#define MLEDCR_MOD3 (1 << 7)            // New LED mode
+#define MLEDCR_POL (1 << 2)             // Reverse Polarity of LED Type
+
+//     |      LED Type                     |  LNKLED (pin 25) | SPDLED (pin 26) | FDXLED (pin 16) |
+//     |-----------------------------------|------------------|-----------------|-----------------|
+#define MLEDCR_LED_TYPE_00 (0x00 << 0)  // |       Link       |     Traffic     |   Full-Duplex   |
+#define MLEDCR_LED_TYPE_01 (0x01 << 0)  // |  Link & Traffic  |    Speed100M    |   Full-Duplex   |
+#define MLEDCR_LED_TYPE_10 (0x02 << 0)  // |      Traffic     |    Speeed100M   |    Speed10M     |
+#define MLEDCR_LED_TYPE_11 (0x03 << 0)  // |       Link       |   Traffic100M   |   Traffic10M    |
 
 #ifdef __cplusplus
 }
