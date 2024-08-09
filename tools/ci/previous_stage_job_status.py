@@ -31,5 +31,6 @@ if __name__ == '__main__':
 
         for job in jobs:
             if job['stage'] == args.stage:
+                print(f'Jobs from the previous stage {args.stage} should pass; otherwise, this job will fail.')
                 sys.exit(1)
         page += 1
