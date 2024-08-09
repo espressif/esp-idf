@@ -34,6 +34,8 @@
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
+#include "stack/goep_common.h"
+#include "stack/goepc_api.h"
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta/bta_ar_api.h"
 #endif
@@ -98,6 +100,9 @@ void bta_av_del_rc(tBTA_AV_RCB *p_rcb)
 
     p_scb = NULL;
     if (p_rcb->handle != BTA_AV_RC_HANDLE_NONE) {
+        /* reset cover art state */
+        bta_av_ca_reset(p_rcb);
+
         if (p_rcb->shdl) {
             /* Validate array index*/
             if ((p_rcb->shdl - 1) < BTA_AV_NUM_STRS) {
@@ -1143,7 +1148,7 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
                                   p_data->conn_chg.peer_addr[5]);
                 if (p_lcb_rc->conn_msk && bdcmp(p_lcb_rc->addr, p_data->conn_chg.peer_addr) == 0) {
                     /* AVRCP is already connected.
-                     * need to update the association betwen SCB and RCB */
+                     * need to update the association between SCB and RCB */
                     p_lcb_rc->conn_msk = 0; /* indicate RC ONLY is not connected */
                     p_lcb_rc->lidx = 0;
                     p_scb->rc_handle = p_cb->rc_acp_handle;
@@ -1484,6 +1489,37 @@ static void bta_av_acp_sig_timer_cback (TIMER_LIST_ENT *p_tle)
     }
 }
 
+UINT16 bta_av_extra_tg_cover_art_l2cap_psm(void)
+{
+    tBTA_AV_CB          *p_cb = &bta_av_cb;
+    tSDP_DISC_REC       *p_rec = NULL;
+    tSDP_DISC_ATTR      *p_add_prot_desc, *p_prot_desc;
+    tSDP_PROTOCOL_ELEM  elem_l2cap, elem_obex;
+    UINT16              l2cap_psm = 0;
+
+    while (TRUE) {
+        /* get next record; if none found, we're done */
+        if ((p_rec = SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET, p_rec)) == NULL) {
+            break;
+        }
+
+        p_add_prot_desc = SDP_FindAttributeInRec(p_rec, ATTR_ID_ADDITION_PROTO_DESC_LISTS);
+        if ((p_add_prot_desc != NULL) && (SDP_DISC_ATTR_TYPE(p_add_prot_desc->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE)) {
+            /* Walk through all protocol descriptor list */
+            for (p_prot_desc = p_add_prot_desc->attr_value.v.p_sub_attr; p_prot_desc; p_prot_desc = p_prot_desc->p_next_attr) {
+                if(SDP_FindProtocolListElem(p_prot_desc, UUID_PROTOCOL_L2CAP, &elem_l2cap)
+                    && SDP_FindProtocolListElem(p_prot_desc, UUID_PROTOCOL_OBEX, &elem_obex))
+                {
+                    /* found */
+                    l2cap_psm = elem_l2cap.params[0];
+                    break;
+                }
+            }
+        }
+    }
+    return l2cap_psm;
+}
+
 /*******************************************************************************
 **
 ** Function         bta_av_check_peer_rc_features
@@ -1539,6 +1575,10 @@ tBTA_AV_FEAT bta_av_check_peer_rc_features (UINT16 service_uuid, UINT16 *rc_feat
                     if (categories & AVRC_SUPF_CT_BROWSE) {
                         peer_features |= (BTA_AV_FEAT_BROWSE);
                     }
+                    if ((service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) && (categories & AVRC_SUPF_TG_COVER_ART)) {
+                        /* remote target support cover art */
+                        peer_features |= BTA_AV_FEAT_COVER_ART;
+                    }
                 }
             }
         }
@@ -1573,6 +1613,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     tBTA_AV_FEAT        peer_features;  /* peer features mask */
     UINT16              peer_ct_features;  /* peer features mask as controller */
     UINT16              peer_tg_features;  /* peer features mask as target */
+    UINT16              obex_l2cap_psm = 0; /* target obex l2cap psm */
     UNUSED(p_data);
 
     APPL_TRACE_DEBUG("bta_av_rc_disc_done disc:x%x", p_cb->disc);
@@ -1601,6 +1642,10 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
     peer_features = bta_av_check_peer_rc_features (UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_ct_features);
     peer_features |= bta_av_check_peer_rc_features (UUID_SERVCLASS_AV_REM_CTRL_TARGET, &peer_tg_features);
 
+    if (peer_features & BTA_AV_FEAT_COVER_ART) {
+        obex_l2cap_psm = bta_av_extra_tg_cover_art_l2cap_psm();
+    }
+
     p_cb->disc = 0;
     utl_freebuf((void **) &p_cb->p_disc_db);
 
@@ -1618,6 +1663,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
                     p_cb->rcb[rc_handle].peer_features = peer_features;
                     p_cb->rcb[rc_handle].peer_ct_features = peer_ct_features;
                     p_cb->rcb[rc_handle].peer_tg_features = peer_tg_features;
+                    p_cb->rcb[rc_handle].cover_art_l2cap_psm = obex_l2cap_psm;
                 }
 #if (BT_USE_TRACES == TRUE || BT_TRACE_APPL == TRUE)
                 else {
@@ -1636,6 +1682,7 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
         }
     } else {
         p_cb->rcb[rc_handle].peer_features = peer_features;
+        p_cb->rcb[rc_handle].cover_art_l2cap_psm = obex_l2cap_psm;
         rc_feat.rc_handle =  rc_handle;
         rc_feat.peer_features = peer_features;
         rc_feat.peer_ct_features = peer_ct_features;
@@ -1676,6 +1723,10 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
             p_rcb->peer_features = 0;
             p_rcb->peer_ct_features = 0;
             p_rcb->peer_tg_features = 0;
+
+            /* reset cover art state */
+            bta_av_ca_reset(p_rcb);
+
             APPL_TRACE_DEBUG("       shdl:%d, lidx:%d", p_rcb->shdl, p_rcb->lidx);
             if (p_rcb->shdl) {
                 if ((p_rcb->shdl - 1) < BTA_AV_NUM_STRS) {
@@ -1748,6 +1799,7 @@ void bta_av_rc_disc(UINT8 disc)
     tAVRC_SDP_DB_PARAMS db_params;
     UINT16              attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST,
                                        ATTR_ID_BT_PROFILE_DESC_LIST,
+                                       ATTR_ID_ADDITION_PROTO_DESC_LISTS,
                                        ATTR_ID_SUPPORTED_FEATURES
                                       };
     UINT8       hdi;
@@ -1785,7 +1837,7 @@ void bta_av_rc_disc(UINT8 disc)
         if (p_cb->p_disc_db) {
             /* set up parameters */
             db_params.db_len = BTA_AV_DISC_BUF_SIZE;
-            db_params.num_attr = 3;
+            db_params.num_attr = 4;
             db_params.p_db = p_cb->p_disc_db;
             db_params.p_attrs = attr_list;
 

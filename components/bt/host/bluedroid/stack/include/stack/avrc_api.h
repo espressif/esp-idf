@@ -99,6 +99,9 @@
 #define AVRC_SUPF_CT_CAT3               0x0004      /* Category 3 */
 #define AVRC_SUPF_CT_CAT4               0x0008      /* Category 4 */
 #define AVRC_SUPF_CT_BROWSE             0x0040      /* Browsing */
+#define AVRC_SUPF_CT_COVER_ART_GIP      0x0080      /* Cover Art GetImageProperties */
+#define AVRC_SUPF_CT_COVER_ART_GI       0x0100      /* Cover Art GetImage */
+#define AVRC_SUPF_CT_COVER_ART_GLT      0x0200      /* Cover Art GetLinkedThumbnail */
 
 #define AVRC_SUPF_TG_CAT1               0x0001      /* Category 1 */
 #define AVRC_SUPF_TG_CAT2               0x0002      /* Category 2 */
@@ -107,7 +110,8 @@
 #define AVRC_SUPF_TG_APP_SETTINGS       0x0010      /* Player Application Settings */
 #define AVRC_SUPF_TG_GROUP_NAVI         0x0020      /* Group Navigation */
 #define AVRC_SUPF_TG_BROWSE             0x0040      /* Browsing */
-#define AVRC_SUPF_TG_MULTI_PLAYER       0x0080      /* Muliple Media Player */
+#define AVRC_SUPF_TG_MULTI_PLAYER       0x0080      /* Multiple Media Player */
+#define AVRC_SUPF_TG_COVER_ART          0x0100      /* Cover Art */
 
 #define AVRC_META_SUCCESS               AVRC_SUCCESS
 #define AVRC_META_FAIL                  AVRC_FAIL
@@ -561,7 +565,7 @@ extern bt_status_t AVRC_Init(void);
 **
 ** Function         AVRC_Deinit
 **
-** Description      This function is called at stack shotdown to free the
+** Description      This function is called at stack shutdown to free the
 **                  control block (if using dynamic memory), and deinitializes the
 **                  control block and tracing level.
 **

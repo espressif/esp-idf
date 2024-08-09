@@ -27,8 +27,8 @@
 #include <string.h>
 
 
-/* Stack Configuation Related Init Definaton
- * TODO: Now Just Unmask these defination until stack layer is OK
+/* Stack Configuration Related Init Definaton
+ * TODO: Now Just Unmask these definition until stack layer is OK
  */
 
 #ifndef BTA_INCLUDED
@@ -89,6 +89,15 @@
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
 #include "stack/smp_api.h"
 #endif
+#endif
+
+#if (defined(OBEX_INCLUDED) && OBEX_INCLUDED == TRUE)
+#include "stack/obex_api.h"
+#endif
+
+#if (defined(GOEPC_INCLUDED) && GOEPC_INCLUDED == TRUE)
+#include "stack/goep_common.h"
+#include "stack/goepc_api.h"
 #endif
 
 //BTA Modules
@@ -267,6 +276,14 @@ void BTE_DeinitStack(void)
     }
 #endif // BTA_INCLUDED == TRUE
 
+#if (defined(GOEPC_INCLUDED) && GOEPC_INCLUDED == TRUE)
+    GOEPC_Deinit();
+#endif
+
+#if (defined(OBEX_INCLUDED) && OBEX_INCLUDED == TRUE)
+    OBEX_Deinit();
+#endif
+
 #if (defined(HID_DEV_INCLUDED) && HID_DEV_INCLUDED == TRUE)
     HID_DevDeinit();
 #endif
@@ -386,6 +403,18 @@ bt_status_t BTE_InitStack(void)
 
 #if (defined(MCA_INCLUDED) && MCA_INCLUDED == TRUE)
     MCA_Init();
+#endif
+
+#if (defined(OBEX_INCLUDED) && OBEX_INCLUDED == TRUE)
+    if (OBEX_Init() != OBEX_SUCCESS) {
+        goto error_exit;
+    }
+#endif
+
+#if (defined(GOEPC_INCLUDED) && GOEPC_INCLUDED == TRUE)
+    if (GOEPC_Init() != GOEP_SUCCESS) {
+        goto error_exit;
+    }
 #endif
 
     //BTA Modules

@@ -91,7 +91,8 @@ typedef UINT16 tBTA_SYS_HW_MODULE;
 #define BTA_ID_GATTC        31           /* GATT Client */
 #define BTA_ID_GATTS        32           /* GATT Client */
 #define BTA_ID_SDP          33           /* SDP Client */
-#define BTA_ID_BLUETOOTH_MAX   34        /* last BT profile */
+#define BTA_ID_GOEPC        34           /* GOEP Client */
+#define BTA_ID_BLUETOOTH_MAX   35        /* last BT profile */
 
 /* GENERIC */
 #define BTA_ID_PRM          38
@@ -142,7 +143,7 @@ typedef void (tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 
 typedef void (tBTA_SYS_SSR_CFG_CBACK)(UINT8 id, UINT8 app_id, UINT16 latency, UINT16 tout);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
-/* eir callback for adding/removeing UUID */
+/* eir callback for adding/removing UUID */
 typedef void (tBTA_SYS_EIR_CBACK)(tBT_UUID uuid, BOOLEAN adding);
 #endif
 

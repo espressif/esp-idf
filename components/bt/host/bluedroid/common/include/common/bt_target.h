@@ -171,6 +171,9 @@
 #define BTC_HD_INCLUDED             TRUE
 #endif /* UC_BT_HID_DEVICE_ENABLED */
 
+#define OBEX_INCLUDED               TRUE
+#define GOEPC_INCLUDED               TRUE
+
 #endif /* UC_BT_CLASSIC_ENABLED */
 
 /* This is set to enable use of GAP L2CAP connections. */
@@ -2159,6 +2162,20 @@
 
 #ifndef HID_HOST_REPAGE_WIN
 #define HID_HOST_REPAGE_WIN          (2)
+#endif
+
+/*************************************************************************
+** Definitions for OBEX
+*/
+#ifndef OBEX_INCLUDED
+#define OBEX_INCLUDED            FALSE
+#endif
+
+/*************************************************************************
+** Definitions for OBEX
+*/
+#ifndef GOEPC_INCLUDED
+#define GOEPC_INCLUDED            FALSE
 #endif
 
 /*************************************************************************
