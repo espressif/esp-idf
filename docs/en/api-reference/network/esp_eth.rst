@@ -148,8 +148,10 @@ Ethernet driver is composed of two parts: MAC and PHY.
         * Disable or power down the crystal oscillator (as the case *b* in the picture).
         * Force the PHY device in reset status (as the case *a* in the picture). **This could fail for some PHY device** (i.e. it still outputs signal to GPIO0 even in reset state).
 
-    **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!**
-    Keep the trace as short as possible. Keep it away from RF devices. Keep it away from inductor elements.
+    .. warning::
+        If you want the **Ethernet to work with WiFi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable WiFi or use a PHY or an external oscillator as the ``REF_CLK`` source.
+
+    **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep the trace as short as possible. Keep it away from RF devices. Keep it away from inductor elements.
 
     .. note::
         ESP-IDF only supports the RMII interface (i.e. always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`).
