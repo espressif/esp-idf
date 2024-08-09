@@ -163,12 +163,12 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP-WROVER-KIT
-.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT <../../hw-reference/index>`
+.. |devkit-name-with-link| replace:: `ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html>`__
 
 ---
 
 .. devkit-hw-config
 
-* Enable on-board JTAG functionality by setting JP8 according to :doc:`../../hw-reference/esp32/get-started-wrover-kit`, Section :ref:`get-started-esp-wrover-kit-v4.1-setup-options`.
+* Enable on-board JTAG functionality by setting JP8 according to `ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html>`__.
 
 ---
