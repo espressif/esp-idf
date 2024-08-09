@@ -8,7 +8,6 @@ tools/ci/get_all_test_results.py
 tools/gdb_panic_server.py
 tools/check_term.py
 tools/python_version_checker.py
-tools/generate_debug_prefix_map.py
 tools/ci/astyle-rules.yml
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
