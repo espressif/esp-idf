@@ -144,10 +144,7 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_IDF_TARGET_ESP32C61)  # TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-9248
         list(REMOVE_ITEM srcs
                 "sleep_cpu.c"
-                "sleep_modem.c"
-                "sleep_modes.c"
                 "sleep_wake_stub.c"
-                "sleep_gpio.c"
             )
     endif()
 else()

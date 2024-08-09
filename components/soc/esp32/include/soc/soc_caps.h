@@ -415,7 +415,7 @@
 #define SOC_PM_SUPPORT_MODEM_PD                   (1)     /*!<Modem here includes wifi and btdm */
 
 #define SOC_CONFIGURABLE_VDDSDIO_SUPPORTED        (1)
-
+#define SOC_PM_MODEM_PD_BY_SW                     (1)
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)
 

@@ -46,8 +46,8 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_BOD_SUPPORTED               1
 //  \#define SOC_APM_SUPPORTED               1    //TODO: [ESP32C61] IDF-9230
-#define SOC_PMU_SUPPORTED               1    //TODO: [ESP32C61] IDF-9250
-//  \#define SOC_LP_TIMER_SUPPORTED          1    //TODO: [ESP32C61] IDF-9244
+#define SOC_PMU_SUPPORTED               1
+#define SOC_LP_TIMER_SUPPORTED          1
 //  \#define SOC_LP_AON_SUPPORTED            1
 //  \#define SOC_LP_PERIPHERALS_SUPPORTED    1
  #define SOC_CLK_TREE_SUPPORTED          1
@@ -60,7 +60,8 @@
 //  \#define SOC_ETM_SUPPORTED               0
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
 //  \#define SOC_PAU_SUPPORTED               0
-//  \#define SOC_PM_SUPPORTED                1
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_PM_SUPPORTED                1
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_SPIRAM_SUPPORTED            1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
@@ -401,15 +402,15 @@
 
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
-#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-#define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
-#define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+// #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+// #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
+// #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+// #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 //  \#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
-// \#define SOC_PM_SUPPORT_RC32K_PD         (1)
+#define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 //  \#define SOC_PM_SUPPORT_TOP_PD           (1)
@@ -421,12 +422,9 @@
 /* macro redefine for pass esp_wifi headers md5sum check */
 #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
+// #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
-#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
-
-//  \#define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (0)
-#define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
 #define SOC_PM_PAU_LINK_NUM             (4)
 
@@ -437,7 +435,7 @@
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
 #define SOC_CLK_LP_FAST_SUPPORT_XTAL              (1)     /*!< Support XTAL clock as the LP_FAST clock source */
-
+#define SOC_CLK_RC32K_NOT_TO_USE                  (1)     /*!< Due to the poor low-temperature characteristics of RC32K (it cannot operate below -40 degrees Celsius), please avoid using it whenever possible. */
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/

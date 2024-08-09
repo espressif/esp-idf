@@ -91,6 +91,10 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
+config SOC_LP_TIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
@@ -104,6 +108,14 @@ config SOC_MODEM_CLOCK_SUPPORTED
     default y
 
 config SOC_REG_I2C_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_PM_SUPPORTED
     bool
     default y
 
@@ -695,31 +707,15 @@ config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
 
-config SOC_PM_SUPPORT_WIFI_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_BEACON_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_EXT1_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
-    bool
-    default y
-
 config SOC_PM_SUPPORT_MODEM_PD
     bool
     default y
 
 config SOC_PM_SUPPORT_XTAL32K_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RC32K_PD
     bool
     default y
 
@@ -747,21 +743,9 @@ config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default n
 
-config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-    bool
-    default y
-
 config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default n
-
-config SOC_PM_RETENTION_HAS_CLOCK_BUG
-    bool
-    default y
-
-config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
-    bool
-    default y
 
 config SOC_PM_PAU_LINK_NUM
     int
@@ -784,6 +768,10 @@ config SOC_CLK_OSC_SLOW_SUPPORTED
     default y
 
 config SOC_CLK_LP_FAST_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_CLK_RC32K_NOT_TO_USE
     bool
     default y
 

@@ -17,8 +17,6 @@
 #include "hal/pmu_types.h"
 #include "hal/misc.h"
 
-// TODO: [ESP32C61] IDF-9250
-#pragma message "pmu_ll.h has not been fully updated on ESP32C61 (IDF-9250). Use with care!"
 
 #ifdef __cplusplus
 extern "C" {

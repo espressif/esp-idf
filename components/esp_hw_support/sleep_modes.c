@@ -96,6 +96,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/rtc.h"
 #include "hal/gpio_ll.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/rtc.h"
+#include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
@@ -152,6 +155,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C5
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
@@ -196,7 +202,7 @@
 #define MAX_DSLP_HOOKS      3
 
 static esp_deep_sleep_cb_t s_dslp_cb[MAX_DSLP_HOOKS] = {0};
-#if CONFIG_ESP_PHY_ENABLED
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
 static esp_deep_sleep_cb_t s_dslp_phy_cb[MAX_DSLP_HOOKS] = {0};
 #endif
 
@@ -247,7 +253,9 @@ void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx)
 
 static uint32_t s_lightsleep_cnt = 0;
 
+#if SOC_RTCIO_PIN_COUNT > 0
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
+#endif
 
 static sleep_config_t s_config = {
     .domain = {
@@ -676,7 +684,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61
     // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
@@ -703,7 +711,9 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
+#if !CONFIG_IDF_TARGET_ESP32C61
     sar_periph_ctrl_power_enable();
+#endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
@@ -789,7 +799,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
 
-#if CONFIG_ESP_PHY_ENABLED
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
     // Do deep-sleep PHY related callback, which need to be executed when the PLL clock is exists.
     // For light-sleep, PHY state is managed by the upper layer of the wifi/bt protocol stack.
     if (deep_sleep) {
@@ -1765,7 +1775,7 @@ static void ext0_wakeup_prepare(void)
 
 #endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
-#if SOC_PM_SUPPORT_EXT1_WAKEUP
+#if SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
 {
     if (io_mask == 0 && level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
@@ -1945,7 +1955,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     return gpio_mask;
 }
 
-#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP && SOC_RTCIO_PIN_COUNT > 0
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
