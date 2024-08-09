@@ -24,7 +24,7 @@
 .. toctree::
    :maxdepth: 1
 
-   host-based-security-workflows
+   security-features-enablement-workflows
 
 漏洞
 ---------
