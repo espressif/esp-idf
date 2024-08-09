@@ -45,11 +45,11 @@ static const uint16_t spp_service_uuid = 0xABF0;
 
 static const uint8_t spp_adv_data[23] = {
     /* Flags */
-    0x02,0x01,0x06,
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
     /* Complete List of 16-bit Service Class UUIDs */
-    0x03,0x03,0xF0,0xAB,
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xF0, 0xAB,
     /* Complete Local Name in advertising */
-    0x0F,0x09, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
+    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R', 'V', 'E', 'R'
 };
 
 static uint16_t spp_mtu_size = 23;
