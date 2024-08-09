@@ -161,6 +161,10 @@ components_not_formatted_permanent:
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
     # Coredump (generated)
     - /components/espcoredump/include_core_dump/elf.h
+    # OpenOCD stub binaries (generated)
+    - /components/esp_system/openocd_stub_bins/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32c6/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32h2/*.inc
 
 docs:
   # Docs directory contains some .inc files, which are not C include files
