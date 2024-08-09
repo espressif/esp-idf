@@ -117,6 +117,22 @@ esp_attr_value_t gatts_demo_char1_val = {
     .attr_value   = char1_str,
 };
 
+#ifdef CONFIG_SET_RAW_ADV_DATA
+static uint8_t raw_adv_data[] = {
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,               // Length 2, Data Type ESP_BLE_AD_TYPE_FLAG, Data 1 (LE General Discoverable Mode, BR/EDR Not Supported)
+    /* TX Power Level */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xEB,             // Length 2, Data Type ESP_BLE_AD_TYPE_TX_PWR, Data 2 (-21)
+    /* Complete 16-bit Service UUIDs */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xAB, 0xCD    // Length 3, Data Type ESP_BLE_AD_TYPE_16SRV_CMPL, Data 3 (UUID)
+};
+
+static uint8_t raw_scan_rsp_data[] = {
+    /* Complete Local Name */
+    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'G', 'A', 'T', 'T', 'S', '_', 'D', 'E', 'M', 'O'   // Length 15, Data Type ESP_BLE_AD_TYPE_NAME_CMPL, Data (ESP_GATTS_DEMO)
+};
+
+#else
 static uint8_t service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
@@ -157,6 +173,7 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .p_service_uuid = NULL,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
+#endif /* CONFIG_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
     .adv_int_min        = 0x20,
