@@ -261,7 +261,13 @@ void vPortEnterCritical( void )
 
 void vPortExitCritical( void )
 {
-    uxCriticalNesting--;
+    if ( uxCriticalNesting > 0 )
+    {
+        uxCriticalNesting--;
+    }
+
+    /* Critical section nesting count must always be >= 0. */
+    configASSERT( uxCriticalNesting >= 0 );
 
     /* If we have reached 0 then re-enable the interrupts. */
     if( uxCriticalNesting == 0 )

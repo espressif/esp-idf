@@ -145,9 +145,14 @@ void vPortExitCriticalIDF(portMUX_TYPE *lock)
     spinlock_release(lock);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNestingIDF[coreID];
+
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNestingIDF[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             XTOS_RESTORE_JUST_INTLEVEL((int) port_uxCriticalOldInterruptStateIDF[coreID]);
