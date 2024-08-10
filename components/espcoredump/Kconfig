@@ -50,8 +50,7 @@ menu "Core dump"
     config ESP_COREDUMP_CAPTURE_DRAM
         bool "Include whole .bss and .data sections and heap data into core dump file"
         default n
-        #TODO: Heap walker api is not ready for the esp32c5 (IDF-9641)
-        depends on ESP_COREDUMP_DATA_FORMAT_ELF && !IDF_TARGET_ESP32C5
+        depends on ESP_COREDUMP_DATA_FORMAT_ELF
         help
             Storing these sections can help with easier debugging and troubleshooting.
             However, additional storage space will be required in the core dump partition.
