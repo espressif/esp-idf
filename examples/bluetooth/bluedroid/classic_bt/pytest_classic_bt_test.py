@@ -12,10 +12,10 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, target, erase_all', [
+    'count, app_path, target, erase_all, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "bt_spp_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_initiator")}',
-         'esp32|esp32', 'y'),
+         'esp32|esp32', 'y', 'test'),
     ],
     indirect=True,
 )
@@ -42,10 +42,10 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, target', [
+    'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_acceptor")}|{os.path.join(os.path.dirname(__file__), "bt_spp_vfs_initiator")}',
-         'esp32|esp32'),
+         'esp32|esp32', 'test'),
     ],
     indirect=True,
 )
@@ -67,10 +67,10 @@ def test_bt_spp_vfs(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, target', [
+    'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "a2dp_sink")}|{os.path.join(os.path.dirname(__file__), "a2dp_source")}',
-         'esp32|esp32'),
+         'esp32|esp32', 'test'),
     ],
     indirect=True,
 )
@@ -112,11 +112,11 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, target', [
+    'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}| \
            {os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
-         'esp32|esp32'),
+         'esp32|esp32', 'test'),
     ],
     indirect=True,
 )
@@ -138,10 +138,10 @@ def test_bt_hid(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, target', [
+    'count, app_path, target, config', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "bt_l2cap_server")}|{os.path.join(os.path.dirname(__file__), "bt_l2cap_client")}',
-         'esp32|esp32'),
+         'esp32|esp32', 'test'),
     ],
     indirect=True,
 )
