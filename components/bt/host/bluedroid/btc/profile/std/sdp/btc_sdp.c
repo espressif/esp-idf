@@ -27,6 +27,7 @@ typedef enum {
 typedef struct {
     sdp_state_t state;
     int sdp_handle;
+    esp_bt_uuid_t uuid;
     bluetooth_sdp_record* record_data;
 } sdp_slot_t;
 
@@ -92,11 +93,11 @@ static int get_sdp_records_size(bluetooth_sdp_record* in_record, int count)
     return records_size;
 }
 
-static void set_sdp_handle(int id, int handle)
+static void set_sdp_slot_info(int id, int sdp_handle, esp_bt_uuid_t *uuid)
 {
     sdp_slot_t *slot = NULL;
 
-    BTC_TRACE_DEBUG("%s() id=%d to handle=0x%08x", __func__, id, handle);
+    BTC_TRACE_DEBUG("%s() id=%d to sdp_handle=0x%08x", __func__, id, sdp_handle);
 
     if(id >= SDP_MAX_RECORDS) {
         BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
@@ -104,19 +105,30 @@ static void set_sdp_handle(int id, int handle)
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-    slot = sdp_local_param.sdp_slots[id];
-    if (slot == NULL) {
-        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-        BTC_TRACE_ERROR("%s() id=%d to handle=0x%08x, set failed", __func__, id, handle);
-        return;
-    }
-    slot->sdp_handle = handle;
+
+    do {
+        slot = sdp_local_param.sdp_slots[id];
+        if (slot == NULL) {
+            BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
+            break;
+        }
+
+        if (slot->state != SDP_RECORD_ALLOCED) {
+            BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__, id,
+                            sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
+            break;
+        }
+        slot->sdp_handle = sdp_handle;
+        slot->record_data = NULL;
+        memcpy(&slot->uuid, uuid, sizeof(esp_bt_uuid_t));
+    } while (0);
+
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 }
 
-
-static bool get_sdp_record_by_handle(int handle, bluetooth_sdp_record* record)
+static bool get_sdp_uuid_by_handle(int handle, esp_bt_uuid_t **uuid)
 {
+    bool ret = false;
     sdp_slot_t *slot = NULL;
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
@@ -124,14 +136,16 @@ static bool get_sdp_record_by_handle(int handle, bluetooth_sdp_record* record)
     for (int i = 0; i < SDP_MAX_RECORDS; i++) {
         slot = sdp_local_param.sdp_slots[i];
         if ((slot != NULL) && (slot->sdp_handle == handle)) {
-            memcpy(record, slot->record_data, sizeof(bluetooth_sdp_record));
-            osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-            return true;
+            if (uuid) {
+                *uuid = &slot->uuid;
+            }
+            ret = true;
+            break;
         }
     }
 
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-    return false;
+    return ret;
 }
 
 static int get_sdp_slot_id_by_handle(int handle)
@@ -152,9 +166,10 @@ static int get_sdp_slot_id_by_handle(int handle)
     return -1;
 }
 
-static sdp_slot_t *start_create_sdp(int id)
+static bluetooth_sdp_record *start_create_sdp(int id)
 {
-    sdp_slot_t *sdp_slot = NULL;
+    sdp_slot_t *slot = NULL;
+    bluetooth_sdp_record* record_data = NULL;
 
     if(id >= SDP_MAX_RECORDS) {
         BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
@@ -162,18 +177,25 @@ static sdp_slot_t *start_create_sdp(int id)
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-    sdp_slot = sdp_local_param.sdp_slots[id];
-    if (sdp_slot == NULL) {
-        BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
-    } else if(sdp_slot->state != SDP_RECORD_ALLOCED) {
-        BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__,
-                id, sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
-        /* The record have been removed before this event occurred - e.g. deinit */
-        sdp_slot = NULL;
-    }
+
+    do {
+        slot = sdp_local_param.sdp_slots[id];
+        if (slot == NULL) {
+            BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
+            break;
+        }
+
+        if (slot->state != SDP_RECORD_ALLOCED) {
+            BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__, id,
+                            sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
+            break;
+        }
+        record_data = slot->record_data;
+    } while (0);
+
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 
-    return sdp_slot;
+    return record_data;
 }
 
 /* Deep copy all content of in_records into out_records.
@@ -357,7 +379,7 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -448,7 +470,7 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -523,7 +545,7 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -603,7 +625,7 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -649,7 +671,7 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec)
                                      UUID_SERVCLASS_PHONE_ACCESS,
                                      rec->hdr.profile_version);
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -736,7 +758,7 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -799,7 +821,7 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec)
             UUID_SERVCLASS_SAP,
             rec->hdr.profile_version);
 
-    // Make the service browseable
+    // Make the service browsable
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -816,46 +838,55 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec)
 
 static int btc_handle_create_record_event(int id)
 {
-    int handle = -1;
-    const sdp_slot_t *sdp_slot = NULL;
+    int sdp_handle = 0;
 
     BTC_TRACE_DEBUG("Sdp Server %s", __func__);
 
-    sdp_slot = start_create_sdp(id);
-    if(sdp_slot != NULL) {
-        bluetooth_sdp_record* record = sdp_slot->record_data;
-        switch(record->hdr.type) {
+    bluetooth_sdp_record *record = start_create_sdp(id);
+    if(record != NULL) {
+        switch (record->hdr.type) {
         case SDP_TYPE_RAW:
-            handle = add_raw_sdp(record);
+            sdp_handle = add_raw_sdp(record);
             break;
         case SDP_TYPE_MAP_MAS:
-            handle = add_maps_sdp(&record->mas);
+            sdp_handle = add_maps_sdp(&record->mas);
             break;
         case SDP_TYPE_MAP_MNS:
-            handle = add_mapc_sdp(&record->mns);
+            sdp_handle = add_mapc_sdp(&record->mns);
             break;
         case SDP_TYPE_PBAP_PSE:
-            handle = add_pbaps_sdp(&record->pse);
+            sdp_handle = add_pbaps_sdp(&record->pse);
             break;
         case SDP_TYPE_PBAP_PCE:
-            handle = add_pbapc_sdp(&record->pce);
+            sdp_handle = add_pbapc_sdp(&record->pce);
             break;
         case SDP_TYPE_OPP_SERVER:
-            handle = add_opps_sdp(&record->ops);
+            sdp_handle = add_opps_sdp(&record->ops);
             break;
         case SDP_TYPE_SAP_SERVER:
-            handle = add_saps_sdp(&record->sap);
+            sdp_handle = add_saps_sdp(&record->sap);
             break;
         default:
-            BTC_TRACE_DEBUG("Record type %d is not supported",record->hdr.type);
+            BTC_TRACE_DEBUG("Record type %d is not supported", record->hdr.type);
             break;
         }
-        if(handle != -1) {
-            set_sdp_handle(id, handle);
+
+        if(sdp_handle != 0) {
+            set_sdp_slot_info(id, sdp_handle, &record->hdr.bt_uuid);
+            // free the record, since not use it anymore
+            osi_free(record);
+        } else {
+            sdp_handle = -1;
         }
+    } else {
+        sdp_handle = -1;
     }
 
-    return handle;
+    if (sdp_handle == -1) {
+        free_sdp_slot(id);
+    }
+
+    return sdp_handle;
 }
 
 static bool btc_sdp_remove_record_event(int handle)
@@ -1022,14 +1053,14 @@ static void btc_sdp_remove_record(btc_sdp_args_t *arg)
             break;
         }
 
-        bluetooth_sdp_record rec;
-        if (get_sdp_record_by_handle(arg->remove_record.record_handle, &rec)) {
-            if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_16) {
-                bta_sys_remove_uuid(rec.hdr.bt_uuid.uuid.uuid16);
-            } else if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_32) {
-                bta_sys_remove_uuid_32(rec.hdr.bt_uuid.uuid.uuid32);
-            } else if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_128) {
-                bta_sys_remove_uuid_128((UINT8 *)&rec.hdr.bt_uuid.uuid.uuid128);
+        esp_bt_uuid_t *service_uuid = NULL;
+        if (get_sdp_uuid_by_handle(arg->remove_record.record_handle, &service_uuid)) {
+            if (service_uuid->len == ESP_UUID_LEN_16) {
+                bta_sys_remove_uuid(service_uuid->uuid.uuid16);
+            } else if (service_uuid->len == ESP_UUID_LEN_32) {
+                bta_sys_remove_uuid_32(service_uuid->uuid.uuid32);
+            } else if (service_uuid->len == ESP_UUID_LEN_128) {
+                bta_sys_remove_uuid_128((UINT8 *)&service_uuid->uuid.uuid128);
             }
         } else {
             BTC_TRACE_ERROR("%s SDP record with handle %d not found",
