@@ -31,4 +31,5 @@ include:
   - '.gitlab/ci/host-test.yml'
   - '.gitlab/ci/deploy.yml'
   - '.gitlab/ci/post_deploy.yml'
+  - '.gitlab/ci/retry_failed_jobs.yml'
   - '.gitlab/ci/test-win.yml'

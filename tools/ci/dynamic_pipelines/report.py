@@ -19,12 +19,16 @@ from prettytable import PrettyTable
 
 from .constants import COMMENT_START_MARKER
 from .constants import REPORT_TEMPLATE_FILEPATH
+from .constants import RETRY_JOB_PICTURE_LINK
+from .constants import RETRY_JOB_PICTURE_PATH
+from .constants import RETRY_JOB_TITLE
 from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from .models import GitlabJob
 from .models import TestCase
 from .utils import fetch_failed_testcases_failure_ratio
 from .utils import format_permalink
-from .utils import get_report_url
+from .utils import get_artifacts_url
+from .utils import get_repository_file_url
 from .utils import is_url
 from .utils import load_known_failure_cases
 
@@ -69,13 +73,14 @@ class ReportGenerator:
 
         # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
         # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
-        report_url: str = get_report_url(job_id, output_filepath)
+        report_url: str = get_artifacts_url(job_id, output_filepath)
         return report_url
 
     def generate_html_report(self, table_str: str) -> str:
         # we're using bootstrap table
         table_str = table_str.replace(
-            '<table>', '<table data-toggle="table" data-search="true" data-sticky-header="true">'
+            '<table>',
+            '<table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">',
         )
         with open(REPORT_TEMPLATE_FILEPATH) as fr:
             template = fr.read()
@@ -245,20 +250,23 @@ class ReportGenerator:
         if self.mr is None:
             print('No MR found, skip posting comment')
             return
-
+        retry_job_picture_comment = (f'{RETRY_JOB_TITLE}\n\n'
+                                     f'{RETRY_JOB_PICTURE_LINK}').format(pic_url=get_repository_file_url(RETRY_JOB_PICTURE_PATH))
+        del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
         for note in self.mr.notes.list(iterator=True):
             if note.body.startswith(COMMENT_START_MARKER):
                 updated_str = re.sub(self.REGEX_PATTERN.format(self.title), comment, note.body)
                 if updated_str == note.body:  # not updated
                     updated_str = f'{note.body.strip()}\n\n{comment}'
 
-                note.body = updated_str
+                updated_str = re.sub(del_retry_job_pic_pattern, '', updated_str, flags=re.DOTALL)
+                note.body = updated_str + retry_job_picture_comment
                 note.save()
                 break
         else:
             new_comment = f"""{COMMENT_START_MARKER}
 
-{comment}"""
+{comment}{retry_job_picture_comment}"""
             self.mr.notes.create({'body': new_comment})
 
 
@@ -526,7 +534,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Test Case',
                 'Test Script File Path',
                 'Failure Reason',
-                'Failures across all other branches (40 latest testcases)',
+                'Cases that failed in other branches as well (40 latest testcases)',
                 'Dut Log URL',
                 'Job URL',
                 'Grafana URL',
@@ -534,7 +542,7 @@ class TargetTestReportGenerator(ReportGenerator):
             row_attrs=['name', 'file', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
             value_functions=[
                 (
-                    'Failures across all other branches (40 latest testcases)',
+                    'Cases that failed in other branches as well (40 latest testcases)',
                     lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
                 )
             ],
@@ -696,11 +704,10 @@ class JobReportGenerator(ReportGenerator):
                 )
             ],
         )
-        relevant_failed_jobs_report_url = get_report_url(self.job_id, self.failed_jobs_report_file)
+        relevant_failed_jobs_report_url = get_artifacts_url(self.job_id, self.failed_jobs_report_file)
         self.additional_info += self.generate_additional_info_section(
             self.report_titles_map['failed_jobs'], len(relevant_failed_jobs), relevant_failed_jobs_report_url
         )
 
         report_str = self.generate_html_report(''.join(report_sections))
-
         return report_str
