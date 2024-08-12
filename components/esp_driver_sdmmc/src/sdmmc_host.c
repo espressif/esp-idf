@@ -814,9 +814,6 @@ static void sdmmc_host_change_to_slot(int slot)
     }
     s_host_ctx.active_slot_num = slot;
 
-    // Clear interrupt status and set interrupt mask to known state
-    sdmmc_host_intmask_clear_disable();
-
     // Apply the appropriate saved host settings for the new slot before starting the transaction
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_host_div);
@@ -828,9 +825,6 @@ static void sdmmc_host_change_to_slot(int slot)
 
     // Wait for the clock to propagate
     esp_rom_delay_us(10);
-
-    // Enable interrupts again
-    sdmmc_host_intmask_set_enable();
 }
 #endif  // SOC_SDMMC_NUM_SLOTS >= 2
 
