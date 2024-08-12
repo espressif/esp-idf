@@ -172,11 +172,13 @@ examples/protocols/l2tap:
 examples/protocols/modbus:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C5] IDF-8697, [ESP32C61] IDF-9298
+      reason: not supported yet [ESP32C61] IDF-9298
   depends_filepatterns:
+    - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/modbus/mb_example_common/**/*
+
 
 examples/protocols/mqtt:
   <<: *default_dependencies
