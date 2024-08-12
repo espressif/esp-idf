@@ -168,3 +168,15 @@ pipeline_variables:
       - pipeline.env
     expire_in: 1 week
     when: always
+
+redundant_pass_job:
+  stage: pre_check
+  tags: [shiny, fast_run]
+  image: $ESP_ENV_IMAGE
+  dependencies: null
+  before_script: []
+  cache: []
+  extends: []
+  script:
+    - echo "This job is redundant to ensure the 'retry_failed_jobs' job can exist and not be skipped"
+  when: always

@@ -1,6 +1,7 @@
 retry_failed_jobs:
   stage: retry_failed_jobs
   tags: [shiny, fast_run]
+  allow_failure: true
   image: $ESP_ENV_IMAGE
   dependencies: null
   before_script: []
@@ -11,4 +12,4 @@ retry_failed_jobs:
     - python tools/ci/python_packages/gitlab_api.py retry_failed_jobs $CI_MERGE_REQUEST_PROJECT_ID --pipeline_id $CI_PIPELINE_ID
   when: manual
   needs:
-    - generate_failed_jobs_report
+    - redundant_pass_job
