@@ -47,7 +47,7 @@ static void uart_event_task(void *pvParameters)
             bzero(dtmp, RD_BUF_SIZE);
             ESP_LOGI(TAG, "uart[%d] event:", EX_UART_NUM);
             switch (event.type) {
-            //Event of UART receving data
+            //Event of UART receiving data
             /*We'd better handler data event fast, there would be much more data events than
             other types of events. If we take too much time on data event, the queue might
             be full.*/
@@ -146,5 +146,5 @@ void app_main(void)
     uart_pattern_queue_reset(EX_UART_NUM, 20);
 
     //Create a task to handler UART event from ISR
-    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
+    xTaskCreate(uart_event_task, "uart_event_task", 3072, NULL, 12, NULL);
 }
