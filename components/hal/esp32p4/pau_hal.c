@@ -46,9 +46,9 @@ void IRAM_ATTR pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal)
 void IRAM_ATTR pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_restore)
 {
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);
-    /* The link 3 of REGDMA is reserved, we use it as an extra linked list to
-     * provide backup and restore services for BLE, IEEE802.15.4 and possibly
-     * other modules */
+    /* The link 3 of REGDMA is reserved, it is used as software trigger REGDMA to backup and
+     * restore, and is used by the UT to test module driver retention function.
+     */
     pau_ll_select_regdma_entry_link(hal->dev, 3);
     pau_ll_set_regdma_entry_link_backup_direction(hal->dev, backup_or_restore);
     pau_ll_set_regdma_entry_link_backup_start_enable(hal->dev);

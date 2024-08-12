@@ -26,6 +26,9 @@ extern "C" {
 
 #define ENTRY(n)    (BIT(n))
 
+// Only used for driver retention function testing when lightsleep is not supported
+#define REGDMA_SW_TRIGGER_ENTRY             (ENTRY(3))
+
 #define REGDMA_PHY_LINK(_pri)               ((0x00 << 8) | _pri)
 #define REGDMA_PCR_LINK(_pri)               ((0x01 << 8) | _pri)
 #define REGDMA_MODEMSYSCON_LINK(_pri)       ((0x02 << 8) | _pri)

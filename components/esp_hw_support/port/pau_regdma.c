@@ -15,6 +15,10 @@
 #include "esp_private/esp_pau.h"
 #include "esp_private/periph_ctrl.h"
 
+#if SOC_PAU_IN_TOP_DOMAIN
+#include "hal/lp_sys_ll.h"
+#endif
+
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
 typedef struct {
@@ -107,3 +111,10 @@ void IRAM_ATTR pau_regdma_trigger_extra_link_restore(void)
     pau_hal_start_regdma_extra_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_extra_link(PAU_instance()->hal);
 }
+
+#if SOC_PAU_IN_TOP_DOMAIN
+void pau_regdma_enable_aon_link_entry(bool enable)
+{
+    lp_sys_ll_set_pau_aon_bypass(enable);
+}
+#endif

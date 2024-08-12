@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,16 @@ void pau_regdma_trigger_extra_link_backup(void);
  * @brief Software trigger regdma to perform extra link restore
  */
 void pau_regdma_trigger_extra_link_restore(void);
+
+#if SOC_PAU_IN_TOP_DOMAIN
+/**
+ * @brief Rentention link entry selection, enable or disable the retention
+ *        link entry configuration in always-on domain
+ *
+ * @param enable Set true to use always-on domain link configuration instead
+ */
+void pau_regdma_enable_aon_link_entry(bool enable);
+#endif
 
 #ifdef __cplusplus
 }

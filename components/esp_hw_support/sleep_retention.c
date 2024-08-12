@@ -21,6 +21,10 @@
 #include "sdkconfig.h"
 #include "esp_pmu.h"
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "hal/cache_ll.h"
+#endif
+
 static __attribute__((unused)) const char *TAG = "sleep";
 
 struct sleep_retention_module_object {
@@ -183,9 +187,7 @@ typedef struct {
 
     struct sleep_retention_module_object instance[32];
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
-#endif
 } sleep_retention_t;
 
 static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
@@ -312,6 +314,7 @@ void sleep_retention_dump_entries(FILE *out)
             regdma_link_dump(out, s_retention.lists[s_retention.highpri].entries[entry], entry);
         }
     }
+    fflush(out);
     _lock_release_recursive(&s_retention.lock);
 }
 
@@ -770,22 +773,28 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
     return err;
 }
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
 void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
 {
     if (s_retention.highpri < SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY ||
         s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
         return;
     }
+#if SOC_PAU_IN_TOP_DOMAIN
+    pau_regdma_enable_aon_link_entry(false);
+#endif
     // Set extra linked list head pointer to hardware
     pau_regdma_set_extra_link_addr(s_retention.lists[s_retention.highpri].entries[EXTRA_LINK_NUM]);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    /* Data of retention link may be temporarily stored in L1 DCache, which is not accessible by
+       REGDMA, write it back to L2MEM before starting REGDMA. */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
     if (backup_or_restore) {
         pau_regdma_trigger_extra_link_backup();
     } else {
         pau_regdma_trigger_extra_link_restore();
     }
 }
-#endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
