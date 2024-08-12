@@ -619,7 +619,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             config COMPILER_ORPHAN_SECTIONS_WARNING
                 bool "Place with warning"
                 help
-                    Places orphan sections without a warning message.
+                    Places orphan sections with a warning message.
 
             config COMPILER_ORPHAN_SECTIONS_PLACE
                 bool "Place silently"
