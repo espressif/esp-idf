@@ -5,6 +5,7 @@ from pytest_embedded_idf import IdfDut
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32p4
 @pytest.mark.esp32c5
