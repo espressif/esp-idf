@@ -52,7 +52,7 @@ menu "Example Ethernet Configuration"
                 bool "KSZ80xx"
                 help
                     With the KSZ80xx series, Microchip offers single-chip 10BASE-T/100BASE-TX
-                    Ethernet Physical Layer Tranceivers (PHY).
+                    Ethernet Physical Layer Transceivers (PHY).
                     The following chips are supported: KSZ8001, KSZ8021, KSZ8031, KSZ8041,
                         KSZ8051, KSZ8061, KSZ8081, KSZ8091
                     Goto https://www.microchip.com for more information about them.
@@ -70,7 +70,7 @@ menu "Example Ethernet Configuration"
             int "SMI MDIO GPIO number"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
             default 18 if IDF_TARGET_ESP32
-            default 27 if IDF_TARGET_ESP32P4
+            default 52 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SMI MDIO.
 
@@ -78,7 +78,7 @@ menu "Example Ethernet Configuration"
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
             default 5 if IDF_TARGET_ESP32
-            default 26 if IDF_TARGET_ESP32P4
+            default 51 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used to reset PHY chip.
                 Set to -1 to disable PHY chip hardware reset.
