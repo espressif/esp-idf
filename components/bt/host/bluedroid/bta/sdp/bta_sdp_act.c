@@ -558,7 +558,7 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
     tBTA_SDP_CREATE_RECORD_USER bta_sdp = {0};
     bta_sdp.status = BTA_SDP_SUCCESS;
-    bta_sdp.handle = (int)p_data->record.user_data;
+    bta_sdp.handle = -1;
     if (bta_sdp_cb.p_dm_cback) {
         bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, (tBTA_SDP *)&bta_sdp, p_data->record.user_data);
     }
