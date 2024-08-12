@@ -136,12 +136,7 @@ api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/mqtt.rst
-api-reference/protocols/mbedtls.rst
-api-reference/protocols/esp_http_server.rst
-api-reference/protocols/esp_local_ctrl.rst
 api-reference/protocols/esp_crt_bundle.rst
-api-reference/protocols/esp_http_client.rst
-api-reference/protocols/esp_https_server.rst
 api-reference/protocols/esp_spi_slave_protocol.rst
 api-reference/protocols/modbus.rst
 api-reference/protocols/esp_tls.rst
