@@ -31,6 +31,19 @@ function(__generate_prefix_map compile_options_var)
             string(APPEND gdbinit_file_lines "set substitute-path ${substituted_path} ${component_dir}\n")
         endforeach()
 
+        # Mapping for toolchain path
+        execute_process(
+            COMMAND ${CMAKE_C_COMPILER} -print-sysroot
+            OUTPUT_VARIABLE compiler_sysroot
+        )
+        if(compiler_sysroot STREQUAL "")
+            message(FATAL_ERROR "Failed to determine toolchain sysroot")
+        endif()
+        string(STRIP "${compiler_sysroot}" compiler_sysroot)
+        get_filename_component(compiler_sysroot "${compiler_sysroot}/.." REALPATH)
+        list(APPEND compile_options "-fdebug-prefix-map=${compiler_sysroot}=/TOOLCHAIN")
+        string(APPEND gdbinit_file_lines "set substitute-path /TOOLCHAIN ${compiler_sysroot}\n")
+
         # Write the final gdbinit file
         set(gdbinit_path "${BUILD_DIR}/prefix_map_gdbinit")
         file(WRITE "${gdbinit_path}" "${gdbinit_file_lines}")

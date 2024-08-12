@@ -3,6 +3,7 @@
 # This test checks the behavior of reproducible builds option.
 import logging
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -36,6 +37,10 @@ def test_reproducible_builds(app_name: str, idf_py: IdfPyFunc, test_app_copy: Pa
     idf_path = os.environ['IDF_PATH']
     assert str(idf_path) not in strings_output, f'{idf_path} found in {elf_file}'
     assert str(test_app_copy) not in strings_output, f'{test_app_copy} found in {elf_file}'
+    compiler_path = shutil.which('xtensa-esp32-elf-gcc')
+    assert compiler_path is not None, 'failed to determine compiler path'
+    toolchain_path = Path(compiler_path).parent.parent
+    assert str(toolchain_path) not in strings_output, f'{toolchain_path} found in {elf_file}'
 
     logging.info(f'Building in {build_second} directory')
     idf_py('-B', str(build_second), 'build')
