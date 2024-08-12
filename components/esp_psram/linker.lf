@@ -4,8 +4,8 @@ entries:
 
     if SPIRAM = y:
         if SPIRAM_MODE_QUAD = y:
-            if IDF_TARGET_ESP32S3 = y:
-                esp_psram_impl_quad (noflash)
+            if IDF_TARGET_ESP32 = n && IDF_TARGET_ESP32S2 = n:
+                esp_psram_impl_ap_quad (noflash)
 
         if IDF_TARGET_ESP32S3 = y:
             if SPIRAM_MODE_OCT = y:
