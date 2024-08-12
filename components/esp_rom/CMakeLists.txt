@@ -21,7 +21,8 @@ else()
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_efuse.c")
+                        "patches/esp_rom_efuse.c"
+                        "patches/esp_rom_gpio.c")
 
 
     # Override regi2c implementation in ROM
