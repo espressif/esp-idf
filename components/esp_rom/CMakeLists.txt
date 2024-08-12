@@ -18,7 +18,8 @@ else()
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_efuse.c")
+                        "patches/esp_rom_efuse.c"
+                        "patches/esp_rom_gpio.c")
 
 
     # Override regi2c implementation in ROM
