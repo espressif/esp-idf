@@ -45,7 +45,7 @@ typedef struct {
     rtc_cntl_sleep_retent_t retent;
 } sleep_cpu_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
+static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 
 esp_err_t esp_sleep_cpu_pd_low_init(void)
 {

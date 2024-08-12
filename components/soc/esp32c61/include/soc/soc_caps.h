@@ -407,7 +407,7 @@
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
-//  \#define SOC_PM_SUPPORT_CPU_PD           (1)
+#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
@@ -424,6 +424,7 @@
 
 // #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
+#define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (0)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
 #define SOC_PM_PAU_LINK_NUM             (4)
