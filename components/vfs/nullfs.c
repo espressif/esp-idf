@@ -204,12 +204,13 @@ static int vfs_null_open(const char* path, int flags, int mode)
         return -1;
     }
 
-    if (flags & O_RDWR) {
+    int acc_mode = flags & O_ACCMODE;
+    if (acc_mode == O_RDWR) {
         SET_READABLE(g_fds, fd);
         SET_WRITABLE(g_fds, fd);
-    } else if (flags & O_WRONLY) {
+    } else if (acc_mode == O_WRONLY) {
         SET_WRITABLE(g_fds, fd);
-    } else if (flags & O_RDONLY) {
+    } else if (acc_mode == O_RDONLY) {
         SET_READABLE(g_fds, fd);
     } else {
         errno = EINVAL;
