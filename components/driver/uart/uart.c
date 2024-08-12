@@ -626,21 +626,22 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     /* In the following statements, if the io_num is negative, no need to configure anything. */
     if (tx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
-        gpio_set_level(tx_io_num, 1);
         esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+        // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
+        // (output enabled too early may cause unnecessary level change at the pad)
     }
 
     if (rx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
-        gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
+        gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY); // This does not consider that RX signal can be read inverted by configuring the hardware (i.e. idle is at low level). However, it is only a weak pullup, the TX at the other end can always drive the line.
         gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
         esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
     }
 
     if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
-        gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+        // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
     }
 
     if (cts_io_num >= 0  && !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX)) {
