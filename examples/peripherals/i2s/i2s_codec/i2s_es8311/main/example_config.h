@@ -42,8 +42,8 @@
 #define I2S_MCK_IO      (GPIO_NUM_13)
 #define I2S_BCK_IO      (GPIO_NUM_12)
 #define I2S_WS_IO       (GPIO_NUM_10)
-#define I2S_DO_IO       (GPIO_NUM_11)
-#define I2S_DI_IO       (GPIO_NUM_9)
+#define I2S_DO_IO       (GPIO_NUM_9)
+#define I2S_DI_IO       (GPIO_NUM_11)
 #else
 #define I2S_MCK_IO      (GPIO_NUM_0)
 #define I2S_BCK_IO      (GPIO_NUM_4)
