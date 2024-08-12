@@ -5,12 +5,12 @@ menu "Modbus Example Configuration"
     config MB_UART_PORT_ONE
         bool
         default y
-        depends on (ESP_CONSOLE_UART_NUM !=1) && (SOC_UART_NUM > 1)
+        depends on (ESP_CONSOLE_UART_NUM !=1) && (SOC_UART_HP_NUM > 1)
 
     config MB_UART_PORT_TWO
         bool
         default y
-        depends on (ESP_CONSOLE_UART_NUM !=2) && (SOC_UART_NUM > 2)
+        depends on (ESP_CONSOLE_UART_NUM !=2) && (SOC_UART_HP_NUM > 2)
 
     config MB_UART_PORT_NUM
         int "UART port number"
@@ -33,7 +33,7 @@ menu "Modbus Example Configuration"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
         default 22 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32P4
         default 8 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 ||\
-            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
         help
             GPIO number for UART RX pin. See UART documentation for more information
             about available pin numbers for UART.
@@ -43,7 +43,7 @@ menu "Modbus Example Configuration"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 23 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32P4
         default 9 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 ||\
-            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
         help
             GPIO number for UART TX pin. See UART documentation for more information
             about available pin numbers for UART.
@@ -54,7 +54,7 @@ menu "Modbus Example Configuration"
         default 20 if IDF_TARGET_ESP32P4
         default 18 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C6
         default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 ||\
-            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+            IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
         help
             GPIO number for UART RTS pin. This pin is connected to
             ~RE/DE pin of RS485 transceiver to switch direction.
