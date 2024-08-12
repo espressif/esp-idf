@@ -75,9 +75,13 @@ Name field can be any meaningful name. It is not significant to the {IDF_TARGET_
 Type Field
 ~~~~~~~~~~
 
-Partition type field can be specified as ``app`` (0x00) or ``data`` (0x01). Or it can be a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for ESP-IDF core functions.
+Partition type field can be specified as a name or a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for ESP-IDF core functions.
 
-If your app needs to store data in a format not already supported by ESP-IDF, then please add a custom partition type value in the range 0x40-0xFE.
+- ``app`` (0x00),
+- ``data`` (0x01),
+- ``bootloader`` (0x02). By default, this partition is not included in any CSV partition table files because it is not required and does not impact the system's functionality. It is only useful for the bootloader OTA update. Even if this partition is not present in the CSV file, it is still possible to perform the OTA. Please note that if you specify this partition in the CSV file, its address and size must match Kconfigs,
+- ``partition_table`` (0x03),
+- 0x40-0xFE are reserved for **custom partition types**. If your app needs to store data in a format not already supported by ESP-IDF, then use a value from this range.
 
 See :cpp:type:`esp_partition_type_t` for the enum definitions for ``app`` and ``data`` partitions.
 
@@ -104,6 +108,16 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
   - ``ota_0`` (0x10) ... ``ota_15`` (0x1F) are the OTA app slots. When :doc:`OTA <../api-reference/system/ota>` is in use, the OTA data partition configures which app slot the bootloader should boot. When using OTA, an application should have at least two OTA application slots (``ota_0`` & ``ota_1``). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
   - ``test`` (0x20) is a reserved subtype for factory test procedures. It will be used as the fallback boot partition if no other valid app partition is found. It is also possible to configure the bootloader to read a GPIO input during each boot, and boot this partition if the GPIO is held low, see :ref:`bootloader_boot_from_test_firmware`.
+
+* When type is ``bootloader``, the SubType field can be specified as:
+
+  - ``primary`` (0x00). It is the so-called 2nd stage bootloader, which is placed at the {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} address in the flash. The ``gen_esp32part.py`` does not allow to have this partition in the CSV file for now.
+  - ``ota`` (0x01). It is a temporary bootloader partition used by the bootloader OTA update functionality for downloading a new image.
+
+* When type is ``partition_table``, the SubType field can be specified as:
+
+  - ``primary`` (0x00). It is the primary partition table, which is placed at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in the flash. The ``gen_esp32part.py`` does not allow to have this partition in the CSV file for now.
+  - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image.
 
 * When type is ``data``, the subtype field can be specified as ``ota`` (0x00), ``phy`` (0x01), ``nvs`` (0x02), nvs_keys (0x04), or a range of other component-specific subtypes (see :cpp:type:`subtype enum <esp_partition_subtype_t>`).
 

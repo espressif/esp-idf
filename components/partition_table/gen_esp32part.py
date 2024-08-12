@@ -7,11 +7,8 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import argparse
 import binascii
 import errno
@@ -36,8 +33,12 @@ __version__ = '1.3'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
+BOOTLOADER_TYPE = 0x02
+PARTITION_TABLE_TYPE = 0x03
 
 TYPES = {
+    'bootloader': BOOTLOADER_TYPE,
+    'partition_table': PARTITION_TABLE_TYPE,
     'app': APP_TYPE,
     'data': DATA_TYPE,
 }
@@ -56,6 +57,14 @@ def get_ptype_as_int(ptype):
 
 # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h
 SUBTYPES = {
+    BOOTLOADER_TYPE: {
+        # 'primary': 0x00,  # The tool does not allow to define this partition yet.
+        'ota': 0x01,
+    },
+    PARTITION_TABLE_TYPE: {
+        # 'primary': 0x00,  # The tool does not allow to define this partition yet.
+        'ota': 0x01,
+    },
     APP_TYPE: {
         'factory': 0x00,
         'test': 0x20,
@@ -90,6 +99,8 @@ def get_subtype_as_int(ptype, subtype):
 ALIGNMENT = {
     APP_TYPE: 0x10000,
     DATA_TYPE: 0x1000,
+    BOOTLOADER_TYPE: 0x1000,
+    PARTITION_TABLE_TYPE: 0x1000,
 }
 
 
@@ -110,7 +121,7 @@ def get_alignment_size_for_type(ptype):
         else:
             # For no secure boot enabled case, app partition must be 4K aligned (min. flash erase size)
             return 0x1000
-    # No specific size alignement requirement as such
+    # No specific size alignment requirement as such
     return 0x1
 
 
@@ -119,6 +130,10 @@ def get_partition_type(ptype):
         return APP_TYPE
     if ptype == 'data':
         return DATA_TYPE
+    if ptype == 'bootloader':
+        return BOOTLOADER_TYPE
+    if ptype == 'partition_table':
+        return PARTITION_TABLE_TYPE
     raise InputError('Invalid partition type')
 
 
