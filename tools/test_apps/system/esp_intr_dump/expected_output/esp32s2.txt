@@ -14,7 +14,7 @@ CPU 0 interrupt status:
  11     3    Level  CPU-internal
  12     1    Level  Free
  13     1    Level  Free
- 14     7    Level  Reserved
+ 14     7    Level  Free
  15     3    Level  CPU-internal
  16     5    Level  CPU-internal
  17     1    Level  Free
