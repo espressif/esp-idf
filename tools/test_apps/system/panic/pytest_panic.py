@@ -112,9 +112,20 @@ def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
 
 
+def expect_coredump_flash_write_logs(dut: PanicTestDut, config: str) -> None:
+    dut.expect_exact('Save core dump to flash...')
+    if 'extram_stack' in config:
+        dut.expect_exact('Backing up stack @')
+        dut.expect_exact('Restoring stack')
+    dut.expect_exact('Core dump has been saved to flash.')
+    dut.expect('Rebooting...')
+
+
 def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
                 expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None) -> None:
     if 'gdbstub' in config:
+        if 'coredump' in config:
+            dut.process_coredump_uart(expected_coredump, False)
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb_for_gdbstub()
         frames = dut.gdb_backtrace()
@@ -130,11 +141,10 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
     if 'uart' in config:
         dut.process_coredump_uart(expected_coredump)
     elif 'flash' in config:
+        expect_coredump_flash_write_logs(dut, config)
         dut.process_coredump_flash(expected_coredump)
     elif 'panic' in config:
-        pass
-
-    dut.expect('Rebooting...')
+        dut.expect('Rebooting...')
 
     if check_cpu_reset:
         dut.expect_cpu_reset()
@@ -219,13 +229,6 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
     dut.expect_none('Guru Meditation')
     dut.expect_backtrace()
     dut.expect_elf_sha256()
-    # Check that coredump is getting written to flash
-    dut.expect_exact('Save core dump to flash...')
-    # And that the stack is replaced and restored
-    dut.expect_exact('Backing up stack @')
-    dut.expect_exact('Restoring stack')
-    # The caller must be accessible after restoring the stack
-    dut.expect_exact('Core dump has been saved to flash.')
 
     if dut.target == 'esp32':
         # ESP32 External data memory range [0x3f800000-0x3fc00000)
@@ -882,7 +885,7 @@ def test_rtc_slow_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_gme('Memory protection fault')
     dut.expect(r'Read operation at address [0-9xa-f]+ not permitted \((\S+)\)')
     dut.expect_reg_dump(0)
-    dut.expect_corrupted_backtrace()
+    dut.expect_backtrace(corrupted=True)
     dut.expect_cpu_reset()
 
 
@@ -893,7 +896,7 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_gme('Memory protection fault')
     dut.expect(r'Read operation at address [0-9xa-f]+ not permitted \((\S+)\)')
     dut.expect_reg_dump(0)
-    dut.expect_corrupted_backtrace()
+    dut.expect_backtrace(corrupted=True)
     dut.expect_cpu_reset()
 
 
@@ -948,15 +951,7 @@ def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_na
 def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     test_func_name = 'test_storeprohibited'
     dut.run_test_func(test_func_name)
-
-    dut.process_coredump_uart()
-
-    dut.expect_exact('Entering gdb stub now.')
-    dut.start_gdb_for_gdbstub()
-    frames = dut.gdb_backtrace()
-    dut.verify_gdb_backtrace(frames, get_default_backtrace(test_func_name))
-    dut.revert_log_level()
-    return  # don't expect "Rebooting" output below
+    common_test(dut, 'gdbstub_coredump', get_default_backtrace(test_func_name))
 
 
 def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
@@ -1019,9 +1014,7 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
-    dut.expect_exact('Save core dump to flash...')
-    dut.expect_exact('Core dump has been saved to flash.')
-    dut.expect('Rebooting...')
+    expect_coredump_flash_write_logs(dut, config)
 
     core_elf_file = dut.process_coredump_flash()
     dut.start_gdb_for_coredump(core_elf_file)
@@ -1074,7 +1067,7 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
     if dut.is_xtensa:
         dut.expect_gme('LoadProhibited')
         dut.expect_reg_dump(0)
-        dut.expect_corrupted_backtrace()
+        dut.expect_backtrace()
     else:
         dut.expect_gme('Load access fault')
         dut.expect_reg_dump(0)

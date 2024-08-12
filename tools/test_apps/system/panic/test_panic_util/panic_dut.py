@@ -80,15 +80,13 @@ class PanicTestDut(IdfDut):
         except pexpect.TIMEOUT:
             pass
 
-    def expect_backtrace(self) -> None:
+    def expect_backtrace(self, corrupted: bool = False) -> None:
         assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
         match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
-        assert not match.group('corrupted')
-
-    def expect_corrupted_backtrace(self) -> None:
-        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
-        self.expect_exact('Backtrace:')
-        self.expect_exact('CORRUPTED')
+        if corrupted:
+            assert match.group('corrupted')
+        else:
+            assert match
 
     def expect_stack_dump(self) -> None:
         assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
@@ -153,11 +151,16 @@ class PanicTestDut(IdfDut):
         self.coredump_output.flush()
         self.coredump_output.seek(0)
 
-    def process_coredump_uart(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> None:
+    def process_coredump_uart(
+        self, expected: Optional[List[Union[str, re.Pattern]]] = None, wait_reboot: bool = True
+    ) -> None:
         """Extract the core dump from UART output of the test, run espcoredump on it"""
         self.expect(self.COREDUMP_UART_START)
-        res = self.expect('(.+)' + self.COREDUMP_UART_END)
-        coredump_base64 = res.group(1).decode('utf8')
+        uart_data = self.expect('(.+)' + self.COREDUMP_UART_END)
+        self.expect(re.compile(r"Coredump checksum='([a-fA-F0-9]+)'"))
+        if wait_reboot:
+            self.expect('Rebooting...')
+        coredump_base64 = uart_data.group(1).decode('utf8')
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
