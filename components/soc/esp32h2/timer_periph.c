@@ -40,31 +40,31 @@ const regdma_entries_config_t tg0_timer_regdma_entries[] = {
     [0] = {
         .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG0_TIMER_LINK(0x00),
         TIMG_T0UPDATE_REG(0), TIMG_T0_UPDATE, TIMG_T0_UPDATE_M, 0, 1),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: wait for the capture done
     [1] = {
         .config = REGDMA_LINK_WAIT_INIT(REGDMA_TG0_TIMER_LINK(0x01),
         TIMG_T0UPDATE_REG(0), 0x0, TIMG_T0_UPDATE_M, 0, 1),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: save the captured counter value
     // restore stage: store the captured counter value to the loader register
     [2] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG0_TIMER_LINK(0x02),
         TIMG_T0LO_REG(0), TIMG_T0LOADLO_REG(0), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     [3] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG0_TIMER_LINK(0x03),
         TIMG_T0HI_REG(0), TIMG_T0LOADHI_REG(0), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // restore stage: trigger a soft reload, so the timer can continue from where it was backed up
     [4] = {
         .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG0_TIMER_LINK(0x04),
         TIMG_T0LOAD_REG(0), 0x1, TIMG_T0_LOAD_M, 1, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: save other configuration and status registers
     // restore stage: restore the configuration and status registers
@@ -74,7 +74,7 @@ const regdma_entries_config_t tg0_timer_regdma_entries[] = {
         TG_TIMER_RETENTION_REGS_CNT, 0, 0,
         tg_timer_regs_map[0], tg_timer_regs_map[1],
         tg_timer_regs_map[2], tg_timer_regs_map[3]),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
 };
 
@@ -83,31 +83,31 @@ const regdma_entries_config_t tg1_timer_regdma_entries[] = {
     [0] = {
         .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_TIMER_LINK(0x00),
         TIMG_T0UPDATE_REG(1), TIMG_T0_UPDATE, TIMG_T0_UPDATE_M, 0, 1),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: wait for the capture done
     [1] = {
         .config = REGDMA_LINK_WAIT_INIT(REGDMA_TG1_TIMER_LINK(0x01),
         TIMG_T0UPDATE_REG(1), 0x0, TIMG_T0_UPDATE_M, 0, 1),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: save the captured counter value
     // restore stage: store the captured counter value to the loader register
     [2] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG1_TIMER_LINK(0x02),
         TIMG_T0LO_REG(1), TIMG_T0LOADLO_REG(1), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     [3] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG1_TIMER_LINK(0x03),
         TIMG_T0HI_REG(1), TIMG_T0LOADHI_REG(1), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // restore stage: trigger a soft reload, so the timer can continue from where it was backed up
     [4] = {
         .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_TIMER_LINK(0x04),
         TIMG_T0LOAD_REG(1), 0x1, TIMG_T0_LOAD_M, 1, 0),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
     // backup stage: save other configuration and status registers
     // restore stage: restore the configuration and status registers
@@ -117,7 +117,7 @@ const regdma_entries_config_t tg1_timer_regdma_entries[] = {
         TG_TIMER_RETENTION_REGS_CNT, 0, 0,
         tg_timer_regs_map[0], tg_timer_regs_map[1],
         tg_timer_regs_map[2], tg_timer_regs_map[3]),
-        .owner = ENTRY(0) | ENTRY(2)
+        .owner = TIMG_RETENTION_ENTRY
     },
 };
 

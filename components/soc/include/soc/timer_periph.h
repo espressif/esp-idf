@@ -17,6 +17,16 @@
 extern "C" {
 #endif
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
+#if SOC_PHY_SUPPORTED
+#define TIMG_RETENTION_ENTRY    (ENTRY(0) | ENTRY(2))
+#else
+#define TIMG_RETENTION_ENTRY    (ENTRY(0))
+#endif
+#else
+#define TIMG_RETENTION_ENTRY    REGDMA_SW_TRIGGER_ENTRY
+#endif
+
 typedef struct {
     struct {
         const periph_module_t module; // Peripheral module
