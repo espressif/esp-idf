@@ -44,7 +44,7 @@ C++ 语言标准
 
 支持 C++ 线程，互斥锁和条件变量。C++ 线程基于 pthread 构建，而 pthread 封装了 FreeRTOS 任务。
 
-有关在 C++ 中创建线程的示例，请参阅 :example:`cxx/pthread`。
+有关在 C++ 中创建线程的示例，请参阅 :example:`cxx/pthread`。该示例演示了如何使用 ESP-pthread 组件修改 C++ 线程的堆栈大小、优先级、名称和内核亲和性。
 
 .. note::
 
@@ -62,8 +62,7 @@ ESP-IDF 默认禁用对 C++ 异常处理的支持，可以用 :ref:`CONFIG_COMPI
 
 C++ 异常处理应 **仅** 应用于异常情况，即意外情况及罕见情况，如发生频率低于 1% 的事件。**请勿** 将 C++ 异常处理用于流程控制，详情请参阅下文的资源使用部分。有关使用 C++ 异常处理的更多详情，请参阅 `ISO C++ FAQ <https://isocpp.org/wiki/faq/exceptions>`_ 和 `CPP 核心指南 <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-errors>`_。
 
-有关 C++ 异常处理的示例，请参阅 :example:`cxx/exceptions`。
-
+有关 C++ 异常处理的示例，请参阅 :example:`cxx/exceptions`。该示例演示了如何在 {IDF_TARGET_NAME} 中启用和使用 C++ 异常，示例中声明了一个类，当提供的参数等于 0 时，这个类会在构造函数中抛出异常。
 
 C++ 异常处理及所需资源
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,8 +92,7 @@ ESP-IDF 默认禁用对 RTTI 的支持，可以用 :ref:`CONFIG_COMPILER_CXX_RTT
 
 启用此选项，将以启用了 RTTI 支持的方式编译所有的 C++ 文件，并支持使用 ``dynamic_cast`` 转换和 ``typeid`` 运算符。启用此选项通常会增加几十 KB 的二进制文件大小。
 
-有关在 ESP-IDF 中使用 RTTI 的示例，请参阅 :example:`cxx/rtti`。
-
+有关在 ESP-IDF 中使用 RTTI 的示例，请参阅 :example:`cxx/rtti`。该示例演示了如何在 ESP-IDF 中使用 RTTI 功能，启用编译时对 RTTI 的支持，并展示了如何打印对象和函数的去混淆类型名称，以及 dynamic_cast 在两个继承自同一基类的对象上如何表现。
 
 在 C++ 中进行开发
 -----------------
@@ -195,3 +193,12 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 -------------
 
 请勿在 C++ 中使用 ``setjmp``/``longjmp``。``longjmp`` 会在不调用任何析构函数的情况下盲目跳出堆栈，容易引起未定义的行为和内存泄漏。请改用 C++ 异常处理，这类程序可以确保正确调用析构函数。如果无法使用 C++ 异常处理，请使用其他替代方案（ ``setjmp``/``longjmp`` 除外），如简单的返回码。
+
+应用示例
+--------------------
+
+- :example:`cxx/pthread`
+
+- :example:`cxx/exceptions` 演示了如何在 {IDF_TARGET_NAME} 中启用和使用 C++ 异常。该示例声明了一个类，当提供的参数等于 0 时，这个类会在构造函数中抛出异常。
+
+- :example:`cxx/rtti`
