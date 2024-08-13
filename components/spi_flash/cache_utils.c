@@ -371,12 +371,19 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    esp_cpu_branch_prediction_disable();
+#endif
     cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
     cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)
