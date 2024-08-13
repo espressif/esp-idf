@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,7 +124,31 @@ static size_t write_value(uint16_t conn_handle, uint16_t attr_handle,
         }
     }
 
-    btc_blufi_recv_handler(&ctxt->om->om_data[0], ctxt->om->om_len);
+    /* Data may come in linked om. So retrieve all data */
+    if (SLIST_NEXT(ctxt->om, om_next) != NULL) {
+	uint8_t *fw_buf = (uint8_t *)malloc(517 * sizeof(uint8_t));
+	memset(fw_buf, 0x0, 517);
+
+        memcpy(fw_buf, &ctxt->om->om_data[0], ctxt->om->om_len);
+        struct os_mbuf *last;
+        last = ctxt->om;
+        uint32_t offset = ctxt->om->om_len;
+
+        while (SLIST_NEXT(last, om_next) != NULL) {
+              struct os_mbuf *temp = SLIST_NEXT(last, om_next);
+	      memcpy(fw_buf + offset  , &temp->om_data[0], temp->om_len);
+	      offset += temp->om_len;
+	      last = SLIST_NEXT(last, om_next);
+              temp = NULL;
+        }
+	btc_blufi_recv_handler(fw_buf, offset);
+
+	free(fw_buf);
+    }
+    else {
+        btc_blufi_recv_handler(&ctxt->om->om_data[0], ctxt->om->om_len);
+    }
+
     rc = ble_hs_mbuf_to_flat(ctxt->om, value->buf->om_data,
                              value->buf->om_len, &len);
     if (rc != 0) {
