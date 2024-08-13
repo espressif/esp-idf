@@ -20,13 +20,13 @@
 //  \#define SOC_ADC_SUPPORTED               1    //TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
-//  \#define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32C61] IDF-9310, IDF-9311
-//  \#define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32C61] IDF-9310, IDF-9311
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 //  \#define SOC_BT_SUPPORTED                1
 //  \#define SOC_IEEE802154_SUPPORTED        1
-//  \#define SOC_ASYNC_MEMCPY_SUPPORTED      1    //TODO: [ESP32C61] IDF-9315
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 //  \#define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32C61] IDF-9322
 //  \#define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -143,13 +143,15 @@
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 #define SOC_CPU_PMP_REGION_GRANULARITY  128 // TODO IDF-9580 check when doing PMP bringup
 
+/*-------------------------- DMA Common CAPS ----------------------------------------*/
+#define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
 
-//TODO: [ESP32C61] IDF-9310
 /*-------------------------- GDMA CAPS -------------------------------------*/
-//  \#define SOC_AHB_GDMA_VERSION            1U
-//  \#define SOC_GDMA_NUM_GROUPS_MAX         1U
-//  \#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-//  \#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION            2U
+#define SOC_GDMA_NUM_GROUPS_MAX         1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX    2
+// \#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule TODO: IDF-9964
+// \#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1  // TODO: IDF-10380
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups

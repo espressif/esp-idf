@@ -49,51 +49,43 @@ extern "C" {
 
 #define GDMA_LL_AHB_GROUP_START_ID    0 // AHB GDMA group ID starts from 0
 #define GDMA_LL_AHB_NUM_GROUPS        1 // Number of AHB GDMA groups
-#define GDMA_LL_AHB_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AHB group
+#define GDMA_LL_AHB_PAIRS_PER_GROUP   2 // Number of GDMA pairs in each AHB group
 
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
-    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
+    (uint32_t[1][2][GDMA_ETM_EVENT_MAX]){{{                                                \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \
                                           },                                               \
                                           {                                                \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH1, \
                                           },                                               \
-                                          {                                                \
-                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH2, \
-                                          }}}[group][chan][event]
+                                          }}[group][chan][event]
 
 #define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                                        \
-    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                   \
+    (uint32_t[1][2][GDMA_ETM_EVENT_MAX]){{{                                                   \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH0, \
                                           },                                                  \
                                           {                                                   \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH1, \
                                           },                                                  \
-                                          {                                                   \
-                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH2, \
-                                          }}}[group][chan][event]
+                                          }}[group][chan][event]
 
 #define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                                          \
-    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                    \
+    (uint32_t[1][2][GDMA_ETM_TASK_MAX]){{{                                                    \
                                              [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH0, \
                                          },                                                   \
                                          {                                                    \
                                              [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH1, \
                                          },                                                   \
-                                         {                                                    \
-                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH2, \
-                                         }}}[group][chan][task]
+                                         }}[group][chan][task]
 
 #define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                                         \
-    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                   \
+    (uint32_t[1][2][GDMA_ETM_TASK_MAX]){{{                                                   \
                                              [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH0, \
                                          },                                                  \
                                          {                                                   \
                                              [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH1, \
                                          },                                                  \
-                                         {                                                   \
-                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH2, \
-                                         }}}[group][chan][task]
+                                         }}[group][chan][task]
 
 #define GDMA_LL_AHB_DESC_ALIGNMENT    4
 
