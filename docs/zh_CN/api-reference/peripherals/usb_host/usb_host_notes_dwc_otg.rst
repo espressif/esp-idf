@@ -91,26 +91,51 @@ DMA 引擎负责在 FIFO 和主内存之间复制数据。启用主机模式分�
 
 DWC_OTG IP 是可配置的。有关 {IDF_TARGET_NAME} 的 DWC_OTG 的重要主机配置，请参阅下表：
 
-.. list-table:: {IDF_TARGET_NAME} 的 DWC_OTG 配置
-    :widths: 70 30
-    :header-rows: 1
+.. only:: esp32p4
 
-    * - 描述
-      - 配置
-    * - 支持 OTG 的主机和设备模式
-      - ``OTG_MODE = 0``
-    * - 支持全速 (FS) 和低速 (LS)
-      - ``OTG_FSPHY_INTERFACE = 1``、``OTG_HSPHY_INTERFACE = 0``
-    * - 支持分散/聚集式 DMA 功能的内部 DMA 控制器
-      - ``OTG_ARCHITECTURE = 2``、 ``OTG_EN_DESC_DMA = 1``
-    * - 支持 FS 集线器但不支持 HS 集线器（即，不支持分割传输）
-      - ``OTG_SINGLE_POINT = 0``
-    * - 8 个主机模式通道
-      - ``OTG_NUM_HOST_CHAN = 8``
-    * - 支持包括 ISOC 和 INTR OUT 传输在内的所有传输类型
-      - ``OTG_EN_PERIO_HOST = 1``
-    * - 动态大小的 1024 字节（256 行）数据 FIFO
-      - ``OTG_DFIFO_DYNAMIC = 1``、``OTG_DFIFO_DEPTH = 256``
+    .. list-table:: {IDF_TARGET_NAME} 的 DWC_OTG 配置
+        :widths: 70 30
+        :header-rows: 1
+
+        * - 描述
+          - 配置
+        * - 支持 OTG 的主机和设备模式
+          - ``OTG_MODE = 0``
+        * - 支持高速 (HS)、全速 (FS) 和低速 (LS)
+          - ``OTG_FSPHY_INTERFACE = 2``、``OTG_HSPHY_INTERFACE = 3``
+        * - 支持分散/聚集式 DMA 功能的内部 DMA 控制器
+          - ``OTG_ARCHITECTURE = 2``、 ``OTG_EN_DESC_DMA = 1``
+        * - 不支持分割传输
+          - ``OTG_SINGLE_POINT = 1``
+        * - 16 个主机模式通道
+          - ``OTG_NUM_HOST_CHAN = 16``
+        * - 支持包括 ISOC 和 INTR OUT 传输在内的所有传输类型
+          - ``OTG_EN_PERIO_HOST = 1``
+        * - 动态大小的 4096 字节（1024 行）数据 FIFO
+          - ``OTG_DFIFO_DYNAMIC = 1``、``OTG_DFIFO_DEPTH = 1024``
+        * - 每个微帧仅支持 4 个周期性和 4 个非周期性事务
+          - ``OTG_NPERIO_TX_QUEUE_DEPTH = 4``、``OTG_PERIO_TX_QUEUE_DEPTH = 4``
+
+.. only:: esp32s2 or esp32s3
+
+    .. list-table:: {IDF_TARGET_NAME} 的 DWC_OTG 配置
+        :widths: 70 30
+        :header-rows: 1
+
+        * - 描述
+          - 配置
+        * - 支持 OTG 的主机和设备模式
+          - ``OTG_MODE = 0``
+        * - 支持全速 (FS) 和低速 (LS)
+          - ``OTG_FSPHY_INTERFACE = 1``、``OTG_HSPHY_INTERFACE = 0``
+        * - 支持分散/聚集式 DMA 功能的内部 DMA 控制器
+          - ``OTG_ARCHITECTURE = 2``、 ``OTG_EN_DESC_DMA = 1``
+        * - 8 个主机模式通道
+          - ``OTG_NUM_HOST_CHAN = 8``
+        * - 支持包括 ISOC 和 INTR OUT 传输在内的所有传输类型
+          - ``OTG_EN_PERIO_HOST = 1``
+        * - 动态大小的 1024 字节（256 行）数据 FIFO
+          - ``OTG_DFIFO_DYNAMIC = 1``, ``OTG_DFIFO_DEPTH = 256``
 
 分散/聚集式 DMA 传输
 ---------------------

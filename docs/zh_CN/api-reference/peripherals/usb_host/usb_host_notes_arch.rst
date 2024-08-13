@@ -39,7 +39,7 @@ USB 主机维护者注释（架构）
       - ``usb_host.h``， ``usb_host.c``
       - USB 主机库层是主机协议栈的最低公共 API 层，并呈现 USB 主机客户端的概念。客户端的抽象允许多个 class 驱动程序同时存在（其中每个类大致映射到一个单独的客户端），这也是一种分工机制（其中每个客户端负责各自的处理以及事件处理）。
     * - 主机 Class 驱动程序
-      - 请参阅 `ESP-IDF 额外组件存储库 <https://github.com/espressif/idf-extra-components>`_ 或是 ESP-IDF 中的 USB 主机示例 :example:`peripherals/usb/host`。
+      - 请参阅 `ESP-USB 存储库 <https://github.com/espressif/esp-usb>`_ 或是 ESP-IDF 中的 USB 主机示例 :example:`peripherals/usb/host`。
       - 主机 Class 驱动程序能实现特定设备类（例如，CDC、MSC、HID）的主机端。每个 class 驱动程序具有特定的公开 API 接口。
 
 层依赖关系
