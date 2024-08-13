@@ -186,6 +186,20 @@ class Esp32c5FpgaDut(FpgaDut):
         self.serial.burn_efuse_key_digest(digest, 'SECURE_BOOT_DIGEST%d' % key_index, 'BLOCK_KEY%d' % block)
 
 
+class Esp32c61FpgaDut(FpgaDut):
+    SECURE_BOOT_EN_KEY = 'SECURE_BOOT_EN'
+    SECURE_BOOT_EN_VAL = 1
+
+    def burn_wafer_version(self) -> None:
+        pass
+
+    def secure_boot_burn_en_bit(self) -> None:
+        self.serial.burn_efuse(self.SECURE_BOOT_EN_KEY, self.SECURE_BOOT_EN_VAL)
+
+    def secure_boot_burn_digest(self, digest: str, key_index: int = 0, block: int = 0) -> None:
+        self.serial.burn_efuse_key_digest(digest, 'SECURE_BOOT_DIGEST%d' % key_index, 'BLOCK_KEY%d' % block)
+
+
 @pytest.fixture(scope='module')
 def monkeypatch_module(request: FixtureRequest) -> MonkeyPatch:
     mp = MonkeyPatch()
@@ -204,5 +218,7 @@ def replace_dut_class(monkeypatch_module: MonkeyPatch, pytestconfig: pytest.Conf
         monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32p4FpgaDut)
     elif target == 'esp32c5':
         monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32c5FpgaDut)
+    elif target == 'esp32c61':
+        monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32c61FpgaDut)
 
     monkeypatch_module.setattr('pytest_embedded_idf.IdfSerial', FpgaSerial)

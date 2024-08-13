@@ -565,6 +565,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
 @pytest.mark.esp32c2
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4
@@ -640,6 +642,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
 @pytest.mark.esp32c2
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4

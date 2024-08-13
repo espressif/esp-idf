@@ -82,6 +82,8 @@ def dut_start_secure_app(dut: Dut) -> None:
 @pytest.mark.esp32c3
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot(dut: Dut) -> None:
@@ -96,6 +98,8 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 @pytest.mark.esp32c3
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
@@ -120,6 +124,8 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 @pytest.mark.esp32c3
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
@@ -141,6 +147,8 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 @pytest.mark.esp32c3
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
@@ -180,6 +188,8 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
 @pytest.mark.esp32c3
 # TODO: [ESP32C5] IDF-10043
 # @pytest.mark.esp32c5
+# TODO: [ESP32C5] IDF-10102
+# @pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)

@@ -360,7 +360,7 @@ static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
 };
 
 static const esp_efuse_desc_t FORCE_SEND_RESUME[] = {
-    {EFUSE_BLK0, 103, 1}, 	 // [] Represents whether ROM code is forced to send a resume commmand during SPI boot,
+    {EFUSE_BLK0, 103, 1}, 	 // [] Represents whether ROM code is forced to send a resume command during SPI boot,
 };
 
 static const esp_efuse_desc_t SECURE_VERSION[] = {
@@ -879,7 +879,7 @@ const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[] = {
-    &FORCE_SEND_RESUME[0],    		// [] Represents whether ROM code is forced to send a resume commmand during SPI boot
+    &FORCE_SEND_RESUME[0],    		// [] Represents whether ROM code is forced to send a resume command during SPI boot
     NULL
 };
 
