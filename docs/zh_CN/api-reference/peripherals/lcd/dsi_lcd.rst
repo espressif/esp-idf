@@ -62,7 +62,7 @@ MIPI DSI 接口的 LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` 设置 DPI 时钟频率 (MHz)。像素时钟频率越高，刷新率越高，但如果 DMA 带宽不足或 LCD 控制器芯片不支持高像素时钟频率，则可能会导致闪烁。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` 设置像素数据的像素格式。可用的像素格式见 :cpp:type:`lcd_color_rgb_pixel_format_t`。MIPI LCD 通常使用 **RGB888** 来获得最佳色彩深度。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` 设置 LCD 面板的特定时序参数。包括 LCD 分辨率和消隐间隔在内的必要参数列表见 :cpp:type:`esp_lcd_video_timing_t`，请依据 LCD 技术规格书填写参数。
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_flags::use_dma2d` 设置是否用 2D DMA 将用户数据异步复制到帧 buffer 中。
+    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` 设置是否用 2D DMA 将用户数据异步复制到帧 buffer 中。
 
     .. code-block:: c
 

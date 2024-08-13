@@ -138,7 +138,7 @@ typedef struct {
     uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
 
     /// Extra configuration flags for capture channel
-    struct extra_flags {
+    struct extra_capture_channel_flags {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
         uint32_t neg_edge: 1;          /*!< Whether to capture on negative edge */
         uint32_t pull_up: 1;           /*!< Whether to pull up internally */
