@@ -1,5 +1,6 @@
 include(${SDKCONFIG_CMAKE})
 enable_language(C ASM)
+set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 # Check the supported assembler version
 if(CONFIG_ULP_COPROC_TYPE_FSM)
