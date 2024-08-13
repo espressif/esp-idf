@@ -128,6 +128,7 @@ struct wpa_sm {
     int (*wpa_sm_wps_disable)(void);
     esp_err_t (*wpa_sm_eap_disable)(void);
 
+    bool rsn_override_support;
     enum wpa_rsn_override rsn_override;
 };
 
@@ -220,4 +221,6 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 
 int wpa_derive_ptk_ft(struct wpa_sm *sm, const unsigned char *src_addr,
                       const struct wpa_eapol_key *key, struct wpa_ptk *ptk);
+
+bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm);
 #endif /* WPA_I_H */

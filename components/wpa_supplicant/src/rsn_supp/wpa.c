@@ -733,7 +733,7 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
             wpa_printf(MSG_DEBUG, "WPA: Failed to get random data for SNonce");
             goto failed;
         }
-        if (sm->rsn_override != RSN_OVERRIDE_NOT_USED)
+        if (wpa_sm_rsn_overriding_supported(sm))
             rsn_set_snonce_cookie(sm->snonce);
         sm->renew_snonce = 0;
         wpa_hexdump(MSG_DEBUG, "WPA: Renewed SNonce",
@@ -1215,8 +1215,7 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
-    if (sm->proto == WPA_PROTO_RSN &&
-            sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
+    if (sm->proto == WPA_PROTO_RSN && wpa_sm_rsn_overriding_supported(sm)) {
         if ((sm->ap_rsne_override && !ie->rsne_override) ||
                 (!sm->ap_rsne_override && ie->rsne_override) ||
                 (sm->ap_rsne_override && ie->rsne_override &&
@@ -2286,10 +2285,34 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
         case WPA_PARAM_RSN_OVERRIDE:
             sm->rsn_override = value;
             break;
+        case WPA_PARAM_RSN_OVERRIDE_SUPPORT:
+            sm->rsn_override_support = value;
+            break;
         default:
             break;
     }
     return ret;
+}
+
+static const u8 * wpa_sm_get_ap_rsne(struct wpa_sm *sm, size_t *len)
+{
+    if (sm->rsn_override == RSN_OVERRIDE_RSNE_OVERRIDE) {
+        *len = sm->ap_rsne_override_len;
+        return sm->ap_rsne_override;
+    }
+
+    *len = sm->ap_rsn_ie_len;
+    return sm->ap_rsn_ie;
+}
+
+bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm)
+{
+    const u8 *rsne;
+    size_t rsne_len;
+
+    rsne = wpa_sm_get_ap_rsne(sm, &rsne_len);
+
+    return sm->rsn_override_support && rsne;
 }
 
 #ifdef ESP_SUPPLICANT
@@ -2574,6 +2597,8 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         return -1;
     }
     pos += assoc_ie_len;
+    wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
+            esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA));
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
             RSN_OVERRIDE_NOT_USED);
     ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
@@ -2601,7 +2626,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         *pos = variant;
         assoc_ie_len += 2 + 4 + 1;
     }
-
+    wpa_hexdump(MSG_DEBUG, "WPA: ASSOC IE LEN", assoc_ie, assoc_ie_len);
     esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
 
     if (sm->ap_rsnxe != NULL) {

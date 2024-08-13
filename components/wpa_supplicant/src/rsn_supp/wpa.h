@@ -37,6 +37,7 @@ struct l2_ethhdr {
 
 enum wpa_sm_conf_params {
     WPA_PARAM_RSN_OVERRIDE,
+    WPA_PARAM_RSN_OVERRIDE_SUPPORT,
 };
 
 void wpa_sm_set_state(enum wpa_states state);
