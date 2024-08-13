@@ -27,6 +27,13 @@ extern "C" {
 #define CSR_PCCR_MACHINE    0x7e2
 #endif /* SOC_CPU_HAS_CSR_PC */
 
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+#define MHCR 0x7c1
+#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
+#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
+#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
+#endif  //SOC_BRANCH_PREDICTOR_SUPPORTED
+
 #if SOC_CPU_HAS_FPU
 
 /* FPU bits in mstatus start at bit 13 */
@@ -363,11 +370,12 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
 FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
 {
-#define MHCR 0x7c1
-#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
-#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
-#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
     RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+}
+
+FORCE_INLINE_ATTR void rv_utils_dis_branch_predictor(void)
+{
+    RV_CLEAR_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
 }
 #endif
 

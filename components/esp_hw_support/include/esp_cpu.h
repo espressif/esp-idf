@@ -578,6 +578,14 @@ FORCE_INLINE_ATTR void esp_cpu_branch_prediction_enable(void)
 {
     rv_utils_en_branch_predictor();
 }
+
+/**
+ * @brief Disable branch prediction
+ */
+FORCE_INLINE_ATTR void esp_cpu_branch_prediction_disable(void)
+{
+    rv_utils_dis_branch_predictor();
+}
 #endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
 
 #ifdef __cplusplus
