@@ -30,7 +30,6 @@ api-guides/deep-sleep-stub.rst
 api-guides/blufi.rst
 api-guides/lwip.rst
 api-guides/coexist.rst
-api-guides/flash_psram_config.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/bluetooth.rst
