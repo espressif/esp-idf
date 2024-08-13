@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_psram/test_apps:
+components/esp_psram/test_apps/psram:
   disable:
     - if: SOC_SPIRAM_SUPPORTED != 1
   depends_components:
@@ -9,3 +9,11 @@ components/esp_psram/test_apps:
     - esp_driver_gpio
     - esp_driver_spi
     - spi_flash
+
+
+components/esp_psram/test_apps/psram_no_malloc_task_stack:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32p4"]
+  depends_components:
+    - esp_psram
+    - freertos
