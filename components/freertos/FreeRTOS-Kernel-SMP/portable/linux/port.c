@@ -333,7 +333,7 @@ BaseType_t xPortSetInterruptMask( void )
 
 void vPortClearInterruptMask( BaseType_t xMask )
 {
-    // Only reenable interrupts if xMask is 0
+    // Only re-enable interrupts if xMask is 0
     uxInterruptLevel = xMask;
     if (uxInterruptLevel == 0 && uxCriticalNestingIDF == 0) {
         vPortEnableInterrupts();
@@ -621,14 +621,6 @@ portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "port";
 
-
-/* When configSUPPORT_STATIC_ALLOCATION is set to 1 the application writer can
- * use a callback function to optionally provide the memory required by the idle
- * and timer tasks.  This is the stack that will be used by the timer task.  It is
- * declared here, as a global, so it can be checked by a test that is implemented
- * in a different file. */
-StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
-
 BaseType_t xPortCheckIfInISR(void)
 {
     return (uxInterruptNesting == 0) ? pdFALSE : pdTRUE;
@@ -726,7 +718,16 @@ void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
 #endif // configSUPPORT_STATIC_ALLOCATION == 1
 /*-----------------------------------------------------------*/
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+#if ( (configSUPPORT_STATIC_ALLOCATION == 1) && (configUSE_TIMERS == 1))
+
+/* When configSUPPORT_STATIC_ALLOCATION is set to 1 the application writer can
+ * use a callback function to optionally provide the memory required by the idle
+ * and timer tasks.  This is the stack that will be used by the timer task.  It is
+ * declared here, as a global, so it can be checked by a test that is implemented
+ * in a different file. */
+StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+
+
 /* configUSE_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
  * application must provide an implementation of vApplicationGetTimerTaskMemory()
  * to provide the memory that is used by the Timer service task. */
@@ -751,7 +752,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
      * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
-#endif // configSUPPORT_STATIC_ALLOCATION == 1
+#endif // configSUPPORT_STATIC_ALLOCATION == 1 && (configUSE_TIMERS == 1)
 
 void vPortTakeLock( portMUX_TYPE *lock )
 {
