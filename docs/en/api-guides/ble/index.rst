@@ -11,7 +11,6 @@ Overview
    :maxdepth: 1
 
    overview
-   ble-feature-support-status
 
 **********
 Profile
