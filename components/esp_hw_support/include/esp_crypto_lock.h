@@ -44,7 +44,7 @@ void esp_crypto_ds_lock_acquire(void);
 void esp_crypto_ds_lock_release(void);
 #endif /* SOC_DIG_SIGN_SUPPORTED */
 
-#if defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED)
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
 /**
  * @brief Acquire lock for the SHA and AES cryptography peripheral.
  *
@@ -56,9 +56,9 @@ void esp_crypto_sha_aes_lock_acquire(void);
  *
  */
 void esp_crypto_sha_aes_lock_release(void);
-#endif /* defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED) */
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
 
-#if defined(SOC_SHA_CRYPTO_DMA) && defined(SOC_AES_CRYPTO_DMA)
+#if defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA)
 /**
  * This API should be used by all components which use the SHA, AES, HMAC and DS crypto hardware on the ESP32S2.
  * They can not be used in parallel because they use the same DMA or are calling each other.
@@ -76,7 +76,7 @@ void esp_crypto_dma_lock_acquire(void);
  * Release lock for the AES and SHA cryptography peripherals, which both use the crypto DMA.
  */
 void esp_crypto_dma_lock_release(void);
-#endif /* defined(SOC_SHA_CRYPTO_DMA) && defined(SOC_AES_CRYPTO_DMA) */
+#endif /* defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA) */
 
 #ifdef SOC_MPI_SUPPORTED
 /**

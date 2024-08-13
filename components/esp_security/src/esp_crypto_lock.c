@@ -33,10 +33,10 @@ static _lock_t s_crypto_hmac_lock;
 static _lock_t s_crypto_mpi_lock;
 #endif /* SOC_MPI_SUPPORTED */
 
-#if defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED)
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
 /* Single lock for SHA and AES, sharing a reserved GDMA channel */
 static _lock_t s_crypto_sha_aes_lock;
-#endif /* defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED) */
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
 
 #ifdef SOC_ECC_SUPPORTED
 /* Lock for ECC peripheral */
@@ -83,7 +83,7 @@ void esp_crypto_ds_lock_release(void)
 }
 #endif /* SOC_DIG_SIGN_SUPPORTED */
 
-#if defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED)
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
 void esp_crypto_sha_aes_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_sha_aes_lock);
@@ -93,9 +93,9 @@ void esp_crypto_sha_aes_lock_release(void)
 {
     _lock_release(&s_crypto_sha_aes_lock);
 }
-#endif /* defined(SOC_SHA_SUPPORTED) && defined(SOC_AES_SUPPORTED) */
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
 
-#if defined(SOC_SHA_CRYPTO_DMA) && defined(SOC_AES_CRYPTO_DMA)
+#if defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA)
 void esp_crypto_dma_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_sha_aes_lock);
@@ -105,7 +105,7 @@ void esp_crypto_dma_lock_release(void)
 {
     _lock_release(&s_crypto_sha_aes_lock);
 }
-#endif /* defined(SOC_SHA_CRYPTO_DMA) && defined(SOC_AES_CRYPTO_DMA) */
+#endif /* defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA) */
 
 #ifdef SOC_MPI_SUPPORTED
 void esp_crypto_mpi_lock_acquire(void)
