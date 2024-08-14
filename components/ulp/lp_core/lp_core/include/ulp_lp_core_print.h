@@ -3,6 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Print from the LP core
@@ -15,3 +20,7 @@
  *
  */
 void lp_core_printf(const char* format, ...);
+
+#ifdef __cplusplus
+}
+#endif
