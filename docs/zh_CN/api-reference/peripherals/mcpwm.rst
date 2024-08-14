@@ -1031,14 +1031,15 @@ Kconfig 选项
 应用示例
 --------------------
 
-* 通过 PID 算法控制有刷直流电机速度：:example:`peripherals/mcpwm/mcpwm_bdc_speed_control`
-* 控制带霍尔传感器反馈的无刷直流电机：:example:`peripherals/mcpwm/mcpwm_bldc_hall_control`
-* 使用超声波传感器 (HC-SR04) 测量距离：:example:`peripherals/mcpwm/mcpwm_capture_hc_sr04`
-* 控制伺服电机角度：:example:`peripherals/mcpwm/mcpwm_servo_control`
-* 定时器之间的 MCPWM 同步：:example:`peripherals/mcpwm/mcpwm_sync`
+* :example:`peripherals/mcpwm/mcpwm_bdc_speed_control` 演示了如何使用两个特定 PWM 信号驱动有刷直流电机，通过光电编码器测量电机速度，并通过 PID 算法保持稳定的电机速度。
+* :example:`peripherals/mcpwm/mcpwm_bldc_hall_control` 演示了如何使用 MCPWM 外设，通过六步换向方案控制无刷直流电机，根据霍尔传感器的读数调整电机的旋转方向和速度。
+* :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04` 演示了如何使用 MCPWM 外设的捕获模块，解码超声波传感器 (HC-SR04) 的脉冲宽度信号。HC-SR04 传感器可根据脉冲的宽度测量距离。
+* :example:`peripherals/mcpwm/mcpwm_foc_svpwm_open_loop` 演示了如何使用 MCPWM 外设生成三对 PWM 信号，用于磁场定向控制 (FOC)，从而驱动无刷直流电机或永磁同步电机，或驱动三相功率逆变器（使用开环 FOC 算法）。
+* :example:`peripherals/mcpwm/mcpwm_servo_control` 演示了如何使用 MCPWM 驱动程序发送 PWM 信号来控制 RC 伺服电机，它可以在 -60° 到 60° 间来回旋转。
+* :example:`peripherals/mcpwm/mcpwm_sync` 演示了如何使用 MCPWM 定时器生成三个 PWM 同步信号，可以通过 GPIO、Timer TEZ 或软件来同步定时器。
 
 
-API Reference
+API 参考
 -------------
 
 .. include-build-file:: inc/mcpwm_timer.inc
