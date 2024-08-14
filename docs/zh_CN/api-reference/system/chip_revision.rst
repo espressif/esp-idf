@@ -89,8 +89,8 @@ EFuse 块版本 API
 
 下列 Kconfig 选项（格式为 ``major * 100 + minor``）可以将 eFuse 块版本依赖添加到代码中：
 
-- :ref:`CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL`
-- :ref:`CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL`
+- ``CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL``
+- ``CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL``
 
 .. _revision_limitation:
 
@@ -103,7 +103,7 @@ ESP-IDF 兼容性检查
 
 最大芯片版本号无法指定，只能由当前使用的 ESP-IDF 版本自动决定。ESP-IDF 会拒绝启动任何超过最大芯片版本号的芯片版本。由于特定版本的 ESP-IDF 无法预知未来的芯片版本更新，因此最大芯片版本号通常设置为 ``maximum supported MAJOR version + 99``。可以设置 “忽略最大版本” eFuse 来绕过最大版本限制，但这不能确保软件正常工作。
 
-EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中指定的参数（如 ADC 校正参数等）。如果 eFuse 块版本号在您的应用中并不重要，你可以通过使能 Kconfig 选项 :ref:`CONFIG_ESP_IGNORE_EFUSE_BLOCK_REV_CHECK` 来禁用 eFuse 块版本号检查。
+EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中指定的参数（如 ADC 校正参数等）。
 
 下文介绍了芯片版本未通过兼容性检查时显示的故障排除信息及解决方法，并描述了在早期 ESP-IDF 版本中与软件行为和兼容性检查相关的技术细节。
 
@@ -141,7 +141,7 @@ EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中�
 而 eFuse 块版本的要求则存储在 :cpp:type:`esp_app_desc_t` 结构体中。该结构体对象位于应用程序的二进制进项文件中。由于 eFuse 块版本信息主要影响 ADC 校准，而二级引导程序的镜像不涉及 ADC，因此我们只需要检查应用程序镜像的 eFuse 块版本信息。有 2 个与 eFuse 块版本相关的字段：
 
 - ``min_efuse_blk_rev_full`` - 镜像所需 eFuse 块的最小版本号，格式为 ``major * 100 + minor``。其值由 ``CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL`` 确定。
-- ``max_efuse_blk_rev_full`` - 镜像所需 eFuse 块的最大版本号，格式为 ``major * 100 + minor``。其值由 ``CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL`` 确定。这个值由硬件决定，用户不应对其进行修改，仅当 ESP-IDF 支持新版本时由乐鑫官方进行更改。
+- ``max_efuse_blk_rev_full`` - 镜像所需 eFuse 块的最大版本号，格式为 ``major * 100 + minor``。其值由 ``CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL`` 确定。它反映了当前 ESP-IDF 版本能支持的最大 eFuse 块版本号，不应由用户修改。
 
 最大和最小版本限制
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -154,12 +154,7 @@ EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中�
 
 3. 然后，第 2 阶段引导启动程序会检查应用程序的版本要求。它从应用程序镜像的标头中读取支持的芯片最小和最大版本，以及从段的标头中读取 eFuse 块版本信息，并与 eFuse 中的芯片版本进行比较。如果该芯片版本或 eFuse 块版本低于各自的最小版本或高于最大版本，引导程序会拒绝启动并中止。然而，如果设置了忽略最大版本位，则可以忽略最大版本限制。软件确定可以使用此芯片版本时，用户可以自行设置忽略位。
 
-4. 接着在应用程序的启动阶段将会检查 eFuse 块版本信息。允许的 eFuse 块最大和最小版本由以下 Kconfig 宏指定：
-
-    * :ref:`CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL`
-    * :ref:`CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL`
-
-5. 在空中升级 (OTA) 阶段，运行中的应用程序会检查新软件是否与芯片版本及 eFuse 块版本相匹配。它会从新应用程序镜像的标头中提取最小和最大芯片版本，以及应用程序描述中提取最大和最小 eFuse 块版本，并与 eFuse 中的芯片版本和块版本进行比较。应用程序检查版本匹配的方式与引导启动程序相同，即芯片版本和 eFuse 块版本须处在最小和最大版本之间（忽略最大版本的逻辑也相同）。
+4. 在空中升级 (OTA) 阶段，运行中的应用程序会检查新软件是否与芯片版本及 eFuse 块版本相匹配。它会从新应用程序镜像的标头中提取最小和最大芯片版本，以及应用程序描述中提取最大和最小 eFuse 块版本，并与 eFuse 中的芯片版本和块版本进行比较。应用程序检查版本匹配的方式与引导启动程序相同，即芯片版本和 eFuse 块版本须处在最小和最大版本之间（忽略最大版本的逻辑也相同）。
 
 向后兼容旧版 ESP-IDF 构建的引导启动程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
