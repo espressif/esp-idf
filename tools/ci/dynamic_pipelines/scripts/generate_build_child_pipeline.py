@@ -9,6 +9,7 @@ import __init__  # noqa: F401 # inject the system path
 import yaml
 from dynamic_pipelines.constants import DEFAULT_APPS_BUILD_PER_JOB
 from dynamic_pipelines.constants import DEFAULT_BUILD_CHILD_PIPELINE_FILEPATH
+from dynamic_pipelines.constants import DEFAULT_BUILD_CHILD_PIPELINE_NAME
 from dynamic_pipelines.constants import DEFAULT_TEST_PATHS
 from dynamic_pipelines.constants import NON_TEST_RELATED_APPS_FILENAME
 from dynamic_pipelines.constants import NON_TEST_RELATED_BUILD_JOB_NAME
@@ -133,7 +134,7 @@ def main(arguments: argparse.Namespace) -> None:
     else:
         extra_include_yml = ['tools/ci/dynamic_pipelines/templates/test_child_pipeline.yml']
 
-    dump_jobs_to_yaml(build_jobs, arguments.yaml_output, extra_include_yml)
+    dump_jobs_to_yaml(build_jobs, arguments.yaml_output, DEFAULT_BUILD_CHILD_PIPELINE_NAME, extra_include_yml)
     print(f'Generate child pipeline yaml file {arguments.yaml_output} with {sum(j.parallel for j in build_jobs)} jobs')
 
 

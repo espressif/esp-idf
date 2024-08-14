@@ -17,6 +17,9 @@ DEFAULT_CASES_TEST_PER_JOB = 30
 DEFAULT_BUILD_CHILD_PIPELINE_FILEPATH = os.path.join(IDF_PATH, 'build_child_pipeline.yml')
 DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH = os.path.join(IDF_PATH, 'target_test_child_pipeline.yml')
 
+DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
+DEFAULT_TARGET_TEST_CHILD_PIPELINE_NAME = 'Target Test Child Pipeline'
+
 TEST_RELATED_BUILD_JOB_NAME = 'build_test_related_apps'
 NON_TEST_RELATED_BUILD_JOB_NAME = 'build_non_test_related_apps'
 

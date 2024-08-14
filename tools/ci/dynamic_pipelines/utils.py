@@ -21,7 +21,10 @@ from .models import TestCase
 
 
 def dump_jobs_to_yaml(
-    jobs: t.List[Job], output_filepath: str, extra_include_yml: t.Optional[t.List[str]] = None
+    jobs: t.List[Job],
+    output_filepath: str,
+    pipeline_name: str,
+    extra_include_yml: t.Optional[t.List[str]] = None,
 ) -> None:
     yaml_dict = {}
     for job in jobs:
@@ -35,6 +38,7 @@ def dump_jobs_to_yaml(
                 '.gitlab/ci/common.yml',
             ],
             'workflow': {
+                'name': pipeline_name,
                 'rules': [
                     # always run the child pipeline, if they are created
                     {'when': 'always'},
