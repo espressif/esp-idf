@@ -691,19 +691,28 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
 
     const uint32_t *src = data;
 
-#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     // Case I: Bootloader verifying application
     // Case II: Bootloader verifying bootloader
-    // Anti-rollback check should handle only Case I from above.
+    // The esp_app_desc_t structure is located in DROM and is always in segment #0.
+    // Anti-rollback check and efuse block version check should handle only Case I from above.
     if (segment == 0 && metadata->start_addr != ESP_BOOTLOADER_OFFSET) {
+/* ESP32 doesn't have more memory and more efuse bits for block major version. */
+#if !CONFIG_IDF_TARGET_ESP32
+        const esp_app_desc_t *app_desc = (const esp_app_desc_t *)src;
+        esp_err_t ret = bootloader_common_check_efuse_blk_validity(app_desc->min_efuse_blk_rev_full, app_desc->max_efuse_blk_rev_full);
+        if (ret != ESP_OK) {
+            bootloader_munmap(data);
+            return ret;
+        }
+#endif  // !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
         ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, data_addr);
-        // The esp_app_desc_t structure is located in DROM and is always in segment #0.
         size_t len = process_esp_app_desc_data(src, sha_handle, checksum, metadata);
         data_len -= len;
         src += len / 4;
         // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
-    }
 #endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    }
 
     for (size_t i = 0; i < data_len; i += 4) {
         int w_i = i / 4; // Word index
