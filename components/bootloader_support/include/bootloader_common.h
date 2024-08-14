@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,6 +180,20 @@ uint32_t bootloader_common_get_chip_ver_pkg(void);
  *      - ESP_FAIL: image doesn't match to the chip
  */
 esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type);
+
+#if !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Check the eFuse block revision
+ *
+ * @param[in] min_rev_full The required minimum revision of the eFuse block
+ * @param[in] max_rev_full The required maximum revision of the eFuse block
+ * @return
+ *          - ESP_OK: The eFuse block revision is in the required range.
+ *          - ESP_OK: DISABLE_BLK_VERSION_MAJOR has been set in the eFuse of the SoC. No requirements shall be checked at this time.
+ *          - ESP_FAIL: The eFuse block revision of this chip does not match the requirement of the current image.
+ */
+esp_err_t bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full);
+#endif  // !CONFIG_IDF_TARGET_ESP32
 
 /**
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
