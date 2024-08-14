@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,6 +115,11 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_ve
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
+{
+    return false;
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
     return false;
 }
