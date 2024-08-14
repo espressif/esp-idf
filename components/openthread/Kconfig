@@ -299,6 +299,7 @@ menu "OpenThread"
     config OPENTHREAD_DNS64_CLIENT
         bool "Use dns64 client"
         depends on OPENTHREAD_ENABLED && LWIP_IPV4
+        select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
         default n
         help
             Select this option to acquire NAT64 address from dns servers.
