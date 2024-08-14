@@ -70,22 +70,23 @@ static prepare_type_env_t prepare_write_env;
 //#define CONFIG_SET_RAW_ADV_DATA
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power*/
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF, 0x00,
-        /* device name */
-        0x0E, 0x09, 'B', 'L', 'E', '_', 'C', 'O','M', 'P', '_', 'T','E', 'S', 'T'
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00,
+    /* Device Name */
+    0x0E, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'L', 'E', '_', 'C', 'O', 'M', 'P', '_', 'T', 'E', 'S', 'T'
 };
+
 static uint8_t raw_scan_rsp_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power */
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF,0x00
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00
 };
 
 #else
