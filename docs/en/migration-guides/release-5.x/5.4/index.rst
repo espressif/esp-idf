@@ -7,3 +7,4 @@ Migration from 5.3 to 5.4
     :maxdepth: 1
 
     system
+    bluetooth-classic

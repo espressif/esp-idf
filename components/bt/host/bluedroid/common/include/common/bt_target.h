@@ -103,9 +103,12 @@
 #if (UC_BT_L2CAP_ENABLED == TRUE)
 #define BTA_JV_INCLUDED             TRUE
 #define BTC_L2CAP_INCLUDED          TRUE
-#define BTC_SDP_INCLUDED            TRUE
 #define VND_BT_JV_BTA_L2CAP         TRUE
 #endif /* UC_BT_L2CAP_ENABLED */
+
+#if (UC_BT_SDP_COMMON_ENABLED == TRUE)
+#define BTC_SDP_COMMON_INCLUDED     TRUE
+#endif /* UC_BT_SDP_COMMON_ENABLED */
 
 #if (UC_BT_HFP_AG_ENABLED == TRUE) || (UC_BT_HFP_CLIENT_ENABLED == TRUE)
 #ifndef RFCOMM_INCLUDED
@@ -1500,7 +1503,7 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
-#if (defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)) || (defined(BTC_SDP_INCLUDED) && (BTC_SDP_INCLUDED==TRUE))
+#if (defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)) || (defined(BTC_SDP_COMMON_INCLUDED) && (BTC_SDP_COMMON_INCLUDED==TRUE))
 #define SDP_MAX_REC_ATTR            25
 #else
 #define SDP_MAX_REC_ATTR            8

@@ -101,15 +101,27 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
 *******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpDisable(void)
 {
+    BT_HDR  *p_buf = NULL;
     tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
 
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
+        p_buf->event = BTA_SDP_API_DISABLE_EVT;
+        bta_sys_sendmsg(p_buf);
+        status = BTA_SDP_FAILURE;
+    }
+
+    return status;
+}
+
+tBTA_SDP_STATUS BTA_SdpCleanup(void)
+{
     bta_sys_deregister(BTA_ID_SDP);
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Free buffer for SDP configuration structure */
     osi_free(p_bta_sdp_cfg->p_sdp_db);
     p_bta_sdp_cfg->p_sdp_db = NULL;
 #endif
-    return (status);
+    return BTA_SDP_SUCCESS;
 }
 
 /*******************************************************************************

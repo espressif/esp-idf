@@ -49,10 +49,11 @@ typedef void (*tBTA_SDP_ACTION)(tBTA_SDP_MSG *p_data);
 
 /* action function list */
 const tBTA_SDP_ACTION bta_sdp_action[] = {
-    bta_sdp_enable,  /* BTA_SDP_API_ENABLE_EVT */
-    bta_sdp_search,  /* BTA_SDP_API_SEARCH_EVT */
-    bta_sdp_create_record,  /* BTA_SDP_API_CREATE_RECORD_USER_EVT */
-    bta_sdp_remove_record,  /* BTA_SDP_API_REMOVE_RECORD_USER_EVT */
+    bta_sdp_enable,        /* BTA_SDP_API_ENABLE_EVT */
+    bta_sdp_search,        /* BTA_SDP_API_SEARCH_EVT */
+    bta_sdp_create_record, /* BTA_SDP_API_CREATE_RECORD_USER_EVT */
+    bta_sdp_remove_record, /* BTA_SDP_API_REMOVE_RECORD_USER_EVT */
+    bta_sdp_disable,       /* BTA_SDP_API_DISABLE_EVT */
 };
 
 /*******************************************************************************
