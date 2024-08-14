@@ -2,7 +2,6 @@ api-guides/partition-tables.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
-api-guides/flash_psram_config.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
@@ -19,7 +18,6 @@ api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/touch_element.rst
-api-reference/peripherals/spi_flash/xip_from_psram.inc
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/parlio.rst

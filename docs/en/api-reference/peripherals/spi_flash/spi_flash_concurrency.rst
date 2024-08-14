@@ -19,7 +19,7 @@ The SPI0/1 bus is shared between the instruction & data cache (for firmware exec
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    On {IDF_TARGET_NAME}, the config options :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` (disabled by default) and :ref:`CONFIG_SPIRAM_RODATA` (disabled by default) allow the cache to read/write PSRAM concurrently with SPI1 operations. See :ref:`xip_from_psram` for more details.
+    On {IDF_TARGET_NAME}, the config options :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` (disabled by default) allows the cache to read/write PSRAM concurrently with SPI1 operations. See :ref:`xip_from_psram` for more details.
 
     If these options are disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. These constraints will cause more IRAM/DRAM usages.
 
@@ -40,7 +40,7 @@ Under this condition, all CPUs should always execute code and access data from i
 
     .. note::
 
-        When :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA` are both enabled, these APIs will not disable the caches.
+        When :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` is enabled, these APIs will not disable the caches.
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
