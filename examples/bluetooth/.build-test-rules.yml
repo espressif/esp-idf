@@ -109,6 +109,14 @@ examples/bluetooth/esp_ble_mesh/wifi_coexist:
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
 
+examples/bluetooth/esp_hid_host:
+  disable_test:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: temporarily test esp32
+  disable:
+    - if: SOC_BT_SUPPORTED != 1
+
 examples/bluetooth/hci:
   <<: *bt_default_depends
   enable:
