@@ -55,6 +55,10 @@ config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG
+    bool
+    default y
+
 config ESP_ROM_WDT_INIT_PATCH
     bool
     default y
