@@ -142,7 +142,7 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 esp_err_t IRAM_ATTR periph_rtc_mpll_acquire(void)
 {
     // power up LDO for the MPLL
-#if defined(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN) && CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN != -1
+#if CONFIG_ESP_LDO_RESERVE_PSRAM
     esp_ldo_channel_config_t ldo_mpll_config = {
         .chan_id = CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN,
         .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_PSRAM_DOMAIN,

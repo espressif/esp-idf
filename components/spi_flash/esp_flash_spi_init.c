@@ -437,15 +437,18 @@ esp_err_t esp_flash_app_init(void)
 
     // Acquire the LDO channel used by the SPI NOR flash
     // in case the LDO voltage is changed by other users
-#if defined(CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN) && CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN != -1
+#if CONFIG_ESP_LDO_RESERVE_SPI_NOR_FLASH
     static esp_ldo_channel_handle_t s_ldo_chan = NULL;
     esp_ldo_channel_config_t ldo_config = {
         .chan_id = CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN,
         .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN,
+        .flags = {
+            .owned_by_hw = true,     // LDO output is totally controlled by hardware
+        },
     };
     err = esp_ldo_acquire_channel(&ldo_config, &s_ldo_chan);
     if (err != ESP_OK) return err;
-#endif
+#endif // CONFIG_ESP_LDO_RESERVE_SPI_NOR_FLASH
 
     spi_flash_init_lock();
     spi_flash_guard_set(&g_flash_guard_default_ops);

@@ -31,8 +31,8 @@ static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static const uint32_t s_ldo_channel_adjustable_mask = LDO_LL_ADJUSTABLE_CHAN_MASK; // each bit represents if the LDO channel is adjustable in hardware
 
-static ldo_regulator_channel_t s_ldo_channels[LDO_LL_UNIT_NUM] = {
-    [0 ... LDO_LL_UNIT_NUM - 1] = {
+static ldo_regulator_channel_t s_ldo_channels[LDO_LL_NUM_UNITS] = {
+    [0 ... LDO_LL_NUM_UNITS - 1] = {
         .chan_id = -1,
         .voltage_mv = 0,
         .ref_cnt = 0,
@@ -43,7 +43,7 @@ static ldo_regulator_channel_t s_ldo_channels[LDO_LL_UNIT_NUM] = {
 esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ldo_channel_handle_t *out_handle)
 {
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ldo_ll_is_valid_ldo_id(config->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid ldo channel ID");
+    ESP_RETURN_ON_FALSE(ldo_ll_is_valid_ldo_channel(config->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid ldo channel ID");
     ESP_RETURN_ON_FALSE(config->voltage_mv <= LDO_LL_MAX_VOLTAGE_MV,
                         ESP_ERR_INVALID_ARG, TAG, "invalid voltage value: %d", config->voltage_mv);
     int unit_id = LDO_ID2UNIT(config->chan_id);
@@ -78,8 +78,16 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
     }
     if (check_voltage_constraint_valid && check_adjustable_constraint_valid) {
         if (channel->ref_cnt == 0) {
-            // if the channel is not in use, we need to set the voltage and enable it
-            ldo_ll_set_output_voltage_mv(unit_id, config->voltage_mv);
+            // if the channel is not in use, we need to set the initial voltage and enable it
+            uint8_t dref = 0;
+            uint8_t mul = 0;
+            // calculate the dref and mul
+            ldo_ll_voltage_to_dref_mul(unit_id, config->voltage_mv, &dref, &mul);
+            ldo_ll_adjust_voltage(unit_id, dref, mul);
+            // set the ldo unit owner ship
+            ldo_ll_set_owner(unit_id, config->flags.owned_by_hw ? LDO_LL_UNIT_OWNER_HW : LDO_LL_UNIT_OWNER_SW);
+            // suppress voltage ripple
+            ldo_ll_enable_ripple_suppression(unit_id, true);
             ldo_ll_enable(unit_id, true);
         }
         // update the channel attributes
@@ -143,7 +151,11 @@ esp_err_t esp_ldo_channel_adjust_voltage(esp_ldo_channel_handle_t chan, int volt
     // i.e., the handle is not shared between threads without mutex protection
     chan->voltage_mv = voltage_mv;
     int unit_id = LDO_ID2UNIT(chan->chan_id);
-    ldo_ll_set_output_voltage_mv(unit_id, voltage_mv);
+    uint8_t dref = 0;
+    uint8_t mul = 0;
+    // calculate the dref and mul
+    ldo_ll_voltage_to_dref_mul(unit_id, voltage_mv, &dref, &mul);
+    ldo_ll_adjust_voltage(unit_id, dref, mul);
 
     return ESP_OK;
 }
@@ -153,7 +165,7 @@ esp_err_t esp_ldo_dump(FILE *stream)
     char line[100];
     fprintf(stream, "ESP LDO Channel State:\n");
     fprintf(stream, "%-5s %-5s %-10s %-12s %-5s\n", "Index", "ID", "ref_cnt", "voltage_mv", "adjustable");
-    for (int i = 0; i < LDO_LL_UNIT_NUM; i++) {
+    for (int i = 0; i < LDO_LL_NUM_UNITS; i++) {
         char *buf = line;
         size_t len = sizeof(line);
         memset(line, 0x0, len);
