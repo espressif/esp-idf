@@ -71,7 +71,6 @@ api-reference/peripherals/gptimer.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
 api-reference/peripherals/ana_cmpr.rst
-api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst

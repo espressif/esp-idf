@@ -30,7 +30,7 @@
 #define SOC_PARLIO_SUPPORTED            1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-// #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_LP_CORE_SUPPORTED           1
@@ -131,7 +131,7 @@
 // #define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED (1) /*!< support channel compensation to the HW offset calibration */
 
 /*!< Interrupt */
-// #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)  // TODO: [ESP32C5] IDF-8727
+#define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
 
 /*!< ADC power control is shared by PWDET */
 #define SOC_ADC_SHARED_POWER                    1
@@ -567,9 +567,9 @@
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
-// #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */

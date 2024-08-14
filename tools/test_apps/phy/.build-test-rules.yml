@@ -9,7 +9,7 @@ tools/test_apps/phy/phy_multi_init_data_test:
 
 tools/test_apps/phy/phy_tsens:
   disable:
-    - if: SOC_WIFI_SUPPORTED != 1 or SOC_TEMP_SENSOR_SUPPORTED != 1
+    - if: (SOC_WIFI_SUPPORTED != 1 or SOC_TEMP_SENSOR_SUPPORTED != 1) or SOC_LIGHT_SLEEP_SUPPORTED != 1
   depends_components:
     - hal
     - driver
