@@ -267,7 +267,7 @@ else() # Regular app build
             rom_linker_script("wdt")
         endif()
 
-        if(CONFIG_NEWLIB_NANO_FORMAT)
+        if(CONFIG_NEWLIB_NANO_FORMAT AND NOT CONFIG_ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG)
             # nano formatting functions in ROM are also built for 64-bit time_t.
             rom_linker_script("newlib-nano")
         endif()
