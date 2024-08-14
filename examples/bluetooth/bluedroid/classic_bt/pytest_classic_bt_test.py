@@ -31,7 +31,7 @@ def test_bt_spp_only(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
     if 'ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!' in str(initiator_output):
         passkey = acceptor.expect(r'ESP_BT_GAP_KEY_NOTIF_EVT passkey:(\d+)').group(1).decode('utf8')
-        initiator.write(f'spp key {passkey};')
+        initiator.write(f'spp key {passkey};')  # noqa: E702 multiple statements on one line (semicolon)
         acceptor.expect_exact('authentication success', timeout=30)
         initiator.expect_exact('authentication success', timeout=30)
     acceptor.expect_exact('ESP_SPP_SRV_OPEN_EVT status:0', timeout=30)
@@ -114,8 +114,8 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize(
     'count, app_path, target, config', [
         (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}| \
-           {os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
+         f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}|'
+         f'{os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
          'esp32|esp32', 'test'),
     ],
     indirect=True,
