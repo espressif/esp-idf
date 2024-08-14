@@ -102,7 +102,7 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     """
     response = requests.get(
         f'{CI_DASHBOARD_API}/commits/{commit_id}/jobs',
-        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'}
+        headers={'CI-Job-Token': CI_JOB_TOKEN},
     )
     if response.status_code != 200:
         print(f'Failed to fetch jobs data: {response.status_code} with error: {response.text}')
@@ -117,7 +117,7 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     failed_job_names = [job['name'] for job in jobs if job['status'] == 'failed']
     response = requests.post(
         f'{CI_DASHBOARD_API}/jobs/failure_ratio',
-        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'},
+        headers={'CI-Job-Token': CI_JOB_TOKEN},
         json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
     )
     if response.status_code != 200:
@@ -145,7 +145,7 @@ def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], bra
     req_json = {'testcase_names': list(set([testcase.name for testcase in failed_testcases])), **branches_filter}
     response = requests.post(
         f'{CI_DASHBOARD_API}/testcases/failure_ratio',
-        headers={'Authorization': f'Bearer {CI_JOB_TOKEN}'},
+        headers={'CI-Job-Token': CI_JOB_TOKEN},
         json=req_json,
     )
     if response.status_code != 200:

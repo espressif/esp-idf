@@ -289,7 +289,7 @@ class Gitlab(object):
         """
         response = requests.get(
             f'{os.getenv("CI_DASHBOARD_API", "")}/pipelines/{parent_pipeline_id}/child-ids',
-            headers={'Authorization': f'Bearer {os.getenv("ESPCI_TOKEN", "")}'}
+            headers={'CI-Job-Token': os.getenv('CI_JOB_TOKEN', '')},
         )
 
         if response.status_code == 200:
