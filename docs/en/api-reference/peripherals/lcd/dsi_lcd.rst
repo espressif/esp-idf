@@ -62,7 +62,7 @@ MIPI DSI Interfaced LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` sets the DPI clock frequency in MHz. Higher pixel clock frequency results in higher refresh rate, but may cause flickering if the DMA bandwidth is not sufficient or the LCD controller chip does not support high pixel clock frequency.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` sets the pixel format of the pixel data. The available pixel formats are listed in :cpp:type:`lcd_color_rgb_pixel_format_t`. We usually use **RGB888** for MIPI LCD to get the best color depth.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_video_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_flags::use_dma2d` sets whether to use the 2D DMA peripheral to copy the user data to the frame buffer, asynchronously.
+    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` sets whether to use the 2D DMA peripheral to copy the user data to the frame buffer, asynchronously.
 
     .. code-block:: c
 

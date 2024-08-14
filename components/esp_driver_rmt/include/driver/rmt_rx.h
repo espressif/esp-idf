@@ -56,7 +56,7 @@ typedef struct {
     uint32_t signal_range_max_ns; /*!< RMT will stop receiving if one symbol level has kept more than `signal_range_max_ns` */
 
     /// Receive specific flags
-    struct extra_flags {
+    struct extra_rmt_receive_flags {
         uint32_t en_partial_rx: 1; /*!< Set this flag if the incoming data is very long, and the driver can only receive the data piece by piece,
                                         because the user buffer is not sufficient to save all the data. */
     } flags;                       /*!< Receive specific config flags */

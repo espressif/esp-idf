@@ -192,13 +192,13 @@ esp_err_t esp_async_fbcpy(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_trans_de
     async_memcpy_setup_dma2d_descriptor(mcp, transaction);
 
     // submit the DMA2D request
-    dma2d_trans_config_t dma2d_trans_conf = {
+    static dma2d_trans_config_t dma2d_trans_conf = {
         .tx_channel_num = 1,
         .rx_channel_num = 1,
         .channel_flags = DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING,
         .on_job_picked = dma2d_job_picked_cb,
-        .user_config = mcp,
     };
+    dma2d_trans_conf.user_config = mcp;
     ESP_RETURN_ON_ERROR(dma2d_enqueue(mcp->client, &dma2d_trans_conf, mcp->trans_desc), TAG, "DMA2D enqueue failed");
     return ESP_OK;
 }
