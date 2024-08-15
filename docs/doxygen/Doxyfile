@@ -263,7 +263,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/twai_types_deprecated.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \

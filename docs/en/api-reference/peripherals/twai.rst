@@ -613,5 +613,5 @@ Application Examples
 API Reference
 -------------
 
-.. include-build-file:: inc/twai_types.inc
+.. include-build-file:: inc/twai_types_deprecated.inc
 .. include-build-file:: inc/twai.inc

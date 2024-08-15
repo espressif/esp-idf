@@ -41,7 +41,7 @@ ignores:
   - "components/hal/include/hal/pmu_types.h"
   - "components/hal/include/hal/sha_types.h"
   - "components/hal/include/hal/touch_sensor_legacy_types.h"
-  - "components/hal/include/hal/twai_types.h"
+  - "components/hal/include/hal/twai_types_deprecated.h"
 rule:
   any:
     - kind: argument_list
@@ -95,7 +95,7 @@ ignores:
   - "components/hal/include/hal/sha_types.h"
   - "components/hal/include/hal/touch_sensor_legacy_types.h"
   - "components/hal/include/hal/twai_hal.h"
-  - "components/hal/include/hal/twai_types.h"
+  - "components/hal/include/hal/twai_types_deprecated.h"
 rule:
   kind: preproc_include
   has:

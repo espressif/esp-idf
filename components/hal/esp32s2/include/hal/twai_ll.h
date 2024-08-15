@@ -255,7 +255,7 @@ static inline void twai_ll_set_cmd_tx(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_tx_single_shot(twai_dev_t *hw)
 {
-    hw->command_reg.val = 0x03; //Set command_reg.tr and command_reg.at simultaneously for single shot transmittion request
+    hw->command_reg.val = 0x03; //Set command_reg.tr and command_reg.at simultaneously for single shot transmission request
 }
 
 /**
