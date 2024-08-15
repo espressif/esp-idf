@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -70,6 +70,18 @@ uint8_t hid_mouse_descriptor[] = {
     0xc0,                          //   END_COLLECTION
     0xc0                           // END_COLLECTION
 };
+
+static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 const int hid_mouse_descriptor_len = sizeof(hid_mouse_descriptor);
 
@@ -156,16 +168,6 @@ void mouse_move_task(void *pvParameters)
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-}
-
-static void print_bt_address(void)
-{
-    const char *TAG = "bt_address";
-    const uint8_t *bd_addr;
-
-    bd_addr = esp_bt_dev_get_address();
-    ESP_LOGI(TAG, "my bluetooth address is %02X:%02X:%02X:%02X:%02X:%02X",
-             bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
 }
 
 void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
@@ -390,6 +392,7 @@ void app_main(void)
 {
     const char *TAG = "app_main";
     esp_err_t ret;
+    char bda_str[18] = {0};
 
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -473,6 +476,6 @@ void app_main(void)
     esp_bt_pin_code_t pin_code;
     esp_bt_gap_set_pin(pin_type, 0, pin_code);
 
-    print_bt_address();
+    ESP_LOGI(TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
     ESP_LOGI(TAG, "exiting");
 }
