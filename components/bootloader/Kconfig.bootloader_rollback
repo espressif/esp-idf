@@ -1,8 +1,37 @@
-menu "Bootloader Rollback"
+menu "Recovery Bootloader and Rollback"
+
+    config BOOTLOADER_RECOVERY_ENABLE
+        bool "Enable Recovery Bootloader"
+        depends on SOC_RECOVERY_BOOTLOADER_SUPPORTED
+        default n
+        help
+            The recovery bootloader feature is implemented in the ROM bootloader. It is required for safe OTA
+            updates of the bootloader. The feature is activated when the eFuse field
+            (ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR) is set, which defines the flash address of the
+            recovery bootloader. If activated and the primary bootloader fails to load, the ROM bootloader
+            will attempt to load the recovery bootloader from the address specified in eFuse.
+
+    config BOOTLOADER_RECOVERY_OFFSET
+        hex "Recovery Bootloader Flash Offset"
+        depends on BOOTLOADER_RECOVERY_ENABLE
+        default 0x3F0000
+        range 0x0 0xFFE000
+        help
+            Flash address where the recovery bootloader is stored.
+            This value must be written to the eFuse field (ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR)
+            to activate the recovery bootloader in the ROM bootloader. The eFuse can be programmed
+            using espefuse.py or in the user application with the API esp_efuse_set_recovery_bootloader_offset().
+            Setting this value in the config allows parttool.py to verify that it does not overlap with existing
+            partitions in the partition table.
+
+            The address must be a multiple of the flash sector size (0x1000 bytes).
+            The eFuse field stores the offset in sectors.
+            If the feature is no longer needed or unused, you can burn the 0xFFF value to disable this feature in
+            the ROM bootloader.
 
     config BOOTLOADER_ANTI_ROLLBACK_ENABLE
         bool "Enable bootloader rollback support"
-        depends on SOC_RECOVERY_BOOTLOADER_SUPPORTED
+        depends on BOOTLOADER_RECOVERY_ENABLE
         default n
         help
             This option prevents rollback to previous bootloader image with lower security version.

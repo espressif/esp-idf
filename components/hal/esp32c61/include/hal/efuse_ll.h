@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecd
 {
     (void) curve;
     EFUSE0.conf.cfg_ecdsa_blk = efuse_blk;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
+{
+    return EFUSE0.rd_repeat_data3.recovery_bootloader_flash_sector;
 }
 
 /******************* eFuse control functions *************************/

@@ -564,9 +564,9 @@
 
 /*------------------------Bootloader CAPS---------------------------------*/
 /* Support Recovery Bootloader */
-#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (0)
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)
 /* Support Anti-rollback */
-#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (0)
+#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (1)
 
 /*-------------------------- APM CAPS-----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED         1    /*!< Support for APM control filter */

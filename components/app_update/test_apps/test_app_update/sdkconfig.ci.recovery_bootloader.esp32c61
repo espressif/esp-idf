@@ -1,0 +1,2 @@
+# ESP32C61 supports the Recovery bootloader feature in ROM starting from v1.0 (ECO3)
+CONFIG_IDF_TARGET="esp32c61"

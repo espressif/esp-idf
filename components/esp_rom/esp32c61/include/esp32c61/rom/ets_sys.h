@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -420,6 +420,30 @@ typedef enum {
     CANCEL,
 } STATUS __attribute__((deprecated("Use ETS_STATUS instead")));
 #endif
+
+/**
+ * @brief Returns the offset from which the bootloader image is used to load.
+ *
+ * The offset can point to either the PRIMARY or RECOVERY bootloader.
+ *
+ * @note The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+ *       Read it before the heap is initialized, otherwise it may return an invalid value.
+ *
+ * @return The offset of the active bootloader.
+ */
+uint32_t ets_get_bootloader_offset(void);
+
+/**
+ * @brief Sets the offset from which the bootloader image is used to load.
+ *
+ * The offset can point to either the PRIMARY or RECOVERY bootloader.
+ *
+ * @note The bootloader offset variable in ROM is stored in a memory that will be reclaimed by heap component.
+ *       Setting it after the heap is initialized, may corrupt the heap memory.
+ *
+ * @param offset The offset value to set for the active bootloader.
+ */
+void ets_set_bootloader_offset(uint32_t offset);
 
 /**
   * @}

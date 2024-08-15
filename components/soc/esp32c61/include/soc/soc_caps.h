@@ -401,6 +401,12 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 
+/*------------------------Bootloader CAPS---------------------------------*/
+/* Support Recovery Bootloader */
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)
+/* Support Anti-rollback */
+#define SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED        (1)
+
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
 #define SOC_APM_SUPPORT_CTRL_CFG_LOCK   1 /*!< Support for APM controller configuration lock */
