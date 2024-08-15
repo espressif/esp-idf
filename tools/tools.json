@@ -497,6 +497,40 @@
       "versions": [
         {
           "linux-amd64": {
+            "sha256": "cdd7fb352605cee3ae53b0e18b5929b642900e33d6b0173e19f6d4f2067ebf16",
+            "size": 53635506 ,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-x86_64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "d18f50f01b001303d21f53c6c16ff12ee3aa45df5da1899c2fe95be7426aa026",
+            "size": 54889935,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-aarch64.tar.gz"
+          },
+          "macos": {
+            "sha256": "c6fdda745f9ce69bca048e91955c7d043ba905d6388a62e0ff52b681ac17183c",
+            "size": 79199037,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-macos-universal.tar.gz"
+          },
+          "macos-arm64": {
+            "sha256": "c6fdda745f9ce69bca048e91955c7d043ba905d6388a62e0ff52b681ac17183c",
+            "size": 79199037,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-macos-universal.tar.gz"
+          },
+          "name": "3.30.2",
+          "status": "recommended",
+          "win32": {
+            "sha256": "48bf4b3dc2d668c578e0884cac7878e146b036ca6b5ce4f8b5572f861b004c25",
+            "size": 45404613,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-windows-x86_64.zip"
+          },
+          "win64": {
+            "sha256": "48bf4b3dc2d668c578e0884cac7878e146b036ca6b5ce4f8b5572f861b004c25",
+            "size": 45404613,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-windows-x86_64.zip"
+          }
+        },
+        {
+          "linux-amd64": {
             "sha256": "726f88e6598523911e4bce9b059dc20b851aa77f97e4cc5573f4e42775a5c16f",
             "size": 47042675,
             "url": "https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-linux-x86_64.tar.gz"
@@ -527,7 +561,7 @@
             "url": "https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-macos-universal.tar.gz"
           },
           "name": "3.24.0",
-          "status": "recommended",
+          "status": "supported",
           "win32": {
             "sha256": "b1ad8c2dbf0778e3efcc9fd61cd4a962e5c1af40aabdebee3d5074bcff2e103c",
             "size": 40212531,
