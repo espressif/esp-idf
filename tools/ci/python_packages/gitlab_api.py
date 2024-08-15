@@ -18,7 +18,6 @@ from typing import Optional
 from typing import Union
 
 import gitlab
-import requests
 
 TR = Callable[..., Any]
 
@@ -68,6 +67,7 @@ class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
+    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
     def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
@@ -280,25 +280,38 @@ class Gitlab(object):
         job = self.project.jobs.get(job_id)
         return ','.join(job.tag_list)
 
-    def get_child_pipeline_ids(self, parent_pipeline_id: int) -> List[int]:
+    def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> List[int]:
         """
-        Fetches the child pipeline IDs for a given parent pipeline ID.
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
 
-        :param parent_pipeline_id: ID of the parent pipeline.
-        :return: List of child pipeline IDs.
+        :param main_pipeline_id: The ID of the main pipeline to start the search.
+        :return: A list of IDs of all downstream child pipelines.
         """
-        response = requests.get(
-            f'{os.getenv("CI_DASHBOARD_API", "")}/pipelines/{parent_pipeline_id}/child-ids',
-            headers={'CI-Job-Token': os.getenv('CI_JOB_TOKEN', '')},
-        )
+        bridge_pipeline_ids = []
+        child_pipeline_ids = []
 
-        if response.status_code == 200:
-            response_data = response.json()
-            child_pipeline_ids: list = response_data.get('child_pipeline_ids', [])
-            return child_pipeline_ids
-        else:
-            logging.error(f'Failed to fetch child pipeline IDs: {response.text}')
-            return []
+        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in main_pipeline_bridges:
+            downstream_pipeline = bridge.attributes.get('downstream_pipeline')
+            if not downstream_pipeline:
+                continue
+            bridge_pipeline_ids.append(downstream_pipeline['id'])
+
+        for bridge_pipeline_id in bridge_pipeline_ids:
+            child_pipeline_ids.append(bridge_pipeline_id)
+            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
+
+            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+                continue
+
+            child_bridges = bridge_pipeline.bridges.list()
+            for child_bridge in child_bridges:
+                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
+                if not downstream_child_pipeline:
+                    continue
+                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+
+        return [pid for pid in child_pipeline_ids if pid is not None]
 
     def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
         """
@@ -308,22 +321,23 @@ class Gitlab(object):
         :param retry_allowed_failures: Whether to retry jobs that are marked as allowed failures.
         """
         jobs_succeeded_retry = []
-        pipeline_ids = [pipeline_id] + self.get_child_pipeline_ids(pipeline_id)
-
+        pipeline_ids = [pipeline_id] + self.get_downstream_pipeline_ids(pipeline_id)
+        logging.info(f'Retrying jobs for pipelines: {pipeline_ids}')
         for pid in pipeline_ids:
             pipeline = self.project.pipelines.get(pid)
-            jobs_to_retry = [
-                job
+            job_ids_to_retry = [
+                job.id
                 for job in pipeline.jobs.list(scope='failed')
                 if retry_allowed_failures or not job.attributes.get('allow_failure', False)
             ]
-            for job in jobs_to_retry:
+            logging.info(f'Failed jobs for pipeline {pid}: {job_ids_to_retry}')
+            for job_id in job_ids_to_retry:
                 try:
-                    res = self.project.jobs.get(job.id).retry()
-                    jobs_succeeded_retry.append(job.id)
-                    logging.info(f'Retried job {job.id} with result {res}')
+                    res = self.project.jobs.get(job_id).retry()
+                    jobs_succeeded_retry.append(job_id)
+                    logging.info(f'Retried job {job_id} with result {res}')
                 except Exception as e:
-                    logging.error(f'Failed to retry job {job.id}: {str(e)}')
+                    logging.error(f'Failed to retry job {job_id}: {str(e)}')
 
         return jobs_succeeded_retry
 
