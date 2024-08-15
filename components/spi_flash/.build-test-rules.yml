@@ -6,6 +6,12 @@ components/spi_flash/test_apps/esp_flash:
       temporary: true
       reason: target esp32c6 cannot pass atomic build, target esp32h2 currently doesn't support GPSPI.
 
+components/spi_flash/test_apps/esp_flash_stress:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: all targets according to the README file
+
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
     - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2"]
