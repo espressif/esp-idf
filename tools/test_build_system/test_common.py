@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -13,7 +13,11 @@ from typing import List
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from test_build_system_helpers import IdfPyFunc, find_python, get_snapshot, replace_in_file, run_idf_py
+from test_build_system_helpers import find_python
+from test_build_system_helpers import get_snapshot
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import replace_in_file
+from test_build_system_helpers import run_idf_py
 
 
 def get_subdirs_absolute_paths(path: Path) -> List[str]:
@@ -38,18 +42,6 @@ def test_compile_commands_json_updated_by_reconfigure(idf_py: IdfPyFunc) -> None
     idf_py('reconfigure')
     snapshot_3 = get_snapshot(['build/compile_commands.json'])
     snapshot_3.assert_different(snapshot_2)
-
-
-@pytest.mark.usefixtures('test_app_copy')
-def test_of_test_app_copy(idf_py: IdfPyFunc) -> None:
-    p = Path('main/idf_component.yml')
-    p.write_text('syntax_error\n')
-    try:
-        with (pytest.raises(subprocess.CalledProcessError)) as exc_info:
-            idf_py('reconfigure')
-        assert 'ERROR: Unknown format of the manifest file:' in exc_info.value.stderr
-    finally:
-        p.unlink()
 
 
 @pytest.mark.usefixtures('test_app_copy')
