@@ -157,6 +157,10 @@ def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typin
 @pytest.fixture
 def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
     copy_to = request.node.name + '_idf'
+    # allow overriding the destination via pytest.mark.idf_copy_with_space so the destination contain space
+    mark_with_space = request.node.get_closest_marker('idf_copy_with_space')
+    if mark_with_space:
+        copy_to = request.node.name + ' idf'
 
     # allow overriding the destination via pytest.mark.idf_copy()
     mark = request.node.get_closest_marker('idf_copy')

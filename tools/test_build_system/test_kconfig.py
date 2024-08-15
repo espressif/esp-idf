@@ -79,7 +79,7 @@ def test_kconfig_deprecated_options(idf_py: IdfPyFunc, test_app_copy: Path) -> N
 
 
 @pytest.mark.usefixtures('idf_copy')
-@pytest.mark.idf_copy('test_kconfig_variouos_options')
+@pytest.mark.idf_copy('test_kconfig_various_options')
 def test_kconfig_multiple_and_target_specific_options(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     idf_path = Path(os.environ['IDF_PATH'])
 
