@@ -136,8 +136,6 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
     return param;
 }
 
-TCM_DRAM_ATTR static uint32_t s_saved_pd_flags = 0;
-
 const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
         uint32_t pd_flags,
@@ -147,7 +145,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         bool dslp
     )
 {
-    s_saved_pd_flags = pd_flags;
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags);
 
     uint32_t iram_pd_flags = 0;
@@ -308,11 +305,11 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
 
-    if (s_saved_pd_flags & PMU_SLEEP_PD_TOP) {
-        // L1 Cache will be powered down during PD_TOP sleep, write it back to L2 Cache here.
-        // !!! Need to manually check that data in L2 memory will not be modified from now on. !!!
-        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
-    }
+    // For the sleep where powered down the TOP domain, the L1 cache data memory will be lost and needs to be written back here.
+    // For the sleep without power down the TOP domain, regdma retention may still be enabled, and dirty data in the L1 cache needs
+    // to be written back so that regdma can get the correct link. So we always need to write back to L1 DCache here.
+    // !!! Need to manually check that data in L2 memory will not be modified from now on. !!!
+    Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
 
 #if CONFIG_SPIRAM
     psram_ctrlr_ll_wait_all_transaction_done();
