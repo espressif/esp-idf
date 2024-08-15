@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import time
 
 import netifaces
 import pytest
-from common_test_methods import get_env_config_variable, get_my_interface_by_dest_ip
+from common_test_methods import get_env_config_variable
+from common_test_methods import get_my_interface_by_dest_ip
 from pytest_embedded import Dut
 
 try:
@@ -27,6 +27,7 @@ MESSAGE = 'Data to ESP'
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.wifi_router
 def test_examples_tcp_server_ipv4(dut: Dut) -> None:

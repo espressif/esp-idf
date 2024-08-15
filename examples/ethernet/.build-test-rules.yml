@@ -4,9 +4,9 @@ examples/ethernet/basic:
   enable:
     - if: INCLUDE_DEFAULT == 1
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: not supported yet # TODO: [ESP32C5] IDF-8697, [esp32c61] IDF-9298
+      reason: not supported yet # TODO: [esp32c61] IDF-9298
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
@@ -21,9 +21,9 @@ examples/ethernet/basic:
 
 examples/ethernet/enc28j60:
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: target esp32p4, esp32c5 is not supported yet # TODO: [ESP32P4] IDF-8073 [ESP32C5] IDF-8697, [esp32c61] IDF-9298
+      reason: not supported yet # TODO: [esp32c61] IDF-9298
   depends_components:
     - esp_eth
     - esp_netif
@@ -34,9 +34,9 @@ examples/ethernet/enc28j60:
 
 examples/ethernet/iperf:
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: not supported yet # TODO: [ESP32C5] IDF-8697, [esp32c61] IDF-9298
+      reason: not supported yet # TODO: [esp32c61] IDF-9298
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true

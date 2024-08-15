@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 
 import pytest
@@ -39,6 +38,7 @@ def _run_test(dut: Dut) -> None:
 @pytest.mark.esp32s2
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.wifi_ap
 def test_protocols_icmp_echo(dut: Dut) -> None:

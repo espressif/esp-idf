@@ -1,10 +1,11 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
-# WiFi station example
+# Static IP Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+This example demonstrates how to configure static IP address on ESP32 family devices.
 
 ## How to use example
 
@@ -14,9 +15,13 @@
 idf.py menuconfig
 ```
 
-Set following parameters under Example Configuration Options:
+At first, decide if you want to use the example with WiFi or Ethernet network interface. Note that the example is designed to support only one network interface at a time.
 
-* Set `WiFi SSID` and `WiFi Password` and `Maximal retry` under Example Configuration Options.
+* Set `WiFi SSID` and `WiFi Password` and `Maximal retry` under `WiFi Example Configuration` Options, if you are planning to use WiFi to connect to the network.
+
+* Or configure `Internal EMAC` or `SPI Ethernet` under `Ethernet Configuration` Option based on your actual hardware configuration, if you are planning to use Ethernet to connect to the network.
+
+Set following parameters under `Example Configuration` Options which are common for both network interfaces:
 
 * Set `Static IP address` of your device static IP.
 
@@ -54,7 +59,7 @@ I (573) system_api: read default base MAC address from EFUSE
 I (603) wifi:wifi firmware version: 6b2834e
 I (603) wifi:wifi certification version: v7.0
 I (603) wifi:config NVS flash: enabled
-I (603) wifi:config nano formating: disabled
+I (603) wifi:config nano formatting: disabled
 I (613) wifi:Init data frame dynamic rx buffer num: 32
 I (613) wifi:Init management frame dynamic rx buffer num: 32
 I (623) wifi:Init management short buffer num: 32
