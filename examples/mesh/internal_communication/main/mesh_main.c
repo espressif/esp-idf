@@ -80,7 +80,7 @@ void esp_mesh_p2p_tx_main(void *arg)
         if (!esp_mesh_is_root()) {
             ESP_LOGI(MESH_TAG, "layer:%d, rtableSize:%d, %s", mesh_layer,
                      esp_mesh_get_routing_table_size(),
-                     (is_mesh_connected && esp_mesh_is_root()) ? "ROOT" : is_mesh_connected ? "NODE" : "DISCONNECT");
+                     is_mesh_connected ? "NODE" : "DISCONNECT");
             vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
             continue;
         }
