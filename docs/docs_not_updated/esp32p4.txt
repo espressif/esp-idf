@@ -10,7 +10,6 @@ api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
 api-reference/peripherals/adc_continuous.rst
 api-reference/peripherals/adc_oneshot.rst
-api-reference/peripherals/usb_host.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
