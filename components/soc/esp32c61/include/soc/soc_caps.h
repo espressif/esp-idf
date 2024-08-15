@@ -59,7 +59,7 @@
 #define SOC_REG_I2C_SUPPORTED           1
 //  \#define SOC_ETM_SUPPORTED               0
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
-//  \#define SOC_PAU_SUPPORTED               0
+#define SOC_PAU_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_PM_SUPPORTED                1
 #define SOC_ECDSA_SUPPORTED             1
@@ -348,10 +348,12 @@
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 // #define SOC_TIMER_SUPPORT_ETM             (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 // #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 0
@@ -390,7 +392,7 @@
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
 #define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
-
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
@@ -422,7 +424,7 @@
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-//  \#define SOC_PM_SUPPORT_TOP_PD           (1)
+#define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
 #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
@@ -434,9 +436,13 @@
 // #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
-#define SOC_PM_MODEM_RETENTION_BY_REGDMA    (0)
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
-#define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD   (1)
+
+#define SOC_PM_PAU_LINK_NUM                 (4)
+#define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
+#define SOC_PM_PAU_REGDMA_LINK_WIFIMAC      (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)

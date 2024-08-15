@@ -37,7 +37,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_hp_system_retention_in
     return ESP_OK;
 }
 
-#if SOC_APM_SUPPORTED
+#if SOC_APM_SUPPORTED || CONFIG_IDF_TARGET_ESP32C61
 static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init(void *arg)
 {
 /* TBD for ESP32P4 IDF-10020. */
@@ -132,7 +132,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     err = sleep_sys_periph_l2_cache_retention_init();
     if(err) goto error;
 #endif
-#if SOC_APM_SUPPORTED
+#if SOC_APM_SUPPORTED || CONFIG_IDF_TARGET_ESP32C61
     err = sleep_sys_periph_tee_apm_retention_init(arg);
     if(err) goto error;
 #endif
