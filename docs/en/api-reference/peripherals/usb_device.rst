@@ -5,9 +5,9 @@ USB Device Stack
 
 {IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
 {IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
-{IDF_TARGET_USB_EP_NUM:default="6"}
-{IDF_TARGET_USB_EP_NUM_INOUT:default="5"}
-{IDF_TARGET_USB_EP_NUM_IN:default="1"}
+{IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
+{IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
+{IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
 
 Overview
 --------
@@ -34,16 +34,24 @@ Features
 Hardware Connection
 -------------------
 
-The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
+.. only:: esp32s2 or esp32s3
+
+    The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
+
+.. only:: esp32p4
+
+    The {IDF_TARGET_NAME} routes the USB D+ and D- signals to their dedicated pins. For USB device functionality, these pins should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 
 .. figure:: ../../../_static/usb-board-connection.png
     :align: center
     :alt: Connection of an USB GPIOs directly to a USB standard-A plug
     :figclass: align-center
 
-.. note::
+.. only:: esp32s2 or esp32s3
 
-    If you are using an {IDF_TARGET_NAME} development board with two USB ports, the port labeled "USB" will already be connected to the D+ and D- GPIOs.
+    .. note::
+
+        If you are using an {IDF_TARGET_NAME} development board with two USB ports, the port labeled "USB" will already be connected to the D+ and D- GPIOs.
 
 .. note::
 
@@ -95,15 +103,17 @@ Full-speed devices should initialize the following field to provide their config
 
 - :cpp:member:`configuration_descriptor`
 
-High-speed devices should initialize the following fields to provide configuration descriptors at each speed:
+.. only:: esp32p4
 
-- :cpp:member:`fs_configuration_descriptor`
-- :cpp:member:`hs_configuration_descriptor`
-- :cpp:member:`qualifier_descriptor`
+    High-speed devices should initialize the following fields to provide configuration descriptors at each speed:
 
-.. note::
+    - :cpp:member:`fs_configuration_descriptor`
+    - :cpp:member:`hs_configuration_descriptor`
+    - :cpp:member:`qualifier_descriptor`
 
-    When Device Stack supports high-speed, both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` should be present to comply with USB 2.0 specification.
+    .. note::
+
+        Both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` must be present to comply with USB 2.0 specification.
 
 The Device Stack will instantiate a USB device based on the descriptors provided in the fields described above when :cpp:func:`tinyusb_driver_install` is called.
 
