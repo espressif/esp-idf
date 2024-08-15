@@ -67,6 +67,7 @@ class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
+    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
     def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
@@ -279,6 +280,39 @@ class Gitlab(object):
         job = self.project.jobs.get(job_id)
         return ','.join(job.tag_list)
 
+    def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> List[int]:
+        """
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
+
+        :param main_pipeline_id: The ID of the main pipeline to start the search.
+        :return: A list of IDs of all downstream child pipelines.
+        """
+        bridge_pipeline_ids = []
+        child_pipeline_ids = []
+
+        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in main_pipeline_bridges:
+            downstream_pipeline = bridge.attributes.get('downstream_pipeline')
+            if not downstream_pipeline:
+                continue
+            bridge_pipeline_ids.append(downstream_pipeline['id'])
+
+        for bridge_pipeline_id in bridge_pipeline_ids:
+            child_pipeline_ids.append(bridge_pipeline_id)
+            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
+
+            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+                continue
+
+            child_bridges = bridge_pipeline.bridges.list()
+            for child_bridge in child_bridges:
+                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
+                if not downstream_child_pipeline:
+                    continue
+                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+
+        return [pid for pid in child_pipeline_ids if pid is not None]
+
     def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
         """
         Retry failed jobs for a specific pipeline. Optionally include jobs marked as 'allowed failures'.
@@ -286,20 +320,25 @@ class Gitlab(object):
         :param pipeline_id: ID of the pipeline whose failed jobs are to be retried.
         :param retry_allowed_failures: Whether to retry jobs that are marked as allowed failures.
         """
-        pipeline = self.project.pipelines.get(pipeline_id)
-        jobs_to_retry = [
-            job
-            for job in pipeline.jobs.list(scope='failed')
-            if retry_allowed_failures or not job.attributes.get('allow_failure', False)
-        ]
         jobs_succeeded_retry = []
-        for job in jobs_to_retry:
-            try:
-                res = self.project.jobs.get(job.id).retry()
-                jobs_succeeded_retry.append(job.id)
-                logging.info(f'Retried job {job.id} with result {res}')
-            except Exception as e:
-                logging.error(f'Failed to retry job {job.id}: {str(e)}')
+        pipeline_ids = [pipeline_id] + self.get_downstream_pipeline_ids(pipeline_id)
+        logging.info(f'Retrying jobs for pipelines: {pipeline_ids}')
+        for pid in pipeline_ids:
+            pipeline = self.project.pipelines.get(pid)
+            job_ids_to_retry = [
+                job.id
+                for job in pipeline.jobs.list(scope='failed')
+                if retry_allowed_failures or not job.attributes.get('allow_failure', False)
+            ]
+            logging.info(f'Failed jobs for pipeline {pid}: {job_ids_to_retry}')
+            for job_id in job_ids_to_retry:
+                try:
+                    res = self.project.jobs.get(job_id).retry()
+                    jobs_succeeded_retry.append(job_id)
+                    logging.info(f'Retried job {job_id} with result {res}')
+                except Exception as e:
+                    logging.error(f'Failed to retry job {job_id}: {str(e)}')
+
         return jobs_succeeded_retry
 
 
@@ -334,7 +373,7 @@ def main() -> None:
         print('project id: {}'.format(ret))
     elif args.action == 'retry_failed_jobs':
         res = gitlab_inst.retry_failed_jobs(args.pipeline_id, args.retry_allowed_failures)
-        print('job retried successfully: {}'.format(res))
+        print('jobs retried successfully: {}'.format(res))
     elif args.action == 'get_job_tags':
         ret = gitlab_inst.get_job_tags(args.job_id)
         print(ret)
