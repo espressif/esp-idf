@@ -99,8 +99,11 @@ static void ot_cli_loop(void *context)
                     printf("Internal error: %s\n", esp_err_to_name(err));
                 }
             } else {
-                esp_openthread_cli_input(line);
-                xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+                if (esp_openthread_cli_input(line) == ESP_OK) {
+                    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+                } else {
+                    printf("Openthread task is busy, failed to run command: %s\n", line);
+                }
             }
             linenoiseHistoryAdd(line);
         }
