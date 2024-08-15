@@ -114,7 +114,7 @@ static esp_err_t mount_to_vfs_fat(const esp_vfs_fat_mount_config_t *mount_config
         }
 
         ESP_LOGW(TAG, "mounting again");
-        res = f_mount(fs, drv, 0);
+        res = f_mount(fs, drv, 1);
         if (res != FR_OK) {
             err = ESP_FAIL;
             ESP_LOGD(TAG, "f_mount failed after formatting (%d)", res);
