@@ -24,6 +24,7 @@ static __attribute__((unused)) const char *TAG = "efuse";
 uint32_t esp_efuse_get_pkg_ver(void)
 {
     uint32_t pkg_ver = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_PKG_VERSION, &pkg_ver, ESP_EFUSE_PKG_VERSION[0]->bit_count);
     return pkg_ver;
 }
 
