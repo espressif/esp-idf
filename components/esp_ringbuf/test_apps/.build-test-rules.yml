@@ -2,12 +2,8 @@
 
 components/esp_ringbuf/test_apps:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2", "linux"]
       reason: covers all target types
-  disable_test:
-    - if: IDF_TARGET in ["esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
   depends_components:
     - freertos
     - esp_ringbuf
