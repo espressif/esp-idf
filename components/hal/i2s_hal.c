@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 // The HAL layer for I2S (common part)
 
 #include "soc/soc.h"
+#include "hal/assert.h"
 #include "hal/i2s_hal.h"
 
 #if SOC_I2S_HW_VERSION_2 && (SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER)
@@ -217,11 +218,13 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_slave_mod(hal->dev, is_slave); //TX Slave
     i2s_ll_tx_enable_msb_shift(hal->dev, false);
 
-    i2s_ll_tx_set_pdm_prescale(hal->dev, slot_cfg->pdm_tx.sd_prescale);
-    i2s_ll_tx_set_pdm_hp_scale(hal->dev, slot_cfg->pdm_tx.hp_scale);
-    i2s_ll_tx_set_pdm_lp_scale(hal->dev, slot_cfg->pdm_tx.lp_scale);
-    i2s_ll_tx_set_pdm_sinc_scale(hal->dev, slot_cfg->pdm_tx.sinc_scale);
-    i2s_ll_tx_set_pdm_sd_scale(hal->dev, slot_cfg->pdm_tx.sd_scale);
+    if (slot_cfg->pdm_tx.data_fmt == I2S_PDM_DATA_FMT_PCM) {
+        i2s_ll_tx_set_pdm_prescale(hal->dev, slot_cfg->pdm_tx.sd_prescale);
+        i2s_ll_tx_set_pdm_hp_scale(hal->dev, slot_cfg->pdm_tx.hp_scale);
+        i2s_ll_tx_set_pdm_lp_scale(hal->dev, slot_cfg->pdm_tx.lp_scale);
+        i2s_ll_tx_set_pdm_sinc_scale(hal->dev, slot_cfg->pdm_tx.sinc_scale);
+        i2s_ll_tx_set_pdm_sd_scale(hal->dev, slot_cfg->pdm_tx.sd_scale);
+    }
 
 #if SOC_I2S_HW_VERSION_1
     uint32_t slot_bit_width = (int)slot_cfg->slot_bit_width < (int)slot_cfg->data_bit_width ?
@@ -244,20 +247,25 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_ws_idle_pol(hal->dev, false);
     /* Slot mode seems not take effect according to the test, leave it default here */
     i2s_ll_tx_pdm_slot_mode(hal->dev, is_mono, false, I2S_PDM_SLOT_BOTH);
-    uint32_t param0;
-    uint32_t param5;
-    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hzx10, &param0, &param5);
-    i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
-    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, param0);
-    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, param5);
-    i2s_ll_tx_set_pdm_sd_dither(hal->dev, slot_cfg->pdm_tx.sd_dither);
-    i2s_ll_tx_set_pdm_sd_dither2(hal->dev, slot_cfg->pdm_tx.sd_dither2);
+    if (slot_cfg->pdm_tx.data_fmt == I2S_PDM_DATA_FMT_PCM) {
+        uint32_t param0;
+        uint32_t param5;
+        s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hzx10, &param0, &param5);
+        i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
+        i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, param0);
+        i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, param5);
+        i2s_ll_tx_set_pdm_sd_dither(hal->dev, slot_cfg->pdm_tx.sd_dither);
+        i2s_ll_tx_set_pdm_sd_dither2(hal->dev, slot_cfg->pdm_tx.sd_dither2);
+    }
 #endif
 }
 
-void i2s_hal_pdm_enable_tx_channel(i2s_hal_context_t *hal)
+void i2s_hal_pdm_enable_tx_channel(i2s_hal_context_t *hal, bool pcm2pdm_en)
 {
-    i2s_ll_tx_enable_pdm(hal->dev);
+#if !SOC_I2S_SUPPORTS_PCM2PDM
+    HAL_ASSERT(!pcm2pdm_en);
+#endif
+    i2s_ll_tx_enable_pdm(hal->dev, pcm2pdm_en);
 }
 #endif
 
@@ -289,20 +297,25 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
 #endif  // SOC_I2S_HW_VERSION_1
 
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
-    uint32_t param0;
-    uint32_t param5;
-    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hzx10, &param0, &param5);
-    i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
-    i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
-    i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);
-    /* Set the amplification number, the default and the minimum value is 1. 0 will mute the channel */
-    i2s_ll_rx_set_pdm_amplify_num(hal->dev, slot_cfg->pdm_rx.amplify_num ? slot_cfg->pdm_rx.amplify_num : 1);
+    if (slot_cfg->pdm_rx.data_fmt != I2S_PDM_DATA_FMT_RAW) {
+        uint32_t param0;
+        uint32_t param5;
+        s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hzx10, &param0, &param5);
+        i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
+        i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
+        i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);
+        /* Set the amplification number, the default and the minimum value is 1. 0 will mute the channel */
+        i2s_ll_rx_set_pdm_amplify_num(hal->dev, slot_cfg->pdm_rx.amplify_num ? slot_cfg->pdm_rx.amplify_num : 1);
+    }
 #endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 }
 
-void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal)
+void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal, bool pdm2pcm_en)
 {
-    i2s_ll_rx_enable_pdm(hal->dev);
+#if !SOC_I2S_SUPPORTS_PDM2CDM
+    HAL_ASSERT(!pdm2pcm_en);
+#endif
+    i2s_ll_rx_enable_pdm(hal->dev, pdm2pcm_en);
 }
 #endif
 

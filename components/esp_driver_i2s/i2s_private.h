@@ -163,6 +163,7 @@ struct i2s_channel_obj_t {
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
+    bool                    is_raw_pdm;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
     /* Locks and queues */

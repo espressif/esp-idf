@@ -733,15 +733,29 @@ static inline void i2s_ll_rx_enable_std(i2s_dev_t *hw)
 }
 
 /**
- * @brief Enable TX PDM mode.
+ * @brief Enable I2S TX PDM mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param pcm2pdm_en Set true to enable TX PCM to PDM filter
  */
-static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pcm2pdm_en)
 {
     hw->tx_conf.tx_pdm_en = true;
     hw->tx_conf.tx_tdm_en = false;
-    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = true;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = pcm2pdm_en;
+}
+
+/**
+ * @brief Enable I2S RX PDM mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pdm2pcm_en Set true to enable RX PDM to PCM filter
+ */
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm_en)
+{
+    HAL_ASSERT(!pdm2pcm_en);  // C3 does not have PDM2PCM filter
+    hw->rx_conf.rx_pdm_en = true;
+    hw->rx_conf.rx_tdm_en = false;
 }
 
 /**
@@ -901,21 +915,6 @@ static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
     return hw->tx_pcm2pdm_conf1.tx_pdm_fs;
-}
-
-/**
- * @brief Enable RX PDM mode.
- * @note  ESP32-C3 doesn't support pdm in rx mode, disable anyway
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to RX enable PDM mode (ignored)
- */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
-{
-    // Due to the lack of `PDM to PCM` module on ESP32-C3, PDM RX is not available
-    HAL_ASSERT(!pdm_enable);
-    hw->rx_conf.rx_pdm_en = 0;
-    hw->rx_conf.rx_tdm_en = 1;
 }
 
 /**

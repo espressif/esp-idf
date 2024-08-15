@@ -764,15 +764,16 @@ static inline void i2s_ll_rx_enable_std(i2s_dev_t *hw)
 }
 
 /**
- * @brief Enable TX PDM mode.
+ * @brief Enable I2S TX PDM mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param pcm2pdm_en Set true to enable TX PCM to PDM filter
  */
-static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pcm2pdm_en)
 {
     hw->tx_conf.tx_pdm_en = true;
     hw->tx_conf.tx_tdm_en = false;
-    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = true;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = pcm2pdm_en;
 }
 
 /**
@@ -936,17 +937,53 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 
 /**
  * @brief Enable RX PDM mode.
- * @note  ESP32-C61 doesn't support pdm in rx mode, disable anyway
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to RX enable PDM mode (ignored)
+ * @param pdm2pcm Set true to RX enable PDM mode
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm)
 {
-    // Due to the lack of `PDM to PCM` module on ESP32-C61, PDM RX is not available
-    HAL_ASSERT(!pdm_enable);
     hw->rx_conf.rx_pdm_en = 0;
     hw->rx_conf.rx_tdm_en = 1;
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = pdm2pcm;
+}
+
+/**
+ * @brief Configure RX PDM downsample
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr PDM downsample configuration parameter
+ */
+static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en = dsr;
+}
+
+/**
+ * @brief Get RX PDM downsample configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr Pointer to accept PDM downsample configuration
+ */
+static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
+{
+    *dsr = (i2s_pdm_dsr_t)hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en;
+}
+
+/**
+ * @brief Configure RX PDM amplify number
+ * @note  This is the amplification number of the digital amplifier,
+ *        which is added after the PDM to PCM conversion result and mainly used for
+ *        amplify the small PDM signal under the VAD scenario
+ *        pcm_result = pdm_input * amplify_num
+ *        pcm_result = 0 if amplify_num = 0
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param amp_num PDM RX amplify number
+ */
+static inline void i2s_ll_rx_set_pdm_amplify_num(i2s_dev_t *hw, uint32_t amp_num)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_amplify_num = amp_num;
 }
 
 /**

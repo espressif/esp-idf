@@ -85,6 +85,29 @@ typedef enum {
 } i2s_pcm_compress_t;
 #endif // SOC_I2S_SUPPORTS_PCM
 
+/**
+ * @brief I2S PDM data format
+ *
+ */
+typedef enum {
+    I2S_PDM_DATA_FMT_PCM = 0,       /*!< PDM RX:
+                                     *   Enable the hardware PDM to PCM filter to convert the inputted PDM data on the line into PCM format in software,
+                                     *   so that the read data in software is PCM format data already, no need additional software filter.
+                                     *   PCM data format is only available when PCM2PDM filter is supported in hardware.
+                                     *   PDM TX:
+                                     *   Enable the hardware PCM to PDM filter to convert the written PCM data in software into PDM format on the line,
+                                     *   so that we only need to write the PCM data in software, no need to prepare raw PDM data in software.
+                                     *   PCM data format is only available when PDM2PCM filter is supported in hardware.
+                                     */
+    I2S_PDM_DATA_FMT_RAW = 1,       /*!< PDM RX:
+                                     *   Read the raw PDM data directly in software, without the hardware PDM to PCM filter.
+                                     *   You may need a software PDM to PCM filter to convert the raw PDM data that read into PCM format.
+                                     *   PDM TX:
+                                     *   Write the raw PDM data directly in software, without the hardware PCM to PDM filter.
+                                     *   You may need to prepare the raw PDM data in software to output the PDM format data on the line.
+                                     */
+} i2s_pdm_data_fmt_t;
+
 #if SOC_I2S_SUPPORTS_PDM_RX
 /**
  * @brief I2S PDM RX down-sampling mode
