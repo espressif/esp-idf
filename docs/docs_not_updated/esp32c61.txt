@@ -109,7 +109,6 @@ api-reference/peripherals/spi_flash/index.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst
-api-reference/peripherals/lcd/i2c_lcd.rst
 api-reference/peripherals/lcd/dsi_lcd.rst
 api-reference/peripherals/lcd/index.rst
 api-reference/peripherals/lcd/rgb_lcd.rst
@@ -117,7 +116,6 @@ api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/spi_slave_hd.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/ds.rst
-api-reference/peripherals/i2c.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/spi_master.rst
 api-reference/peripherals/index.rst
