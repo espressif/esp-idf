@@ -175,6 +175,7 @@ r_btdm_task_recycle = 0x40000c1c;
 r_hci_register_vendor_desc_tab = 0x40000d9c;
 r_ke_task_schedule = 0x40000e80;
 r_llc_hci_command_handler = 0x40000ef0;
+r_llc_loc_ch_map_proc_continue = 0x40000f5c;
 r_llc_loc_con_upd_proc_continue = 0x40000f60;
 r_llc_loc_phy_upd_proc_continue = 0x40000f78;
 r_llc_rem_con_upd_proc_continue = 0x40000fb4;
