@@ -48,6 +48,7 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B BIT(16)
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B_192 BIT(17)
 #define WPA_KEY_MGMT_OWE BIT(22)
+#define WPA_KEY_MGMT_DPP BIT(23)
 
 static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 {
