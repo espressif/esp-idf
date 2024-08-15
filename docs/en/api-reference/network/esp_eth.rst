@@ -154,9 +154,7 @@ Ethernet driver is composed of two parts: MAC and PHY.
     .. note::
         ESP-IDF only supports the RMII interface (i.e. always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`).
 
-        Signals used in data plane are fixed to specific GPIOs via MUX, they can't be modified to other GPIOs.
-        Signals used in control plane can be routed to any free GPIOs via Matrix.
-        Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+        Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to `ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html>`_ for hardware design example.
 
 We need to setup necessary parameters for MAC and PHY respectively based on your Ethernet board design and then combine the two together, completing the driver installation.
 
@@ -456,12 +454,12 @@ Advanced Topics
 Custom PHY Driver
 ^^^^^^^^^^^^^^^^^
 
-There are multiple PHY manufactures with their wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies user's actual needs due to either price, features, stock availability etc. 
+There are multiple PHY manufactures with their wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies user's actual needs due to either price, features, stock availability etc.
 
 Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in 22.2.4 Management functions section. It defines provisions of so called “MII Management Interface” for the purposes of controlling the PHY and gathering status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration etc. This basic management functionality is addressed by :component_file:`esp_eth/src/esp_eth_phy_802_3.c` in ESP-IDF and so it makes a creation of new custom PHY chip driver quite a simple task.
 
 .. note::
-    Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, it will just require more effort. You will have to define all PHY management functions. 
+    Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, it will just require more effort. You will have to define all PHY management functions.
 
 Majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/esp_eth_phy_802_3.c` however, the following may require developing chip specific management functions:
 
