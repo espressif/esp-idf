@@ -1,5 +1,5 @@
-BT COMMON
-=========
+Bluetooth® Common
+==================
 
 .. toctree::
    :caption: Bluetooth Common Defines and APIs
