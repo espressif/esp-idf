@@ -2112,7 +2112,7 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_cback);
 **
 *******************************************************************************/
 //extern
-UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length);
+UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p_length);
 
 /*******************************************************************************
 **
