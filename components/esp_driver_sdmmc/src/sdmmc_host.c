@@ -91,6 +91,7 @@ static host_ctx_t s_host_ctx = {0};
 static void sdmmc_isr(void *arg);
 static void sdmmc_host_dma_init(void);
 static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
+static bool sdmmc_host_slot_initialized(int slot);
 #if SOC_SDMMC_NUM_SLOTS >= 2
 static void sdmmc_host_change_to_slot(int slot);
 #endif
@@ -380,8 +381,16 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     SLOT_CHECK(slot);
 
 #if SOC_SDMMC_NUM_SLOTS >= 2
-    // change the host settings to the appropriate slot before starting the transaction
-    sdmmc_host_change_to_slot(slot);
+    // Change the host settings to the appropriate slot before starting the transaction
+    // If the slot is not initialized (slot_host_div not set) or already active, do nothing
+    if (s_host_ctx.active_slot_num != slot) {
+        s_host_ctx.active_slot_num = slot;
+        if (sdmmc_host_slot_initialized(slot)) {
+            sdmmc_host_change_to_slot(slot);
+        } else {
+            ESP_LOGD(TAG, "Slot %d is not initialized yet, skipping sdmmc_host_change_to_slot", slot);
+        }
+    }
 #endif
 
     // if this isn't a clock update command, check the card detect status
@@ -808,12 +817,6 @@ static bool sdmmc_host_slot_initialized(int slot)
 #if SOC_SDMMC_NUM_SLOTS >= 2
 static void sdmmc_host_change_to_slot(int slot)
 {
-    // If the slot is not initialized (slot_host_div not set) or already active, do nothing
-    if (s_host_ctx.active_slot_num == slot || sdmmc_host_slot_initialized(slot) == false) {
-        return;
-    }
-    s_host_ctx.active_slot_num = slot;
-
     // Apply the appropriate saved host settings for the new slot before starting the transaction
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_host_div);
