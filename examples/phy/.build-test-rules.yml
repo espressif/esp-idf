@@ -11,6 +11,6 @@ examples/phy/cert_test:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       reason: not supported
-    - if: IDF_TARGET == "esp32c5"
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
       reason: not supported yet  # TODO: [ESP32C5] IDF-8851
