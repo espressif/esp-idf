@@ -23,9 +23,11 @@ BT_DOCS = ['api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/controller_vhci.rst',
            'api-reference/bluetooth/index.rst']
 
-BLE_DOCS = ['api-reference/bluetooth/bt_le.rst',
-            'api-guides/ble/index.rst',
+BLE_DOCS = ['api-guides/ble/index.rst',
             'api-guides/ble/overview.rst',
+            'api-guides/ble/ble-feature-support-status.rst',
+            'api-guides/ble/host-feature-support-status.rst',
+            'api-reference/bluetooth/bt_le.rst',
             'api-reference/bluetooth/esp_gap_ble.rst',
             'api-reference/bluetooth/esp_gatt_defs.rst',
             'api-reference/bluetooth/esp_gatts.rst',
