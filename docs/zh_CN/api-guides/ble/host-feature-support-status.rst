@@ -89,7 +89,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
