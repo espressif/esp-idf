@@ -14,11 +14,6 @@
 #include "esp_clk_tree.h"
 #include "driver/isp_core.h"
 #include "driver/isp_bf.h"
-#include "esp_private/periph_ctrl.h"
-#include "esp_private/mipi_csi_share_hw_ctrl.h"
-#include "hal/hal_utils.h"
-#include "soc/mipi_csi_bridge_struct.h"
-#include "soc/isp_periph.h"
 #include "esp_private/isp_private.h"
 
 static const char *TAG = "ISP_BF";

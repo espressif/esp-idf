@@ -67,6 +67,7 @@ extern "C" {
 #define ISP_LL_EVENT_AF_MASK                  (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
 #define ISP_LL_EVENT_AE_MASK                  (ISP_LL_EVENT_AE_FDONE | ISP_LL_EVENT_AE_ENV)
 #define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE)
+#define ISP_LL_EVENT_SHARP_MASK               (ISP_LL_EVENT_SHARP_FRAME)
 
 /*---------------------------------------------------------------
                       AF
@@ -787,6 +788,7 @@ static inline void isp_ll_bf_set_template(isp_dev_t *hw, uint8_t template_arr[SO
 
     hw->bf_gau1.gau_template22 = template_arr[2][2];
 }
+
 /*---------------------------------------------------------------
                       CCM
 ---------------------------------------------------------------*/
@@ -1322,6 +1324,166 @@ __attribute__((always_inline))
 static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
 {
     return hw->awb0_acc_b.awb0_acc_b;
+}
+
+/*---------------------------------------------------------------
+                      Sharpen
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable sharpen clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_sharp_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_sharp_force_on = enable;
+}
+
+/**
+ * @brief Enable / Disable sharpen
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_sharp_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.sharp_en = enable;
+}
+
+/**
+ * @brief Set sharpen low thresh
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] thresh  Thresh
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_low_thresh(isp_dev_t *hw, uint8_t thresh)
+{
+    hw->sharp_ctrl0.sharp_threshold_low = thresh;
+}
+
+/**
+ * @brief Set sharpen high thresh
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] thresh  Thresh
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_high_thresh(isp_dev_t *hw, uint8_t thresh)
+{
+    hw->sharp_ctrl0.sharp_threshold_high = thresh;
+}
+
+/**
+ * @brief Set sharpen medium pixel coeff
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] coeff  coeff
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_medium_freq_coeff(isp_dev_t *hw, isp_sharpen_m_freq_coeff coeff)
+{
+    //val between `sharp_amount_low` and `sharp_threshold_high` will be multiplied by `sharp_amount_low`
+    hw->sharp_ctrl0.sharp_amount_low = coeff.val;
+}
+
+/**
+ * @brief Set sharpen high freq pixel coeff
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] coeff  coeff
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_high_freq_coeff(isp_dev_t *hw, isp_sharpen_h_freq_coeff coeff)
+{
+    //val higher than `sharp_threshold_high` will be multiplied by `sharp_amount_high`
+    hw->sharp_ctrl0.sharp_amount_high = coeff.val;
+}
+
+/**
+ * @brief Set ISP sharpen padding mode
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_mode  padding mode
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_padding_mode(isp_dev_t *hw, isp_sharpen_edge_padding_mode_t padding_mode)
+{
+    hw->sharp_matrix_ctrl.sharp_padding_mode = padding_mode;
+}
+
+/**
+ * @brief Set ISP sharpen padding data
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_data  padding data
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
+{
+    hw->sharp_matrix_ctrl.sharp_padding_data = padding_data;
+}
+
+/**
+ * @brief Set ISP sharpen tail start pulse pixel
+ *
+ * @param[in] hw           Hardware instance address
+ * @param[in] start_pixel  start pixel value
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
+{
+    hw->sharp_matrix_ctrl.sharp_tail_pixen_pulse_tl = start_pixel;
+}
+
+/**
+ * @brief Set ISP sharpen tail pulse end pixel
+ *
+ * @param[in] hw         Hardware instance address
+ * @param[in] end_pixel  end pixel value
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
+{
+    hw->sharp_matrix_ctrl.sharp_tail_pixen_pulse_th = end_pixel;
+}
+
+/**
+ * @brief Set ISP sharpen template
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] template_arr  2-d array for the template
+ */
+__attribute__((always_inline))
+static inline void isp_ll_sharp_set_template(isp_dev_t *hw, uint8_t template_arr[SOC_ISP_SHARPEN_TEMPLATE_X_NUMS][SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS])
+{
+    for (int i = 0; i < SOC_ISP_SHARPEN_TEMPLATE_X_NUMS; i++) {
+        for (int j = 0; j < SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS; j++) {
+            if (j == 0) {
+                hw->sharp_filter[i].sharp_filter_coe0 = template_arr[i][j];
+            } else if (j == 1) {
+                hw->sharp_filter[i].sharp_filter_coe1 = template_arr[i][j];
+            } else if (j == 2) {
+                hw->sharp_filter[i].sharp_filter_coe2 = template_arr[i][j];
+            } else {
+                HAL_ASSERT(false);
+            }
+        }
+    }
+}
+
+/**
+ * @brief Get ISP sharpen high freq image pixel max value
+ *
+ * @param[in] hw            Hardware instance address
+ *
+ * @return Max value
+ */
+__attribute__((always_inline))
+static inline uint8_t isp_ll_sharp_get_high_freq_pixel_max(isp_dev_t *hw)
+{
+    return hw->sharp_ctrl1.sharp_gradient_max;
 }
 
 #ifdef __cplusplus

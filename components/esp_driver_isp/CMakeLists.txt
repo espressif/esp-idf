@@ -20,6 +20,10 @@ if(CONFIG_SOC_ISP_BF_SUPPORTED)
     list(APPEND srcs "src/isp_bf.c")
 endif()
 
+if(CONFIG_SOC_ISP_SHARPEN_SUPPORTED)
+    list(APPEND srcs "src/isp_sharpen.c")
+endif()
+
 if(NOT ${target} STREQUAL "linux")
     list(APPEND requires esp_mm)
 endif()
@@ -28,4 +32,5 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        REQUIRES ${requires}
                        PRIV_REQUIRES ${priv_requires}
+                       LDFRAGMENTS "linker.lf"
                       )

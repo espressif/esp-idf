@@ -1484,6 +1484,25 @@ typedef union {
     uint32_t val;
 } isp_sharp_filter2_reg_t;
 
+typedef union {
+    struct {
+        /** sharp_filter_coe0 : R/W; bitpos: [4:0]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe0:5;
+        /** sharp_filter_coe1 : R/W; bitpos: [9:5]; default: 2;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe1:5;
+        /** sharp_filter_coe2 : R/W; bitpos: [14:10]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe2:5;
+        uint32_t reserved_15:17;
+    };
+    uint32_t val;
+} isp_sharp_filter_reg_t;
+
 /** Type of sharp_matrix_ctrl register
  *  sharp pix2matrix ctrl
  */
@@ -3778,9 +3797,7 @@ typedef struct {
     volatile isp_ae_win_reciprocal_reg_t ae_win_reciprocal;
     volatile isp_ae_block_mean_reg_t ae_block_mean[7];
     volatile isp_sharp_ctrl0_reg_t sharp_ctrl0;
-    volatile isp_sharp_filter0_reg_t sharp_filter0;
-    volatile isp_sharp_filter1_reg_t sharp_filter1;
-    volatile isp_sharp_filter2_reg_t sharp_filter2;
+    volatile isp_sharp_filter_reg_t sharp_filter[3];
     volatile isp_sharp_matrix_ctrl_reg_t sharp_matrix_ctrl;
     volatile isp_sharp_ctrl1_reg_t sharp_ctrl1;
     volatile isp_dma_cntl_reg_t dma_cntl;

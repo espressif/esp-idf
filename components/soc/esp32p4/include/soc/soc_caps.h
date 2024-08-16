@@ -330,22 +330,31 @@
 #define SOC_LP_I2S_NUM              (1U)
 
 /*-------------------------- ISP CAPS ----------------------------------------*/
-#define SOC_ISP_BF_SUPPORTED            1
-#define SOC_ISP_CCM_SUPPORTED           1
-#define SOC_ISP_DVP_SUPPORTED           1
+#define SOC_ISP_BF_SUPPORTED                     1
+#define SOC_ISP_CCM_SUPPORTED                    1
+#define SOC_ISP_DVP_SUPPORTED                    1
+#define SOC_ISP_SHARPEN_SUPPORTED                1
+#define SOC_ISP_SHARE_CSI_BRG                    1
 
-#define SOC_ISP_NUMS                    1U
-#define SOC_ISP_DVP_CTLR_NUMS           1U
-#define SOC_ISP_AF_CTLR_NUMS            1U
-#define SOC_ISP_AF_WINDOW_NUMS          3
-#define SOC_ISP_AE_CTLR_NUMS            1U
-#define SOC_ISP_AE_BLOCK_X_NUMS         5
-#define SOC_ISP_AE_BLOCK_Y_NUMS         5
-#define SOC_ISP_SHARE_CSI_BRG           1
-#define SOC_ISP_BF_TEMPLATE_X_NUMS      3
-#define SOC_ISP_BF_TEMPLATE_Y_NUMS      3
-#define SOC_ISP_CCM_DIMENSION           3
-#define SOC_ISP_DVP_DATA_WIDTH_MAX      16
+#define SOC_ISP_NUMS                             1U
+#define SOC_ISP_DVP_CTLR_NUMS                    1U
+#define SOC_ISP_AE_CTLR_NUMS                     1U
+#define SOC_ISP_AE_BLOCK_X_NUMS                  5
+#define SOC_ISP_AE_BLOCK_Y_NUMS                  5
+#define SOC_ISP_AF_CTLR_NUMS                     1U
+#define SOC_ISP_AF_WINDOW_NUMS                   3
+#define SOC_ISP_BF_TEMPLATE_X_NUMS               3
+#define SOC_ISP_BF_TEMPLATE_Y_NUMS               3
+#define SOC_ISP_CCM_DIMENSION                    3
+#define SOC_ISP_DVP_DATA_WIDTH_MAX               16
+#define SOC_ISP_SHARPEN_TEMPLATE_X_NUMS          3
+#define SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS          3
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_INT_BITS     3
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_DEC_BITS     5
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_RES_BITS     24
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_INT_BITS     3
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_DEC_BITS     5
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS     24
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

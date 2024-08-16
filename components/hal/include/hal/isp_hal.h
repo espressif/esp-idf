@@ -34,6 +34,21 @@ typedef struct {
 } isp_hal_bf_cfg_t;
 
 /**
+ * @brief Sharpen configurations
+ */
+typedef struct {
+    isp_sharpen_h_freq_coeff h_freq_coeff;                                                  ///< High freq pixel sharpeness coeff
+    isp_sharpen_m_freq_coeff m_freq_coeff;                                                  ///< Medium freq pixel sharpeness coeff
+    uint8_t h_thresh;                                                                       ///< High threshold, pixel value higher than this threshold will be multiplied by `h_freq_coeff`
+    uint8_t l_thresh;                                                                       ///< Low threshold, pixel value higher than this threshold but lower than `h_thresh` will be multiplied by `m_freq_coeff`. Pixel value lower than this threshold will be set to 0
+    isp_sharpen_edge_padding_mode_t padding_mode;                                           ///< Sharpen edge padding mode
+    uint8_t padding_data;                                                                   ///< Sharpen edge padding pixel data
+    uint8_t sharpen_template[ISP_SHARPEN_TEMPLATE_X_NUMS][ISP_SHARPEN_TEMPLATE_Y_NUMS];     ///< Sharpen template data
+    uint8_t padding_line_tail_valid_start_pixel;                                            ///< Sharpen edge padding line tail valid start pixel
+    uint8_t padding_line_tail_valid_end_pixel;                                              ///< Sharpen edge padding line tail valid end pixel
+} isp_hal_sharpen_cfg_t;
+
+/**
  * @brief Context that should be maintained by both the driver and the HAL
  */
 typedef struct {
@@ -76,43 +91,6 @@ void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_w
  * @param[in] window     Window info, see `isp_window_t`
  */
 void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window);
-
-/*---------------------------------------------------------------
-                      INTR
----------------------------------------------------------------*/
-/**
- * @brief Clear ISP HW intr event
- *
- * @param[in] hal   Context of the HAL layer
- * @param[in] mask  HW event mask
- */
-uint32_t isp_hal_check_clear_intr_event(isp_hal_context_t *hal, uint32_t mask);
-
-/*---------------------------------------------------------------
-                      BF
----------------------------------------------------------------*/
-/**
- * @brief Configure ISP BF registers
- *
- * @param[in] hal        Context of the HAL layer
- * @param[in] config     BF config, set NULL to de-config the ISP BF
- */
-void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config);
-
-/*---------------------------------------------------------------
-                      Color Correction Matrix
----------------------------------------------------------------*/
-/**
- * @brief Set Color Correction Matrix
- *
- * @param[in] hal           Context of the HAL layer
- * @param[in] saturation    Whether to enable saturation when float data overflow
- * @param[in] flt_matrix    3x3 RGB correction matrix
- * @return
- *      - true      Set success
- *      - false     Invalid argument
- */
-bool isp_hal_ccm_set_matrix(isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION]);
 
 /*---------------------------------------------------------------
                             AWB
@@ -161,6 +139,54 @@ bool isp_hal_awb_set_rg_ratio_range(isp_hal_context_t *hal, float rg_min, float 
  *      - false     Invalid arg
  */
 bool isp_hal_awb_set_bg_ratio_range(isp_hal_context_t *hal, float bg_min, float bg_max);
+
+/*---------------------------------------------------------------
+                      BF
+---------------------------------------------------------------*/
+/**
+ * @brief Configure ISP BF
+ *
+ * @param[in] hal        Context of the HAL layer
+ * @param[in] config     BF config, set NULL to de-config the ISP BF
+ */
+void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config);
+
+/*---------------------------------------------------------------
+                      Color Correction Matrix
+---------------------------------------------------------------*/
+/**
+ * @brief Set Color Correction Matrix
+ *
+ * @param[in] hal           Context of the HAL layer
+ * @param[in] saturation    Whether to enable saturation when float data overflow
+ * @param[in] flt_matrix    3x3 RGB correction matrix
+ * @return
+ *      - true      Set success
+ *      - false     Invalid argument
+ */
+bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION]);
+
+/*---------------------------------------------------------------
+                      INTR
+---------------------------------------------------------------*/
+/**
+ * @brief Clear ISP HW intr event
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] mask  HW event mask
+ */
+uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t mask);
+
+/*---------------------------------------------------------------
+                      Sharpness
+---------------------------------------------------------------*/
+/**
+ * @brief Configure ISP sharpeness
+ *
+ * @param[in] hal        Context of the HAL layer
+ * @param[in] config     Sharpness config, set NULL to de-config the ISP sharpness
+ */
+void isp_hal_sharpen_config(isp_hal_context_t *hal, isp_hal_sharpen_cfg_t *config);
 
 #ifdef __cplusplus
 }

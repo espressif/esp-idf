@@ -27,38 +27,6 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id)
 }
 
 /*---------------------------------------------------------------
-                      AF
----------------------------------------------------------------*/
-void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_window_t *window)
-{
-    isp_ll_af_set_window_range(hal->hw, window_id, window->top_left.x, window->top_left.y, window->btm_right.x, window->btm_right.y);
-}
-
-/*---------------------------------------------------------------
-                      BF
----------------------------------------------------------------*/
-void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config)
-{
-    if (config) {
-        isp_ll_bf_set_sigma(hal->hw, config->denoising_level);
-        isp_ll_bf_set_padding_mode(hal->hw, config->padding_mode);
-        isp_ll_bf_set_padding_data(hal->hw, config->padding_data);
-        isp_ll_bf_set_padding_line_tail_valid_start_pixel(hal->hw, config->padding_line_tail_valid_start_pixel);
-        isp_ll_bf_set_padding_line_tail_valid_end_pixel(hal->hw, config->padding_line_tail_valid_end_pixel);
-        isp_ll_bf_set_template(hal->hw, config->bf_template);
-    } else {
-        isp_ll_bf_set_sigma(hal->hw, 0);
-        isp_ll_bf_set_padding_mode(hal->hw, 0);
-        isp_ll_bf_set_padding_data(hal->hw, 0);
-        isp_ll_bf_set_padding_line_tail_valid_start_pixel(hal->hw, 0);
-        isp_ll_bf_set_padding_line_tail_valid_end_pixel(hal->hw, 0);
-        uint8_t default_template[SOC_ISP_BF_TEMPLATE_X_NUMS][SOC_ISP_BF_TEMPLATE_Y_NUMS] = {};
-        memset(default_template, SOC_ISP_BF_TEMPLATE_X_NUMS, sizeof(default_template));
-        isp_ll_bf_set_template(hal->hw, default_template);
-    }
-}
-
-/*---------------------------------------------------------------
                       AE
 ---------------------------------------------------------------*/
 void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window)
@@ -76,41 +44,11 @@ void isp_hal_ae_window_config(isp_hal_context_t *hal, const isp_window_t *window
 }
 
 /*---------------------------------------------------------------
-                      INTR, put in iram
+                      AF
 ---------------------------------------------------------------*/
-uint32_t isp_hal_check_clear_intr_event(isp_hal_context_t *hal, uint32_t mask)
+void isp_hal_af_window_config(isp_hal_context_t *hal, int window_id, const isp_window_t *window)
 {
-    uint32_t triggered_events = isp_ll_get_intr_status(hal->hw) & mask;
-
-    if (triggered_events) {
-        isp_ll_clear_intr(hal->hw, triggered_events);
-    }
-
-    return triggered_events;
-}
-
-/*---------------------------------------------------------------
-                      Color Correction Matrix
----------------------------------------------------------------*/
-bool isp_hal_ccm_set_matrix(isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
-{
-    isp_ll_ccm_gain_t fp_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION] = {};
-    hal_utils_fixed_point_t fp_cfg = {
-        .int_bit = ISP_LL_CCM_MATRIX_INT_BITS,
-        .frac_bit = ISP_LL_CCM_MATRIX_FRAC_BITS,
-        .saturation = saturation,
-    };
-    int err_level = saturation ? -1 : 0;
-    /* Transfer the float type to fixed point */
-    for (int i = 0; i < ISP_CCM_DIMENSION; i++) {
-        for (int j = 0; j < ISP_CCM_DIMENSION; j++) {
-            if (hal_utils_float_to_fixed_point_32b(flt_matrix[i][j], &fp_cfg, &fp_matrix[i][j].val) < err_level) {
-                return false;
-            }
-        }
-    }
-    isp_ll_ccm_set_matrix(hal->hw, fp_matrix);
-    return true;
+    isp_ll_af_set_window_range(hal->hw, window_id, window->top_left.x, window->top_left.y, window->btm_right.x, window->btm_right.y);
 }
 
 /*---------------------------------------------------------------
@@ -180,4 +118,98 @@ bool isp_hal_awb_set_bg_ratio_range(isp_hal_context_t *hal, float bg_min, float 
     // Set AWB white patch B/G ratio range
     isp_ll_awb_set_bg_ratio_range(hal->hw, fp_bg_min, fp_bg_max);
     return true;
+}
+
+/*---------------------------------------------------------------
+                      BF
+---------------------------------------------------------------*/
+void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config)
+{
+    if (config) {
+        isp_ll_bf_set_sigma(hal->hw, config->denoising_level);
+        isp_ll_bf_set_padding_mode(hal->hw, config->padding_mode);
+        isp_ll_bf_set_padding_data(hal->hw, config->padding_data);
+        isp_ll_bf_set_padding_line_tail_valid_start_pixel(hal->hw, config->padding_line_tail_valid_start_pixel);
+        isp_ll_bf_set_padding_line_tail_valid_end_pixel(hal->hw, config->padding_line_tail_valid_end_pixel);
+        isp_ll_bf_set_template(hal->hw, config->bf_template);
+    } else {
+        isp_ll_bf_set_sigma(hal->hw, 0);
+        isp_ll_bf_set_padding_mode(hal->hw, 0);
+        isp_ll_bf_set_padding_data(hal->hw, 0);
+        isp_ll_bf_set_padding_line_tail_valid_start_pixel(hal->hw, 0);
+        isp_ll_bf_set_padding_line_tail_valid_end_pixel(hal->hw, 0);
+        uint8_t default_template[SOC_ISP_BF_TEMPLATE_X_NUMS][SOC_ISP_BF_TEMPLATE_Y_NUMS] = {};
+        memset(default_template, 0, sizeof(default_template));
+        isp_ll_bf_set_template(hal->hw, default_template);
+    }
+}
+
+/*---------------------------------------------------------------
+                      Color Correction Matrix
+---------------------------------------------------------------*/
+bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
+{
+    isp_ll_ccm_gain_t fp_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION] = {};
+    hal_utils_fixed_point_t fp_cfg = {
+        .int_bit = ISP_LL_CCM_MATRIX_INT_BITS,
+        .frac_bit = ISP_LL_CCM_MATRIX_FRAC_BITS,
+        .saturation = saturation,
+    };
+    int err_level = saturation ? -1 : 0;
+    /* Transfer the float type to fixed point */
+    for (int i = 0; i < ISP_CCM_DIMENSION; i++) {
+        for (int j = 0; j < ISP_CCM_DIMENSION; j++) {
+            if (hal_utils_float_to_fixed_point_32b(flt_matrix[i][j], &fp_cfg, &fp_matrix[i][j].val) < err_level) {
+                return false;
+            }
+        }
+    }
+    isp_ll_ccm_set_matrix(hal->hw, fp_matrix);
+    return true;
+}
+
+/*---------------------------------------------------------------
+                      INTR, put in iram
+---------------------------------------------------------------*/
+uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t mask)
+{
+    uint32_t triggered_events = isp_ll_get_intr_status(hal->hw) & mask;
+
+    if (triggered_events) {
+        isp_ll_clear_intr(hal->hw, triggered_events);
+    }
+
+    return triggered_events;
+}
+
+/*---------------------------------------------------------------
+                      Sharpness
+---------------------------------------------------------------*/
+void isp_hal_sharpen_config(isp_hal_context_t *hal, isp_hal_sharpen_cfg_t *config)
+{
+    if (config) {
+        isp_ll_sharp_set_low_thresh(hal->hw, config->l_thresh);
+        isp_ll_sharp_set_high_thresh(hal->hw, config->h_thresh);
+        isp_ll_sharp_set_medium_freq_coeff(hal->hw, config->m_freq_coeff);
+        isp_ll_sharp_set_high_freq_coeff(hal->hw, config->h_freq_coeff);
+        isp_ll_sharp_set_padding_mode(hal->hw, config->padding_mode);
+        isp_ll_sharp_set_padding_data(hal->hw, config->padding_data);
+        isp_ll_sharp_set_padding_line_tail_valid_start_pixel(hal->hw, config->padding_line_tail_valid_start_pixel);
+        isp_ll_sharp_set_padding_line_tail_valid_end_pixel(hal->hw, config->padding_line_tail_valid_end_pixel);
+        isp_ll_sharp_set_template(hal->hw, config->sharpen_template);
+    } else {
+        isp_ll_sharp_set_low_thresh(hal->hw, 0);
+        isp_ll_sharp_set_high_thresh(hal->hw, 0);
+        isp_sharpen_m_freq_coeff m_freq = {};
+        isp_sharpen_h_freq_coeff h_freq = {};
+        isp_ll_sharp_set_medium_freq_coeff(hal->hw, m_freq);
+        isp_ll_sharp_set_high_freq_coeff(hal->hw, h_freq);
+        isp_ll_sharp_set_padding_mode(hal->hw, 0);
+        isp_ll_sharp_set_padding_data(hal->hw, 0);
+        isp_ll_sharp_set_padding_line_tail_valid_start_pixel(hal->hw, 0);
+        isp_ll_sharp_set_padding_line_tail_valid_end_pixel(hal->hw, 0);
+        uint8_t default_template[SOC_ISP_SHARPEN_TEMPLATE_X_NUMS][SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS] = {};
+        memset(default_template, 0, sizeof(default_template));
+        isp_ll_sharp_set_template(hal->hw, default_template);
+    }
 }
