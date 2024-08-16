@@ -14,6 +14,13 @@ Developers can use this library to send application specific state of execution 
 2. Lightweight logging to the host, see :ref:`app_trace-logging-to-host`.
 3. System behaviour analysis, see :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`.
 
+Application Examples
+--------------------
+
+- :example:`system/app_trace_to_plot` demonstrates how to use the Application Level Tracing Library to send and plot dummy sensor data to a host via JTAG, providing a faster alternative to logging via UART.
+
+- :example:`system/app_trace_basic` demonstrates how to use the Application Level Tracing Library to log messages to a host via JTAG, providing a faster alternative to UART logs.
+
 API Reference
 -------------
 

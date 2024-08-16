@@ -8,9 +8,6 @@ Overview
 
 ``esp_https_ota`` provides simplified APIs to perform firmware upgrades over HTTPS. It is an abstraction layer over the existing OTA APIs.
 
-Application Example
--------------------
-
     .. code-block:: c
 
         esp_err_t do_firmware_upgrade()
@@ -56,15 +53,6 @@ Signature Verification
 
 For additional security, signature of OTA firmware images can be verified. For more information， please refer to :ref:`secure-ota-updates`.
 
-
-Advanced APIs
--------------
-
-``esp_https_ota`` also provides advanced APIs which can be used if more information and control is needed during the OTA process.
-
-Example that uses advanced ESP_HTTPS_OTA APIs: :example:`system/ota/advanced_https_ota`.
-
-
 .. _ota_updates_pre-encrypted-firmware:
 
 OTA Upgrades with Pre-Encrypted Firmware
@@ -93,14 +81,6 @@ This whole workflow is managed by an external component `esp_encrypted_image <ht
 
 .. note::
     The supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
-
-Example
-^^^^^^^
-
-To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component menuconfig.
-
-For detailed workflow and setup instructions, please refer to this example: :example:`system/ota/pre_encrypted_ota`.
-
 
 OTA System Events
 -----------------
@@ -163,6 +143,14 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
     - ESP_HTTPS_OTA_FINISH                    : ``NULL``
     - ESP_HTTPS_OTA_ABORT                     : ``NULL``
 
+Application Examples
+--------------------
+
+- :example:`system/ota/pre_encrypted_ota` demonstrates how to perform OTA updates with pre-encrypted binary using the `esp_encrypted_img` component's APIs and tool, ensuring the confidentiality of the firmware on the network channel, but not its authenticity. To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component `menuconfig`.
+
+- :example:`system/ota/advanced_https_ota` demonstrates how to use the Advanced HTTPS OTA update functionality on {IDF_TARGET_NAME} using the `esp_https_ota` component's APIs. For the applicable SoCs, please refer to :example_file:`system/ota/advanced_https_ota/README.md`.
+
+- :example:`system/ota/simple_ota_example` demonstrates how to use the `esp_https_ota` component's APIs to support firmware upgrades through specific networking interfaces such as Ethernet or Wi-Fi Station on {IDF_TARGET_NAME}. For the applicable SoCs, please refer to :example_file:`system/ota/simple_ota_example/README.md`.
 
 API Reference
 -------------

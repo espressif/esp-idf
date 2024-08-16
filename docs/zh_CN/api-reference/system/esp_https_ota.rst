@@ -8,9 +8,6 @@ ESP HTTPS OTA 升级
 
 ``esp_https_ota`` 是现有 OTA（空中升级）API 的抽象层，其中提供了简化的 API，能够通过 HTTPS 升级固件。
 
-应用示例
--------------------
-
     .. code-block:: c
 
         esp_err_t do_firmware_upgrade()
@@ -46,7 +43,7 @@ ESP HTTPS OTA 升级
 
 要使用部分镜像下载功能，请启用 ``esp_https_ota_config_t`` 中的 ``partial_http_download`` 配置。启用此配置后，固件镜像将通过多个指定大小的 HTTP 请求进行下载。将 ``max_http_request_size`` 设置为所需值，即可指定每个请求的最大内容长度。
 
-在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时， 可以将 mbedTLS Rx 的 buffer 大小（即 :ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
+在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时，可以将 mbedTLS Rx 的 buffer 大小（即 :ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
 
 mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 KB，便能将 mbedTLS Rx 的 buffer 减小到 4 KB。使用这一配置方式预计可以节省约 12 KB 内存。
 
@@ -55,15 +52,6 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 ----------------------
 
 要进一步提升安全性，还可以验证 OTA 固件镜像的签名。更多内容请参考 :ref:`secure-ota-updates`。
-
-
-高级 API
--------------
-
-``esp_https_ota`` 还提供一些高级 API，用于查看 OTA 过程的更多信息并满足其他控制需求。
-
-如需查看使用高级 ESP_HTTPS_OTA API 的示例，请前往 :example:`system/ota/advanced_https_ota`。
-
 
 .. _ota_updates_pre-encrypted-firmware:
 
@@ -93,14 +81,6 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 
 .. note::
     该支持方案基于 RSA-3072，必须使用平台安全功能保护设备端的私钥。
-
-示例
-^^^^
-
-如需使用预加密的固件进行 OTA 升级，请在组件的菜单配置中启用 :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` 选项。
-
-如需了解详细的配置流程和说明，请参考示例 :example:`system/ota/pre_encrypted_ota`。
-
 
 OTA 系统事件
 -----------------
@@ -163,6 +143,14 @@ ESP HTTPS OTA 过程中可能发生各种系统事件。当特定事件发生时
     - ESP_HTTPS_OTA_FINISH                    : ``NULL``
     - ESP_HTTPS_OTA_ABORT                     : ``NULL``
 
+应用示例
+----------------
+
+- :example:`system/ota/pre_encrypted_ota` 演示了如何使用 `esp_encrypted_img` 组件的 API 和工具进行带预加密二进制文件的 OTA 更新，确保固件在网络通道上的机密性，但不保证其真实性。要进行带预加密固件的 OTA 升级，请在组件 `menuconfig` 中启用 :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB`。
+
+- :example:`system/ota/advanced_https_ota` 演示了如何在 {IDF_TARGET_NAME} 上使用 `esp_https_ota` 组件的 API 来使用 HTTPS OTA 更新功能。关于该示例适用的芯片，请参考 :example_file:`system/ota/advanced_https_ota/README.md`。
+
+- :example:`system/ota/simple_ota_example` 演示了如何使用 `esp_https_ota` 组件的 API，通过特定的网络接口，如以太网或 Wi-Fi Station，在 {IDF_TARGET_NAME} 上进行固件升级。关于该示例适用的芯片，请参考 :example_file:`system/ota/simple_ota_example/README.md`。
 
 API 参考
 -------------
