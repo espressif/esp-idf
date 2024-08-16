@@ -71,7 +71,7 @@ __attribute__((always_inline))
 static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 {
     (void)mmu_id;
-    uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MEM_MMU_PAGE_SIZE);
+    uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE);
     return  (page_size_code == 0) ? MMU_PAGE_64KB : \
             (page_size_code == 1) ? MMU_PAGE_32KB : \
             (page_size_code == 2) ? MMU_PAGE_16KB : \
@@ -90,7 +90,7 @@ static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
                       (size == MMU_PAGE_32KB) ? 1 : \
                       (size == MMU_PAGE_16KB) ? 2 : \
                       (size == MMU_PAGE_8KB) ? 3 : 0;
-    REG_SET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MEM_MMU_PAGE_SIZE, reg_val);
+    REG_SET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE, reg_val);
 }
 
 /**

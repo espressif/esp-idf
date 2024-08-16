@@ -18,7 +18,6 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "soc/spi_mem_struct.h"
-#include "soc/spi1_mem_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/clk_tree_defs.h"
 #include "rom/opi_flash.h"
@@ -53,9 +52,9 @@ static inline void psram_ctrlr_ll_set_wr_cmd(uint32_t mspi_id, uint32_t cmd_bitl
 {
     (void)mspi_id;
     HAL_ASSERT(cmd_bitlen > 0);
-    SPIMEM0.cache_sctrl.sram_usr_wcmd = 1;
-    SPIMEM0.sram_dwr_cmd.sram_usr_wr_cmd_bitlen = cmd_bitlen - 1;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM0.sram_dwr_cmd, sram_usr_wr_cmd_value, cmd_val);
+    SPIMEM0.mem_cache_sctrl.mem_cache_sram_usr_wcmd = 1;
+    SPIMEM0.mem_sram_dwr_cmd.mem_cache_sram_usr_wr_cmd_bitlen = cmd_bitlen - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM0.mem_sram_dwr_cmd, mem_cache_sram_usr_wr_cmd_value, cmd_val);
 }
 
 /**
@@ -70,9 +69,9 @@ static inline void psram_ctrlr_ll_set_rd_cmd(uint32_t mspi_id, uint32_t cmd_bitl
 {
     (void)mspi_id;
     HAL_ASSERT(cmd_bitlen > 0);
-    SPIMEM0.cache_sctrl.sram_usr_rcmd = 1;
-    SPIMEM0.sram_drd_cmd.sram_usr_rd_cmd_bitlen = cmd_bitlen - 1;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM0.sram_drd_cmd, sram_usr_rd_cmd_value, cmd_val);
+    SPIMEM0.mem_cache_sctrl.mem_cache_sram_usr_rcmd = 1;
+    SPIMEM0.mem_sram_drd_cmd.mem_cache_sram_usr_rd_cmd_bitlen = cmd_bitlen - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SPIMEM0.mem_sram_drd_cmd, mem_cache_sram_usr_rd_cmd_value, cmd_val);
 }
 
 /**
@@ -86,7 +85,7 @@ static inline void psram_ctrlr_ll_set_addr_bitlen(uint32_t mspi_id, uint32_t add
 {
     (void)mspi_id;
     HAL_ASSERT(addr_bitlen > 0);
-    SPIMEM0.cache_sctrl.sram_addr_bitlen = addr_bitlen - 1;
+    SPIMEM0.mem_cache_sctrl.mem_sram_addr_bitlen = addr_bitlen - 1;
 }
 
 /**
@@ -100,8 +99,8 @@ static inline void psram_ctrlr_ll_set_rd_dummy(uint32_t mspi_id, uint32_t dummy_
 {
     (void)mspi_id;
     HAL_ASSERT(dummy_n > 0);
-    SPIMEM0.cache_sctrl.usr_rd_sram_dummy = 1;
-    SPIMEM0.cache_sctrl.sram_rdummy_cyclelen = dummy_n - 1;
+    SPIMEM0.mem_cache_sctrl.mem_usr_rd_sram_dummy = 1;
+    SPIMEM0.mem_cache_sctrl.mem_sram_rdummy_cyclelen = dummy_n - 1;
 }
 
 /**
@@ -113,7 +112,7 @@ static inline void psram_ctrlr_ll_set_rd_dummy(uint32_t mspi_id, uint32_t dummy_
 __attribute__((always_inline))
 static inline void psram_ctrlr_ll_set_bus_clock(uint32_t mspi_id, uint32_t clock_conf)
 {
-    SPIMEM0.sram_clk.val = clock_conf;
+    SPIMEM0.mem_sram_clk.val = clock_conf;
 }
 
 /**
@@ -143,21 +142,21 @@ static inline uint32_t psram_ctrlr_ll_calculate_clock_reg(uint8_t clkdiv)
  */
 static inline void psram_ctrlr_ll_set_read_mode(uint32_t mspi_id, psram_hal_cmd_mode_t read_mode)
 {
-    typeof (SPIMEM0.cache_sctrl) cache_sctrl;
-    cache_sctrl.val = SPIMEM0.cache_sctrl.val;
+    typeof (SPIMEM0.mem_cache_sctrl) mem_cache_sctrl;
+    mem_cache_sctrl.val = SPIMEM0.mem_cache_sctrl.val;
 
-    cache_sctrl.val &= ~(SPI_MEM_USR_SRAM_DIO_M | SPI_MEM_USR_SRAM_QIO_M);
+    mem_cache_sctrl.val &= ~(SPI_MEM_USR_SRAM_DIO_M | SPI_MEM_USR_SRAM_QIO_M);
     switch (read_mode) {
     case PSRAM_HAL_CMD_SPI:
-        cache_sctrl.usr_sram_dio = 1;
+        mem_cache_sctrl.mem_usr_sram_dio = 1;
         break;
     case PSRAM_HAL_CMD_QPI:
-        cache_sctrl.usr_sram_qio = 1;
+        mem_cache_sctrl.mem_usr_sram_qio = 1;
         break;
     default:
         abort();
     }
-    SPIMEM0.cache_sctrl.val = cache_sctrl.val;
+    SPIMEM0.mem_cache_sctrl.val = mem_cache_sctrl.val;
 }
 
 /**
@@ -171,8 +170,8 @@ static inline void psram_ctrlr_ll_set_cs_setup(uint32_t mspi_id, uint32_t setup_
 {
     (void)mspi_id;
     HAL_ASSERT(setup_n > 0);
-    SPIMEM0.spi_smem_ac.reg_smem_cs_setup = 1;
-    SPIMEM0.spi_smem_ac.reg_smem_cs_setup_time = setup_n - 1;
+    SPIMEM0.smem_ac.smem_cs_setup = 1;
+    SPIMEM0.smem_ac.smem_cs_setup_time = setup_n - 1;
 }
 
 /**
@@ -186,8 +185,8 @@ static inline void psram_ctrlr_ll_set_cs_hold(uint32_t mspi_id, uint32_t hold_n)
 {
     (void)mspi_id;
     HAL_ASSERT(hold_n > 0);
-    SPIMEM0.spi_smem_ac.reg_smem_cs_hold = 1;
-    SPIMEM0.spi_smem_ac.reg_smem_cs_hold_time = hold_n - 1;
+    SPIMEM0.smem_ac.smem_cs_hold = 1;
+    SPIMEM0.smem_ac.smem_cs_hold_time = hold_n - 1;
 }
 
 /**
@@ -201,7 +200,7 @@ static inline void psram_ctrlr_ll_set_cs_hold_delay(uint32_t mspi_id, uint32_t h
 {
     (void)mspi_id;
     HAL_ASSERT(hold_delay_n > 0);
-    SPIMEM0.spi_smem_ac.reg_smem_cs_hold_delay = hold_delay_n - 1;
+    SPIMEM0.smem_ac.smem_cs_hold_delay = hold_delay_n - 1;
 }
 
 /**
@@ -243,8 +242,8 @@ static inline void psram_ctrlr_ll_common_transaction_base(uint32_t mspi_id, esp_
 __attribute__((always_inline))
 static inline void psram_ctrlr_ll_set_cs_pin(uint32_t mspi_id, psram_ll_cs_id_t cs_id)
 {
-    SPIMEM0.misc.cs0_dis = (cs_id == 0) ? 0 : 1;
-    SPIMEM0.misc.cs1_dis = (cs_id == 1) ? 0 : 1;
+    SPIMEM1.misc.cs0_dis = (cs_id == 0) ? 0 : 1;
+    SPIMEM1.misc.cs1_dis = (cs_id == 1) ? 0 : 1;
 }
 
 /**

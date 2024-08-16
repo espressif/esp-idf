@@ -393,10 +393,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** usr_mosi_dbitlen : R/W; bitpos: [9:0]; default: 0;
+        /** usr_mosi_bit_len : R/W; bitpos: [9:0]; default: 0;
          *  The length in bits of write-data. The register value shall be (bit_num-1).
          */
-        uint32_t usr_mosi_dbitlen:10;
+        uint32_t usr_mosi_bit_len:10;
         uint32_t reserved_10:22;
     };
     uint32_t val;
@@ -410,7 +410,7 @@ typedef union {
         /** usr_miso_dbitlen : R/W; bitpos: [9:0]; default: 0;
          *  The length in bits of  read-data. The register value shall be (bit_num-1).
          */
-        uint32_t usr_miso_dbitlen:10;
+        uint32_t usr_miso_bit_len:10;
         uint32_t reserved_10:22;
     };
     uint32_t val;
@@ -1232,9 +1232,9 @@ typedef union {
 } spi_mem_date_reg_t;
 
 
-typedef struct {
+typedef struct spi1_mem_dev_s {
     volatile spi_mem_cmd_reg_t cmd;
-    volatile spi_mem_addr_reg_t addr;
+    volatile uint32_t addr;
     volatile spi_mem_ctrl_reg_t ctrl;
     volatile spi_mem_ctrl1_reg_t ctrl1;
     volatile spi_mem_ctrl2_reg_t ctrl2;
@@ -1250,22 +1250,7 @@ typedef struct {
     volatile spi_mem_tx_crc_reg_t tx_crc;
     volatile spi_mem_cache_fctrl_reg_t cache_fctrl;
     uint32_t reserved_040[6];
-    volatile spi_mem_w0_reg_t w0;
-    volatile spi_mem_w1_reg_t w1;
-    volatile spi_mem_w2_reg_t w2;
-    volatile spi_mem_w3_reg_t w3;
-    volatile spi_mem_w4_reg_t w4;
-    volatile spi_mem_w5_reg_t w5;
-    volatile spi_mem_w6_reg_t w6;
-    volatile spi_mem_w7_reg_t w7;
-    volatile spi_mem_w8_reg_t w8;
-    volatile spi_mem_w9_reg_t w9;
-    volatile spi_mem_w10_reg_t w10;
-    volatile spi_mem_w11_reg_t w11;
-    volatile spi_mem_w12_reg_t w12;
-    volatile spi_mem_w13_reg_t w13;
-    volatile spi_mem_w14_reg_t w14;
-    volatile spi_mem_w15_reg_t w15;
+    volatile uint32_t data_buf[16];                                                /*data buffer*/
     volatile spi_mem_flash_waiti_ctrl_reg_t flash_waiti_ctrl;
     volatile spi_mem_flash_sus_ctrl_reg_t flash_sus_ctrl;
     volatile spi_mem_flash_sus_cmd_reg_t flash_sus_cmd;
@@ -1287,9 +1272,8 @@ typedef struct {
     volatile spi_mem_date_reg_t date;
 } spi1_mem_dev_t;
 
-
 #ifndef __cplusplus
-_Static_assert(sizeof(spi1_mem_dev_t) == 0x400, "Invalid size of spi_mem_dev_t structure");
+_Static_assert(sizeof(spi1_mem_dev_t) == 0x400, "Invalid size of spi1_mem_dev_t structure");
 #endif
 
 #ifdef __cplusplus

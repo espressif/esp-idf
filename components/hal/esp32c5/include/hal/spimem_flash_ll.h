@@ -18,7 +18,6 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-#include "sdkconfig.h"  // TODO: remove
 
 #include "soc/spi_periph.h"
 #include "soc/spi_mem_struct.h"
@@ -212,7 +211,7 @@ static inline void spimem_flash_ll_res_check_sus_setup(spi_mem_dev_t *dev, bool 
  */
 static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint32_t sus_conf)
 {
-    dev->flash_sus_ctrl.frd_sus_2b = 0;
+    dev->flash_sus_ctrl.fmem_rd_sus_2b = 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_ctrl, pesr_end_msk, sus_conf);
 }
 
@@ -237,7 +236,7 @@ static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dl
  */
 static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t cs_hold_delay)
 {
-    SPIMEM0.ctrl2.cs_hold_delay = cs_hold_delay;
+    SPIMEM0.ctrl2.mem_cs_hold_delay = cs_hold_delay;
 }
 
 /**
@@ -256,14 +255,19 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
 /**
  * This function is used to set dummy phase when auto suspend is enabled.
  *
- * @note This function is only used when timing tuning is enabled.
+ * @note This function is only used when timing tuning is enabled. This function is only used in quad flash
  *
  * @param dev Beginning address of the peripheral registers.
  * @param extra_dummy extra dummy length. Get from timing tuning.
  */
 static inline void spimem_flash_ll_set_wait_idle_dummy_phase(spi_mem_dev_t *dev, uint32_t extra_dummy)
 {
-    // Not supported on this chip.
+    if (extra_dummy > 0) {
+        dev->flash_waiti_ctrl.waiti_dummy_cyclelen = extra_dummy - 1;
+        dev->flash_waiti_ctrl.waiti_dummy = 1;
+    } else {
+        dev->flash_waiti_ctrl.waiti_dummy = 0;
+    }
 }
 
 /**
@@ -287,7 +291,7 @@ static inline bool spimem_flash_ll_sus_status(spi_mem_dev_t *dev)
 static inline void spimem_flash_ll_sus_set_spi0_lock_trans(spi_mem_dev_t *dev, uint32_t lock_time)
 {
     dev->sus_status.spi0_lock_en = 1;
-    SPIMEM0.fsm.lock_delay_time = lock_time;
+    SPIMEM0.mem_fsm.mem_lock_delay_time = lock_time;
 }
 
 /**
@@ -329,6 +333,7 @@ static inline void spimem_flash_ll_set_write_protect(spi_mem_dev_t *dev, bool wp
  * @param buffer Buffer to hold the output data
  * @param read_len Length to get out of the buffer
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buffer, uint32_t read_len)
 {
     if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
@@ -354,6 +359,7 @@ static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buf
  * @param buffer Buffer holding the data
  * @param length Length of data in bytes.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_buffer_data(spi_mem_dev_t *dev, const void *buffer, uint32_t length)
 {
     // Load data registers, word at a time
@@ -507,6 +513,7 @@ static inline void spimem_flash_ll_set_miso_bitlen(spi_mem_dev_t *dev, uint32_t 
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of output, in bits.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user.usr_mosi = bitlen > 0;
@@ -547,6 +554,7 @@ static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of the address, in bits
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user1.usr_addr_bitlen = (bitlen - 1);
@@ -561,8 +569,8 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
  */
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
-    dev->cache_fctrl.usr_addr_4byte = 0;
-    dev->rd_status.wb_mode = extra_addr;
+    dev->cache_fctrl.cache_usr_addr_4byte = 0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
 }
 
 /**
@@ -582,6 +590,7 @@ static inline void spimem_flash_ll_set_address(spi_mem_dev_t *dev, uint32_t addr
  * @param dev Beginning address of the peripheral registers.
  * @param addr Address to send
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
     (void)bitlen;
@@ -608,14 +617,23 @@ static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_
  */
 static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
 {
-    dev->ctrl2.cs_hold_time = hold_n - 1;
-    dev->user.cs_hold = (hold_n > 0? 1: 0);
+    // Not supported on esp32c5
 }
 
+/**
+ * Set CS setup time
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param cs_setup_time CS setup time
+ */
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
-    dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
-    dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+    // Not supported on esp32c5
+}
+
+static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    //for compatibility
 }
 
 /**
@@ -675,7 +693,7 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
  */
 static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
 {
-    dev->ctrl.wp = level;
+    dev->ctrl.wp_reg = level;
 }
 
 /**
@@ -686,6 +704,51 @@ static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
 static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
 {
     return dev->ctrl.val;
+}
+
+/**
+ * @brief Reset whole memory spi
+ */
+static inline void spimem_flash_ll_sync_reset(void)
+{
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+    SPIMEM1.ctrl2.sync_reset = 1;
+    SPIMEM0.ctrl2.sync_reset = 1;
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+}
+
+/**
+ * @brief Get common command related registers
+ *
+ * @param ctrl_reg ctrl_reg
+ * @param user_reg user_reg
+ * @param user1_reg user1_reg
+ * @param user2_reg user2_reg
+ */
+static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_t *dev, uint32_t *ctrl_reg, uint32_t *user_reg, uint32_t *user1_reg, uint32_t *user2_reg)
+{
+    *ctrl_reg = dev->ctrl.val;
+    *user_reg = dev->user.val;
+    *user1_reg = dev->user1.val;
+    *user2_reg = dev->user2.val;
+}
+
+/**
+ * @brief Set common command related registers
+ *
+ * @param ctrl_reg ctrl_reg
+ * @param user_reg user_reg
+ * @param user1_reg user1_reg
+ * @param user2_reg user2_reg
+ */
+static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_t *dev, uint32_t ctrl_reg, uint32_t user_reg, uint32_t user1_reg, uint32_t user2_reg)
+{
+    dev->ctrl.val = ctrl_reg;
+    dev->user.val = user_reg;
+    dev->user1.val = user1_reg;
+    dev->user2.val = user2_reg;
 }
 
 #ifdef __cplusplus
