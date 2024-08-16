@@ -129,7 +129,7 @@ typedef struct {
 #if SOC_SPI_AS_CS_SUPPORTED
         uint32_t as_cs  : 1;            ///< Whether to toggle the CS while the clock toggles, device specific
 #endif
-        uint32_t positive_cs : 1;       ///< Whether the positive CS feature is abled, device specific
+        uint32_t positive_cs : 1;       ///< Whether the positive CS feature is enabled, device specific
     };//boolean configurations
 } spi_hal_dev_config_t;
 
