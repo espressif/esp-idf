@@ -740,16 +740,17 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (tx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(tx_io_num, PIN_FUNC_GPIO);
-            gpio_set_level(tx_io_num, 1);
             esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+            // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
+            // (output enabled too early may cause unnecessary level change at the pad)
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            rtc_gpio_set_direction(tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(tx_io_num);
             rtc_gpio_iomux_func_sel(tx_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+            // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
         }
 #endif
     }
@@ -757,7 +758,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(rx_io_num, PIN_FUNC_GPIO);
-            gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
+            gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY); // This does not consider that RX signal can be read inverted by configuring the hardware (i.e. idle is at low level). However, it is only a weak pullup, the TX at the other end can always drive the line.
             gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
             esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
@@ -765,7 +766,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         else {
             rtc_gpio_set_direction(rx_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(rx_io_num);
-            rtc_gpio_iomux_func_sel(rx_io_num, 1);
+            rtc_gpio_iomux_func_sel(rx_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
@@ -775,15 +776,15 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(rts_io_num, PIN_FUNC_GPIO);
-            gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
             esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+            // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            rtc_gpio_set_direction(rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(rts_io_num);
-            rtc_gpio_iomux_func_sel(rts_io_num, 1);
+            rtc_gpio_iomux_func_sel(rts_io_num, RTCIO_LL_PIN_FUNC);
             lp_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+            // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
         }
 #endif
     }
@@ -799,7 +800,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         else {
             rtc_gpio_set_direction(cts_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(cts_io_num);
-            rtc_gpio_iomux_func_sel(cts_io_num, 1);
+            rtc_gpio_iomux_func_sel(cts_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
         }
