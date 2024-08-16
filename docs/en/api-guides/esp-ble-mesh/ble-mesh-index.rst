@@ -25,8 +25,8 @@ ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.
 
 .. _getting-started-with-ble-mesh:
 
-Getting Started with ESP-BLE-MESH
-=================================
+Getting Started
+=================
 
 This section is intended to help you get started with ESP-BLE-MESH for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
@@ -210,8 +210,8 @@ The following screenshot shows different board with different color on.
 
 .. _esp-ble-mesh-examples:
 
-ESP-BLE-MESH Examples
-=====================
+Examples
+=========
 
 * :example_file:`OnOff Server <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_server>`.
 
@@ -230,15 +230,15 @@ ESP-BLE-MESH Examples
 
 .. _esp-ble-mesh-demo-videos:
 
-ESP-BLE-MESH Demo Videos
-========================
+Demo Videos
+============
 
 * `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
 * `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
-ESP-BLE-MESH FAQ
-================
+FAQ
+====
 
 * :ref:`ble-mesh-faq-provisioner-development`
 * :ref:`ble-mesh-faq-node-development`
@@ -266,9 +266,9 @@ Bluetooth SIG Documentation
 ---------------------------
 
 - `BLE Mesh Core Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633>`_
-- `BLE Mesh Protocol v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=554899>`_
+- `BLE Mesh Protocol v1.1 Specification <https://www.bluetooth.com/specifications/specs/mesh-protocol/>`_
 - `BLE Mesh Model Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429634>`_
-- `BLE Mesh Model v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=557081>`_
+- `BLE Mesh Model v1.1 Specification <https://www.bluetooth.com/specifications/specs/mesh-model-1-1/>`_
 - `An Intro to Bluetooth Mesh Part 1 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part1>`_ / `Part 2 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part2>`__
 - `The Fundamental Concepts of Bluetooth Mesh Networking, Part 1 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-1>`_ / `Part 2 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-2>`__
 - `Bluetooth Mesh Networking: Friendship <https://www.bluetooth.com/blog/bluetooth-mesh-networking-series-friendship>`_
