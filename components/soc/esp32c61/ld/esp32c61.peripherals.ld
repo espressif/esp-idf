@@ -11,6 +11,7 @@ PROVIDE ( SPIMEM1             = 0x60003000 );
 PROVIDE ( I2C0                = 0x60004000 );
 PROVIDE ( UART2               = 0x60006000 );
 PROVIDE ( LEDC                = 0x60007000 );
+PROVIDE ( LEDC_GAMMA_RAM      = 0x60007400 );
 PROVIDE ( TIMERG0             = 0x60008000 );
 PROVIDE ( TIMERG1             = 0x60009000 );
 PROVIDE ( SYSTIMER            = 0x6000A000 );

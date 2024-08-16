@@ -97,7 +97,6 @@ api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/camera_driver.rst
-api-reference/peripherals/ledc.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/sdio_slave.rst

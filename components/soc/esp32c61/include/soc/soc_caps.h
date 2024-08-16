@@ -37,8 +37,8 @@
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32C61] IDF-9274
 //  \#define SOC_I2S_SUPPORTED               1    //TODO: [ESP32C61] IDF-9312, IDF-9313
 //  \#define SOC_GPSPI_SUPPORTED             1    //TODO: [ESP32C61] IDF-9299, IDF-9300, IDF-9301
-//  \#define SOC_LEDC_SUPPORTED              1    //TODO: [ESP32C61] IDF-9291
 #define SOC_I2C_SUPPORTED               1
+#define SOC_LEDC_SUPPORTED              1
 #define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32C61] IDF-9307, IDF-9308
 //  \#define SOC_SUPPORT_COEXISTENCE         1
 //  \#define SOC_SHA_SUPPORTED               1    //TODO: [ESP32C61] IDF-9234
@@ -240,15 +240,14 @@
 // #define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-//TODO: [ESP32C61] IDF-9291
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
-// #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
 #define SOC_LEDC_CHANNEL_NUM                (6)
-// #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
-// #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
-// #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
+#define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)

@@ -472,7 +472,7 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
 }
 #endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
-#if SOC_PCNT_SUPPORTED // Note. C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
+#if SOC_PCNT_SUPPORTED // Note. C61, C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 

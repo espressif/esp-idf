@@ -20,38 +20,38 @@ typedef union {
          *  Configures which timer is channel n selected.\\0: Select timer0\\1: Select
          *  timer1\\2: Select timer2\\3: Select timer3
          */
-        uint32_t timer_sel_chn:2;
+        uint32_t timer_sel:2;
         /** sig_out_en_chn : R/W; bitpos: [2]; default: 0;
          *  Configures whether or not to enable signal output on channel n.\\0: Signal output
          *  disable\\1: Signal output enable
          */
-        uint32_t sig_out_en_chn:1;
+        uint32_t sig_out_en:1;
         /** idle_lv_chn : R/W; bitpos: [3]; default: 0;
          *  Configures the output value when channel n is inactive. Valid only when
          *  LEDC_SIG_OUT_EN_CHn is 0.\\0: Output level is low\\1: Output level is high
          */
-        uint32_t idle_lv_chn:1;
+        uint32_t idle_lv:1;
         /** para_up_chn : WT; bitpos: [4]; default: 0;
          *  Configures whether or not to update LEDC_HPOINT_CHn, LEDC_DUTY_START_CHn,
          *  LEDC_SIG_OUT_EN_CHn, LEDC_TIMER_SEL_CHn, LEDC_OVF_CNT_EN_CHn fields and duty cycle
          *  range configuration for channel n, and will be automatically cleared by
          *  hardware.\\0: Invalid. No effect\\1: Update
          */
-        uint32_t para_up_chn:1;
+        uint32_t para_up:1;
         /** ovf_num_chn : R/W; bitpos: [14:5]; default: 0;
          *  Configures the maximum times of overflow minus 1.The LEDC_OVF_CNT_CHn_INT interrupt
          *  will be triggered when channel n overflows for (LEDC_OVF_NUM_CHn + 1) times.
          */
-        uint32_t ovf_num_chn:10;
+        uint32_t ovf_num:10;
         /** ovf_cnt_en_chn : R/W; bitpos: [15]; default: 0;
          *  Configures whether or not to enable the ovf_cnt of channel n.\\0: Disable\\1: Enable
          */
-        uint32_t ovf_cnt_en_chn:1;
+        uint32_t ovf_cnt_en:1;
         /** ovf_cnt_reset_chn : WT; bitpos: [16]; default: 0;
          *  Configures whether or not to reset the  ovf_cnt of channel n.\\0: Invalid. No
          *  effect\\1: Reset the ovf_cnt
          */
-        uint32_t ovf_cnt_reset_chn:1;
+        uint32_t ovf_cnt_reset:1;
         uint32_t reserved_17:15;
     };
     uint32_t val;
@@ -66,7 +66,7 @@ typedef union {
          *  Configures high point of signal output on channel n. The output value changes to
          *  high when the selected timers has reached the value specified by this register.
          */
-        uint32_t hpoint_chn:20;
+        uint32_t hpoint:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
@@ -80,7 +80,7 @@ typedef union {
         /** duty_chn : R/W; bitpos: [24:0]; default: 0;
          *  Configures the duty of signal output on channel n.
          */
-        uint32_t duty_chn:25;
+        uint32_t duty:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
@@ -96,7 +96,7 @@ typedef union {
          *  Configures whether the duty cycle fading configurations take effect.\\0: Not take
          *  effect\\1: Take effect
          */
-        uint32_t duty_start_chn:1;
+        uint32_t duty_start:1;
     };
     uint32_t val;
 } ledc_chn_conf1_reg_t;
@@ -109,30 +109,30 @@ typedef union {
         /** timern_duty_res : R/W; bitpos: [4:0]; default: 0;
          *  Configures the bit width of the counter in timer n. Valid values are 1 to 20.
          */
-        uint32_t timern_duty_res:5;
+        uint32_t duty_res:5;
         /** clk_div_timern : R/W; bitpos: [22:5]; default: 0;
          *  Configures the divisor for the divider in timer n.The least significant eight bits
          *  represent the fractional part.
          */
-        uint32_t clk_div_timern:18;
+        uint32_t clk_div:18;
         /** timern_pause : R/W; bitpos: [23]; default: 0;
          *  Configures whether or not to pause the counter in timer n.\\0: Normal\\1: Pause
          */
-        uint32_t timern_pause:1;
+        uint32_t pause:1;
         /** timern_rst : R/W; bitpos: [24]; default: 1;
          *  Configures whether or not to reset timer n. The counter will show 0 after
          *  reset.\\0: Not reset\\1: Reset
          */
-        uint32_t timern_rst:1;
+        uint32_t rst:1;
         /** tick_sel_timern : R/W; bitpos: [25]; default: 0;
          *  Configures which clock is timer n selected. Unused.
          */
-        uint32_t tick_sel_timern:1;
+        uint32_t tick_sel:1;
         /** timern_para_up : WT; bitpos: [26]; default: 0;
          *  Configures whether or not to update LEDC_CLK_DIV_TIMERn and
          *  LEDC_TIMERn_DUTY_RES.\\0: Invalid. No effect\\1: Update
          */
-        uint32_t timern_para_up:1;
+        uint32_t para_up:1;
         uint32_t reserved_27:5;
     };
     uint32_t val;
@@ -146,17 +146,17 @@ typedef union {
         /** chn_gamma_entry_num : R/W; bitpos: [4:0]; default: 0;
          *  Configures the number of duty cycle fading rages for LEDC chn.
          */
-        uint32_t chn_gamma_entry_num:5;
+        uint32_t gamma_entry_num:5;
         /** chn_gamma_pause : WT; bitpos: [5]; default: 0;
          *  Configures whether or not to pause duty cycle fading of LEDC chn.\\0: Invalid. No
          *  effect\\1: Pause
          */
-        uint32_t chn_gamma_pause:1;
+        uint32_t gamma_pause:1;
         /** chn_gamma_resume : WT; bitpos: [6]; default: 0;
          *  Configures whether or nor to resume duty cycle fading of LEDC chn.\\0: Invalid. No
          *  effect\\1: Resume
          */
-        uint32_t chn_gamma_resume:1;
+        uint32_t gamma_resume:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
@@ -633,7 +633,7 @@ typedef union {
         /** duty_chn_r : RO; bitpos: [24:0]; default: 0;
          *  Represents the current duty of output signal on channel n.
          */
-        uint32_t duty_chn_r:25;
+        uint32_t duty:25;
         uint32_t reserved_25:7;
     };
     uint32_t val;
@@ -1017,13 +1017,18 @@ typedef union {
     uint32_t val;
 } ledc_date_reg_t;
 
+
 typedef struct {
     volatile ledc_chn_conf0_reg_t conf0;
     volatile ledc_chn_hpoint_reg_t hpoint;
-    volatile ledc_chn_duty_reg_t duty;
+    volatile ledc_chn_duty_reg_t duty_init;
     volatile ledc_chn_conf1_reg_t conf1;
-    volatile ledc_chn_duty_r_reg_t duty_rd;
+    volatile ledc_chn_duty_r_reg_t duty_r;
 } ledc_chn_reg_t;
+
+typedef struct {
+    volatile ledc_chn_reg_t channel[6];
+} ledc_ch_group_reg_t;
 
 typedef struct {
     volatile ledc_timern_conf_reg_t conf;
@@ -1031,31 +1036,71 @@ typedef struct {
 } ledc_timerx_reg_t;
 
 typedef struct {
-    volatile ledc_chn_reg_t channel[6];
-    uint32_t reserved_078[10];
     volatile ledc_timerx_reg_t timer[4];
+} ledc_timer_group_reg_t;
+
+typedef struct {
+    volatile ledc_chn_gamma_conf_reg_t gamma_conf[6];
+} ledc_ch_gamma_conf_group_reg_t;
+
+typedef struct {
+    volatile ledc_timern_cmp_reg_t cmp[4];
+} ledc_timer_cmp_group_reg_t;
+
+typedef struct {
+    volatile ledc_timern_cnt_cap_reg_t cnt_cap[4];
+} ledc_timer_cnt_cap_group_reg_t;
+
+typedef struct {
+    volatile ledc_ch_group_reg_t channel_group[1];
+    uint32_t reserved_078[10];
+    volatile ledc_timer_group_reg_t timer_group[1];
     volatile ledc_int_raw_reg_t int_raw;
     volatile ledc_int_st_reg_t int_st;
     volatile ledc_int_ena_reg_t int_ena;
     volatile ledc_int_clr_reg_t int_clr;
     uint32_t reserved_0d0[12];
-    volatile ledc_chn_gamma_conf_reg_t chn_gamma_conf[6];
+    volatile ledc_ch_gamma_conf_group_reg_t channel_gamma_conf_group[1];
     uint32_t reserved_118[2];
     volatile ledc_evt_task_en0_reg_t evt_task_en0;
     volatile ledc_evt_task_en1_reg_t evt_task_en1;
     volatile ledc_evt_task_en2_reg_t evt_task_en2;
     uint32_t reserved_12c[5];
-    volatile ledc_timern_cmp_reg_t timern_cmp[4];
-    volatile ledc_timern_cnt_cap_reg_t timern_cnt_cap[4];
+    volatile ledc_timer_cmp_group_reg_t timer_cmp_group[1];
+    volatile ledc_timer_cnt_cap_group_reg_t timer_cnt_cap_group[1];
     uint32_t reserved_160[4];
     volatile ledc_conf_reg_t conf;
     volatile ledc_date_reg_t date;
 } ledc_dev_t;
 
+/**
+ * Gamma fade param group ram type
+ */
+typedef union {
+    struct {
+        uint32_t duty_inc       :1;
+        uint32_t duty_cycle     :10;
+        uint32_t scale          :10;
+        uint32_t duty_num       :10;
+        uint32_t reserved       :1;
+    };
+    uint32_t val;
+} ledc_channel_gamma_fade_param_t;
+
+typedef struct {
+    volatile ledc_channel_gamma_fade_param_t entry[16];
+} ledc_gamma_channel_t;
+
+typedef struct {
+    volatile ledc_gamma_channel_t channel[6];
+} ledc_gamma_ram_t;
+
 extern ledc_dev_t LEDC;
+extern ledc_gamma_ram_t LEDC_GAMMA_RAM;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ledc_dev_t) == 0x178, "Invalid size of ledc_dev_t structure");
+_Static_assert(sizeof(ledc_gamma_ram_t) == 0x180, "Invalid size of ledc_gamma_ram_t structure");
 #endif
 
 #ifdef __cplusplus
