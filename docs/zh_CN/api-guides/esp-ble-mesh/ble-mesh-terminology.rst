@@ -1,9 +1,9 @@
-ESP-BLE-MESH Terminology
-========================
-
-.. _ble-mesh-terminology-role:
+常见术语
+========
 
 :link_to_translation:`en:[English]`
+
+.. _ble-mesh-terminology-role:
 
 .. list-table:: 表 1 ESP-BLE-MESH 术语 - 身份
   :widths: 10 40 60
@@ -216,6 +216,3 @@ ESP-BLE-MESH Terminology
 
 官方定义摘自 `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/mesh/mesh-glossary/>`_.
 查看更多术语，也请参照上述网址。
-
-
-

@@ -1,5 +1,5 @@
-ESP-BLE-MESH FAQ
-================
+FAQ
+=====
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -23,7 +23,7 @@ Users could refer to the sections for quick answer to their questions. This docu
 
 Generally, a Provisioner is used to provision unprovisioned devices and form a mesh network. And after provisioning, roles of the unprovisioned devices will be changed to those of a node.
 
-1.1 What is the flow for an unprovisioned device to join ESP-BLE-MESH network?
+1.1 What Is the Flow for an Unprovisioned Device to Join ESP-BLE-MESH Network?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     There are two phases for a device to join ESP-BLE-MESH network via a Provisioner, namely, provisioning and configuration.
@@ -32,76 +32,76 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - The phase of configuration is to add AppKeys to the node and bind AppKeys to corresponding models. And some items are optional during configuration, including adding subscription addresses to the node, set publication information, etc. By configuration, the node can actually transmit messages to a Provisioner and receive messages from it.
 
-1.2 If a Provisioner wants to change states of a node, what requirements should be met for a Provisioner?
+1.2 If a Provisioner Wants to Change States of a Node, What Requirements Should Be Met for a Provisioner?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Client model that corresponds to server model of the node is required.
     - NetKey and AppKey used to encrypt messages shall be owned by both the node and the Provisioner.
     - The address owned by the node shall be known, which could be its unicast address or subscription address.
 
-1.3 How can NetKey and AppKey be used?
+1.3 How Can NetKey and AppKey Be Used?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - NetKey is used for encryption of messages in Network Layer. Nodes with the same NetKey are assumed to be in the same subnet while those with different NetKeys cannot communicate with each other.
     - AppKey is used for encryption of messages in Upper Transport Layer. If client model and server model are bound to different AppKeys, the communication cannot be achieved.
 
-1.4 How to generate a NetKey or AppKey for Provisioner? Can we use a fixed NetKey or AppKey?
+1.4 How to Generate a NetKey or AppKey for Provisioner? Can We Use a Fixed NetKey or AppKey?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - The API :cpp:func:`esp_ble_mesh_provisioner_add_local_net_key` can be used to add a NetKey with a fixed or random value.
     - The API :cpp:func:`esp_ble_mesh_provisioner_add_local_app_key` can be used to add an AppKey with a fixed or random value.
 
-1.5 Is the unicast address of Provisioner fixed?
+1.5 Is the Unicast Address of Provisioner Fixed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The value of :code:`prov_unicast_addr` in :cpp:type:`esp_ble_mesh_prov_t` is used to set the unicast address of Provisioner, it can be set only once during initialization and can't be changed afterwards.
+    The value of :code:`prov_unicast_addr` in :cpp:type:`esp_ble_mesh_prov_t` is used to set the unicast address of Provisioner, it can be set only once during initialization and cannot be changed afterwards.
 
-1.6 Can the address of Provisioner serve as destination address of the node-reporting-status message？
+1.6 Can the Address of Provisioner Serve as Destination Address of the Node-reporting-status Message?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The unicast address of Provisioner can be set only once during initialization and can't be changed afterwards. In theory, it can serve as the destination address of the node-reporting-status message, provided that the unicast address of the Provisioner is known by nodes. Nodes can know the unicast address of Provisioner during configuration since Provisioner sends messages to them with its unicast address used as the source address.
+    The unicast address of Provisioner can be set only once during initialization and cannot be changed afterwards. In theory, it can serve as the destination address of the node-reporting-status message, provided that the unicast address of the Provisioner is known by nodes. Nodes can know the unicast address of Provisioner during configuration since Provisioner sends messages to them with its unicast address used as the source address.
 
     Subscription address can also be used. Provisioner subscribes to a group address or virtual address, and nodes send messages to the subscription address.
 
-1.7 Is the unicast address of the node that is firstly provisioned by Provisioner to ESP-BLE-MESH network fixed？
+1.7 Is the Unicast Address of the Node That Is Firstly Provisioned by ProvIsioner to ESP-BLE-MESH Network Fixed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The value of :code:`prov_start_address` in :cpp:type:`esp_ble_mesh_prov_t` is used to set the starting address when the Provisioner provisions unprovisioned devices, i.e. the unicast address of the node it firstly provisioned. It can be set only once during initialization and can't be changed afterwards.
+    The value of :code:`prov_start_address` in :cpp:type:`esp_ble_mesh_prov_t` is used to set the starting address when the Provisioner provisions unprovisioned devices, i.e., the unicast address of the node it firstly provisioned. It can be set only once during initialization and cannot be changed afterwards.
 
-1.8 Is the unicast address of the node that mobile App firstly provisioned fixed?
+1.8 Is the Unicast Address of the Node That Mobile App Firstly Provisioned Fixed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The App will decide the unicast address, and currently most of them are fixed.
 
-1.9 How to know which unprovisioned device is the Provisioner that is provisioning currently?
+1.9 How to Know Which Unprovisioned Device Is the ProvIsioner That Is Provisioning Currently?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The value of :code:`prov_attention` in :cpp:type:`esp_ble_mesh_prov_t` is used by Provisioner set to unprovisioned device during provisioning. It can be set only once during initialization and can't be changed afterwards. When the unprovisioned device is joining the mesh network, it can display in a specific way like flashing light to notify Provisioner that it is being provisioned.
+    The value of :code:`prov_attention` in :cpp:type:`esp_ble_mesh_prov_t` is used by Provisioner set to unprovisioned device during provisioning. It can be set only once during initialization and cannot be changed afterwards. When the unprovisioned device is joining the mesh network, it can display in a specific way like flashing light to notify Provisioner that it is being provisioned.
 
-1.10 How many ways to authenticate the devices during provisioning? Which way was used in the :example:`provided examples <bluetooth/esp_ble_mesh>`?
+1.10 How Many Ways to Authenticate the Devices During Provisioning? Which Way Was Used in the :example:`provided examples <bluetooth/esp_ble_mesh>`?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    There are four authentication methods, i.e. No OOB, Static OOB, Output OOB and Input OOB. In the provided examples, No OOB is used.
+    There are four authentication methods, i.e., No OOB, Static OOB, Output OOB and Input OOB. In the provided examples, No OOB is used.
 
-1.11 What information can be carried by the advertising packets of the unprovisioned device before provisioning into the network?
+1.11 What Information Can Be Carried by the Advertising Packets of the Unprovisioned Device Before Provisioning into the Network?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Device UUID
     - OOB Info
     - URL Hash (optional)
 
-1.12 Can such information be used for device identification?
+1.12 Can Such Information Be Used for Device Identification?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     For example, each unprovisioned device contains a unique Device UUID, which can be used for device identification.
 
-1.13 How is the unicast address assigned when the node provisioned by Provisioner contains multiple elements?
+1.13 How Is the Unicast Address Assigned When the Node Provisioned by ProvIsioner Contains Multiple Elements?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Provisioner will assign an unicast address for the primary element of the node, and unicast address of the remaining elements are incremented one by one.
-    - For example: If an unprovisioned device has three elements, i.e. the primary element, the second element and the third element. After provisioning, the primary element address of the node is 0x0002 while the second element address is 0x0003, and the third element address is 0x0004.
+    - For example: If an unprovisioned device has three elements, i.e., the primary element, the second element and the third element. After provisioning, the primary element address of the node is 0x0002 while the second element address is 0x0003, and the third element address is 0x0004.
 
-1.14 How can Provisioner get and parse the :ref:`Composition Data <ble-mesh-terminology-composition>` of nodes through Configuration Client Model?
+1.14 How Can Provisioner Get and Parse the :ref:`Composition Data <ble-mesh-terminology-composition>` of Nodes Through Configuration Client Model?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Provisioner can get the Composition Data of nodes using the :ref:`Configuration Client Model <ble-mesh-terminology-foundation-models>` API :cpp:func:`esp_ble_mesh_config_client_set_state` with :code:`comp_data_get` in the parameter :cpp:type:`esp_ble_mesh_cfg_client_get_state_t` set properly.
@@ -204,7 +204,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
             }
         }
 
-1.15 How can Provisioner further configure nodes through obtained Composition Data?
+1.15 How Can Provisioner Further Configure Nodes Through Obtained Composition Data?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Provisioner do the following configuration by calling the :ref:`Configuration Client Model <ble-mesh-terminology-foundation-models>` API :cpp:func:`esp_ble_mesh_config_client_set_state`.
@@ -213,7 +213,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
     - Add subscription address to the models of nodes with :code:`model_sub_add` in the parameter :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` set properly.
     - Set publication information to the models of nodes with :code:`model_pub_set` in the parameter :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` set properly.
 
-1.16 Can nodes add corresponding configurations for themselves?
+1.16 Can Nodes Add Corresponding Configurations for Themselves?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     This method can be used in special cases like testing period.
@@ -271,7 +271,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     When the NVS storage of the node is enabled, group address added and AppKey bound by this method will not be saved in the NVS when the device is powered off currently. These configuration information can only be saved if they are configured by Configuration Client Model.
 
-1.17 How does Provisioner control nodes by grouping?
+1.17 How Does Provisioner Control Nodes by Grouping?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Generally there are two approaches to implement group control in ESP-BLE-MESH network, group address approach and virtual address approach. And supposing there are 10 devices, i.e., five devices with blue lights and five devices with red lights.
@@ -280,12 +280,12 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - Method 2: 5 blue lights can subscribe to a virtual address, 5 red lights subscribe to another one. By sending messages to different virtual addresses, Provisioner can realize group control.
 
-1.18 How does Provisioner add nodes to multiple subnets?
+1.18 How Does Provisioner Add Nodes to Multiple Subnets?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Provisioner can add multiple NetKeys to nodes during configuration, and nodes sharing the same NetKey belong to the same subnet. Provisioner can communicate with nodes on different subnets by using different NetKeys.
 
-1.19 How does Provisioner know if a node in the mesh network is offline?
+1.19 How Does ProvIsioner Know If a Node in the Mesh Network Is Offline?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Node offline is usually defined as: the condition that the node cannot be properly communicated with other nodes in the mesh network due to power failure or some other reasons.
@@ -300,7 +300,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     The heartbeat message should be designed into a single package (less than 11 bytes), so the transmission and reception of it can be more efficient.
 
-1.20 What operations should be performed when Provisioner removes nodes from the network?
+1.20 What Operations Should Be Performed When Provisioner Removes Nodes from the Network?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Usually when Provisioner tries to remove node from the mesh network, the procedure includes three main steps:
@@ -311,19 +311,19 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - Lastly, the node performs node reset procedure, and switches itself to an unprovisioned device.
 
-1.21 In the Key Refresh procedure, how does Provisioner update the Netkey owned by nodes?
+1.21 In the Key Refresh Procedure, How Does Provisioner Update the Netkey Owned by Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Provisioner updates the NetKey of nodes using the :ref:`Configuration Client Model <ble-mesh-terminology-foundation-models>` API :cpp:func:`esp_ble_mesh_config_client_set_state` with :code:`net_key_update` in the parameter :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` set properly.
 
     - Provisioner updates the AppKey of nodes using the :ref:`Configuration Client Model <ble-mesh-terminology-foundation-models>` API :cpp:func:`esp_ble_mesh_config_client_set_state` with :code:`app_key_update` in the parameter :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` set properly.
 
-1.22 How does Provisioner manage nodes in the mesh network?
+1.22 How Does Provisioner Manage Nodes in the Mesh Network?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     ESP-BLE-MESH implements several functions related to basic node management in the example, such as :cpp:func:`esp_ble_mesh_store_node_info`. And ESP-BLE-MESH also provides the API :cpp:func:`esp_ble_mesh_provisioner_set_node_name` which can be used to set the node's local name and the API :cpp:func:`esp_ble_mesh_provisioner_get_node_name` which can be used to get the node's local name.
 
-1.23 What does Provisioner need when trying to control the server model of nodes?
+1.23 What Does Provisioner Need When Trying to Control the Server Model of Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Provisioner must include corresponding client model before controlling the server model of nodes.
@@ -338,8 +338,8 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - Provisioner bind AppKey to its own client model by calling the API :cpp:func:`esp_ble_mesh_provisioner_bind_app_key_to_local_model`.
 
-1.24 How does Provisoner control the server model of nodes?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.24 How Does Provisioner Control the Server Model of Nodes?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     ESP-BLE-MESH supports all SIG-defined client models. Provisioner can use these client models to control the server models of nodes. And the client models are divided into 6 categories with each category has the corresponding functions.
 
@@ -378,7 +378,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 2. Node Development
 -------------------
 
-2.1 What kind of models are included by nodes?
+2.1 What Kind of Models Are Included by Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - In ESP-BLE-MESH, nodes are all composed of a series of models with each model implements some functions of the node.
@@ -387,14 +387,14 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - Model can also be divided into SIG model and vendor model. All behaviors of SIG models are officially defined while behaviors of vendor models are defined by users.
 
-2.2 Is the format of messages corresponding to each model fixed?
+2.2 Is the Format of Messages Corresponding to Each Model Fixed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Messages, which consist of opcode and payload, are divided by opcode.
 
     - The type and the format of the messages corresponding to models are both fixed, which means the messages transmitted between models are fixed.
 
-2.3 Which functions can be used to send messages with the models of nodes?
+2.3 Which Functions Can Be Used to Send Messages with the Models of Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - For client models, users can use the API :cpp:func:`esp_ble_mesh_client_model_send_msg` to send messages.
@@ -403,40 +403,40 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - For publication, users call the API :cpp:func:`esp_ble_mesh_model_publish` to publish messages.
 
-2.4 How to achieve the transmission of messages without packet loss?
+2.4 How to Achieve the Transmission of Messages Without Packet Loss?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Acknowledegd message is needed if users want to transmit messages without packet loss. The default time to wait for corresponding response is set in :ref:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT`. If the sender waits for the response until the timer expires, the corresponding timeout event would be triggered.
+    Acknowledged message is needed if users want to transmit messages without packet loss. The default time to wait for corresponding response is set in :ref:`CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT`. If the sender waits for the response until the timer expires, the corresponding timeout event would be triggered.
 
 .. note::
 
     Response timeout can be set in the API :cpp:func:`esp_ble_mesh_client_model_send_msg`. The default value (4 seconds) would be applied if the parameter :code:`msg_timeout` is set to **0**.
 
-2.5 How to send unacknowledged messages?
+2.5 How to Send Unacknowledged Messages?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     For client models, users can use the API :cpp:func:`esp_ble_mesh_client_model_send_msg` with the parameter :code:`need_rsp` set to :code:`false` to send unacknowledged messages.
 
     For server models, the messages sent by using the API :cpp:func:`esp_ble_mesh_server_model_send_msg` are always unacknowledged messages.
 
-2.6 How to add subscription address to models?
+2.6 How to Add Subscription Address to Models?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Subscription address can be added through Configuration Client Model.
 
-2.7 What is the difference between messages sent and published by models?
+2.7 What Is the Difference Between Messages Sent and Published by Models?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Messages sent by calling the API :cpp:func:`esp_ble_mesh_client_model_send_msg` or :cpp:func:`esp_ble_mesh_server_model_send_msg` will be sent in the duration determined by the Network Transmit state.
 
     Messages published by calling the API :cpp:func:`esp_ble_mesh_model_publish` will be published determined by the Model Publication state. And the publication of messages is generally periodic or with a fixed number of counts. The publication period and publication count are controlled by the Model Publication state, and can be configured through Configuration Client Model.
 
-2.8 How many bytes can be carried when sending unsegmented messages?
+2.8 How Many Bytes Can Be Carried When Sending Unsegmented Messages?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The total payload length (which can be set by users) of unsegmented message is 11 octets, so if the opcode of the message is 2 octets, then the message can carry 9-octets of valid information. For vendor messages, due to the 3-octets opcode, the remaining payload length is 8 octets.
 
-2.9 When should the :ref:`Relay <ble-mesh-terminology-features>` feature of nodes be enabled?
+2.9 When Should the :ref:`Relay <ble-mesh-terminology-Features>` Feature of Nodes Be Enabled?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Users can enable the Relay feature of all nodes when nodes detected in the mesh network are sparse.
@@ -445,17 +445,17 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     And users can enable the Relay feature by default if the mesh network size is unknown.
 
-2.10 When should the :ref:`Proxy <ble-mesh-terminology-features>` feature of node be enabled?
+2.10 When Should the :ref:`Proxy <ble-mesh-terminology-Features>` Feature of Node Be Enabled?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     If the unprovisioned device is expected to be provisioned by a phone, then it should enable the Proxy feature since almost all the phones do not support sending ESP-BLE-MESH packets through advertising bearer currently. And after the unprovisioned device is provisioned successfully and becoming a Proxy node, it will communicate with the phone using GATT bearer and using advertising bearer to communicate with other nodes in the mesh network.
 
-2.11 How to use the Proxy filter?
+2.11 How to Use the Proxy Filter?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The Proxy filter is used to reduce the number of Network PDUs exchanged between a Proxy Client (e.g. the phone) and a Proxy Server (e.g. the node). And with the Proxy filter, Proxy Client can explicitly request to receive only mesh messages with certain destination addresses from Proxy Server.
+    The Proxy filter is used to reduce the number of Network PDUs exchanged between a Proxy Client (e.g., the phone) and a Proxy Server (e.g., the node). And with the Proxy filter, Proxy Client can explicitly request to receive only mesh messages with certain destination addresses from Proxy Server.
 
-2.12 When a message can be relayed by a Relay node?
+2.12 When a Message Can Be Relayed by a Relay Node?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     If a message need to be relayed, the following conditions should be met.
@@ -466,12 +466,12 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - The value of TTL in the message is greater than 1.
 
-2.13 If a message is segmented into several segments, should the other Relay nodes just relay when one of these segments is received or wait until the message is received completely?
+2.13 If a Message Is Segmented into Several Segments, Should the Other Relay Nodes Just Relay When One of These Segments Is Received or Wait Until the Message Is Received Completely?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Relay nodes will forward segments when one of them are received rather than keeping waiting until all the segments are received.
 
-2.14 What is the principle of reducing power consumption using :ref:`Low Power <ble-mesh-terminology-features>` feature?
+2.14 What Is the Principle of Reducing Power Consumption Using :ref:`Low Power <ble-mesh-terminology-Features>` Feature?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - When the radio is turned on for listening, the device is consuming energy. When low power feature of the node is enabled, it will turn off its radio in the most of the time.
@@ -480,17 +480,17 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - When there are some new messages for low power node, its friend node will store the messages for it. And low power node can poll friend nodes to see if there are new messages at a fixed interval.
 
-2.15 How to continue the communication on the network after powering-down and powering-up again?
+2.15 How to Continue the Communication on the Network After Powering-down and Powering-up Again?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Enable the configuration :code:`Store ESP-BLE-MESH Node configuration persistently` in `menuconfig`.
 
-2.16 How to send out the self-test results of nodes?
+2.16 How to Send out the Self-test Results of Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     It is recommended that nodes can publish its self-test results periodically through Health Server Model.
 
-2.17 How to transmit information between nodes?
+2.17 How to Transmit Information Between Nodes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     One possible application scenario for transmitting information between nodes is that spray nodes would be triggered once smoke alarm detected high smoke concentration. There are two approaches in implementation.
@@ -499,19 +499,19 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     - Approach 2 is that Provisioner can configure the unicast address of spray node to the smoke alarm. When high smoke concentration is detected, smoke alarm can use send messages to the spray node with the spray node's unicast address as the destination address.
 
-2.18 Is gateway a must for nodes communication?
+2.18 Is Gateway a Must for Nodes Communication?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Situation 1: nodes only communicate within the mesh network. In this situation, no gateway is need. ESP-BLE-MESH network is a flooded network, messages in the network have no fixed paths, and nodes can communicate with each other freely.
 
     - Situation 2: if users want to control the nodes remotely, for example turn on some nodes before getting home, then a gateway is needed.
 
-2.19 When will the IV Update procedure be performed?
+2.19 When Will the IV Update Procedure Be Performed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     IV Update procedure would be performed once sequence number of messages sent detected by the bottom layer of node reached a critical value.
 
-2.20 How to perform IV Update procedure?
+2.20 How to Perform IV Update Procedure?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Nodes can perform IV Update procedure with Secure Network Beacon.
@@ -522,25 +522,25 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 3. ESP-BLE-MESH and Wi-Fi Coexistence
 -------------------------------------
 
-3.1 Which modes does Wi-Fi support when it coexists with ESP-BLE-MESH?
+3.1 Which Modes Does Wi-Fi Support When it Coexists with ESP-BLE-MESH?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Currently only Wi-Fi station mode supports the coexistence.
 
-3.2 Why is the Wi-Fi throughput so low when Wi-Fi and ESP-BLE-MESH coexist?
+3.2 Why Is the Wi-Fi Throughput So Low When Wi-Fi and ESP-BLE-MESH Coexist?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. only:: esp32
 
-        The :doc:`ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>` board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
+        The `ESP32-DevKitC <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/index.html>`__ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1 Mbps.
 
     Some configurations in menuconfig shall be enabled to support PSRAM.
 
-        - :code:`{IDF_TARGET_NAME}-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
-        - :code:`Bluetooth --> Bluedroid Enable --> BT/BLE will first malloc the memory from the PSRAM`
-        - :code:`Bluetooth --> Bluedroid Enable --> Use dynamic memory allocation in BT/BLE stack.`
-        - :code:`Bluetooth --> Bluetooth controller --> BLE full scan feature supported.`
-        - :code:`Wi-Fi --> Software controls Wi-Fi/Bluetooth coexistence --> Wi-Fi`
+        - ``{IDF_TARGET_NAME}-specific`` > ``Support for external,SPI-connected RAM`` > ``Try to allocate memories of Wi-Fi and LWIP...``
+        - ``Bluetooth`` > ``Bluedroid Enable`` > ``BT/BLE will first malloc the memory from the PSRAM``
+        - ``Bluetooth`` > ``Bluedroid Enable`` > ``Use dynamic memory allocation in BT/BLE stack``
+        - ``Bluetooth`` > ``Bluetooth controller`` > ``BLE full scan feature supported``
+        - ``Wi-Fi`` > ``Software controls Wi-Fi/Bluetooth coexistence`` > ``Wi-Fi``
 
 
 .. _ble-mesh-faq-fast-provisioning:
@@ -548,32 +548,32 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 4. Fast Provisioning
 --------------------
 
-4.1 Why is fast provisioning needed?
+4.1 Why Is Fast Provisioning Needed?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Normally when they are several unprovisioned devices, users can provision them one by one. But when it comes to a large number of unprovisioned devices (e.g. 100), provisioning them one by one will take huge amount of time. With fast provisioning, users can provision 100 unprovisioned devices in about 50 seconds.
+    Normally when they are several unprovisioned devices, users can provision them one by one. But when it comes to a large number of unprovisioned devices (e.g., 100), provisioning them one by one will take huge amount of time. With fast provisioning, users can provision 100 unprovisioned devices in about 50 seconds.
 
-4.2 Why EspBleMesh App would wait for a long time during fast provisioning?
+4.2 Why EspBleMesh App Would Wait for a Long Time During Fast Provisioning?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     After the App provisioned one Proxy node, it will disconnect from the App during fast provisioning, and reconnect with the App when all the nodes are provisioned.
 
-4.3 Why is the number of node addresses displayed in the App is more than that of existing node addresses?
+4.3 Why Is the Number of Node Addresses Displayed in the App Is More than That of Existing Node Addresses?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Each time after a fast provisioning process, and before starting a new one, the node addresses in the App should be cleared, otherwise the number of the node address will be incorrect.
 
-4.4 What is the usage of the **count** value which was input in EspBleMesh App?
+4.4 What Is the Usage of the **count** Value Which Was Input in EspBleMesh App?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The **count** value is provided to the Proxy node which is provisioned by the App so as to determine when to start Proxy advertising in advance.
 
-4.5 When will Configuration Client Model of the node running :example:`fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server>` example start to work?
+4.5 When will Configuration Client Model of the node running :example:`fast_prov_server <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server>` example start to work?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Configuration Client Model will start to work after the Temporary Provisioner functionality is enabled.
 
-4.6 Will the Temporary Provisioner functionality be enabled all the time?
+4.6 Will the Temporary Provisioner Functionality Be Enabled All the Time?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     After the nodes receive messages used to turn on/off lights, all the nodes will disable its Temporary Provisioner functionality and become nodes.
@@ -586,37 +586,37 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
 You can find meaning of errors or warnings when they appear at the bottom of ESP-BLE-MESH stack.
 
-5.1 What is the meaning of warning :code:`ran out of retransmit attempts`?
+5.1 What Is the Meaning of Warning ``ran out of retransmit attempts``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    When the node transmits a segmented message, and due to some reasons, the receiver doesn't receive the complete message. Then the node will retransmit the message. When the retransmission count reaches the maximum number, which is 4 currently, then this warning will appear.
+    When the node transmits a segmented message, and due to some reasons, the receiver does not receive the complete message. Then the node will retransmit the message. When the retransmission count reaches the maximum number, which is 4 currently, then this warning will appear.
 
-5.2 What is the meaning of warning :code:`Duplicate found in Network Message Cache`?
+5.2 What Is the Meaning of Warning  ``Duplicate found in Network Message Cache``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     When the node receives a message, it will compare the message with the ones stored in the network cache. If the same has been found in the cache, which means it has been received before, then the message will be dropped.
 
-5.3 What is the meaning of warning :code:`Incomplete timer expired`?
+5.3 What Is the Meaning of Warning  ``Incomplete timer expired``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    When the node doesn't receive all the segments of a segmented message during a certain period (e.g. 10 seconds), then the Incomplete timer will expire and this warning will appear.
+    When the node does not receive all the segments of a segmented message during a certain period (e.g., 10 seconds), then the Incomplete timer will expire and this warning will appear.
 
-5.4 What is the meaning of warning :code:`No matching TX context for ack`?
+5.4 What Is the Meaning of Warning  ``No matching TX context for ack``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    When the node receives a segment ack and it doesn't find any self-send segmented message related with this ack, then this warning will appear.
+    When the node receives a segment ack and it does not find any self-send segmented message related with this ack, then this warning will appear.
 
-5.5 What is the meaning of warning :code:`No free slots for new incoming segmented messages`?
+5.5 What Is the Meaning of Warning  ``No free slots for new incoming segmented messages``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     When the node has no space for receiving new segmented message, this warning will appear. Users can make the space larger through the configuration :ref:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT`.
 
-5.6 What is the meaning of error :code:`Model not bound to Appkey 0x0000`？
+5.6 What Is the Meaning of Error ``Model not bound to Appkey 0x0000``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     When the node sends messages with a model and the model has not been bound to the AppKey with AppKey Index 0x000, then this error will appear.
 
-5.7 What is the meaning of error :code:`Busy sending message to DST xxxx`?
+5.7 What Is the Meaning of Error ``Busy sending message to DST xxxx``?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    This error means client model of the node has transmitted a message to the target node and now is waiting for a response, users can not send messages to the same node with the same unicast address. After the corresponding response is received or timer is expired, then another message can be sent.
@@ -627,7 +627,7 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 6. Example Help
 ---------------
 
-6.1 How are the ESP-BLE-MESH callback functions classified?
+6.1 How Are the ESP-BLE-MESH Callback Functions Classified?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - The API :cpp:func:`esp_ble_mesh_register_prov_callback` is used to register callback function used to handle provisioning and networking related events.
@@ -647,22 +647,22 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 7. Others
 ---------
 
-7.1 How to print the message context?
+7.1 How to Print the Message Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The examples use :cpp:func:`ESP_LOG_BUFFER_HEX` to print the message context while the ESP-BLE-MESH protocol stack uses :cpp:func:`bt_hex`.
 
-7.2 Which API can be used to restart {IDF_TARGET_NAME}?
+7.2 Which API Can Be Used to Restart {IDF_TARGET_NAME}?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`esp_restart`.
 
-7.3 How to monitor the remaining space of the stack of a task?
+7.3 How to Monitor the Remaining Space of the Stack of a Task?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`vTaskList` can be used to print the remaining space of the task stack periodically.
 
-7.4 How to change the level of log without changing the menuconfig output level?
+7.4 How to Change the Level of Log Without Changing the Menuconfig Output Level?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`esp_log_level_set` can be used to change the log output level rather than using menuconfig to change it.
