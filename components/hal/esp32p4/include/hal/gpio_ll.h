@@ -468,6 +468,11 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
     *strength = (gpio_drive_cap_t)(IO_MUX.gpio[gpio_num].fun_drv);
 }
 
+// On ESP32P4, all digital GPIO pads can be held together during Deep-sleep through PMU.hp_sys[PMU_MODE_HP_SLEEP].syscntl.hp_pad_hold_all = 1
+// However, since the hold register for digital IOs is in TOP domain (HP_SYSTEM.gpio_o_hold_ctrlx), it gets powered down in Deep-sleep.
+// Therefore, after waking up from Deep-sleep, the register has been reset, it is not able to hold at that time.
+// In all, the users can not achieve the purpose of being hold all the time. So this feature is considered not usable on P4.
+
 /**
   * @brief Enable gpio pad hold function.
   *

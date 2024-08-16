@@ -519,6 +519,10 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y

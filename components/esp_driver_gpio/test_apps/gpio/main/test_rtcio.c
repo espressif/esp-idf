@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -235,10 +235,10 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 #endif //SOC_RTCIO_HOLD_SUPPORTED
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-#if SOC_DEEP_SLEEP_SUPPORTED
+#if SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12, P4: IO5, C5: IO5) these pads' default configuration is low level
+// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12, C5: IO5) these pads' default configuration is low level
 #define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
@@ -284,4 +284,4 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                           rtcio_deep_sleep_hold_test_first_stage,
                           rtcio_deep_sleep_hold_test_second_stage)
-#endif // SOC_DEEP_SLEEP_SUPPORTED
+#endif // SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP

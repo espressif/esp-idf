@@ -14,10 +14,6 @@ components/esp_driver_uart/test_apps/rs485:
 components/esp_driver_uart/test_apps/uart:
   disable:
     - if: SOC_UART_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8971
   depends_components:
     - esp_driver_uart
     - esp_driver_gpio

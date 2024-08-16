@@ -1,14 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_driver_gpio/test_apps:
-  disable:
-    - if: IDF_TARGET in ["esp32c61"]
-      temporary: true
-      reason: not support yet # TODO: [esp32c61] IDF-9877
-  disable_test:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: [ESP32P4] IDF-8968
   depends_components:
     - esp_driver_gpio
 

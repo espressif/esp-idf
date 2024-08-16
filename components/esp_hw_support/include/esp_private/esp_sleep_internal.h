@@ -39,7 +39,7 @@ void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx);
  */
 void esp_sleep_enable_adc_tsens_monitor(bool enable);
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
  * @brief Isolate all digital IOs except those that are held during deep sleep
  *

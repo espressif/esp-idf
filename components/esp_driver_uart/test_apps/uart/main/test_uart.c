@@ -10,7 +10,11 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
+#include "driver/rtc_io.h"
+#include "hal/rtc_io_ll.h"
+#endif
 #include "soc/uart_periph.h"
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
@@ -469,6 +473,13 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     } else {
         // LP_UART
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
+        // Need to route TX signal to RX signal with the help of LP_GPIO matrix, TX signal connect to the RX IO directly
+        // This means RX IO should also only use LP_GPIO matrix to connect the RX signal
+        // In case the selected RX IO is the LP UART IOMUX IO, and the IO has been configured to IOMUX function in the driver
+        // Do the following:
+        TEST_ESP_OK(rtc_gpio_iomux_func_sel(uart_rx, RTCIO_LL_PIN_FUNC));
+        const int uart_rx_signal = uart_periph_signal[uart_num].pins[SOC_UART_RX_PIN_IDX].signal;
+        TEST_ESP_OK(lp_gpio_connect_in_signal(uart_rx, uart_rx_signal, false));
         TEST_ESP_OK(lp_gpio_connect_out_signal(uart_rx, uart_tx_signal, false, false));
 #else
         // The only way is to use loop back feature
