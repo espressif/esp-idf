@@ -73,7 +73,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
     * -
       - GATT Caching
       - |experimental|
@@ -89,7 +89,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
@@ -125,7 +125,7 @@ ESP 主机主要功能支持状态
     * -
       - Periodic Advertising with Responses
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
 
 .. [1]
    如果想了解支持功能的 Bluetooth SIG 认证状态，

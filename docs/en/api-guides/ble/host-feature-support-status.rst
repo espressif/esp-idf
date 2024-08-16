@@ -73,7 +73,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
     * -
       - GATT Caching
       - |experimental|
@@ -89,7 +89,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
@@ -125,7 +125,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Periodic Advertising with Responses
       - |unsupported|
-      - |developing202412|
+      - |unsupported|
 
 .. [1]
    If you would like to know the Bluetooth SIG certification information for supported features,
