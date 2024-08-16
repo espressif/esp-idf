@@ -13,6 +13,7 @@ ESP-IDF 构建系统支持 `可重复构建 <https://reproducible-builds.org/doc
 - 项目所在目录
 - ESP-IDF 所在目录 (``IDF_PATH``)
 - 构建时间
+- 工具链安装路径
 
 构建不可重复的原因
 ------------------
@@ -46,6 +47,7 @@ ESP-IDF 可通过以下方式实现可重复构建：
     - 替换项目路径为 ``/IDF_PROJECT``
     - 替换构建目录的路径为 ``/IDF_BUILD``
     - 替换组件路径为 ``/COMPONENT_NAME_DIR`` （其中 ``NAME`` 指的是组件的名称）
+    - 替换工具链的路径为 ``/TOOLCHAIN``
 
 - 如果启用 :ref:`CONFIG_APP_REPRODUCIBLE_BUILD`，则不会将构建日期和时间包括在 :ref:`应用程序元数据结构 <app-image-format-application-description>` 和 :ref:`引导加载程序元数据结构 <image-format-bootloader-description>` 中。
 - ESP-IDF 构建系统在将源文件列表、组件列表和其他序列传递给 CMake 之前会对其进行排序。构建系统的其他各个部分，如链接器脚本生成器，也会先排序，从而确保无论环境如何，输出都一致。

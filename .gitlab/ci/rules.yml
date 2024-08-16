@@ -108,8 +108,6 @@
   - "tools/detect_python.sh"
   - "tools/detect_python.fish"
 
-  - "tools/ci/test_reproducible_build.sh"
-
   - "tools/gen_soc_caps_kconfig/*"
   - "tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py"
 
