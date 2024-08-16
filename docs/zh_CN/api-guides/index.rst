@@ -7,14 +7,15 @@ API 指南
 
    app_trace
    startup
-   :SOC_BT_SUPPORTED: blufi
+   :SOC_BT_CLASSIC_SUPPORTED: classic-bt/index
+   :SOC_BT_SUPPORTED: ble/index
+   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    bootloader
    build-system
    core_dump
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED: dfu
    error-handling
-   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    event-handling
    fatal-errors
