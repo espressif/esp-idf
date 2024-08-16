@@ -44,7 +44,11 @@ typedef struct {
     // TX parameters
     RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler */
     uint8_t tx_stash_buf[USB_SER_JTAG_ENDP_SIZE];  /*!< Data buffer to stash TX FIFO data */
-    size_t tx_stash_cnt;                          /*!< Number of stashed TX FIFO bytes */
+    size_t tx_stash_cnt;                           /*!< Number of stashed TX FIFO bytes */
+
+    //Synchronization stuff, only used for flush for now
+    SemaphoreHandle_t tx_mux;
+    SemaphoreHandle_t tx_idle_sem;
 } usb_serial_jtag_obj_t;
 
 static usb_serial_jtag_obj_t *p_usb_serial_jtag_obj = NULL;
@@ -111,6 +115,19 @@ static void usb_serial_jtag_isr_handler_default(void *arg)
                 // We will also disable the interrupt as for now there's no need to handle the
                 // TX interrupt again. We'll re-enable this externally if we need data sent.
                 usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+
+                // Technically something could have been pushed into the ringbuffer between us checking
+                // here and us disabling the interrupt. That would mean that data would not be
+                // transmitted anymore. Check for that case.
+                UBaseType_t bytes_waiting;
+                vRingbufferGetInfo(p_usb_serial_jtag_obj->tx_ring_buf, NULL, NULL, NULL, NULL, &bytes_waiting);
+                if (bytes_waiting) {
+                    // Uh-oh, it happened. Re-enable interrupts so we can process the data the next run.
+                    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+                } else {
+                    //Nope, still nothing. Mark tx as idle.
+                    xSemaphoreGiveFromISR(p_usb_serial_jtag_obj->tx_idle_sem, &xTaskWoken);
+                }
             }
         }
     }
@@ -159,6 +176,20 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
         goto _exit;
     }
 
+    p_usb_serial_jtag_obj->tx_mux = xSemaphoreCreateMutex();
+    if (p_usb_serial_jtag_obj->tx_mux == NULL) {
+        ESP_LOGE(USB_SERIAL_JTAG_TAG, "tx_mux create error");
+        err = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+
+    p_usb_serial_jtag_obj->tx_idle_sem = xSemaphoreCreateBinary();
+    if (p_usb_serial_jtag_obj->tx_idle_sem == NULL) {
+        ESP_LOGE(USB_SERIAL_JTAG_TAG, "tx_idle_sem create error");
+        err = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+
     // Enable USB-Serial-JTAG peripheral module clock
     USJ_RCC_ATOMIC() {
         usb_serial_jtag_ll_enable_bus_clock(true);
@@ -180,6 +211,9 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     // We only enable the RX interrupt; we'll enable the TX one when we actually
     // have anything to send.
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+
+    //Assume tx is idle; if any we have nothing in the ringbuffer so this is probably true.
+    xSemaphoreGive(p_usb_serial_jtag_obj->tx_idle_sem);
 
     err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
     if (err != ESP_OK) {
@@ -221,12 +255,54 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     ESP_RETURN_ON_FALSE(src != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "Invalid buffer pointer.");
     ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "The driver hasn't been initialized");
 
-    BaseType_t result = pdTRUE;
+    //This will block when something else is waiting in wait_tx_done, making sure we don't add data to the ringbuffer.
+    //Note that the ringbuffer itself is thread-safe, so this is only needed to handle wait_tx_done.
+    BaseType_t result = xSemaphoreTake(p_usb_serial_jtag_obj->tx_mux, ticks_to_wait);
+    if (result == pdFALSE) {
+        return 0;
+    }
+
+    //Mark TX as not idle so flush function knows to wait. Note we don't care if it was already not idle, so no
+    //timeout and we don't check if this succeeds; we just want to make sure the semaphore is taken.
+    xSemaphoreTake(p_usb_serial_jtag_obj->tx_idle_sem, 0);
+
     result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*)src, size, ticks_to_wait);
     // Re-enable the TX interrupt. If this was disabled, this will immediately trigger the ISR
-    // and send the things we just put in the ringbuffer.
+    // and send the things we just put in the ringbuffer. Note that even though this is a
+    // read-modify-write operation on the interrupt enable register that could happen at the
+    // same point the ISR does a read-modify-write to disable the interrupt,
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+    xSemaphoreGive(p_usb_serial_jtag_obj->tx_mux);
     return (result == pdFALSE) ? 0 : size;
+}
+
+esp_err_t usb_serial_jtag_wait_tx_done(TickType_t ticks_to_wait)
+{
+    int r;
+    TimeOut_t timeout;
+    vTaskSetTimeOutState(&timeout);
+    // Make sure write_bytes blocks so nothing is added to the ringbuffer.
+    // Note that this can time out (e.g. blocked ringbuffer while writing)
+    r = xSemaphoreTake(p_usb_serial_jtag_obj->tx_mux, ticks_to_wait);
+    if (r) {
+        // Adjust timeout to compensate for the time we waited for tx_mux. Note xTaskCheckForTimeOut
+        // changes ticks_to_wait accordingly.
+        if (xTaskCheckForTimeOut(&timeout, &ticks_to_wait)) {
+            // if this triggers, we timed out: we got tx_mux at the exact time of the timeout? Probably
+            // never happens, but handle correctly anyway.
+            ticks_to_wait = 0;
+        }
+        // Check if we're idle or wait until we are (or time out)
+        r = xSemaphoreTake(p_usb_serial_jtag_obj->tx_idle_sem, ticks_to_wait);
+        if (r) {
+            // We could take the semaphore, meaning tx is done now. Immediately give it again so
+            // the next run of usb_serial_jtag_wait_tx_done also succeeds.
+            xSemaphoreGive(p_usb_serial_jtag_obj->tx_idle_sem);
+        }
+        // Re-allow writes.
+        xSemaphoreGive(p_usb_serial_jtag_obj->tx_mux);
+    }
+    return r ? ESP_OK : ESP_ERR_TIMEOUT;
 }
 
 //Note that this is also called when usb_serial_jtag_driver_install errors out and as such should
@@ -252,6 +328,14 @@ esp_err_t usb_serial_jtag_driver_uninstall(void)
     if (p_usb_serial_jtag_obj->tx_ring_buf) {
         vRingbufferDelete(p_usb_serial_jtag_obj->tx_ring_buf);
         p_usb_serial_jtag_obj->tx_ring_buf = NULL;
+    }
+    if (p_usb_serial_jtag_obj->tx_idle_sem) {
+        vSemaphoreDelete(p_usb_serial_jtag_obj->tx_idle_sem);
+        p_usb_serial_jtag_obj->tx_idle_sem  = NULL;
+    }
+    if (p_usb_serial_jtag_obj->tx_mux) {
+        vSemaphoreDelete(p_usb_serial_jtag_obj->tx_mux);
+        p_usb_serial_jtag_obj->tx_mux  = NULL;
     }
     heap_caps_free(p_usb_serial_jtag_obj);
     p_usb_serial_jtag_obj = NULL;

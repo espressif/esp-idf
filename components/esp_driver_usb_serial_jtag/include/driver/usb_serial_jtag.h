@@ -75,6 +75,15 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
 int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait);
 
 /**
+ * @brief Blocks until all data written using `usb_serial_jtag_write_bytes` is sent to the host, or until timeout.
+ *
+ * @param ticks_to_wait Maximum timeout in RTOS ticks
+ *
+ * @return ESP_OK when flushed, ESP_ERR_TIMEOUT on timeout.
+ */
+esp_err_t usb_serial_jtag_wait_tx_done(TickType_t ticks_to_wait);
+
+/**
  * @brief Uninstall USB-SERIAL-JTAG driver.
  *
  * @return
