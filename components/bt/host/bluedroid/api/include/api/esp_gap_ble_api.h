@@ -1903,17 +1903,41 @@ esp_err_t esp_ble_gap_get_device_name(void);
  *
  */
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type);
+
 /**
  * @brief          This function is called to get ADV data for a specific type.
  *
- * @param[in]       adv_data - pointer of ADV data which to be resolved
- * @param[in]       type   - finding ADV data type
- * @param[out]      length - return the length of ADV data not including type
+ * @note           This is the recommended function to use for resolving ADV data by type.
+ *                 It improves upon the deprecated `esp_ble_resolve_adv_data` function by
+ *                 including an additional parameter to specify the length of the ADV data,
+ *                 thereby offering better safety and reliability.
  *
- * @return          pointer of ADV data
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      adv_data_len - the length of ADV data which to be resolved.
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
+ *
+ */
+uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length);
+
+/**
+ * @brief          This function is called to get ADV data for a specific type.
+ *
+ * @note           This function has been deprecated and will be removed in a future release.
+ *                 Please use `esp_ble_resolve_adv_data_by_type` instead, which provides
+ *                 better parameter validation and supports more accurate data resolution.
+ *
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to set raw advertising data. User need to fill

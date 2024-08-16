@@ -504,21 +504,33 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
     return ESP_OK;
 }
 
-uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
+uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length)
 {
+    if (length == NULL) {
+        return NULL;
+    }
+
     if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
             (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE)) {
         LOG_ERROR("the eir type not define, type = %x\n", type);
+        *length = 0;
         return NULL;
     }
 
-    if (adv_data == NULL) {
-        LOG_ERROR("Invalid p_eir data.\n");
+    if (adv_data == NULL || adv_data_len == 0) {
+        LOG_ERROR("Invalid advertising data.\n");
+        *length = 0;
         return NULL;
     }
 
-    return (BTM_CheckAdvData( adv_data, type, length));
+    return (BTM_CheckAdvData( adv_data, adv_data_len, type, length));
 }
+
+uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
+{
+    return esp_ble_resolve_adv_data_by_type( adv_data, ESP_BLE_ADV_DATA_LEN_MAX + ESP_BLE_SCAN_RSP_DATA_LEN_MAX, (esp_ble_adv_data_type) type, length);
+}
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
 {
