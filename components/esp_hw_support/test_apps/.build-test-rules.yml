@@ -5,9 +5,6 @@ components/esp_hw_support/test_apps/dma:
     - if: IDF_TARGET in ["esp32"]
       temporary: false
       reason: No general DMA controller on ESP32
-    - if: IDF_TARGET in ["esp32c61"]
-      temporary: true
-      reason: not supported [ESP32C61] IDF-9310
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
 
