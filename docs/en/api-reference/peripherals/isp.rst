@@ -618,6 +618,8 @@ Calling :cpp:func:`esp_isp_sharpen_disable` does the opposite, that is, put the 
 
 Register Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
+After an ISP module starts up, it can generate a specific event dynamically.
+You can save your own context to callback function as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.
 
 .. note::
 
@@ -630,8 +632,6 @@ After the ISP processor is enabled, it can generate multiple events of multiple 
 
 - :cpp:member:`esp_isp_evt_cbs_t::on_sharpen_frame_done`. sets a callback function for sharpen frame done. It will be called after the ISP sharpen submodule finishes its operation for one frame. The function prototype is declared in :cpp:type:`esp_isp_sharpen_callback_t`.
 
-You can save your own context to :cpp:func:`esp_isp_register_event_callbacks` as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.
-
 Register ISP AF Environment Detector Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -640,8 +640,6 @@ After the ISP AF environment detector starts up, it can generate a specific even
 -  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` sets a callback function for environment statistics done. The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
 -  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` sets a callback function for environment change. The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
 
-You can save your own context to :cpp:func:`esp_isp_af_env_detector_register_event_callbacks` as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.
-
 Register ISP AWB Statistics Done Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -649,7 +647,22 @@ After the ISP AWB controller finished statistics of white patches, it can genera
 
 -  :cpp:member:`esp_isp_awb_cbs_t::on_statistics_done` sets a callback function when finished statistics of the white patches. The function prototype is declared in :cpp:type:`esp_isp_awb_callback_t`.
 
-You can save your own context via the parameter ``user_data`` of :cpp:func:`esp_isp_awb_register_event_callbacks`. The user data will be directly passed to the callback function.
+
+Register ISP AE Environment Detector Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP AE environment detector starts up, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_ae_env_detector_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_ae_env_detector_evt_cbs_t`:
+
+-  :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_statistics_done` sets a callback function for environment statistics done. . The function prototype is declared in :cpp:type:`esp_isp_ae_env_detector_callback_t`.
+-  :cpp:member:`esp_isp_ae_env_detector_evt_cbs_t::on_env_change` sets a callback function for environment change. . The function prototype is declared in :cpp:type:`esp_isp_ae_env_detector_callback_t`.
+
+
+Register ISP HIST Statistics Done Event Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the ISP HIST controller finished statistics of brightness, it can generate a specific event dynamically. If you want to be informed when the statistics done event takes place, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_hist_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_hist_cbs_t`:
+
+-  :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` sets a callback function when finished statistics of the brightness. . The function prototype is declared in :cpp:type:`esp_isp_hist_callback_t`.
 
 .. _isp-thread-safety:
 
