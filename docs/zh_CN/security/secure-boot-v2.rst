@@ -11,7 +11,7 @@
 
 {IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。"}
 
-{IDF_TARGET_ECO_VERSION:default="", esp32="（v3.0 及以上版本）", esp32c3="（v3.0 及以上版本）"}
+{IDF_TARGET_ECO_VERSION:default="", esp32="（v3.0 及以上版本）", esp32c3="（v0.3 及以上版本）"}
 
 {IDF_TARGET_RSA_TIME:default="", esp32c6="约 2.7 ms", esp32h2="约 4.5 ms", esp32p4="约 2.4 ms"}
 
@@ -37,7 +37,7 @@
 
 .. only:: esp32c3
 
-    自 ESP32-C3 芯片版本 v3.0 起，提供了 ``Secure Boot v2`` 选项。请设置 :ref:`CONFIG_ESP32C3_REV_MIN` 为高于或等于 `v3.0`，以在 menuconfig 中使用上述选项。
+    自 ESP32-C3 芯片版本 v0.3 起，提供了 ``Secure Boot v2`` 选项。请设置 :ref:`CONFIG_ESP32C3_REV_MIN` 为高于或等于 `v0.3`，以在 menuconfig 中使用上述选项。
 
 
 .. note::

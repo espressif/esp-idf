@@ -11,7 +11,7 @@ Secure Boot v2
 
 {IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32p4="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
 
-{IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v3.0 onwards)"}
+{IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v0.3 onwards)"}
 
 {IDF_TARGET_RSA_TIME:default="", esp32c6="about 2.7 ms", esp32h2="about 4.5 ms", esp32p4="about 2.4 ms"}
 
@@ -37,7 +37,7 @@ Secure Boot v2
 
 .. only:: esp32c3
 
-    ``Secure Boot v2`` is available for ESP32-C3 from chip revision v3.0 onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `v3.0`.
+    ``Secure Boot v2`` is available for ESP32-C3 from chip revision v0.3 (ECO3) onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `v0.3 (ECO3)`.
 
 
 .. note::
