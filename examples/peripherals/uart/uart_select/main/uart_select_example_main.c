@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <string.h>
 #include <sys/fcntl.h>
 #include <sys/errno.h>
 #include <sys/unistd.h>
@@ -63,7 +64,7 @@ static void uart_select_task(void *arg)
             s = select(fd + 1, &rfds, NULL, NULL, &tv);
 
             if (s < 0) {
-                ESP_LOGE(TAG, "Select failed: errno %d", errno);
+                ESP_LOGE(TAG, "Select failed: errno %d (%s)", errno, strerror(errno));
                 break;
             } else if (s == 0) {
                 ESP_LOGI(TAG, "Timeout has been reached and nothing has been received");
