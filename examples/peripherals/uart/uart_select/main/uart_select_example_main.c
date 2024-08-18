@@ -47,7 +47,7 @@ static void uart_select_task(void *arg)
         }
 
         // We have a driver now installed so set up the read/write functions to use driver also.
-        uart_vfs_dev_use_driver(0);
+        uart_vfs_dev_use_driver(UART_NUM_0);
 
         while (1) {
             int s;
