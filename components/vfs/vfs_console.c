@@ -12,6 +12,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_private/usb_console.h"
 #include "sdkconfig.h"
+#include <sys/errno.h>
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -49,8 +50,18 @@ static int primary_vfs_index;
 
 static vfs_console_context_t vfs_console= {0};
 
+static size_t s_open_count = 0;
+
 int console_open(const char * path, int flags, int mode)
 {
+    if (s_open_count > 0) {
+        // Underlying fd is already open, so just increment the open count
+        // and return the same fd
+
+        s_open_count++;
+        return 0;
+    }
+
 // Primary port open
 #if CONFIG_ESP_CONSOLE_UART
     vfs_console.fd_primary = get_vfs_for_path(primary_path)->vfs.open("/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), flags, mode);
@@ -64,6 +75,8 @@ int console_open(const char * path, int flags, int mode)
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     vfs_console.fd_secondary = get_vfs_for_path(secondary_path)->vfs.open("/", flags, mode);
 #endif
+
+    s_open_count++;
     return 0;
 }
 
@@ -84,6 +97,18 @@ int console_fstat(int fd, struct stat * st)
 
 int console_close(int fd)
 {
+    if (s_open_count == 0) {
+        errno = EBADF;
+        return -1;
+    }
+
+    s_open_count--;
+
+    // We don't actually close the underlying fd until the open count reaches 0
+    if (s_open_count > 0) {
+        return 0;
+    }
+
     // All function calls are to primary, except from write and close, which will be forwarded to both primary and secondary.
     get_vfs_for_index(primary_vfs_index)->vfs.close(vfs_console.fd_primary);
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
