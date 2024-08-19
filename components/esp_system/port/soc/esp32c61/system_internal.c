@@ -40,7 +40,6 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
         }
     }
 
-    // ESP32C61 TODO: IDF9513, when you run modem, pay attention
 #if SOC_MODEM_CLOCK_SUPPORTED
     modem_syscon_ll_reset_all(&MODEM_SYSCON);
     modem_lpcon_ll_reset_all(&MODEM_LPCON);

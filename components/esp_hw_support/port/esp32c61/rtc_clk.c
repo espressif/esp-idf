@@ -21,7 +21,7 @@
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 
-#if SOC_MODEM_CLOCK_SUPPORTED   //TODO: [ESP32C61] IDF-9513
+#if SOC_MODEM_CLOCK_SUPPORTED
 #include "esp_private/esp_modem_clock.h"
 #endif
 
@@ -133,7 +133,6 @@ static void rtc_clk_bbpll_enable(void)
 
 static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
 {
-// TODO: [ESP32C61] IDF-9513, modem support
 #if SOC_MODEM_CLOCK_SUPPORTED
 #ifdef BOOTLOADER_BUILD
     regi2c_ctrl_ll_master_enable_clock(enable);
