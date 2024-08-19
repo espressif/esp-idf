@@ -36,6 +36,7 @@
 #define BTA_UTL_CLR_COD_SERVICE_CLASS   0x04
 #define BTA_UTL_SET_COD_ALL             0x08 /* take service class as the input (may clear some set bits!!) */
 #define BTA_UTL_INIT_COD                0x0a
+#define BTA_UTL_SET_COD_RESERVED_2      0x10 /* overwrite the two least significant bits reserved_2 */
 
 /*****************************************************************************
 **  Type Definitions
@@ -43,6 +44,7 @@
 
 /** for utl_set_device_class() **/
 typedef struct {
+    UINT8       reserved_2;
     UINT8       minor;
     UINT8       major;
     UINT16      service;
@@ -125,11 +127,12 @@ extern void utl_freebuf(void **p);
 **                  p_cod   - Pointer to the device class to set to
 **
 **                  cmd     - the fields of the device class to update.
+**                            BTA_UTL_SET_COD_RESERVED_2 - overwrite the two least significant bits reserved_2
 **                            BTA_UTL_SET_COD_MAJOR_MINOR, - overwrite major, minor class
 **                            BTA_UTL_SET_COD_SERVICE_CLASS - set the bits in the input
 **                            BTA_UTL_CLR_COD_SERVICE_CLASS - clear the bits in the input
-**                            BTA_UTL_SET_COD_ALL - overwrite major, minor, set the bits in service class
-**                            BTA_UTL_INIT_COD - overwrite major, minor, and service class
+**                            BTA_UTL_SET_COD_ALL - overwrite major, minor, set the bits in service class, reserved_2 remain unchanged
+**                            BTA_UTL_INIT_COD - overwrite major, minor, and service class, reserved_2 remain unchanged
 **
 ** Returns          TRUE if successful, Otherwise FALSE
 **
