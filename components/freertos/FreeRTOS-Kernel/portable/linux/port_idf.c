@@ -189,7 +189,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
 
     /* Pass out the size of the array pointed to by *ppxIdleTaskStackBuffer.
      * Note that, as the array is necessarily of type StackType_t,
-     * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+     * configMINIMAL_STACK_SIZE is specified in bytes. */
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 #endif // configSUPPORT_STATIC_ALLOCATION == 1
@@ -225,7 +225,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 
     /* Pass out the size of the array pointed to by *ppxTimerTaskStackBuffer.
      * Note that, as the array is necessarily of type StackType_t,
-     * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+     * configMINIMAL_STACK_SIZE is specified in bytes. */
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 #endif // (configSUPPORT_STATIC_ALLOCATION == 1) && (configUSE_TIMERS == 1)
