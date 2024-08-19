@@ -97,7 +97,7 @@ ESP 主机主要功能支持状态
     * -
       - LE Power Control
       - |unsupported|
-      - |developing202412|
+      - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
