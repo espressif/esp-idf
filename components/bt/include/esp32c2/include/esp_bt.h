@@ -115,6 +115,13 @@ typedef enum {
     ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
 } esp_ble_log_buf_t;
 
+typedef enum {
+    BT_SLOW_CLK_SRC_INVALID = 0,
+    BT_SLOW_CLK_SRC_MAIN_XTAL,
+    BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0,
+    BT_SLOW_CLK_SRC_MAX,
+} ble_rtc_slow_clk_src_t;
+
 /**
  * @brief Address type and address value.
  */
@@ -427,6 +434,12 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
  */
 void esp_ble_controller_log_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
+#if CONFIG_PM_ENABLE
+ble_rtc_slow_clk_src_t esp_bt_get_lpclk_src(void);
+
+void esp_bt_set_lpclk_src(ble_rtc_slow_clk_src_t clk_src);
+#endif // CONFIG_PM_ENABLE
 
 #ifdef __cplusplus
 }
