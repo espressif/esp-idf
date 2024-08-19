@@ -210,7 +210,7 @@
             |unsupported|
         .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
 
-            |developing202412|
+            |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - .. only:: esp32 or esp32c3 or esp32s3
