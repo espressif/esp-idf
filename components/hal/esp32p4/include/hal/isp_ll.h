@@ -1486,6 +1486,63 @@ static inline uint8_t isp_ll_sharp_get_high_freq_pixel_max(isp_dev_t *hw)
     return hw->sharp_ctrl1.sharp_gradient_max;
 }
 
+/*---------------------------------------------------------------
+                      RGB/YUV
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable rgb2yuv clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  0: hw control; 1: always on
+ */
+static inline void isp_ll_rgb2yuv_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_rgb2yuv_force_on = enable;
+}
+
+/**
+ * @brief Enable / Disable yuv2rgb clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  0: hw control; 1: always on
+ */
+static inline void isp_ll_yuv2rgb_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_yuv2rgb_force_on = enable;
+}
+
+/**
+ * @brief Set YUV range
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] range   see `isp_color_range_t`
+ */
+static inline void isp_ll_yuv_set_range(isp_dev_t *hw, isp_color_range_t range)
+{
+    switch (range) {
+    case ISP_COLOR_RANGE_LIMIT:
+        hw->yuv_format.yuv_range = 1;
+        break;
+    case ISP_COLOR_RANGE_FULL:
+        hw->yuv_format.yuv_range = 0;
+        break;
+    default:
+        // Unsupported color range
+        abort();
+    }
+}
+
+/**
+ * @brief Set YUV standard
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] std     see `isp_yuv_conv_std_t`
+ */
+static inline void isp_ll_yuv_set_std(isp_dev_t *hw, isp_yuv_conv_std_t std)
+{
+    hw->yuv_format.yuv_mode = std;
+}
+
 #ifdef __cplusplus
 }
 #endif
