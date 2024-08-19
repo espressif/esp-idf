@@ -33,8 +33,9 @@ typedef enum {
     ESP_BT_SET_COD_MAJOR_MINOR     = 0x01,          /*!< overwrite major, minor class */
     ESP_BT_SET_COD_SERVICE_CLASS   = 0x02,          /*!< set the bits in the input, the current bit will remain */
     ESP_BT_CLR_COD_SERVICE_CLASS   = 0x04,          /*!< clear the bits in the input, others will remain */
-    ESP_BT_SET_COD_ALL             = 0x08,          /*!< overwrite major, minor, set the bits in service class */
-    ESP_BT_INIT_COD                = 0x0a,          /*!< overwrite major, minor, and service class */
+    ESP_BT_SET_COD_ALL             = 0x08,          /*!< overwrite major, minor, set the bits in service class, reserved_2 remain unchanged */
+    ESP_BT_INIT_COD                = 0x0a,          /*!< overwrite major, minor, and service class, reserved_2 remain unchanged */
+    ESP_BT_SET_COD_RESERVED_2      = 0x10,          /*!< overwrite the two least significant bits reserved_2 whose default value is 0b00; other values of reserved_2 are invalid according to Bluetooth Core Specification 5.4 */
 } esp_bt_cod_mode_t;
 
 #define ESP_BT_GAP_AFH_CHANNELS_LEN     10
