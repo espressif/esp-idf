@@ -17,7 +17,7 @@
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
 
-在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 `idf.py partition-table` ，即可以打印当前使用分区表的信息摘要。
+在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 ``idf.py partition-table``，即可以打印当前使用分区表的信息摘要。
 
 内置分区表
 ------------
@@ -327,6 +327,25 @@ Python API
 
   # 打印默认启动分区的大小
   parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
+
+.. note::
+  如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool.py`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
+
+  ::
+
+    A fatal error occurred: Active security features detected, erasing flash is disabled as a safety measure. Use --force to override, please use with caution, otherwise it may brick your device!
+
+  要解决此问题，需在运行 ``esptool.py`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool.py``。
+
+  .. code-block:: bash
+
+    # 擦除名为 'storage' 的分区
+    # 如果启用了 Flash Encryption 或 Secure Boot，则添加 "--esptool-erase-args=force"
+    parttool.py --port "/dev/ttyUSB1" --esptool-erase-args=force erase_partition --partition-name=storage
+
+    # 将名为 'factory.bin' 的文件内容写入 'factory' 分区
+    # 如果启用了 Flash Encryption 或 Secure Boot，则添加 "--esptool-erase-args=force"
+    parttool.py --port "/dev/ttyUSB1" --esptool-erase-args=force write_partition --partition-name=factory --input "factory.bin"
 
 更多信息可用 `--help` 指令查看：
 
