@@ -7,8 +7,8 @@ import argparse
 import csv
 import os
 from itertools import zip_longest
+from pathlib import Path
 
-import distutils.dir_util
 import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 
 
@@ -208,7 +208,7 @@ def create_dir(filetype, output_dir_path):
     """
     output_target_dir = os.path.join(output_dir_path,filetype,'')
     if not os.path.isdir(output_target_dir):
-        distutils.dir_util.mkpath(output_target_dir)
+        Path(output_target_dir).mkdir(parents=True)
 
     return output_target_dir
 
