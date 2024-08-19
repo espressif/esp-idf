@@ -65,7 +65,6 @@ api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/twai.rst
 api-reference/peripherals/sdspi_host.rst
-api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/gptimer.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
@@ -78,9 +77,7 @@ api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
 api-reference/peripherals/spi_flash/index.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
-api-reference/peripherals/spi_slave_hd.rst
 api-reference/peripherals/sd_pullup_requirements.rst
-api-reference/peripherals/spi_master.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/ecdsa.rst
@@ -136,7 +133,6 @@ api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/mqtt.rst
 api-reference/protocols/esp_crt_bundle.rst
-api-reference/protocols/esp_spi_slave_protocol.rst
 api-reference/protocols/modbus.rst
 api-reference/protocols/esp_tls.rst
 api-reference/protocols/mdns.rst
