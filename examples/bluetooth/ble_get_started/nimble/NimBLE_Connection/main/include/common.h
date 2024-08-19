@@ -31,6 +31,6 @@
 
 /* Defines */
 #define TAG "NimBLE_Connection"
-#define DEVICE_NAME "NimBLE_DEMO"
+#define DEVICE_NAME "NimBLE_CONN"
 
 #endif // COMMON_H
