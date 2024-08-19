@@ -32,6 +32,6 @@
 
 /* Defines */
 #define TAG "NimBLE_GATT_Server"
-#define DEVICE_NAME "NimBLE_DEMO"
+#define DEVICE_NAME "NimBLE_GATT"
 
 #endif // COMMON_H

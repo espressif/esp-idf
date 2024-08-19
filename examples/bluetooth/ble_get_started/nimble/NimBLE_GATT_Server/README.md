@@ -366,10 +366,10 @@ static void heart_rate_task(void *param) {
 
 If everything goes well, you should be able to see 4 services when connected to ESP32, including
 
-- GAP
-- GATT
-- Heart Rate Service
-- Automation IO Service
+- Generic Access
+- Generic Attribute
+- Heart Rate
+- Automation IO
 
 Click on Automation IO Service, you should be able to see LED characteristic. Click on upload button, you should be able to write `ON` or `OFF` value. Send it to the device, LED will be turned on or off following your instruction.
 
