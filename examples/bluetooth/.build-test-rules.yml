@@ -95,9 +95,9 @@ examples/bluetooth/nimble:
 
 examples/bluetooth/nimble/ble_enc_adv_data:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3"]
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
       temporary: true
-      reason: the other targets are not tested yet
+      reason: BLE 5.0 not supported on esp32
 
 examples/bluetooth/nimble/ble_htp:
   enable:

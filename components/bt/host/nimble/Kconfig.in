@@ -674,7 +674,7 @@ config BT_NIMBLE_VS_SUPPORT
 
 config BT_NIMBLE_ENC_ADV_DATA
     bool "Encrypted Advertising Data"
-    depends on SOC_ESP_NIMBLE_CONTROLLER && BT_NIMBLE_50_FEATURE_SUPPORT
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT
     select BT_NIMBLE_EXT_ADV
     help
         This option is used to enable encrypted advertising data.
