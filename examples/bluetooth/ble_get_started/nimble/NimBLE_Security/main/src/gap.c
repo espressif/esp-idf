@@ -112,7 +112,7 @@ static void start_advertising(void) {
     rsp_fields.uri_len = sizeof(esp_uri);
 
     /* Set advertising interval */
-    rsp_fields.adv_itvl = 0x320;
+    rsp_fields.adv_itvl = BLE_GAP_ADV_ITVL_MS(500);
     rsp_fields.adv_itvl_is_present = 1;
 
     /* Set scan response fields */
@@ -127,8 +127,8 @@ static void start_advertising(void) {
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 
     /* Set advertising interval */
-    adv_params.itvl_min = 0x320;
-    adv_params.itvl_max = 0x321;
+    adv_params.itvl_min = BLE_GAP_ADV_ITVL_MS(500);
+    adv_params.itvl_max = BLE_GAP_ADV_ITVL_MS(510);
 
     /* Start advertising */
     rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER, &adv_params,
