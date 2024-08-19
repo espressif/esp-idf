@@ -13,7 +13,6 @@ menu "Brownout Detector"
         depends on ESP_BROWNOUT_DET
         default ESP_BROWNOUT_DET_LVL_SEL_7
         help
-            TODO: [ESP32C5] IDF-8647
             The brownout detector will reset the chip when the supply voltage is approximately
             below this level. Note that there may be some variation of brownout voltage level
             between each chip.

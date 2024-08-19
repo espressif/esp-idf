@@ -159,6 +159,10 @@ config SOC_IEEE802154_SUPPORTED
     bool
     default y
 
+config SOC_BOD_SUPPORTED
+    bool
+    default y
+
 config SOC_APM_SUPPORTED
     bool
     default y
@@ -324,6 +328,10 @@ config SOC_ADC_TEMPERATURE_SHARE_INTR
     default y
 
 config SOC_ADC_SHARED_POWER
+    bool
+    default y
+
+config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
