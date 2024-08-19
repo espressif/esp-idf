@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_RF_NAME: default="Wi-Fi 或蓝牙", esp32s2="Wi-Fi", esp32h2="蓝牙或 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi 或蓝牙或 802.15.4 Thread/Zigbee"}
+{IDF_TARGET_RF_NAME: default="Wi-Fi 或蓝牙", esp32s2="Wi-Fi", esp32h2="蓝牙或 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi 或蓝牙或 802.15.4 Thread/Zigbee", esp32c5="Wi-Fi 或蓝牙或 802.15.4 Thread/Zigbee"}
 {IDF_TARGET_RF_IS: default="已启用", esp32s2="已启用"}
 
 {IDF_TARGET_NAME} 中包含一个硬件随机数发生器 (RNG)，可以调用 API :cpp:func:`esp_random` 和 :cpp:func:`esp_fill_random` 从中获取随机数值。

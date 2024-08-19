@@ -92,7 +92,6 @@
     I (104) boot:  4 custom_nvs       WiFi data        01 02 00121000 00006000
     I (113) boot: End of partition table
     I (116) esp_image: segment 0: paddr=00020020 vaddr=42010020 size=095c4h ( 38340) map
-    E (125) fpga_rng: Project configuration is for internal FPGA use, RNG will not work
     I (169) esp_image: segment 1: paddr=000295ec vaddr=40800000 size=06a2ch ( 27180) load
     I (197) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=0f4d4h ( 62676) map
     I (256) esp_image: segment 3: paddr=0003f4fc vaddr=40806a2c size=00b78h (  2936) load
@@ -101,7 +100,6 @@
     I (270) boot: Checking flash encryption...
     I (273) efuse: Batch mode of writing fields is enabled
     I (278) flash_encrypt: Generating new flash encryption key...
-    E (285) fpga_rng: Project configuration is for internal FPGA use, RNG will not work
     I (295) efuse: Writing EFUSE_BLK_KEY0 with purpose 4
     W (300) flash_encrypt: Not disabling UART bootloader encryption
     I (305) flash_encrypt: Disable JTAG...

@@ -45,10 +45,6 @@ libraries-and-frameworks/index.rst
 libraries-and-frameworks/cloud-frameworks.rst
 versions.rst
 api-reference/template.rst
-api-reference/provisioning/protocomm.rst
-api-reference/provisioning/provisioning.rst
-api-reference/provisioning/index.rst
-api-reference/provisioning/wifi_provisioning.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
@@ -92,14 +88,11 @@ api-reference/network/index.rst
 api-reference/network/esp_netif.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/mm_sync.rst
-api-reference/system/ota.rst
 api-reference/system/chip_revision.rst
 api-reference/system/async_memcpy.rst
-api-reference/system/random.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32c5.rst
 api-reference/system/mm.rst
-api-reference/system/esp_https_ota.rst
 api-reference/bluetooth/esp_spp.rst
 api-reference/bluetooth/esp_l2cap_bt.rst
 api-reference/bluetooth/esp_hidd.rst
@@ -132,7 +125,6 @@ api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/mqtt.rst
 api-reference/protocols/esp_crt_bundle.rst
 api-reference/protocols/modbus.rst
-api-reference/protocols/esp_tls.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst
