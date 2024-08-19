@@ -391,6 +391,7 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif // CONFIG_PM_ENABLE
+static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
 
 #define BLE_RTC_DELAY_US_LIGHT_SLEEP        (2500)
 #define BLE_RTC_DELAY_US_MODEM_SLEEP        (500)
@@ -532,6 +533,20 @@ void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
             break;
         default:
     }
+}
+
+modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void)
+{
+    return s_bt_lpclk_src;
+}
+
+void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src)
+{
+    if (clk_src >= MODEM_CLOCK_LPCLK_SRC_MAX) {
+        return;
+    }
+
+    s_bt_lpclk_src = clk_src;
 }
 
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
@@ -757,12 +772,51 @@ void ble_controller_scan_duplicate_config(void)
     ble_vhci_disc_duplicate_set_max_cache_size(cache_size);
 }
 
+static void ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
+{
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
+#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
+#else
+#if CONFIG_RTC_CLK_SRC_INT_RC
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC_SLOW;
+#elif CONFIG_RTC_CLK_SRC_EXT_CRYS
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+            s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_XTAL32K;
+        } else {
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
+            s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
+        }
+#elif CONFIG_RTC_CLK_SRC_INT_RC32K
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC32K;
+#elif CONFIG_RTC_CLK_SRC_EXT_OSC
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_EXT32K;
+#else
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported clock source");
+        assert(0);
+#endif
+#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
+    }
+
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+        cfg->rtc_freq = 100000;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K) {
+        cfg->rtc_freq = 32768;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
+        cfg->rtc_freq = 30000;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC32K) {
+        cfg->rtc_freq = 32000;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_EXT32K) {
+        cfg->rtc_freq = 32000;
+    }
+    esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     uint8_t mac[6];
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
-    uint32_t slow_clk_freq = 0;
     uint8_t hci_transport_mode;
 
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
@@ -814,33 +868,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     modem_clock_module_enable(PERIPH_BT_MODULE);
     modem_clock_module_mac_reset(PERIPH_BT_MODULE);
     /* Select slow clock source for BT momdule */
-#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
-   esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
-   slow_clk_freq = 100000;
-#else
-#if CONFIG_RTC_CLK_SRC_INT_RC
-    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
-    slow_clk_freq = 30000;
-#elif CONFIG_RTC_CLK_SRC_EXT_CRYS
-    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_XTAL32K);
-        slow_clk_freq = 32768;
-    } else {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
-        esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
-        slow_clk_freq = 100000;
-    }
-#elif CONFIG_RTC_CLK_SRC_INT_RC32K
-    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC32K);
-    slow_clk_freq = 32000;
-#elif CONFIG_RTC_CLK_SRC_EXT_OSC
-    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_EXT32K);
-    slow_clk_freq = 32000;
-#else
-    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported clock source");
-    assert(0);
-#endif
-#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
+    ble_rtc_clk_init(cfg);
     esp_phy_modem_init();
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
@@ -873,7 +901,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
-    r_esp_ble_change_rtc_freq(slow_clk_freq);
 
     ble_controller_scan_duplicate_config();
 
