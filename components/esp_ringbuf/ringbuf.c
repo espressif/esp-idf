@@ -1397,7 +1397,8 @@ err:
 
 void vRingbufferDeleteWithCaps(RingbufHandle_t xRingbuffer)
 {
-    BaseType_t xResult;
+    // Return value unused if asserts are disabled
+    BaseType_t __attribute__((unused)) xResult;
     StaticRingbuffer_t *pxStaticRingbuffer = NULL;
     uint8_t *pucRingbufferStorage = NULL;
 

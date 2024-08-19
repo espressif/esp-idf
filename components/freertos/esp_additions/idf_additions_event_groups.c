@@ -59,7 +59,8 @@
 
     void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup )
     {
-        BaseType_t xResult;
+        // Return value unused if asserts are disabled
+        BaseType_t __attribute__((unused)) xResult;
         StaticEventGroup_t * pxEventGroupBuffer;
 
         /* Retrieve the buffer used to create the event group before deleting it

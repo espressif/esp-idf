@@ -164,7 +164,8 @@ err:
                     portYIELD_WITHIN_API();
                 }
 
-                BaseType_t xResult;
+                // Return value unused if asserts are disabled
+                BaseType_t __attribute__((unused)) xResult;
                 StaticTask_t * pxTaskBuffer;
                 StackType_t * puxStackBuffer;
 
@@ -187,7 +188,8 @@ err:
              * from another task's context. */
             configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
 
-            BaseType_t xResult;
+            // Return value unused if asserts are disabled
+            BaseType_t __attribute__((unused)) xResult;
             StaticTask_t * pxTaskBuffer;
             StackType_t * puxStackBuffer;
 
@@ -260,7 +262,8 @@ err:
 
     void vQueueDeleteWithCaps( QueueHandle_t xQueue )
     {
-        BaseType_t xResult;
+        // Return value unused if asserts are disabled
+        BaseType_t __attribute__((unused)) xResult;
         StaticQueue_t * pxQueueBuffer;
         uint8_t * pucQueueStorageBuffer;
 
@@ -332,7 +335,8 @@ err:
 
     void vSemaphoreDeleteWithCaps( SemaphoreHandle_t xSemaphore )
     {
-        BaseType_t xResult;
+        // Return value unused if asserts are disabled
+        BaseType_t __attribute__((unused)) xResult;
         StaticSemaphore_t * pxSemaphoreBuffer;
 
         /* Retrieve the buffer used to create the semaphore before deleting it
@@ -404,7 +408,8 @@ err:
     void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
                                              BaseType_t xIsMessageBuffer )
     {
-        BaseType_t xResult;
+        // Return value unused if asserts are disabled
+        BaseType_t __attribute__((unused)) xResult;
         StaticStreamBuffer_t * pxStaticStreamBuffer;
         uint8_t * pucStreamBufferStorageArea;
 

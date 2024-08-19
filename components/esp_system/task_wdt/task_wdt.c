@@ -370,7 +370,7 @@ static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
 void task_wdt_timeout_abort(bool current_core)
 {
     TaskSnapshot_t snapshot = { 0 };
-    BaseType_t ret = pdTRUE;
+    BaseType_t __attribute__((unused)) ret = pdTRUE;
 
     ESP_EARLY_LOGE(TAG, "Aborting.");
     esp_reset_reason_set_hint(ESP_RST_TASK_WDT);

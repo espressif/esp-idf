@@ -50,7 +50,8 @@ static void s_c2m_ops(uint32_t vaddr, size_t size)
     } else
 #endif
     {
-        bool valid = false;
+        // Value unused if asserts are disabled
+        bool __attribute__((unused)) valid = false;
         esp_os_enter_critical_safe(&s_spinlock);
         valid = cache_hal_writeback_addr(vaddr, size);
         esp_os_exit_critical_safe(&s_spinlock);
