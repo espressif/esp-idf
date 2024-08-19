@@ -33,6 +33,6 @@
 
 /* Defines */
 #define TAG "NimBLE_Security"
-#define DEVICE_NAME "NimBLE_DEMO"
+#define DEVICE_NAME "NimBLE_SEC"
 
 #endif // COMMON_H
