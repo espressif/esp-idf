@@ -148,8 +148,18 @@ Ethernet driver is composed of two parts: MAC and PHY.
         * Disable or power down the crystal oscillator (as the case *b* in the picture).
         * Force the PHY device in reset status (as the case *a* in the picture). **This could fail for some PHY device** (i.e. it still outputs signal to GPIO0 even in reset state).
 
+        What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_GPIO` and :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_180_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+
+        If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` (or ``CONFIG_ETH_RMII_CLK_INPUT`` is selected), then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+
+        The ways to disable the ``REF_CLK`` signal can be:
+
+        * Disable or power down the crystal oscillator (as the case **b** in the picture).
+
+        * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
+
     .. warning::
-        If you want the **Ethernet to work with WiFi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable WiFi or use a PHY or an external oscillator as the ``REF_CLK`` source.
+        If you want the **Ethernet to work with Wi-Fi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep the trace as short as possible. Keep it away from RF devices. Keep it away from inductor elements.
 
