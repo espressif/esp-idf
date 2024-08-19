@@ -355,6 +355,7 @@ typedef enum {
     MSPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MSPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
     MSPI_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,           /*!< Select SPLL as the source clock */
+    MSPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_SPLL,        /*!< Select PLL_F64M as the default clock choice */
     MSPI_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_mspi_clk_src_t;
 

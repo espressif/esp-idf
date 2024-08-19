@@ -483,7 +483,7 @@ SECTIONS
   .ext_ram.dummy (NOLOAD):
   {
     . = ORIGIN(ext_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start);
-    . = ALIGN (0x10000);
+    . = ALIGN (_esp_mmu_page_size);
   } > ext_ram_seg
 #endif  //CONFIG_SPIRAM_XIP_FROM_PSRAM
 

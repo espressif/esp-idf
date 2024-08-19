@@ -391,7 +391,7 @@ SECTIONS
   {
     . = ORIGIN(extern_ram_seg);
     . = . + (_rodata_reserved_end - _flash_rodata_dummy_start);
-    . = ALIGN (0x10000);
+    . = ALIGN (_esp_mmu_page_size);
   } > extern_ram_seg
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
