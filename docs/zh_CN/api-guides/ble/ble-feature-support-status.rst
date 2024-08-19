@@ -230,7 +230,7 @@
             |unsupported|
         .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
 
-            |supported|
+            |developing202412|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
@@ -285,7 +285,7 @@
       - Encrypted Advertising Data
       - |NA|
       - |unsupported|
-      - |experimental|
+      - |developing202412|
     * -
       - LE GATT Security Levels Characteristic
       - |NA|
