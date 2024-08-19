@@ -92,14 +92,14 @@ static void start_advertising(void) {
     ...
 
     /* Set advertising interval */
-    rsp_fields.adv_itvl = 0x320;
+    rsp_fields.adv_itvl = BLE_GAP_ADV_ITVL_MS(500);
     rsp_fields.adv_itvl_is_present = 1;
 
     ...
 
     /* Set advertising interval */
-    adv_params.itvl_min = 0x320;
-    adv_params.itvl_max = 0x321;
+    adv_params.itvl_min = BLE_GAP_ADV_ITVL_MS(500);
+    adv_params.itvl_max = BLE_GAP_ADV_ITVL_MS(510);
 
     ...
 }
