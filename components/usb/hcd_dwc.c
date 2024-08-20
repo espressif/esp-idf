@@ -11,7 +11,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_heap_caps.h"
-#include "esp_dma_utils.h"
 #include "esp_intr_alloc.h"
 #include "soc/interrupts.h" // For interrupt index
 #include "esp_err.h"
@@ -25,7 +24,6 @@
 #include "soc/soc_caps.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
-#include "esp_private/esp_cache_private.h"
 #endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
@@ -324,35 +322,6 @@ static inline void cache_sync_data_buffer(pipe_t *pipe, urb_t *urb, bool done)
     }
 }
 #endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-
-// --------------------- Allocation ------------------------
-
-/**
- * @brief Allocate Frame List
- *
- * - Frame list is allocated in DMA capable memory
- * - Frame list is aligned to 512 and cache line size
- *
- * @note Free the memory with heap_caps_free() call
- *
- * @param[in] frame_list_len Length of the Frame List
- * @return Pointer to allocated frame list
- */
-static void *frame_list_alloc(size_t frame_list_len);
-
-/**
- * @brief Allocate Transfer Descriptor List
- *
- * - Frame list is allocated in DMA capable memory
- * - Frame list is aligned to 512 and cache line size
- *
- * @note Free the memory with heap_caps_free() call
- *
- * @param[in]  list_len           Required length
- * @param[out] list_len_bytes_out Allocated length in bytes (can be greater than required)
- * @return Pointer to allocated transfer descriptor list
- */
-static void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out);
 
 // ------------------- Buffer Control ----------------------
 
@@ -987,7 +956,7 @@ static port_t *port_obj_alloc(void)
 {
     port_t *port = calloc(1, sizeof(port_t));
     usb_dwc_hal_context_t *hal = malloc(sizeof(usb_dwc_hal_context_t));
-    void *frame_list = frame_list_alloc(FRAME_LIST_LEN);
+    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL);
     SemaphoreHandle_t port_mux = xSemaphoreCreateMutex();
     if (port == NULL || hal == NULL || frame_list == NULL || port_mux == NULL) {
         free(port);
@@ -1013,59 +982,6 @@ static void port_obj_free(port_t *port)
     free(port->frame_list);
     free(port->hal);
     free(port);
-}
-
-void *frame_list_alloc(size_t frame_list_len)
-{
-    esp_err_t ret;
-    void *frame_list = NULL;
-    size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = USB_DWC_FRAME_LIST_MEM_ALIGN,
-    };
-    ret = esp_dma_capable_calloc(frame_list_len, sizeof(uint32_t), &dma_mem_info, &frame_list, &actual_size);
-    assert(ret == ESP_OK);
-
-    // Both Frame List start address and size should be already cache aligned so this is only a sanity check
-    if (frame_list) {
-        if (!esp_dma_is_buffer_alignment_satisfied(frame_list, actual_size, dma_mem_info)) {
-            // This should never happen
-            heap_caps_free(frame_list);
-            frame_list = NULL;
-        }
-    }
-    return frame_list;
-}
-
-void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out)
-{
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // Required Transfer Descriptor List size (in bytes) might not be aligned to cache line size, align the size up
-    size_t data_cache_line_size = 0;
-    esp_cache_get_alignment(MALLOC_CAP_DMA, &data_cache_line_size);
-    const size_t required_list_len_bytes = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
-    *list_len_bytes_out = ALIGN_UP_BY(required_list_len_bytes, data_cache_line_size);
-#else
-    *list_len_bytes_out = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
-#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-
-    esp_err_t ret;
-    void *qtd_list = NULL;
-    size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = USB_DWC_QTD_LIST_MEM_ALIGN,
-    };
-    ret = esp_dma_capable_calloc(*list_len_bytes_out, 1, &dma_mem_info, &qtd_list, &actual_size);
-    assert(ret == ESP_OK);
-
-    if (qtd_list) {
-        if (!esp_dma_is_buffer_alignment_satisfied(qtd_list, actual_size, dma_mem_info)) {
-            // This should never happen
-            heap_caps_free(qtd_list);
-            qtd_list = NULL;
-        }
-    }
-    return qtd_list;
 }
 
 // ----------------------- Public --------------------------
@@ -1594,19 +1510,24 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         desc_list_len = XFER_LIST_LEN_INTR;
         break;
     }
+
+    // DMA buffer lock: Software structure for managing the transfer buffer
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
     if (buffer == NULL) {
         return NULL;
     }
-    size_t real_len = 0;
-    void *xfer_desc_list = transfer_descriptor_list_alloc(desc_list_len, &real_len);
+
+    // Transfer descriptor list: Must be 512 aligned and DMA capable (USB-DWC requirement) and its size must be cache aligned
+    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL);
     if (xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
     }
     buffer->xfer_desc_list = xfer_desc_list;
-    buffer->xfer_desc_list_len_bytes = real_len;
+    // For targets with L1CACHE, the allocated size might be bigger than requested, this value is than used during memory sync
+    // We save this value here, so we don't have to call 'heap_caps_get_allocated_size()' during every memory sync
+    buffer->xfer_desc_list_len_bytes = heap_caps_get_allocated_size(xfer_desc_list);
     return buffer;
 }
 

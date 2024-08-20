@@ -21,7 +21,6 @@
 #include "test_usb_common.h"
 #include "mock_msc.h"
 #include "unity.h"
-#include "esp_dma_utils.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -264,19 +263,14 @@ urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
     // Allocate a URB and data buffer
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
-    void *data_buffer;
-    size_t real_size;
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
+    void *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
     TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
     TEST_ASSERT_NOT_NULL_MESSAGE(data_buffer, "Failed to allocate transfer buffer");
 
     // Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
     usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
     transfer_dummy->data_buffer = data_buffer;
-    transfer_dummy->data_buffer_size = real_size;
+    transfer_dummy->data_buffer_size = heap_caps_get_allocated_size(data_buffer);
     transfer_dummy->num_isoc_packets = num_isoc_packets;
     return urb;
 }
