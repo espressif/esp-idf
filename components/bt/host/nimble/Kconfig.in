@@ -685,3 +685,9 @@ config BT_NIMBLE_MAX_EADS
     depends on BT_NIMBLE_ENABLED && BT_NIMBLE_ENC_ADV_DATA
     help
         Defines maximum number of encrypted advertising data key material to save
+
+config BT_NIMBLE_HOST_ALLOW_CONNECT_WITH_SCAN
+    bool "Allow Connections with scanning in progress"
+    depends on BT_NIMBLE_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    help
+        This enables support for user to initiate a new connection with scan in progress
