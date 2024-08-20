@@ -118,7 +118,7 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_sta_get_negotiated_phymode(&phymode);
     if (phymode == WIFI_PHY_MODE_HE20) {
         esp_err_t err = ESP_OK;
-        wifi_twt_setup_config_t setup_config = {
+        wifi_itwt_setup_config_t setup_config = {
             .setup_cmd = TWT_REQUEST,
             .flow_id = 0,
             .twt_id = CONFIG_EXAMPLE_ITWT_ID,
