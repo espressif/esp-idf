@@ -566,6 +566,10 @@ Part of the functionality of this tool is also provided directly by ``idf.py`` c
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
+To get a dump for all eFuse registers.
+
+.. include:: inc/espefuse_summary_{IDF_TARGET_NAME}_dump.rst
+
 Application Examples
 --------------------
 

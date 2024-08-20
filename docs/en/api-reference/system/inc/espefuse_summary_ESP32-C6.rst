@@ -152,33 +152,3 @@
     WDT_DELAY_SEL (BLOCK0)                             Represents whether RTC watchdog timeout threshold  = 0 R/W (0b00)
                                                        is selected at startup. 1: selected. 0: not select
                                                        ed
-
-
-To get a dump for all eFuse registers.
-
-.. code-block:: none
-
-    idf.py efuse-dump
-
-    Executing action: efuse-dump
-    Running espefuse.py in directory <project-directory>
-    Executing "espefuse.py dump --chip esp32c6"...
-    espefuse.py v4.6-dev
-    Connecting....
-    BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: f9f7529c 00006055 00000000 01040000 00000000 00000000
-    BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_USR_DATA  (BLOCK3          ) [3 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY0      (BLOCK4          ) [4 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY1      (BLOCK5          ) [5 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY2      (BLOCK6          ) [6 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY3      (BLOCK7          ) [7 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY4      (BLOCK8          ) [8 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY5      (BLOCK9          ) [9 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_SYS_DATA2 (BLOCK10         ) [10] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-
-    BLOCK0          (                ) [0 ] err__regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    EFUSE_RD_RS_ERR0_REG        0x00000000
-    EFUSE_RD_RS_ERR1_REG        0x00000000
-
-    === Run "dump" command ===
