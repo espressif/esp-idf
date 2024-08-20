@@ -1005,7 +1005,6 @@ components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
-components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
 components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h

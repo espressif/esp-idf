@@ -51,6 +51,9 @@ typedef struct {
     unsigned ble_bonding:1;
     /** BLE Secure Connection flag */
     unsigned ble_sm_sc:1;
+    /** BLE Address */
+    uint8_t *ble_addr;
+
 } simple_ble_cfg_t;
 
 

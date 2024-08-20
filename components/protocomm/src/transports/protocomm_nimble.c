@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,7 @@ static struct ble_hs_adv_fields adv_data, resp_data;
 static uint8_t *protocomm_ble_mfg_data;
 static size_t protocomm_ble_mfg_data_len;
 
+static uint8_t *protocomm_ble_addr;
 /**********************************************************************
 * Maintain database of uuid_name addresses to free memory afterwards  *
 **********************************************************************/
@@ -130,6 +131,8 @@ typedef struct {
     unsigned ble_sm_sc:1;
     /** BLE Link Encryption flag */
     unsigned ble_link_encryption:1;
+    /** BLE address */
+    uint8_t *ble_addr;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -461,10 +464,25 @@ simple_ble_on_sync(void)
 {
     int rc;
 
-    rc = ble_hs_util_ensure_addr(0);
-    if (rc != 0) {
-        ESP_LOGE(TAG, "Error loading address");
-        return;
+    if (protocomm_ble_addr) {
+         rc = ble_hs_id_set_rnd(protocomm_ble_addr);
+	 if (rc != 0) {
+             ESP_LOGE(TAG,"Error in setting address");
+	     return;
+	 }
+
+         rc = ble_hs_util_ensure_addr(1);
+	 if (rc != 0) {
+             ESP_LOGE(TAG,"Error loading address");
+	     return;
+	 }
+    }
+    else {
+        rc = ble_hs_util_ensure_addr(0);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Error loading address");
+            return;
+        }
     }
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -727,7 +745,7 @@ ble_gatt_add_primary_svcs(struct ble_gatt_svc_def *gatt_db_svcs, int char_count)
     gatt_db_svcs->type = BLE_GATT_SVC_TYPE_PRIMARY;
 
     /* Allocate (number of characteristics + 1) memory for characteristics, the
-     * addtional characteristic consist of all 0s indicating end of
+     * additional characteristic consist of all 0s indicating end of
      * characteristics */
     gatt_db_svcs->characteristics = (struct ble_gatt_chr_def *) calloc((char_count + 1),
                                     sizeof(struct ble_gatt_chr_def));
@@ -781,7 +799,7 @@ populate_gatt_db(struct ble_gatt_svc_def **gatt_db_svcs, const protocomm_ble_con
         rc = ble_gatt_add_char_dsc((void *) (*gatt_db_svcs)->characteristics,
                                    i, BLE_GATT_UUID_CHAR_DSC);
         if (rc != 0) {
-            ESP_LOGE(TAG, "Error adding GATT Discriptor !!");
+            ESP_LOGE(TAG, "Error adding GATT Descriptor !!");
             return rc;
         }
     }
@@ -812,6 +830,11 @@ static void protocomm_ble_cleanup(void)
         free(protocomm_ble_mfg_data);
         protocomm_ble_mfg_data = NULL;
         protocomm_ble_mfg_data_len = 0;
+    }
+
+    if (protocomm_ble_addr) {
+        free(protocomm_ble_addr);
+        protocomm_ble_addr = NULL;
     }
 }
 
@@ -969,6 +992,10 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->device_name     = protocomm_ble_device_name;
     ble_config->ble_bonding     = config->ble_bonding;
     ble_config->ble_sm_sc       = config->ble_sm_sc;
+
+    if (config->ble_addr != NULL) {
+        protocomm_ble_addr = config->ble_addr;
+    }
 
     if (populate_gatt_db(&ble_config->gatt_db, config) != 0) {
         ESP_LOGE(TAG, "Error populating GATT Database");
