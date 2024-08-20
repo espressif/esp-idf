@@ -600,12 +600,16 @@ Kconfig 选项
 应用示例
 --------------------
 
-* 基于 RMT 的 RGB LED 灯带自定义编码器：:example:`peripherals/rmt/led_strip`
-* RMT 红外 NEC 协议的编码与解码：:example:`peripherals/rmt/ir_nec_transceiver`
-* 队列中的 RMT 事务：:example:`peripherals/rmt/musical_buzzer`
-* 基于 RMT 的步进电机与 S 曲线算法：: :example:`peripherals/rmt/stepper_motor`
-* 用于驱动 DShot ESC 的 RMT 无限循环：:example:`peripherals/rmt/dshot_esc`
-* 模拟 1-wire 协议的 RMT 实现（以 DS18B20 为例）：:example:`peripherals/rmt/onewire`
+.. list::
+
+    - :example:`peripherals/rmt/led_strip` 演示了如何使用 RMT 外设来驱动 WS2812 LED 灯带，支持设置 LED 的数量和追踪灯效。
+    - :example:`peripherals/rmt/led_strip_simple_encoder` 演示了如何使用 RMT 外设，通过编写回调函数将 RGB 像素转换为硬件可识别的格式，用于控制 WS2812 LED 灯带。
+    - :example:`peripherals/rmt/ir_nec_transceiver` 演示了如何使用 RMT 外设实现红外遥控 NEC 协议的编解码。
+    - :example:`peripherals/rmt/dshot_esc` 演示了如何使用 RMT 外设的 TX 通道实现无限循环发送功能，自定义了 RMT 编码器 实现了 DShot 数字协议。该协议主要用于飞控器和电调之间的通信，比传统的模拟协议更能抵抗电噪声。
+    - :example:`peripherals/rmt/onewire` 演示了如何使用 `onewire_bus` 库模拟 1-wire 硬件协议，并读取总线上多个 DS18B20 温度传感器的数据。该库构建于 RMT 外设的一对发送和接收通道之上。
+    :SOC_RMT_SUPPORT_TX_LOOP_COUNT: - :example:`peripherals/rmt/musical_buzzer` 演示了如何使用 RMT 外设的 TX 通道驱动无源蜂鸣器播放简单的音乐。每个音符用恒定频率的 PWM 信号和恒定持续时间表示。
+    :SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP: - :example:`peripherals/rmt/stepper_motor` 演示了如何使用 RMT 外设驱动 STEP/DIR 接口的步进电机控制器（例如 DRV8825），通过自定义 RMT 编码器实现加速、匀速和减速阶段的 S 曲线控制，从而平稳驱动步进电机。
+
 
 FAQ
 ---
