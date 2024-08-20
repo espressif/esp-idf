@@ -12,7 +12,7 @@ Wi-Fi 场景如何选择低功耗模式
 
 .. todo - add sleep-current/esp32c5_summary.inc
 
-.. only:: not esp32c5
+.. only:: not esp32c5 and not esp32c61
 
     .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
 
@@ -367,7 +367,7 @@ Modem-sleep 模式配置
 
   .. todo - add sleep-current/esp32c5_modem_sleep.inc
 
-  .. only:: not esp32c5
+  .. only:: not esp32c5 and not esp32c61
 
       .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
 
@@ -383,7 +383,7 @@ Auto Light-sleep 在 Wi-Fi 场景下的配置比纯系统下少了唤醒源的�
 
     .. todo - add sleep-current/esp32c5_light_sleep.inc
 
-    .. only:: not esp32c5
+    .. only:: not esp32c5 and not esp32c61
 
         .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
 

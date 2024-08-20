@@ -61,6 +61,10 @@ examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
     - if: (SOC_WIFI_SUPPORTED != 1) or (IDF_TARGET == "esp32c5")
+  disable_test:
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runners
   depends_components:
     - esp_driver_uart
 
