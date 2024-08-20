@@ -33,7 +33,7 @@ To add a dependency to a component (e.g., ``my_component``) in your ESP-IDF proj
 
 To update dependencies of the ESP-IDF project, you can run the command ``idf.py update-dependencies``. You can also specify the path to the project directory using ``--project-dir PATH``.
 
-There is an example application :example:`build_system/cmake/component_manager` that uses components installed by the component manager.
+:example:`build_system/cmake/component_manager` demonstrates how to use the IDF Component Manager to download dependencies from the ESP Component Registry.
 
 It is not necessary to have a manifest for components that do not need any managed dependencies.
 

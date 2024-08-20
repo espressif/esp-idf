@@ -33,7 +33,7 @@ IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下�
 
 要更新 ESP-IDF 项目的依赖项，请运行命令 ``idf.py update-dependencies``。你也可以使用 ``--project-dir PATH`` 选项，指定项目目录的路径。
 
-应用程序示例 :example:`build_system/cmake/component_manager` 使用了由组件管理器安装的组件。
+:example:`build_system/cmake/component_manager` 演示了如何使用 IDF 组件管理器从组件注册表中下载依赖项。
 
 对于不需要受管理依赖项的组件，则无需提供清单文件。
 
