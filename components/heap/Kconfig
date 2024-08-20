@@ -43,6 +43,37 @@ menu "Heap memory debugging"
         help
             Enables/disables heap tracing API.
 
+    config HEAP_TRACE_HASH_MAP
+        bool "Use hash map mechanism to access heap trace records"
+        depends on HEAP_TRACING_STANDALONE
+        default n
+        help
+            Enable this flag to use a hash map to increase performance in handling
+            heap trace records.
+
+            Heap trace standalone supports storing records as a list, or a list + hash map.
+
+            Using only a list takes less memory, but calls to 'free' will get slower as the
+            list grows. This is particularly affected when using HEAP_TRACE_ALL mode.
+
+            By using a list + hash map, calls to 'free' remain fast, at the cost of
+            additional memory to store the hash map.
+
+    config HEAP_TRACE_HASH_MAP_IN_EXT_RAM
+        bool "Place hash map in external RAM"
+        depends on SPIRAM && HEAP_TRACE_HASH_MAP
+        default n
+        help
+            When enabled this configuration forces the hash map to be placed in external RAM.
+
+    config HEAP_TRACE_HASH_MAP_SIZE
+        int "The number of entries in the hash map"
+        depends on HEAP_TRACE_HASH_MAP
+        default 512
+        help
+            Defines the number of entries in the heap trace hashmap. Each entry takes 8 bytes.
+            The bigger this number is, the better the performance. Recommended range: 200 - 2000.
+
     config HEAP_TRACING_STACK_DEPTH
         int "Heap tracing stack depth"
         range 0 0 if IDF_TARGET_ARCH_RISCV # Disabled for RISC-V due to `__builtin_return_address` limitation
@@ -68,37 +99,6 @@ menu "Heap memory debugging"
 
             This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
             allocated.
-
-    config HEAP_TRACE_HASH_MAP
-        bool "Use hash map mechanism to access heap trace records"
-        depends on HEAP_TRACING_STANDALONE
-        default n
-        help
-            Enable this flag to use a hash map to increase performance in handling
-            heap trace records.
-
-            Heap trace standalone supports storing records as a list, or a list + hash map.
-
-            Using only a list takes less memory, but calls to 'free' will get slower as the
-            list grows. This is particularly affected when using HEAP_TRACE_ALL mode.
-
-            By using a list + hash map, calls to 'free' remain fast, at the cost of
-            additional memory to store the hash map.
-
-    config HEAP_TRACE_HASH_MAP_IN_EXT_RAM
-        bool "Place hash map in external RAM"
-        depends on HEAP_TRACE_HASH_MAP
-        default n
-        help
-            When enabled this configuration forces the hash map to be placed in external RAM.
-
-    config HEAP_TRACE_HASH_MAP_SIZE
-        int "The number of entries in the hash map"
-        depends on HEAP_TRACE_HASH_MAP
-        default 512
-        help
-            Defines the number of entries in the heap trace hashmap. Each entry takes 8 bytes.
-            The bigger this number is, the better the performance. Recommended range: 200 - 2000.
 
     config HEAP_ABORT_WHEN_ALLOCATION_FAILS
         bool "Abort if memory allocation fails"
