@@ -133,7 +133,7 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
     elif 'panic' in config:
         pass
 
-    dut.expect('Rebooting...')
+    dut.expect('Rebooting...', timeout=60)
 
     if check_cpu_reset:
         dut.expect_cpu_reset()
