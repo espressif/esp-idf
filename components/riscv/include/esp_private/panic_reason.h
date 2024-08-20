@@ -22,3 +22,4 @@
 #define MCAUSE_ILLIGAL_INSTRUCTION_ACCESS    1
 #define MCAUSE_ILLEGAL_INSTRUCTION           2
 #define MCAUSE_LOAD_ACCESS_FAULT             5
+#define MCAUSE_INVALID_VALUE                 0xDEADC0DE // Frame mcause value was written by SW to indicate no useful info, e.g. during a register dump without a crash
