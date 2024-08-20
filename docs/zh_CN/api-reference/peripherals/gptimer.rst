@@ -1,6 +1,8 @@
 通用定时器
 =====================
 
+:link_to_translation:`en:[English]`
+
 简介
 -----------------
 
@@ -8,9 +10,9 @@
 
 通用定时器通常在以下场景中使用：
 
--  如同挂钟一般自由运行，随时随地获取高分辨率时间戳；
--  生成周期性警报，定期触发事件；
--  生成一次性警报，在目标时间内响应。
+- 如同挂钟一般自由运行，随时随地获取高分辨率时间戳；
+- 生成周期性警报，定期触发事件；
+- 生成一次性警报，在目标时间内响应。
 
 功能概述
 -----------------
@@ -341,8 +343,10 @@ Kconfig 选项
 
 .. list::
 
-    - 示例 :example:`peripherals/timer_group/gptimer` 中列出了通用定时器的典型用例。
-    :SOC_TIMER_SUPPORT_ETM: - 示例 :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何在 ETM 模块的帮助下，用定时器捕获外部事件的时间戳。
+    * :example:`peripherals/timer_group/gptimer` 演示了如何在 ESP 芯片上使用通用定时器 API 生成周期性警报事件，触发不同的警报动作。
+    :SOC_TIMER_SUPPORT_ETM: * :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何使用通用定时器和事件任务矩阵 (ETM) 外设来捕获内部定时器计数值，并测量两个事件之间的时间，用于解码常见的 HC-SR04 超声波传感器生成的脉冲宽度信号。
+    :not esp32c2: * :example:`peripherals/timer_group/wiegand_interface` 使用两个定时器（一个在单次触发模式下，另一个在周期触发模式下），来触发中断并在中断中改变 GPIO 的输出状态。
+
 
 API 参考
 -------------------

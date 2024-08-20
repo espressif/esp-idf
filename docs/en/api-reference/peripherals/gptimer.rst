@@ -1,16 +1,18 @@
 General Purpose Timer (GPTimer)
 ===============================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Introduction
 ------------
 
-GPTimer (General Purpose Timer) is the driver of {IDF_TARGET_NAME} Timer Group peripheral. The hardware timer features high resolution and flexible alarm action. The behavior when the internal counter of a timer reaches a specific target value is called a timer alarm. When a timer alarms, a user registered per-timer callback would be called.
+GPTimer (General Purpose Timer) is the driver of {IDF_TARGET_NAME} Timer Group peripheral. The hardware timer features high resolution and flexible alarm action. A timer alarm occurs when the internal counter of a timer reaches a specific target value. At that moment, a user-registered per-timer callback function is triggered.
 
-Typically, a general purpose timer can be used in scenarios like:
+General-purpose timers are typically used in the following scenarios:
 
-- Free running as a wall clock, fetching a high-resolution timestamp at any time and any places
-- Generate period alarms, trigger events periodically
-- Generate one-shot alarm, respond in target time
+- To run freely like a clock, providing high-resolution timestamps anytime and anywhere;
+- To generate periodic alarms that trigger events at regular intervals;
+- To generate one-shot alarms that respond at a specific target time.
 
 Functional Overview
 -------------------
@@ -114,7 +116,7 @@ This function lazy installs the interrupt service for the timer but not enable i
 Enable and Disable Timer
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before doing IO control to the timer, you needs to enable the timer first, by calling :cpp:func:`gptimer_enable`. This function:
+Before doing IO control to the timer, you need to enable the timer first, by calling :cpp:func:`gptimer_enable`. This function:
 
 * Switches the timer driver state from **init** to **enable**.
 * Enables the interrupt service if it has been lazy installed by :cpp:func:`gptimer_register_event_callbacks`.
@@ -341,8 +343,10 @@ Application Examples
 
 .. list::
 
-    - Typical use cases of GPTimer are listed in the example :example:`peripherals/timer_group/gptimer`.
-    :SOC_TIMER_SUPPORT_ETM: - GPTimer capture external event's timestamp, with the help of ETM module: :example:`peripherals/timer_group/gptimer_capture_hc_sr04`.
+    * :example:`peripherals/timer_group/gptimer` demonstrates how to use the general purpose timer APIs on ESP SOC chip to generate periodic alarm events and manage different alarm actions.
+    :SOC_TIMER_SUPPORT_ETM: * :example:`peripherals/timer_group/gptimer_capture_hc_sr04` demonstrates how to use the general purpose timer and ETM (Event Task Matrix) peripheral to capture internal timer count values and measure the time between two events, specifically to decode the pulse width signals generated from a common HC-SR04 sonar sensor.
+    :not esp32c2: * :example:`peripherals/timer_group/wiegand_interface` uses two timers (one in one-shot mode and another in periodic mode) to trigger the interrupt and change the output state of the GPIO in the interrupt.
+
 
 API Reference
 -------------
