@@ -350,3 +350,17 @@ void panic_set_address(void *f, uint32_t addr)
 {
     ((RvExcFrame *)f)->mepc = addr;
 }
+
+void panic_prepare_frame_from_ctx(void* frame)
+{
+    /* Cleanup the frame, status registers are not saved during context switches, so these will contain garbage
+       values from the stack.
+    */
+    ((RvExcFrame *)frame)->mstatus = RV_READ_CSR(mstatus);
+    ((RvExcFrame *)frame)->mtvec = RV_READ_CSR(mtvec);
+
+    ((RvExcFrame *)frame)->mcause = MCAUSE_INVALID_VALUE;
+    ((RvExcFrame *)frame)->mtval = MCAUSE_INVALID_VALUE;
+
+    ((RvExcFrame *)frame)->mhartid = RV_READ_CSR(mhartid);
+}
