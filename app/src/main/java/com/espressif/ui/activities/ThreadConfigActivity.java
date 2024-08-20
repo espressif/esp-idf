@@ -37,19 +37,16 @@ import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.WiFiAccessPoint;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.WiFiScanListener;
 import com.espressif.ui.utils.Utils;
 import com.espressif.wifi_provisioning.R;
 import com.google.android.gms.threadnetwork.ThreadNetwork;
 import com.google.android.gms.threadnetwork.ThreadNetworkCredentials;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
 import java.util.ArrayList;
 
-public class ThreadConfigActivity extends AppCompatActivity {
+public class ThreadConfigActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = ThreadConfigActivity.class.getSimpleName();
 
@@ -72,16 +69,15 @@ public class ThreadConfigActivity extends AppCompatActivity {
         handler = new Handler();
         threadNetworkList = new ArrayList<>();
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        provisionManager.addListener(this);
         scanCapAvailable = getIntent().getBooleanExtra(AppConstants.KEY_THREAD_SCAN_AVAILABLE, false);
-
         initViews();
-        EventBus.getDefault().register(this);
         getThreadPreferredCredentials();
     }
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        provisionManager.removeListener(this);
         super.onDestroy();
     }
 
@@ -91,7 +87,7 @@ public class ThreadConfigActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Override
     public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());

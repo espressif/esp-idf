@@ -27,7 +27,6 @@ import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -48,12 +47,10 @@ public class ManualProvBaseActivity extends AppCompatActivity {
         securityType = getIntent().getIntExtra(AppConstants.KEY_SECURITY_TYPE, AppConstants.SEC_TYPE_DEFAULT);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
-        EventBus.getDefault().register(this);
     }
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
 

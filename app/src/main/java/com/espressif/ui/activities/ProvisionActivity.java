@@ -30,16 +30,13 @@ import androidx.core.widget.ContentLoadingProgressBar;
 
 import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.listeners.ProvisionListener;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
-public class ProvisionActivity extends AppCompatActivity {
+public class ProvisionActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = ProvisionActivity.class.getSimpleName();
 
@@ -66,8 +63,8 @@ public class ProvisionActivity extends AppCompatActivity {
         passphraseValue = intent.getStringExtra(AppConstants.KEY_WIFI_PASSWORD);
         dataset = intent.getStringExtra(AppConstants.KEY_THREAD_DATASET);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        provisionManager.addListener(this);
         initViews();
-        EventBus.getDefault().register(this);
 
         Log.d(TAG, "Selected AP -" + ssidValue);
         showLoading();
@@ -82,12 +79,11 @@ public class ProvisionActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        provisionManager.removeListener(this);
         super.onDestroy();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(DeviceConnectionEvent event) {
+    @Override public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());
 

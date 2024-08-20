@@ -28,9 +28,9 @@ import android.util.Log;
 
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.ResponseListener;
 
-import org.greenrobot.eventbus.EventBus;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,16 +65,18 @@ public class BLETransport implements Transport {
     private boolean isReadingDescriptors = false;
     public ArrayList<String> deviceCapabilities = new ArrayList<>();
     public String versionInfo;
+    private final EventUpdateListener eventUpdateListener;
 
     /**
      * Create BLETransport implementation
      *
      * @param context
      */
-    public BLETransport(Context context) {
+    public BLETransport(Context context, EventUpdateListener eventUpdateListener) {
         this.context = context;
         this.transportToken = new Semaphore(1);
         this.dispatcherThreadPool = Executors.newSingleThreadExecutor();
+        this.eventUpdateListener = eventUpdateListener;
     }
 
     /**
@@ -179,10 +181,10 @@ public class BLETransport implements Transport {
             Log.d(TAG, "onConnectionStateChange, New state : " + newState + ", Status : " + status);
 
             if (status == BluetoothGatt.GATT_FAILURE) {
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                 return;
             } else if (status == 133) {
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                 return;
             } else if (status != BluetoothGatt.GATT_SUCCESS && newState != BluetoothProfile.STATE_DISCONNECTED) {
                 // TODO need to check this status
@@ -194,7 +196,7 @@ public class BLETransport implements Transport {
                 gatt.requestMtu(512);
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.e(TAG, "Disconnected from GATT server.");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_DISCONNECTED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_DISCONNECTED));
             }
         }
 
@@ -206,7 +208,7 @@ public class BLETransport implements Transport {
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Status not success");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                 return;
             }
 
@@ -214,7 +216,7 @@ public class BLETransport implements Transport {
 
             if (service == null) {
                 Log.e(TAG, "Service not found!");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                 return;
             }
 
@@ -222,7 +224,7 @@ public class BLETransport implements Transport {
 
                 if (characteristic == null) {
                     Log.e(TAG, "Tx characteristic not found!");
-                    EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                    updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                     return;
                 }
 
@@ -243,7 +245,7 @@ public class BLETransport implements Transport {
                 Log.d(TAG, "Read Descriptor : " + bluetoothGatt.readDescriptor(descriptor));
             } else {
                 Log.e(TAG, "Fail to write descriptor");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
             }
         }
 
@@ -257,8 +259,6 @@ public class BLETransport implements Transport {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Failed to read descriptor");
                 charUuidList.remove(charUuid);
-//                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
-//                return;
             }
 
             if (data == null) {
@@ -335,7 +335,7 @@ public class BLETransport implements Transport {
                     Log.d(TAG, "Capabilities JSON not available.");
                 }
 
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTED));
+                updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTED));
             }
 
             if (currentResponseListener != null) {
@@ -358,7 +358,6 @@ public class BLETransport implements Transport {
                 } else {
 
                     currentResponseListener.onFailure(new Exception("Read from BLE failed"));
-//                    EventBus.getDefault().post(new DeviceProvEvent(LibConstants.EVENT_DEVICE_COMMUNICATION_FAILED));
                 }
             }
             transportToken.release();
@@ -376,7 +375,6 @@ public class BLETransport implements Transport {
             } else {
                 if (currentResponseListener != null) {
                     currentResponseListener.onFailure(new Exception("Write to BLE failed"));
-//                    EventBus.getDefault().post(new DeviceProvEvent(LibConstants.EVENT_DEVICE_COMMUNICATION_FAILED));
                 }
                 transportToken.release();
             }
@@ -398,7 +396,7 @@ public class BLETransport implements Transport {
                 if (characteristic == null) {
                     Log.e(TAG, "Tx characteristic not found!");
                     disconnect();
-                    EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                    updateListeners(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
                     return;
                 }
 
@@ -425,6 +423,12 @@ public class BLETransport implements Transport {
                 characteristic.setValue("ESP");
                 bluetoothGatt.writeCharacteristic(characteristic);
             }
+        }
+    }
+
+    private void updateListeners(DeviceConnectionEvent connectionEvent) {
+        if (eventUpdateListener != null) {
+            eventUpdateListener.onEvent(connectionEvent);
         }
     }
 }

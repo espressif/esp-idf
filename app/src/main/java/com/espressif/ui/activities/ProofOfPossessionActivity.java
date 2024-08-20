@@ -32,16 +32,14 @@ import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.ResponseListener;
 import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
-public class ProofOfPossessionActivity extends AppCompatActivity {
+public class ProofOfPossessionActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = ProofOfPossessionActivity.class.getSimpleName();
 
@@ -62,8 +60,8 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
 
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
-        EventBus.getDefault().register(this);
 
+        provisionManager.addListener(this);
         deviceName = provisionManager.getEspDevice().getDeviceName();
 
         if (!TextUtils.isEmpty(deviceName)) {
@@ -83,7 +81,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        provisionManager.removeListener(this);
         super.onDestroy();
     }
 
@@ -93,7 +91,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Override
     public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());

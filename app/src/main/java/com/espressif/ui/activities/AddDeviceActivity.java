@@ -49,20 +49,18 @@ import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPDevice;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.QRCodeScanListener;
 import com.espressif.wifi_provisioning.R;
 import com.google.android.material.card.MaterialCardView;
 import com.wang.avi.AVLoadingIndicatorView;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class AddDeviceActivity extends AppCompatActivity {
+public class AddDeviceActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = AddDeviceActivity.class.getSimpleName();
 
@@ -95,8 +93,8 @@ public class AddDeviceActivity extends AppCompatActivity {
         intent = new Intent();
         sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        provisionManager.addListener(this);
         initViews();
-        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -150,7 +148,6 @@ public class AddDeviceActivity extends AppCompatActivity {
     protected void onDestroy() {
 
         hideLoading();
-        EventBus.getDefault().unregister(this);
 //        if (cameraPreview != null) {
 //            cameraPreview.release();
 //        }
@@ -220,8 +217,7 @@ public class AddDeviceActivity extends AppCompatActivity {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(DeviceConnectionEvent event) {
+    @Override public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());
 

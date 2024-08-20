@@ -31,13 +31,11 @@ import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
-public class WiFiConfigActivity extends AppCompatActivity {
+public class WiFiConfigActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = WiFiConfigActivity.class.getSimpleName();
 
@@ -54,13 +52,13 @@ public class WiFiConfigActivity extends AppCompatActivity {
         setContentView(R.layout.activity_wifi_config);
 
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        provisionManager.addListener(this);
         initViews();
-        EventBus.getDefault().register(this);
     }
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        provisionManager.removeListener(this);
         super.onDestroy();
     }
 
@@ -70,7 +68,7 @@ public class WiFiConfigActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Override
     public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());

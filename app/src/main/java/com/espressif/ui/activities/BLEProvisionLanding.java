@@ -49,19 +49,17 @@ import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.listeners.BleScanListener;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.ui.adapters.BleDeviceListAdapter;
 import com.espressif.ui.models.BleDevice;
 import com.espressif.ui.utils.Utils;
 import com.espressif.wifi_provisioning.BuildConfig;
 import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class BLEProvisionLanding extends ManualProvBaseActivity {
+public class BLEProvisionLanding extends ManualProvBaseActivity implements EventUpdateListener {
 
     private static final String TAG = BLEProvisionLanding.class.getSimpleName();
 
@@ -198,7 +196,7 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Override
     public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "ON Device Prov Event RECEIVED : " + event.getEventType());

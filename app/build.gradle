@@ -61,7 +61,6 @@ dependencies {
     implementation 'com.google.crypto.tink:tink-android:1.6.1'
     implementation project(path: ':provisioning')
 
-    implementation 'org.greenrobot:eventbus:3.3.1'
     implementation 'com.github.yuriy-budiyev:code-scanner:2.1.2'
     implementation 'com.github.firdausmaulan:AVLoadingIndicatorView:2.3.0'
 

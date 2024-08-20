@@ -34,15 +34,14 @@ import androidx.core.widget.ContentLoadingProgressBar;
 import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.ui.utils.Utils;
 import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
-public class ProvisionLanding extends ManualProvBaseActivity {
+public class ProvisionLanding extends ManualProvBaseActivity implements EventUpdateListener {
 
     private static final String TAG = ProvisionLanding.class.getSimpleName();
 
@@ -92,8 +91,7 @@ public class ProvisionLanding extends ManualProvBaseActivity {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(DeviceConnectionEvent event) {
+    @Override public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Prov Event RECEIVED : " + event.getEventType());
 

@@ -36,6 +36,7 @@ import com.budiyev.android.codescanner.DecodeCallback;
 import com.espressif.provisioning.device_scanner.BleScanner;
 import com.espressif.provisioning.device_scanner.WiFiScanner;
 import com.espressif.provisioning.listeners.BleScanListener;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.QRCodeScanListener;
 import com.espressif.provisioning.listeners.WiFiScanListener;
 import com.google.android.gms.vision.CameraSource;
@@ -56,7 +57,7 @@ import java.util.List;
  * App can use this class to provision device. It has APIs to scan devices, scan QR code and connect with the device to get
  * object of ESPDevice.
  */
-public class ESPProvisionManager {
+public class ESPProvisionManager implements EventUpdateListener {
 
     private static final String TAG = "ESP:" + ESPProvisionManager.class.getSimpleName();
 
@@ -68,6 +69,7 @@ public class ESPProvisionManager {
     private Context context;
     private Handler handler;
     private boolean isScanned = false;
+    private final List<EventUpdateListener> listeners = new ArrayList<>();
 
     /**
      * This method is used to get singleton instance of
@@ -81,6 +83,14 @@ public class ESPProvisionManager {
             provision = new ESPProvisionManager(context);
         }
         return provision;
+    }
+
+    public void addListener(EventUpdateListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(EventUpdateListener listener) {
+        this.listeners.remove(listener);
     }
 
     private ESPProvisionManager(Context context) {
@@ -97,7 +107,7 @@ public class ESPProvisionManager {
      */
     public ESPDevice createESPDevice(ESPConstants.TransportType transportType, ESPConstants.SecurityType securityType) {
 
-        espDevice = new ESPDevice(context, transportType, securityType);
+        espDevice = new ESPDevice(context, transportType, securityType, this);
         return espDevice;
     }
 
@@ -208,7 +218,7 @@ public class ESPProvisionManager {
 
                         securityType = setSecurityType(security);
 
-                        espDevice = new ESPDevice(context, transportType, securityType);
+                        espDevice = new ESPDevice(context, transportType, securityType, ESPProvisionManager.this);
                         espDevice.setDeviceName(deviceName);
                         espDevice.setProofOfPossession(pop);
                         espDevice.setUserName(userName);
@@ -308,7 +318,7 @@ public class ESPProvisionManager {
 
                         securityType = setSecurityType(security);
 
-                        espDevice = new ESPDevice(context, transportType, securityType);
+                        espDevice = new ESPDevice(context, transportType, securityType, ESPProvisionManager.this);
                         espDevice.setDeviceName(deviceName);
                         espDevice.setProofOfPossession(pop);
                         espDevice.setUserName(userName);
@@ -471,6 +481,15 @@ public class ESPProvisionManager {
             case 2:
             default:
                 return ESPConstants.SecurityType.SECURITY_2;
+        }
+    }
+
+    @Override
+    public void onEvent(DeviceConnectionEvent deviceConnectionEvent) {
+        if (listeners.isEmpty()) return;
+
+        for (EventUpdateListener listener : listeners) {
+            listener.onEvent(deviceConnectionEvent);
         }
     }
 

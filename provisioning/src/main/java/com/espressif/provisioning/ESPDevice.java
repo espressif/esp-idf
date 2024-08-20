@@ -37,6 +37,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.ProvisionListener;
 import com.espressif.provisioning.listeners.ResponseListener;
 import com.espressif.provisioning.listeners.WiFiScanListener;
@@ -50,7 +51,6 @@ import com.espressif.provisioning.transport.Transport;
 import com.espressif.provisioning.utils.MessengeHelper;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import org.greenrobot.eventbus.EventBus;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -101,9 +101,10 @@ public class ESPDevice {
     private String deviceName;
     private WifiManager wifiManager;
     private ConnectivityManager connectivityManager;
+    private final EventUpdateListener eventUpdateListener;
     private ConnectivityManager.NetworkCallback networkCallback;
 
-    public ESPDevice(Context context, ESPConstants.TransportType transportType, ESPConstants.SecurityType securityType) {
+    public ESPDevice(Context context, ESPConstants.TransportType transportType, ESPConstants.SecurityType securityType, EventUpdateListener eventUpdateListener) {
 
         this.context = context;
         handler = new Handler(Looper.getMainLooper());
@@ -111,11 +112,12 @@ public class ESPDevice {
         this.securityType = securityType;
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        this.eventUpdateListener = eventUpdateListener;
 
         switch (transportType) {
 
             case TRANSPORT_BLE:
-                transport = new BLETransport(context);
+                transport = new BLETransport(context, eventUpdateListener);
                 break;
 
             case TRANSPORT_SOFTAP:
@@ -157,7 +159,9 @@ public class ESPDevice {
             ((BLETransport) transport).connect(bluetoothDevice, UUID.fromString(primaryServiceUuid));
         } else {
             Log.e(TAG, "Trying to connect device with wrong transport.");
-            EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            if (eventUpdateListener != null) {
+                eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            }
         }
     }
 
@@ -175,7 +179,9 @@ public class ESPDevice {
 
         } else {
             Log.e(TAG, "Trying to connect device with wrong transport.");
-            EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            if (eventUpdateListener != null) {
+                eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            }
         }
     }
 
@@ -304,7 +310,9 @@ public class ESPDevice {
 
             } else {
                 Log.e(TAG, "Failed to add network");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                if (eventUpdateListener != null) {
+                    eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+                }
             }
         }
     }
@@ -1609,7 +1617,9 @@ public class ESPDevice {
                     }
                     deviceName = fetchWiFiSSID();
                     handler.removeCallbacks(wifiConnectionFailedTask);
-                    EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTED));
+                    if (eventUpdateListener != null) {
+                        eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTED));
+                    }
                 }
 
                 @Override
@@ -1636,7 +1646,9 @@ public class ESPDevice {
             handler.removeCallbacks(getCapabilitiesTask);
             handler.removeCallbacks(deviceConnectionFailedTask);
             Log.e(TAG, "deviceConnectionFailedTask");
-            EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            if (eventUpdateListener != null) {
+                eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            }
         }
     };
 
@@ -1676,7 +1688,9 @@ public class ESPDevice {
 
             handler.removeCallbacks(task);
             Log.e(TAG, "wifiConnectionFailedTask");
-            EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            if (eventUpdateListener != null) {
+                eventUpdateListener.onEvent(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+            }
         }
     };
 

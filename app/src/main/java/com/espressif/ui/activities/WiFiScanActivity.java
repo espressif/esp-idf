@@ -40,18 +40,15 @@ import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.WiFiAccessPoint;
+import com.espressif.provisioning.listeners.EventUpdateListener;
 import com.espressif.provisioning.listeners.WiFiScanListener;
 import com.espressif.ui.adapters.WiFiListAdapter;
 import com.espressif.wifi_provisioning.R;
 import com.google.android.material.textfield.TextInputLayout;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
 import java.util.ArrayList;
 
-public class WiFiScanActivity extends AppCompatActivity {
+public class WiFiScanActivity extends AppCompatActivity implements EventUpdateListener {
 
     private static final String TAG = WiFiScanActivity.class.getSimpleName();
 
@@ -80,6 +77,7 @@ public class WiFiScanActivity extends AppCompatActivity {
         wifiAPList = new ArrayList<>();
         handler = new Handler();
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
+        provisionManager.addListener(this);
 
         String deviceName = provisionManager.getEspDevice().getDeviceName();
         String wifiMsg = String.format(getString(R.string.setup_instructions), deviceName);
@@ -116,13 +114,12 @@ public class WiFiScanActivity extends AppCompatActivity {
             }
         });
 
-        EventBus.getDefault().register(this);
         startWifiScan();
     }
 
     @Override
     protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        provisionManager.removeListener(this);
         super.onDestroy();
     }
 
@@ -132,8 +129,7 @@ public class WiFiScanActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(DeviceConnectionEvent event) {
+    @Override public void onEvent(DeviceConnectionEvent event) {
 
         Log.d(TAG, "On Device Connection Event RECEIVED : " + event.getEventType());
 
