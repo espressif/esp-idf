@@ -2,10 +2,7 @@ set(srcs "test_app_main.c"
           "test_dport.c"
           "test_fp.c"
           "test_dport_xt_highint5.S"
-          "test_ds.c"
-          "test_hmac.c"
           "test_random.c"
-          "test_key_mgr.c"
            )
 
 if(CONFIG_SOC_GP_LDO_SUPPORTED)

@@ -243,44 +243,6 @@ menu "Hardware Settings"
         orsource "./port/$IDF_TARGET/Kconfig.xtal"
     endmenu
 
-    menu "Crypto DPA Protection"
-        depends on SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
-        config ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            bool "Enable crypto DPA protection at startup"
-            default y
-            help
-                This config controls the DPA (Differential Power Analysis) protection
-                knob for the crypto peripherals. DPA protection dynamically adjusts the
-                clock frequency of the crypto peripheral. DPA protection helps to make it
-                difficult to perform SCA attacks on the crypto peripherals. However,
-                there is also associated performance impact based on the security level
-                set. Please refer to the TRM for more details.
-
-        choice ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            prompt "DPA protection level"
-            depends on ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            default ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            help
-                Configure the DPA protection security level
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-                bool "Security level low"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-                bool "Security level medium"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-                bool "Security level high"
-        endchoice
-
-        config ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            int
-            default 1 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            default 2 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-            default 3 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-
-    endmenu
-
     orsource "./port/$IDF_TARGET/Kconfig.dcdc"
 
     orsource "./port/$IDF_TARGET/Kconfig.ldo"

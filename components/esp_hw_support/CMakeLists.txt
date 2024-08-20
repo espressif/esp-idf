@@ -10,7 +10,8 @@ endif()
 
 set(requires soc)
 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support)
+# TODO: remove esp_security from REQUIRES in ESP-IDF v6.0 (see IDF-10733)
+set(priv_requires efuse spi_flash bootloader_support esp_security)
 
 if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)
@@ -111,24 +112,8 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "port/${target}/systimer.c")
     endif()
 
-    if(CONFIG_SOC_HMAC_SUPPORTED)
-        list(APPEND srcs "esp_hmac.c")
-    endif()
-
     if(CONFIG_SOC_ETM_SUPPORTED)
         list(APPEND srcs "esp_etm.c")
-    endif()
-
-    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
-        list(APPEND srcs "esp_dpa_protection.c")
-    endif()
-
-    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
-        list(APPEND srcs "esp_ds.c")
-    endif()
-
-    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
-        list(APPEND srcs "esp_key_mgr.c")
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)
@@ -202,8 +187,5 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
-    endif()
-    if(CONFIG_SOC_CRYPTO_DPA_PROTECTION_SUPPORTED)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_crypto_dpa_prot_include_impl")
     endif()
 endif()

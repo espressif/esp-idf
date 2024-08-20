@@ -10,7 +10,6 @@ set(srcs
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "cache_sram_mmu.c"
-                     "esp_crypto_lock.c"
                      "sar_periph_ctrl.c")
 endif()
 

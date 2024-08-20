@@ -91,6 +91,11 @@ set(extra_components_which_shouldnt_be_included
 
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread
+
+    # esp_security is a private dependency of the following G1 components:
+    #    esp_hw_support
+    #    TODO: will be removed in IDF 6.x (see IDF-10733)
+    esp_security
 )
 
 set(expected_components

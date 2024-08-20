@@ -10,8 +10,7 @@ set(srcs
     )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "esp_crypto_lock.c"
-                     "sar_periph_ctrl.c")
+    list(APPEND srcs "sar_periph_ctrl.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         list(APPEND srcs "mspi_timing_config.c")

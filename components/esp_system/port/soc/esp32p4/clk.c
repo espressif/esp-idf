@@ -107,9 +107,6 @@ __attribute__((weak)) void esp_clk_init(void)
 
     // Re calculate the ccount to make time calculation correct.
     esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
-
-    // Set crypto clock (`clk_sec`) to use 240M PLL clock
-    REG_SET_FIELD(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_CRYPTO_CLK_SRC_SEL, 0x2);
 }
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
