@@ -560,8 +560,8 @@ TEST_CASE("readonly handle fails on writing", "[nvs]")
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     // first, creating namespace...
     TEST_ESP_OK(nvs_open("ro_ns", NVS_READWRITE, &handle_1));
@@ -588,14 +588,13 @@ TEST_CASE("nvs api tests", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
-
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READWRITE, &handle_1), ESP_ERR_NVS_NOT_INITIALIZED);
     for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
         f.erase(i);
     }
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
@@ -654,11 +653,11 @@ TEST_CASE("deinit partition doesn't affect other partition's open handles", "[nv
     TEMPORARILY_DISABLED(f_other.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f_other.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_OK(nvs_open_from_partition(OTHER_PARTITION_NAME, "ns", NVS_READWRITE, &handle_1));
 
@@ -725,8 +724,8 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         f.erase(i);
     }
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_iterator_t it;
     nvs_entry_info_t info;
@@ -758,8 +757,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         int count = 0;
         nvs_iterator_t it = nullptr;
         esp_err_t res = nvs_entry_find(part, name, type, &it);
-        for (count = 0; res == ESP_OK; count++)
-        {
+        for (count = 0; res == ESP_OK; count++) {
             res = nvs_entry_next(&it);
         }
         CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
@@ -773,8 +771,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         int count = 0;
         nvs_iterator_t it = nullptr;
         esp_err_t res = nvs_entry_find_in_handle(handle, type, &it);
-        for (count = 0; res == ESP_OK; count++)
-        {
+        for (count = 0; res == ESP_OK; count++) {
             res = nvs_entry_next(&it);
         }
         CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
@@ -827,7 +824,6 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_I32) == 5);
         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
     }
-
 
     SECTION("Number of entries found for specified handle and type is correct") {
         CHECK(entry_count_handle(handle_1, NVS_TYPE_ANY) == 11);
@@ -892,14 +888,13 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         nvs_release_iterator(it);
     }
 
-
     SECTION("Iterating over multiple pages works correctly") {
         nvs_handle_t handle_3;
         const char *name_3 = "namespace3";
         const int entries_created = 250;
 
         TEST_ESP_OK(nvs_open(name_3, NVS_READWRITE, &handle_3));
-        for  (size_t i = 0; i < entries_created; i++) {
+        for (size_t i = 0; i < entries_created; i++) {
             TEST_ESP_OK(nvs_set_u8(handle_3, to_string(i).c_str(), 123));
         }
 
@@ -956,8 +951,8 @@ TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
         f.erase(i);
     }
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     // writing string to namespace (a type which spans multiple entries)
     TEST_ESP_OK(nvs_open(NAMESPACE, NVS_READWRITE, &my_handle));
@@ -970,8 +965,8 @@ TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
     // re-init to trigger cleaning up of broken items -> a corrupted string will be erased
     TEST_ESP_OK(nvs_flash_deinit());
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_OK(nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR, &it));
     nvs_release_iterator(it);
@@ -989,8 +984,8 @@ TEST_CASE("wifi test", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_handle_t misc_handle;
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &misc_handle));
@@ -1242,8 +1237,7 @@ public:
         static_assert(nKeys == sizeof(future_values) / sizeof(future_values[0]), "");
 
         auto randomRead = [&](size_t index) -> esp_err_t {
-            switch (types[index])
-            {
+            switch (types[index]) {
             case nvs::ItemType::I32: {
                 int32_t val;
                 auto err = nvs_get_i32(handle, keys[index], &val);
@@ -1290,8 +1284,7 @@ public:
         };
 
         auto randomWrite = [&](size_t index) -> esp_err_t {
-            switch (types[index])
-            {
+            switch (types[index]) {
             case nvs::ItemType::I32: {
                 int32_t val = static_cast<int32_t>(gen());
 
@@ -1428,7 +1421,7 @@ public:
         return ESP_OK;
     }
 
-    esp_err_t handleExternalWriteAtIndex(uint8_t index, const void *value, const size_t len )
+    esp_err_t handleExternalWriteAtIndex(uint8_t index, const void *value, const size_t len)
     {
         if (index == 9) { /* This is only done for small-page blobs for now*/
             if (len > smallBlobLen) {
@@ -1459,8 +1452,8 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_handle_t handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
@@ -1480,8 +1473,8 @@ TEST_CASE("test for memory leaks in open/set", "[leaks]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     for (int i = 0; i < 100000; ++i) {
         nvs_handle_t light_handle = 0;
@@ -1534,22 +1527,22 @@ TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
     const size_t blob_size = nvs::Page::CHUNK_MAX_SIZE;
     uint8_t blob[blob_size] = {0};
     PartitionEmulationFixture f(0, 8);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5));
     nvs_handle_t handle;
-    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
     // Fill first page
-    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size) );
+    TEST_ESP_OK(nvs_set_blob(handle, "1a", blob, blob_size));
     // Fill second page
-    TEST_ESP_OK( nvs_set_blob(handle, "2a", blob, blob_size) );
+    TEST_ESP_OK(nvs_set_blob(handle, "2a", blob, blob_size));
     // Fill third page
-    TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, blob_size) );
-    TEST_ESP_OK( nvs_commit(handle) );
+    TEST_ESP_OK(nvs_set_blob(handle, "3a", blob, blob_size));
+    TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
     // first two pages are now full, third one is writable, last two are empty
     // init should fail
-    TEST_ESP_ERR( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3),
-                  ESP_ERR_NVS_NO_FREE_PAGES );
+    TEST_ESP_ERR(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3),
+                 ESP_ERR_NVS_NO_FREE_PAGES);
 
     // in case this test fails, to not affect other tests
     nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
@@ -1560,19 +1553,19 @@ TEST_CASE("nvs page selection takes into account free entries also not just eras
     const size_t blob_size = nvs::Page::CHUNK_MAX_SIZE / 2;
     uint8_t blob[blob_size] = {0};
     PartitionEmulationFixture f(0, 3);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
     nvs_handle_t handle;
-    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
     // Fill first page
-    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size / 3) );
-    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
+    TEST_ESP_OK(nvs_set_blob(handle, "1a", blob, blob_size / 3));
+    TEST_ESP_OK(nvs_set_blob(handle, "1b", blob, blob_size));
     // Fill second page
-    TEST_ESP_OK( nvs_set_blob(handle, "2a", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "2b", blob, blob_size) );
+    TEST_ESP_OK(nvs_set_blob(handle, "2a", blob, blob_size));
+    TEST_ESP_OK(nvs_set_blob(handle, "2b", blob, blob_size));
 
     // The item below should be able to fit the first page.
-    TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, 4) );
-    TEST_ESP_OK( nvs_commit(handle) );
+    TEST_ESP_OK(nvs_set_blob(handle, "3a", blob, 4));
+    TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 
     TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
@@ -1820,21 +1813,21 @@ TEST_CASE("Modification of values for Multi-page blobs are supported", "[nvs]")
     uint8_t blob4[blob_size] = { 0x33};
     size_t read_size = blob_size;
     PartitionEmulationFixture f(0, 6);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 6) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 6));
     nvs_handle_t handle;
     memset(blob, 0x11, blob_size);
     memset(blob2, 0x22, blob_size);
     memset(blob3, 0x33, blob_size);
     memset(blob4, 0x44, blob_size);
     memset(blob_read, 0xff, blob_size);
-    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
-    TEST_ESP_OK( nvs_set_blob(handle, "abc", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "abc", blob2, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "abc", blob3, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "abc", blob4, blob_size) );
-    TEST_ESP_OK( nvs_get_blob(handle, "abc", blob_read, &read_size));
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
+    TEST_ESP_OK(nvs_set_blob(handle, "abc", blob2, blob_size));
+    TEST_ESP_OK(nvs_set_blob(handle, "abc", blob3, blob_size));
+    TEST_ESP_OK(nvs_set_blob(handle, "abc", blob4, blob_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "abc", blob_read, &read_size));
     CHECK(memcmp(blob4, blob_read, blob_size) == 0);
-    TEST_ESP_OK( nvs_commit(handle) );
+    TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 
     TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
@@ -1847,14 +1840,14 @@ TEST_CASE("Modification from single page blob to multi-page", "[nvs]")
     uint8_t blob_read[blob_size] = {0xff};
     size_t read_size = blob_size;
     PartitionEmulationFixture f(0, 5);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5));
     nvs_handle_t handle;
-    TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, nvs::Page::CHUNK_MAX_SIZE / 2));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_get_blob(handle, "abc", blob_read, &read_size));
     CHECK(memcmp(blob, blob_read, blob_size) == 0);
-    TEST_ESP_OK(nvs_commit(handle) );
+    TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 
     TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
@@ -1867,15 +1860,15 @@ TEST_CASE("Modification from  multi-page to single page", "[nvs]")
     uint8_t blob_read[blob_size] = {0xff};
     size_t read_size = blob_size;
     PartitionEmulationFixture f(0, 5);
-    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5));
     nvs_handle_t handle;
-    TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, nvs::Page::CHUNK_MAX_SIZE / 2));
     TEST_ESP_OK(nvs_set_blob(handle, "abc2", blob, blob_size));
     TEST_ESP_OK(nvs_get_blob(handle, "abc", blob_read, &read_size));
     CHECK(memcmp(blob, blob_read, nvs::Page::CHUNK_MAX_SIZE) == 0);
-    TEST_ESP_OK(nvs_commit(handle) );
+    TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 
     TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
@@ -1910,7 +1903,6 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 
     TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob)));
 
-
     TEST_ESP_OK(storage.init(0, 5));
     /* Check that multi-page item is still available.**/
     TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob)));
@@ -1930,21 +1922,21 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 TEST_CASE("nvs blob fragmentation test", "[nvs]")
 {
     PartitionEmulationFixture f(0, 4);
-    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 4) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 4));
     const size_t BLOB_SIZE = 3500;
     uint8_t *blob = (uint8_t *) malloc(BLOB_SIZE);
     CHECK(blob != NULL);
     memset(blob, 0xEE, BLOB_SIZE);
     const uint32_t magic = 0xff33eaeb;
     nvs_handle_t h;
-    TEST_ESP_OK( nvs_open("blob_tests", NVS_READWRITE, &h) );
+    TEST_ESP_OK(nvs_open("blob_tests", NVS_READWRITE, &h));
     for (int i = 0; i < 128; i++) {
         INFO("Iteration " << i << "...\n");
-        TEST_ESP_OK( nvs_set_u32(h, "magic", magic) );
-        TEST_ESP_OK( nvs_set_blob(h, "blob", blob, BLOB_SIZE) );
+        TEST_ESP_OK(nvs_set_u32(h, "magic", magic));
+        TEST_ESP_OK(nvs_set_blob(h, "blob", blob, BLOB_SIZE));
         char seq_buf[16];
         snprintf(seq_buf, sizeof(seq_buf), "seq%d", i);
-        TEST_ESP_OK( nvs_set_u32(h, seq_buf, i) );
+        TEST_ESP_OK(nvs_set_u32(h, seq_buf, i));
     }
     free(blob);
 
@@ -2009,14 +2001,14 @@ TEST_CASE("monkey test with old-format blob present", "[nvs][monkey]")
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_handle_t handle;
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
     RandomTest test;
 
-    for ( uint8_t it = 0; it < 10; it++) {
+    for (uint8_t it = 0; it < 10; it++) {
         size_t count = 200;
 
         /* Erase index and chunks for the blob with "singlepage" key, do not care about errorcodes */
@@ -2055,8 +2047,8 @@ TEST_CASE("monkey test with old-format blob present", "[nvs][monkey]")
         TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
         /* Initialize again */
         TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                    NVS_FLASH_SECTOR,
-                    NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                          NVS_FLASH_SECTOR,
+                                                                          NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
 
         /* Perform random things */
@@ -2132,7 +2124,7 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
 
-    TEST_ESP_OK( nvs_get_blob(handle, "singlepage", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "singlepage", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 
     nvs::Page p2;
@@ -2162,7 +2154,6 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     size_t buflen = sizeof(hexdata);
     uint8_t buf[nvs::Page::CHUNK_MAX_SIZE];
 
-
     /* Power-off when blob was being written on the different page where its old version in old format
      * was present*/
     nvs::Page p;
@@ -2191,7 +2182,7 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
 
-    TEST_ESP_OK( nvs_get_blob(handle, "singlepage", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "singlepage", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 
     nvs::Page p3;
@@ -2234,9 +2225,9 @@ TEST_CASE("namespace name is deep copy", "[nvs]")
 
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                 NVS_FLASH_SECTOR,
-                 NVS_FLASH_SECTOR_COUNT_MIN));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_OK(nvs_open("const_name", NVS_READWRITE, &handle_1));
     strcpy(ns_name, "just_kidding");
@@ -2266,22 +2257,22 @@ TEST_CASE("multiple partitions access check", "[nvs]")
                                  NVS_FLASH_PARTITION2
                                 );
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                 NVS_FLASH_SECTOR_BEGIN1,
-                 NVS_FLASH_SECTOR_SIZE1));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                                                                      NVS_FLASH_SECTOR_BEGIN1,
+                                                                      NVS_FLASH_SECTOR_SIZE1));
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part2(),
-                 NVS_FLASH_SECTOR_BEGIN2,
-                 NVS_FLASH_SECTOR_SIZE2));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part2(),
+                                                                      NVS_FLASH_SECTOR_BEGIN2,
+                                                                      NVS_FLASH_SECTOR_SIZE2));
 
     nvs_handle_t handle1, handle2;
-    TEST_ESP_OK( nvs_open_from_partition("nvs1", "test", NVS_READWRITE, &handle1) );
-    TEST_ESP_OK( nvs_open_from_partition("nvs2", "test", NVS_READWRITE, &handle2) );
-    TEST_ESP_OK( nvs_set_i32(handle1, "foo", 0xdeadbeef));
-    TEST_ESP_OK( nvs_set_i32(handle2, "foo", 0xcafebabe));
+    TEST_ESP_OK(nvs_open_from_partition("nvs1", "test", NVS_READWRITE, &handle1));
+    TEST_ESP_OK(nvs_open_from_partition("nvs2", "test", NVS_READWRITE, &handle2));
+    TEST_ESP_OK(nvs_set_i32(handle1, "foo", 0xdeadbeef));
+    TEST_ESP_OK(nvs_set_i32(handle2, "foo", 0xcafebabe));
     int32_t v1, v2;
-    TEST_ESP_OK( nvs_get_i32(handle1, "foo", &v1));
-    TEST_ESP_OK( nvs_get_i32(handle2, "foo", &v2));
+    TEST_ESP_OK(nvs_get_i32(handle1, "foo", &v1));
+    TEST_ESP_OK(nvs_get_i32(handle2, "foo", &v2));
     CHECK(v1 == 0xdeadbeef);
     CHECK(v2 == 0xcafebabe);
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_FLASH_PARTITION1));
@@ -2296,8 +2287,8 @@ TEST_CASE("writing the identical content does not write or erase", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 10;
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_handle_t misc_handle;
     TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &misc_handle));
@@ -2355,8 +2346,8 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_OK(nvs_open("nvs.net80211", NVS_READWRITE, &handle));
 
@@ -2373,7 +2364,7 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][long][.]")
     const size_t testIters = 3000;
     int lastPercent = -1;
     for (size_t count = 0; count < testIters; ++count) {
-        int percentDone = (int) (count * 100 / testIters);
+        int percentDone = (int)(count * 100 / testIters);
         if (percentDone != lastPercent) {
             lastPercent = percentDone;
             printf("%d%%\n", percentDone);
@@ -2386,8 +2377,8 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][long][.]")
         TEMPORARILY_DISABLED(f.emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);)
 
         TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                    NVS_FLASH_SECTOR,
-                    NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                          NVS_FLASH_SECTOR,
+                                                                          NVS_FLASH_SECTOR_COUNT_MIN));
 
         nvs_handle_t handle_1;
         TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
@@ -2463,8 +2454,8 @@ TEST_CASE("test recovery from sudden poweroff", "[long][nvs][recovery][monkey][.
         size_t count = iter_count;
 
         if (nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
+                                                                  NVS_FLASH_SECTOR,
+                                                                  NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK) {
             esp_err_t res = ESP_ERR_FLASH_OP_FAIL;
             if (nvs_open("namespace1", NVS_READWRITE, &handle) == ESP_OK) {
                 res = test.doRandomThings(handle, gen, count, errDelay);
@@ -2480,8 +2471,8 @@ TEST_CASE("test recovery from sudden poweroff", "[long][nvs][recovery][monkey][.
         }
 
         TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                    NVS_FLASH_SECTOR,
-                    NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                          NVS_FLASH_SECTOR,
+                                                                          NVS_FLASH_SECTOR_COUNT_MIN));
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle));
 
         esp_err_t res;
@@ -2639,6 +2630,499 @@ TEST_CASE("crc error in variable length item is handled", "[nvs]")
     }
 }
 
+// handle damaged item header's span=0 even if crc is correct
+TEST_CASE("zero span in item header with correct crc is handled", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 3);
+    nvs::Storage storage(f.part());
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+
+    // damage item header of value1 to introduce span==0 error, recalculate crc
+    {
+        uint8_t new_span = 0;
+        size_t entry_offset = 32 * 3; // 2x page header + 1x ns1
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        // set span to 0
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        // allow overwriting smaller portion of flash than whole 4k page
+        ((esp_partition_t*) f.get_esp_partition())->erase_size = 1;
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    // check that storage can recover
+    uint32_t val = 0;
+
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "value2", val));
+    CHECK(val == 2);
+    // check that the damaged item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value1", val));
+
+    // add more items named "item_0" till "item_125" to make the page full
+    for (size_t i = 0; i < nvs::Page::ENTRY_COUNT; ++i) {
+        char item_name[nvs::Item::MAX_KEY_LENGTH + 1];
+        snprintf(item_name, sizeof(item_name), "item_%ld", (long int)i);
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+    }
+
+    // damage item header of item_125 to introduce span==0 error, recalculate crc
+    {
+        uint8_t new_span = 0;
+        size_t entry_offset = 32 * (2 + 1 + 1 + 128) ; // 2x page header + 1x ns1 + 1x value1 + whole page
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+        // set span to 0
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        // allow overwriting smaller portion of flash than whole 4k page
+        ((esp_partition_t*) f.get_esp_partition())->erase_size = 1;
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    // check that storage can recover
+    TEST_ESP_OK(storage.init(0, 3));
+    // check that the damaged item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "item_125", val));
+}
+
+// test case for damaged item header with correct crc using string.
+// first sub-case, span goes over the remaining entries in the page
+// second sub-case, span goes over the number of entries required to store the string
+// third sub-case, span goes below the number of entries required to store the string
+// fourth sub-case, indicated variable data length goes over the remaining space in the page
+TEST_CASE("inconsistent fields in item header with correct crc are handled for string", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 3);
+    nvs::Storage storage(f.part());
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    const char str[] = "String67890123456789012345678901String67890123456789012345678901String6789012345678901234567890"; // 95 + 1 bytes data occupy 3 entries, overhead 1
+
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr1", str, strlen(str)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr2", str, strlen(str)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr3", str, strlen(str)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr4", str, strlen(str)));
+    TEST_ESP_OK(storage.writeItem(1, "valueu32", static_cast<uint32_t>(2)));
+
+    // read the values back
+    char read_str[sizeof(str)] = {0};
+    size_t read_str_size = sizeof(read_str);
+    uint32_t val = 0;
+
+    TEST_ESP_OK(storage.readItem(1, nvs::ItemType::SZ, "valuestr1", (void*)read_str, read_str_size));
+    CHECK(strcmp(read_str, str) == 0);
+    TEST_ESP_OK(storage.readItem(1, nvs::ItemType::SZ, "valuestr2", (void*)read_str, read_str_size));
+    CHECK(strcmp(read_str, str) == 0);
+    TEST_ESP_OK(storage.readItem(1, nvs::ItemType::SZ, "valuestr3", (void*)read_str, read_str_size));
+    CHECK(strcmp(read_str, str) == 0);
+    TEST_ESP_OK(storage.readItem(1, nvs::ItemType::SZ, "valuestr4", (void*)read_str, read_str_size));
+    CHECK(strcmp(read_str, str) == 0);
+
+    // default values for re-check after sections of the test
+    esp_err_t exp_err_str1 = ESP_OK;
+    esp_err_t exp_err_str2 = ESP_OK;
+    esp_err_t exp_err_str3 = ESP_OK;
+    esp_err_t exp_err_str4 = ESP_OK;
+
+    TEST_ESP_OK(storage.readItem(1, "valueu32", val));
+    CHECK(val == 2);
+
+    // allow overwriting smaller portion of flash than whole 4k page
+    ((esp_partition_t*) f.get_esp_partition())->erase_size = 1;
+
+    SECTION("damage item header of valuestr1 to introduce span exceeding remaining page size error") {
+        // span of the valstr1 is 4, there are 126 - 1  = 125 entries left in the page, set damaged span to 126
+        uint8_t new_span = 126;
+
+        const uint8_t entry_index = 3; // 2x page header + 1x ns1
+
+        size_t entry_offset = 32 * entry_index;
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        // expect error when trying to read the item
+        exp_err_str1 = ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    SECTION("damage item header of valuestr2 to introduce span exceeding the number of entries required to store the string") {
+        // span of the valstr2 is 4, there are 126 - (1 + 4)  = 121 entries left in the page, set damaged span to value below 121 and above 4
+        uint8_t new_span = 10;
+
+        const uint8_t entry_index = 7; // 2x page header + 1x ns1 + 4x valuestr1
+
+        size_t entry_offset = 32 * entry_index;
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        // expect error when trying to read the item
+        exp_err_str2 = ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    SECTION("damage item header of valuestr3 to introduce span lower than the number of entries required to store the string") {
+        // span of the valstr3 is 4, set to 3
+        uint8_t new_span = 3;
+
+        const uint8_t entry_index = 11; // 2x page header + 1x ns1 + 4x valuestr1 + 4x valuestr2
+
+        size_t entry_offset = 32 * entry_index;
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        // expect error when trying to read the item
+        exp_err_str3 = ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    SECTION("damage item header of valuestr4 to introduce indicated variable data length going over the remaining space in the page") {
+        const uint8_t entry_index = 15; // 2x page header + 1x ns1 + 4x valuestr1 + 4x valuestr2 + 4x valuestr3
+
+        size_t entry_offset = 32 * entry_index;
+        // we are at entry 15, there are 126 - 15 = 111 entries left in the page, set data size to 112 * 32 bytes
+        uint16_t new_size = 112 * 32;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        item->varLength.dataSize = new_size;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        // expect error when trying to read the item
+        exp_err_str4 = ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    // check that storage can recover
+
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "valueu32", val));
+    CHECK(val == 2);
+
+    // check that the damaged items are no longer present
+    char read_buff[sizeof(str)];
+    TEST_ESP_ERR(exp_err_str1, storage.readItem(1, nvs::ItemType::SZ, "valuestr1", read_buff, sizeof(read_buff)));
+    TEST_ESP_ERR(exp_err_str2, storage.readItem(1, nvs::ItemType::SZ, "valuestr2", read_buff, sizeof(read_buff)));
+    TEST_ESP_ERR(exp_err_str3, storage.readItem(1, nvs::ItemType::SZ, "valuestr3", read_buff, sizeof(read_buff)));
+    TEST_ESP_ERR(exp_err_str4, storage.readItem(1, nvs::ItemType::SZ, "valuestr4", read_buff, sizeof(read_buff)));
+}
+
+// Inconsistent fields in item header with correct crc are handled for blobs
+
+// Before each sub case damaging the blob with key = "valueblob1", following scheme will be used to store the blob and do the test
+// Page 1
+// 1x namespace entry
+// 1x U32 entry, key = "valueu32_1" before data
+// 124x BLOB_DATA entries, key = "valueblob1", chunk index = 0 containing 123*32 bytes of data
+
+// Page 2
+// 3x BLOB_DATA entries, key = "valueblob1", chunk index = 1 containing 2*32 bytes of data
+// 1x BLOB_INDEX entry key = "valueblob1", chunkVersion = 0, chunkCount = 2
+// 3x BLOB_DATA entries, key = "valueblob2", chunk index = 0 containing 2*32 bytes of data
+// 1x BLOB_INDEX entry key = "valueblob2", chunkVersion = 0, chunkCount = 1
+// 1x U32 entry key = "valueu32_2" after data
+TEST_CASE("inconsistent fields in item header with correct crc are handled for multi page blob", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 3);
+
+    // keys
+    char ukey1[] = "valueu32_1";
+    char ukey2[] = "valueu32_2";
+    char blob_key1[] = "valueblob1";
+    char blob_key2[] = "valueblob2";
+
+    // planned chunk lengths
+    size_t blob_key1_chunk_0_len = 123 * 32;
+    size_t blob_key1_chunk_1_len = 2 * 32;
+    size_t blob_key2_chunk_len = 2 * 32;
+
+    // initial values
+    uint32_t uval1 = 1;
+    uint32_t uval2 = 2;
+    uint8_t blob_data1[blob_key1_chunk_0_len + blob_key1_chunk_1_len];
+    uint8_t blob_data2[blob_key2_chunk_len];
+
+    // value buffers
+    uint32_t read_u32_1;
+    uint32_t read_u32_2;
+    uint8_t read_blob1[sizeof(blob_data1)];
+    uint8_t read_blob2[sizeof(blob_data2)];
+    size_t read_blob1_size = sizeof(read_blob1);
+    size_t read_blob2_size = sizeof(read_blob2);
+
+    // Skip one page, 2 entries of page header and 3 entries of valueblob1's BLOB_DATA entries
+    const size_t blob_index_offset = 4096 + 32 * 2 + 32 * 3;
+
+    // Skip 2 entries of page header 1 entry of namespace and 1 entry of valueu32_1
+    const size_t blob_data_chunk0_offset = 32 * 2 + 32 * 1 + 32 * 1;
+
+    // returns length of BLOB_DATA of blob_key1 on page 1 within the partition
+    // Skip 2 entries of page header 1 entry of namespace and 1 entry of valueu32_1
+    const uint16_t blob_data_chunk0_len = blob_key1_chunk_0_len;
+
+    // returns length of BLOB_DATA of blob_key1 on page 1 within the partition
+    // Skip 2 entries of page header 1 entry of namespace and 1 entry of valueu32_1
+    const uint16_t blob_data_chunk1_len = blob_key1_chunk_1_len;
+
+    // returns offset of BLOB_DATA of blob_key1 on page 1 within the partition
+    // Skip one page, 2 entries of page header
+    const size_t blob_data_chunk1_offset = 4096 + 32 * 2;
+
+    // initialize buffers
+    read_u32_1 = 0;
+    read_u32_2 = 0;
+    memset(blob_data1, 0x55, sizeof(blob_data1));
+    memset(blob_data2, 0xaa, sizeof(blob_data2));
+    memset(read_blob1, 0, sizeof(read_blob1));
+    memset(read_blob2, 0, sizeof(read_blob2));
+
+    // Write initial data to the nvs partition
+    {
+        TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
+
+        nvs_handle_t handle;
+        TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
+        TEST_ESP_OK(nvs_set_u32(handle, ukey1, uval1));
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key1, blob_data1, sizeof(blob_data1)));
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key2, blob_data2, sizeof(blob_data2)));
+        TEST_ESP_OK(nvs_set_u32(handle, ukey2, uval2));
+        nvs_close(handle);
+
+        TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
+    }
+
+    // during the test, we will make changes of the data in more granular way than the whole 4k page
+    // allow overwriting smaller portion of flash than whole 4k page
+    ((esp_partition_t*) f.get_esp_partition())->erase_size = 1;
+
+    // Sub test cases
+    SECTION("damage BLOB_IDX - span set to 0") {
+        // Damage BLOB_IDX of valueblob1, modify span == 1 to 0
+        size_t entry_offset = blob_index_offset;
+        uint8_t expected_span = 1;
+        uint8_t new_span = 0;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->span == expected_span);
+        item->span = new_span;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    SECTION("damage BLOB_IDX - chunkIndex set to 111 instead of CHUNK_ANY") {
+        // Damage BLOB_IDX of valueblob1, modify chunkIndex == 111
+        size_t entry_offset = blob_index_offset;
+        uint8_t expected_chunk_index = nvs::Item::CHUNK_ANY;
+        uint8_t new_chunk_index = 111;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->chunkIndex == expected_chunk_index);
+        item->chunkIndex = new_chunk_index;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    SECTION("damage BLOB_IDX - blobIndex.dataSize over theoretical limit of 32*125*127 (entry size * max payload entries in page * max # of chunks)") {
+        // Damage BLOB_IDX of valueblob1, modify blobIndex.dataSize
+        size_t entry_offset = blob_index_offset;
+        uint32_t expected_data_size = blob_data_chunk0_len + blob_data_chunk1_len;
+        uint32_t new_data_size = (32 * 125 * 127) + 1;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->blobIndex.dataSize == expected_data_size);
+        item->chunkIndex = new_data_size;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    SECTION("damage BLOB_DATA - chunkIndex set to invalid value of CHUNK_ANY") {
+        // Damage BLOB_DATA of valueblob1, modify chunkIndex to CHUNK_ANY
+        size_t entry_offset = blob_data_chunk0_offset;
+        uint8_t unexpected_chunk_index = nvs::Item::CHUNK_ANY;
+        uint8_t new_chunk_index = nvs::Item::CHUNK_ANY;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->chunkIndex != unexpected_chunk_index);
+        item->chunkIndex = new_chunk_index;
+
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    SECTION("damage BLOB_DATA - varLength.dataSize is exceeding the maximum capacity available till the end of the page") {
+        // Damage BLOB_DATA of valueblob1, set new data size to be beyond remaining capacity in the page.
+        // Even if all entries are used for payload, there will be one overhead entry required
+        size_t entry_offset = blob_data_chunk1_offset; // let's take chunk1 for this test
+        uint16_t expected_data_size = blob_data_chunk1_len;
+        uint16_t new_data_size = 32 * 126;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->varLength.dataSize == expected_data_size);
+        item->varLength.dataSize = new_data_size;
+
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    SECTION("damage BLOB_DATA - span > maxAvailablePageSpan") {
+        // Damage BLOB_DATA of valueblob1, set span to the value larger than the rest of entries in the page but smaller than maximum of entries .
+        // page can accommodate
+        // chunk0 starts at entry index 2 so max span is 126 - 2 = 124. Use 125
+        size_t entry_offset = blob_data_chunk0_offset;
+        uint8_t expected_span = (blob_data_chunk0_len + 31) / 32 + 1;
+        uint8_t new_span = 125;
+
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+        nvs::Item* item = (nvs::Item*)buff;
+
+        CHECK(item->span == expected_span);
+        item->span = new_span;
+
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    // check that storage can recover and validate the remaining data
+    {
+        TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
+
+        nvs_handle_t handle;
+        TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
+        TEST_ESP_OK(nvs_get_u32(handle, ukey1, &read_u32_1));
+        TEST_ESP_ERR(nvs_get_blob(handle, blob_key1, &read_blob1, &read_blob1_size), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_OK(nvs_get_blob(handle, blob_key2, &read_blob2, &read_blob2_size));
+        TEST_ESP_OK(nvs_get_u32(handle, ukey2, &read_u32_2));
+        nvs_close(handle);
+        TEST_ESP_OK(nvs_flash_deinit_partition(f.part()->get_partition_name()));
+
+        // validate the data
+        CHECK(read_u32_1 == uval1);
+        CHECK(read_u32_2 == uval2);
+        CHECK(memcmp(read_blob2, blob_data2, sizeof(blob_data2)) == 0);
+    }
+}
+
+// header entry of u32 entry will be damaged in a way that data type will be invalid
+// while crc will be correct
+TEST_CASE("invalid data type in item header with correct crc is handled", "[nvs]")
+{
+    PartitionEmulationFixture f(0, 3);
+    nvs::Storage storage(f.part());
+    // prepare some data
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    TEST_ESP_OK(storage.writeItem(1, "value3", static_cast<uint32_t>(3)));
+
+    // damage item header of value2 to introduce data type error, recalculate crc
+    {
+        nvs::ItemType new_data_type = (nvs::ItemType) 0xfe;
+        size_t entry_offset = 32 * 4; // 2x page header + 1x ns1 + 1x value1
+        uint8_t buff[sizeof(nvs::Item)] = {0};
+        TEST_ESP_OK(esp_partition_read(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+
+        nvs::Item* item = (nvs::Item*)buff;
+
+        // set span to U8
+        item->datatype = new_data_type;
+        // recalculate crc same way as nvs::Item::calculateCrc32 does
+        item->crc32 = ((nvs::Item*)buff)->calculateCrc32();
+
+        // allow overwriting smaller portion of flash than whole 4k page
+        ((esp_partition_t*) f.get_esp_partition())->erase_size = 1;
+        TEST_ESP_OK(esp_partition_erase_range(f.get_esp_partition(), entry_offset, sizeof(buff)));
+        TEST_ESP_OK(esp_partition_write(f.get_esp_partition(), entry_offset, &buff, sizeof(buff)));
+    }
+
+    // check that storage can recover
+    uint32_t val = 0;
+
+    TEST_ESP_OK(storage.init(0, 3));
+    TEST_ESP_OK(storage.readItem(1, "value1", val));
+    CHECK(val == 1);
+    // check that the damaged item is no longer present
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, storage.readItem(1, "value2", val));
+
+    TEST_ESP_OK(storage.readItem(1, "value3", val));
+    CHECK(val == 3);
+}
+
 // leaks memory
 TEST_CASE("Recovery from power-off when the entry being erased is not on active page", "[nvs]")
 {
@@ -2646,24 +3130,24 @@ TEST_CASE("Recovery from power-off when the entry being erased is not on active 
     size_t read_size = blob_size;
     uint8_t blob[blob_size] = {0x11};
     PartitionEmulationFixture f(0, 3);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
     nvs_handle_t handle;
-    TEST_ESP_OK( nvs_open("test", NVS_READWRITE, &handle) );
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
 
     esp_partition_clear_stats();
     esp_partition_fail_after(nvs::Page::CHUNK_MAX_SIZE / 4 + 75, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
-    TEST_ESP_OK( nvs_set_blob(handle, "1a", blob, blob_size) );
-    TEST_ESP_OK( nvs_set_blob(handle, "1b", blob, blob_size) );
+    TEST_ESP_OK(nvs_set_blob(handle, "1a", blob, blob_size));
+    TEST_ESP_OK(nvs_set_blob(handle, "1b", blob, blob_size));
 
-    TEST_ESP_ERR( nvs_erase_key(handle, "1a"), ESP_ERR_FLASH_OP_FAIL );
+    TEST_ESP_ERR(nvs_erase_key(handle, "1a"), ESP_ERR_FLASH_OP_FAIL);
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
 
     // Check 1a is erased fully
-    TEST_ESP_ERR( nvs_get_blob(handle, "1a", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle, "1a", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
 
     // Check 2b is still accessible
-    TEST_ESP_OK( nvs_get_blob(handle, "1b", blob, &read_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "1b", blob, &read_size));
 
     nvs_close(handle);
 
@@ -2677,7 +3161,7 @@ TEST_CASE("Recovery from power-off when page is being freed", "[nvs]")
     size_t read_size = blob_size / 2;
     uint8_t blob[blob_size] = {0};
     PartitionEmulationFixture f(0, 3);
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
     nvs_handle_t handle;
     TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &handle));
     // Fill first page
@@ -2694,19 +3178,19 @@ TEST_CASE("Recovery from power-off when page is being freed", "[nvs]")
     esp_partition_fail_after(6 * nvs::Page::ENTRY_COUNT, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
     TEST_ESP_ERR(nvs_set_blob(handle, "1d", blob, blob_size / 4), ESP_ERR_FLASH_OP_FAIL);
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 3));
 
     read_size = blob_size / 3;
-    TEST_ESP_OK( nvs_get_blob(handle, "1a", blob, &read_size));
-    TEST_ESP_OK( nvs_get_blob(handle, "1b", blob, &read_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "1a", blob, &read_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "1b", blob, &read_size));
 
     read_size = blob_size / 4;
-    TEST_ESP_ERR( nvs_get_blob(handle, "1c", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
-    TEST_ESP_ERR( nvs_get_blob(handle, "1d", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle, "1c", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_blob(handle, "1d", blob, &read_size), ESP_ERR_NVS_NOT_FOUND);
 
     read_size = blob_size / 2;
-    TEST_ESP_OK( nvs_get_blob(handle, "2a", blob, &read_size));
-    TEST_ESP_OK( nvs_get_blob(handle, "2b", blob, &read_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "2a", blob, &read_size));
+    TEST_ESP_OK(nvs_get_blob(handle, "2b", blob, &read_size));
 
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
@@ -2719,7 +3203,7 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     // initialize the fixture with nvs binary loaded
     PartitionEmulationFixture f(0, 2, "nvs", WD_PREFIX "../../nvs_partition_generator/part_old_blob_format.bin");
 
-    TEST_ESP_OK( nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 2));
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 2));
     nvs_handle_t handle;
     TEST_ESP_OK(nvs_open_from_partition("nvs", "dummyNamespace", NVS_READWRITE, &handle));
 
@@ -2780,23 +3264,23 @@ static void check_nvs_part_gen_args(char const *flash_binary_filename,      // n
 
     // initialize the fixture with nvs binary loaded
     PartitionEmulationFixture f(0, size, part_name, flash_binary_filename);
-    TEST_ESP_OK(  nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, size) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, size));
 
-    TEST_ESP_OK( nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
+    TEST_ESP_OK(nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
     uint8_t u8v;
-    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    TEST_ESP_OK(nvs_get_u8(handle, "dummyU8Key", &u8v));
     CHECK(u8v == 127);
     int8_t i8v;
-    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    TEST_ESP_OK(nvs_get_i8(handle, "dummyI8Key", &i8v));
     CHECK(i8v == -128);
     uint16_t u16v;
-    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    TEST_ESP_OK(nvs_get_u16(handle, "dummyU16Key", &u16v));
     CHECK(u16v == 32768);
     uint32_t u32v;
-    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    TEST_ESP_OK(nvs_get_u32(handle, "dummyU32Key", &u32v));
     CHECK(u32v == 4294967295);
     int32_t i32v;
-    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    TEST_ESP_OK(nvs_get_i32(handle, "dummyI32Key", &i32v));
     CHECK(i32v == -2147483648);
 
     char string_buf[256];
@@ -2806,27 +3290,27 @@ static void check_nvs_part_gen_args(char const *flash_binary_filename,      // n
                             "Pellentesque rhoncus dictum sodales.\n"
                             "In justo erat, viverra at interdum eget, interdum vel dui.";
     size_t str_len = sizeof(test_str);
-    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", string_buf, &str_len));
+    TEST_ESP_OK(nvs_get_str(handle, "dummyStringKey", string_buf, &str_len));
     CHECK(strncmp(string_buf, test_str, str_len) == 0);
 
     char buf[64] = {0};
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     size_t buflen = 64;
-    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 
     uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
-    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
     CHECK(memcmp(buf, base64data, buflen) == 0);
 
     buflen = 64;
     uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
-    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "hexFileKey", buf, &buflen));
     CHECK(memcmp(buf, hexfiledata, buflen) == 0);
 
     buflen = 64;
     uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
-    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_str(handle, "stringFileKey", buf, &buflen));
     CHECK(memcmp(buf, strfiledata, buflen) == 0);
 
     char bin_data[5200];
@@ -2835,7 +3319,7 @@ static void check_nvs_part_gen_args(char const *flash_binary_filename,      // n
     ifstream file;
     file.open(filename);
     file.read(binfiledata, 5200);
-    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    TEST_ESP_OK(nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
 
     file.close();
@@ -2854,47 +3338,47 @@ static void check_nvs_part_gen_args_mfg(char const *flash_binary_filename,  // n
 
     // initialize the fixture with nvs binary loaded
     PartitionEmulationFixture f(0, size, part_name, flash_binary_filename);
-    TEST_ESP_OK(  nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, size) );
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, size));
 
-    TEST_ESP_OK( nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
+    TEST_ESP_OK(nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
     uint8_t u8v;
-    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    TEST_ESP_OK(nvs_get_u8(handle, "dummyU8Key", &u8v));
     CHECK(u8v == 127);
     int8_t i8v;
-    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    TEST_ESP_OK(nvs_get_i8(handle, "dummyI8Key", &i8v));
     CHECK(i8v == -128);
     uint16_t u16v;
-    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    TEST_ESP_OK(nvs_get_u16(handle, "dummyU16Key", &u16v));
     CHECK(u16v == 32768);
     uint32_t u32v;
-    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    TEST_ESP_OK(nvs_get_u32(handle, "dummyU32Key", &u32v));
     CHECK(u32v == 4294967295);
     int32_t i32v;
-    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    TEST_ESP_OK(nvs_get_i32(handle, "dummyI32Key", &i32v));
     CHECK(i32v == -2147483648);
 
     char buf[64] = {0};
     size_t buflen = 64;
-    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_str(handle, "dummyStringKey", buf, &buflen));
     CHECK(strncmp(buf, "0A:0B:0C:0D:0E:0F", buflen) == 0);
 
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     buflen = 64;
-    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 
     uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
-    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
     CHECK(memcmp(buf, base64data, buflen) == 0);
 
     buflen = 64;
     uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
-    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_blob(handle, "hexFileKey", buf, &buflen));
     CHECK(memcmp(buf, hexfiledata, buflen) == 0);
 
     buflen = 64;
     uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
-    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    TEST_ESP_OK(nvs_get_str(handle, "stringFileKey", buf, &buflen));
     CHECK(memcmp(buf, strfiledata, buflen) == 0);
 
     char bin_data[5200];
@@ -2903,7 +3387,7 @@ static void check_nvs_part_gen_args_mfg(char const *flash_binary_filename,  // n
     ifstream file;
     file.open(filename);
     file.read(binfiledata, 5200);
-    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    TEST_ESP_OK(nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
     CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
 
     file.close();
@@ -2921,7 +3405,7 @@ TEST_CASE("check and read data from partition generated via partition generation
         exit(execlp("cp", " cp",
                     "-rf",
                     WD_PREFIX "../../nvs_partition_generator/testdata",
-                    "." ,
+                    ".",
                     NULL));
     } else {
         CHECK(childpid > 0);
@@ -3084,7 +3568,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
                                 "test",
                                 3,
                                 "testdata/sample_singlepage_blob.bin");
-
 
     childpid = fork();
     if (childpid == 0) {
@@ -3271,8 +3754,8 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs][xxx]")
         f.erase(j);
     }
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
 
@@ -3335,14 +3818,13 @@ TEST_CASE("nvs find key tests", "[nvs]")
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 13;
 
-
     TEST_ESP_ERR(nvs_open("namespace1", NVS_READWRITE, &handle_1), ESP_ERR_NVS_NOT_INITIALIZED);
     for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
         f.erase(i);
     }
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
-                NVS_FLASH_SECTOR,
-                NVS_FLASH_SECTOR_COUNT_MIN));
+                                                                      NVS_FLASH_SECTOR,
+                                                                      NVS_FLASH_SECTOR_COUNT_MIN));
 
     nvs_type_t datatype_found;  // datatype of entry found
 
@@ -3375,11 +3857,15 @@ TEST_CASE("nvs find key tests", "[nvs]")
     uint8_t *p_buff = (uint8_t *) malloc(buff_len);
     CHECK(p_buff != nullptr);
     TEST_ESP_ERR(nvs_find_key(handle_1, "foo2", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
-    for(size_t i=0; i<buff_len; i++) p_buff[i] = (uint8_t) (i%0xff);
+    for (size_t i = 0; i < buff_len; i++) {
+        p_buff[i] = (uint8_t)(i % 0xff);
+    }
     TEST_ESP_OK(nvs_set_blob(handle_1, "foo2", p_buff, buff_len));
     TEST_ESP_OK(nvs_find_key(handle_1, "foo2", &datatype_found));
     CHECK(datatype_found == NVS_TYPE_BLOB);
-    for(size_t i=0; i<buff_len; i++) p_buff[i] = (uint8_t) ((buff_len-i-1)%0xff);
+    for (size_t i = 0; i < buff_len; i++) {
+        p_buff[i] = (uint8_t)((buff_len - i - 1) % 0xff);
+    }
     TEST_ESP_OK(nvs_set_blob(handle_1, "foo2", p_buff, buff_len));
     TEST_ESP_OK(nvs_find_key(handle_1, "foo2", &datatype_found));
     CHECK(datatype_found == NVS_TYPE_BLOB);
