@@ -925,6 +925,12 @@ config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
     help
         This enable BLE high duty advertising interval feature
 
+config BT_NIMBLE_HOST_ALLOW_CONNECT_WITH_SCAN
+    bool "Allow Connections with scanning in progress"
+    depends on BT_NIMBLE_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    help
+        This enables support for user to initiate a new connection with scan in progress
+
 config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
     bool "BLE queue congestion check"
     depends on BT_NIMBLE_ENABLED
