@@ -67,7 +67,7 @@ function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
                             -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                             -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
                             -DPYTHON=${python}
-                            -DCMAKE_MODULE_PATH=$ENV{IDF_PATH}/components/ulp/cmake/
+                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
                             ${extra_cmake_args}
                 BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
