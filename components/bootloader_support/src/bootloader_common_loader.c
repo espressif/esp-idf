@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,14 +67,14 @@ esp_err_t bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint
     uint32_t major_rev = revision / 100;
     uint32_t minor_rev = revision % 100;
     if (IS_FIELD_SET(min_rev_full) && !ESP_EFUSE_BLK_REV_ABOVE(revision, min_rev_full)) {
-        ESP_LOGE(TAG, "Image requires efuse blk rev >= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
-                    min_rev_full / 100, min_rev_full % 100, major_rev, minor_rev);
+        ESP_LOGE(TAG, "efuse blk rev = v%"PRIu32".%"PRIu32" < min rev v%"PRIu32".%"PRIu32,
+                    major_rev, minor_rev, min_rev_full / 100, min_rev_full % 100);
         err = ESP_FAIL;
     }
     // If burnt `disable_blk_version_major` bit, skip the max version check
     if ((IS_FIELD_SET(max_rev_full) && (revision > max_rev_full) && !efuse_hal_get_disable_blk_version_major())) {
-        ESP_LOGE(TAG, "Image requires efuse blk rev <= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
-                    max_rev_full / 100, max_rev_full % 100, major_rev, minor_rev);
+        ESP_LOGE(TAG, "efuse blk rev = v%"PRIu32".%"PRIu32" > max rev v%"PRIu32".%"PRIu32,
+                    major_rev, minor_rev, max_rev_full / 100, max_rev_full % 100);
         err = ESP_FAIL;
     }
 #endif

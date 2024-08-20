@@ -57,7 +57,7 @@ config ESP_REV_MAX_FULL
 
 config ESP_EFUSE_BLOCK_REV_MIN_FULL
     int "Minimum Supported ESP32-C3 eFuse Block Revision"
-    default 100
+    default 0
     help
         Required minimum eFuse Block revision. ESP-IDF will check it at the 2nd bootloader stage
         whether the current image can work correctly for this eFuse Block revision.
