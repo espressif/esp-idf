@@ -430,7 +430,7 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(dut: Dut) -> 
 
 
 @pytest.mark.esp32
-@pytest.mark.ethernet_flash_8m
+@pytest.mark.flash_encryption_ota
 @pytest.mark.parametrize('config', ['anti_rollback',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_protocol_advanced_https_ota_example_anti_rollback(dut: Dut) -> None:

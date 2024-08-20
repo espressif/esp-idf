@@ -68,6 +68,7 @@ ENV_MARKERS = {
     'flash_encryption': 'Flash Encryption runners',
     'flash_encryption_f4r8': 'Flash Encryption runners with 4-line flash and 8-line psram',
     'flash_encryption_f8r8': 'Flash Encryption runners with 8-line flash and 8-line psram',
+    'flash_encryption_ota': 'Flash Encryption runners with ethernet OTA support with 4mb flash size',
     'flash_multi': 'Multiple flash chips tests',
     'psram': 'Chip has 4-line psram',
     'ir_transceiver': 'runners with a pair of IR transmitter and receiver',
