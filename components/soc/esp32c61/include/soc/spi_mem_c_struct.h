@@ -262,7 +262,7 @@ typedef union {
          */
         uint32_t mem_ecc_16to18_byte_en:1;
         uint32_t reserved_15:9;
-        /** mem_split_trans_en : R/W; bitpos: [24]; default: 1;
+        /** mem_split_trans_en : R/W; bitpos: [24]; default: 0;
          *  Set this bit to enable SPI0 split one AXI read flash transfer into two SPI
          *  transfers when one transfer will cross flash or EXT_RAM page corner, valid no
          *  matter whether there is an ECC region or not.
@@ -999,7 +999,7 @@ typedef union {
          *  MSPI core clock cycles.
          */
         uint32_t smem_cs_hold_delay:6;
-        /** smem_split_trans_en : HRO; bitpos: [31]; default: 1;
+        /** smem_split_trans_en : HRO; bitpos: [31]; default: 0;
          *  Set this bit to enable SPI0 split one AXI accesses EXT_RAM transfer into two SPI
          *  transfers when one transfer will cross flash/EXT_RAM page corner, valid no matter
          *  whether there is an ECC region or not.
@@ -2046,13 +2046,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xts_physical_address : R/W; bitpos: [25:0]; default: 0;
+        /** xts_physical_address : R/W; bitpos: [29:0]; default: 0;
          *  This bits stores the physical-address parameter which will be used in manual
          *  encryption calculation. This value should aligned with byte number decided by
          *  line-size parameter.
          */
-        uint32_t xts_physical_address:26;
-        uint32_t reserved_26:6;
+        uint32_t xts_physical_address:30;
+        uint32_t reserved_30:2;
     };
     uint32_t val;
 } spi_mem_c_xts_physical_address_reg_t;
@@ -2131,7 +2131,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xts_date : R/W; bitpos: [29:0]; default: 538972176;
+        /** xts_date : R/W; bitpos: [29:0]; default: 539035911;
          *  This bits stores the last modified-time of manual encryption feature.
          */
         uint32_t xts_date:30;
@@ -2241,6 +2241,33 @@ typedef union {
 } spi_mem_c_dpa_ctrl_reg_t;
 
 
+/** Group: External mem cryption PSEUDO registers */
+/** Type of mem_xts_pseudo_round_conf register
+ *  SPI memory cryption PSEUDO register
+ */
+typedef union {
+    struct {
+        /** mem_mode_pseudo : R/W; bitpos: [1:0]; default: 0;
+         *  Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo
+         *  and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo.
+         *  2'b11: crypto with pseudo.
+         */
+        uint32_t mem_mode_pseudo:2;
+        /** mem_pseudo_base : R/W; bitpos: [5:2]; default: 2;
+         *  xts aes peseudo function base round that must be performed.
+         */
+        uint32_t mem_pseudo_base:4;
+        /** mem_pseudo_inc : R/W; bitpos: [7:6]; default: 2;
+         *  xts aes peseudo function increment round that will be performed randomly between 0 &
+         *  2**(inc+1).
+         */
+        uint32_t mem_pseudo_inc:2;
+        uint32_t reserved_8:24;
+    };
+    uint32_t val;
+} spi_mem_c_xts_pseudo_round_conf_reg_t;
+
+
 /** Group: ECO registers */
 /** Type of mem_registerrnd_eco_high register
  *  MSPI ECO high register
@@ -2277,7 +2304,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mem_date : R/W; bitpos: [27:0]; default: 36712560;
+        /** mem_date : R/W; bitpos: [27:0]; default: 36770128;
          *  SPI0 register version.
          */
         uint32_t mem_date:28;
@@ -2359,7 +2386,8 @@ typedef struct {
     volatile spi_mem_c_mmu_item_index_reg_t mem_mmu_item_index;
     volatile spi_mem_c_mmu_power_ctrl_reg_t mem_mmu_power_ctrl;
     volatile spi_mem_c_dpa_ctrl_reg_t mem_dpa_ctrl;
-    uint32_t reserved_38c[25];
+    volatile spi_mem_c_xts_pseudo_round_conf_reg_t mem_xts_pseudo_round_conf;
+    uint32_t reserved_390[24];
     volatile spi_mem_c_registerrnd_eco_high_reg_t mem_registerrnd_eco_high;
     volatile spi_mem_c_registerrnd_eco_low_reg_t mem_registerrnd_eco_low;
     uint32_t reserved_3f8;

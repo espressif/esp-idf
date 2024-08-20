@@ -339,7 +339,7 @@ extern "C" {
 #define SPI_MEM_ECC_16TO18_BYTE_EN_M  (SPI_MEM_ECC_16TO18_BYTE_EN_V << SPI_MEM_ECC_16TO18_BYTE_EN_S)
 #define SPI_MEM_ECC_16TO18_BYTE_EN_V  0x00000001U
 #define SPI_MEM_ECC_16TO18_BYTE_EN_S  14
-/** SPI_MEM_SPLIT_TRANS_EN : R/W; bitpos: [24]; default: 1;
+/** SPI_MEM_SPLIT_TRANS_EN : R/W; bitpos: [24]; default: 0;
  *  Set this bit to enable SPI0 split one AXI read flash transfer into two SPI
  *  transfers when one transfer will cross flash or EXT_RAM page corner, valid no
  *  matter whether there is an ECC region or not.
@@ -2896,7 +2896,7 @@ extern "C" {
 #define SPI_SMEM_CS_HOLD_DELAY_M  (SPI_SMEM_CS_HOLD_DELAY_V << SPI_SMEM_CS_HOLD_DELAY_S)
 #define SPI_SMEM_CS_HOLD_DELAY_V  0x0000003FU
 #define SPI_SMEM_CS_HOLD_DELAY_S  25
-/** SPI_SMEM_SPLIT_TRANS_EN : HRO; bitpos: [31]; default: 1;
+/** SPI_SMEM_SPLIT_TRANS_EN : HRO; bitpos: [31]; default: 0;
  *  Set this bit to enable SPI0 split one AXI accesses EXT_RAM transfer into two SPI
  *  transfers when one transfer will cross flash/EXT_RAM page corner, valid no matter
  *  whether there is an ECC region or not.
@@ -2962,14 +2962,14 @@ extern "C" {
  *  Manual Encryption physical address register
  */
 #define SPI_MEM_XTS_PHYSICAL_ADDRESS_REG(i) (REG_SPI_MEM_BASE(i) + 0x348)
-/** SPI_XTS_PHYSICAL_ADDRESS : R/W; bitpos: [25:0]; default: 0;
+/** SPI_XTS_PHYSICAL_ADDRESS : R/W; bitpos: [29:0]; default: 0;
  *  This bits stores the physical-address parameter which will be used in manual
  *  encryption calculation. This value should aligned with byte number decided by
  *  line-size parameter.
  */
-#define SPI_XTS_PHYSICAL_ADDRESS    0x03FFFFFFU
+#define SPI_XTS_PHYSICAL_ADDRESS    0x3FFFFFFFU
 #define SPI_XTS_PHYSICAL_ADDRESS_M  (SPI_XTS_PHYSICAL_ADDRESS_V << SPI_XTS_PHYSICAL_ADDRESS_S)
-#define SPI_XTS_PHYSICAL_ADDRESS_V  0x03FFFFFFU
+#define SPI_XTS_PHYSICAL_ADDRESS_V  0x3FFFFFFFU
 #define SPI_XTS_PHYSICAL_ADDRESS_S  0
 
 /** SPI_MEM_XTS_TRIGGER_REG register
@@ -3033,7 +3033,7 @@ extern "C" {
  *  Manual Encryption version register
  */
 #define SPI_MEM_XTS_DATE_REG(i) (REG_SPI_MEM_BASE(i) + 0x35c)
-/** SPI_XTS_DATE : R/W; bitpos: [29:0]; default: 538972176;
+/** SPI_XTS_DATE : R/W; bitpos: [29:0]; default: 539035911;
  *  This bits stores the last modified-time of manual encryption feature.
  */
 #define SPI_XTS_DATE    0x3FFFFFFFU
@@ -3153,6 +3153,35 @@ extern "C" {
 #define SPI_CRYPT_DPA_SELECT_REGISTER_V  0x00000001U
 #define SPI_CRYPT_DPA_SELECT_REGISTER_S  4
 
+/** SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG register
+ *  SPI memory cryption PSEUDO register
+ */
+#define SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(i) (REG_SPI_MEM_BASE(i) + 0x38c)
+/** SPI_MEM_MODE_PSEUDO : R/W; bitpos: [1:0]; default: 0;
+ *  Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo
+ *  and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo.
+ *  2'b11: crypto with pseudo.
+ */
+#define SPI_MEM_MODE_PSEUDO    0x00000003U
+#define SPI_MEM_MODE_PSEUDO_M  (SPI_MEM_MODE_PSEUDO_V << SPI_MEM_MODE_PSEUDO_S)
+#define SPI_MEM_MODE_PSEUDO_V  0x00000003U
+#define SPI_MEM_MODE_PSEUDO_S  0
+/** SPI_MEM_PSEUDO_BASE : R/W; bitpos: [5:2]; default: 2;
+ *  xts aes peseudo function base round that must be performed.
+ */
+#define SPI_MEM_PSEUDO_BASE    0x0000000FU
+#define SPI_MEM_PSEUDO_BASE_M  (SPI_MEM_PSEUDO_BASE_V << SPI_MEM_PSEUDO_BASE_S)
+#define SPI_MEM_PSEUDO_BASE_V  0x0000000FU
+#define SPI_MEM_PSEUDO_BASE_S  2
+/** SPI_MEM_PSEUDO_INC : R/W; bitpos: [7:6]; default: 2;
+ *  xts aes peseudo function increment round that will be performed randomly between 0 &
+ *  2**(inc+1).
+ */
+#define SPI_MEM_PSEUDO_INC    0x00000003U
+#define SPI_MEM_PSEUDO_INC_M  (SPI_MEM_PSEUDO_INC_V << SPI_MEM_PSEUDO_INC_S)
+#define SPI_MEM_PSEUDO_INC_V  0x00000003U
+#define SPI_MEM_PSEUDO_INC_S  6
+
 /** SPI_MEM_REGISTERRND_ECO_HIGH_REG register
  *  MSPI ECO high register
  *  This register is only for internal debugging purposes. Do not use it in
@@ -3187,7 +3216,7 @@ extern "C" {
  *  SPI0 version control register
  */
 #define SPI_MEM_DATE_REG(i) (REG_SPI_MEM_BASE(i) + 0x3fc)
-/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 36712560;
+/** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 36770128;
  *  SPI0 register version.
  */
 #define SPI_MEM_DATE    0x0FFFFFFFU
