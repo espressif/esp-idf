@@ -21,7 +21,40 @@
 #include "soc/i2s_reg.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "esp_cpu.h"
+#include "mspi_timing_tuning_configs.h"
+
+#include "soc/hp_sys_clkrst_reg.h"
+#include "soc/lp_clkrst_reg.h"
+#include "soc/lp_system_reg.h"
+#include "soc/sdmmc_reg.h"
+#include "soc/spi_mem_c_reg.h"
+#include "soc/spi_mem_s_reg.h"
+#include "soc/usb_serial_jtag_reg.h"
+#include "soc/trace_struct.h"
+
+#include "hal/aes_ll.h"
+#include "hal/assist_debug_ll.h"
+#include "hal/ds_ll.h"
+#include "hal/ecc_ll.h"
+#include "hal/etm_ll.h"
+#include "hal/gdma_ll.h"
+#include "hal/hmac_ll.h"
+#include "hal/mipi_csi_ll.h"
+#include "hal/mipi_dsi_brg_ll.h"
+#include "hal/mpi_ll.h"
+#include "hal/pau_ll.h"
+#include "hal/parlio_ll.h"
+#include "hal/psram_ctrlr_ll.h"
+#include "hal/rtc_io_ll.h"
+#include "hal/sha_ll.h"
+#include "hal/spi_ll.h"
+#include "hal/spimem_flash_ll.h"
+#include "hal/timer_ll.h"
+#include "hal/uart_ll.h"
+#include "hal/usb_serial_jtag_ll.h"
+#include "hal/usb_utmi_ll.h"
 #include "hal/wdt_hal.h"
+
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -177,115 +210,164 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 {
     soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
 
-    if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+    if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
         esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
-        // RC slow (150K) always ON
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
     } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
         // RC slow (150K) always ON
-    } else {
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
         esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_RC_32K_CLK_EN);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+    } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+        // RC slow (150K) always ON
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_XTAL_32K_CLK_EN);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
     }
-
-    ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
-#if 0 // TODO: IDF-5658
-    uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
-    uint32_t common_perip_clk1 = 0;
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    if ((rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU_MWDT)      \
+            && (rst_reason != RESET_REASON_CPU_RWDT) && (rst_reason != RESET_REASON_CPU_JTAG)    \
+            && (rst_reason != RESET_REASON_CPU_LOCKUP)) {
+        _gdma_ll_enable_bus_clock(0, false);
+        _gdma_ll_enable_bus_clock(1, false);
+        _pau_ll_enable_bus_clock(false);
+        _parlio_ll_enable_bus_clock(0, false);
+        _etm_ll_enable_bus_clock(0, false);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_SYS_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_RX_SYS_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_TX_SYS_CLK_EN);
 
-    /* For reason that only reset CPU, do not disable the clocks
-     * that have been enabled before reset.
-     */
-    if (rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_SW ||
-            rst_reason == RESET_REASON_CPU0_RTC_WDT || rst_reason == RESET_REASON_CPU0_MWDT1) {
-        common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
-        hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
-        wifi_bt_sdio_clk = ~READ_PERI_REG(SYSTEM_WIFI_CLK_EN_REG);
-    } else {
-        common_perip_clk = SYSTEM_WDG_CLK_EN |
-                           SYSTEM_I2S0_CLK_EN |
+// Non-Console UART
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                           SYSTEM_UART_CLK_EN |
+        _uart_ll_enable_bus_clock(UART_NUM_0, false);
+        _uart_ll_sclk_disable(&UART0);
+#elif CONFIG_ESP_CONSOLE_UART_NUM != 1
+        _uart_ll_enable_bus_clock(UART_NUM_1, false);
+        _uart_ll_sclk_disable(&UART1);
 #endif
-#if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                           SYSTEM_UART1_CLK_EN |
-#endif
-                           SYSTEM_SPI2_CLK_EN |
-                           SYSTEM_I2C_EXT0_CLK_EN |
-                           SYSTEM_UHCI0_CLK_EN |
-                           SYSTEM_RMT_CLK_EN |
-                           SYSTEM_LEDC_CLK_EN |
-                           SYSTEM_TIMERGROUP1_CLK_EN |
-                           SYSTEM_SPI3_CLK_EN |
-                           SYSTEM_SPI4_CLK_EN |
-                           SYSTEM_TWAI_CLK_EN |
-                           SYSTEM_I2S1_CLK_EN |
-                           SYSTEM_SPI2_DMA_CLK_EN |
-                           SYSTEM_SPI3_DMA_CLK_EN;
+        _uart_ll_enable_bus_clock(UART_NUM_2, false);
+        _uart_ll_sclk_disable(&UART2);
+        _uart_ll_enable_bus_clock(UART_NUM_3, false);
+        _uart_ll_sclk_disable(&UART3);
+        _uart_ll_enable_bus_clock(UART_NUM_4, false);
+        _uart_ll_sclk_disable(&UART4);
 
-        common_perip_clk1 = 0;
-        hwcrypto_perip_clk = SYSTEM_CRYPTO_AES_CLK_EN |
-                             SYSTEM_CRYPTO_SHA_CLK_EN |
-                             SYSTEM_CRYPTO_RSA_CLK_EN;
-        wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
-                           SYSTEM_WIFI_CLK_BT_EN_M |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT5 |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT12;
+        _timer_ll_enable_bus_clock(0, false);
+        _timer_ll_enable_clock(&TIMERG0, 0, false);
+        _timer_ll_enable_clock(&TIMERG0, 1, false);
+
+        _timer_ll_enable_bus_clock(1, false);
+        _timer_ll_enable_clock(&TIMERG1, 0, false);
+        _timer_ll_enable_clock(&TIMERG1, 1, false);
+
+        mipi_dsi_brg_ll_enable_ref_clock(&MIPI_DSI_BRIDGE, false);
+        _mipi_csi_ll_enable_host_bus_clock(0, false);
+
+        REG_CLR_BIT(SDHOST_CLK_EDGE_SEL_REG, SDHOST_CCLK_EN);
+
+#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+        _spimem_ctrlr_ll_unset_clock(0);
+#endif
+
+#if !MSPI_TIMING_FLASH_NEEDS_TUNING
+        REG_CLR_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CLK_ENA);
+        REG_CLR_BIT(SPI_MEM_C_SMEM_TIMING_CALI_REG, SPI_MEM_C_SMEM_TIMING_CLK_ENA);
+#endif
+
+#if !MSPI_TIMING_PSRAM_NEEDS_TUNING
+        REG_CLR_BIT(SPI_MEM_S_TIMING_CALI_REG, SPI_MEM_S_TIMING_CLK_ENA);
+        REG_CLR_BIT(SPI_MEM_S_SMEM_TIMING_CALI_REG, SPI_MEM_S_SMEM_TIMING_CLK_ENA);
+#endif
+
+#if !CONFIG_SPIRAM
+        _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+        _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+#endif
+
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
+        // 240M CLK is for Key Management use, should not be gated
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
+
+        _spi_ll_enable_bus_clock(SPI2_HOST, false);
+        _spi_ll_enable_bus_clock(SPI3_HOST, false);
+        _spi_ll_enable_clock(SPI2_HOST, false);
+        _spi_ll_enable_clock(SPI3_HOST, false);
+
+#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
+        /* Disable ASSIST Debug module clock if PC recoreding function is not used,
+         * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
+        _assist_debug_ll_enable_bus_clock(false);
+#endif
+        // Trace & Bus Monitor (0)
+        TRACE0.clock_gate.clk_en = 0;
+        TRACE1.clock_gate.clk_en = 0;
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_L2MEMMON_MEM_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_L2MEMMON_SYS_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_TCMMON_SYS_CLK_EN);
+
+        // Crypto Modules
+        _aes_ll_enable_bus_clock(false);
+        _ds_ll_enable_bus_clock(false);
+        _ecc_ll_enable_bus_clock(false);
+        _hmac_ll_enable_bus_clock(false);
+        _mpi_ll_enable_bus_clock(false);
+        _sha_ll_enable_bus_clock(false);
+
+        // USB1.1
+        REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG11_BK_SYS_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG11_48M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_USB_OTG11_SYS_CLK_EN);
+        // USB2.0
+        _usb_utmi_ll_enable_bus_clock(false);
+        REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG20_BK_SYS_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL1_REG, LP_CLKRST_USB_OTG20_ULPI_CLK_EN);
+        // UHCI
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_UHCI_APB_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_UHCI_SYS_CLK_EN);
+
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        // Disable USB-Serial-JTAG clock and it's pad if not used
+        usb_serial_jtag_ll_phy_enable_pad(false);
+        _usb_serial_jtag_ll_enable_bus_clock(false);
+        REG_SET_BIT(USB_SERIAL_JTAG_MEM_CONF_REG, USB_SERIAL_JTAG_USB_MEM_PD);
+        REG_CLR_BIT(USB_SERIAL_JTAG_MEM_CONF_REG, USB_SERIAL_JTAG_USB_MEM_CLK_EN);
+#endif
     }
 
-    //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
-    common_perip_clk |= SYSTEM_I2S0_CLK_EN |
-#if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                        SYSTEM_UART_CLK_EN |
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_SUPER_WDT) \
+            || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)) {
+        _lp_uart_ll_enable_bus_clock(0, false);
+        lp_uart_ll_sclk_disable(0);
+        _rtcio_ll_enable_io_clock(false);
+        // LP_Peri & Clock Control
+        _uart_ll_enable_pad_sleep_clock(&UART0, false);
+        _uart_ll_enable_pad_sleep_clock(&UART1, false);
+        _uart_ll_enable_pad_sleep_clock(&UART2, false);
+        _uart_ll_enable_pad_sleep_clock(&UART3, false);
+        _uart_ll_enable_pad_sleep_clock(&UART4, false);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_TX_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_RX_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S2_MCLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S1_MCLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S0_MCLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PLL_8M_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_AUDIO_PLL_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL2_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL1_CLK_EN);
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
+#if !CONFIG_SPIRAM_BOOT_INIT
+        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
 #endif
-#if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                        SYSTEM_UART1_CLK_EN |
-#endif
-                        SYSTEM_SPI2_CLK_EN |
-                        SYSTEM_I2C_EXT0_CLK_EN |
-                        SYSTEM_UHCI0_CLK_EN |
-                        SYSTEM_RMT_CLK_EN |
-                        SYSTEM_UHCI1_CLK_EN |
-                        SYSTEM_SPI3_CLK_EN |
-                        SYSTEM_SPI4_CLK_EN |
-                        SYSTEM_I2C_EXT1_CLK_EN |
-                        SYSTEM_I2S1_CLK_EN |
-                        SYSTEM_SPI2_DMA_CLK_EN |
-                        SYSTEM_SPI3_DMA_CLK_EN;
-    common_perip_clk1 = 0;
-
-    /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
-     * the current is not reduced when disable I2S clock.
-     */
-    // TOCK(check replacement)
-    // REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
-    // REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
-
-    /* Disable some peripheral clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, common_perip_clk);
-
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, common_perip_clk1);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, common_perip_clk1);
-
-    /* Disable hardware crypto clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, hwcrypto_perip_clk);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, hwcrypto_perip_clk);
-
-    /* Disable WiFi/BT/SDIO clocks. */
-    CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
-    SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
-
-    /* Set WiFi light sleep clock source to RTC slow clock */
-    REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
-    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL32K | SYSTEM_LPCLK_SEL_XTAL | SYSTEM_LPCLK_SEL_8M | SYSTEM_LPCLK_SEL_RTC_SLOW);
-    SET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_RTC_SLOW);
-
-    /* Enable RNG clock. */
-    periph_module_enable(PERIPH_RNG_MODULE);
-#endif
+        REG_CLR_BIT(LP_SYSTEM_REG_HP_ROOT_CLK_CTRL_REG, LP_SYSTEM_REG_CPU_CLK_EN);
+    }
 }

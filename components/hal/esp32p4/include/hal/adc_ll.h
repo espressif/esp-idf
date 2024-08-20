@@ -223,6 +223,7 @@ static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
             HP_SYS_CLKRST.peri_clk_ctrl22.reg_adc_clk_src_sel = 1;
             break;
         case ADC_DIGI_CLK_SRC_PLL_F80M:
+            HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_80m_clk_en = 1;
             HP_SYS_CLKRST.peri_clk_ctrl22.reg_adc_clk_src_sel = 2;
             break;
         default:

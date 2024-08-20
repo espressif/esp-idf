@@ -69,12 +69,14 @@ static inline void mipi_csi_ll_set_phy_clock_source(int group_id, mipi_csi_phy_c
     (void)group_id;
     switch (source) {
     case MIPI_CSI_PHY_CLK_SRC_PLL_F20M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_20m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 0;
         break;
     case MIPI_CSI_PHY_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 1;
         break;
     case MIPI_CSI_PHY_CLK_SRC_PLL_F25M:
+        HP_SYS_CLKRST.ref_clk_ctrl1.reg_ref_25m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 2;
         break;
     default:
@@ -111,7 +113,7 @@ static inline void mipi_csi_ll_enable_phy_config_clock(int group_id, bool en)
  * @param group_id Group ID
  * @param en true to enable, false to disable
  */
-static inline void mipi_csi_ll_enable_host_bus_clock(int group_id, bool en)
+static inline void _mipi_csi_ll_enable_host_bus_clock(int group_id, bool en)
 {
     (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_csi_host_sys_clk_en = en;
@@ -119,7 +121,31 @@ static inline void mipi_csi_ll_enable_host_bus_clock(int group_id, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_csi_ll_enable_host_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_csi_ll_enable_host_bus_clock(__VA_ARGS__)
+#define mipi_csi_ll_enable_host_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_csi_ll_enable_host_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Enable the clock for MIPI CSI host
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_csi_ll_enable_host_clock(int group_id, bool en)
+{
+    (void)group_id;
+    MIPI_CSI_BRIDGE.host_ctrl.csi_enableclk = en;
+}
+
+/**
+ * @brief Enable the config clock for MIPI CSI host
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_csi_ll_enable_host_config_clock(int group_id, bool en)
+{
+    (void)group_id;
+    MIPI_CSI_BRIDGE.host_ctrl.csi_cfg_clk_en = en;
+}
 
 /**
  * @brief Reset the MIPI CSI host CLK

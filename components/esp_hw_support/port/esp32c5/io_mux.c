@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/periph_ctrl.h"

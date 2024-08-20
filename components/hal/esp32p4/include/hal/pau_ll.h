@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-static inline void pau_ll_enable_bus_clock(bool enable)
+static inline void _pau_ll_enable_bus_clock(bool enable)
 {
     if (enable) {
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_regdma_sys_clk_en = 1;
@@ -32,6 +32,10 @@ static inline void pau_ll_enable_bus_clock(bool enable)
         HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_regdma = 1;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pau_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _pau_ll_enable_bus_clock(__VA_ARGS__)
 
 static inline uint32_t pau_ll_get_regdma_backup_flow_error(pau_dev_t *dev)
 {

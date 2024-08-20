@@ -15,6 +15,7 @@
 #include "hal/parlio_types.h"
 #include "hal/hal_utils.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
 #include "soc/parl_io_struct.h"
 
 #define PARLIO_LL_RX_MAX_BYTES_PER_FRAME 0xFFFF
@@ -102,6 +103,7 @@ static inline void _parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clo
         clk_sel = 1;
         break;
     case PARLIO_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_sel = 2;
         break;
     case PARLIO_CLK_SRC_EXTERNAL:
@@ -164,6 +166,7 @@ __attribute__((always_inline))
 static inline void _parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_parlio_rx_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl117.reg_parlio_rx_clk_en = en;
 }
 
@@ -425,6 +428,7 @@ static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clo
         clk_sel = 1;
         break;
     case PARLIO_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_sel = 2;
         break;
     case PARLIO_CLK_SRC_EXTERNAL:
@@ -488,6 +492,7 @@ __attribute__((always_inline))
 static inline void _parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_parlio_tx_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl118.reg_parlio_tx_clk_en = en;
 }
 

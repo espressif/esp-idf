@@ -96,6 +96,7 @@ static inline void cam_ll_select_clk_src(int group_id, cam_clock_source_t src)
         HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel = 0;
         break;
     case CAM_CLK_SRC_PLL160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel = 1;
         break;
     case CAM_CLK_SRC_APLL:

@@ -102,6 +102,7 @@ static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t 
         HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 0;
         break;
     case LCD_CLK_SRC_PLL160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 1;
         break;
     case LCD_CLK_SRC_APLL:

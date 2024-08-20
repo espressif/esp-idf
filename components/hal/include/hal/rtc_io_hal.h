@@ -36,7 +36,7 @@ extern "C" {
 /**
  * Enable rtcio module clock.
  */
-#define rtcio_hal_enable_io_clock(enable) rtcio_ll_output_enable(enable)
+#define rtcio_hal_enable_io_clock(enable) rtcio_ll_enable_io_clock(enable)
 #endif
 
 /**

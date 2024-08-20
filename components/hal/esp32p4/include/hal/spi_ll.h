@@ -98,7 +98,7 @@ typedef enum {
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+static inline void _spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
     switch (host_id)
     {
     case SPI2_HOST:
@@ -115,7 +115,7 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_bus_clock(__VA_ARGS__)
+#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * Reset whole peripheral register to init value defined by HW design
@@ -147,7 +147,7 @@ static inline void spi_ll_reset_register(spi_host_device_t host_id) {
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+static inline void _spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
 {
     switch (host_id)
     {
@@ -165,7 +165,7 @@ static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_clock(__VA_ARGS__)
+#define spi_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spi_ll_enable_clock(__VA_ARGS__)
 
 /**
  * Select SPI peripheral clock source (master).

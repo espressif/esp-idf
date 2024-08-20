@@ -103,6 +103,7 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
         clk_sel_val = 1;
         break;
     case LEDC_SLOW_CLK_PLL_DIV:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_80m_clk_en = 1;
         clk_sel_val = 2;
         break;
     default:

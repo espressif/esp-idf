@@ -63,7 +63,11 @@ static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
             controller->csi_id = i;
             PERIPH_RCC_ATOMIC() {
                 mipi_csi_ll_enable_host_bus_clock(i, 0);
+                mipi_csi_ll_enable_host_clock(i, 0);
+                mipi_csi_ll_enable_host_config_clock(i, 0);
                 mipi_csi_ll_enable_host_bus_clock(i, 1);
+                mipi_csi_ll_enable_host_clock(i, 1);
+                mipi_csi_ll_enable_host_config_clock(i, 1);
                 mipi_csi_ll_reset_host_clock(i);
             }
             break;
@@ -85,6 +89,8 @@ static esp_err_t s_csi_declaim_controller(csi_controller_t *controller)
     s_platform.controllers[controller->csi_id] = NULL;
     PERIPH_RCC_ATOMIC() {
         mipi_csi_ll_enable_host_bus_clock(controller->csi_id, 0);
+        mipi_csi_ll_enable_host_clock(controller->csi_id, 0);
+        mipi_csi_ll_enable_host_config_clock(controller->csi_id, 0);
     }
     _lock_release(&s_platform.mutex);
 

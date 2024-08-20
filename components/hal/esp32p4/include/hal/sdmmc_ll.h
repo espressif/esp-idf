@@ -135,6 +135,7 @@ static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_
     uint32_t clk_val = 0;
     switch (clk_src) {
     case SDMMC_CLK_SRC_PLL160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_val = 0;
         break;
     // case SDMMC_CLK_SRC_PLL200M: // TODO: IDF-8886

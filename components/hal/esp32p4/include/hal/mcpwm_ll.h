@@ -168,6 +168,7 @@ static inline void mcpwm_ll_group_set_clock_source(int group_id, soc_module_clk_
         clk_id = 1;
         break;
     case SOC_MOD_CLK_PLL_F160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_id = 2;
         break;
     default:

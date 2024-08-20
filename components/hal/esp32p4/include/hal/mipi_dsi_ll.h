@@ -27,7 +27,7 @@ extern "C" {
  * @param group_id Group ID
  * @param enable true to enable, false to disable
  */
-static inline void mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_dsi_sys_clk_en = enable;
@@ -35,7 +35,31 @@ static inline void mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Enable the clock for MIPI DSI host
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_dsi_ll_enable_host_clock(int group_id, bool en)
+{
+    (void)group_id;
+    MIPI_DSI_BRIDGE.clk_en.clk_en = en;
+}
+
+/**
+ * @brief Enable the config clock for MIPI DSI host
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_dsi_ll_enable_host_config_clock(int group_id, bool en)
+{
+    (void)group_id;
+    MIPI_DSI_BRIDGE.host_ctrl.dsi_cfg_ref_clk_en = en;
+}
 
 /**
  * @brief Reset the MIPI DSI module
@@ -83,9 +107,11 @@ static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_c
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 0;
         break;
     case MIPI_DSI_DPI_CLK_SRC_PLL_F160M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 2;
         break;
     case MIPI_DSI_DPI_CLK_SRC_PLL_F240M:
+        // PLL240 has no gating by default in esp_perip_clk_init.
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 1;
         break;
     default:
@@ -156,12 +182,14 @@ static inline void mipi_dsi_ll_set_phy_clock_source(int group_id, mipi_dsi_phy_c
     (void)group_id;
     switch (source) {
     case MIPI_DSI_PHY_CLK_SRC_PLL_F20M:
+        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_20m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 0;
         break;
     case MIPI_DSI_PHY_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 1;
         break;
     case MIPI_DSI_PHY_CLK_SRC_PLL_F25M:
+        HP_SYS_CLKRST.ref_clk_ctrl1.reg_ref_25m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 2;
         break;
     default:

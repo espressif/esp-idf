@@ -39,6 +39,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     // Enable the APB clock for accessing the DSI host and bridge registers
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, true);
+        mipi_dsi_ll_enable_host_clock(bus_id, true);
+        mipi_dsi_ll_enable_host_config_clock(bus_id, true);
         mipi_dsi_ll_reset_register(bus_id);
     }
 
@@ -140,6 +142,8 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     // disable the APB clock for accessing the DSI peripheral registers
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, false);
+        mipi_dsi_ll_enable_host_clock(bus_id, false);
+        mipi_dsi_ll_enable_host_config_clock(bus_id, false);
     }
     if (bus->pm_lock) {
         esp_pm_lock_release(bus->pm_lock);

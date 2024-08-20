@@ -198,9 +198,7 @@
 #define DR_REG_INTERRUPT_CORE1_BASE             (DR_REG_INTR_BASE + 0x800)
 #define DR_REG_LPPERI_BASE                      DR_REG_LP_PERI_CLKRST_BASE
 #define DR_REG_CPU_BUS_MONITOR_BASE             DR_REG_CPU_BUS_MON_BASE
-
+#define DR_REG_ASSIST_DEBUG_BASE                DR_REG_CPU_BUS_MON_BASE
 #define DR_REG_PAU_BASE                         DR_REG_REGDMA_BASE
-
-//TODO: IDF-7688
-// #define DR_REG_TRACE_BASE                       0x600C0000
-#define DR_REG_ASSIST_DEBUG_BASE                0x3FF06000
+#define DR_REG_SDHOST_BASE                      DR_REG_SDMMC_BASE
+#define DR_REG_TRACE_BASE                       DR_REG_TRACE0_BASE

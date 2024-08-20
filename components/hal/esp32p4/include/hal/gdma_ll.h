@@ -95,7 +95,7 @@ extern "C" {
 /**
  * @brief Enable the bus clock for the DMA module
  */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 {
     if (group_id == 0) {
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_ahb_pdma_sys_clk_en = enable;
@@ -106,7 +106,7 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_enable_bus_clock(__VA_ARGS__)
+#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the DMA module
