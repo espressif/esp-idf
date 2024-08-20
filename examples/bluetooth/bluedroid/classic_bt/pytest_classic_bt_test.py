@@ -114,8 +114,8 @@ def test_bt_hfp(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize(
     'count, app_path, target, config', [
         (2,
-         f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}| \
-           {os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
+         f'{os.path.join(os.path.dirname(__file__), "bt_hid_mouse_device")}|'
+         f'{os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")), "esp_hid_host")}',
          'esp32|esp32', 'test'),
     ],
     indirect=True,
