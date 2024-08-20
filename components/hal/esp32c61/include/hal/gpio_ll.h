@@ -260,6 +260,31 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+  * @brief Enable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    // Always set hys_sel to 1 to use software control hysteresis, since no efuse bit reserved for hysteresis on ESP32C61
+    IO_MUX.gpion[gpio_num].gpion_hys_sel = 1;
+    IO_MUX.gpion[gpio_num].gpion_hys_en = 1;
+}
+
+/**
+  * @brief Disable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    IO_MUX.gpion[gpio_num].gpion_hys_sel = 1;
+    IO_MUX.gpion[gpio_num].gpion_hys_en = 0;
+}
+
+/**
   * @brief Disable output mode on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.
