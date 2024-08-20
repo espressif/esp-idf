@@ -226,3 +226,10 @@ esp_err_t gptimer_get_pm_lock(gptimer_handle_t timer, esp_pm_lock_handle_t *ret_
     *ret_pm_lock = timer->pm_lock;
     return ESP_OK;
 }
+
+int gptimer_get_group_id(gptimer_handle_t timer, int *group_id)
+{
+    ESP_RETURN_ON_FALSE(timer && group_id, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *group_id = timer->group->group_id;
+    return ESP_OK;
+}

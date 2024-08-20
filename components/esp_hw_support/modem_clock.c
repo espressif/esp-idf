@@ -458,7 +458,7 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     case PERIPH_BT_MODULE:
         modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, false);
-#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND && SOC_LIGHT_SLEEP_SUPPORTED  // TODO: [ESP32C5] IDF-8643
         if (efuse_hal_chip_revision() != 0) {
             if (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
                 pmu_sleep_enable_hp_sleep_sysclk(false);
