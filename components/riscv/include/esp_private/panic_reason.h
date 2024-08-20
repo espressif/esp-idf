@@ -18,3 +18,6 @@
 #endif
 
 #define PANIC_RSN_CACHEERR    3
+
+#define MCAUSE_INVALID_VALUE                 0xDEADC0DE // Frame mcause value was written by SW to indicate no useful info, e.g. during a register dump without a crash
+
