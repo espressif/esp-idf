@@ -54,6 +54,7 @@
     * And so forth...
     */
    *(.rela.*)
+   *(.got .got.plt) /* TODO: GCC-382 */
 #if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
    *(.eh_frame_hdr)
    *(.eh_frame)
