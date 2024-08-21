@@ -78,6 +78,9 @@ MEMORY
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
   lp_reserved_seg(RW) :        org = 0x50000000 + 0x4000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
+
+  /* PSRAM seg */
+  extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 }
 
 /* Heap ends at top of sram_seg */
