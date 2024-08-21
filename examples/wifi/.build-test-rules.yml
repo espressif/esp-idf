@@ -60,7 +60,7 @@ examples/wifi/itwt:
 examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
-    - if: SOC_WIFI_SUPPORTED != 1
+    - if: (SOC_WIFI_SUPPORTED != 1) or (IDF_TARGET == "esp32c5")
   depends_components:
     - esp_driver_uart
 

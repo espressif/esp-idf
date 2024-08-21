@@ -182,7 +182,7 @@
 #endif
 
 #if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-#define SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US  (961)
+#define SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US  (1220)
 #endif
 
 // Minimal amount of time we can sleep for
@@ -1354,8 +1354,21 @@ esp_err_t esp_light_sleep_start(void)
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Suspend 0: if CONFIG_PM_SLP_IRAM_OPT is enabled, suspend cache here so that the access to flash
-       during the sleep process can be explicitly exposed. */
-    suspend_cache();
+     * during the sleep process can be explicitly exposed.
+     *
+     * If we use EXTx wakeup, we must put related codes in IRAM, but The `rtc_io_desc` table
+     * consumes a significant amount of memory. For example, on the ESP32, its size is 1008
+     * bytes. Therefore, when EXTx wakeup is enabled, we do not perform cache access checks here */
+    uint32_t ignore_check_wakeup_triggers = 0;
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
+    ignore_check_wakeup_triggers |= RTC_EXT0_TRIG_EN;
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+    ignore_check_wakeup_triggers |= RTC_EXT1_TRIG_EN;
+#endif
+    if (!(s_config.wakeup_triggers & ignore_check_wakeup_triggers)) {
+        suspend_cache();
+    }
 #endif
 
     // Decide which power domains can be powered down
@@ -1499,7 +1512,9 @@ esp_err_t esp_light_sleep_start(void)
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Resume 0: sleep process done, resume cache for continue running */
-    resume_cache();
+    if (!(s_config.wakeup_triggers & ignore_check_wakeup_triggers)) {
+        resume_cache();
+    }
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE

@@ -80,7 +80,10 @@ SECONDARY: 103: esp_security_init in components/esp_security/src/init.c on BIT(0
 
 # esp_sleep doesn't have init dependencies
 SECONDARY: 105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
-SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32c6/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32h2/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32p4/sleep_clock.c on BIT(0)
 SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
 SECONDARY: 108: sleep_mmu_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_mmu.c on BIT(0)
 

@@ -145,6 +145,7 @@ def run_phy_tsens_test_with_light_sleep(dut: Tuple[Dut, Dut]) -> None:
 
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c5
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_two_dut

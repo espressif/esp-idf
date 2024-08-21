@@ -55,7 +55,7 @@ static esp_err_t sleep_task_wdt_retention_init(void *arg)
                                                    REGDMA_LINK_PRI_SYS_PERIPH_LOW,
                                                    (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "Task watchdog timer retention initialization");
+        ESP_LOGD(TAG, "Task watchdog timer retention initialization");
     }
     ESP_RETURN_ON_ERROR(err, TAG, "Failed to create sleep retention linked list for task watchdog timer");
     return err;
