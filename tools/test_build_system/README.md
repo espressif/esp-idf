@@ -114,6 +114,8 @@ Note, `default_idf_env` sets up the environment based on the `IDF_PATH` environm
 
 Copies IDF from `IDF_PATH` into a new temporary directory. `@pytest.mark.idf_copy('name prefix')` can be used to specify the name prefix of the temporary directory.
 
+The marker `@pytest.mark.idf_copy_with_space` can be used in combination with `idf_copy` fixture to create a temporary directory with a space in the name.
+
 For the duration of the test, `IDF_PATH` environment variable is set to the newly created copy.
 
 ```python

@@ -133,7 +133,9 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
 
 @pytest.fixture
 def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
-    copy_to = request.node.name + '_app'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_app'
     path_to = func_work_dir / copy_to
 
     logging.debug(f'cloning git-template app to {path_to}')
@@ -156,7 +158,13 @@ def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typin
 
 @pytest.fixture
 def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
-    copy_to = request.node.name + '_idf'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_idf'
+    # allow overriding the destination via pytest.mark.idf_copy_with_space so the destination contain space
+    mark_with_space = request.node.get_closest_marker('idf_copy_with_space')
+    if mark_with_space:
+        copy_to = test_name_sanitized + ' idf'
 
     # allow overriding the destination via pytest.mark.idf_copy()
     mark = request.node.get_closest_marker('idf_copy')

@@ -21,7 +21,7 @@ def clean_app_dir(app_path: Path) -> None:
     shutil.rmtree(app_path / 'build', ignore_errors=True)
 
 
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 def test_spaces_bundle1(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 1')
     # test spiffsgen
@@ -32,7 +32,7 @@ def test_spaces_bundle1(idf_copy: Path) -> None:
     run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
 
 
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 def test_spaces_bundle2(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 2')
     # test flash_encryption
@@ -41,7 +41,7 @@ def test_spaces_bundle2(idf_copy: Path) -> None:
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'protocols' / 'https_x509_bundle'))
 
 
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 def test_spaces_bundle3(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 3')
     secure_boot_app_path = (idf_copy / 'tools' / 'test_apps' / 'security' / 'secure_boot')
@@ -62,12 +62,13 @@ def test_spaces_bundle3(idf_copy: Path) -> None:
                workdir=secure_boot_app_path)
 
 
+@pytest.mark.xfail(sys.platform == 'win32', reason='Bug with reproducible build')
 # Use this bundle for tests which can be done with the default build_test_app
 @pytest.mark.parametrize('dummy_', [
     # Dummy parameter with a space in it, used so that the test directory name contains a space
     pytest.param('test spaces')
 ])
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 @pytest.mark.usefixtures('idf_copy')
 def test_spaces_bundle4(dummy_: str, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info(f'Running test spaces bundle 4 in {test_app_copy}')
@@ -83,7 +84,7 @@ def test_spaces_bundle4(dummy_: str, idf_py: IdfPyFunc, test_app_copy: Path) -> 
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='Unix test')
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 def test_install_export_unix(idf_copy: Path) -> None:
     logging.info('install and export setup scripts')
     env = dict(**os.environ)
@@ -100,7 +101,7 @@ def test_install_export_unix(idf_copy: Path) -> None:
 
 
 @pytest.mark.skipif(sys.platform != 'win32', reason='Windows test')
-@pytest.mark.idf_copy('esp idf with spaces')
+@pytest.mark.idf_copy_with_space
 def test_install_export_win(idf_copy: Path) -> None:
     logging.info('install and export setup scripts')
     env = dict(**os.environ)

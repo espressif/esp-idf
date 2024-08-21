@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
-from test_build_system_helpers import IdfPyFunc, append_to_file, file_contains
+from test_build_system_helpers import append_to_file
+from test_build_system_helpers import file_contains
+from test_build_system_helpers import IdfPyFunc
 
 
 @contextmanager
@@ -77,6 +79,7 @@ def test_kconfig_deprecated_options(idf_py: IdfPyFunc, test_app_copy: Path) -> N
 
 
 @pytest.mark.usefixtures('idf_copy')
+@pytest.mark.idf_copy('test_kconfig_various_options')
 def test_kconfig_multiple_and_target_specific_options(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     idf_path = Path(os.environ['IDF_PATH'])
 
