@@ -216,6 +216,19 @@ esp_err_t esp_wifi_sta_btwt_get_info(uint8_t btwt_number, esp_wifi_btwt_info_t *
   */
 esp_err_t esp_wifi_sta_twt_config(wifi_twt_config_t *config);
 
+/**
+  * @brief     Enable bss color collision detection.
+  *
+  * @param[in] enable If true, when the station detects a BSS color collision, it will report the BSS color collision event to the access point (AP).
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported in AP mode yet
+  */
+esp_err_t esp_wifi_sta_enable_bsscolor_collision_detection(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
