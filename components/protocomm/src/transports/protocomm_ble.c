@@ -599,6 +599,9 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->ble_bonding = config->ble_bonding;
     ble_config->ble_sm_sc   = config->ble_sm_sc;
 
+   /* Set parameter to keep BLE on */
+    ble_config->keep_ble_on = config->keep_ble_on;
+
     if (config->ble_addr != NULL) {
         ble_config->ble_addr = protocomm_ble_addr;
     }
@@ -630,23 +633,26 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
             (pc == protoble_internal->pc_ble)) {
         esp_err_t ret = ESP_OK;
 
-#ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    uint8_t protocomm_keep_ble_on = get_keep_ble_on();
+    if (protocomm_keep_ble_on) {
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
         /* Keep BT stack on, but terminate the connection after provisioning */
-	ret = simple_ble_disconnect();
-	if (ret) {
-	    ESP_LOGE(TAG, "BLE disconnect failed");
-	}
-	simple_ble_deinit();
+	    ret = simple_ble_disconnect();
+        if (ret) {
+            ESP_LOGE(TAG, "BLE disconnect failed");
+	    }
+	    simple_ble_deinit();
 #endif  // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-#else
+    }
+    else {
+
 	/* If flag is not enabled, stop the stack. */
         ret = simple_ble_stop();
         if (ret) {
             ESP_LOGE(TAG, "BLE stop failed");
         }
         simple_ble_deinit();
-#endif  // CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    }
 
         protocomm_ble_cleanup();
         return ret;

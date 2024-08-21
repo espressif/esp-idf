@@ -23,8 +23,20 @@ extern const wifi_prov_scheme_t wifi_prov_scheme_ble;
 
 static uint8_t *custom_service_uuid;
 static uint8_t *custom_ble_addr;
+static uint8_t custom_keep_ble_on;
+
 static uint8_t *custom_manufacturer_data;
 static size_t custom_manufacturer_data_len;
+
+esp_err_t wifi_prov_mgr_keep_ble_on(uint8_t is_on_after_ble_stop)
+{
+    if (!is_on_after_ble_stop) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    custom_keep_ble_on = is_on_after_ble_stop;
+    return ESP_OK;
+}
 
 static esp_err_t prov_start(protocomm_t *pc, void *config)
 {
@@ -39,6 +51,8 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
     }
 
     protocomm_ble_config_t *ble_config = (protocomm_ble_config_t *) config;
+
+    ble_config->keep_ble_on = custom_keep_ble_on;
 
 #if defined(CONFIG_WIFI_PROV_BLE_BONDING)
     ble_config->ble_bonding = 1;
