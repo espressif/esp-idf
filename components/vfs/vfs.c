@@ -101,46 +101,6 @@ static void esp_free_minified_vfs(esp_vfs_minified_t *vfs) {
     free(vfs);
 }
 
-static esp_vfs_minified_t *esp_alloc_minified_vfs(void) {
-    esp_vfs_minified_t *main = (esp_vfs_minified_t*) heap_caps_malloc(sizeof(esp_vfs_minified_t), VFS_MALLOC_FLAGS);
-    if (main == NULL) {
-        return NULL;
-    }
-
-    // Initialize all fields to NULL
-    memset(main, 0, sizeof(esp_vfs_minified_t));
-
-#ifdef CONFIG_VFS_SUPPORT_DIR
-    main->dir = (esp_vfs_dir_t*) heap_caps_malloc(sizeof(esp_vfs_dir_t), VFS_MALLOC_FLAGS);
-    if (main->dir == NULL) {
-        goto fail;
-    }
-#endif
-
-#ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    main->termios = (esp_vfs_termios_t*) heap_caps_malloc(sizeof(esp_vfs_termios_t), VFS_MALLOC_FLAGS);
-    if (main->termios == NULL) {
-        goto fail;
-    }
-#endif
-
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-    main->select = (esp_vfs_select_t*) heap_caps_malloc(sizeof(esp_vfs_select_t), VFS_MALLOC_FLAGS);
-    if (main->select == NULL) {
-        goto fail;
-    }
-#endif
-
-    return main;
-
-#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
-fail:
-
-    esp_free_minified_vfs(main);
-    return NULL;
-#endif
-}
-
 static void esp_vfs_free_entry(vfs_entry_t *entry) {
     if (entry == NULL) { // Necessary because of the following flags check
         return;
@@ -154,18 +114,8 @@ static void esp_vfs_free_entry(vfs_entry_t *entry) {
 }
 
 static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min) {
-    if (vfs == NULL) {
-        ESP_LOGE(TAG, "Cannot minify NULL VFS");
-        assert(vfs != NULL); // Show stack trace
-        abort(); // Ensure we don't continue with a NULL VFS when assert is disabled
-    }
-
-    if (min == NULL) {
-        ESP_LOGE(TAG, "Cannot minify VFS to NULL");
-        assert(min != NULL); // Show stack trace
-        abort(); // Ensure we don't continue with a NULL VFS when assert is disabled
-    }
-
+    assert(vfs != NULL);
+    assert(min != NULL);
     *min = (esp_vfs_minified_t) {
         .write = vfs->write,
         .lseek = vfs->lseek,
@@ -190,66 +140,210 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min)
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    if (min->dir == NULL) {
-        ESP_LOGE(TAG, "Dir subcomponent is not allocated");
-        assert(min->dir != NULL); // Show stack trace
-        abort(); // Ensure we don't continue with a NULL VFS when assert is disabled
+    // If the dir functions are not implemented, we don't need to convert them
+    if (min->dir != NULL) {
+        *(min->dir) = (esp_vfs_dir_t) {
+            .stat = vfs->stat,
+            .link = vfs->link,
+            .unlink = vfs->unlink,
+            .rename = vfs->rename,
+            .opendir = vfs->opendir,
+            .readdir = vfs->readdir,
+            .readdir_r = vfs->readdir_r,
+            .telldir = vfs->telldir,
+            .seekdir = vfs->seekdir,
+            .closedir = vfs->closedir,
+            .mkdir = vfs->mkdir,
+            .rmdir = vfs->rmdir,
+            .access = vfs->access,
+            .truncate = vfs->truncate,
+            .ftruncate = vfs->ftruncate,
+            .utime = vfs->utime,
+        };
     }
-    *(min->dir) = (esp_vfs_dir_t) {
-        .stat = vfs->stat,
-        .link = vfs->link,
-        .unlink = vfs->unlink,
-        .rename = vfs->rename,
-        .opendir = vfs->opendir,
-        .readdir = vfs->readdir,
-        .readdir_r = vfs->readdir_r,
-        .telldir = vfs->telldir,
-        .seekdir = vfs->seekdir,
-        .closedir = vfs->closedir,
-        .mkdir = vfs->mkdir,
-        .rmdir = vfs->rmdir,
-        .access = vfs->access,
-        .truncate = vfs->truncate,
-        .ftruncate = vfs->ftruncate,
-        .utime = vfs->utime,
-    };
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    if (min->termios == NULL) {
-        ESP_LOGE(TAG, "Termios subcomponent is not allocated");
-        assert(min->termios != NULL); // Show stack trace
-        abort(); // Ensure we don't continue with a NULL VFS when assert is disabled
+    // If the termios functions are not implemented, we don't need to convert them
+    if (min->termios != NULL) {
+        *(min->termios) = (esp_vfs_termios_t) {
+            .tcsetattr = vfs->tcsetattr,
+            .tcgetattr = vfs->tcgetattr,
+            .tcdrain = vfs->tcdrain,
+            .tcflush = vfs->tcflush,
+            .tcflow = vfs->tcflow,
+            .tcgetsid = vfs->tcgetsid,
+            .tcsendbreak = vfs->tcsendbreak,
+        };
     }
-
-    *(min->termios) = (esp_vfs_termios_t) {
-        .tcsetattr = vfs->tcsetattr,
-        .tcgetattr = vfs->tcgetattr,
-        .tcdrain = vfs->tcdrain,
-        .tcflush = vfs->tcflush,
-        .tcflow = vfs->tcflow,
-        .tcgetsid = vfs->tcgetsid,
-        .tcsendbreak = vfs->tcsendbreak,
-    };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    if (min->select == NULL) {
-        ESP_LOGE(TAG, "Select subcomponent is not allocated");
-        assert(min->select != NULL); // Show stack trace
-        abort(); // Ensure we don't continue with a NULL VFS when assert is disabled
+    // If the select functions are not implemented, we don't need to convert them
+    if (min->select != NULL) {
+        *(min->select) = (esp_vfs_select_t) {
+            .start_select = vfs->start_select,
+            .socket_select = vfs->socket_select,
+            .stop_socket_select = vfs->stop_socket_select,
+            .stop_socket_select_isr = vfs->stop_socket_select_isr,
+            .get_socket_select_semaphore = vfs->get_socket_select_semaphore,
+            .end_select = vfs->end_select,
+        };
     }
-
-    *(min->select) = (esp_vfs_select_t) {
-        .start_select = vfs->start_select,
-        .socket_select = vfs->socket_select,
-        .stop_socket_select = vfs->stop_socket_select,
-        .stop_socket_select_isr = vfs->stop_socket_select_isr,
-        .get_socket_select_semaphore = vfs->get_socket_select_semaphore,
-        .end_select = vfs->end_select,
-    };
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
+}
+
+static esp_vfs_minified_t* esp_duplicate_minified_vfs(const esp_vfs_minified_t *vfs) {
+    esp_vfs_minified_t *min = (esp_vfs_minified_t*) heap_caps_malloc(sizeof(esp_vfs_minified_t), VFS_MALLOC_FLAGS);
+    if (min == NULL) {
+        return NULL;
+    }
+
+    memcpy(min, vfs, sizeof(esp_vfs_minified_t));
+
+    // remove references to the original components
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    min->dir = NULL;
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    min->termios = NULL;
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    min->select = NULL;
+#endif
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    if (vfs->dir != NULL) {
+        min->dir = (esp_vfs_dir_t*) heap_caps_malloc(sizeof(esp_vfs_dir_t), VFS_MALLOC_FLAGS);
+        if (min->dir == NULL) {
+            goto fail;
+        }
+        memcpy(min->dir, vfs->dir, sizeof(esp_vfs_dir_t));
+    }
+#endif
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    if (vfs->termios != NULL) {
+        min->termios = (esp_vfs_termios_t*) heap_caps_malloc(sizeof(esp_vfs_termios_t), VFS_MALLOC_FLAGS);
+        if (min->termios == NULL) {
+            goto fail;
+        }
+        memcpy(min->termios, vfs->termios, sizeof(esp_vfs_termios_t));
+    }
+#endif
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    if (vfs->select != NULL) {
+        min->select = (esp_vfs_select_t*) heap_caps_malloc(sizeof(esp_vfs_select_t), VFS_MALLOC_FLAGS);
+        if (min->select == NULL) {
+            goto fail;
+        }
+        memcpy(min->select, vfs->select, sizeof(esp_vfs_select_t));
+    }
+#endif
+
+    return min;
+
+#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
+fail:
+#endif
+    esp_free_minified_vfs(min);
+    return NULL;
+}
+
+static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minified_t **min) {
+    if (vfs == NULL) {
+        ESP_LOGE(TAG, "Cannot minify NULL VFS");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (min == NULL) {
+        ESP_LOGE(TAG, "Cannot minify VFS to NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_vfs_minified_t *main = (esp_vfs_minified_t*) heap_caps_malloc(sizeof(esp_vfs_minified_t), VFS_MALLOC_FLAGS);
+    if (main == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    // Initialize all fields to NULL
+    memset(main, 0, sizeof(esp_vfs_minified_t));
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    bool skip_dir =
+        vfs->stat == NULL &&
+        vfs->link == NULL &&
+        vfs->unlink == NULL &&
+        vfs->rename == NULL &&
+        vfs->opendir == NULL &&
+        vfs->readdir == NULL &&
+        vfs->readdir_r == NULL &&
+        vfs->telldir == NULL &&
+        vfs->seekdir == NULL &&
+        vfs->closedir == NULL &&
+        vfs->mkdir == NULL &&
+        vfs->rmdir == NULL &&
+        vfs->access == NULL &&
+        vfs->truncate == NULL &&
+        vfs->ftruncate == NULL &&
+        vfs->utime == NULL;
+
+    if (!skip_dir) {
+        main->dir = (esp_vfs_dir_t*) heap_caps_malloc(sizeof(esp_vfs_dir_t), VFS_MALLOC_FLAGS);
+        if (main->dir == NULL) {
+            goto fail;
+        }
+    }
+#endif
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    bool skip_termios =
+        vfs->tcsetattr == NULL &&
+        vfs->tcgetattr == NULL &&
+        vfs->tcdrain == NULL &&
+        vfs->tcflush == NULL &&
+        vfs->tcflow == NULL &&
+        vfs->tcgetsid == NULL &&
+        vfs->tcsendbreak == NULL;
+
+    if (!skip_termios) {
+        main->termios = (esp_vfs_termios_t*) heap_caps_malloc(sizeof(esp_vfs_termios_t), VFS_MALLOC_FLAGS);
+        if (main->termios == NULL) {
+            goto fail;
+        }
+    }
+#endif
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    bool skip_select =
+        vfs->start_select == NULL &&
+        vfs->socket_select == NULL &&
+        vfs->stop_socket_select == NULL &&
+        vfs->stop_socket_select_isr == NULL &&
+        vfs->get_socket_select_semaphore == NULL &&
+        vfs->end_select == NULL;
+
+    if (!skip_select) {
+        main->select = (esp_vfs_select_t*) heap_caps_malloc(sizeof(esp_vfs_select_t), VFS_MALLOC_FLAGS);
+        if (main->select == NULL) {
+            goto fail;
+        }
+    }
+#endif
+
+    esp_minify_vfs(vfs, main);
+
+    *min = main;
+    return ESP_OK;
+
+#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
+fail:
+
+    esp_free_minified_vfs(main);
+    return ESP_ERR_NO_MEM;
+#endif
 }
 
 static esp_err_t esp_vfs_register_minified_common(const char* base_path, size_t len, const esp_vfs_minified_t* vfs, int flags, void* ctx, int *vfs_index)
@@ -318,7 +412,7 @@ esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minifie
         return esp_vfs_register_minified_common(base_path, strlen(base_path), vfs, flags, ctx, NULL);
     }
 
-    esp_vfs_minified_t *_vfs = esp_alloc_minified_vfs();
+    esp_vfs_minified_t *_vfs = esp_duplicate_minified_vfs(vfs);
     if (_vfs == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -344,15 +438,13 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_vfs_minified_t *_vfs = esp_alloc_minified_vfs();
-    if (_vfs == NULL) {
-        return ESP_ERR_NO_MEM;
+    esp_vfs_minified_t *_vfs = NULL;
+    esp_err_t ret = esp_vfs_make_minified_vfs(vfs, &_vfs);
+    if (ret != ESP_OK) {
+        return ret;
     }
 
-    // Minify the VFS
-    esp_minify_vfs(vfs, _vfs);
-
-    esp_err_t ret = esp_vfs_register_minified_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
+    ret = esp_vfs_register_minified_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
     if (ret != ESP_OK) {
         esp_free_minified_vfs(_vfs);
         return ret;
@@ -629,7 +721,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
     size_t len = strlen(path);
     for (size_t i = 0; i < s_vfs_count; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
-        if (!vfs || vfs->path_prefix_len == LEN_PATH_PREFIX_IGNORED) {
+        if (vfs == NULL || vfs->path_prefix_len == LEN_PATH_PREFIX_IGNORED) {
             continue;
         }
         // match path prefix
@@ -685,6 +777,16 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         ret = (*pvfs->vfs->func)(__VA_ARGS__);\
     }
 
+#define CHECK_AND_CALL_MINIFIED(ret, r, pvfs, component, func, ...) \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+        __errno_r(r) = ENOSYS; \
+        return -1; \
+    } \
+    if (pvfs->flags & ESP_VFS_FLAG_CONTEXT_PTR) { \
+        ret = (*pvfs->vfs->component->func ## _p)(pvfs->ctx, __VA_ARGS__); \
+    } else { \
+        ret = (*pvfs->vfs->component->func)(__VA_ARGS__);\
+    }
 
 #define CHECK_AND_CALLV(r, pvfs, func, ...) \
     if (pvfs->vfs->func == NULL) { \
@@ -697,6 +799,17 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         (*pvfs->vfs->func)(__VA_ARGS__);\
     }
 
+#define CHECK_AND_CALL_MINIFIEDV(r, pvfs, component, func, ...) \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+        __errno_r(r) = ENOSYS; \
+        return; \
+    } \
+    if (pvfs->flags & ESP_VFS_FLAG_CONTEXT_PTR) { \
+        (*pvfs->vfs->component->func ## _p)(pvfs->ctx, __VA_ARGS__); \
+    } else { \
+        (*pvfs->vfs->component->func)(__VA_ARGS__);\
+    }
+
 #define CHECK_AND_CALLP(ret, r, pvfs, func, ...) \
     if (pvfs->vfs->func == NULL) { \
         __errno_r(r) = ENOSYS; \
@@ -706,6 +819,17 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         ret = (*pvfs->vfs->func ## _p)(pvfs->ctx, __VA_ARGS__); \
     } else { \
         ret = (*pvfs->vfs->func)(__VA_ARGS__);\
+    }
+
+#define CHECK_AND_CALL_MINIFIEDP(ret, r, pvfs, component, func, ...) \
+    if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
+        __errno_r(r) = ENOSYS; \
+        return NULL; \
+    } \
+    if (pvfs->flags & ESP_VFS_FLAG_CONTEXT_PTR) { \
+        ret = (*pvfs->vfs->component->func ## _p)(pvfs->ctx, __VA_ARGS__); \
+    } else { \
+        ret = (*pvfs->vfs->component->func)(__VA_ARGS__);\
     }
 
 #define CHECK_VFS_READONLY_FLAG(flags) \
@@ -912,7 +1036,7 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
     }
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->stat, path_within_vfs, st);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, stat, path_within_vfs, st);
     return ret;
 }
 
@@ -926,7 +1050,7 @@ int esp_vfs_utime(const char *path, const struct utimbuf *times)
         return -1;
     }
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL(ret, r, vfs, dir->utime, path_within_vfs, times);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, utime, path_within_vfs, times);
     return ret;
 }
 
@@ -948,7 +1072,7 @@ int esp_vfs_link(struct _reent *r, const char* n1, const char* n2)
     const char* path1_within_vfs = translate_path(vfs, n1);
     const char* path2_within_vfs = translate_path(vfs, n2);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->link, path1_within_vfs, path2_within_vfs);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, link, path1_within_vfs, path2_within_vfs);
     return ret;
 }
 
@@ -964,7 +1088,7 @@ int esp_vfs_unlink(struct _reent *r, const char *path)
 
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->unlink, path_within_vfs);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, unlink, path_within_vfs);
     return ret;
 }
 
@@ -989,7 +1113,7 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
     const char* src_within_vfs = translate_path(vfs, src);
     const char* dst_within_vfs = translate_path(vfs, dst);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->rename, src_within_vfs, dst_within_vfs);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, rename, src_within_vfs, dst_within_vfs);
     return ret;
 }
 
@@ -1003,7 +1127,7 @@ DIR* esp_vfs_opendir(const char* name)
     }
     const char* path_within_vfs = translate_path(vfs, name);
     DIR* ret;
-    CHECK_AND_CALLP(ret, r, vfs, dir->opendir, path_within_vfs);
+    CHECK_AND_CALL_MINIFIEDP(ret, r, vfs, dir, opendir, path_within_vfs);
     if (ret != NULL) {
         ret->dd_vfs_idx = vfs->offset;
     }
@@ -1019,7 +1143,7 @@ struct dirent* esp_vfs_readdir(DIR* pdir)
         return NULL;
     }
     struct dirent* ret;
-    CHECK_AND_CALLP(ret, r, vfs, dir->readdir, pdir);
+    CHECK_AND_CALL_MINIFIEDP(ret, r, vfs, dir, readdir, pdir);
     return ret;
 }
 
@@ -1032,7 +1156,7 @@ int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_diren
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->readdir_r, pdir, entry, out_dirent);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, readdir_r, pdir, entry, out_dirent);
     return ret;
 }
 
@@ -1045,7 +1169,7 @@ long esp_vfs_telldir(DIR* pdir)
         return -1;
     }
     long ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->telldir, pdir);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, telldir, pdir);
     return ret;
 }
 
@@ -1057,7 +1181,7 @@ void esp_vfs_seekdir(DIR* pdir, long loc)
         errno = EBADF;
         return;
     }
-    CHECK_AND_CALLV(r, vfs, dir->seekdir, pdir, loc);
+    CHECK_AND_CALL_MINIFIEDV(r, vfs, dir, seekdir, pdir, loc);
 }
 
 void esp_vfs_rewinddir(DIR* pdir)
@@ -1074,7 +1198,7 @@ int esp_vfs_closedir(DIR* pdir)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->closedir, pdir);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, closedir, pdir);
     return ret;
 }
 
@@ -1091,7 +1215,7 @@ int esp_vfs_mkdir(const char* name, mode_t mode)
 
     const char* path_within_vfs = translate_path(vfs, name);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->mkdir, path_within_vfs, mode);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, mkdir, path_within_vfs, mode);
     return ret;
 }
 
@@ -1108,7 +1232,7 @@ int esp_vfs_rmdir(const char* name)
 
     const char* path_within_vfs = translate_path(vfs, name);
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->rmdir, path_within_vfs);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, rmdir, path_within_vfs);
     return ret;
 }
 
@@ -1122,7 +1246,7 @@ int esp_vfs_access(const char *path, int amode)
         return -1;
     }
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL(ret, r, vfs, dir->access, path_within_vfs, amode);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, access, path_within_vfs, amode);
     return ret;
 }
 
@@ -1139,7 +1263,7 @@ int esp_vfs_truncate(const char *path, off_t length)
     CHECK_VFS_READONLY_FLAG(vfs->flags);
 
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL(ret, r, vfs, dir->truncate, path_within_vfs, length);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, truncate, path_within_vfs, length);
     return ret;
 }
 
@@ -1156,7 +1280,7 @@ int esp_vfs_ftruncate(int fd, off_t length)
     CHECK_VFS_READONLY_FLAG(vfs->flags);
 
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, dir->ftruncate, local_fd, length);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, ftruncate, local_fd, length);
     return ret;
 }
 
@@ -1348,33 +1472,38 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         const vfs_entry_t *vfs = get_vfs_for_index(i);
         fds_triple_t *item = &vfs_fds_triple[i];
 
-        if (vfs && !vfs->vfs->select->start_select) {
+        if (vfs == NULL || vfs->vfs->select == NULL || vfs->vfs->select->start_select == NULL) {
             ESP_LOGD(TAG, "start_select function callback for this vfs (s_vfs[%d]) is not defined", vfs->offset);
-        } else if (vfs && vfs->vfs->select->start_select && item->isset) {
-            // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
-            // note: it can point to socket VFS but item->isset will be false for that
-            ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
-            esp_vfs_log_fd_set("readfds", &item->readfds);
-            esp_vfs_log_fd_set("writefds", &item->writefds);
-            esp_vfs_log_fd_set("errorfds", &item->errorfds);
-            esp_err_t err = vfs->vfs->select->start_select(nfds, &item->readfds, &item->writefds, &item->errorfds, sel_sem,
-                    driver_args + i);
+            continue;
+        }
 
-            if (err != ESP_OK) {
-                if (err != ESP_ERR_NOT_SUPPORTED) {
-                    call_end_selects(i, vfs_fds_triple, driver_args);
-                }
-                (void) set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
-                if (sel_sem.is_sem_local && sel_sem.sem) {
-                    vSemaphoreDelete(sel_sem.sem);
-                    sel_sem.sem = NULL;
-                }
-                free(vfs_fds_triple);
-                free(driver_args);
-                __errno_r(r) = EINTR;
-                ESP_LOGD(TAG, "start_select failed: %s", esp_err_to_name(err));
-                return -1;
+        if (!item->isset) {
+            continue;
+        }
+
+        // call start_select for all non-socket VFSs with has at least one FD set in readfds, writefds, or errorfds
+        // note: it can point to socket VFS but item->isset will be false for that
+        ESP_LOGD(TAG, "calling start_select for VFS ID %d with the following local FDs", i);
+        esp_vfs_log_fd_set("readfds", &item->readfds);
+        esp_vfs_log_fd_set("writefds", &item->writefds);
+        esp_vfs_log_fd_set("errorfds", &item->errorfds);
+        esp_err_t err = vfs->vfs->select->start_select(nfds, &item->readfds, &item->writefds, &item->errorfds, sel_sem,
+                driver_args + i);
+
+        if (err != ESP_OK) {
+            if (err != ESP_ERR_NOT_SUPPORTED) {
+                call_end_selects(i, vfs_fds_triple, driver_args);
             }
+            (void) set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
+            if (sel_sem.is_sem_local && sel_sem.sem) {
+                vSemaphoreDelete(sel_sem.sem);
+                sel_sem.sem = NULL;
+            }
+            free(vfs_fds_triple);
+            free(driver_args);
+            __errno_r(r) = EINTR;
+            ESP_LOGD(TAG, "start_select failed: %s", esp_err_to_name(err));
+            return -1;
         }
     }
 
@@ -1510,7 +1639,7 @@ int tcgetattr(int fd, struct termios *p)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcgetattr, local_fd, p);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcgetattr, local_fd, p);
     return ret;
 }
 
@@ -1524,7 +1653,7 @@ int tcsetattr(int fd, int optional_actions, const struct termios *p)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcsetattr, local_fd, optional_actions, p);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcsetattr, local_fd, optional_actions, p);
     return ret;
 }
 
@@ -1538,7 +1667,7 @@ int tcdrain(int fd)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcdrain, local_fd);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcdrain, local_fd);
     return ret;
 }
 
@@ -1552,7 +1681,7 @@ int tcflush(int fd, int select)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcflush, local_fd, select);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcflush, local_fd, select);
     return ret;
 }
 
@@ -1566,7 +1695,7 @@ int tcflow(int fd, int action)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcflow, local_fd, action);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcflow, local_fd, action);
     return ret;
 }
 
@@ -1580,7 +1709,7 @@ pid_t tcgetsid(int fd)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcgetsid, local_fd);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcgetsid, local_fd);
     return ret;
 }
 
@@ -1594,7 +1723,7 @@ int tcsendbreak(int fd, int duration)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL(ret, r, vfs, termios->tcsendbreak, local_fd, duration);
+    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcsendbreak, local_fd, duration);
     return ret;
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
