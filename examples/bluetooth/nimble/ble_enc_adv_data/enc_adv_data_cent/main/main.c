@@ -425,7 +425,7 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
         enc_adv_data_cent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
