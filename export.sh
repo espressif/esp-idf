@@ -1,5 +1,12 @@
 # This script should be sourced, not executed.
 
+# Emergency backup option to use previous export.sh (export_legacy.sh) if the new export approach fails.
+# To use it, set environmental variable like: export ESP_IDF_LEGACY_EXPORT=1
+if [ -n "${ESP_IDF_LEGACY_EXPORT-}" ]; then
+    . ./tools/legacy_exports/export_legacy.sh
+    return $?
+fi
+
 # shellcheck disable=SC2128,SC2169,SC2039,SC3054 # ignore array expansion warning
 if [ -n "${BASH_SOURCE-}" ] && [ "${BASH_SOURCE[0]}" = "${0}" ]
 then

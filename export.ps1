@@ -1,5 +1,12 @@
 #!/usr/bin/env pwsh
 
+# Emergency backup option to use previous export.ps1 (export_legacy.ps1) if the new export approach fails.
+# To use it, set environmental variable like: $Env:ESP_IDF_LEGACY_EXPORT=1
+if ($env:ESP_IDF_LEGACY_EXPORT) {
+    . ./tools/legacy_exports/export_legacy.ps1
+    exit $LASTEXITCODE
+}
+
 $idf_path = "$PSScriptRoot"
 
 if (-not (Test-Path "$idf_path/tools/idf.py") -or

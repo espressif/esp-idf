@@ -6,6 +6,14 @@ if defined MSYSTEM (
 
 set SCRIPT_EXIT_CODE=0
 
+:: Emergency backup option to use previous export.bat (export_legacy.bat) if the new export approach fails.
+:: To use it, set environmental variable like: set ESP_IDF_LEGACY_EXPORT=1
+if not "%ESP_IDF_LEGACY_EXPORT%"=="" (
+    tools\legacy_exports\export_legacy.bat
+    set SCRIPT_EXIT_CODE=%errorlevel%
+    goto :eof
+)
+
 :: Missing requirements check
 set MISSING_REQUIREMENTS=
 python.exe --version >NUL 2>NUL
