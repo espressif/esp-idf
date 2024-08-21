@@ -62,6 +62,7 @@ def test_spaces_bundle3(idf_copy: Path) -> None:
                workdir=secure_boot_app_path)
 
 
+@pytest.mark.xfail(sys.platform == 'win32', reason='Bug with reproducible build')
 # Use this bundle for tests which can be done with the default build_test_app
 @pytest.mark.parametrize('dummy_', [
     # Dummy parameter with a space in it, used so that the test directory name contains a space
