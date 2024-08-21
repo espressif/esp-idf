@@ -434,3 +434,7 @@
 -
     re: "the current mclk multiple cannot perform integer division"
     hint: "Please adjust the mclk multiple to get the accurate sample rate.\nFor example, if you're using 24-bit slot width or enabled 3 slots, then the mclk multiple should be a multiple of 3, otherwise the sample rate will be inaccurate."
+
+-
+    re: "discarded output section: .*\\.got"
+    hint: "Some objects being linked were compiled with the \"-fpic\"/\"-fpie\" options. These options may be suitable for \"linux\" builds, but must not be applied for esp32XX targets."
