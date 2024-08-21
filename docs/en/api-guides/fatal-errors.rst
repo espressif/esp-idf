@@ -393,10 +393,12 @@ Interrupt Watchdog Timeout on CPU0/CPU1
 
 Indicates that an interrupt watchdog timeout has occurred. See :doc:`Watchdogs <../api-reference/system/wdts>` for more information.
 
+.. _cache_error:
+
 |CACHE_ERR_MSG|
 ^^^^^^^^^^^^^^^
 
-In some situations, ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+In some situations, ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. For more details, see the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` and the :ref:`IRAM-Safe Interrupt Handlers <iram_safe_interrupts_handlers>` section.
 
 .. only:: SOC_MEMPROT_SUPPORTED
 

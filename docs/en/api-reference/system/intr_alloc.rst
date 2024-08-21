@@ -89,17 +89,45 @@ To illustrate why shared interrupts can only be level-triggered, take the scenar
 
     Care should be taken when calling :cpp:func:`esp_intr_alloc` from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use :cpp:func:`xTaskCreatePinnedToCore` with a specific CoreID argument to create tasks that allocate interrupts. In the case of internal interrupt sources, this is required.
 
+.. _iram_safe_interrupts_handlers:
 
 IRAM-Safe Interrupt Handlers
 ----------------------------
 
-The ``ESP_INTR_FLAG_IRAM`` flag registers an interrupt handler that always runs from IRAM (and reads all its data from DRAM), and therefore does not need to be disabled during flash erase and write operations.
+When performing write and erase operations on SPI flash, the {IDF_TARGET_NAME} will disable the cache, making SPI flash and SPIRAM inaccessible for interrupt handlers. This is why there are two types of interrupt handlers in ESP-IDF, which have their advantages and disadvantages:
 
-This is useful for interrupts which need a guaranteed minimum execution latency, as flash write and erase operations can be slow (erases can take tens or hundreds of milliseconds to complete).
+**IRAM-safe interrupt handlers** - only access code and data in internal memory (IRAM for code, DRAM for data).
 
-It can also be useful to keep an interrupt handler in IRAM if it is called very frequently, to avoid flash cache misses.
+.. list::
 
-Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+    - **+** **Latency**: They execute relatively fast and with low latency, since they are not blocked by slow flash write and erase operations (erases can take tens or hundreds of milliseconds to complete). This is useful for interrupts which need a guaranteed minimum execution latency.
+    - **-** **Internal memory use**: They consume precious internal memory that could otherwise be used for something else.
+    - **+** **Cache misses**: They do not rely on the cache with potential cache misses since the code and data are in internal memory already.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+**Non-IRAM-safe interrupt handlers** - may access code and (read-only) data in flash.
+
+.. list::
+
+    - **-** **Latency**: In case of flash operations, these interrupt handlers are postponed, which makes their average latency longer and less predictable.
+    - **+** **Internal memory use**: They do not use any or not as much memory in internal RAM as IRAM-safe interrupts.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, do *not* use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+*Note that there is nothing that explicitly marks an interrupt handler as IRAM-safe.* An interrupt handler is IRAM-safe implicitly if and only if the code and data it may access are placed in internal memory. The term "IRAM-safe" is actually a bit misleading, since there are more requirements than just placing the handler's code in IRAM memory. Examples of interrupt handlers that are **not** IRAM-safe include:
+
+.. list::
+
+    - A handler that has some of its code placed in flash memory.
+    - A handler that is placed in IRAM but calls functions placed in flash memory.
+    - A handler that accesses a read-only variable placed in flash, even though the handler's code is actually placed in IRAM.
+
+For details on placing code and data in IRAM or DRAM, see :ref:`how-to-place-code-in-iram`.
+
+For more details about SPI flash operations and their interactions with interrupt handlers, see the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>`.
+
+.. note::
+
+    Never register an interrupt handler with ``ESP_INTR_FLAG_IRAM`` flag if you are not 100% sure that all the code and data that the interrupt ever accesses are in IRAM (code) or DRAM (data). Disregarding this will lead to (sometimes spurious) :ref:`cache errors <cache_error>`. This must also be true for code and data accessed indirectly through function calls.
 
 .. _intr-alloc-shared-interrupts:
 
