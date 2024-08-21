@@ -415,7 +415,7 @@ void esp_supplicant_common_deinit(void)
             s_supplicant_evt_queue = NULL;
         }
         if (s_supplicant_api_lock) {
-            os_semphr_delete(s_supplicant_api_lock);
+            os_mutex_delete(s_supplicant_api_lock);
             s_supplicant_api_lock = NULL;
         }
     } else if (esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
