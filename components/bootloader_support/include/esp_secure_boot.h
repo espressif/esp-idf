@@ -87,7 +87,7 @@ typedef enum {
  *
  * @return key type for the selected secure boot scheme
  */
-static inline char* esp_secure_boot_get_scheme_name(esp_secure_boot_sig_scheme_t scheme)
+static inline const char* esp_secure_boot_get_scheme_name(esp_secure_boot_sig_scheme_t scheme)
 {
     switch (scheme) {
         case ESP_SECURE_BOOT_V2_RSA:
