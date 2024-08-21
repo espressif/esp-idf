@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import atexit
 import binascii
+import fnmatch
 import json
 import os
 import shutil
@@ -41,6 +42,8 @@ class QemuTarget:
     install_package: str    # name of the tools.json package from which to install the QEMU binary
     qemu_args: str          # chip-specific arguments to pass to QEMU
     default_efuse: bytes    # default efuse values for the target
+    boot_mode_arg: str = ''  # additional arguments to pass to QEMU when booting in download mode
+    efuse_device: str = ''  # efuse device name, if different from the target nvram.{target}.efuse
 
 
 # To generate the default eFuse values, follow the instructions in
@@ -57,7 +60,9 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000800000000000000000100000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '00000000')),
+            '00000000'),
+        '-global driver=esp32.gpio,property=strap_mode,value=0x0f',
+        'nvram.esp32.efuse'),
 
     'esp32c3': QemuTarget(
         'esp32c3',
@@ -91,7 +96,10 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '000000000000000000000000000000000000000000000000')),
+            '000000000000000000000000000000000000000000000000'),
+        '-global driver=esp32c3.gpio,property=strap_mode,value=0x02',
+        'nvram.esp32c3.efuse'),
+
     'esp32s3': QemuTarget(
         'esp32s3',
         'qemu-system-xtensa',
@@ -124,7 +132,9 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
             '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
-            '000000000000000000000000000000000000000000000000')),
+            '000000000000000000000000000000000000000000000000'),
+        '-global driver=esp32s3.gpio,property=strap_mode,value=0x07',
+        'nvram.esp32c3.efuse'),   # Not esp32s3, QEMU-201
 }
 
 
@@ -136,6 +146,7 @@ class QemuTaskRunOptions:
         self.bg_mode = False
         self.wait_for_gdb = False
         self.wait_for_monitor = False
+        self.boot_mode = False
 
 
 def wait_for_socket(port: int, timeout_sec: float = 10.0) -> None:
@@ -165,11 +176,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     def global_callback(ctx: Context, global_args: Dict, tasks: List) -> None:
         # This callback lets us customize QEMU launch arguments depending on the presence of other tasks.
         def have_task(name: str) -> bool:
-            return any(task.name == name for task in tasks)
+            return any(fnmatch.fnmatch(task.name, name) for task in tasks)
 
         have_qemu = have_task('qemu')
         have_gdb = have_task('gdb')
         have_monitor = have_task('monitor')
+        have_efuse = have_task('efuse-*')
 
         if have_qemu:
             if have_gdb and have_monitor:
@@ -183,6 +195,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 options.bg_mode = True
                 yellow_print(f'Running qemu on {PYSERIAL_PORT}')
                 global_args['port'] = PYSERIAL_PORT
+            if have_efuse:
+                options.bg_mode = True
+                options.boot_mode = True
+                yellow_print(f'Running qemu on {PYSERIAL_PORT}')
+                global_args['port'] = PYSERIAL_PORT
+                for task in tasks:
+                    if fnmatch.fnmatch(task.name, 'efuse-*'):
+                        if 'before' in task.action_args.keys():
+                            task.action_args['before'] = 'no_reset'
 
     def _get_project_desc(args: PropertyDict, ctx: Context) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
@@ -192,7 +213,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             project_desc = json.load(f)
         return project_desc
 
-    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool) -> None:
+    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool, efuse_file: str) -> None:
         project_desc = _get_project_desc(args, ctx)
 
         # Determine the target and check if we have the necessary QEMU binary
@@ -209,23 +230,31 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         # Generate flash image and efuse image
         flash_size = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_ESPTOOLPY_FLASHSIZE')
-        bin_path = os.path.join(args.build_dir, 'flash_image.bin')
+        bin_path = os.path.join(args.build_dir, 'qemu_flash.bin')
         yellow_print(f'Generating flash image: {bin_path}')
         subprocess.check_call([
             sys.executable, '-m', 'esptool', f'--chip={target}', 'merge_bin', f'--output={bin_path}',
             f'--fill-flash-size={flash_size}', '@flash_args'], cwd=args.build_dir)
 
-        efuse_bin_path = os.path.join(args.build_dir, 'qemu_efuse.bin')
-        yellow_print(f'Generating efuse image: {efuse_bin_path}')
-        with open(efuse_bin_path, 'wb') as f:
-            f.write(qemu_target_info.default_efuse)
+        if efuse_file:
+            efuse_bin_path = efuse_file
+        else:
+            efuse_bin_path = os.path.join(args.build_dir, 'qemu_efuse.bin')
+        try:
+            open(efuse_bin_path, 'rb').close()
+            yellow_print(f'Using existing efuse image: {efuse_bin_path}')
+        except FileNotFoundError:
+            yellow_print(f'Generating efuse image: {efuse_bin_path}')
+            with open(efuse_bin_path, 'wb') as f:
+                f.write(qemu_target_info.default_efuse)
 
         # Prepare QEMU launch arguments
         qemu_args = [qemu_target_info.qemu_prog]
         qemu_args += qemu_target_info.qemu_args.split(' ')
         qemu_args += [
             '-drive', f'file={bin_path},if=mtd,format=raw',
-            '-drive', f'file={efuse_bin_path},if=none,format=raw,id=efuse', '-global', f'driver=nvram.{target}.efuse,property=drive,value=efuse',
+            '-drive', f'file={efuse_bin_path},if=none,format=raw,id=efuse',
+            '-global', f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
             '-global', f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
         if '-nic' not in qemu_extra_args:
@@ -241,6 +270,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             qemu_args += ['-display', 'sdl']
         else:
             qemu_args += ['-nographic']
+
+        if options.boot_mode:
+            qemu_args += qemu_target_info.boot_mode_arg.split(' ')
 
         # Launch QEMU!
         if not options.bg_mode:
@@ -300,6 +332,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'help': 'Enable graphical window',
                         'is_flag': True,
                         'default': False,
+                    },
+                    {
+                        'names': ['--efuse-file'],
+                        'help': ('File used to store efuse values. If not specified, qemu_efuse.bin file '
+                                 'in build directory is used.'),
+                        'is_flag': False,
+                        'default': '',
                     }
                 ]
             }

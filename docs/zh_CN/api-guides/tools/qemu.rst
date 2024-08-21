@@ -111,3 +111,21 @@ QEMU 支持虚拟帧缓冲设备。帧缓冲设备在真实的 {IDF_TARGET_NAME}
 当启用 ``--graphics`` 选项时，QEMU 会打开一个额外的窗口，显示帧缓冲内容。
 
 要在应用程序中使用虚拟帧缓冲设备，可以将 `espressif/esp_lcd_qemu_rgb <https://components.espressif.com/components/espressif/esp_lcd_qemu_rgb>`_ 组件添加到项目中。此组件为虚拟帧缓冲设备提供了一个与 esp_lcd 兼容的驱动程序。
+
+eFuse 仿真
+~~~~~~~~~~~
+
+QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与安全相关的功能，而无需在真实硬件上执行不可逆操作。
+
+使用 :doc:`idf.py<idf-py>` eFuse 相关命令来编程 eFuse。当这些命令与 ``qemu`` 命令一起运行时，eFuse 会在 QEMU 中编程，并且 ``qemu_efuse.bin`` 文件会更新。例如，
+
+.. code-block:: console
+
+    idf.py qemu efuse-burn FLASH_CRYPT_CNT 1
+
+默认情况下，eFuse 的值从编译文件夹里的 ``qemu_efuse.bin`` 文件中读取和写入。也可以使用 ``--efuse-file`` 选项指定不同的文件。例如，
+
+.. code-block:: console
+
+    idf.py qemu --efuse-file my_efuse.bin efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu --efuse-file my_efuse.bin monitor
