@@ -97,7 +97,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - LE Power Control
       - |unsupported|
-      - |developing202412|
+      - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
