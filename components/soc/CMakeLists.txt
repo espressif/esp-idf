@@ -89,7 +89,7 @@ if(CONFIG_SOC_GPTIMER_SUPPORTED)
     list(APPEND srcs "${target_folder}/timer_periph.c")
 endif()
 
-if(CONFIG_SOC_LCDCAM_SUPPORTED OR CONFIG_SOC_LCD_I80_SUPPORTED)
+if(CONFIG_SOC_LCDCAM_SUPPORTED OR CONFIG_SOC_I2S_SUPPORTS_LCD_CAMERA)
     list(APPEND srcs "${target_folder}/lcd_periph.c")
 endif()
 

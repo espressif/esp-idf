@@ -196,7 +196,7 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
     if (rgb_panel->panel_id >= 0) {
-        PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_signals.panels[rgb_panel->panel_id].module, ref_count) {
+        PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_rgb_signals.panels[rgb_panel->panel_id].module, ref_count) {
             if (ref_count == 0) {
                 lcd_ll_enable_bus_clock(rgb_panel->panel_id, false);
             }
@@ -306,7 +306,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->panel_id = panel_id;
 
     // enable APB to access LCD registers
-    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_signals.panels[panel_id].module, ref_count) {
+    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_rgb_signals.panels[panel_id].module, ref_count) {
         if (ref_count == 0) {
             lcd_ll_enable_bus_clock(panel_id, true);
             lcd_ll_reset_register(panel_id);
@@ -332,7 +332,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     }
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
-    ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
+    ret = esp_intr_alloc_intrstatus(lcd_periph_rgb_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
@@ -801,7 +801,7 @@ static esp_err_t rgb_panel_invert_color(esp_lcd_panel_t *panel, bool invert_colo
     // inverting the data line by GPIO matrix
     for (int i = 0; i < rgb_panel->data_width; i++) {
         if (rgb_panel->data_gpio_nums[i] >= 0) {
-            esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], lcd_periph_signals.panels[panel_id].data_sigs[i],
+            esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], lcd_periph_rgb_signals.panels[panel_id].data_sigs[i],
                                             invert_color_data, false);
         }
     }
@@ -857,34 +857,34 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
             gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
             esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
-                                            lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
+                                            lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
         }
     }
     if (panel_config->hsync_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
         gpio_set_direction(panel_config->hsync_gpio_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(panel_config->hsync_gpio_num,
-                                        lcd_periph_signals.panels[panel_id].hsync_sig, false, false);
+                                        lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
     }
     if (panel_config->vsync_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->vsync_gpio_num], PIN_FUNC_GPIO);
         gpio_set_direction(panel_config->vsync_gpio_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
-                                        lcd_periph_signals.panels[panel_id].vsync_sig, false, false);
+                                        lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
     if (panel_config->pclk_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->pclk_gpio_num], PIN_FUNC_GPIO);
         gpio_set_direction(panel_config->pclk_gpio_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
-                                        lcd_periph_signals.panels[panel_id].pclk_sig, false, false);
+                                        lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
     }
     // DE signal might not be necessary for some RGB LCD
     if (panel_config->de_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->de_gpio_num], PIN_FUNC_GPIO);
         gpio_set_direction(panel_config->de_gpio_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(panel_config->de_gpio_num,
-                                        lcd_periph_signals.panels[panel_id].de_sig, false, false);
+                                        lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
     }
     // disp enable GPIO is optional
     if (panel_config->disp_gpio_num >= 0) {
