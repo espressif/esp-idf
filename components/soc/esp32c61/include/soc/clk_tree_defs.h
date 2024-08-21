@@ -258,22 +258,6 @@ typedef enum {
     SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as SPI source clock */
 } soc_periph_spi_clk_src_t;
 
-//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
-
-/**
- * @brief Array initializer for all supported clock sources of SDM
- */
-#define SOC_SDM_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
-
-/**
- * @brief Sigma Delta Modulator clock source
- */
-typedef enum {
-    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
-    SDM_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
-    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
-} soc_periph_sdm_clk_src_t;
-
 //////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
 
 /**

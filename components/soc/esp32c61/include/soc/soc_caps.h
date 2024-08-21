@@ -161,10 +161,10 @@
 // ESP32-C61 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 22
-//  \#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1 //TODO: [ESP32C61] IDF-9340
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 
 // GPIO peripheral has the ETM extension
-//  \#define SOC_GPIO_SUPPORT_ETM          1  //TODO: [ESP32C61] IDF-9340
+//  \#define SOC_GPIO_SUPPORT_ETM          1  //TODO: [ESP32C61] IDF-9318
 
 // Target has the full LP IO subsystem
 // On ESP32-C61, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
