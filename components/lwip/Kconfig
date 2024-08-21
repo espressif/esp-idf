@@ -1196,6 +1196,21 @@ menu "LWIP"
 
         endchoice
 
+        choice LWIP_HOOK_DNS_EXTERNAL_RESOLVE
+            prompt "DNS external resolve Hook"
+            default LWIP_HOOK_DNS_EXT_RESOLVE_NONE
+            help
+                Enables custom DNS resolve hook.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_DNS_EXT_RESOLVE_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_DNS_EXT_RESOLVE_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
         choice LWIP_HOOK_IP6_INPUT
             prompt "IPv6 packet input"
             depends on LWIP_IPV6
