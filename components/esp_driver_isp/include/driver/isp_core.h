@@ -24,6 +24,8 @@ typedef struct {
     isp_input_data_source_t input_data_source;    ///< Input data source
     isp_color_t input_data_color_type;            ///< Input color type
     isp_color_t output_data_color_type;           ///< Output color type
+    isp_color_range_t yuv_range;                  ///< When the `output_data_color_type` is any YUV color space, this field is to describe its color range
+    isp_yuv_conv_std_t yuv_std;                   ///< This field is to describe YUV<->RGB conversion standard
     bool has_line_start_packet;                   ///< Enable line start packet
     bool has_line_end_packet;                     ///< Enable line end packet
     uint32_t h_res;                               ///< Input horizontal resolution, i.e. the number of pixels in a line

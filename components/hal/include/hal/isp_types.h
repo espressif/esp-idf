@@ -63,6 +63,22 @@ typedef enum {
     ISP_COLOR_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420), ///< YUV420
 } isp_color_t;
 
+/**
+ * @brief ISP color range
+ */
+typedef enum {
+    ISP_COLOR_RANGE_LIMIT = COLOR_RANGE_LIMIT, /*!< Limited color range */
+    ISP_COLOR_RANGE_FULL = COLOR_RANGE_FULL,   /*!< Full color range */
+} isp_color_range_t;
+
+/**
+ * @brief The standard used for conversion between RGB and YUV
+ */
+typedef enum {
+    ISP_YUV_CONV_STD_BT601 = COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
+    ISP_YUV_CONV_STD_BT709 = COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
+} isp_yuv_conv_std_t;
+
 /*---------------------------------------------------------------
                       AE
 ---------------------------------------------------------------*/
