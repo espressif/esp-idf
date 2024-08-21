@@ -776,6 +776,33 @@ menu "Security features"
             This can lead to permanent bricking of the device, in case all keys are revoked
             because of signature verification failure.
 
+    config SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
+        bool "Do not disable the ability to further read protect eFuses"
+        depends on SECURE_BOOT_V2_ENABLED
+        default n
+        help
+            If not set (default, recommended), on first boot the bootloader will burn the WR_DIS_RD_DIS
+            efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
+
+            If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
+            Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
+            BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the secure boot public key digest,
+            causing an immediate denial of service and possibly allowing an additional fault injection attack to
+            bypass the signature protection.
+
+            The option must be set when you need to program any read-protected key type into the efuses,
+            e.g., HMAC, ECDSA etc. after secure boot has already been enabled on the device.
+            Please refer to secure boot V2 documentation guide for more details.
+
+            NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
+
+            NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
+            "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
+            then it is __NOT__ possible to read/write efuses using espefuse.py utility.
+            However, efuse can be read/written from the application
+
+            Please refer to the Secure Boot V2 documentation guide for more information.
+
     config SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
         bool "Flash bootloader along with other artifacts when using the default flash command"
         depends on SECURE_BOOT_V2_ENABLED && SECURE_BOOT_BUILD_SIGNED_BINARIES
@@ -955,26 +982,6 @@ menu "Security features"
                 Setting this option allows the app partition length to be unaligned, and disables padding of the app
                 image to this length. It is generally not recommended to set this option, unless you have a legacy
                 partitioning scheme which doesn't support 64KB aligned partition lengths.
-
-        config SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
-            bool "Allow additional read protecting of efuses"
-            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
-            help
-                If not set (default, recommended), on first boot the bootloader will burn the WR_DIS_RD_DIS
-                efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
-
-                If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
-                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
-                BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the public key digest, causing an
-                immediate denial of service and possibly allowing an additional fault injection attack to
-                bypass the signature protection.
-
-                NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
-
-                NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
-                "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
-                then it is __NOT__ possible to read/write efuses using espefuse.py utility.
-                However, efuse can be read/written from the application
 
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
