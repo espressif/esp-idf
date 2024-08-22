@@ -142,7 +142,7 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
     * - Vmax
       - 可测量的最大模拟输入电压，与 ADC 衰减相关，请参考 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`__ > ``片上传感器与模拟信号处理``。
     * - Dmax
-      - 输出 ADC 原始数字读取结果的最大值，即 2^位宽，位宽即之前配置的 :cpp:member:`adc_digi_pattern_config_t::bit_width`。
+      - 输出 ADC 原始数字读取结果的最大值，即 2^位宽，位宽即之前配置的 :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`。
 
 若需进一步校准，将 ADC 原始结果转换为以 mV 为单位的电压数据，请参考校准文档 :doc:`adc_calibration`。
 
