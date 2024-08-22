@@ -229,7 +229,6 @@
                                              */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
-#define SOC_RTCIO_VALID_RTCIO_MASK         (0xFF)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */

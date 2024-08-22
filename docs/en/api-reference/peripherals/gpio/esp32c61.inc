@@ -40,12 +40,12 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO3
       - ADC1_CH1
       - LP_GPIO3
-      - Strapping pin
+      -
 
     * - GPIO4
       - ADC1_CH2
       - LP_GPIO4
-      - Strapping pin
+      -
 
     * - GPIO5
       - ADC1_CH3
@@ -60,17 +60,17 @@ The table below provides more information on pin usage, and please note the comm
     * - GPIO7
       -
       -
-      - Strapping pin
+      -
 
     * - GPIO8
       -
       -
-      - Strapping pin
+      -
 
     * - GPIO9
       -
       -
-      - Strapping pin
+      -
 
     * - GPIO10
       -
@@ -134,7 +134,7 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO3, GPIO4, GPIO7, GPIO8 and GPIO9 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
+  - Some pins are used as strapping pins, which can be used to select in which boot mode to load the chip, etc.. The details can be found in `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_ > ``Strapping Pins``.
 	- SPI0/1: GPIO14 ~ GPIO17 and GPIO19 ~ GPIO21 are usually used for SPI flash and not recommended for other uses.
 	- USB-JTAG: GPIO12 and GPIO13 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 

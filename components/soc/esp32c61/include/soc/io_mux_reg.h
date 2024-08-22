@@ -135,43 +135,6 @@ extern "C" {
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 
 #define REG_IO_MUX_BASE                             DR_REG_IO_MUX_BASE
-#define PIN_CTRL                                    (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
-
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
-
-//TODO: [ESP32C61] IDF-9316, copy from verify
-#define IO_MUX_CLK_OUT3    0x0000000F
-#define IO_MUX_CLK_OUT3_M  ((IO_MUX_CLK_OUT3_V)<<(IO_MUX_CLK_OUT3_S))
-#define IO_MUX_CLK_OUT3_V  0xF
-#define IO_MUX_CLK_OUT3_S  8
-#define IO_MUX_CLK_OUT2    0x0000000F
-#define IO_MUX_CLK_OUT2_M  ((IO_MUX_CLK_OUT2_V)<<(IO_MUX_CLK_OUT2_S))
-#define IO_MUX_CLK_OUT2_V  0xF
-#define IO_MUX_CLK_OUT2_S  4
-#define IO_MUX_CLK_OUT1    0x0000000F
-#define IO_MUX_CLK_OUT1_M  ((IO_MUX_CLK_OUT1_V)<<(IO_MUX_CLK_OUT1_S))
-#define IO_MUX_CLK_OUT1_V  0xF
-#define IO_MUX_CLK_OUT1_S  0
-
-#define CLK_OUT3                                    IO_MUX_CLK_OUT3
-#define CLK_OUT3_V                                  IO_MUX_CLK_OUT3_V
-#define CLK_OUT3_S                                  IO_MUX_CLK_OUT3_S
-#define CLK_OUT3_M                                  IO_MUX_CLK_OUT3_M
-#define CLK_OUT2                                    IO_MUX_CLK_OUT2
-#define CLK_OUT2_V                                  IO_MUX_CLK_OUT2_V
-#define CLK_OUT2_S                                  IO_MUX_CLK_OUT2_S
-#define CLK_OUT2_M                                  IO_MUX_CLK_OUT2_M
-#define CLK_OUT1                                    IO_MUX_CLK_OUT1
-#define CLK_OUT1_V                                  IO_MUX_CLK_OUT1_V
-#define CLK_OUT1_S                                  IO_MUX_CLK_OUT1_S
-#define CLK_OUT1_M                                  IO_MUX_CLK_OUT1_M
 // definitions above are inherited from previous version of code, should double check
 
 // definitions below are generated from pin_txt.csv

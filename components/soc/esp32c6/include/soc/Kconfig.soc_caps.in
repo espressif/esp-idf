@@ -551,10 +551,6 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
-config SOC_RTCIO_VALID_RTCIO_MASK
-    hex
-    default 0xFF
-
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8

@@ -73,10 +73,10 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 
 void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
 {
-    gpio_ll_set_pin_ctrl(clk_sig, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
+    abort(); // TODO: IDF-10968
 }
 
 void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)
 {
-    gpio_ll_set_pin_ctrl(0, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
+    abort(); // TODO: IDF-10968
 }
