@@ -168,7 +168,7 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
     pthread_setspecific(s_pthread_cfg_key, p);
 
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
-    return 0;
+    return ESP_OK;
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
