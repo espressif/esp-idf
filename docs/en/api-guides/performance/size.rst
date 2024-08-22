@@ -16,9 +16,6 @@ To optimize both firmware binary size and memory usage it's necessary to measure
 
 Using the :ref:`idf.py` sub-commands ``size``, ``size-components`` and ``size-files`` provides a summary of memory used by the project:
 
-.. note::
-    It is possible to add ``-DOUTPUT_FORMAT=csv`` or ``-DOUTPUT_FORMAT=json`` to get the output in CSV or JSON format.
-
 Size Summary (idf.py size)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
