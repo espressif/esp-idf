@@ -723,7 +723,7 @@ static inline void i2c_ll_master_get_filter(i2c_dev_t *hw, uint8_t *filter_conf)
 }
 
 /**
- * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
+ * @brief reset I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
  *
  * @param  hw Beginning address of the peripheral registers
  *
@@ -947,7 +947,8 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_hz, uint32_t timeout_us)
 {
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
-    return 31 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
+    // round up to an integer
+    return 32 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

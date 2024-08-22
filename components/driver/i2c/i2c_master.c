@@ -40,6 +40,8 @@ static const char *TAG = "i2c.master";
 #define I2C_ADDRESS_TRANS_WRITE(device_address)    (((device_address) << 1) | 0)
 #define I2C_ADDRESS_TRANS_READ(device_address)    (((device_address) << 1) | 1)
 
+#define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
+
 static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
 {
 #if !SOC_I2C_SUPPORT_HW_CLR_BUS
@@ -548,12 +550,13 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
 
-    i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
-
     I2C_CLOCK_SRC_ATOMIC() {
-        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
     }
+
+    // Set the timeout value
+    i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
+
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_update(hal->dev);
 
@@ -890,6 +893,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         ESP_LOGW(TAG, "Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs");
     }
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
+
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+    }
 
     i2c_master->bus_lock_mux = xSemaphoreCreateBinaryWithCaps(I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i2c_master->bus_lock_mux, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
