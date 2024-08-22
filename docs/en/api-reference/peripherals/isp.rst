@@ -158,17 +158,38 @@ Install ISP histogram (HIST) Driver
 
 ISP histogram (HIST) driver requires the configuration that specified by :cpp:type:`esp_isp_hist_config_t`.
 
-If the configurations in :cpp:type:`esp_isp_hist_config_t` is specified, users can call :cpp:func:`esp_isp_new_hist_controller` to allocate and initialize an ISP HISTG processor. This function will return an ISP HIST processor handle if it runs correctly. You can take following code as reference.
+If the configurations in :cpp:type:`esp_isp_hist_config_t` is specified, users can call :cpp:func:`esp_isp_new_hist_controller` to allocate and initialize an ISP Histogram processor. This function will return an ISP HIST processor handle if it runs correctly. You can take following code as reference.
+
+.. list::
+
+    - The sum of all subwindows weight's decimal value should be 256 or the statistics will be small, and integer value should be 0.
+    - The sum of all RGB coefficients' decimal value should be 256 or the statistics will be small, and integer value should be 0.
+    - The segment_threshold must be 0 ~ 255 and in order
 
 .. code:: c
 
     esp_isp_hist_config_t hist_cfg = {
         .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
-        .rgb_coefficient.coeff_r = 33,
-        .rgb_coefficient.coeff_g = 33,
-        .rgb_coefficient.coeff_b = 34,
         .hist_mode = ISP_HIST_SAMPLING_RGB,
-        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
+        .rgb_coefficient.coeff_r = {
+            .integer = 0,
+            .decimal = 86,
+        },
+        .rgb_coefficient.coeff_g = {
+            .integer = 0,
+            .decimal = 85,
+        },
+        .rgb_coefficient.coeff_b = {
+            .integer = 0,
+            .decimal = 85,
+        },
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
     };
     isp_hist_ctlr_t hist_ctlr_ctlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr));
@@ -444,8 +465,6 @@ Aside from the above oneshot API, the ISP histogram driver also provides a way t
 
 Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` callback to get the statistics result. See how to register it in `Register Event Callbacks <#isp-callback>`__
 
-Note that the sum of all subwindows's weight should be 100, the sum of all RGB coefficients should be 100, and segment_threshold must be 0 ~ 256.
-
 .. code:: c
 
     static bool s_hist_scheme_on_statistics_done_callback(isp_hist_ctlr_t awb_ctrlr, const esp_isp_hist_evt_data_t *edata, void *user_data)
@@ -456,17 +475,6 @@ Note that the sum of all subwindows's weight should be 100, the sum of all RGB c
         return true;
     }
 
-    isp_hist_ctlr_t hist_ctlr = NULL;
-    esp_isp_hist_config_t hist_cfg = {
-        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
-        .rgb_coefficient.coeff_r = 33,
-        .rgb_coefficient.coeff_g = 33,
-        .rgb_coefficient.coeff_b = 34,
-        .hist_mode = ISP_HIST_SAMPLING_RGB,
-        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
-    };
-
-    esp_isp_new_hist_controller(isp_proc, &hist_cfg, &hist_ctlr);
     esp_isp_hist_cbs_t hist_cbs = {
         .on_statistics_done = s_hist_scheme_on_statistics_done_callback,
     };
@@ -715,3 +723,4 @@ API Reference
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_sharpen.inc
 .. include-build-file:: inc/isp_gamma.inc
+.. include-build-file:: inc/isp_hist.inc

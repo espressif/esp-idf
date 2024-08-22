@@ -15,14 +15,25 @@
 extern "C" {
 #endif
 
-typedef struct {
-    isp_window_t window;                                                      /*!< The sampling window of histogram, see `isp_window_t`*/
-    isp_hist_sampling_mode_t hist_mode;                                       /*!< ISP histogram sampling mode */
-    isp_hist_rgb_coefficient rgb_coefficient;                                 /*!< RGB coefficients, adjust the sensitivity to red, geen, and blue colors in the image,
-                                                                                only effect when hist_mode is ISP_HIST_SAMPLING_RGB, the sum of all coefficients should be 100**/
-    uint32_t windows_weight[ISP_HIST_BLOCK_X_NUM][ISP_HIST_BLOCK_Y_NUM];      /*!< Weights of histogram's each subwindows, the sum of all subwindows's weight should be 100*/
-    uint32_t segment_threshold[ISP_HIST_INTERVAL_NUMS];                       /*!< Threshold to segment the histogram into intervals, range 0~256 */
+/*
+ *                                ISP Histogram Struct
+ * |<----------------------------- INTERVAL_NUMS = 16 ------------------------------>|
+ * |                     |                      |              |                     |
+ * |       Segment 0     |      Segment 1       | ............ |      Segment 15     |
+ * 0               threshold 0            threshold 1 ... threshold 14              255
+ * |<------------------------------------------------------------------------------->|
+ */
 
+/**
+ * @brief Hist controller config
+ */
+typedef struct {
+    isp_window_t window;                                                            /*!< The sampling window of histogram, see `isp_window_t`*/
+    isp_hist_sampling_mode_t hist_mode;                                             /*!< ISP histogram sampling mode */
+    isp_hist_rgb_coefficient_t rgb_coefficient;                                       /*!< RGB coefficients, adjust the sensitivity to red, geen, and blue colors in the image,
+                                                                                    only effect when hist_mode is ISP_HIST_SAMPLING_RGB, the sum of all coefficients decimal should be 256**/
+    isp_hist_weight_t window_weight[ISP_HIST_BLOCK_X_NUM * ISP_HIST_BLOCK_Y_NUM];    /*!< Weights of histogram's each subwindows, the sum of all subwindows's weight decimal should be 256*/
+    uint32_t segment_threshold[ISP_HIST_INTERVAL_NUMS];                             /*!< Threshold to segment the histogram into intervals, range 0~255 */
 } esp_isp_hist_config_t;
 
 /**

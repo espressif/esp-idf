@@ -358,17 +358,33 @@ TEST_CASE("ISP HIST driver basic function", "[isp]")
     /* Test when sum of weight is not 256 */
     esp_isp_hist_config_t hist_config_error = {
         .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
-        .windows_weight = {{5, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{15, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
     };
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_isp_new_hist_controller(isp_proc, &hist_config_error, &hist_ctlr));
 
     esp_isp_hist_config_t hist_config = {
         .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
         .hist_mode = ISP_HIST_SAMPLING_RGB,
-        .rgb_coefficient.coeff_r = 33,
-        .rgb_coefficient.coeff_g = 33,
-        .rgb_coefficient.coeff_b = 34,
-        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
     };
     TEST_ESP_OK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr));
 
@@ -408,10 +424,16 @@ TEST_CASE("ISP HIST controller exhausted allocation", "[isp]")
     esp_isp_hist_config_t hist_config = {
         .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
         .hist_mode = ISP_HIST_SAMPLING_RGB,
-        .rgb_coefficient.coeff_r = 33,
-        .rgb_coefficient.coeff_g = 33,
-        .rgb_coefficient.coeff_b = 34,
-        .windows_weight = {{4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {4, 4, 4, 4, 4}},
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
     };
 
     isp_hist_ctlr_t hist_ctlr[SOC_ISP_HIST_CTLR_NUMS + 1] = {};

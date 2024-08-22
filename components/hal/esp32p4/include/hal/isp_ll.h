@@ -1635,12 +1635,11 @@ static inline void isp_ll_hist_clk_enable(isp_dev_t *hw, bool enable)
  * @param[in] hw Hardware instance address
  * @param[in] window_weight array for window weight
 */
-static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const uint32_t window_weight[SOC_ISP_HIST_BLOCK_X_NUMS][SOC_ISP_HIST_BLOCK_Y_NUMS])
+static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const isp_hist_weight_t hist_window_weight[SOC_ISP_HIST_BLOCK_X_NUMS * SOC_ISP_HIST_BLOCK_Y_NUMS])
 {
-    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS; i++) {
-        for (int j = 0; j < SOC_ISP_HIST_BLOCK_Y_NUMS; j++) {
-            hw->hist_weight[i / 4].hist_weight_b[3 - (i % 4)] = (window_weight[i][j] * 256) / 100;
-        }
+    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS * SOC_ISP_HIST_BLOCK_Y_NUMS; i++) {
+        // On ESP32P4, hist_weight [7,0] are decimal
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight[i / 4], hist_weight_b[3 - (i % 4)], hist_window_weight[i].decimal);
     }
 }
 
@@ -1652,9 +1651,8 @@ static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const uint32_
 */
 static inline void isp_ll_hist_set_segment_threshold(isp_dev_t *hw, const uint32_t segment_threshold[SOC_ISP_HIST_INTERVAL_NUMS])
 {
-    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++)
-    {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg[i / 4], hist_seg_b[3 - (i % 4)], segment_threshold[i])
+    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg[i / 4], hist_seg_b[3 - (i % 4)], segment_threshold[i]);
     }
 }
 
@@ -1717,11 +1715,11 @@ static inline void isp_ll_hist_set_mode(isp_dev_t *hw, isp_hist_sampling_mode_t 
  * @param[in] hw Hardware instance address
  * @param[in] rgb_coeff RGB coefficients
 */
-static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist_rgb_coefficient *rgb_coeff)
+static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist_rgb_coefficient_t *rgb_coeff)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_r, (rgb_coeff->coeff_r * 256) / 100);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, (rgb_coeff->coeff_g * 256) / 100);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, (rgb_coeff->coeff_b * 256) / 100);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_r, rgb_coeff->coeff_r.decimal);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, rgb_coeff->coeff_g.decimal);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, rgb_coeff->coeff_b.decimal);
 }
 
 #ifdef __cplusplus

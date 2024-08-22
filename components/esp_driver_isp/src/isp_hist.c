@@ -70,6 +70,34 @@ static void s_isp_hist_free_controller(isp_hist_ctlr_t hist_ctlr)
     }
 }
 
+static esp_err_t s_esp_isp_hist_config_hardware(isp_proc_handle_t isp_proc, const esp_isp_hist_config_t *hist_cfg)
+{
+    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++) {
+        ESP_RETURN_ON_FALSE((hist_cfg->segment_threshold[i] > 0 && hist_cfg->segment_threshold[i] < 256), ESP_ERR_INVALID_ARG, TAG, "invalid segment threshold");
+    }
+    ESP_RETURN_ON_FALSE(hist_cfg->rgb_coefficient.coeff_r.integer == 0 && hist_cfg->rgb_coefficient.coeff_g.integer == 0 && hist_cfg->rgb_coefficient.coeff_b.integer == 0, \
+                        ESP_ERR_INVALID_ARG, TAG, "The rgb_coefficient's integer value is bigger than 0");
+
+    int weight_sum = 0;
+    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS * SOC_ISP_HIST_BLOCK_Y_NUMS; i++) {
+        ESP_RETURN_ON_FALSE(hist_cfg->window_weight[i].integer == 0, ESP_ERR_INVALID_ARG, TAG, "The subwindow weight's integer value is bigger than -");
+        weight_sum = weight_sum + hist_cfg->window_weight[i].decimal;
+    }
+    ESP_RETURN_ON_FALSE(weight_sum == 256, ESP_ERR_INVALID_ARG, TAG, "The sum of all subwindow weight's decimal value is not 256");
+
+    isp_ll_hist_set_mode(isp_proc->hal.hw, hist_cfg->hist_mode);
+    isp_hal_hist_window_config(&isp_proc->hal, &hist_cfg->window);
+
+    isp_ll_hist_set_subwindow_weight(isp_proc->hal.hw, hist_cfg->window_weight);
+
+    isp_ll_hist_set_segment_threshold(isp_proc->hal.hw, hist_cfg->segment_threshold);
+    if (hist_cfg->hist_mode == ISP_HIST_SAMPLING_RGB) {
+        isp_ll_hist_set_rgb_coefficient(isp_proc->hal.hw, &hist_cfg->rgb_coefficient);
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t esp_isp_new_hist_controller(isp_proc_handle_t isp_proc, const esp_isp_hist_config_t *hist_cfg, isp_hist_ctlr_t *ret_hdl)
 {
     esp_err_t ret = ESP_FAIL;
@@ -85,39 +113,14 @@ esp_err_t esp_isp_new_hist_controller(isp_proc_handle_t isp_proc, const esp_isp_
     hist_ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     hist_ctlr->isp_proc = isp_proc;
 
-    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++) {
-        ESP_GOTO_ON_FALSE((hist_cfg->segment_threshold[i] > 0 && hist_cfg->segment_threshold[i] < 256), ESP_ERR_INVALID_ARG, err1, TAG, "invalid segment threshold");
-    }
-
-    int weight_sum = 0;
-    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS; i++) {
-        for (int j = 0; j < SOC_ISP_HIST_BLOCK_Y_NUMS; j++) {
-            weight_sum = weight_sum + hist_cfg->windows_weight[i][j];
-        }
-    }
-    ESP_GOTO_ON_FALSE(weight_sum == 100, ESP_ERR_INVALID_ARG, err1, TAG, "The sum of all subwindow's weight is not 100");
-
-    if (hist_cfg->hist_mode ==  ISP_HIST_SAMPLING_RGB) {
-        int rgb_coefficient_sum = hist_cfg->rgb_coefficient.coeff_r + hist_cfg->rgb_coefficient.coeff_g + hist_cfg->rgb_coefficient.coeff_b;
-        ESP_GOTO_ON_FALSE(rgb_coefficient_sum == 100, ESP_ERR_INVALID_ARG, err1, TAG, "The sum of rgb_coefficient is not 100");
-    }
+    // Configure the hardware
+    ESP_GOTO_ON_ERROR(s_esp_isp_hist_config_hardware(isp_proc, hist_cfg), err1, TAG, "configure HIST hardware failed");
 
     // Claim an hist controller
     ESP_GOTO_ON_ERROR(s_isp_claim_hist_controller(isp_proc, hist_ctlr), err1, TAG, "no available controller");
 
     // Register the HIGT ISR
     ESP_GOTO_ON_ERROR(esp_isp_register_isr(hist_ctlr->isp_proc, ISP_SUBMODULE_HIST), err2, TAG, "fail to register ISR");
-
-    // Configure the hardware
-    isp_ll_hist_set_mode(isp_proc->hal.hw, hist_cfg->hist_mode);
-    isp_hal_hist_window_config(&isp_proc->hal, &hist_cfg->window);
-
-    isp_ll_hist_set_subwindow_weight(isp_proc->hal.hw, hist_cfg->windows_weight);
-
-    isp_ll_hist_set_segment_threshold(isp_proc->hal.hw, hist_cfg->segment_threshold);
-    if (hist_cfg->hist_mode ==  ISP_HIST_SAMPLING_RGB) {
-        isp_ll_hist_set_rgb_coefficient(isp_proc->hal.hw, &hist_cfg->rgb_coefficient);
-    }
 
     *ret_hdl = hist_ctlr;
 
@@ -191,7 +194,7 @@ esp_err_t esp_isp_hist_controller_get_oneshot_statistics(isp_hist_ctlr_t hist_ct
     // Start the histogram reference statistics and waiting it done
     isp_ll_hist_enable(hist_ctlr->isp_proc->hal.hw, true);
     // Wait the statistics to finish and receive the result from the queue
-    if ((ticks > 0) && xQueueReceive(hist_ctlr->evt_que, out_res, ticks) != pdTRUE) {
+    if (xQueueReceive(hist_ctlr->evt_que, out_res, ticks) != pdTRUE) {
         ret = ESP_ERR_TIMEOUT;
     }
     // Stop the histogram reference statistics
