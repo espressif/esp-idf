@@ -21,9 +21,6 @@ extern "C" {
 /**
  * Probe and initialize SD/MMC card using given host
  *
- * @note Only SD cards (SDSC and SDHC/SDXC) are supported now.
- *       Support for MMC/eMMC cards will be added later.
- *
  * @param host  pointer to structure defining host controller
  * @param out_card  pointer to structure which will receive information
  *                  about the card when the function completes

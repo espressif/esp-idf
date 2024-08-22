@@ -6,11 +6,11 @@ SD/SDIO/MMC 驱动程序
 概述
 --------
 
-SD/SDIO/MMC 驱动目前支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个协议层驱动 (:component_file:`sdmmc/include/sdmmc_cmd.h`)，可以由以下方式实现：
+SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个协议层驱动 (:component_file:`sdmmc/include/sdmmc_cmd.h`)，可以与以下驱动配合使用：
 
 .. list::
-  :SOC_SDMMC_HOST_SUPPORTED: - SDMMC 主机驱动 (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`)，详情请参阅 :doc:`SDMMC Host API <../peripherals/sdmmc_host>`。
-  :SOC_GPSPI_SUPPORTED: - SDSPI 主机驱动 (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`)，详情请参阅 :doc:`SD SPI Host API <../peripherals/sdspi_host>`。
+    :SOC_SDMMC_HOST_SUPPORTED: - SDMMC 主机驱动 (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`)，详情请参阅 :doc:`SDMMC Host API <../peripherals/sdmmc_host>`。
+    :SOC_GPSPI_SUPPORTED: - SDSPI 主机驱动 (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`)，详情请参阅 :doc:`SD SPI Host API <../peripherals/sdspi_host>`。
 
 协议层与主机层
 ^^^^^^^^^^^^^^
@@ -34,22 +34,30 @@ SD/SDIO/MMC 驱动目前支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是�
 
 ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库组合使用的示例，演示了先初始化卡，然后使用 POSIX 和 C 库 API 向卡读写数据。请参考示例目录下 README.md 文件，查看更多详细信息。
 
+协议层 API
+------------------
+
+协议层具备 :cpp:class:`sdmmc_host_t` 结构体，此结构体描述了 SD/MMC 主机驱动，列出了其功能，并提供指向驱动程序函数的指针。协议层将卡信息储存于 :cpp:class:`sdmmc_card_t` 结构体中。向 SD/MMC 主机发送命令时，协议层使用 :cpp:class:`sdmmc_command_t` 结构体来描述命令、参数、预期返回值和需传输的数据（如有）。
+
+用于 SD 存储卡的 API
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list::
+    :SOC_SDMMC_HOST_SUPPORTED: - 初始化 SDMMC 主机，请调用主机驱动函数，例如 :cpp:func:`sdmmc_host_init` 和 :cpp:func:`sdmmc_host_init_slot`。
+    :SOC_GPSPI_SUPPORTED: - 初始化 SDSPI 主机，请调用主机驱动函数，例如 :cpp:func:`sdspi_host_init` 和 :cpp:func:`sdspi_host_init_slot`。
+    - 初始化卡，请调用 :cpp:func:`sdmmc_card_init`，并将参数 ``host`` （主机驱动信息）和参数 ``card`` （指向 :cpp:class:`sdmmc_card_t` 结构体的指针）传递给此函数。函数运行结束后，将会向 :cpp:class:`sdmmc_card_t` 结构体填充该卡的信息。
+    - 读取或写入卡的扇区，请分别调用 :cpp:func:`sdmmc_read_sectors` 和 :cpp:func:`sdmmc_write_sectors`，并将参数 ``card`` （指向卡信息结构的指针）传递给函数。
+
+    - 如果不再使用该卡，请调用主机驱动函数，例如 ``sdmmc_host_deinit`` 或 ``sdspi_host_deinit``，以禁用SDMMC 主机外设或 SDSPI 主机外设，并释放驱动程序分配的资源。
+
+.. only:: not SOC_SDMMC_HOST_SUPPORTED
+
+    eMMC 芯片支持
+    ^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 没有 SDMMC 主机控制器，只能使用 SPI 协议与卡通信。然而，eMMC 芯片不能通过 SPI 使用。因此，无法在 {IDF_TARGET_NAME} 上使用 eMMC 芯片。
+
 .. only:: SOC_SDMMC_HOST_SUPPORTED
-
-    协议层 API
-    ------------------
-
-    协议层具备 :cpp:class:`sdmmc_host_t` 结构体，此结构体描述了 SD/MMC 主机驱动，列出了其功能，并提供指向驱动程序函数的指针。协议层将卡信息储存于 :cpp:class:`sdmmc_card_t` 结构体中。向 SD/MMC 主机发送命令时，协议层使用 :cpp:class:`sdmmc_command_t` 结构体来描述命令、参数、预期返回值和需传输的数据（如有）。
-
-
-    用于 SD 存储卡的 API
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    1. 初始化主机，请调用主机驱动函数，例如 :cpp:func:`sdmmc_host_init` 和 :cpp:func:`sdmmc_host_init_slot`；
-    2. 初始化卡，请调用 :cpp:func:`sdmmc_card_init`，并将参数 ``host`` （主机驱动信息）和参数 ``card`` （指向 :cpp:class:`sdmmc_card_t` 结构体的指针）传递给此函数。函数运行结束后，将会向 :cpp:class:`sdmmc_card_t` 结构体填充该卡的信息；
-    3. 读取或写入卡的扇区，请分别调用 :cpp:func:`sdmmc_read_sectors` 和 :cpp:func:`sdmmc_write_sectors`，并将参数 ``card`` （指向卡信息结构的指针）传递给函数；
-    4. 如果不再使用该卡，请调用主机驱动函数，例如 :cpp:func:`sdmmc_host_deinit`，以禁用主机外设，并释放驱动程序分配的资源。
-
 
     用于 eMMC 芯片的 API
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,13 +89,13 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
        * - 操作
          - 函数读取
          - 函数写入
-       * - 使用 IO_RW_DIRECT (CMD52) 读写单个字节。
+       * - 使用 IO_RW_DIRECT (CMD52) 读写单个字节
          - :cpp:func:`sdmmc_io_read_byte`
          - :cpp:func:`sdmmc_io_write_byte`
-       * - 使用 IO_RW_EXTENDED (CMD53) 的字节模式读写多个字节。
+       * - 使用 IO_RW_EXTENDED (CMD53) 的字节模式读写多个字节
          - :cpp:func:`sdmmc_io_read_bytes`
          - :cpp:func:`sdmmc_io_write_bytes`
-       * - 块模式下，使用 IO_RW_EXTENDED (CMD53) 读写数据块。
+       * - 块模式下，使用 IO_RW_EXTENDED (CMD53) 读写数据块
          - :cpp:func:`sdmmc_io_read_blocks`
          - :cpp:func:`sdmmc_io_write_blocks`
 
@@ -97,12 +105,12 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     .. only:: esp32
 
-    如果需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和 :example:`peripherals/sdio/host`。
+        如果需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和示例 :example:`peripherals/sdio/host`。
 
-复合卡（存储 + IO）
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    复合卡（存储 + IO）
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-该驱动程序不支持 SD 复合卡，复合卡会被视为 IO 卡。
+    该驱动程序不支持 SD 复合卡，复合卡会被视为 IO 卡。
 
 
 线程安全
