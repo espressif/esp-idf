@@ -163,6 +163,7 @@
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 22
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
 // GPIO peripheral has the ETM extension
 //  \#define SOC_GPIO_SUPPORT_ETM          1  //TODO: [ESP32C61] IDF-9318

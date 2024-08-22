@@ -102,8 +102,8 @@ typedef union {
         uint32_t gpion_hys_en:1;
         /** gpion_hys_sel : R/W; bitpos: [17]; default: 0;
          *  Configures to choose the signal for enabling the hysteresis function for GPIOn. \\
-         *  0: Choose the output enable signal of eFuse\\
-         *  1: Choose the output enable signal of IO_MUX_GPIOn_HYS_EN\\
+         *  0: Choose the output enable signal of eFuse, there is no efuse bit for it, should never set to 0\\
+         *  1: Choose the output enable signal of IO_MUX_GPIOn_HYS_EN, always set to 1\\
          */
         uint32_t gpion_hys_sel:1;
         uint32_t reserved_18:14;
