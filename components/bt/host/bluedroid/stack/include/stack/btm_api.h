@@ -75,6 +75,7 @@ enum {
     BTM_SET_STATIC_RAND_ADDR_FAIL,      /* 25 Command failed */
     BTM_INVALID_STATIC_RAND_ADDR,       /* 26 invalid static rand addr */
     BTM_SEC_DEV_REC_REMOVED,            /* 27 Device record relate to the bd_addr is removed */
+    BTM_HCI_ERROR = 128,                /* 128 HCI error code from controller (0x80) */
 };
 
 typedef uint8_t tBTM_STATUS;
