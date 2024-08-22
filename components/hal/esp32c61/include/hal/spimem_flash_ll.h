@@ -27,8 +27,8 @@
 #include "hal/spi_flash_types.h"
 #include "soc/pcr_struct.h"
 #include "esp_rom_sys.h"
-
-// TODO: [ESP32C61] IDF-9314, inherit from c6
+#include "hal/clk_tree_ll.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -628,39 +628,25 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-#if CONFIG_IDF_ENV_FPGA
-    // in FPGA, mspi source freq is fixed to 80M
-    return 80;
-#else
-    // MAY CAN IMPROVE (ONLY rc_fast case is incorrect)!
-    // TODO: Default is PLL480M, this is hard-coded.
-    // In the future, we can get the CPU clock source by calling interface.
-    uint8_t clock_val = 0;
-    switch (PCR.mspi_clk_conf.mspi_fast_div_num) {
+    int source_clk_mhz = 0;
+
+    switch (PCR.mspi_clk_conf.mspi_func_clk_sel)
+    {
     case 0:
-        clock_val = 40;
+        source_clk_mhz = clk_ll_xtal_get_freq_mhz();
         break;
     case 1:
-        clock_val = 20;
+        source_clk_mhz = (SOC_CLK_RC_FAST_FREQ_APPROX/(1 * 1000 * 1000));
         break;
     case 2:
-        clock_val = 10;
-        break;
-    case 3:
-        clock_val = 120;
-        break;
-    case 4:
-        clock_val = 96;
-        break;
-    case 5:
-        clock_val = 80;
+        source_clk_mhz = clk_ll_bbpll_get_freq_mhz();
         break;
     default:
-        HAL_ASSERT(false);
+        break;
     }
 
+    uint8_t clock_val = source_clk_mhz / (PCR.mspi_clk_conf.mspi_fast_div_num + 1);
     return clock_val;
-#endif
 }
 
 /**

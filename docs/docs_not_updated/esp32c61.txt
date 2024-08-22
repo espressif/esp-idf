@@ -44,7 +44,6 @@ api-guides/esp-ble-mesh/ble-mesh-feature-list.rst
 api-guides/esp-ble-mesh/ble-mesh-terminology.rst
 api-guides/esp-ble-mesh/ble-mesh-architecture.rst
 api-guides/esp-ble-mesh/ble-mesh-faq.rst
-api-guides/external-ram.rst
 api-guides/wifi-security.rst
 api-guides/index.rst
 api-guides/openthread.rst

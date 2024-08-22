@@ -210,8 +210,8 @@ static inline void psram_ctrlr_ll_common_transaction_base(uint32_t mspi_id, esp_
  */
 static inline void psram_ctrlr_ll_set_cs_pin(uint32_t mspi_id, psram_ll_cs_id_t cs_id)
 {
-    SPIMEM0.misc.cs0_dis = (cs_id == 0) ? 0 : 1;
-    SPIMEM0.misc.cs1_dis = (cs_id == 1) ? 0 : 1;
+    SPIMEM0.misc.cs0_dis = (cs_id == PSRAM_LL_CS_ID_0) ? 0 : 1;
+    SPIMEM0.misc.cs1_dis = (cs_id == PSRAM_LL_CS_ID_1) ? 0 : 1;
 }
 
 /**

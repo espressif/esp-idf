@@ -130,6 +130,7 @@ extern "C" {
 #define SPI_CLK_GPIO_NUM             20
 #define SPI_D_GPIO_NUM               21
 #define SPI_Q_GPIO_NUM               16
+#define SPI_CS1_GPIO_NUM             14
 
 #define USB_INT_PHY0_DM_GPIO_NUM     12
 #define USB_INT_PHY0_DP_GPIO_NUM     13

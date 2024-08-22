@@ -192,7 +192,7 @@
 #define SOC_MEM_INTERNAL_LOW1       0x40800000
 #define SOC_MEM_INTERNAL_HIGH1      0x40850000
 
-#define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_IRAM_HIGH - SOC_IRAM_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW) ///< Largest span of contiguous memory in the address space
 
 // Region of address space that holds peripherals
 #define SOC_PERIPHERAL_LOW 0x60000000
