@@ -586,23 +586,13 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
 
-    i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
-
-    if (!i2c_master->base->is_lp_i2c) {
-        I2C_CLOCK_SRC_ATOMIC() {
-            i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
-        }
-    }
-#if SOC_LP_I2C_SUPPORTED
-    else {
-        LP_I2C_SRC_CLK_ATOMIC() {
-            lp_i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
-        }
-    }
-#endif
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
     }
+
+    // Set the timeout value
+    i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
+
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_update(hal->dev);
 
@@ -940,6 +930,19 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         ESP_LOGW(TAG, "Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs");
     }
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
+
+    if (!i2c_master->base->is_lp_i2c) {
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+        }
+    }
+#if SOC_LP_I2C_SUPPORTED
+    else {
+        LP_I2C_SRC_CLK_ATOMIC() {
+            lp_i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+        }
+    }
+#endif
 
     i2c_master->bus_lock_mux = xSemaphoreCreateBinaryWithCaps(I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i2c_master->bus_lock_mux, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
