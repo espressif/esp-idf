@@ -302,7 +302,7 @@ ble_multi_advertise(ble_addr_t addr)
 static void
 ble_multi_perform_gatt_proc(ble_addr_t addr)
 {
-    /* GATT procedures like notify, indicate can be perfomed now */
+    /* GATT procedures like notify, indicate can be performed now */
     for (int i = 0; i < BLE_ADV_INSTANCES; i++) {
         if (memcmp(&addr, &ble_instance_cb[i].addr, sizeof(addr)) == 0) {
             if (ble_instance_cb[i].cb) {
@@ -335,7 +335,7 @@ ble_multi_adv_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",

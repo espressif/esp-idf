@@ -1290,6 +1290,7 @@ examples/bluetooth/nimble/blecent/main/blecent.h
 examples/bluetooth/nimble/blecent/main/main.c
 examples/bluetooth/nimble/blecent/main/misc.c
 examples/bluetooth/nimble/blecent/main/peer.c
+examples/bluetooth/nimble/blecsc/main/main.c
 examples/bluetooth/nimble/blehr/blehr_test.py
 examples/bluetooth/nimble/blehr/main/blehr_sens.h
 examples/bluetooth/nimble/blehr/main/gatt_svr.c
