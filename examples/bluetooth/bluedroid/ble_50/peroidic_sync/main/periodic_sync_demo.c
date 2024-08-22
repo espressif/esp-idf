@@ -108,7 +108,10 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_EXT_ADV_REPORT_EVT: {
         uint8_t *adv_name = NULL;
         uint8_t adv_name_len = 0;
-	    adv_name = esp_ble_resolve_adv_data(param->ext_adv_report.params.adv_data, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+	    adv_name = esp_ble_resolve_adv_data_by_type(param->ext_adv_report.params.adv_data,
+                                            param->ext_adv_report.params.adv_data_len,
+                                            ESP_BLE_AD_TYPE_NAME_CMPL,
+                                            &adv_name_len);
 	    if ((adv_name != NULL) && (memcmp(adv_name, "ESP_MULTI_ADV_80MS", adv_name_len) == 0) && !periodic_sync) {
             periodic_sync = true;
 	        char adv_temp_name[30] = {'0'};
