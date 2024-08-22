@@ -3,6 +3,8 @@ archive: libesp_driver_isp.a
 entries:
     if ISP_CTRL_FUNC_IN_IRAM = y:
         isp_sharpen: esp_isp_sharpen_configure (noflash)
+        isp_gamma: esp_isp_gamma_configure (noflash)
+        isp_gamma: esp_isp_gamma_fill_curve_points (noflash)
 
 [mapping:isp_hal]
 archive: libhal.a

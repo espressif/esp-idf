@@ -40,14 +40,14 @@ ISP Pipeline
         isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
         isp_yuv [label = "YUV Limit\nYUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> Demosaic -> CCM -> RGB2YUV -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BF -> Demosaic -> CCM -> Gamma -> RGB2YUV -> isp_chs -> isp_yuv -> isp_tail;
 
         BF -> HIST
         Demosaic -> AWB
         Demosaic -> AE
         Demosaic -> HIST
         CCM -> AWB
-        CCM -> AE
+        Gamma -> AE
         RGB2YUV -> HIST
         RGB2YUV -> AF
     }
@@ -62,7 +62,8 @@ The ISP driver offers following services:
 -  `Get AF statistics in one shot or continuous way <#isp-af-statistics>`__ - covers how to get AF statistics one-shot or continuously.
 -  `Get AWB statistics in one shot or continuous way <#isp-awb-statistics>`__ - covers how to get AWB white patches statistics one-shot or continuously.
 -  `Enable BF function <#isp_bf>`__ - covers how to enable and configure BF function.
--  `Configure CCM <#isp-ccm-config>`__ - covers how to config the Color Correction Matrix.
+-  `Configure CCM <#isp-ccm-config>`__ - covers how to configure the Color Correction Matrix.
+-  `Enable Gamma Correction <#isp-gamma-correction>`__ - covers how to enable and configure gamma correction.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
 -  `Thread Safety <#isp-thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Kconfig Options <#isp-kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
@@ -416,6 +417,7 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF pr
 * Switches the driver state from **init** to **enable**.
 
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
+
 .. _isp-ccm-config:
 
 Configure CCM
@@ -456,6 +458,39 @@ To adjust the color correction matrix, here is the formula:
     ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     // Disable CCM if no longer needed
     ESP_ERROR_CHECK(esp_isp_ccm_disable(isp_proc));
+
+.. _isp-gamma-correction:
+
+Enable Gamma Correction
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The human visual system is non-linearly sensitive to the physical luminance. Adding gamma correction to the ISP pipeline to transforms RGB coordinates into a space in which coordinates are proportional to subjective brightness.
+
+The driver provides a helper API :cpp:func:`esp_isp_gamma_fill_curve_points` to fill :cpp:type:`isp_gamma_curve_points_t`, which is a group of points used to describe the gamma correction curve. Or you can manually declare the points as your desired 'gamma' correction curve. Each R / G / B component can have its own gamma correction curve, you can set the configuration by calling :cpp:func:`esp_isp_gamma_configure`.
+
+A typical code example is:
+
+.. code:: c
+
+    #include <math.h>
+
+    // Set the camera gamma to be 0.7, so the gamma correction curve is y = 256 * (x / 256) ^ 0.7
+    static uint32_t s_gamma_curve(uint32_t x)
+    {
+        return pow((double)x / 256, 0.7) * 256;
+    }
+
+    isp_gamma_curve_points_t pts = {};
+    ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_curve, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_G, &pts));
+    ESP_ERROR_CHECK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &pts));
+
+    // Enable gamma module after curve parameters configured
+    ESP_ERROR_CHECK(esp_isp_gamma_enable(isp_proc));
+
+    // Disable gamma if no longer needed
+    ESP_ERROR_CHECK(esp_isp_gamma_disable(isp_proc));
 
 .. _isp-callback:
 
@@ -516,3 +551,4 @@ API Reference
 .. include-build-file:: inc/isp.inc
 .. include-build-file:: inc/isp_types.inc
 .. include-build-file:: inc/isp_af.inc
+.. include-build-file:: inc/isp_gamma.inc
