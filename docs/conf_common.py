@@ -58,7 +58,7 @@ CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
                    'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
 
-BLUFI_DOCS = ['api-guides/blufi.rst',
+BLUFI_DOCS = ['api-guides/ble/blufi.rst',
               'api-reference/bluetooth/esp_blufi.rst']
 
 WIFI_DOCS = ['api-guides/wifi.rst',
