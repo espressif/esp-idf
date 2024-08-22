@@ -42,7 +42,9 @@ BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
                  'api-reference/bluetooth/esp-ble-mesh.rst']
 
-CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
+CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
+                   'api-guides/classic-bt/overview.rst',
+                   'api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
                    'api-reference/bluetooth/esp_avrc.rst',
                    'api-reference/bluetooth/esp_hidd.rst',
