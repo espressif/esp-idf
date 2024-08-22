@@ -654,7 +654,7 @@ extern "C" {
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_V  0x0000000FU
 #define EFUSE_KM_DISABLE_DEPLOY_MODE_S  8
 /** EFUSE_USB_DEVICE_DREFL : RO; bitpos: [13:12]; default: 0;
- *  Represents the usb device single-end input low threhold, 0.8 V to 1.04 V with step
+ *  Represents the usb device single-end input low threshold, 0.8 V to 1.04 V with step
  *  of 80 mV.
  */
 #define EFUSE_USB_DEVICE_DREFL    0x00000003U
@@ -662,7 +662,7 @@ extern "C" {
 #define EFUSE_USB_DEVICE_DREFL_V  0x00000003U
 #define EFUSE_USB_DEVICE_DREFL_S  12
 /** EFUSE_USB_OTG11_DREFL : RO; bitpos: [15:14]; default: 0;
- *  Represents the usb otg11 single-end input low threhold, 0.8 V to 1.04 V with step
+ *  Represents the usb otg11 single-end input low threshold, 0.8 V to 1.04 V with step
  *  of 80 mV.
  */
 #define EFUSE_USB_OTG11_DREFL    0x00000003U
@@ -789,62 +789,41 @@ extern "C" {
 #define EFUSE_BLK_VERSION_MAJOR_M  (EFUSE_BLK_VERSION_MAJOR_V << EFUSE_BLK_VERSION_MAJOR_S)
 #define EFUSE_BLK_VERSION_MAJOR_V  0x00000003U
 #define EFUSE_BLK_VERSION_MAJOR_S  11
-/** EFUSE_FLASH_CAP : R; bitpos: [15:13]; default: 0;
- *  Flash capacity
- */
-#define EFUSE_FLASH_CAP    0x00000007U
-#define EFUSE_FLASH_CAP_M  (EFUSE_FLASH_CAP_V << EFUSE_FLASH_CAP_S)
-#define EFUSE_FLASH_CAP_V  0x00000007U
-#define EFUSE_FLASH_CAP_S  13
-/** EFUSE_FLASH_TEMP : R; bitpos: [17:16]; default: 0;
- *  Flash temperature
- */
-#define EFUSE_FLASH_TEMP    0x00000003U
-#define EFUSE_FLASH_TEMP_M  (EFUSE_FLASH_TEMP_V << EFUSE_FLASH_TEMP_S)
-#define EFUSE_FLASH_TEMP_V  0x00000003U
-#define EFUSE_FLASH_TEMP_S  16
-/** EFUSE_FLASH_VENDOR : R; bitpos: [20:18]; default: 0;
- *  Flash vendor
- */
-#define EFUSE_FLASH_VENDOR    0x00000007U
-#define EFUSE_FLASH_VENDOR_M  (EFUSE_FLASH_VENDOR_V << EFUSE_FLASH_VENDOR_S)
-#define EFUSE_FLASH_VENDOR_V  0x00000007U
-#define EFUSE_FLASH_VENDOR_S  18
-/** EFUSE_PSRAM_CAP : R; bitpos: [22:21]; default: 0;
+/** EFUSE_PSRAM_CAP : R; bitpos: [15:13]; default: 0;
  *  PSRAM capacity
  */
-#define EFUSE_PSRAM_CAP    0x00000003U
+#define EFUSE_PSRAM_CAP    0x00000007U
 #define EFUSE_PSRAM_CAP_M  (EFUSE_PSRAM_CAP_V << EFUSE_PSRAM_CAP_S)
-#define EFUSE_PSRAM_CAP_V  0x00000003U
-#define EFUSE_PSRAM_CAP_S  21
-/** EFUSE_PSRAM_TEMP : R; bitpos: [24:23]; default: 0;
- *  PSRAM temperature
+#define EFUSE_PSRAM_CAP_V  0x00000007U
+#define EFUSE_PSRAM_CAP_S  13
+/** EFUSE_TEMP : R; bitpos: [17:16]; default: 0;
+ *  Operating temperature of the ESP chip
  */
-#define EFUSE_PSRAM_TEMP    0x00000003U
-#define EFUSE_PSRAM_TEMP_M  (EFUSE_PSRAM_TEMP_V << EFUSE_PSRAM_TEMP_S)
-#define EFUSE_PSRAM_TEMP_V  0x00000003U
-#define EFUSE_PSRAM_TEMP_S  23
-/** EFUSE_PSRAM_VENDOR : R; bitpos: [26:25]; default: 0;
+#define EFUSE_TEMP    0x00000003U
+#define EFUSE_TEMP_M  (EFUSE_TEMP_V << EFUSE_TEMP_S)
+#define EFUSE_TEMP_V  0x00000003U
+#define EFUSE_TEMP_S  16
+/** EFUSE_PSRAM_VENDOR : R; bitpos: [19:18]; default: 0;
  *  PSRAM vendor
  */
 #define EFUSE_PSRAM_VENDOR    0x00000003U
 #define EFUSE_PSRAM_VENDOR_M  (EFUSE_PSRAM_VENDOR_V << EFUSE_PSRAM_VENDOR_S)
 #define EFUSE_PSRAM_VENDOR_V  0x00000003U
-#define EFUSE_PSRAM_VENDOR_S  25
-/** EFUSE_PKG_VERSION : R; bitpos: [29:27]; default: 0;
+#define EFUSE_PSRAM_VENDOR_S  18
+/** EFUSE_PKG_VERSION : R; bitpos: [22:20]; default: 0;
  *  Package version
  */
 #define EFUSE_PKG_VERSION    0x00000007U
 #define EFUSE_PKG_VERSION_M  (EFUSE_PKG_VERSION_V << EFUSE_PKG_VERSION_S)
 #define EFUSE_PKG_VERSION_V  0x00000007U
-#define EFUSE_PKG_VERSION_S  27
-/** EFUSE_RESERVED_1_94 : R; bitpos: [31:30]; default: 0;
+#define EFUSE_PKG_VERSION_S  20
+/** EFUSE_RESERVED_1_87 : R; bitpos: [31:23]; default: 0;
  *  reserved
  */
-#define EFUSE_RESERVED_1_94    0x00000003U
-#define EFUSE_RESERVED_1_94_M  (EFUSE_RESERVED_1_94_V << EFUSE_RESERVED_1_94_S)
-#define EFUSE_RESERVED_1_94_V  0x00000003U
-#define EFUSE_RESERVED_1_94_S  30
+#define EFUSE_RESERVED_1_87    0x000001FFU
+#define EFUSE_RESERVED_1_87_M  (EFUSE_RESERVED_1_87_V << EFUSE_RESERVED_1_87_S)
+#define EFUSE_RESERVED_1_87_V  0x000001FFU
+#define EFUSE_RESERVED_1_87_S  23
 
 /** EFUSE_RD_MAC_SYS_3_REG register
  *  BLOCK1 data register $n.
@@ -2455,7 +2434,7 @@ extern "C" {
 #define EFUSE_CLK_EN_S  16
 
 /** EFUSE_CONF_REG register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 #define EFUSE_CONF_REG (DR_REG_EFUSE_BASE + 0x1cc)
 /** EFUSE_OP_CODE : R/W; bitpos: [15:0]; default: 0;

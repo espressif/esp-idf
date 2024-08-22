@@ -59,38 +59,38 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return (uint32_t)0;
+    return EFUSE.rd_mac_sys2.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return (uint32_t)0;
+    return EFUSE.rd_mac_sys2.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    return (bool)0;
+    return EFUSE.rd_mac_sys2.disable_wafer_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return (uint32_t)0;
+    return EFUSE.rd_mac_sys2.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    return (uint32_t)0;
+    return EFUSE.rd_mac_sys2.blk_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    return (bool)0;
+    return EFUSE.rd_mac_sys2.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    return (uint32_t)0;
+    return EFUSE.rd_mac_sys2.pkg_version;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)

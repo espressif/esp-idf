@@ -546,14 +546,58 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_0 : RO; bitpos: [13:0]; default: 0;
-         *  Reserved.
+        /** wafer_version_minor : R; bitpos: [3:0]; default: 0;
+         *  Minor chip version
          */
-        uint32_t mac_reserved_0:14;
-        /** mac_reserved_1 : RO; bitpos: [31:14]; default: 0;
-         *  Reserved.
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [5:4]; default: 0;
+         *  Minor chip version
          */
-        uint32_t mac_reserved_1:18;
+        uint32_t wafer_version_major:2;
+        /** disable_wafer_version_major : R; bitpos: [6]; default: 0;
+         *  Disables check of wafer version major
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** disable_blk_version_major : R; bitpos: [7]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** blk_version_minor : R; bitpos: [10:8]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [12:11]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
+        /** flash_cap : R; bitpos: [15:13]; default: 0;
+         *  Flash capacity
+         */
+        uint32_t flash_cap:3;
+        /** flash_vendor : R; bitpos: [18:16]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** psram_cap : R; bitpos: [21:19]; default: 0;
+         *  Psram capacity
+         */
+        uint32_t psram_cap:3;
+        /** psram_vendor : R; bitpos: [23:22]; default: 0;
+         *  Psram vendor
+         */
+        uint32_t psram_vendor:2;
+        /** temp : R; bitpos: [25:24]; default: 0;
+         *  Temp (die embedded inside)
+         */
+        uint32_t temp:2;
+        /** pkg_version : R; bitpos: [28:26]; default: 0;
+         *  Package version
+         */
+        uint32_t pkg_version:3;
+        /** pa_trim_version : R; bitpos: [31:29]; default: 0;
+         *  PADC CAL PA trim version
+         */
+        uint32_t pa_trim_version:3;
     };
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
@@ -563,10 +607,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_2 : RO; bitpos: [17:0]; default: 0;
-         *  Reserved.
+        /** trim_n_bias : R; bitpos: [4:0]; default: 0;
+         *  PADC CAL N bias
          */
-        uint32_t mac_reserved_2:18;
+        uint32_t trim_n_bias:5;
+        /** trim_p_bias : R; bitpos: [9:5]; default: 0;
+         *  PADC CAL P bias
+         */
+        uint32_t trim_p_bias:5;
+        /** reserved_1_106 : R; bitpos: [17:10]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_106:8;
         /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
          *  Represents the first 14-bit of zeroth part of system data.
          */
@@ -608,10 +660,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_0 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_0:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data0_reg_t;
@@ -621,10 +673,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_1 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_1:32;
+        uint32_t optional_unique_id_1:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data1_reg_t;
@@ -634,10 +686,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_2 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_2:32;
+        uint32_t optional_unique_id_2:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data2_reg_t;
@@ -647,10 +699,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_3 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_3:32;
+        uint32_t optional_unique_id_3:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data3_reg_t;
@@ -660,10 +712,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** reserved_2_128 : R; bitpos: [8:0]; default: 0;
+         *  reserved
          */
-        uint32_t sys_data_part1_4:32;
+        uint32_t reserved_2_128:9;
+        /** ocode : R; bitpos: [16:9]; default: 0;
+         *  ADC OCode
+         */
+        uint32_t ocode:8;
+        /** reserved_2_145 : R; bitpos: [31:17]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_145:15;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
