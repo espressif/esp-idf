@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,9 +26,6 @@
 #include "hal/clk_tree_ll.h"
 
 static const char *TAG = "rtc_clk_init";
-
-static uint32_t HP_CALI_DBIAS = 27; //about 1.25v
-static uint32_t LP_CALI_DBIAS = 29; //about 1.25v
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
@@ -62,7 +59,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     // Switch to DCDC
     SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
     CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_DBIAS);
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
     esp_rom_delay_us(1000);
     CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
 
