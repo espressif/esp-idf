@@ -414,7 +414,7 @@
 
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
-// #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+#define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 // #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
