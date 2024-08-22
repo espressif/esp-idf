@@ -170,21 +170,30 @@ When it comes to text, please follow guidelines below to provide well-formatted 
 Building Documentation
 ----------------------
 
-The documentation is built with the `esp-docs` Python package, which is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_.
+To build documentation, start by installing the dependencies:
 
-To install it simply do::
+1. Install `Doxygen <https://www.doxygen.nl/manual/install.html>`_.
+2. Chances are you already set up the required `tools <https://docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-macos-setup.html#step-3-set-up-the-tools>`_ by running ``./install.sh``. To enable building docs, you need to run:
 
-    pip install esp-docs
+  .. code-block:: bash
 
-After a successful install then the documentation can be built from the docs folder with::
+      ./install.sh --enable-docs
+
+  This action will install the ``esp-docs`` Python package. This package is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_ and is required to build ESP-IDF documentation.
+
+After installing the dependencies, go to the ``docs`` folder and run the following to build the documentation:
+
+.. code-block:: bash
 
     build-docs build
 
-or for specific target and language with::
+You can also build only the needed docs by choosing a specific target and language (it speeds up the process):
+
+.. code-block:: bash
 
     build-docs -t esp32 -l en build
 
-For more in-depth documentation about `esp-docs` features please see the documentation at `esp-docs <https://docs.espressif.com/projects/esp-docs/en/latest/>`_.
+For more in-depth information, see the `esp-docs <https://docs.espressif.com/projects/esp-docs/en/latest/>`_ documentation.
 
 Wrap Up
 -------
