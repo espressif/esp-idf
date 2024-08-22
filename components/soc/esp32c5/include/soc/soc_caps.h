@@ -57,7 +57,7 @@
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_IEEE802154_SUPPORTED        1
-// #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
+#define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
@@ -141,7 +141,7 @@
 // #define SOC_APB_BACKUP_DMA              (0)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
-// #define SOC_BROWNOUT_RESET_SUPPORTED 1
+#define SOC_BROWNOUT_RESET_SUPPORTED 1
 
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
