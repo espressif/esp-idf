@@ -89,7 +89,7 @@ NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P161
 NVS 密钥分区
 ^^^^^^^^^^^^^^^^^
 
-应用程序如果想使用 NVS 加密，则需要编译进一个类型为 `data`，子类型为 `key` 的密钥分区。该分区应标记为 `已加密` 且最小为 4096 字节。如需了解更多详细信息，请参考 :doc:`分区表 <../../api-guides/partition-tables>`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下提供了两个包含 :ref:`nvs_key_partition` 的额外分区表，可以直接用于 :ref:`nvs_encryption`。这些分区的具体结构见下表：
+应用程序如果想使用 NVS 加密，则需要编译进一个类型为 `data`，子类型为 `nvs_keys` 的密钥分区。该分区应标记为 `已加密` 且最小为 4096 字节。如需了解更多详细信息，请参考 :doc:`分区表 <../../api-guides/partition-tables>`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下提供了两个包含 :ref:`nvs_key_partition` 的额外分区表，可以直接用于 :ref:`nvs_encryption`。这些分区的具体结构见下表：
 
 .. highlight:: none
 
