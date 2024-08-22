@@ -17,7 +17,7 @@ Configuration Set ID: 11
 /* 3.1 Basic Config Parameters */
 #define OTG_MODE                0
 #define OTG_ARCHITECTURE        2
-#define OTG_SINGLE_POINT        0
+#define OTG_SINGLE_POINT        1
 #define OTG_ENABLE_LPM          0
 #define OTG_EN_DED_TX_FIFO      1
 #define OTG_EN_DESC_DMA         1

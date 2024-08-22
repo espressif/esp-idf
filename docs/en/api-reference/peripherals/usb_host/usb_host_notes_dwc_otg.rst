@@ -91,26 +91,51 @@ Hardware Configuration
 
 The DWC_OTG IP is configurable. The notable host related configurations of the {IDF_TARGET_NAME}'s DWC_OTG are listed below:
 
-.. list-table:: {IDF_TARGET_NAME}'s DWC_OTG Configuration
-    :widths: 70 30
-    :header-rows: 1
+.. only:: esp32p4
 
-    * - Description
-      - Configuration
-    * - Host and Device Mode support with OTG
-      - ``OTG_MODE = 0``
-    * - Full Speed (FS) and Low Speed (LS) support
-      - ``OTG_FSPHY_INTERFACE = 1``, ``OTG_HSPHY_INTERFACE = 0``
-    * - Internal DMA controller with Scatter/Gather DMA
-      - ``OTG_ARCHITECTURE = 2``, ``OTG_EN_DESC_DMA = 1``
-    * - FS Hubs are supported but HS Hub are not (i.e., split transfers not supported)
-      - ``OTG_SINGLE_POINT = 0``
-    * - 8 Host Mode channels
-      - ``OTG_NUM_HOST_CHAN = 8``
-    * - All transfer types supported, including ISOC and INTR OUT transfers
-      - ``OTG_EN_PERIO_HOST = 1``
-    * - Dynamically sized Data FIFO of 1024 bytes (256 lines)
-      - ``OTG_DFIFO_DYNAMIC = 1``, ``OTG_DFIFO_DEPTH = 256``
+    .. list-table:: {IDF_TARGET_NAME}'s DWC_OTG Configuration
+        :widths: 70 30
+        :header-rows: 1
+
+        * - Description
+          - Configuration
+        * - Host and Device Mode support with OTG
+          - ``OTG_MODE = 0``
+        * - High Speed (HS), Full Speed (FS) and Low Speed (LS) support
+          - ``OTG_FSPHY_INTERFACE = 2``, ``OTG_HSPHY_INTERFACE = 3``
+        * - Internal DMA controller with Scatter/Gather DMA
+          - ``OTG_ARCHITECTURE = 2``, ``OTG_EN_DESC_DMA = 1``
+        * - Split transfers not supported
+          - ``OTG_SINGLE_POINT = 1``
+        * - 16 Host Mode channels
+          - ``OTG_NUM_HOST_CHAN = 16``
+        * - All transfer types supported, including ISOC and INTR OUT transfers
+          - ``OTG_EN_PERIO_HOST = 1``
+        * - Dynamically sized Data FIFO of 4096 bytes (1024 lines)
+          - ``OTG_DFIFO_DYNAMIC = 1``, ``OTG_DFIFO_DEPTH = 1024``
+        * - Only 4 periodic and 4 non-periodic transactions per microframe
+          - ``OTG_NPERIO_TX_QUEUE_DEPTH = 4``, ``OTG_PERIO_TX_QUEUE_DEPTH = 4``
+
+.. only:: esp32s2 or esp32s3
+
+    .. list-table:: {IDF_TARGET_NAME}'s DWC_OTG Configuration
+        :widths: 70 30
+        :header-rows: 1
+
+        * - Description
+          - Configuration
+        * - Host and Device Mode support with OTG
+          - ``OTG_MODE = 0``
+        * - Full Speed (FS) and Low Speed (LS) support
+          - ``OTG_FSPHY_INTERFACE = 1``, ``OTG_HSPHY_INTERFACE = 0``
+        * - Internal DMA controller with Scatter/Gather DMA
+          - ``OTG_ARCHITECTURE = 2``, ``OTG_EN_DESC_DMA = 1``
+        * - 8 Host Mode channels
+          - ``OTG_NUM_HOST_CHAN = 8``
+        * - All transfer types supported, including ISOC and INTR OUT transfers
+          - ``OTG_EN_PERIO_HOST = 1``
+        * - Dynamically sized Data FIFO of 1024 bytes (256 lines)
+          - ``OTG_DFIFO_DYNAMIC = 1``, ``OTG_DFIFO_DEPTH = 256``
 
 Scatter/Gather DMA Transfer
 ---------------------------

@@ -39,7 +39,7 @@ The layers of the Host Stack are described in the following table. The layers ar
       - ``usb_host.h``, ``usb_host.c``
       - The USB Host Library layer is the lowest public API layer of the Host Stack and presents the concept of USB Host Clients. The abstraction of clients allows for multiple class drivers to coexist simultaneously (where each class roughly maps to a single client) and also acts as a mechanism for division of labor (where each client is responsible for its own processing and event handling).
     * - Host Class Drivers
-      - See the `ESP-IDF Extra Components repository <https://github.com/espressif/idf-extra-components>`_ or the USB Host examples in ESP-IDF (via :example:`peripherals/usb/host`).
+      - See the `ESP-USB repository <https://github.com/espressif/esp-usb>`_ or the USB Host examples in ESP-IDF (via :example:`peripherals/usb/host`).
       - The Host Class Drivers implement the host side of a particular device class (e.g., CDC, MSC, HID). The exposed API is specific to each class driver.
 
 Layer Dependencies
