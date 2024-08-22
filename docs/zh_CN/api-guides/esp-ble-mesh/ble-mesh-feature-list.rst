@@ -111,20 +111,20 @@ Mesh 示例
 """""""""""
 
 * ESP-BLE-MESH 节点
-    * :example_file:`教程 <bluetooth/esp_ble_mesh/onoff_models/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
-    * :example_file:`教程 <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>`
-    * :example:`示例 <bluetooth/esp_ble_mesh/onoff_models>`
+    * :example_file:`教程 <<bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
+    * :example_file:`教程 <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>`
+    * :example:`示例 <bluetooth/esp_ble_mesh/ble_mesh_node>`
 * ESP-BLE-MESH 供应者
-    * :example_file:`教程 <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
-    * :example:`示例 <bluetooth/esp_ble_mesh/provisioner>`
+    * :example_file:`教程 <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
+    * :example:`示例 <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`
 * ESP-BLE-MESH 快速入网
-    * :example_file:`客户端模型快速入网教程 <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
-    * :example_file:`服务器模型快速入网教程 <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
-    * :example:`示例 <bluetooth/esp_ble_mesh/fast_provisioning>`
+    * :example_file:`客户端模型快速入网教程 <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
+    * :example_file:`服务器模型快速入网教程 <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
+    * :example:`示例 <bluetooth/esp_ble_mesh/ble_mesh_fast_provision>`
     * `演示视频 <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
 * ESP-BLE-MESH 及 Wi-Fi 共存
-    * :example_file:`教程 <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
-    * :example:`示例 <bluetooth/esp_ble_mesh/wifi_coexist>`
+    * :example_file:`教程 <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
+    * :example:`示例 <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`
     * `演示视频 <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`__
 * ESP-BLE-MESH 命令行
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_console>`
