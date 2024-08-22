@@ -1012,7 +1012,7 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
                 memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
                 param.conn_stat.connected = true;
                 memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
-                btc_avrc_tg_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+                btc_avrc_tg_cb_to_app(ESP_AVRC_TG_CONNECTION_STATE_EVT, &param);
             }
         } while (0);
         btc_rc_cb.rc_features = p_data->rc_feat.peer_features;
