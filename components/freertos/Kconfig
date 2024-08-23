@@ -463,7 +463,7 @@ menu "FreeRTOS"
 
         config FREERTOS_FPU_IN_ISR
             bool "Use float in Level 1 ISR"
-            depends on IDF_TARGET_ESP32
+            depends on SOC_CPU_HAS_FPU && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3)
             default n
             help
                 When enabled, the usage of float type is allowed inside Level 1 ISRs. Note that usage of float types in
