@@ -120,6 +120,7 @@ do{\
 
 #define BLE_PWR_HDL_INVL 0xFFFF
 
+#define BLE_CONTROLLER_MALLOC_CAPS        (MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA)
 /* Types definition
  ************************************************************************
  */
@@ -689,11 +690,25 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    void *p = heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA);
+    void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
     if(p == NULL) {
         ESP_LOGE(BT_LOG_TAG, "Malloc failed");
     }
     return p;
+}
+
+void *malloc_ble_controller_mem(size_t size)
+{
+    void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+    if(p == NULL) {
+        ESP_LOGE(BT_LOG_TAG, "Malloc failed");
+    }
+    return p;
+}
+
+uint32_t get_ble_controller_free_heap_size(void)
+{
+    return heap_caps_get_free_size(BLE_CONTROLLER_MALLOC_CAPS);
 }
 
 static int IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
