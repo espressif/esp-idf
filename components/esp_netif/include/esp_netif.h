@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,7 +112,7 @@ esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle dri
  * to TCP/IP stack. Similarly esp_netif_transmit is called from the TCP/IP stack whenever
  * a packet ought to output to the communication media.
  *
- * @note These IO functions are registerd (installed) automatically for default interfaces
+ * @note These IO functions are registered (installed) automatically for default interfaces
  * (interfaces with the keys such as WIFI_STA_DEF, WIFI_AP_DEF, ETH_DEF). Custom interface
  * has to register these IO functions when creating interface using @ref esp_netif_new
  *
@@ -908,7 +908,7 @@ esp_err_t esp_netif_str_to_ip4(const char *src, esp_ip4_addr_t *dst);
 
 /**
  * @brief Converts Ascii internet IPv6 address into esp_ip4_addr_t
- * Zeros in the IP address can be stripped or completely ommited: "2001:db8:85a3:0:0:0:2:1" or "2001:db8::2:1")
+ * Zeros in the IP address can be stripped or completely omitted: "2001:db8:85a3:0:0:0:2:1" or "2001:db8::2:1")
  *
  * @param[in] src IPv6 address in ascii representation (e.g. ""2001:0db8:85a3:0000:0000:0000:0002:0001")
  * @param[out] dst Address of the target esp_ip6_addr_t structure to receive converted address
@@ -982,7 +982,7 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif);
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
- * @return Integer representing the instance's route-prio, or -1 if invalid paramters
+ * @return Integer representing the instance's route-prio, or -1 if invalid parameters
  */
 int esp_netif_get_route_prio(esp_netif_t *esp_netif);
 
