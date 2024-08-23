@@ -16,6 +16,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include "esp_rom_sys.h"
 
 #define PRINT_TIMES  (300)
 static const char TAG[] = "usb_serial_test";
@@ -117,6 +118,21 @@ TEST_CASE("see if fsync appears to work", "[usb_serial_jtag]")
     TEST_ASSERT_LESS_THAN_INT(45000, end_us - start_us); //50ms means fsync hit a timeout
 
     free(buf);
+    usb_serial_jtag_vfs_use_nonblocking();
+    usb_serial_jtag_driver_uninstall();
+}
+
+TEST_CASE("test rom printf work after driver installed", "[usb_serial_jtag]")
+{
+    usb_serial_jtag_driver_config_t cfg = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+    TEST_ESP_OK(usb_serial_jtag_driver_install(&cfg));
+
+    // Tell vfs to use usb-serial-jtag driver
+    usb_serial_jtag_vfs_use_driver();
+
+    esp_rom_printf("hi, espressif1\n");
+    printf("hi, espressif2");
+
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
 }
