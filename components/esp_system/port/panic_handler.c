@@ -116,6 +116,14 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
     info->frame = frame;
 }
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+FORCE_INLINE_ATTR __attribute__((__noreturn__))
+void busy_wait(void)
+{
+    while (1) {;} // infinite loop
+}
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+
 static void panic_handler(void *frame, bool pseudo_excause)
 {
     panic_info_t info = { 0 };
@@ -133,17 +141,24 @@ static void panic_handler(void *frame, bool pseudo_excause)
     // These are cases where both CPUs both go into panic handler. The following code ensures
     // only one core proceeds to the system panic handler.
     if (pseudo_excause) {
-#define BUSY_WAIT_IF_TRUE(b)                { if (b) while(1); }
         // For WDT expiry, pause the non-offending core - offending core handles panic
-        BUSY_WAIT_IF_TRUE(panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 && core_id == 1);
-        BUSY_WAIT_IF_TRUE(panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1 && core_id == 0);
-
-        // For cache error, pause the non-offending core - offending core handles panic
-        if (panic_get_cause(frame) == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid()) {
-            // Only print the backtrace for the offending core in case of the cache error
-            g_exc_frames[core_id] = NULL;
-            while (1) {
-                ;
+        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 && core_id == 1) {
+            busy_wait();
+        } else if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1 && core_id == 0) {
+            busy_wait();
+        } else if (panic_get_cause(frame) == PANIC_RSN_CACHEERR) {
+            // The invalid cache access interrupt calls to the panic handler.
+            // When the cache interrupt happens, we can not determine the CPU where the
+            // invalid cache access has occurred.
+            if (esp_cache_err_get_cpuid() == -1) {
+                // We can not determine the CPU where the invalid cache access has occurred.
+                // Print backtraces for both CPUs.
+                if (core_id != 0) {
+                    busy_wait();
+                }
+            } else if (core_id != esp_cache_err_get_cpuid()) {
+                g_exc_frames[core_id] = NULL; // Only print the backtrace for the offending core
+                busy_wait();
             }
         }
     }
@@ -166,7 +181,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
 #if __XTENSA__
         if (!(esp_ptr_executable(esp_cpu_pc_to_addr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
             /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
-             * Incase the PC is invalid, GDB will fail to translate addresses to function names
+             * In case the PC is invalid, GDB will fail to translate addresses to function names
              * Hence replacing the PC to a placeholder address in case of invalid PC
              */
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);

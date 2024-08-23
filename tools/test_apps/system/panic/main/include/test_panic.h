@@ -53,6 +53,10 @@ void test_assert(void);
 
 void test_assert_cache_disabled(void);
 
+void test_assert_cache_write_back_error_can_print_backtrace(void);
+
+void test_assert_cache_write_back_error_can_print_backtrace2(void);
+
 #ifdef __cplusplus
 }
 #endif

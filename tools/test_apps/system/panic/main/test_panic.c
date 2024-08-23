@@ -7,10 +7,12 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_partition.h"
 #include "esp_flash.h"
 #include "esp_system.h"
+#include "spi_flash_mmap.h"
 
 #include "esp_private/cache_utils.h"
 #include "esp_memory_utils.h"
@@ -18,6 +20,8 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#include "rom/cache.h"
 
 /* Test utility function */
 
@@ -153,6 +157,46 @@ void IRAM_ATTR test_assert_cache_disabled(void)
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
     assert(0);
+}
+
+const char TEST_STR[] = "my_tag";
+void test_assert_cache_write_back_error_can_print_backtrace(void)
+{
+    printf("1) %p\n", TEST_STR);
+    *(uint32_t*)TEST_STR = 3; // We changed the rodata string.
+    // All chips except ESP32S3 stop execution here and raise a LoadStore error on the line above.
+#if CONFIG_IDF_TARGET_ESP32S3
+    // On the ESP32S3, the error occurs later when the cache writeback is triggered
+    // (in this test, a direct call to Cache_WriteBack_All).
+    Cache_WriteBack_All(); // Cache writeback triggers the invalid cache access interrupt.
+#endif
+    // We are testing that the backtrace is printed instead of TG1WDT.
+    printf("2) %p\n", TEST_STR); // never get to this place.
+}
+
+void test_assert_cache_write_back_error_can_print_backtrace2(void)
+{
+    printf("1) %p\n", TEST_STR);
+    *(uint32_t*)TEST_STR = 3; // We changed the rodata string.
+    // All chips except ESP32S3 stop execution here and raise a LoadStore error on the line above.
+    // On the ESP32S3, the error occurs later when the cache writeback is triggered
+    // (in this test, a large range of DRAM is mapped and read, causing an error).
+    uint8_t temp = 0;
+    size_t map_size = SPI_FLASH_SEC_SIZE * 512;
+    const void *map;
+    spi_flash_mmap_handle_t out_handle;
+    esp_err_t err = spi_flash_mmap(0, map_size, SPI_FLASH_MMAP_DATA, &map, &out_handle);
+    if (err != ESP_OK) {
+        printf("spi_flash_mmap failed %x\n", err);
+        return;
+    }
+    const uint8_t *rodata = map;
+    for (size_t i = 0; i < map_size; i++) {
+        temp = rodata[i];
+    }
+    // Cache writeback triggers the invalid cache access interrupt.
+    // We are testing that the backtrace is printed instead of TG1WDT.
+    printf("2) %p 0x%" PRIx8 " \n", TEST_STR, temp); // never get to this place.
 }
 
 /**
