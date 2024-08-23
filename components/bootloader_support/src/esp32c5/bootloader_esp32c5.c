@@ -92,11 +92,10 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
-    // TODO: [ESP32C5] IDF-8650
-    //Enable super WDT reset.
-    // bootloader_ana_super_wdt_reset_config(true);
     //Enable BOD reset (mode1)
     brownout_ll_ana_reset_enable(true);
+    uint8_t power_glitch_dref = 0;
+    bootloader_power_glitch_reset_config(true, power_glitch_dref);
 }
 
 esp_err_t bootloader_init(void)
