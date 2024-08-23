@@ -1251,6 +1251,7 @@ static void slave_only_tx_trans(uint8_t *slv_send_buf, uint32_t length)
 {
     ESP_LOGI(SLAVE_TAG, "FD DMA, Only TX");
     spi_slave_transaction_t trans = {0};
+    trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     trans.tx_buffer = slv_send_buf;
     trans.length = length * 8;
     unity_send_signal("Slave ready");
@@ -1262,6 +1263,7 @@ static void slave_only_rx_trans(uint8_t *slv_recv_buf, uint8_t *mst_send_buf, ui
 {
     ESP_LOGI(SLAVE_TAG, "FD DMA, Only RX");
     spi_slave_transaction_t trans = {};
+    trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     trans.tx_buffer = NULL;
     trans.rx_buffer = slv_recv_buf;
     trans.length = length * 8;
@@ -1276,6 +1278,7 @@ static void slave_both_trans(uint8_t *slv_send_buf, uint8_t *slv_recv_buf, uint8
 {
     ESP_LOGI(SLAVE_TAG, "FD DMA, Both TX and RX:");
     spi_slave_transaction_t trans = {0};
+    trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     trans.tx_buffer = slv_send_buf;
     trans.rx_buffer = slv_recv_buf;
     trans.length = length * 8;
@@ -1492,6 +1495,8 @@ TEST_CASE("spi_speed", "[spi]")
 #define DUMMY_CS_PINS() {25, 26, 27}
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DUMMY_CS_PINS() {9, 10, 11, 12, 22, 25}
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define DUMMY_CS_PINS() {20, 21, 22, 23, 24, 25}
 #else
 #define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
 #endif //CONFIG_IDF_TARGET_ESP32
@@ -1575,6 +1580,7 @@ void test_add_device_slave(void)
     slave_trans.length = sizeof(slave_sendbuf) * 8;
     slave_trans.tx_buffer = slave_sendbuf;
     slave_trans.rx_buffer = slave_recvbuf;
+    slave_trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
     for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
         memset(slave_recvbuf, 0, sizeof(slave_recvbuf));
@@ -1697,7 +1703,6 @@ static IRAM_ATTR void test_master_iram(void)
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
-    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
     spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
 
     // Test polling trans api once -------------------------------
@@ -1709,13 +1714,12 @@ static IRAM_ATTR void test_master_iram(void)
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
-    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
     spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
 
     free(master_send);
     free(master_recv);
     free(master_exp);
-    spi_bus_remove_device(dev_handle);
+    TEST_ESP_OK(spi_bus_remove_device(dev_handle));
     spi_bus_free(TEST_SPI_HOST);
 }
 
@@ -1733,20 +1737,19 @@ static void test_iram_slave_normal(void)
     slave_trans.length = TEST_MASTER_IRAM_TRANS_LEN * 8;
     slave_trans.tx_buffer = slave_sendbuf;
     slave_trans.rx_buffer = slave_recvbuf;
+    slave_trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     test_fill_random_to_buffers_dualboard(211, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
 
     unity_wait_for_signal("Master ready");
     unity_send_signal("Slave ready");
-    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY));
     ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
-    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
     spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
 
     unity_send_signal("Slave ready");
     test_fill_random_to_buffers_dualboard(119, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
-    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY));
     ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
-    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
     spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
 
     free(slave_sendbuf);

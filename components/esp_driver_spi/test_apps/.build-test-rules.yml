@@ -18,10 +18,6 @@ components/esp_driver_spi/test_apps/master:
 components/esp_driver_spi/test_apps/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: no multi-dev runner  # TODO: [ESP32P4] IDF-9517
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/slave:

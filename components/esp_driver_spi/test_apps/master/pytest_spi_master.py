@@ -27,8 +27,8 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
-# TODO: [ESP32P4] IDF-9517 [ESP32C5] IDF-10322 [ESP32C61] IDF-10949
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61'], reason='no multi-dev runner')
+# TODO: [ESP32C5] IDF-10322 [ESP32C61] IDF-10949
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61'], reason='no multi-dev runner')
 @pytest.mark.supported_targets
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(

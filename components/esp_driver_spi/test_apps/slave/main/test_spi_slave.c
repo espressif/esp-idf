@@ -562,6 +562,7 @@ static IRAM_ATTR void test_slave_isr_iram(void)
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_ISR_IRAM_disable_cache", "[spi_ms]", test_slave_iram_master_normal, test_slave_isr_iram);
 
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE //isr option is not supported in this condition
 static uint32_t isr_trans_cnt, isr_trans_test_fail;
 static IRAM_ATTR void test_trans_in_isr_post_trans_cbk(spi_slave_transaction_t *curr_trans)
 {
@@ -725,6 +726,7 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     spi_slave_free(TEST_SPI_HOST);
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_queue_reset_in_isr);
+#endif  // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif  // CONFIG_SPI_SLAVE_ISR_IN_IRAM
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
