@@ -246,6 +246,36 @@ TEST_CASE("can use std::vector", "[misc]")
     TEST_ASSERT_EQUAL(51, std::accumulate(std::begin(v), std::end(v), 0));
 }
 
+static volatile bool is_tls_class_destructor_called;
+struct TestTLS {
+    TestTLS() { }
+    ~TestTLS()
+    {
+        is_tls_class_destructor_called = true;
+    }
+    void foo() { }
+};
+
+thread_local TestTLS s_testTLS;
+
+void test_thread_local_destructors(void * arg)
+{
+    s_testTLS.foo();
+    xSemaphoreGive(s_slow_init_sem);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("call destructors for thread_local classes CXX", "[misc]")
+{
+    is_tls_class_destructor_called = false;
+    s_slow_init_sem = xSemaphoreCreateCounting(1, 0);
+    xTaskCreate(test_thread_local_destructors, "test_thread_local_destructors", 2048, NULL, 10, NULL);
+    vTaskDelay(1); /* Triggers IDLE task to call prvCheckTasksWaitingTermination() which cleans task-specific data */
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(s_slow_init_sem);
+    TEST_ASSERT_TRUE(is_tls_class_destructor_called);
+}
+
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
  */
 #if 0
@@ -317,6 +347,7 @@ TEST_CASE("test std::this_thread::sleep_for basic functionality", "[misc]")
 
 extern "C" void app_main(void)
 {
+    s_testTLS.foo(); /* allocates memory that will be reused */
     printf("CXX GENERAL TEST\n");
     unity_run_menu();
 }
