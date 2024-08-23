@@ -30,13 +30,7 @@ components/driver/test_apps/legacy_adc_driver:
 
 components/driver/test_apps/legacy_i2c_driver:
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
-      temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-10307, [ESP32C61] IDF-9296
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner
+    - if: SOC_I2C_SUPPORTED != 1
   depends_filepatterns:
     - components/driver/i2c/**
     # Following dependency is needed because they might increase lazy installed memory
