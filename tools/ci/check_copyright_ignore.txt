@@ -1157,7 +1157,6 @@ tools/templates/sample_component/main.c
 tools/test_apps/build_system/embed_test/main/test_main.c
 tools/test_apps/build_system/ldgen_test/main/src1.c
 tools/test_apps/build_system/ldgen_test/main/src2.c
-tools/test_apps/build_system/ldgen_test/main/test_main.c
 tools/test_apps/peripherals/i2c_wifi/main/i2c_wifi_main.c
 tools/test_apps/protocols/esp_netif/build_config/main/init_macro.h
 tools/test_apps/protocols/esp_netif/build_config/main/main.cpp
