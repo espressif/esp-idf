@@ -14,7 +14,7 @@ const char __attribute__((section(".rodata"))) phy_init_magic_pre[] = PHY_INIT_M
  * @brief Structure containing default recommended PHY initialization parameters.
  */
 const esp_phy_init_data_t phy_init_data= { {
-0x1,
+        0x1,
         0x0,
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
         LIMIT(CONFIG_ESP_PHY_MAX_TX_POWER * 4, 0, 0x50),
@@ -96,7 +96,7 @@ const esp_phy_init_data_t phy_init_data= { {
         0,
         0,
         0,
-        0,        
+        0,
         0,
         0,
         0,

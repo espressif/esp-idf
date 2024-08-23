@@ -5,7 +5,7 @@ if(${idf_target} STREQUAL "linux")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32p4")
-    # TODO: IDF-7460, IDF-8851, IDF-9553
+    # TODO: IDF-7460
     idf_component_register()
     return()
 endif()
