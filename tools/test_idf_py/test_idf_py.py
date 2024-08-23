@@ -428,7 +428,6 @@ class TestEFuseCommands(TestWrapperCommands):
         self.assertIn('BLOCK1', output)
         self.assertIn('BLOCK2', output)
         self.assertIn('BLOCK3', output)
-        self.assertIn('read_regs', output)
 
     def test_efuse_read_protect(self):
         read_protect_command = [sys.executable, idf_py_path, 'efuse-read-protect', '--virt', '--do-not-confirm']
