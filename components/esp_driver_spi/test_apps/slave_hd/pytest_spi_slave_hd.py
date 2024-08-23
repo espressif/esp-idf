@@ -25,6 +25,7 @@ def test_slave_hd_single_dev(case_tester) -> None:       # type: ignore
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2,], indirect=True)
 def test_slave_hd_multi_dev(case_tester) -> None:        # type: ignore

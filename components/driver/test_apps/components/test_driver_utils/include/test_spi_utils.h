@@ -94,12 +94,7 @@
 #define WIRE_DELAY              12.5
 #endif  //CONFIG_IDF_TARGET_ESP32
 
-#define GET_DMA_CHAN(HOST)      (HOST)
-
-#define TEST_DMA_CHAN_MASTER    GET_DMA_CHAN(TEST_SPI_HOST)
-#define TEST_DMA_CHAN_SLAVE     GET_DMA_CHAN(TEST_SLAVE_HOST)
-
-#define FUNC_SPI    1
+#define FUNC_SPI    SPI2_FUNC_NUM
 #define FUNC_GPIO   PIN_FUNC_GPIO
 
 //Delay information
