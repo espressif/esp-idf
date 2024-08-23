@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -209,6 +209,12 @@ extern "C" void __cxa_guard_abort(__guard* pg) throw()
         static_cast<void>(result);
     }
 }
+
+/* Originally, this should come with crtbegin.o from the toolchain (if GCC is configured with --enable-__cxa_atexit).
+   Since we do not link with crtbegin.o and have not configured GCC with --enable-__cxa_atexit, it is declared here.
+   Note: It should have a unique value in every shared object; in the main program its value is zero. */
+extern "C" void *__dso_handle __attribute__((__visibility__("hidden")));
+void *__dso_handle = 0;
 
 /**
  * Dummy function used to force linking this file instead of the same one in libstdc++.
