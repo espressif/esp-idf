@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.parametrize('config', [
     'global_dns',
     'dns_per_netif',
+    'loopback',             # test config without LWIP
 ], indirect=True)
 def test_esp_netif(dut: Dut) -> None:
     dut.expect_unity_test_output()
