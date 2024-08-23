@@ -132,7 +132,7 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
 {
-    if (!tls || !data) {
+    if (!tls) {
         return -1;
     }
     return tls->read(tls, (char *)data, datalen);
