@@ -129,7 +129,7 @@ where:
 Vout    Digital output result, standing for the voltage.
 Dout    ADC raw digital reading result.
 Vmax    Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor chapter in `TRM <{IDF_TARGET_TRM_EN_URL}>`__.
-Dmax    Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where bitwidth is the :cpp:member::`adc_oneshot_chan_cfg_t:bitwidth` configured before.
+Dmax    Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where bitwidth is the :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth` configured before.
 ======  =============================================================
 
 To do further calbration to convert the ADC raw result to voltage in mV, please refer to calibration doc :doc:`adc_calibration`.
