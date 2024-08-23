@@ -160,8 +160,25 @@ menu "FreeRTOS"
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
 
+        config FREERTOS_USE_TIMERS
+            bool "configUSE_TIMERS"
+            default y
+            help
+                Enable FreeRTOS Software Timers. Normally the timer task will only get pulled into the build
+                and created if any software timer related functions are used. This is achieved through IDF
+                defining a weak empty function for xTimerCreateTimerTask, which should take effect if timers.c
+                is not pulled into the build.
+
+                In certain special cases (if you use configUSE_TRACE_FACILITY=y and event groups) the linker will
+                still pull in the xTimerCreateTimerTask from timers.c even if the function that utilized it gets
+                discarded due to not being used.
+
+                In these cases you can use this option to force the timer task to be disabled.
+
+
         config FREERTOS_TIMER_SERVICE_TASK_NAME
             string "configTIMER_SERVICE_TASK_NAME"
+            depends on FREERTOS_USE_TIMERS
             default "Tmr Svc"
             help
                 Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
@@ -170,12 +187,14 @@ menu "FreeRTOS"
             int "configTIMER_TASK_PRIORITY"
             range 1 25
             default 1
+            depends on FREERTOS_USE_TIMERS
             help
                 Sets the timer task's priority (see configTIMER_TASK_PRIORITY documentation for more details).
 
         config FREERTOS_TIMER_TASK_STACK_DEPTH
             int "configTIMER_TASK_STACK_DEPTH"
             range 1536 32768
+            depends on FREERTOS_USE_TIMERS
             default 2053 if IDF_TARGET_LINUX
             default 2048
             help
@@ -184,6 +203,7 @@ menu "FreeRTOS"
         config FREERTOS_TIMER_QUEUE_LENGTH
             int "configTIMER_QUEUE_LENGTH"
             range 5 20
+            depends on FREERTOS_USE_TIMERS
             default 10
             help
                 Set the timer task's command queue length (see configTIMER_QUEUE_LENGTH documentation for more
