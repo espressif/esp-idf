@@ -405,7 +405,12 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(CONFIG_MESH_MAX_LAYER));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(1));
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(10));
+    /* set blocking time of esp_mesh_send() to 30s, to prevent the esp_mesh_send() from permanently for some reason */
+    ESP_ERROR_CHECK(esp_mesh_send_block_time(30000));
     mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
+#if !MESH_IE_ENCRYPTED
+    cfg.crypto_funcs = NULL;
+#endif
     /* mesh ID */
     memcpy((uint8_t *) &cfg.mesh_id, MESH_ID, 6);
     /* router */
