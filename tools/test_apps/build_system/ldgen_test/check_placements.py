@@ -66,3 +66,5 @@ if not args.no_rtc:
 check_location('func3', '.flash.text')
 
 check_location('func4', '.iram0.text')
+
+check_location('const_array', '.dram0.data')
