@@ -62,7 +62,9 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
         (s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_clock == clk_sig)) {
         allocated_channel = &s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)];
     }
-    allocated_channel->channel_id = (clock_out_channel_t)IONUM_TO_CLKOUT_CHANNEL(gpio_num);
+    if (allocated_channel != NULL) {
+        allocated_channel->channel_id = (clock_out_channel_t)IONUM_TO_CLKOUT_CHANNEL(gpio_num);
+    }
     portEXIT_CRITICAL(&s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].clkout_channel_lock);
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     for(uint32_t channel = 0; channel < CLKOUT_CHANNEL_MAX; channel++) {
@@ -114,6 +116,9 @@ static esp_clock_output_mapping_t* clkout_mapping_alloc(clkout_channel_handle_t*
 
     if (allocated_mapping == NULL) {
         allocated_mapping = (esp_clock_output_mapping_t *)malloc(sizeof(esp_clock_output_mapping_t));
+        if (!allocated_mapping) {
+            return NULL;
+        }
         allocated_mapping->mapped_io = gpio_num;
         allocated_mapping->clkout_channel_hdl = channel_hdl;
         allocated_mapping->ref_cnt = 0;
