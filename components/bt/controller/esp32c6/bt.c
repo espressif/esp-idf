@@ -132,7 +132,7 @@ extern void r_ble_rtc_wake_up_state_clr(void);
 extern int os_msys_init(void);
 extern void os_msys_deinit(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
+extern sleep_retention_entries_config_t *r_esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
 extern void r_esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 extern void r_esp_ble_change_rtc_freq(uint32_t freq);
@@ -567,7 +567,7 @@ static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
 {
     uint8_t size;
     int extra = *(int *)arg;
-    const sleep_retention_entries_config_t *ble_mac_modem_config = esp_ble_mac_retention_link_get(&size, extra);
+    sleep_retention_entries_config_t *ble_mac_modem_config = r_esp_ble_mac_retention_link_get(&size, extra);
     esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err == ESP_OK) {
         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Modem BLE MAC retention initialization");
