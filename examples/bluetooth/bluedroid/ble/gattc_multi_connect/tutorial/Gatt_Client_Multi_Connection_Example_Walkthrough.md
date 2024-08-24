@@ -180,41 +180,65 @@ case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
    ```
    If the service is found, an ``ESP_GATTC_SEARCH_RES_EVT`` event is triggered which allows to set the ``get_service_1 flag`` to true. This flag is used to print information and later get the characteristic that the client is interested in. 
 
-* Once the search for all services is completed, an ``ESP_GATTC_SEARCH_CMPL_EVT`` event is generated which is used to get the characteristics of the service just discovered. This is done with the ``esp_ble_gattc_get_characteristic()`` function:
-	
+* After the search for all services is completed, an ESP_GATTC_SEARCH_CMPL_EVT event is triggered. This event can be utilized to obtain characteristics or other information. For example, you can retrieve a characteristic by UUID using the esp_ble_gattc_get_char_by_uuid() function:
 	```c
- 	case ESP_GATTC_SEARCH_CMPL_EVT:
+    case ESP_GATTC_SEARCH_CMPL_EVT:
         if (p_data->search_cmpl.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "search service failed, error status = %x", p_data->search_cmpl.status);
             break;
         }
-        if (get_service_1){
-            esp_ble_gattc_get_characteristic(gattc_if, p_data->search_cmpl.conn_id, &remote_service_id, NULL);
+        if (get_service_c){
+            uint16_t count = 0;
+            esp_gatt_status_t status = esp_ble_gattc_get_attr_count( gattc_if,
+                                                                     p_data->search_cmpl.conn_id,
+                                                                     ESP_GATT_DB_CHARACTERISTIC,
+                                                                     gl_profile_tab[PROFILE_C_APP_ID].service_start_handle,
+                                                                     gl_profile_tab[PROFILE_C_APP_ID].service_end_handle,
+                                                                     INVALID_HANDLE,
+                                                                     &count);
+            if (status != ESP_GATT_OK){
+                ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
+            }
+
+            if (count > 0){
+                char_elem_result_c = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
+                if (!char_elem_result_c){
+                    ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
+                }else{
+                    status = esp_ble_gattc_get_char_by_uuid( gattc_if,
+                                                             p_data->search_cmpl.conn_id,
+                                                             gl_profile_tab[PROFILE_C_APP_ID].service_start_handle,
+                                                             gl_profile_tab[PROFILE_C_APP_ID].service_end_handle,
+                                                             remote_filter_char_uuid,
+                                                             char_elem_result_c,
+                                                             &count);
+                    if (status != ESP_GATT_OK){
+                        ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result_c);
+                        char_elem_result_c = NULL;
+                        break;
+                    }
+
+                    /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
+                    if (count > 0 && (char_elem_result_c[0].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)){
+                        gl_profile_tab[PROFILE_C_APP_ID].char_handle = char_elem_result_c[0].char_handle;
+                        esp_ble_gattc_register_for_notify (gattc_if, gl_profile_tab[PROFILE_C_APP_ID].remote_bda, char_elem_result_c[0].char_handle);
+                    }
+                }
+                /* free char_elem_result */
+                free(char_elem_result_c);
+                char_elem_result_c = NULL;
+            }else{
+                ESP_LOGE(GATTC_TAG, "no char found");
+            }
         }
         break;
    ```
-   	The ``esp_ble_gattc_get_characteristic()`` function takes the GATT interface, the connection ID and the remote service ID as parameters. In addition, a NULL value is passed to indicate that we want all the characteristics starting from the first one. If the client is interested in a specific characteristic it could pass the characteristic ID in this field to specify that.
-   	An ``ESP_GATTC_GET_CHAR_EVT`` event is triggered when a characteristic is discovered. This event is used to print information about the characteristic.
 
-* If the characteristic ID is the same as the one defined by ``REMOTE_NOTIFY_CHAR_UUID``, the client registers for notifications on that characteristic value.
-* Finally, the next characteristic is requested using the same ``esp_ble_gattc_get_characteristic()`` function, this time, the last parameter is set to the current characteristic. This triggers another ``ESP_GATTC_GET_CHAR_EVT`` and the process is repeated until all characteristics are obtained.
+* The API esp_ble_gattc_get_attr_count retrieves the number of attributes of a specified type based on esp_gatt_db_attr_type_t.
 
-	```c
-	case ESP_GATTC_GET_CHAR_EVT:
-        if (p_data->get_char.status != ESP_GATT_OK) {
-            break;
-        }
-        ESP_LOGI(GATTC_TAG, "GET CHAR: conn_id = %x, status %d", p_data->get_char.conn_id, p_data->get_char.status);
-        ESP_LOGI(GATTC_TAG, "GET CHAR: srvc_id = %04x, char_id = %04x", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
-
-        if (p_data->get_char.char_id.uuid.uuid.uuid16 == REMOTE_NOTIFY_CHAR_UUID) {
-            ESP_LOGI(GATTC_TAG, "register notify");
-            esp_ble_gattc_register_for_notify(gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, &remote_service_id, &p_data->get_char.char_id);
-        }
-
-        esp_ble_gattc_get_characteristic(gattc_if, p_data->get_char.conn_id, &remote_service_id, &p_data->get_char.char_id);
-        break;
-   ```
+* The API esp_ble_gattc_register_for_notify is used to register for notifications sent from the server and will trigger the ESP_GATTC_REG_FOR_NOTIFY_EVT event.
 
 At this point the client has acquired all characteristics from the remote device and has subscribed for notifications on the characteristics of interest. Every time a client registers for notifications, an ``ESP_GATTC_REG_FOR_NOTIFY_EVT`` event is triggered. In this example, this event is set to write to the remote device Client Configuration Characteristic (CCC) using the ``esp_ble_gattc_write_char_descr()`` function. In turn, this function is used to write to characteristic descriptors. There are many characteristic descriptors defined by the Bluetooth specification, however, for this example, the descriptor of interest is the one that deals with enabling notifications, that is the Client Configuration descriptor. 
 
