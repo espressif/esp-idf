@@ -90,16 +90,15 @@ static inline __attribute__((always_inline)) void clk_ll_xtal32k_enable(clk_ll_x
 {
     // Configure xtal32k
     clk_ll_xtal32k_config_t cfg = CLK_LL_XTAL32K_CONFIG_DEFAULT();
+    if (mode == CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL) {
+        cfg.dbuf = 0;
+    }
     REG_SET_FIELD(RTC_CNTL_EXT_XTL_CONF_REG, RTC_CNTL_DAC_XTAL_32K, cfg.dac);
     REG_SET_FIELD(RTC_CNTL_EXT_XTL_CONF_REG, RTC_CNTL_DRES_XTAL_32K, cfg.dres);
     REG_SET_FIELD(RTC_CNTL_EXT_XTL_CONF_REG, RTC_CNTL_DGM_XTAL_32K, cfg.dgm);
     REG_SET_FIELD(RTC_CNTL_EXT_XTL_CONF_REG, RTC_CNTL_DBUF_XTAL_32K, cfg.dbuf);
     // Enable xtal32k xpd status
     SET_PERI_REG_MASK(RTC_CNTL_EXT_XTL_CONF_REG, RTC_CNTL_XPD_XTAL_32K);
-    if (mode == CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL) {
-        /* TODO: external 32k oscillator may need different settings */
-        ;
-    }
 }
 
 /**
