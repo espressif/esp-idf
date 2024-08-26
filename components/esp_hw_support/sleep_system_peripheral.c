@@ -32,7 +32,7 @@
 
 static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
 
-#define SLEEP_RETENTION_PERIPHERALS_PRIORITY_DEFAULT    (REGDMA_LINK_PRI_6)
+#define SLEEP_RETENTION_PERIPHERALS_PRIORITY_DEFAULT    (REGDMA_LINK_PRI_SYS_PERIPH_LOW)
 
 static __attribute__((unused)) esp_err_t sleep_sys_periph_intr_matrix_retention_init(void *arg)
 {
@@ -42,7 +42,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_intr_matrix_retention_
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTERRUPT_MATRIX_BASE, DR_REG_INTERRUPT_MATRIX_BASE, N_REGS_INTR_MATRIX(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
     };
 
-    esp_err_t err = sleep_retention_entries_create(intr_matrix_regs_retention, ARRAY_SIZE(intr_matrix_regs_retention), REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(intr_matrix_regs_retention, ARRAY_SIZE(intr_matrix_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "Interrupt matrix");
     ESP_LOGD(TAG, "Interrupt Matrix sleep retention initialization");
     return ESP_OK;
@@ -56,7 +56,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_hp_system_retention_in
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(0), DR_REG_HP_SYSTEM_BASE, DR_REG_HP_SYSTEM_BASE, N_REGS_HP_SYSTEM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* hp system */
     };
 
-    esp_err_t err = sleep_retention_entries_create(hp_system_regs_retention, ARRAY_SIZE(hp_system_regs_retention), REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(hp_system_regs_retention, ARRAY_SIZE(hp_system_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "HP system");
     ESP_LOGD(TAG, "HP System sleep retention initialization");
     return ESP_OK;
@@ -72,12 +72,12 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(1), DR_REG_TEE_BASE,    DR_REG_TEE_BASE,    N_REGS_TEE(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* tee */
     };
 
-    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     if (err == ESP_OK) {
         const static sleep_retention_entries_config_t regs_highpri_retention[] = {
             [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TEEAPM_LINK(2), TEE_M4_MODE_CTRL_REG, 0x0, 0xffffffff, 1, 0), .owner = ENTRY(2) }
         };
-        err = sleep_retention_entries_create(regs_highpri_retention, ARRAY_SIZE(regs_highpri_retention), REGDMA_LINK_PRI_2, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+        err = sleep_retention_entries_create(regs_highpri_retention, ARRAY_SIZE(regs_highpri_retention), REGDMA_LINK_PRI_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     }
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "TEE/APM");
     ESP_LOGD(TAG, "TEE/APM sleep retention initialization");
@@ -95,7 +95,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_uart0_retention_init(v
         [2] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_UART_LINK(0x02), UART_REG_UPDATE_REG(0), 0x0,              UART_REG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) }
     };
 
-    esp_err_t err = sleep_retention_entries_create(uart_regs_retention, ARRAY_SIZE(uart_regs_retention), REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(uart_regs_retention, ARRAY_SIZE(uart_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "UART");
     ESP_LOGD(TAG, "UART sleep retention initialization");
     return ESP_OK;

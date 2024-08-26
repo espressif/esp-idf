@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,17 @@ typedef enum regdma_link_mode {
     REGDMA_LINK_MODE_WAIT            /*!< Link used to wait for register value to meet condition*/
 } regdma_link_mode_t;
 
+
+#define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
+#define REGDMA_LINK_PRI_MODEM_CLK               REGDMA_LINK_PRI_1
+#define REGDMA_LINK_PRI_CRITICAL_TEE_APM        REGDMA_LINK_PRI_2
+#define REGDMA_LINK_PRI_WIFI_MAC_BB             REGDMA_LINK_PRI_3
+#define REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM    REGDMA_LINK_PRI_4
+#define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
+#define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
+#define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
+#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
 
 typedef struct regdma_link_head {
     volatile uint32_t length: 10, /* total count of registers that need to be backup or restore, unit: 1 word = 4 bytes */

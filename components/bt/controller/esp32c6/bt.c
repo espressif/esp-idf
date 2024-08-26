@@ -568,7 +568,7 @@ static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
     uint8_t size;
     int extra = *(int *)arg;
     const sleep_retention_entries_config_t *ble_mac_modem_config = esp_ble_mac_retention_link_get(&size, extra);
-    esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_BLE_MAC);
+    esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err == ESP_OK) {
         ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Modem BLE MAC retention initialization");
     }
