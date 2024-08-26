@@ -10,34 +10,21 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
+#include "hal/gpio_types.h"
 #include "ulp_riscv_register_ops.h"
 
 typedef enum {
-    GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
-    GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
-    GPIO_NUM_2 = 2,     /*!< GPIO2, input and output */
-    GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
-    GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
-    GPIO_NUM_5 = 5,     /*!< GPIO5, input and output */
-    GPIO_NUM_6 = 6,     /*!< GPIO6, input and output */
-    GPIO_NUM_7 = 7,     /*!< GPIO7, input and output */
-    GPIO_NUM_8 = 8,     /*!< GPIO8, input and output */
-    GPIO_NUM_9 = 9,     /*!< GPIO9, input and output */
-    GPIO_NUM_10 = 10,   /*!< GPIO10, input and output */
-    GPIO_NUM_11 = 11,   /*!< GPIO11, input and output */
-    GPIO_NUM_12 = 12,   /*!< GPIO12, input and output */
-    GPIO_NUM_13 = 13,   /*!< GPIO13, input and output */
-    GPIO_NUM_14 = 14,   /*!< GPIO14, input and output */
-    GPIO_NUM_15 = 15,   /*!< GPIO15, input and output */
-    GPIO_NUM_16 = 16,   /*!< GPIO16, input and output */
-    GPIO_NUM_17 = 17,   /*!< GPIO17, input and output */
-    GPIO_NUM_18 = 18,   /*!< GPIO18, input and output */
-    GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
-    GPIO_NUM_20 = 20,
-    GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
-} gpio_num_t;
+    ULP_RISCV_GPIO_INTR_DISABLE = 0,    /*!< Disable RTC GPIO interrupt                             */
+    ULP_RISCV_GPIO_INTR_POSEDGE = 1,    /*!< RTC GPIO interrupt type : rising edge                  */
+    ULP_RISCV_GPIO_INTR_NEGEDGE = 2,    /*!< RTC GPIO interrupt type : falling edge                 */
+    ULP_RISCV_GPIO_INTR_ANYEDGE = 3,    /*!< RTC GPIO interrupt type : both rising and falling edge */
+    ULP_RISCV_GPIO_INTR_LOW_LEVEL = 4,  /*!< RTC GPIO interrupt type : input low level trigger      */
+    ULP_RISCV_GPIO_INTR_HIGH_LEVEL = 5, /*!< RTC GPIO interrupt type : input high level trigger     */
+    ULP_RISCV_GPIO_INTR_MAX
+} ulp_riscv_gpio_int_type_t;
 
 typedef enum {
     RTCIO_MODE_OUTPUT = 0,
