@@ -17,6 +17,9 @@
 #include <esp_err.h>
 #include <esp_log.h>
 
+#include "mbedtls/base64.h"
+#include "nvs.h"
+
 #include "wifi_constants.pb-c.h"
 #include "wifi_config.pb-c.h"
 
@@ -133,6 +136,54 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
     return ESP_OK;
 }
 
+static int PrepareForDataAndReturnDataLen(ProtobufCBinaryData* passData)
+{
+    assert(passData->len >= 8);
+    const char check [] = "!@CDATA_";
+    
+    if ((uint64_t)*passData->data != (uint64_t)*check)
+    {
+        return -1;
+    }
+    assert(passData->len >= 16);
+
+    uint32_t customDataLength;
+    size_t bytesWritten;
+    mbedtls_base64_decode((unsigned char*)&customDataLength, sizeof(customDataLength), &bytesWritten, passData->data + sizeof(uint64_t), 8);
+    ESP_LOGI(TAG, "GetPassCustomDataIndex size = %"PRIu32"", customDataLength);
+    passData->data = passData->data + 16;
+    passData->len -= 16;
+    return customDataLength;
+}
+
+static void ExtractCustomDataFromPass(ProtobufCBinaryData* passData)
+{
+    int dataLen = PrepareForDataAndReturnDataLen(passData);
+    if (dataLen < 0)
+        return;
+
+    nvs_handle_t nvsHandle = 0;
+    esp_err_t err;
+
+    err = nvs_open("prov_custom", NVS_READWRITE, &nvsHandle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error opening NVS");
+        goto exit;
+    }
+    nvs_set_blob(nvsHandle, "data", passData->data, dataLen);
+
+    err = nvs_commit(nvsHandle);
+
+exit:
+    if (nvsHandle != 0)
+    {
+        nvs_close(nvsHandle);
+    }
+
+    passData->data = passData->data + dataLen;
+    passData->len -= dataLen;
+}
+
 static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
                                         WiFiConfigPayload *resp, void  *priv_data)
 {
@@ -153,6 +204,10 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
     wifi_prov_config_set_data_t req_data;
     memset(&req_data, 0, sizeof(req_data));
 
+
+    ProtobufCBinaryData passData = req->cmd_set_config->passphrase;
+    ExtractCustomDataFromPass(&passData);
+    
     /* Check arguments provided in protobuf packet:
      * - SSID / Passphrase string length must be within the standard limits
      * - BSSID must either be NULL or have length equal to that imposed by the standard
@@ -164,7 +219,7 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
         ESP_LOGD(TAG, "Received invalid BSSID");
     } else if (req->cmd_set_config->ssid.len >= sizeof(req_data.ssid)) {
         ESP_LOGD(TAG, "Received invalid SSID");
-    } else if (req->cmd_set_config->passphrase.len >= sizeof(req_data.password)) {
+    } else if (passData.len >= sizeof(req_data.password)) {
         ESP_LOGD(TAG, "Received invalid Passphrase");
     } else {
         /* The received SSID and Passphrase are not NULL terminated so
@@ -172,8 +227,8 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
          * that there is atleast 1 extra byte for null termination */
         memcpy(req_data.ssid, req->cmd_set_config->ssid.data,
                req->cmd_set_config->ssid.len);
-        memcpy(req_data.password, req->cmd_set_config->passphrase.data,
-               req->cmd_set_config->passphrase.len);
+        memcpy(req_data.password, passData.data,
+               passData.len);
         memcpy(req_data.bssid, req->cmd_set_config->bssid.data,
                req->cmd_set_config->bssid.len);
         req_data.channel = req->cmd_set_config->channel;

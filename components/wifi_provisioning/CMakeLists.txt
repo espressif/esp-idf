@@ -29,5 +29,5 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS src proto-c
-                    REQUIRES lwip protocomm
+                    REQUIRES lwip protocomm mbedtls nvs_flash
                     PRIV_REQUIRES protobuf-c bt json esp_timer esp_wifi)
