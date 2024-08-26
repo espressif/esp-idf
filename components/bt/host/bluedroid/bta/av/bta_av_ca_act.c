@@ -5,7 +5,7 @@
  */
 
 #include "common/bt_target.h"
-#if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
+#if BTA_AV_CA_INCLUDED
 
 #include <string.h>
 #include "bta/bta_av_api.h"
@@ -492,4 +492,4 @@ void bta_av_ca_reset(tBTA_AV_RCB *p_rcb)
     p_rcb->cover_art_max_rx = 0;
 }
 
-#endif /* BTA_AV_INCLUDED */
+#endif /* BTA_AV_CA_INCLUDED */

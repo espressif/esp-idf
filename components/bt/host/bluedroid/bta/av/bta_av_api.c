@@ -613,6 +613,8 @@ void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p
     }
 }
 
+#if BTA_AV_CA_INCLUDED
+
 /*******************************************************************************
 **
 ** Function         BTA_AvCaOpen
@@ -681,5 +683,7 @@ void BTA_AvCaGet(UINT8 rc_handle, tBTA_AV_GET_TYPE type, UINT8 *image_handle, UI
         bta_sys_sendmsg(p_buf);
     }
 }
+
+#endif /* BTA_AV_CA_INCLUDED */
 
 #endif /* BTA_AV_INCLUDED */

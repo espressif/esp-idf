@@ -767,7 +767,8 @@ esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_
 /**
  *
  * @brief           Start the process to establish OBEX connection used in Cover Art Client. Once the operation done,
- *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param.
+ *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param. This API
+ *                  can be used only when AVRC Cover Art feature is enabled.
  *
  * @param[in]       mtu: MTU used in lower level connection, should not smaller than ESP_AVRC_CA_MTU_MIN or larger than
  *                  ESP_AVRC_CA_MTU_MAX, if value is not valid, will be reset to ESP_AVRC_CA_MTU_MAX. This can limit
@@ -784,7 +785,8 @@ esp_err_t esp_avrc_ct_cover_art_connect(uint16_t mtu);
 /**
  *
  * @brief           Start the process to release the OBEX connection used in Cover Art Client.Once the operation done,
- *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param.
+ *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param. This API
+ *                  can be used only when AVRC Cover Art feature is enabled.
  *
  * @return
  *                  - ESP_OK: success
@@ -796,7 +798,8 @@ esp_err_t esp_avrc_ct_cover_art_disconnect(void);
 
 /**
  *
- * @brief           Start the process to get image properties from Cover Art server.
+ * @brief           Start the process to get image properties from Cover Art server. This API can be used only when AVRC
+ *                  Cover Art feature is enabled.
  *
  * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
  *                  after this function return
@@ -811,7 +814,8 @@ esp_err_t esp_avrc_ct_cover_art_get_image_properties(uint8_t *image_handle);
 
 /**
  *
- * @brief           Start the process to get image from Cover Art server.
+ * @brief           Start the process to get image from Cover Art server. This API can be used only when AVRC Cover Art
+ *                  feature is enabled.
  *
  * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
  *                  after this function return
@@ -831,7 +835,8 @@ esp_err_t esp_avrc_ct_cover_art_get_image(uint8_t *image_handle, uint8_t *image_
 
 /**
  *
- * @brief           Start the process to get linked thumbnail from Cover Art server.
+ * @brief           Start the process to get linked thumbnail from Cover Art server. This API can be used only when AVRC
+ *                  Cover Art feature is enabled.
  *
  * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
  *                  after this function return

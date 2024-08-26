@@ -40,11 +40,13 @@ typedef enum {
     BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT,
     BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT,
     BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT,
+#if BTC_AV_CA_INCLUDED
     BTC_AVRC_CT_API_COVER_ART_CONNECT_EVT,
     BTC_AVRC_CT_API_COVER_ART_DISCONNECT_EVT,
     BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_PROPERTIES_EVT,
     BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_EVT,
     BTC_AVRC_CT_API_COVER_ART_GET_LINKED_THUMBNAIL_EVT,
+#endif
 } btc_avrc_act_t;
 
 typedef struct {
@@ -82,6 +84,8 @@ typedef struct {
     uint8_t volume;
 } set_abs_vol_cmd_t;
 
+#if BTC_AV_CA_INCLUDED
+
 typedef struct {
     uint16_t mtu;
 } ca_conn_t;
@@ -100,6 +104,8 @@ typedef struct {
     uint8_t image_handle[7];
 } ca_get_lk_thn_t;
 
+#endif /* BTC_AV_CA_INCLUDED */
+
 /* btc_avrc_args_t */
 typedef union {
     pt_cmd_t pt_cmd;
@@ -108,10 +114,12 @@ typedef union {
     ps_cmd_t ps_cmd;
     get_caps_cmd_t get_caps_cmd;
     set_abs_vol_cmd_t set_abs_vol_cmd;
+#if BTC_AV_CA_INCLUDED
     ca_conn_t ca_conn;
     ca_get_img_prop_t ca_get_img_prop;
     ca_get_img_t ca_get_img;
     ca_get_lk_thn_t ca_get_lk_thn;
+#endif
 } btc_avrc_args_t;
 
 /* btc_avrc_tg_act_t */
@@ -151,7 +159,9 @@ typedef struct {
 
 typedef struct {
     BOOLEAN                     rc_connected;
+#if BTC_AV_CA_INCLUDED
     BOOLEAN                     rc_cover_art_connected;
+#endif
     UINT8                       rc_handle;
     tBTA_AV_FEAT                rc_features;
     UINT16                      rc_ct_features;

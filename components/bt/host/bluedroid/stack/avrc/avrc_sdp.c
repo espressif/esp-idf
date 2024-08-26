@@ -292,13 +292,13 @@ UINT16 AVRC_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_provide
     } else if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET && media_player_virtual_filesystem_supported) {
         supported_feature |= AVRC_SUPF_TG_BROWSE;
     }
-
+#if AVRC_CA_INCLUDED
     if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_CONTROL || service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) {
         supported_feature |= AVRC_SUPF_CT_COVER_ART_GIP;
         supported_feature |= AVRC_SUPF_CT_COVER_ART_GI;
         supported_feature |= AVRC_SUPF_CT_COVER_ART_GLT;
     }
-
+#endif
     /* add supported feature */
     p = temp;
     UINT16_TO_BE_STREAM(p, supported_feature);

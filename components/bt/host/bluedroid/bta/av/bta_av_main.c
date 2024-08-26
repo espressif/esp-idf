@@ -1248,11 +1248,13 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
         APPL_TRACE_VERBOSE("AV sm event=0x%x(%s)\n", event, bta_av_evt_code(event));
         /* state machine events */
         bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA *) p_msg);
+#if BTA_AV_CA_INCLUDED
     } else if (event >= BTA_AV_CA_FIRST_SM_EVT && event <= BTA_AV_CA_LAST_SM_EVT) {
         if (p_msg->layer_specific < BTA_AV_NUM_RCB) {
             tBTA_AV_RCB *p_rcb = &bta_av_cb.rcb[p_msg->layer_specific];
             bta_av_ca_sm_execute(p_rcb, p_msg->event, (tBTA_AV_DATA *) p_msg);
         }
+#endif
     } else {
         APPL_TRACE_VERBOSE("handle=0x%x\n", p_msg->layer_specific);
         tBTA_AV_SCB *p_scb = bta_av_hndl_to_scb(p_msg->layer_specific);

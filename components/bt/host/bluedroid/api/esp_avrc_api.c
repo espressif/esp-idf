@@ -232,6 +232,8 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+#if BTC_AV_CA_INCLUDED
+
 esp_err_t esp_avrc_ct_cover_art_connect(uint16_t mtu)
 {
     if ((esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) ||
@@ -370,6 +372,8 @@ esp_err_t esp_avrc_ct_cover_art_get_linked_thumbnail(uint8_t *image_handle)
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
+
+#endif /* #if BTC_AV_CA_INCLUDED */
 
 /*********************************************************************************************/
 /**                  following is the API of AVRCP target role                              **/
