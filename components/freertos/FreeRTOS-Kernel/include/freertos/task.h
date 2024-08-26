@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -452,10 +452,9 @@ typedef enum
  * Example usage:
  * @code{c}
  *
- *  // Dimensions of the buffer that the task being created will use as its stack.
- *  // NOTE:  This is the number of words the stack will hold, not the number of
- *  // bytes.  For example, if each stack item is 32-bits, and this is set to 100,
- *  // then 400 bytes (100 * 32-bits) will be allocated.
+ *  // Dimensions the buffer that the task being created will use as its stack.
+ *  // NOTE:  This is the number of bytes the stack will hold, not the number of
+ *  // words as found in vanilla FreeRTOS.
  #define STACK_SIZE 200
  *
  *  // Structure that will hold the TCB of the task being created.
@@ -488,7 +487,7 @@ typedef enum
  *      xHandle = xTaskCreateStatic(
  *                    vTaskCode,       // Function that implements the task.
  *                    "NAME",          // Text name for the task.
- *                    STACK_SIZE,      // Stack size in words, not bytes.
+ *                    STACK_SIZE,      // Stack size in bytes.
  *                    ( void * ) 1,    // Parameter passed into the task.
  *                    tskIDLE_PRIORITY,// Priority at which the task is created.
  *                    xStack,          // Array to use as the task's stack.
@@ -574,7 +573,7 @@ typedef enum
  * {
  *  vATask,     // pvTaskCode - the function that implements the task.
  *  "ATask",    // pcName - just a text name for the task to assist debugging.
- *  100,        // usStackDepth - the stack size DEFINED IN WORDS.
+ *  100,        // usStackDepth - the stack size DEFINED IN BYTES.
  *  NULL,       // pvParameters - passed into the task function as the function parameters.
  *  ( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  *  cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
@@ -657,7 +656,7 @@ typedef enum
  * {
  *  vATask,     // pvTaskCode - the function that implements the task.
  *  "ATask",    // pcName - just a text name for the task to assist debugging.
- *  100,        // usStackDepth - the stack size DEFINED IN WORDS.
+ *  100,        // usStackDepth - the stack size DEFINED IN BYTES.
  *  NULL,       // pvParameters - passed into the task function as the function parameters.
  *  ( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  *  cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
