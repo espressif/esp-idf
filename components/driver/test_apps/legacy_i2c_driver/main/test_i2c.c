@@ -23,6 +23,7 @@
 #include "hal/i2c_types.h"
 #include "soc/uart_periph.h"
 #include "test_utils.h"
+#include "esp_private/gpio.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
@@ -675,7 +676,7 @@ TEST_CASE("I2C general API test", "[i2c]")
 //Init uart baud rate detection
 static void uart_aut_baud_det_init(int rxd_io_num)
 {
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
+    gpio_func_sel(rxd_io_num, PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);

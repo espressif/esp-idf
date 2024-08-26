@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='esp32p4 support TBD, C5 failed')  # TODO: IDF-8960, [ESP32C5] IDF-10307
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -22,7 +21,9 @@ def test_i2c_legacy(dut: Dut) -> None:
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c5
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic_multi_device
