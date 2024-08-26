@@ -467,10 +467,17 @@ void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int
 }
 
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
+#ifdef CONFIG_ATECC608A_RUNTIME_SELECTION
+void esp_transport_ssl_use_secure_element(esp_transport_handle_t t, uint8_t atecc608a_i2c_addr)
+#else
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
+#endif // CONFIG_ATECC608A_RUNTIME_SELECTION
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.use_secure_element = true;
+#ifdef CONFIG_ATECC608A_RUNTIME_SELECTION
+    ssl->cfg.atecc608a_i2c_addr = atecc608a_i2c_addr;
+#endif // CONFIG_ATECC608A_RUNTIME_SELECTION
 }
 #endif
 
