@@ -139,7 +139,7 @@
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
-#define SOC_CPU_PMP_REGION_GRANULARITY  128 // TODO IDF-9580 check when doing PMP bringup
+#define SOC_CPU_PMP_REGION_GRANULARITY  128
 
 #define SOC_CPU_HAS_LOCKUP_RESET        1
 
