@@ -293,8 +293,10 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
-                                                ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+            adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
+                                                scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
+                                                ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                &adv_name_len);
             if (adv_name != NULL) {
                 if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
                     if (connect == false) {
