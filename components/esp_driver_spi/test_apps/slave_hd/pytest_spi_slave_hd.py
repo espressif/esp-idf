@@ -10,6 +10,7 @@ import pytest
 @pytest.mark.esp32c3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4
 @pytest.mark.generic

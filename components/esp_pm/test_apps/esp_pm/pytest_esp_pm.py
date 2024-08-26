@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='not supported yet')  # TODO: [ESP32C61] IDF-9250 IDF-10985
 @pytest.mark.parametrize('config', [
     'default',
     'slp_iram_opt',

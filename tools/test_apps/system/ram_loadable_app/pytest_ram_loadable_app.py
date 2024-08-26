@@ -13,7 +13,8 @@ def test_pure_ram_loadable_app(dut: IdfDut) -> None:
     dut.expect('Time since boot: 3 seconds...', timeout=10)
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5'], reason='esp32p4, esp32c5 support TBD')  # TODO: [ESP32P4] IDF-8994 [ESP32C5] IDF-8644, IDF-10315
+# TODO: [ESP32P4] IDF-8994 [ESP32C5] IDF-8644, IDF-10315, [ESP32C61] IDF-10951
+@pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61'], reason='support TBD')
 @pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['defaults',], indirect=True,)

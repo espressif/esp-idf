@@ -4,4 +4,4 @@ components/esp_security/test_apps/crypto_drivers:
   disable:
     - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: Support for ESP32C6 is yet to be added.
+      reason: Support for ESP32C61 is yet to be added.

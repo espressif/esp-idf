@@ -12,6 +12,7 @@ from pytest_embedded_idf.unity_tester import CaseTester
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.esp32c5
 def test_wpa_supplicant_ut(dut: Dut) -> None:
     dut.run_all_single_board_cases()

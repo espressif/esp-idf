@@ -31,6 +31,7 @@ def validate_sbom(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [esp32c61] IDF-9284 IDF-10990
 @pytest.mark.parametrize(
     'config',
     [

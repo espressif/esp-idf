@@ -9,6 +9,10 @@
 components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: no multi-dev runner  # TODO: [ESP32C61] IDF-10949
   <<: *spi_depends_default
 
 components/esp_driver_spi/test_apps/param:

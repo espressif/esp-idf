@@ -11,7 +11,7 @@ extra_default_build_targets:
   - esp32c61
 
 bypass_check_test_targets:
-  - esp32c61
+
 #
 # These lines would
 # - enable the README.md check for esp32c6. Don't forget to add the build jobs in .gitlab/ci/build.yml
