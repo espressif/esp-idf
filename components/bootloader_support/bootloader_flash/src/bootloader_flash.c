@@ -323,7 +323,8 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08" PRIx32 " (was 0x%08" PRIx32 ")", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
             //Should never fail if we only map a SPI_FLASH_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
-            int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
+            // Return value unused if asserts are disabled
+            int e __attribute__((unused)) = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
             assert(e == 0);
 #else
             uint32_t actual_mapped_len = 0;

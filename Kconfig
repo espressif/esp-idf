@@ -388,6 +388,21 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
+        config COMPILER_ASSERT_NDEBUG_EVALUATE
+            bool "Enable the evaluation of the expression inside assert(X) when NDEBUG is set"
+            default y
+            help
+                When NDEBUG is set, assert(X) will not cause code to trigger an assertion.
+                With this option set, assert(X) will still evaluate the expression X, though
+                the result will never cause an assertion. This means that if X is a function
+                then the function will be called.
+
+                This is not according to the standard, which states that the assert(X) should
+                be replaced with ((void)0) if NDEBUG is defined.
+
+                In ESP-IDF v6.0 the default behavior will change to "no" to be in line with the
+                standard.
+
         choice COMPILER_FLOAT_LIB_FROM
             prompt "Compiler float lib source"
             default COMPILER_FLOAT_LIB_FROM_RVFPLIB if ESP_ROM_HAS_RVFPLIB

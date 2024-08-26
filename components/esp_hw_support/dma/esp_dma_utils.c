@@ -112,7 +112,8 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
         heap_caps &= ~MALLOC_CAP_DMA;
     }
 
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
+    // Return value unused if asserts are disabled
+    esp_err_t __attribute((unused)) ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
     //Get the least common multiple of two alignment
@@ -198,7 +199,8 @@ bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma
     if (esp_ptr_external_ram(ptr)) {
         cache_flags |= MALLOC_CAP_SPIRAM;
     }
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
+    // Return value unused if asserts are disabled
+    esp_err_t __attribute__((unused)) ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
     //Get the least common multiple of two alignment
