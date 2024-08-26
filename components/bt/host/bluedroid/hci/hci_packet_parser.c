@@ -219,7 +219,6 @@ static void parse_ble_read_adv_max_len_response(
         // Size: 2 Octets ; Value: 0x001F – 0x0672 ; Maximum supported advertising data length
         STREAM_TO_UINT16(*adv_max_len_ptr, stream);
     }
-
     osi_free(response);
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
