@@ -5,9 +5,9 @@ USB 设备栈
 
 {IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
 {IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
-{IDF_TARGET_USB_EP_NUM:default="6"}
-{IDF_TARGET_USB_EP_NUM_INOUT:default="5"}
-{IDF_TARGET_USB_EP_NUM_IN:default="1"}
+{IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
+{IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
+{IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
 
 概述
 --------
@@ -34,16 +34,24 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 硬件连接
 --------
 
-{IDF_TARGET_NAME} 将 USB D+ 和 D- 信号分别路由到 GPIO {IDF_TARGET_USB_DP_GPIO_NUM} 和 {IDF_TARGET_USB_DM_GPIO_NUM}。为了实现 USB 设备功能，这些 GPIO 应通过某种方式连接到总线上（例如，通过 Micro-B 端口、USB-C 端口或直接连接到标准-A 插头）。
+.. only:: esp32s2 or esp32s3
+
+    {IDF_TARGET_NAME} 将 USB D+ 和 D- 信号分别路由到 GPIO {IDF_TARGET_USB_DP_GPIO_NUM} 和 {IDF_TARGET_USB_DM_GPIO_NUM}。为了实现 USB 设备功能，这些 GPIO 应通过某种方式连接到总线（例如，通过 Micro-B 端口、USB-C 端口或直接连接到标准-A 插头）。
+
+.. only:: esp32p4
+
+    {IDF_TARGET_NAME} 将 USB D+ 和 D- 信号路由到其专用引脚。为了实现 USB 设备功能，这些引脚应通过某种方式连接到总线（例如，通过 Micro-B 端口、USB-C 端口或直接连接到标准-A 插头）。
 
 .. figure:: ../../../_static/usb-board-connection.png
     :align: center
     :alt: 将 USB GPIO 直接接连至 USB 标准-A 插头
     :figclass: align-center
 
-.. note::
+.. only:: esp32s2 or esp32s3
 
-    如果你使用带有两个 USB 端口的 {IDF_TARGET_NAME} 开发板，标有 "USB" 的端口已经连接到 D+ 和 D- GPIO。
+    .. note::
+
+        如果你使用带有两个 USB 端口的 {IDF_TARGET_NAME} 开发板，标有 "USB" 的端口已经连接到 D+ 和 D- GPIO。
 
 .. note::
 
@@ -95,15 +103,17 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 
 - :cpp:member:`configuration_descriptor`
 
-高速 USB 设备应初始化以下字段，以提供不同速度下的配置描述符：
+.. only:: esp32p4
 
-- :cpp:member:`fs_configuration_descriptor`
-- :cpp:member:`hs_configuration_descriptor`
-- :cpp:member:`qualifier_descriptor`
+    高速 USB 设备应初始化以下字段，以提供不同速度下的配置描述符：
 
-.. note::
+    - :cpp:member:`fs_configuration_descriptor`
+    - :cpp:member:`hs_configuration_descriptor`
+    - :cpp:member:`qualifier_descriptor`
 
-    若设备栈支持高速，为符合 USB 2.0 协议规范，应同时初始化 :cpp:member:`fs_configuration_descriptor` 和 :cpp:member:`hs_configuration_descriptor`。
+    .. note::
+
+        为符合 USB 2.0 协议规范，需同时初始化 :cpp:member:`fs_configuration_descriptor` 和 :cpp:member:`hs_configuration_descriptor`。
 
 调用 :cpp:func:`tinyusb_driver_install` 时，设备栈将基于上述字段中提供的描述符实现 USB 设备。
 
