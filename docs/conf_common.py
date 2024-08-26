@@ -15,7 +15,12 @@ from esp_docs.conf_docs import *  # noqa: F403,F401
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
-BT_DOCS = ['api-guides/blufi.rst',
+BT_DOCS = ['api-guides/ble/blufi.rst',
+           'api-guides/ble/index.rst',
+           'api-guides/ble/overview.rst',
+           'api-guides/ble/ble-feature-support-status.rst',
+           'api-guides/ble/host-feature-support-status.rst',
+           'api-reference/bluetooth/index.rst',
            'api-reference/bluetooth/bt_le.rst',
            'api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
@@ -27,7 +32,7 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_gatts.rst',
            'api-reference/bluetooth/esp_gattc.rst',
            'api-reference/bluetooth/esp_blufi.rst',
-           'api-reference/bluetooth/index.rst',
+           'api-reference/bluetsooth/index.rst',
            'api-reference/bluetooth/nimble/index.rst',
            'migration-guides/release-5.x/bluetooth-low-energy.rst']
 
@@ -38,7 +43,9 @@ BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
                  'api-reference/bluetooth/esp-ble-mesh.rst']
 
-CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
+CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
+                   'api-guides/classic-bt/overview.rst',
+                   'api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
                    'api-reference/bluetooth/esp_avrc.rst',
                    'api-reference/bluetooth/esp_hidd.rst',

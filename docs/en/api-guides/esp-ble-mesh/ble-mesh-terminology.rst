@@ -1,5 +1,5 @@
-ESP-BLE-MESH Terminology
-========================
+Terminology
+============
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -14,16 +14,16 @@ ESP-BLE-MESH Terminology
     - Detailed Explanation
   * - Unprovisioned Device
     - A device that is not a member of a mesh network is known as an unprovisioned device.
-    - Examples: lighting devices, temperature control devices, manufacturing equipments and electric doors, etc.
+    - Examples: lighting devices, temperature control devices, manufacturing equipment and electric doors, etc.
   * - Node
     - A node is a provisioned device.
-    - The role of unprovisioned device will change to node after being provisioned to ESP-BLE-MESH network. Nodes (such as lighting devices, temperature control devices, manufacturing equipments, and electric doors) are devices that can send, receive, or relay messages in ESP-BLE-MESH network, and they can optionally support one or more subnets.
+    - The role of unprovisioned device will change to node after being provisioned to ESP-BLE-MESH network. Nodes (such as lighting devices, temperature control devices, manufacturing equipment, and electric doors) are devices that can send, receive, or relay messages in ESP-BLE-MESH network, and they can optionally support one or more subnets.
   * - Relay Node
     - A node that supports the Relay feature and has the Relay feature enabled is known as a Relay node.
     - Relay nodes can receive and resend ESP-BLE-MESH messages, so the messages can be transferred further. Users can decide whether or not to enable forwarding function of nodes according to nodes' status. Messages can be relayed for multiple times, and each relay is considered as a "hop". Messages can hop up to 126 times, which is enough for message transmission in a wide area.
   * - Proxy Node
     - A node that supports the Proxy feature and has the Proxy feature enabled is known as a Proxy node.
-    - Proxy nodes receive messages from one bearer (it generally includes advertising bearer and GATT bearer) and resend it from another one. The purpose is to connect communication equipments that only support GATT bearer to ESP-BLE-MESH network. Generally, mobile apps need a Proxy node to access Mesh network. Without Proxy nodes, mobile apps cannot communicate with members in Mesh network.
+    - Proxy nodes receive messages from one bearer (it generally includes advertising bearer and GATT bearer) and resend it from another one. The purpose is to connect communication equipment that only support GATT bearer to ESP-BLE-MESH network. Generally, mobile apps need a Proxy node to access Mesh network. Without Proxy nodes, mobile apps cannot communicate with members in Mesh network.
   * - Friend Node
     - A node that supports the Friend feature, has the Friend feature enabled, and has a friendship with a node that supports the Low Power feature is known as a Friend node.
     - Friend node, like the backup of Low Power node (LPN), can store messages that are sent to Low Power node and security updates; the stored information will be transferred to Low Power node when Low Power node needs it. Low Power node must establish "friendship" with another node that supports the Friend Feature to reduce duty cycle of its receiver, thus power consumption of Low Power node can be reduced. Low Power node needs to find a Friend node to establish a friendship with it. The process involved is called "friendship establishment". Cooperation between Low Power node and Friend nodes enables Low Power node to schedule the use of the radio, thus Low Power node can receive messages at an appropriate or lower frequency without the need of keeping listening. Low Power node will poll Friend node to see if there is new message.
@@ -150,7 +150,7 @@ ESP-BLE-MESH Terminology
     - Detailed Explanation
   * - Device Key (DevKey)
     - There is also a device key, which is a special application key that is unique to each node, is known only to the node and a Configuration Client, and is used to secure communications between the node and a Configuration Client.
-    - The device key enables you to provision the devices, configure the nodes. The device key is used to encrypt Configuration Messages, i.e. the message transferred between the Provisioner and the node when the device is configured.
+    - The device key enables you to provision the devices, configure the nodes. The device key is used to encrypt Configuration Messages, i.e., the message transferred between the Provisioner and the node when the device is configured.
   * - Application Key (AppKey)
     - Application keys are used to secure communications at the upper transport layer.
     - Application key is used for decryption of application data before delivering application data to application layer and encryption of them during the delivery of application layer. Some nodes in the network have a specific purpose and can restrict access to potentially sensitive data based on the needs of the application. With specific application keys, these nodes are associated with specific applications. Generally speaking, the fields using different application keys include security (access control of buildings, machine rooms and CEO offices), lighting (plant, exterior building and sidewalks) and HVAC systems. Application keys are bound to Network keys. This means application keys are only used in a context of a Network key they are bound to. An application key shall only be bound to a single Network key.
@@ -168,10 +168,10 @@ ESP-BLE-MESH Terminology
   * - Term
     - Official Definition
     - Detailed Explanation
-  * - Reassembly / Segmentation
+  * - Reassembly/Segmentation
     - Segmentation and reassembly (SAR) is a method of communication network, which is divided into small units before transmitting packets and reassembled in a proper order at the communication receiving end.
     - The lower transport layer will automatically segment the message whose size is too big. The receiving end will return a response message, and the transmitting end will send the data packet again that the receiving end does not receive according to the response message. This is automatically completed by the lower transport layer. Unsegmented messages have at most 15 bytes, of which 4 bytes are transMIC, so the remaining is 11 bytes; in the case of segmentation, there are 12 valid bytes in the first several packets, and 8 in the last one. Special case: A shorter packet requires mandatory segmentation from lower transport layer, in which case the valid byte is 8 bytes.
-  * - Unacknowledged / Acknowledged
+  * - Unacknowledged/Acknowledged
     - There are two types of messages: Unacknowledged or Acknowledged
     - Based on the whether or not the receiving end needs to send the response message, the messages sent are divided into two kinds. The sending end should set the maximum number of retransmission.
 
@@ -211,11 +211,8 @@ ESP-BLE-MESH Terminology
   * - Key Refresh procedure
     - This procedure is used when the security of one or more network keys and/or one or more of the application keys has been compromised or could be compromised.
     - Key Refresh Procedure is used to update network key and application key of ESP-BLE-MESH network. Key Refresh Procedure is used when the security of one or more network keys and/or one or more application keys is threatened or potentially threatened. Keys are usually updated after some nodes in the network are removed.
-  * - IV (Initialisation Vector) Update Procedure
+  * - IV (Initialization Vector) Update Procedure
     - A node can also use an IV Update procedure to signal to peer nodes that it is updating the IV Index.
     - The IV Update procedure is used to update the value of ESP-BLE-MESH network's IV Index. This value is related to the random number required for message encryption. To ensure that the value of the random number is not repeated, this value is periodically incremented. IV Index is a 32-bit value and a shared network resource. For example, all nodes in a mesh network share the same IV Index value. Starting from 0x00000000, the IV Index increments during the IV Update procedure and maintained by a specific process, ensuring the IV Index shared in the mesh network is the same. This can be done when the node believes that it has the risk of exhausting its sequence number, or when it determines that another node is nearly exhausting its sequence number. Note: The update time must not be less than 96 hours. It can be triggered when a secure network beacon is received, or when the node determines that its sequence number is greater than a certain value.
 
 For more terms, please see: `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/mesh/mesh-glossary/>`_.
-
-
-
