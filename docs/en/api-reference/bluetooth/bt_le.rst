@@ -1,5 +1,5 @@
-BT LE
-=========
+Bluetooth® Low Energy
+======================
 
 .. toctree::
    :caption: Bluetooth LE

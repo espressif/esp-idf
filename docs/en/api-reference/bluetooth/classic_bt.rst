@@ -1,8 +1,8 @@
-CLASSIC BT
-==========
+Bluetooth® Classic
+===================
 
 .. toctree::
-   :caption: Classic BT
+   :caption: Bluetooth Classic
 
    BT GAP <esp_gap_bt>
    BT A2DP <esp_a2dp>

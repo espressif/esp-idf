@@ -17,7 +17,7 @@ Please see the :doc:`ble-mesh-architecture` for information about the implementa
 ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH.
 
 .. only:: SOC_WIFI_MESH_SUPPORT
-    
+
     .. note::
 
       If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIFI-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
@@ -25,8 +25,8 @@ ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.
 
 .. _getting-started-with-ble-mesh:
 
-Getting Started with ESP-BLE-MESH
-=================================
+Getting Started
+=================
 
 This section is intended to help you get started with ESP-BLE-MESH for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
@@ -107,7 +107,7 @@ The Scanner is App's functionality to search for unprovisioned devices in range.
 4.2 Identify
 ^^^^^^^^^^^^
 
-Users can select any unprovisioned device, then the App will try to set up a connection with the selected device. After the BLE connection is established successfully (sometimes users need to try multiple times to get connected), and proper ESP-BLE-MESH GATT Service is discovered, users can see the **IDENTIFY** interface button on the screen. The IDENTIFY operation can be used to tell users which device is going to be provisioned.
+Users can select any unprovisioned device, then the App will try to set up a connection with the selected device. After the Bluetooth LE connection is established successfully (sometimes users need to try multiple times to get connected), and proper ESP-BLE-MESH GATT Service is discovered, users can see the **IDENTIFY** interface button on the screen. The IDENTIFY operation can be used to tell users which device is going to be provisioned.
 
 .. note::
     The IDENTIFY operation also needs some cooperation on the device side, then users can see which device is in the provisioning process. Currently when pressing the **IDENTIFY** interface button, no signs can been seen from the device except from the log on the serial monitor.
@@ -210,8 +210,8 @@ The following screenshot shows different board with different color on.
 
 .. _esp-ble-mesh-examples:
 
-ESP-BLE-MESH Examples
-=====================
+Examples
+=========
 
 * :example_file:`ESP-BLE-MESH Node OnOff Server <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server>`.
 
@@ -228,15 +228,15 @@ ESP-BLE-MESH Examples
 
 .. _esp-ble-mesh-demo-videos:
 
-ESP-BLE-MESH Demo Videos
-========================
+Demo Videos
+============
 
 * `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
 * `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
-ESP-BLE-MESH FAQ
-================
+FAQ
+====
 
 * :ref:`ble-mesh-faq-provisioner-development`
 * :ref:`ble-mesh-faq-node-development`
