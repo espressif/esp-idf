@@ -88,7 +88,7 @@ void esp_cpu_configure_region_protection(void)
      *
      * 2. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT enabled
      *    - We split the SRAM into IRAM and DRAM such that IRAM region cannot be written to
-     *      and DRAM region cannot be executed. We use _iram_end and _data_start markers to set the boundaries.
+     *      and DRAM region cannot be executed. We use _iram_text_end and _data_start markers to set the boundaries.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
      * 3. Application build with CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT disabled
@@ -136,7 +136,7 @@ void esp_cpu_configure_region_protection(void)
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
-        extern int _iram_end;
+        extern int _iram_text_end;
         // 5. IRAM and DRAM
         /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
          * Bootloader might have given extra permissions and those won't be cleared
@@ -145,7 +145,7 @@ void esp_cpu_configure_region_protection(void)
         PMP_ENTRY_CFG_RESET(6);
         PMP_ENTRY_CFG_RESET(7);
         PMP_ENTRY_SET(5, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(6, (int)&_iram_end, PMP_TOR | RX);
+        PMP_ENTRY_SET(6, (int)&_iram_text_end, PMP_TOR | RX);
         PMP_ENTRY_SET(7, SOC_DRAM_HIGH, PMP_TOR | RW);
 #else
         // 5. IRAM and DRAM
