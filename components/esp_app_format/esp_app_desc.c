@@ -57,6 +57,8 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .time = "",
     .date = "",
 #endif
+    .min_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL,
+    .max_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL,
 };
 
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR

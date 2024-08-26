@@ -27,7 +27,7 @@
 #include "esp_rom_caps.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
-#define IS_MAX_REV_SET(max_chip_rev_full) (((max_chip_rev_full) != 65535) && ((max_chip_rev_full) != 0))
+#define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
 
 static const char* TAG = "boot_comm";
 
@@ -57,6 +57,31 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
     return bootloader_common_select_otadata(two_otadata, valid_two_otadata, true);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32
+esp_err_t bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full)
+{
+    esp_err_t err = ESP_OK;
+#ifndef CONFIG_IDF_ENV_FPGA
+    // Check whether the efuse block version satisfy the requirements of current image.
+    uint32_t revision = efuse_hal_blk_version();
+    uint32_t major_rev = revision / 100;
+    uint32_t minor_rev = revision % 100;
+    if (IS_FIELD_SET(min_rev_full) && !ESP_EFUSE_BLK_REV_ABOVE(revision, min_rev_full)) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev >= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    min_rev_full / 100, min_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+    // If burnt `disable_blk_version_major` bit, skip the max version check
+    if ((IS_FIELD_SET(max_rev_full) && (revision > max_rev_full) && !efuse_hal_get_disable_blk_version_major())) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev <= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    max_rev_full / 100, max_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+#endif
+    return err;
+}
+#endif  // !CONFIG_IDF_TARGET_ESP32
+
 esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
 {
     esp_err_t err = ESP_OK;
@@ -80,7 +105,7 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         }
         if (type == ESP_IMAGE_APPLICATION) {
             unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
+            if ((IS_FIELD_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
                 ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
                          max_rev / 100, max_rev % 100,
                          major_rev, minor_rev);
