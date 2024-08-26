@@ -271,10 +271,10 @@ _err:
         }
 
         for (int i = 0; i < thread->work_queue_num; i++) {
-            if (thread->work_queues[i]) {
+            if (thread->work_queues && thread->work_queues[i]) {
                 osi_work_queue_delete(thread->work_queues[i]);
+                thread->work_queues[i] = NULL;
             }
-            thread->work_queues[i] = NULL;
         }
 
         if (thread->work_queues) {

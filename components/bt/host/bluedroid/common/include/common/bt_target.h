@@ -2378,12 +2378,6 @@ The maximum number of payload octets that the local device can receive in a sing
 #define BTSNOOP_MEM FALSE
 #endif
 
-#if UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
-#else
-#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
-#endif
-
 #include "common/bt_trace.h"
 
 #endif /* BT_TARGET_H */
