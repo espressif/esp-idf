@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_debug_helpers.h"
+#include "esp_private/panic_reason.h"
+#include "esp_private/panic_internal.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_private/freertos_debug.h"
 #include "esp_err.h"
 #include "esp_attr.h"
-#include "riscv/rvruntime-frames.h"
+#include "esp_private/esp_cpu_internal.h"
+#include <string.h>
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
@@ -47,12 +50,17 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
 
     void *frame = snapshot.pxTopOfStack;
 
+    esp_cpu_frame_t backtrace_frame = {};
+    memcpy(&backtrace_frame, frame, sizeof(esp_cpu_frame_t));
+
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    esp_rom_printf("Print CPU %d (current core) backtrace\n", current_core);
-    esp_eh_frame_print_backtrace(frame);
+    esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) backtrace\n", current_core);
+    esp_eh_frame_print_backtrace(&frame);
 #else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    esp_rom_printf("Print CPU %d (current core) registers\n", current_core);
-    panic_print_registers(frame, current_core);
+    esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) registers\n", current_core);
+    panic_prepare_frame_from_ctx(&backtrace_frame);
+
+    panic_print_registers(&backtrace_frame, current_core);
     esp_rom_printf("\r\n");
 #endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
