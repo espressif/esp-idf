@@ -323,8 +323,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 This option sets compiler optimization level (gcc -O argument) for the app.
 
-                - The "Debug" setting will add the -0g flag to CFLAGS.
-                - The "Size" setting will add the -0s flag to CFLAGS.
+                - The "Debug" setting will add the -Og flag to CFLAGS.
+                - The "Size" setting will add the -Os flag to CFLAGS (-Oz with Clang).
                 - The "Performance" setting will add the -O2 flag to CFLAGS.
                 - The "None" setting will add the -O0 flag to CFLAGS.
 
@@ -345,7 +345,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             config COMPILER_OPTIMIZATION_DEBUG
                 bool "Debug (-Og)"
             config COMPILER_OPTIMIZATION_SIZE
-                bool "Optimize for size (-Os)"
+                bool "Optimize for size (-Os with GCC, -Oz with Clang)"
             config COMPILER_OPTIMIZATION_PERF
                 bool "Optimize for performance (-O2)"
             config COMPILER_OPTIMIZATION_NONE
