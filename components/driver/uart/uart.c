@@ -1969,7 +1969,7 @@ static esp_err_t uart_create_sleep_retention_link_cb(void *arg)
     sleep_retention_module_t module = UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num);
     esp_err_t err = sleep_retention_entries_create(uart_reg_retention_info[uart_num].regdma_entry_array,
                                                    uart_reg_retention_info[uart_num].array_size,
-                                                   REGDMA_LINK_PRI_7, module);
+                                                   REGDMA_LINK_PRI_UART, module);
     ESP_RETURN_ON_ERROR(err, UART_TAG, "create retention link failed");
     return ESP_OK;
 }
