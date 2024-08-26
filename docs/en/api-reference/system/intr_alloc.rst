@@ -94,7 +94,7 @@ To illustrate why shared interrupts can only be level-triggered, take the scenar
 IRAM-Safe Interrupt Handlers
 ----------------------------
 
-When performing write and erase operations on SPI flash, the {IDF_TARGET_NAME} will disable the cache, making SPI flash and SPIRAM inaccessible for interrupt handlers. This is why there are two types of interrupt handlers in ESP-IDF, which have their advantages and disadvantages:
+When performing write and erase operations on SPI flash, {IDF_TARGET_NAME} will disable the cache, making SPI flash and SPIRAM inaccessible for interrupt handlers. This is why there are two types of interrupt handlers in ESP-IDF, which have their advantages and disadvantages:
 
 **IRAM-safe interrupt handlers** - only access code and data in internal memory (IRAM for code, DRAM for data).
 

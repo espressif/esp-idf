@@ -170,21 +170,30 @@ Doxygen 支持多种格式，并支持文档内部的多个详情级别，具有
 构建文档
 -----------
 
-文档由基于 `Sphinx <https://www.sphinx-doc.org/>`_ 的 Python 包 `esp-docs` 进行构建。
+要构建文档，请先安装以下依赖项：
 
-安装命令::
+1. 安装 `Doxygen <https://www.doxygen.nl/manual/install.html>`_。
+2. 如果已经通过运行 ``./install.sh`` 设置好了所需的 `工具 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/linux-macos-setup.html#get-started-set-up-tools>`_，请运行以下命令，启用文档构建功能：
 
-    pip install esp-docs
+    .. code-block:: bash
 
-安装成功后，使用如下命令在 docs 文件夹中构建文档::
+        ./install.sh --enable-docs
+
+    上述操作将安装 ``esp-docs`` Python 包。该包是 `Sphinx <https://www.sphinx-doc.org/>`_ 的一个封装器，用于构建 ESP-IDF 文档。
+
+安装好依赖项后，进入 ``docs`` 文件夹并运行以下命令构建文档：
+
+.. code-block:: bash
 
     build-docs build
 
-或使用以下命令指定目标芯片和语言::
+也可以通过指定目标和语言，仅构建所需的文档，从而加快构建过程：
+
+.. code-block:: bash
 
     build-docs -t esp32 -l en build
 
-如需深入了解 `esp-docs` 的功能，请参考 `esp-docs <https://docs.espressif.com/projects/esp-docs/en/latest/>`_。
+更多详细信息，请参阅 `esp-docs <https://docs.espressif.com/projects/esp-docs/en/latest/>`_。
 
 小结
 ------

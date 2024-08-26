@@ -173,13 +173,13 @@ Building Documentation
 To build documentation, start by installing the dependencies:
 
 1. Install `Doxygen <https://www.doxygen.nl/manual/install.html>`_.
-2. Chances are you already set up the required `tools <https://docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-macos-setup.html#step-3-set-up-the-tools>`_ by running ``./install.sh``. To enable building docs, you need to run:
+2. Chances are you already set up the required `tools <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#step-3-set-up-the-tools>`_ by running ``./install.sh``. To enable building docs, you need to run:
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      ./install.sh --enable-docs
+        ./install.sh --enable-docs
 
-  This action will install the ``esp-docs`` Python package. This package is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_ and is required to build ESP-IDF documentation.
+    This action will install the ``esp-docs`` Python package. This package is a wrapper around `Sphinx <https://www.sphinx-doc.org/>`_ and is required to build ESP-IDF documentation.
 
 After installing the dependencies, go to the ``docs`` folder and run the following to build the documentation:
 
