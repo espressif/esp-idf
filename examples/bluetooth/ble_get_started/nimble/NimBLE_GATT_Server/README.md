@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # NimBLE GATT Server Example
 
@@ -69,7 +69,7 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 In this example, we call GATT `gatt_svr_init` function to initialize GATT server in `app_main` before NimBLE host configuration. This is a custom function defined in `gatt_svc.c`, and basically we just call GATT service initialization API and add services to registration queue.
 
-And there's another code added in `nimble_host_config_init`, which is 
+And there's another code added in `nimble_host_config_init`, which is
 
 ``` C
 static void nimble_host_config_init(void) {
@@ -147,7 +147,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                                          .val_handle = &led_chr_val_handle},
                                         {0}},
     },
-    
+
     {
         0, /* No more services. */
     },
@@ -301,12 +301,12 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
         /* GATT subscribe event callback */
         gatt_svr_subscribe_cb(event);
         return rc;
-    
+
     ...
 }
 ```
 
-Then we'll check connection handle and attribute handle, if the attribute handle matches `heart_rate_chr_val_chandle`, `heart_rate_chr_conn_handle` and `heart_rate_ind_status` will be updated together. 
+Then we'll check connection handle and attribute handle, if the attribute handle matches `heart_rate_chr_val_chandle`, `heart_rate_chr_conn_handle` and `heart_rate_ind_status` will be updated together.
 
 ``` C
 void gatt_svr_subscribe_cb(struct ble_gap_event *event) {

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # NimBLE Connection Example
 
@@ -71,7 +71,7 @@ Please refer to the NimBLE Beacon Example for details.
 
 ### Start Advertising
 
-There're some slight differences in this example when compared to NimBLE Beacon Example. First, in this example we are constructing a connectable peripheral, so connection mode is set to connectable, that is 
+There're some slight differences in this example when compared to NimBLE Beacon Example. First, in this example we are constructing a connectable peripheral, so connection mode is set to connectable, that is
 
 ``` C
 static void start_advertising(void) {
@@ -201,7 +201,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
 
 #### Disconnect Event
 
-On disconnect event, we simply 
+On disconnect event, we simply
 
 1. Print out disconnect reason and connection descriptor
 2. Turn off the LED
@@ -254,7 +254,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
         }
         print_conn_desc(&desc);
         return rc;
-        
+
     ...
 }
 ```
