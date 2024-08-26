@@ -27,6 +27,10 @@
 #include "esp_hidh.h"
 #include "esp_hid_gap.h"
 
+#if CONFIG_BT_HID_HOST_ENABLED
+static const char *remote_device_name = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
+#endif // CONFIG_BT_HID_HOST_ENABLED
+
 static const char *TAG = "ESP_HIDH_DEMO";
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
@@ -119,16 +123,26 @@ void hid_demo_task(void *pvParameters)
                 printf("] srv 0x%03x, ", r->bt.cod.service);
                 print_uuid(&r->bt.uuid);
                 printf(", ");
+                if (strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
+                    break;
+                }
             }
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
             printf("NAME: %s ", r->name ? r->name : "");
             printf("\n");
             r = r->next;
         }
+
+#if CONFIG_BT_HID_HOST_ENABLED
+        if (cr && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
+            esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
+        }
+#else
         if (cr) {
             //open the last result
             esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
         }
+#endif // CONFIG_BT_HID_HOST_ENABLED
         //free the results
         esp_hid_scan_results_free(results);
     }
