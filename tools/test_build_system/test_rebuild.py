@@ -1,15 +1,21 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # These tests check whether the build system rebuilds some files or not
 # depending on the changes to the project.
 import logging
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List
+from typing import Union
 
 import pytest
-from test_build_system_helpers import (ALL_ARTIFACTS, APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, IdfPyFunc,
-                                       get_snapshot, replace_in_file)
+from test_build_system_helpers import ALL_ARTIFACTS
+from test_build_system_helpers import APP_BINS
+from test_build_system_helpers import BOOTLOADER_BINS
+from test_build_system_helpers import get_snapshot
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import PARTITION_BIN
+from test_build_system_helpers import replace_in_file
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -18,7 +24,9 @@ def test_rebuild_no_changes(idf_py: IdfPyFunc) -> None:
     idf_py('build')
     logging.info('get the first snapshot')
     # excluding the 'log' subdirectory here since it changes after every build
-    all_build_files = get_snapshot('build/**/*', exclude_patterns='build/log/*')
+    all_build_files = get_snapshot('build/**/*', exclude_patterns=['build/log/*',
+                                                                   'build/CMakeFiles/bootloader-complete',
+                                                                   'build/bootloader-prefix/src/bootloader-stamp/bootloader-done'])
 
     logging.info('check that all build artifacts were generated')
     for artifact in ALL_ARTIFACTS:
@@ -27,7 +35,9 @@ def test_rebuild_no_changes(idf_py: IdfPyFunc) -> None:
     logging.info('build again with no changes')
     idf_py('build')
     # if there are no changes, nothing gets rebuilt
-    all_build_files_after_rebuild = get_snapshot('build/**/*', exclude_patterns='build/log/*')
+    all_build_files_after_rebuild = get_snapshot('build/**/*', exclude_patterns=['build/log/*',
+                                                                                 'build/CMakeFiles/bootloader-complete',
+                                                                                 'build/bootloader-prefix/src/bootloader-stamp/bootloader-done'])
     all_build_files_after_rebuild.assert_same(all_build_files)
 
 
