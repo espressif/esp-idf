@@ -48,4 +48,11 @@ menu "Echo RS485 Example Configuration"
             See UART documentation for more information about available pin
             numbers for UART.
 
+    config ECHO_TASK_STACK_SIZE
+        int "UART echo RS485 example task stack size"
+        range 1024 16384
+        default 3072
+        help
+            Defines stack size for UART echo RS485 example. Insufficient stack size can cause crash.
+
 endmenu

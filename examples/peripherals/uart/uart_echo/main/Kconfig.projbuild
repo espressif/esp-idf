@@ -38,7 +38,7 @@ menu "Echo Example Configuration"
     config EXAMPLE_TASK_STACK_SIZE
         int "UART echo example task stack size"
         range 1024 16384
-        default 2048
+        default 3072
         help
             Defines stack size for UART echo example. Insufficient stack size can cause crash.
 
