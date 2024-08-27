@@ -1374,6 +1374,11 @@ RingbufHandle_t xRingbufferCreateWithCaps(size_t xBufferSize, RingbufferType_t x
     StaticRingbuffer_t *pxStaticRingbuffer;
     uint8_t *pucRingbufferStorage;
 
+    //Allocate memory
+    if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
+        xBufferSize = rbALIGN_SIZE(xBufferSize);    //xBufferSize is rounded up for no-split/allow-split buffers
+    }
+
     pxStaticRingbuffer = heap_caps_malloc(sizeof(StaticRingbuffer_t), (uint32_t)uxMemoryCaps);
     pucRingbufferStorage = heap_caps_malloc(xBufferSize, (uint32_t)uxMemoryCaps);
 
