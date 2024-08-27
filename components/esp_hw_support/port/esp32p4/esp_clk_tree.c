@@ -51,8 +51,9 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     case SOC_MOD_CLK_MPLL:
         clk_src_freq = clk_ll_mpll_get_freq_mhz(clk_hal_xtal_get_freq_mhz()) * MHZ;
         break;
-    // case SOC_MOD_CLK_APLL: TODO: IDF-8884
-    //     break;
+    case SOC_MOD_CLK_APLL:
+        clk_src_freq = clk_hal_apll_get_freq_hz();
+        break;
     // case SOC_MOD_CLK_SDIO_PLL: TODO: IDF-8886
     //     break;
     case SOC_MOD_CLK_RTC_SLOW:

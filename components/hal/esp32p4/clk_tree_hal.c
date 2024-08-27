@@ -81,6 +81,20 @@ IRAM_ATTR uint32_t clk_hal_xtal_get_freq_mhz(void)
     return freq;
 }
 
+uint32_t clk_hal_apll_get_freq_hz(void)
+{
+    uint64_t xtal_freq_hz = (uint64_t)clk_hal_xtal_get_freq_mhz() * 1000000ULL;
+    uint32_t o_div = 0;
+    uint32_t sdm0 = 0;
+    uint32_t sdm1 = 0;
+    uint32_t sdm2 = 0;
+    clk_ll_apll_get_config(&o_div, &sdm0, &sdm1, &sdm2);
+    uint32_t numerator = ((4 + sdm2) << 16) | (sdm1 << 8) | sdm0;
+    uint32_t denominator = (o_div + 2) << 17;
+    uint32_t apll_freq_hz = (uint32_t)((xtal_freq_hz * numerator) / denominator);
+    return apll_freq_hz;
+}
+
 void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
 {
     clk_ll_set_dbg_clk_ctrl(clk_sig, channel_id);
