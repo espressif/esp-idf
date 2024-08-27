@@ -288,8 +288,8 @@ variables:
     git remote add origin "${CI_REPOSITORY_URL}"
   fi
 
-.git_checkout_fetch_head: &git_checkout_fetch_head |
-  git checkout FETCH_HEAD
+.git_checkout_ci_commit_sha: &git_checkout_ci_commit_sha |
+  git checkout $CI_COMMIT_SHA
   git clean ${GIT_CLEAN_FLAGS}
 
 # git diff requires two commits, with different CI env var
@@ -313,6 +313,7 @@ variables:
         git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA)
+        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
       # merge request pipelines, when the mr got conflicts
       elif [[ -n $CI_MERGE_REQUEST_DIFF_BASE_SHA ]]; then
         git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
@@ -328,7 +329,7 @@ variables:
         git fetch origin $CI_COMMIT_SHA --depth=2 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_SHA~1 $CI_COMMIT_SHA)
       fi
-    - *git_checkout_fetch_head
+    - *git_checkout_ci_commit_sha
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
@@ -342,7 +343,7 @@ variables:
     - *git_init
     - *git_fetch_from_mirror_url_if_exists
     - git fetch origin "${CI_COMMIT_SHA}" --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-    - *git_checkout_fetch_head
+    - *git_checkout_ci_commit_sha
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
