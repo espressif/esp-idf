@@ -76,5 +76,16 @@ menu "ESP NETIF Adapter"
         default n
         help
             Enable LwIP IEEE 802.1D bridge support in ESP-NETIF. Note that "Number of clients store data in netif"
-            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge avaiable!
+            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge available!
+
+    config ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        bool "Enable DNS server per interface"
+        default n
+        select LWIP_DNS_SETSERVER_WITH_NETIF
+        help
+            Enable this option to use the DNS server which belongs to the selected default network interface.
+            This feature collects DNS server and netif information from LWIP core modules.
+            Whenever a new default netif is selected, global DNS servers in LWIP are updated with the netif
+            related servers.
+
 endmenu
