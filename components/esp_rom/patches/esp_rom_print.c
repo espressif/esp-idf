@@ -14,34 +14,52 @@
 #include "rom/ets_sys.h"
 #include "sdkconfig.h"
 
-#if !ESP_ROM_HAS_VPRINTF_FUNC
-static int _cvt(unsigned long long val, char *buf, long radix, const char *digits)
+int esp_rom_cvt(unsigned long long val, long radix, int pad, const char *digits, char *buf)
 {
-#ifdef SUPPORT_LITTLE_RADIX
-    char temp[64];
-#else
-    char temp[32];
-#endif
-    char *cp = temp;
+    char *orig_buf = buf;
     int length = 0;
 
-    if (val == 0) {
-        /* Special case */
-        *cp++ = '0';
-    } else {
-        while (val) {
-            *cp++ = digits[val % radix];
-            val /= radix;
-        }
+    if (radix <= 0 || digits == NULL || buf == NULL) {
+        return 0;
     }
-    while (cp != temp) {
-        *buf++ = *--cp;
+
+    // The comments below show an example of the conversion process for val = 123 and pad = 6
+    do {
+        *buf++ = digits[val % radix];
+        val /= radix;
+        length++;
+    } while (val);
+    //        3   2   1
+    // buf = [0] [1] [2] [3]
+
+    // length = 3, pad = 6
+    while (pad > 0 && pad > length) {
+        *buf++ = '0';
         length++;
     }
     *buf = '\0';
+    // length = 6
+    //        3   2   1   0   0   0  \0
+    // buf = [0] [1] [2] [3] [4] [5] [6]
+
+    --buf;
+    // reverse the order of characters
+    //             3   2   1   0   0   0  \0
+    //            [0] [1] [2] [3] [4] [5] [6]
+    // orig_buf -- ^                   ^ ----- buf
+    while (orig_buf < buf) {
+        char first_char = *orig_buf;
+        char last_char = *buf;
+        *buf-- = first_char;
+        *orig_buf++ = last_char;
+    }
+    //        0   0   0   1   2   3  \0
+    // buf = [0] [1] [2] [3] [4] [5] [6]
+
     return (length);
 }
 
+#if !ESP_ROM_HAS_VPRINTF_FUNC
 #define is_digit(c) ((c >= '0') && (c <= '9'))
 static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
 {
@@ -151,14 +169,14 @@ static int ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap)
                 case 'D':
                 case 'u':
                 case 'U':
-                    length = _cvt(val, buf, 10, "0123456789");
+                    length = esp_rom_cvt(val, 10, 0, "0123456789", buf);
                     break;
                 case 'p':
                 case 'x':
-                    length = _cvt(val, buf, 16, "0123456789abcdef");
+                    length = esp_rom_cvt(val, 16, 0, "0123456789abcdef", buf);
                     break;
                 case 'X':
-                    length = _cvt(val, buf, 16, "0123456789ABCDEF");
+                    length = esp_rom_cvt(val, 16, 0, "0123456789ABCDEF", buf);
                     break;
                 }
                 cp = buf;
