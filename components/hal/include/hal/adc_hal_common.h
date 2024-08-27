@@ -26,7 +26,7 @@ typedef enum adc_hal_work_mode_t {
     ADC_HAL_SINGLE_READ_MODE,
     ADC_HAL_CONTINUOUS_READ_MODE,
     ADC_HAL_PWDET_MODE,
-    ADC_HAL_ULP_FSM_MODE,
+    ADC_HAL_LP_MODE,
 } adc_hal_work_mode_t;
 
 /**
@@ -61,7 +61,7 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
 /**
  * @brief Initialize default parameter for the calibration block.
  *
- * @param adc_n ADC index numer
+ * @param adc_n ADC index number
  */
 void adc_hal_calibration_init(adc_unit_t adc_n);
 

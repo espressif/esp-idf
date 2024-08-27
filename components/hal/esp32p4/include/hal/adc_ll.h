@@ -39,6 +39,7 @@ extern "C" {
 ---------------------------------------------------------------*/
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
+#define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (2)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
 
 /*---------------------------------------------------------------
@@ -616,8 +617,8 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
                 break;
             case ADC_LL_CTRL_ULP:
                 LP_ADC.meas1_mux.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
-                LP_ADC.meas1_ctrl2.meas1_start_force  = 0;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
-                LP_ADC.meas1_ctrl2.sar1_en_pad_force  = 0;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+                LP_ADC.meas1_ctrl2.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+                LP_ADC.meas1_ctrl2.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
                 break;
             case ADC_LL_CTRL_DIG:
                 LP_ADC.meas1_mux.sar1_dig_force       = 1;    // 1: Select digital control;       0: Select RTC control.
@@ -636,8 +637,8 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
                 break;
             case ADC_LL_CTRL_ULP:
                 LP_ADC.meas2_mux.sar2_rtc_force       = 0;    // 1: Select digital control;       0: Select RTC control.
-                LP_ADC.meas2_ctrl2.meas2_start_force  = 0;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
-                LP_ADC.meas2_ctrl2.sar2_en_pad_force  = 0;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
+                LP_ADC.meas2_ctrl2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
+                LP_ADC.meas2_ctrl2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
                 break;
             case ADC_LL_CTRL_DIG:
                 LP_ADC.meas2_mux.sar2_rtc_force       = 0;    // 1: Select digital control;       0: Select RTC control.
