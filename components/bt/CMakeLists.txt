@@ -501,13 +501,15 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/common/common.c"
                     "esp_ble_mesh/common/kernel.c"
                     "esp_ble_mesh/common/mutex.c"
+                    "esp_ble_mesh/common/queue.c"
                     "esp_ble_mesh/common/timer.c"
                     "esp_ble_mesh/common/utils.c"
                     "esp_ble_mesh/core/storage/settings_nvs.c"
                     "esp_ble_mesh/core/storage/settings_uid.c"
                     "esp_ble_mesh/core/storage/settings.c"
                     "esp_ble_mesh/core/access.c"
-                    "esp_ble_mesh/core/adv.c"
+                    "esp_ble_mesh/core/adv_common.c"
+                    "esp_ble_mesh/core/ble_adv.c"
                     "esp_ble_mesh/core/beacon.c"
                     "esp_ble_mesh/core/cfg_cli.c"
                     "esp_ble_mesh/core/cfg_srv.c"
@@ -578,6 +580,11 @@ if(CONFIG_BT_ENABLED)
         else()
             list(APPEND srcs
                         "esp_ble_mesh/core/transport.c")
+        endif()
+        if(CONFIG_BLE_MESH_SUPPORT_MULTI_ADV)
+            list(APPEND srcs "esp_ble_mesh/core/ext_adv.c")
+        else()
+            list(APPEND srcs "esp_ble_mesh/core/adv.c")
         endif()
     endif()
 
