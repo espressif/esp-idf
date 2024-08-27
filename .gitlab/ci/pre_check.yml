@@ -169,6 +169,26 @@ pipeline_variables:
     expire_in: 1 week
     when: always
 
+baseline_manifest_sha:
+  extends:
+    - .pre_check_template
+    - .rules:dev-push
+  tags: [fast_run, shiny]
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1
+        git checkout FETCH_HEAD
+        idf-build-apps dump-manifest-sha \
+          --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
+          --output .manifest_sha
+      fi
+  artifacts:
+    paths:
+      - .manifest_sha
+    expire_in: 1 week
+    when: always
+
 redundant_pass_job:
   stage: pre_check
   tags: [shiny, fast_run]
