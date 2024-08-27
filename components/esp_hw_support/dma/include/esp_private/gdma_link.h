@@ -71,7 +71,7 @@ typedef struct {
         uint32_t mark_final: 1; /*!< Whether to terminate the DMA link list at this item.
                                      Note, DMA engine will stop at this item and trigger an interrupt.
                                      If `mark_final` is not set, this list item will point to the next item, and
-                                     wrap around to the head item if it's the one in the list. */
+                                     wrap around to the head item if it's the last one in the list. */
     } flags; //!< Flags for buffer mount configurations
 } gdma_buffer_mount_config_t;
 
@@ -106,6 +106,27 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_i
 uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list);
 
 /**
+ * @brief Concatenate two link lists as follows:
+ *
+ *        Link A: A1 --> A2 --> A3 --> A4
+ *                    | item_index
+ *                    +-----+
+ *                          |
+ *                          v item_index
+ *        Link B: B1 --> B2 --> B3 --> B4
+ *
+ * @param[in] first_link First link list handle, allocated by `gdma_new_link_list`
+ * @param[in] first_link_item_index Index of the item in the first link list (-1 means the last item)
+ * @param[in] second_link Second link list handle, allocated by `gdma_new_link_list`
+ * @param[in] second_link_item_index Index of the item in the second link list (-1 means the last item)
+ * @return
+ *      - ESP_OK: Concatenate the link lists successfully
+ *      - ESP_ERR_INVALID_ARG: Concatenate the link lists failed because of invalid argument
+ *      - ESP_FAIL: Concatenate the link lists failed because of other error
+ */
+esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_item_index, gdma_link_list_handle_t second_link, int second_link_item_index);
+
+/**
  * @brief GDMA link list item owner
  */
 typedef enum {
@@ -117,7 +138,7 @@ typedef enum {
  * @brief Set the ownership for a DMA link list item
  *
  * @param[in] list Link list handle, allocated by `gdma_new_link_list`
- * @param[in] item_index Index of the link list item
+ * @param[in] item_index Index of the link list item (-1 means the last item)
  * @param[in] owner Ownership
  * @return
  *      - ESP_OK: Set the ownership successfully
@@ -130,7 +151,7 @@ esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma
  * @brief Get the ownership of a DMA link list item
  *
  * @param[in] list Link list handle, allocated by `gdma_new_link_list`
- * @param[in] item_index Index of the link list item
+ * @param[in] item_index Index of the link list item (-1 means the last item)
  * @param[out] owner Ownership
  * @return
  *      - ESP_OK: Get the ownership successfully
