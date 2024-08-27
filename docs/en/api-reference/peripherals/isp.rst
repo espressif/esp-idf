@@ -65,6 +65,7 @@ The ISP driver offers following services:
 -  `Get histogram statistics in one shot or continuous way <#isp-hist-statistics>`__ - covers how to get histogram statistics one-shot or continuously.
 -  `Enable BF function <#isp_bf>`__ - covers how to enable and configure BF function.
 -  `Configure CCM <#isp-ccm-config>`__ - covers how to configure the Color Correction Matrix.
+-  `Configure Demosaic <#isp-demosaic>`__ - covers how to config the Demosaic function.
 -  `Enable Gamma Correction <#isp-gamma-correction>`__ - covers how to enable and configure gamma correction.
 -  `Configure Sharpen <#isp-sharpen>`__ - covers how to config the Sharpen function.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
@@ -196,31 +197,18 @@ If the configurations in :cpp:type:`esp_isp_hist_config_t` is specified, users c
 
 You can use the created handle to do driver enable / disable the ISP HIST driver setup.
 
-Uninstall ISP Driver
-~~~~~~~~~~~~~~~~~~~~
-
-If a previously installed ISP processor is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_isp_del_processor`, so that to release the underlying hardware.
-
-UnInstall ISP AF Driver
+Uninstall ISP Driver(s)
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-If a previously installed ISP AF processor is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_isp_del_af_controller`, so that to release the underlying hardware.
+If a previously installed ISP driver(s) are not needed, it's recommended to recycle the resource by following APIs to release the underlying hardware:
 
-UnInstall ISP AWB Driver
-~~~~~~~~~~~~~~~~~~~~~~~~
+.. list::
 
-If a previously installed ISP AWB processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_awb_controller`, it will also release the underlying hardware.
-
-UnInstall ISP AE Driver
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-If a previously installed ISP AE processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_ae_controller`, it will also release the underlying hardware.
-
-UnInstall ISP HIST Driver
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If a previously installed ISP HIST processor is no longer needed, it's recommended to free the resource by calling :cpp:func:`esp_isp_del_hist_controller`, it will also release the underlying hardware.
-
+    - :cpp:func:`esp_isp_del_processor`, for ISP processor.
+    - :cpp:func:`esp_isp_del_af_controller`, for ISP AF processor.
+    - :cpp:func:`esp_isp_del_awb_controller`, for ISP AWB processor.
+    - :cpp:func:`esp_isp_del_ae_controller`, for ISP AE processor.
+    - :cpp:func:`esp_isp_del_hist_controller`, for ISP Histogram processor.
 
 .. _isp-enable-disable:
 
@@ -555,6 +543,36 @@ To adjust the color correction matrix, here is the formula:
     // Disable CCM if no longer needed
     ESP_ERROR_CHECK(esp_isp_ccm_disable(isp_proc));
 
+.. _isp-demosaic:
+
+ISP Demosaic Processor
+~~~~~~~~~~~~~~~~~~~~~~
+
+This pipeline is used for doing image demosaic algorithm to convert RAW image to RGB mode.
+
+Calling :cpp:func:`esp_isp_demosaic_configure` to configure Demosaic function, you can take following code as reference.
+
+.. code:: c
+
+    esp_isp_demosaic_config_t demosaic_config = {
+        .grad_ratio = {
+            .integer = 2,
+            .decimal = 5,
+        },
+        ...
+    };
+
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &sharpen_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_demosaic_configure`, you need to enable the ISP Sharpen processor, by calling :cpp:func:`esp_isp_demosaic_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_demosaic_disable` does the opposite, that is, put the driver back to the **init** state.
+
+:cpp:func:`esp_isp_demosaic_configure` is allowed to be called even if the driver is in **init** state, but the demosaic configurations will only be taken into effect when in **enable** state.
+
 .. _isp-gamma-correction:
 
 Enable Gamma Correction
@@ -595,7 +613,7 @@ ISP Sharpen Processor
 
 This pipeline is used for doing image input sharpening under YUV mode.
 
-Calling :cpp:func:`esp_isp_sharpen_configure` to configure BF function, you can take following code as reference.
+Calling :cpp:func:`esp_isp_sharpen_configure` to configure Sharpen function, you can take following code as reference.
 
 .. code:: c
 
@@ -677,7 +695,22 @@ After the ISP HIST controller finished statistics of brightness, it can generate
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`esp_isp_new_processor`, :cpp:func:`esp_isp_del_processor`, :cpp:func:`esp_isp_new_af_controller`, :cpp:func:`esp_isp_del_af_controller`, :cpp:func:`esp_isp_new_ae_controller` and :cpp:func:`esp_isp_del_ae_controller` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks. Other APIs are not guaranteed to be thread-safe
+The factory function
+
+.. list::
+
+    - :cpp:func:`esp_isp_new_processor`
+    - :cpp:func:`esp_isp_del_processor`
+    - :cpp:func:`esp_isp_new_af_controller`
+    - :cpp:func:`esp_isp_del_af_controller`
+    - :cpp:func:`esp_isp_new_awb_controller`
+    - :cpp:func:`esp_isp_del_awb_controller`
+    - :cpp:func:`esp_isp_new_ae_controller`
+    - :cpp:func:`esp_isp_del_ae_controller`
+    - :cpp:func:`esp_isp_new_hist_controller`
+    - :cpp:func:`esp_isp_del_hist_controller`
+
+are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks. Other APIs are not guaranteed to be thread-safe.
 
 .. _isp-kconfig-options:
 
@@ -704,7 +737,11 @@ This allows the interrupt to run while the cache is disabled, but comes at the c
 Kconfig option :ref:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` will:
 
 - Place some of ISP control functions into IRAM, function list:
+
+.. list::
+
   - :cpp:func:`esp_isp_sharpen_configure`
+  - :cpp:func:`esp_isp_demosaic_configure`
 
 Application Examples
 --------------------
@@ -721,6 +758,7 @@ API Reference
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
 .. include-build-file:: inc/isp_ccm.inc
+.. include-build-file:: inc/isp_demosaic.inc
 .. include-build-file:: inc/isp_sharpen.inc
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc
