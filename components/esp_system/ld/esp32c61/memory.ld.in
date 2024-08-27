@@ -63,12 +63,7 @@ MEMORY
   /**
    * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
    */
-#if CONFIG_ULP_COPROC_ENABLED
-  lp_ram_seg(RW)  :                 org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                    len = 0x4000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM
-#else
   lp_ram_seg(RW)  :                 org = 0x50000000, len = 0x4000 - RESERVE_RTC_MEM
-#endif // CONFIG_ULP_COPROC_ENABLED
 
   /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
      It reserves the amount of LP memory that we use for this memory segment.
