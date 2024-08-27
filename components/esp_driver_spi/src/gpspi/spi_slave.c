@@ -347,16 +347,20 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
         esp_err_t ret = esp_cache_msync((void *)priv_trans->tx_buffer, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         ESP_RETURN_ON_FALSE_ISR(ESP_OK == ret, ESP_ERR_INVALID_STATE, SPI_TAG, "mem sync c2m(writeback) fail");
     }
-    if (spihost[host]->dma_enabled && trans->rx_buffer && (!esp_ptr_dma_capable(trans->rx_buffer) || ((((uint32_t)trans->rx_buffer) | (trans->length + 7) / 8) & (alignment - 1)))) {
-        ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "RX buffer addr&len not align to %d, or not dma_capable", alignment);
-        //if rxbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
-        ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
-        buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"
-        priv_trans->rx_buffer = heap_caps_aligned_alloc(alignment, buffer_byte_len, MALLOC_CAP_DMA);
-        if (priv_trans->rx_buffer == NULL) {
-            free(priv_trans->tx_buffer);
-            return ESP_ERR_NO_MEM;
+    if (spihost[host]->dma_enabled && trans->rx_buffer) {
+        if ((!esp_ptr_dma_capable(trans->rx_buffer) || ((((uint32_t)trans->rx_buffer) | (trans->length + 7) / 8) & (alignment - 1)))) {
+            ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "RX buffer addr&len not align to %d, or not dma_capable", alignment);
+            //if rxbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
+            ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
+            buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"
+            priv_trans->rx_buffer = heap_caps_aligned_alloc(alignment, buffer_byte_len, MALLOC_CAP_DMA);
+            if (priv_trans->rx_buffer == NULL) {
+                free(priv_trans->tx_buffer);
+                return ESP_ERR_NO_MEM;
+            }
         }
+        esp_err_t ret = esp_cache_msync((void *)priv_trans->rx_buffer, buffer_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        ESP_RETURN_ON_FALSE_ISR(ESP_OK == ret, ESP_ERR_INVALID_STATE, SPI_TAG, "mem sync m2c(invalid) fail");
     }
 #endif  //SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     return ESP_OK;
