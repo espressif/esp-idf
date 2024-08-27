@@ -174,9 +174,7 @@
 #define SOC_CPU_HAS_FPU_EXT_ILL_BUG     1       // EXT_ILL CSR doesn't support FLW/FSW
 #define SOC_CPU_HAS_HWLOOP              1
 /* PIE coprocessor assembly is only supported with GCC compiler  */
-#ifndef __clang__
 #define SOC_CPU_HAS_PIE                 1
-#endif
 
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 
