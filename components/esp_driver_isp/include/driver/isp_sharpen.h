@@ -18,7 +18,7 @@ extern "C" {
  * @brief ISP Sharpen configurations
  */
 typedef struct {
-    isp_sharpen_h_freq_coeff h_freq_coeff;                                                  ///< High freq pixel sharpeness coeff
+    isp_sharpen_h_freq_coeff_t h_freq_coeff;                                                ///< High freq pixel sharpeness coeff
     isp_sharpen_m_freq_coeff m_freq_coeff;                                                  ///< Medium freq pixel sharpeness coeff
     uint8_t h_thresh;                                                                       ///< High threshold, pixel value higher than this threshold will be multiplied by `h_freq_coeff`
     uint8_t l_thresh;                                                                       ///< Low threshold, pixel value higher than this threshold but lower than `h_thresh` will be multiplied by `m_freq_coeff`. Pixel value lower than this threshold will be set to 0

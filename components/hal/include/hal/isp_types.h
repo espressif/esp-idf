@@ -162,6 +162,39 @@ typedef enum {
 #endif
 
 /*---------------------------------------------------------------
+                      Demosaic
+---------------------------------------------------------------*/
+#if SOC_ISP_DEMOSAIC_SUPPORTED
+#define ISP_DEMOSAIC_GRAD_RATIO_INT_BITS    SOC_ISP_DEMOSAIC_GRAD_RATIO_INT_BITS
+#define ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS    SOC_ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS
+#define ISP_DEMOSAIC_GRAD_RATIO_RES_BITS    SOC_ISP_DEMOSAIC_GRAD_RATIO_RES_BITS
+#else
+#define ISP_DEMOSAIC_GRAD_RATIO_INT_BITS    8
+#define ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS    8
+#define ISP_DEMOSAIC_GRAD_RATIO_RES_BITS    16
+#endif
+
+/**
+ * @brief Gradient ratio
+ */
+typedef union {
+    struct {
+        uint32_t decimal:ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS;    ///< Integer part
+        uint32_t integer:ISP_DEMOSAIC_GRAD_RATIO_INT_BITS;    ///< Decimal part
+        uint32_t reserved:ISP_DEMOSAIC_GRAD_RATIO_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;                                             ///< 32-bit gradient ratio value
+} isp_demosaic_grad_ratio_t;
+
+/**
+ * @brief ISP Demosaic edge padding mode
+ */
+typedef enum {
+    ISP_DEMOSAIC_EDGE_PADDING_MODE_SRND_DATA,      ///< Fill Demosaic edge padding data with surrounding pixel data
+    ISP_DEMOSAIC_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill Demosaic edge padding data with custom pixel data
+} isp_demosaic_edge_padding_mode_t;
+
+/*---------------------------------------------------------------
                       DVP
 ---------------------------------------------------------------*/
 #if SOC_ISP_DVP_DATA_WIDTH_MAX
@@ -203,7 +236,7 @@ typedef union {
         uint32_t reserved:ISP_SHARPEN_H_FREQ_COEF_RES_BITS;   ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit high freq pixel sharpeness coeff register value
-} isp_sharpen_h_freq_coeff;
+} isp_sharpen_h_freq_coeff_t;
 
 /**
  * @brief Medium freq pixel sharpeness coeff

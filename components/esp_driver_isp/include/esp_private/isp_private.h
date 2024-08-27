@@ -70,6 +70,7 @@ typedef struct isp_processor_t {
     isp_ae_ctlr_t               ae_ctlr;
     isp_hist_ctlr_t             hist_ctlr;
     isp_fsm_t                   bf_fsm;
+    isp_fsm_t                   demosaic_fsm;
     isp_fsm_t                   sharpen_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
