@@ -203,6 +203,10 @@ config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 128
 
+config SOC_CPU_HAS_LOCKUP_RESET
+    bool
+    default y
+
 config SOC_DMA_CAN_ACCESS_FLASH
     bool
     default y

@@ -532,6 +532,16 @@ The backtrace should point to the function where stack smashing has occurred. Ch
     .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: Stack overflow
 
+
+.. only:: SOC_CPU_HAS_LOCKUP_RESET
+
+    CPU Lockup
+    ^^^^^^^^^^
+    A CPU lockup reset happens when there is a double exception, i.e. when an exception occurs while the CPU is already in an exception handler. The most common cause for this is when the cache is in such a state that accessing external memory not possible. If this is the case then the panic handler will crash as well due to being unable to fetch instructions or read data.
+
+    If this is the case you can try placing the panic handler code in IRAM, which can be accessed when cache is disabled, to get more information about the cause of the lockup. This can be done with :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
+
+
 Undefined Behavior Sanitizer (UBSAN) Checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
