@@ -55,7 +55,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
     esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) backtrace\n", current_core);
-    esp_eh_frame_print_backtrace(&frame);
+    esp_eh_frame_print_backtrace(frame);
 #else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
     esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) registers\n", current_core);
     panic_prepare_frame_from_ctx(&backtrace_frame);
