@@ -635,6 +635,20 @@ typedef enum {
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
 
+///////////////////////////////////////////////LP_ADC///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of LP_ADC
+ */
+#define SOC_LP_ADC_CLKS {SOC_MOD_CLK_LP_DYN_FAST}
+
+/**
+ * @brief LP ADC controller clock source
+ */
+typedef enum {
+    LP_ADC_CLK_SRC_LP_DYN_FAST = SOC_MOD_CLK_LP_DYN_FAST,   /*!< Select LP_DYN_FAST as the source clock */
+} soc_periph_lp_adc_clk_src_t;
+
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**
