@@ -17,7 +17,7 @@
 
 static ieee802154_pending_table_t ieee802154_pending_table;
 
-#define GET_MASK_ITEM_FROM_TABLE(mask, pos) (mask[(pos + 1) / IEEE802154_PENDING_TABLE_MASK_BITS])
+#define GET_MASK_ITEM_FROM_TABLE(mask, pos) (mask[(pos) / IEEE802154_PENDING_TABLE_MASK_BITS])
 
 #define BIT_SET(mask, pos) (GET_MASK_ITEM_FROM_TABLE(mask, pos) |= (1UL << (pos % IEEE802154_PENDING_TABLE_MASK_BITS)))
 #define BIT_CLR(mask, pos) (GET_MASK_ITEM_FROM_TABLE(mask, pos) &= ~(1UL << (pos % IEEE802154_PENDING_TABLE_MASK_BITS)))
