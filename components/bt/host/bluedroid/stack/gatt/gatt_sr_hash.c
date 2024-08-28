@@ -76,7 +76,7 @@ static size_t calculate_database_info_size(void)
                     // Included service declaration
                     len += 8 + p_attr->p_value->incl_handle.service_type.len;
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
-                    tBT_UUID char_uuid;
+                    tBT_UUID char_uuid = {0};
                     // Characteristic declaration
                     p_attr = (tGATT_ATTR16 *)p_attr->p_next;
                     attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
@@ -126,7 +126,7 @@ static void fill_database_info(UINT8 *p_data)
                     UINT16_TO_STREAM(p_data, p_attr->p_value->incl_handle.e_handle);
                     gatt_build_uuid_to_stream(&p_data, p_attr->p_value->incl_handle.service_type);
                 } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
-                    tBT_UUID char_uuid;
+                    tBT_UUID char_uuid = {0};
                     // Characteristic declaration
                     UINT16_TO_STREAM(p_data, p_attr->handle);
                     UINT16_TO_STREAM(p_data, GATT_UUID_CHAR_DECLARE);
@@ -225,7 +225,7 @@ void gatts_show_local_database(void)
                     printf("\tend_handle %d\n", p_attr->p_value->incl_handle.e_handle);
                     break;
                 case GATT_UUID_CHAR_DECLARE: {
-                    tBT_UUID char_uuid;
+                    tBT_UUID char_uuid = {0};
                     tGATT_ATTR16 *p_char_val;
                     p_char_val = (tGATT_ATTR16 *)p_attr->p_next;
                     attr_uuid_to_bt_uuid((void *)p_char_val, &char_uuid);
