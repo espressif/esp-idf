@@ -141,15 +141,15 @@ bool psram_support_wrap_size(uint32_t wrap_size)
 }
 
 //Read ID operation only supports SPI CMD and mode, should issue `psram_disable_qio_mode` before calling this
-static void psram_read_id(int spi_num, uint32_t* dev_id)
+static void psram_read_id(int spi_num, uint8_t* dev_id, int id_bits)
 {
     psram_exec_cmd(spi_num, PSRAM_HAL_CMD_SPI,
                    PSRAM_DEVICE_ID, 8,               /* command and command bit len*/
                    0, 24,                            /* address and address bit len*/
                    0,                                /* dummy bit len */
                    NULL, 0,                          /* tx data and tx bit len*/
-                   (uint8_t*) dev_id, 24,            /* rx data and rx bit len*/
-                   PSRAM_LL_CS_SEL,                     /* cs bit mask*/
+                   dev_id, id_bits,                  /* rx data and rx bit len*/
+                   PSRAM_LL_CS_SEL,                  /* cs bit mask*/
                    false);                           /* whether is program/erase operation */
 }
 
@@ -216,7 +216,25 @@ static void s_config_psram_clock(void)
 #endif
     psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_0, clock_conf);
 }
-#endif
+#endif  //#if !SOC_SPI_MEM_SUPPORT_TIMING_TUNING
+
+/**
+ * For certain wafer version and 8MB case, we consider it as 4MB mode as it uses 2T mode
+ */
+bool s_check_aps3204_2tmode(void)
+{
+    uint64_t full_eid = 0;
+    psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&full_eid, PSRAM_EID_BITS_NUM);
+
+    bool is_2t = false;
+    uint32_t eid_47_16 = __builtin_bswap32((full_eid >> 16) & UINT32_MAX);
+    ESP_EARLY_LOGD(TAG, "full_eid: 0x%" PRIx64", eid_47_16: 0x%"PRIx32", (eid_47_16 >> 5) & 0xfffff: 0x%"PRIx32, full_eid, eid_47_16, (eid_47_16 >> 5) & 0xfffff);
+    if (((eid_47_16 >> 5) & 0xfffff) == 0x8a445) {
+        is_2t = true;
+    }
+
+    return is_2t;
+}
 
 esp_err_t esp_psram_impl_enable(void)
 {
@@ -232,13 +250,13 @@ esp_err_t esp_psram_impl_enable(void)
 
     //We use SPI1 to init PSRAM
     psram_disable_qio_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
-    psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, &psram_id);
+    psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&psram_id, PSRAM_ID_BITS_NUM);
     if (!PSRAM_IS_VALID(psram_id)) {
         /* 16Mbit psram ID read error workaround:
          * treat the first read id as a dummy one as the pre-condition,
          * Send Read ID command again
          */
-        psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, &psram_id);
+        psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&psram_id, PSRAM_ID_BITS_NUM);
         if (!PSRAM_IS_VALID(psram_id)) {
             ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)psram_id);
             return ESP_ERR_NOT_SUPPORTED;
@@ -247,13 +265,15 @@ esp_err_t esp_psram_impl_enable(void)
 
     if (PSRAM_IS_64MBIT_TRIAL(psram_id)) {
         s_psram_size = PSRAM_SIZE_8MB;
-    } else if (PSRAM_IS_2T_APS3204(psram_id)) {
-        s_psram_size = PSRAM_SIZE_4MB;
     } else {
         uint8_t density = PSRAM_SIZE_ID(psram_id);
         s_psram_size = density == 0x0 ? PSRAM_SIZE_2MB :
                        density == 0x1 ? PSRAM_SIZE_4MB :
                        density == 0x2 ? PSRAM_SIZE_8MB : 0;
+    }
+
+    if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_aps3204_2tmode()) {
+        s_psram_size = PSRAM_SIZE_4MB;
     }
 
     //SPI1: send psram reset command
