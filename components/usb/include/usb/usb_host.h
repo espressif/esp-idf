@@ -219,8 +219,10 @@ esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
  * @note If 'usb_host_config_t.root_port_unpowered' was set on USB Host Library installation, users must call this
  *       function to power ON the root port before any device connections can occur.
  *
- * @param enable True to power the root port ON, false to power OFF
- * @return esp_err_t
+ * @param[in] enable True to power the root port ON, false to power OFF
+ * @return
+ *    - ESP_OK: Root port power enabled/disabled
+ *    - ESP_ERR_INVALID_STATE: Root port already powered or HUB driver not installed
  */
 esp_err_t usb_host_lib_set_root_port_power(bool enable);
 

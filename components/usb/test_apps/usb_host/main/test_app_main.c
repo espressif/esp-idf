@@ -31,6 +31,7 @@ void tearDown(void)
     // Short delay to allow task to be cleaned up
     vTaskDelay(10);
     // Clean up USB Host
+    printf("USB Host uninstall\n");
     ESP_ERROR_CHECK(usb_host_uninstall());
     // Short delay to allow task to be cleaned up after client uninstall
     vTaskDelay(10);
