@@ -177,6 +177,7 @@ void msc_client_async_enum_task(void *arg)
             if (enum_iter < TEST_ENUM_ITERATIONS) {
                 // Start the next test iteration by disconnecting the device, then going back to TEST_STAGE_WAIT_CONN stage
                 usb_host_lib_set_root_port_power(false);
+                vTaskDelay(10); // Yield to USB Host task so it can handle the disconnection
                 usb_host_lib_set_root_port_power(true);
                 msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
                 skip_event_handling = true; // Need to execute TEST_STAGE_WAIT_CONN
