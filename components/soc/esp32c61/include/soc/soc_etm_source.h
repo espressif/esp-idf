@@ -86,9 +86,6 @@
 #define I2S1_EVT_TX_DONE                        78
 #define I2S1_EVT_X_WORDS_RECEIVED               79
 #define I2S1_EVT_X_WORDS_SENT                   80
-#define ULP_EVT_ERR_INTR                        81
-#define ULP_EVT_HALT                            82
-#define ULP_EVT_START_INTR                      83
 #define RTC_EVT_TICK                            84
 #define RTC_EVT_OVF                             85
 #define RTC_EVT_CMP                             86
@@ -229,8 +226,6 @@
 #define I2S1_TASK_START_TX                      116
 #define I2S1_TASK_STOP_RX                       117
 #define I2S1_TASK_STOP_TX                       118
-#define ULP_TASK_WAKEUP_CPU                     119
-#define ULP_TASK_INT_CPU                        120
 #define RTC_TASK_START                          121
 #define RTC_TASK_STOP                           122
 #define RTC_TASK_CLR                            123

@@ -20,7 +20,6 @@
 #include "esp_private/rtc_ctrl.h"
 #include "esp_attr.h"
 
-//TODO: [ESP32C61] IDF-9331, c61 don't have lp-core, check
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
