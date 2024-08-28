@@ -16,11 +16,15 @@
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
-#include "hal/key_mgr_hal.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
 #include "soc/keymng_reg.h"
-#endif
+#include "soc/pcr_reg.h"
+#else /* CONFIG_IDF_TARGET_ESP32C5 */
+#include "hal/key_mgr_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
+#endif /* !CONFIG_IDF_TARGET_ESP32C5 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 #include "soc/sensitive_reg.h"
@@ -217,18 +221,25 @@ static esp_err_t check_and_generate_encryption_keys(void)
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
 
-#if SOC_KEY_MANAGER_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32C5 && SOC_KEY_MANAGER_SUPPORTED
-    // TODO: [ESP32C5] IDF-8622 find a more proper place for these codes
-    REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
     REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
     REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
-#endif
+#else /* CONFIG_IDF_TARGET_ESP32C5 */
+    // Enable and reset key manager
+    // To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
+    key_mgr_ll_enable_bus_clock(true);
+    key_mgr_ll_enable_peripheral_clock(true);
+    key_mgr_ll_reset_register();
+    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
+    };
     // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
     _mspi_timing_ll_reset_mspi();
-#endif
-
+#endif /* !CONFIG_IDF_TARGET_ESP32C5 */
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
     return ESP_OK;
 }
 
