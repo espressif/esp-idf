@@ -88,8 +88,10 @@ static void msc_data_transfer_cb(usb_transfer_t *transfer)
     // The data stage should have either completed, or failed due to the disconnection.
     TEST_ASSERT(transfer->status == USB_TRANSFER_STATUS_COMPLETED || transfer->status == USB_TRANSFER_STATUS_NO_DEVICE);
     if (transfer->status == USB_TRANSFER_STATUS_COMPLETED) {
+        printf("Data transfer completed\n");
         TEST_ASSERT_EQUAL(transfer->num_bytes, transfer->actual_num_bytes);
     } else {
+        printf("Data transfer NOT completed: No device\n");
         TEST_ASSERT_EQUAL(0, transfer->actual_num_bytes);
     }
     msc_client_obj_t *msc_obj = (msc_client_obj_t *)transfer->context;
@@ -238,7 +240,7 @@ void msc_client_async_dconn_task(void *arg)
             break;
         }
         case TEST_STAGE_MSC_DATA_DCONN: {
-            ESP_LOGD(MSC_CLIENT_TAG, "Data and disconnect");
+            ESP_LOGD(MSC_CLIENT_TAG, "Data (%d transfers) and disconnect", msc_obj.num_data_transfers);
             // Setup the Data IN transfers
             const usb_ep_desc_t *in_ep_desc = dev_msc_get_in_ep_desc(msc_obj.dev_speed);
             const int bulk_ep_mps = USB_EP_DESC_GET_MPS(in_ep_desc);
@@ -259,8 +261,11 @@ void msc_client_async_dconn_task(void *arg)
             ESP_LOGD(MSC_CLIENT_TAG, "Close");
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(msc_obj.client_hdl, msc_obj.dev_hdl, msc_obj.dev_info->bInterfaceNumber));
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(msc_obj.client_hdl, msc_obj.dev_hdl));
-            dconn_iter++;
-            if (dconn_iter < TEST_DCONN_ITERATIONS) {
+            vTaskDelay(10); // Yield to USB Host task so it can handle the disconnection
+
+            // The device has disconnected and it's disconnection has been handled
+            printf("Dconn iter %d done\n", dconn_iter);
+            if (++dconn_iter < TEST_DCONN_ITERATIONS) {
                 // Start the next test iteration by going back to TEST_STAGE_WAIT_CONN and reenabling connections
                 msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
                 skip_event_handling = true; // Need to execute TEST_STAGE_WAIT_CONN
