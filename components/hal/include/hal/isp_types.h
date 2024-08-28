@@ -23,6 +23,19 @@ typedef soc_periph_isp_clk_src_t    isp_clk_src_t;     ///< Clock source type of
 typedef int                         isp_clk_src_t;     ///< Default type
 #endif
 
+/*
+              ISP window and subwindow
+  +----------------------------------------------------------+
+  | <-- top left point coordinate                            |
+  |  | subwindow[0][0]     |......| subwindow[0][Y_NUM]|     |
+  |  .                                                       |
+  |  .                                                       |
+  |  .                                                       |
+  |  | subwindow[X_NUM][0] |......| subwindow[X_NUM][Y_NUM]| |
+  |                        bottom right point coordinate --> |
+  +----------------------------------------------------------+
+*/
+
 /**
  * @brief ISP coordinate type
  *
@@ -33,8 +46,7 @@ typedef struct {
 } isp_coordinate_t;
 
 /**
- * @brief ISP window type
- *
+ * @brief  The top left and bottom right coordinates of ISP full window
  */
 typedef struct {
     isp_coordinate_t top_left;       ///< The top left point coordinate
@@ -181,14 +193,13 @@ typedef enum {
 #define ISP_SHARPEN_M_FREQ_COEF_RES_BITS    16
 #endif
 
-
 /**
  * @brief High freq pixel sharpeness coeff
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_SHARPEN_H_FREQ_COEF_DEC_BITS;    ///< Integer part
-        uint32_t integer:ISP_SHARPEN_H_FREQ_COEF_INT_BITS;    ///< Decimal part
+        uint32_t decimal:ISP_SHARPEN_H_FREQ_COEF_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_SHARPEN_H_FREQ_COEF_INT_BITS;    ///< Integer part
         uint32_t reserved:ISP_SHARPEN_H_FREQ_COEF_RES_BITS;   ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit high freq pixel sharpeness coeff register value
@@ -199,8 +210,8 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t decimal:ISP_SHARPEN_M_FREQ_COEF_DEC_BITS;    ///< Integer part
-        uint32_t integer:ISP_SHARPEN_M_FREQ_COEF_INT_BITS;    ///< Decimal part
+        uint32_t decimal:ISP_SHARPEN_M_FREQ_COEF_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_SHARPEN_M_FREQ_COEF_INT_BITS;    ///< Integer part
         uint32_t reserved:ISP_SHARPEN_M_FREQ_COEF_RES_BITS;   ///< Reserved
     };
     uint32_t val;                                             ///< 32-bit medium freq pixel sharpeness coeff register value
@@ -234,6 +245,87 @@ typedef struct {
         uint8_t y;                      ///< gamma-corrected value (0, 255]
     } pt[ISP_GAMMA_CURVE_POINTS_NUM];   ///< Point (x, y)
 } isp_gamma_curve_points_t;
+
+/*---------------------------------------------------------------
+                      HIST
+---------------------------------------------------------------*/
+#if (SOC_ISP_HIST_BLOCK_X_NUMS && SOC_ISP_HIST_BLOCK_Y_NUMS)
+#define ISP_HIST_BLOCK_X_NUM        SOC_ISP_HIST_BLOCK_X_NUMS      // The AF window number for sampling
+#define ISP_HIST_BLOCK_Y_NUM        SOC_ISP_HIST_BLOCK_Y_NUMS      // The AF window number for sampling
+#else
+#define ISP_HIST_BLOCK_X_NUM        0
+#define ISP_HIST_BLOCK_Y_NUM        0
+#endif
+
+#if (SOC_ISP_HIST_SEGMENT_NUMS && SOC_ISP_HIST_INTERVAL_NUMS)
+#define ISP_HIST_SEGMENT_NUMS       SOC_ISP_HIST_SEGMENT_NUMS      // The segment of histogram
+#define ISP_HIST_INTERVAL_NUMS      SOC_ISP_HIST_INTERVAL_NUMS     // The interval of histogram
+#else
+#define ISP_HIST_SEGMENT_NUMS       0
+#define ISP_HIST_INTERVAL_NUMS      0
+#endif
+
+#define ISP_HIST_WEIGHT_INT_BITS    8
+#define ISP_HIST_WEIGHT_DEC_BITS    7
+#define ISP_HIST_WEIGHT_RES_BITS    17
+#define ISP_HIST_COEFF_INT_BITS     8
+#define ISP_HIST_COEFF_DEC_BITS     7
+#define ISP_HIST_COEFF_RES_BITS     17
+
+/**
+ * @brief ISP histogram mode.
+*/
+typedef enum {
+    ISP_HIST_SAMPLING_RAW_B,            ///< histogram mode for B component of raw image
+    ISP_HIST_SAMPLING_RAW_GB,           ///< histogram mode for GB component of raw image
+    ISP_HIST_SAMPLING_RAW_GR,           ///< histogram mode for GR component of raw image
+    ISP_HIST_SAMPLING_RAW_R,            ///< histogram mode for R component of raw image
+    ISP_HIST_SAMPLING_RGB,              ///< histogram mode for RGB
+    ISP_HIST_SAMPLING_YUV_Y,            ///< histogram mode for Y component for YUV
+    ISP_HIST_SAMPLING_YUV_U,            ///< histogram mode for U component for YUV
+    ISP_HIST_SAMPLING_YUV_V,            ///< histogram mode for V component for YUV
+} isp_hist_sampling_mode_t;
+
+/**
+ * @brief ISP histogram weight value
+*/
+typedef union {
+    struct {
+        uint32_t decimal:ISP_HIST_WEIGHT_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_HIST_WEIGHT_INT_BITS;    ///< Integer part
+        uint32_t reserved:ISP_HIST_WEIGHT_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;   ///< 32-bit histogram weight value
+} isp_hist_weight_t;
+
+/**
+ * @brief ISP histogram coefficient value
+*/
+typedef union {
+    struct {
+        uint32_t decimal:ISP_HIST_COEFF_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_HIST_COEFF_INT_BITS;    ///< Integer part
+        uint32_t reserved:ISP_HIST_COEFF_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;   ///< 32-bit histogram coefficient value
+} isp_hist_coeff_t;
+
+/**
+ * @brief ISP histogram r,g,b coefficient
+*/
+typedef struct {
+    isp_hist_coeff_t coeff_r;          ///< R coefficient
+    isp_hist_coeff_t coeff_g;          ///< G coefficient
+    isp_hist_coeff_t coeff_b;          ///< B coefficient
+} isp_hist_rgb_coefficient_t;
+
+/**
+ * @brief ISP histogram result.
+*/
+typedef struct {
+    uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];  ///< Histogram value, represents the number of pixels that the histogram window's brightness results fall into the segment X.
+} isp_hist_result_t;
+
 
 #ifdef __cplusplus
 }

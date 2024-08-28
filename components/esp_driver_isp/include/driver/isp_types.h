@@ -76,6 +76,11 @@ typedef struct isp_awb_controller_t *isp_awb_ctlr_t;
  */
 typedef struct isp_ae_controller_t *isp_ae_ctlr_t;
 
+/**
+ * @brief Type of ISP HIST controller handle
+ */
+typedef struct isp_hist_controller_t *isp_hist_ctlr_t;
+
 /*---------------------------------------------
                 Event Callbacks
 ----------------------------------------------*/

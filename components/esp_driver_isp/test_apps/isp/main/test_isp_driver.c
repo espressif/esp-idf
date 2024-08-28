@@ -327,3 +327,124 @@ TEST_CASE("ISP AE controller exhausted allocation", "[isp]")
     }
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));
 }
+
+static bool test_isp_hist_default_on_statistics_done_cb(isp_hist_ctlr_t hist_ctlr, const esp_isp_hist_evt_data_t *edata, void *user_data)
+{
+    (void) hist_ctlr;
+    (void) edata;
+    (void) user_data;
+    // Do nothing
+    return false;
+}
+
+/*---------------------------------------------------------------
+                      HIST
+---------------------------------------------------------------*/
+TEST_CASE("ISP HIST driver basic function", "[isp]")
+{
+    esp_isp_processor_cfg_t isp_config = {
+        .clk_hz = 80 * 1000 * 1000,
+        .input_data_source = ISP_INPUT_DATA_SOURCE_CSI,
+        .input_data_color_type = ISP_COLOR_RAW8,
+        .output_data_color_type = ISP_COLOR_RGB565,
+    };
+    isp_proc_handle_t isp_proc = NULL;
+    TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
+    TEST_ESP_OK(esp_isp_enable(isp_proc));
+
+    isp_hist_ctlr_t hist_ctlr = NULL;
+    isp_hist_result_t hist_res = {};
+
+    /* Test when sum of weight is not 256 */
+    esp_isp_hist_config_t hist_config_error = {
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{15, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
+    };
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_isp_new_hist_controller(isp_proc, &hist_config_error, &hist_ctlr));
+
+    esp_isp_hist_config_t hist_config = {
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
+    };
+    TEST_ESP_OK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr));
+
+    /* Register HIST callback */
+    esp_isp_hist_cbs_t hist_cb = {
+        .on_statistics_done = test_isp_hist_default_on_statistics_done_cb,
+    };
+    TEST_ESP_OK(esp_isp_hist_register_event_callbacks(hist_ctlr, &hist_cb, NULL));
+    /* Enabled the hist controller */
+    TEST_ESP_OK(esp_isp_hist_controller_enable(hist_ctlr));
+    /* Start continuous HIST statistics */
+    TEST_ESP_OK(esp_isp_hist_controller_start_continuous_statistics(hist_ctlr));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_isp_hist_controller_get_oneshot_statistics(hist_ctlr, 0, &hist_res));
+    /* Stop continuous HIST statistics */
+    TEST_ESP_OK(esp_isp_hist_controller_stop_continuous_statistics(hist_ctlr));
+    TEST_ESP_ERR(ESP_ERR_TIMEOUT, esp_isp_hist_controller_get_oneshot_statistics(hist_ctlr, 1, &hist_res));
+    /* Disable the hist controller */
+    TEST_ESP_OK(esp_isp_hist_controller_disable(hist_ctlr));
+    /* Delete the hist controller and free the resources */
+    TEST_ESP_OK(esp_isp_del_hist_controller(hist_ctlr));
+
+    TEST_ESP_OK(esp_isp_disable(isp_proc));
+    TEST_ESP_OK(esp_isp_del_processor(isp_proc));
+}
+
+TEST_CASE("ISP HIST controller exhausted allocation", "[isp]")
+{
+    esp_isp_processor_cfg_t isp_config = {
+        .clk_hz = 80 * 1000 * 1000,
+        .input_data_source = ISP_INPUT_DATA_SOURCE_CSI,
+        .input_data_color_type = ISP_COLOR_RAW8,
+        .output_data_color_type = ISP_COLOR_RGB565,
+    };
+    isp_proc_handle_t isp_proc = NULL;
+    TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
+
+    esp_isp_hist_config_t hist_config = {
+        .segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .hist_mode = ISP_HIST_SAMPLING_RGB,
+        .rgb_coefficient.coeff_r = {{86, 0}},
+        .rgb_coefficient.coeff_g = {{85, 0}},
+        .rgb_coefficient.coeff_b = {{85, 0}},
+        .window_weight = {
+            {{16, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+            {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}}, {{10, 0}},
+        },
+    };
+
+    isp_hist_ctlr_t hist_ctlr[SOC_ISP_HIST_CTLR_NUMS + 1] = {};
+    for (int i = 0; i < SOC_ISP_HIST_CTLR_NUMS; i++) {
+        TEST_ESP_OK(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr[i]));
+    }
+
+    TEST_ASSERT(esp_isp_new_hist_controller(isp_proc, &hist_config, &hist_ctlr[SOC_ISP_HIST_CTLR_NUMS]) == ESP_ERR_NOT_FOUND);
+
+    for (int i = 0; i < SOC_ISP_HIST_CTLR_NUMS; i++) {
+        TEST_ESP_OK(esp_isp_del_hist_controller(hist_ctlr[i]));
+    }
+    TEST_ESP_OK(esp_isp_del_processor(isp_proc));
+}

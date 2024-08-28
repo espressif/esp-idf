@@ -18,3 +18,4 @@
 #include "driver/isp_bf.h"
 #include "driver/isp_ccm.h"
 #include "driver/isp_sharpen.h"
+#include "driver/isp_hist.h"

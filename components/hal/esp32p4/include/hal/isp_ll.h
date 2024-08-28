@@ -68,6 +68,7 @@ extern "C" {
 #define ISP_LL_EVENT_AE_MASK                  (ISP_LL_EVENT_AE_FDONE | ISP_LL_EVENT_AE_ENV)
 #define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE)
 #define ISP_LL_EVENT_SHARP_MASK               (ISP_LL_EVENT_SHARP_FRAME)
+#define ISP_LL_EVENT_HIST_MASK                (ISP_LL_EVENT_HIST_FDONE)
 
 /*---------------------------------------------------------------
                       AF
@@ -1612,6 +1613,113 @@ static inline void isp_ll_gamma_set_correction_curve(isp_dev_t *hw, color_compon
 
     hw->gamma_ctrl.gamma_update = 1;
     while (hw->gamma_ctrl.gamma_update);
+}
+
+/*---------------------------------------------------------------
+                      HIST
+---------------------------------------------------------------*/
+/**
+ * @brief enable histogram clock
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] enable true: enable the clock. false: disable the clock
+*/
+static inline void isp_ll_hist_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_hist_force_on = enable;
+}
+
+/**
+ * @brief Set histogram subwindow weight
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] window_weight array for window weight
+*/
+static inline void isp_ll_hist_set_subwindow_weight(isp_dev_t *hw, const isp_hist_weight_t hist_window_weight[SOC_ISP_HIST_BLOCK_X_NUMS * SOC_ISP_HIST_BLOCK_Y_NUMS])
+{
+    for (int i = 0; i < SOC_ISP_HIST_BLOCK_X_NUMS * SOC_ISP_HIST_BLOCK_Y_NUMS; i++) {
+        // On ESP32P4, hist_weight [7,0] are decimal
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_weight[i / 4], hist_weight_b[3 - (i % 4)], hist_window_weight[i].decimal);
+    }
+}
+
+/**
+ * @brief Set histogram segment threshold
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] segment_threshold array for segment threshold
+*/
+static inline void isp_ll_hist_set_segment_threshold(isp_dev_t *hw, const uint32_t segment_threshold[SOC_ISP_HIST_INTERVAL_NUMS])
+{
+    for (int i = 0; i < SOC_ISP_HIST_INTERVAL_NUMS; i++) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_seg[i / 4], hist_seg_b[3 - (i % 4)], segment_threshold[i]);
+    }
+}
+
+/**
+ * @brief Set histogram window range
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] x_start   Top left pixel x axis value
+ * @param[in] x_bsize   Block size on x axis
+ * @param[in] y_start   Top left pixel y axis value
+ * @param[in] y_bsize   Block size on y axis
+ */
+static inline void isp_ll_hist_set_window_range(isp_dev_t *hw, int x_start, int x_bsize, int y_start, int y_bsize)
+{
+    hw->hist_offs.hist_x_offs = x_start;
+    hw->hist_offs.hist_y_offs = y_start;
+    hw->hist_size.hist_x_size = x_bsize;
+    hw->hist_size.hist_y_size = y_bsize;
+}
+
+/**
+ * @brief Enable / Disable histogram statistic
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] enable enable/disable
+*/
+static inline void isp_ll_hist_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.hist_en = enable;
+}
+
+/**
+ * @brief Get histogram value
+ *
+ * @param[in] hw Hardware instance address
+ * @param[out] histogram_value pointer to histogram result
+*/
+__attribute__((always_inline))
+static inline void isp_ll_hist_get_histogram_value(isp_dev_t *hw, uint32_t *histogram_value)
+{
+    for (int i = 0; i < SOC_ISP_HIST_SEGMENT_NUMS; i++) {
+        histogram_value[i] = hw->hist_binn[i].hist_bin_n;
+    }
+}
+
+/**
+ * @brief Set histogram sampling mode
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] hist_mode histogram mode
+*/
+static inline void isp_ll_hist_set_mode(isp_dev_t *hw, isp_hist_sampling_mode_t hist_mode)
+{
+    hw->hist_mode.hist_mode = hist_mode;
+}
+
+/**
+ * @brief Set histogram RGB coefficients, only effect when hist_mode is ISP_HIST_SAMPLING_RGB
+ *
+ * @param[in] hw Hardware instance address
+ * @param[in] rgb_coeff RGB coefficients
+*/
+static inline void isp_ll_hist_set_rgb_coefficient(isp_dev_t *hw, const isp_hist_rgb_coefficient_t *rgb_coeff)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_r, rgb_coeff->coeff_r.decimal);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_g, rgb_coeff->coeff_g.decimal);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hist_coeff, hist_coeff_b, rgb_coeff->coeff_b.decimal);
 }
 
 #ifdef __cplusplus

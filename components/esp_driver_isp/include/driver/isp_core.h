@@ -30,7 +30,7 @@ typedef struct {
     bool has_line_end_packet;                     ///< Enable line end packet
     uint32_t h_res;                               ///< Input horizontal resolution, i.e. the number of pixels in a line
     uint32_t v_res;                               ///< Input vertical resolution, i.e. the number of lines in a frame
-    int intr_priority;                            ///< The interrupt priority, range 0~3
+    int intr_priority;                            ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
 } esp_isp_processor_cfg_t;
 
 /**
