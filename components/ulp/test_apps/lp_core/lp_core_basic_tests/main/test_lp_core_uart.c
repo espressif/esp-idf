@@ -352,6 +352,9 @@ static void hp_uart_write(void)
     /* Write data to LP UART */
     uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern) + sizeof(end_pattern));
 
+    /* Wait for the LP UART receive data done */
+    unity_wait_for_signal("LP UART recv data done");
+
     /* Uninstall the HP UART driver */
     uart_driver_delete(UART_NUM_1);
     vTaskDelay(1);
@@ -399,6 +402,9 @@ static void test_lp_uart_read(void)
     /* Verify test data */
     ESP_LOGI(TAG, "Verify Rx data");
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_rx_data, rx_data + data_idx, TEST_DATA_LEN);
+
+    /* Notify the HP UART data received done and delete the UART driver */
+    unity_send_signal("LP UART recv data done");
 }
 
 static void hp_uart_write_options(void)
@@ -437,6 +443,9 @@ static void hp_uart_write_options(void)
 
     /* Write data to LP UART */
     uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern) + sizeof(end_pattern));
+
+    /* Wait for the LP UART receive data done */
+    unity_wait_for_signal("LP UART recv data done");
 
     /* Uninstall the HP UART driver */
     uart_driver_delete(UART_NUM_1);
@@ -485,6 +494,9 @@ static void test_lp_uart_read_options(void)
     /* Verify test data */
     ESP_LOGI(TAG, "Verify Rx data");
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_rx_data, rx_data + data_idx, TEST_DATA_LEN);
+
+    /* Notify the HP UART data received done and delete the UART driver */
+    unity_send_signal("LP UART recv data done");
 }
 
 static void test_lp_uart_read_multi_byte(void)
@@ -531,6 +543,9 @@ static void test_lp_uart_read_multi_byte(void)
      * begin with garbage data which fills the initial part of the receive buffer. */
     ESP_LOGI(TAG, "Verify Rx data");
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_rx_data, rx_data + data_idx, TEST_DATA_LEN - 10);
+
+    /* Notify the HP UART data received done and delete the UART driver */
+    unity_send_signal("LP UART recv data done");
 }
 
 static void hp_uart_read_print(void)
