@@ -609,6 +609,9 @@ static esp_err_t s_spi_slave_hd_setup_priv_trans(spi_host_device_t host, spi_sla
         memcpy(priv_trans->aligned_buffer, orig_trans->data, orig_trans->len);
         esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync c2m(writeback) fail");
+    } else {
+        esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync m2c(invalid) fail");
     }
 #endif  //SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     return ESP_OK;
