@@ -714,8 +714,8 @@ menu "LWIP"
             int "The maximum number of pbufs queued on OOSEQ per pcb"
             depends on LWIP_TCP_QUEUE_OOSEQ
             range 0 12
-            default 4 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-            default 0 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 4 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+            default 0 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             help
                 If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
 
@@ -771,7 +771,7 @@ menu "LWIP"
 
         config LWIP_WND_SCALE
             bool "Support TCP window scale"
-            depends on SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            depends on (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             default n
             help
                 Enable this feature to support TCP window scaling.
