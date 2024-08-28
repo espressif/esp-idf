@@ -684,7 +684,10 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
 #else
-    i2c_ll_master_clr_bus(i2c_context[i2c_num].hal.dev, I2C_CLR_BUS_SCL_NUM);
+    i2c_ll_master_clr_bus(i2c_context[i2c_num].hal.dev, I2C_CLR_BUS_SCL_NUM, true);
+    while (i2c_ll_master_is_bus_clear_done(i2c_context[i2c_num].hal.dev)) {
+    }
+    i2c_ll_update(i2c_context[i2c_num].hal.dev);
 #endif
     return ESP_OK;
 }

@@ -46,6 +46,8 @@ static const char *TAG = "i2c.master";
 #define I2C_FIFO_LEN(port_num) (SOC_I2C_FIFO_LEN)
 #endif
 
+#define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
+
 // Use the platform to same master bus handle
 typedef struct i2c_master_bus_platform_t i2c_master_bus_platform_t;
 
@@ -57,6 +59,7 @@ static i2c_master_bus_platform_t s_platform;
 
 static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
 {
+    esp_err_t ret = ESP_OK;
 #if !SOC_I2C_SUPPORT_HW_CLR_BUS
     const int scl_half_period = 5; // use standard 100kHz data rate
     int i = 0;
@@ -83,9 +86,23 @@ static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
     i2c_common_set_pins(handle);
 #else
     i2c_hal_context_t *hal = &handle->hal;
-    i2c_ll_master_clr_bus(hal->dev, I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT);
+    i2c_ll_master_clr_bus(hal->dev, I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT, true);
+    // If the i2c master clear bus state machine got disturbed when its work, it would go into error state.
+    // The solution here is to use freertos tick counter to set time threshold. If its not return on time,
+    // return invalid state and turn off the state machine for avoiding its always wrong.
+    TickType_t start_tick = xTaskGetTickCount();
+    const TickType_t timeout_ticks = pdMS_TO_TICKS(I2C_CLR_BUS_TIMEOUT_MS);
+    while (i2c_ll_master_is_bus_clear_done(hal->dev)) {
+        if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+            ESP_LOGE(TAG, "clear bus failed.");
+            i2c_ll_master_clr_bus(hal->dev, 0, false);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+    }
+    i2c_ll_update(hal->dev);
 #endif
-    return ESP_OK;
+    return ret;
 }
 
 /**
@@ -97,6 +114,7 @@ static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
  */
 static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
 {
+    esp_err_t ret = ESP_OK;
     i2c_hal_context_t *hal = &i2c_master->base->hal;
 #if !SOC_I2C_SUPPORT_HW_FSM_RST
     i2c_hal_timing_config_t timing_config;
@@ -106,7 +124,7 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_master_get_filter(hal->dev, &filter_cfg);
 
     //to reset the I2C hw module, we need re-enable the hw
-    s_i2c_master_clear_bus(i2c_master->base);
+    ret = s_i2c_master_clear_bus(i2c_master->base);
     I2C_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
@@ -118,9 +136,9 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
 #else
     i2c_ll_master_fsm_rst(hal->dev);
-    s_i2c_master_clear_bus(i2c_master->base);
+    ret = s_i2c_master_clear_bus(i2c_master->base);
 #endif
-    return ESP_OK;
+    return ret;
 }
 
 static void s_i2c_err_log_print(i2c_master_event_t event, bool bypass_nack_log)
@@ -572,7 +590,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
     esp_err_t ret = ESP_OK;
     if (i2c_master->status == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(hal->dev)) {
-        s_i2c_hw_fsm_reset(i2c_master);
+        ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master), TAG, "reset hardware failed");
     }
 
     if (i2c_master->base->pm_lock) {
