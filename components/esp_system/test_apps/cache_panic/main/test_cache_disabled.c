@@ -60,7 +60,9 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 
 // This needs to sufficiently large array, otherwise it may end up in
 // DRAM (e.g. size <= 8 bytes && ARCH == RISCV)
-static const uint32_t s_in_rodata[8] = { 0x12345678, 0xfedcba98 };
+// And it needs to be >= and aligned to the cacheline size, otherwise it may be prefetched
+// to cache data memory before accessing it because of accessing other rodata in the same cacheline.
+static const __attribute__((aligned(128))) uint32_t s_in_rodata[32] = { 0x12345678, 0xfedcba98 };
 
 static void reset_after_invalid_cache(void)
 {
