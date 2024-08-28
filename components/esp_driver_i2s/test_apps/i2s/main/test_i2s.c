@@ -14,6 +14,7 @@
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
+#include "hal/dma_types.h"
 #include "esp_private/gpio.h"
 #include "esp_err.h"
 #include "esp_attr.h"
@@ -841,17 +842,25 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
 {
     /* Steps of calculate appropriate parameters of I2S buffer:
      * Known by user: sample_rate = 144k, data_bit_width = 32, slot_num = 2, polling_cycle = 10 ms
-     * 1. dma_buffer_size = dma_frame_num * slot_num * data_bit_width / 8 <= 4092
-     *    dma_frame_num <= 511, dma_frame_num is as big as possible.
+     * 1. dma_buffer_size = dma_frame_num * slot_num * data_bit_width / 8 <= DMA_MAX_ALIGNED_SIZE
+     *    dma_frame_num <= DMA_MAX_ALIGNED_SIZE / data_bit_width / slot_num * 8, dma_frame_num is as big as possible.
      *    interrupt_interval = dma_frame_num / sample_rate = 3.549 ms
      * 2. dma_desc_num > polling_cycle / interrupt_interval = cell(2.818) = 3
-     * 3. recv_buffer_size > dma_desc_num * dma_buffer_size = 3 * 4092 = 12276 bytes */
-#define TEST_RECV_BUF_LEN   12276
+     * 3. recv_buffer_size > dma_desc_num * dma_buffer_size = 3 * DMA_MAX_ALIGNED_SIZE */
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define TEST_RECV_BUF_LEN   (3 * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED)
+#else
+#define TEST_RECV_BUF_LEN   (3 * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED)
+#endif
     i2s_chan_handle_t rx_handle;
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num = 3;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    chan_cfg.dma_frame_num = 504;
+#else
     chan_cfg.dma_frame_num = 511;
+#endif
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),

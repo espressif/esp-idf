@@ -25,6 +25,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_hal.h"
 #include "hal/i2s_hal.h"
+#include "hal/dma_types.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
@@ -63,8 +64,12 @@
 #include "esp_memory_utils.h"
 
 /* The actual max size of DMA buffer is 4095
- * Set 4092 here to align with 4-byte, so that the position of the slot data in the buffer will be relatively fixed */
-#define I2S_DMA_BUFFER_MAX_SIZE     (4092)
+ * Reserve several bytes for alignment, so that the position of the slot data in the buffer will be relatively fixed */
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define I2S_DMA_BUFFER_MAX_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED
+#else
+#define I2S_DMA_BUFFER_MAX_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
+#endif  // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
 static const char *TAG = "i2s_common";
 
@@ -377,7 +382,7 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
                  ", bufsize = %"PRIu32, bufsize / bytes_per_frame, alignment, bufsize);
     }
 #endif
-    /* Limit DMA buffer size if it is out of range (DMA buffer limitation is 4092 bytes) */
+    /* Limit DMA buffer size if it is out of range */
     if (bufsize > I2S_DMA_BUFFER_MAX_SIZE) {
         uint32_t frame_num = I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame;
         bufsize = frame_num * bytes_per_frame;
