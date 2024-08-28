@@ -7,7 +7,7 @@ Hardware Reference
 .. toctree::
     :maxdepth: 1
 
-    Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
+    :not esp32p4: Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
     :esp32:   Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
     :esp32s2: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>
     :esp32s3: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf>
@@ -28,10 +28,10 @@ Hardware Reference
     :esp32c3: Silicon Errata (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>
     :esp32c2: Silicon Errata (PDF) <https://www.espressif.com/sites/default/files/documentation/esp8684_errata_en.pdf>
     Chip Variants <https://espressif.com/en/products/socs?id={IDF_TARGET_NAME}>
-    Modules <https://espressif.com/en/products/modules?id={IDF_TARGET_NAME}>
+    :not esp32p4: Modules <https://espressif.com/en/products/modules?id={IDF_TARGET_NAME}>
     Development Boards <https://www.espressif.com/en/products/devkits?id={IDF_TARGET_NAME}>
-    Espressif KiCad Library <https://github.com/espressif/kicad-libraries>
+    :not esp32p4: Espressif KiCad Library <https://github.com/espressif/kicad-libraries>
     ESP Product Selector <https://products.espressif.com/#/product-selector?names=>
-    Regulatory Certificates <https://www.espressif.com/en/certificates?keys={IDF_TARGET_NAME}>
+    :not esp32p4: Regulatory Certificates <https://www.espressif.com/en/certificates?keys={IDF_TARGET_NAME}>
     Chip Series Comparison <https://products.espressif.com/#/product-comparison>
     User Forum (Hardware) <https://esp32.com/viewforum.php?f=12>
