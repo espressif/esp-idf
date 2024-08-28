@@ -429,28 +429,39 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                      event->pathloss_threshold.zone_entered);
         return 0;
 #endif
+
 #if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
     case BLE_GAP_EVENT_EATT:
         MODLOG_DFLT(INFO, "EATT %s : conn_handle=%d cid=%d",
                 event->eatt.status ? "disconnected" : "connected",
                 event->eatt.conn_handle,
                 event->eatt.cid);
-    if (event->eatt.status) {
-        /* Abort if disconnected */
-        return 0;
-    }
-    cids[bearers] = event->eatt.cid;
-    bearers += 1;
-    if (bearers != MYNEWT_VAL(BLE_EATT_CHAN_NUM)) {
-        /* Wait until all EATT bearers are connected before proceeding */
-        return 0;
-    }
-    /* Set the default bearer to use for further procedures */
-    rc = ble_att_set_default_bearer_using_cid(event->eatt.conn_handle, cids[0]);
-    if (rc != 0) {
-        MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
-        return rc;
-    }
+	if (event->eatt.status) {
+		/* Abort if disconnected */
+		return 0;
+	}
+	cids[bearers] = event->eatt.cid;
+	bearers += 1;
+	if (bearers != MYNEWT_VAL(BLE_EATT_CHAN_NUM)) {
+		/* Wait until all EATT bearers are connected before proceeding */
+		return 0;
+	}
+	/* Set the default bearer to use for further procedures */
+	rc = ble_att_set_default_bearer_using_cid(event->eatt.conn_handle, cids[0]);
+	if (rc != 0) {
+		MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
+		return rc;
+	}
+
+	return 0;
+#endif
+
+#if MYNEWT_VAL(BLE_CONN_SUBRATING)
+    case BLE_GAP_EVENT_SUBRATE_CHANGE:
+        MODLOG_DFLT(INFO, "Subrate change event : conn_handle=%d status=%d factor=%d",
+                    event->subrate_change.conn_handle,
+                    event->subrate_change.status,
+                    event->subrate_change.subrate_factor);
         return 0;
 #endif
     }
