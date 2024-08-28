@@ -435,3 +435,7 @@
 -
     re: "unplaced orphan section"
     hint: "Avoid creating custom sections. Please refer to the 'Linker Script Generation' article in the IDF documentation to address this. Or set option CONFIG_COMPILER_ORPHAN_SECTIONS_PLACE (not recommended)."
+
+-
+    re: "the current mclk multiple cannot perform integer division"
+    hint: "Please adjust the mclk multiple to get the accurate sample rate.\nFor example, if you're using 24-bit slot width or enabled 3 slots, then the mclk multiple should be a multiple of 3, otherwise the sample rate will be inaccurate."
