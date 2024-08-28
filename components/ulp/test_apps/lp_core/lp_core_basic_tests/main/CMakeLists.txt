@@ -16,6 +16,10 @@ if(CONFIG_SOC_LP_CORE_SUPPORT_ETM AND CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND app_sources "test_lp_core_etm.c")
 endif()
 
+if(CONFIG_SOC_LP_ADC_SUPPORTED)
+    list(APPEND app_sources "test_lp_core_adc.c")
+endif()
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
@@ -36,6 +40,10 @@ endif()
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
     set(lp_core_sources_spi_master "lp_core/test_main_spi_master.c")
     set(lp_core_sources_spi_slave "lp_core/test_main_spi_slave.c")
+endif()
+
+if(CONFIG_SOC_LP_ADC_SUPPORTED)
+    set(lp_core_sources_adc "lp_core/test_main_adc.c")
 endif()
 
 idf_component_register(SRCS ${app_sources}
@@ -66,4 +74,8 @@ endif()
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_spi_master "${lp_core_sources_spi_master}" "${lp_core_exp_dep_srcs}")
     ulp_embed_binary(lp_core_test_app_spi_slave "${lp_core_sources_spi_slave}" "${lp_core_exp_dep_srcs}")
+endif()
+
+if(CONFIG_SOC_LP_ADC_SUPPORTED)
+    ulp_embed_binary(lp_core_test_app_adc "${lp_core_sources_adc}" "${lp_core_exp_dep_srcs}")
 endif()
