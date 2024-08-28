@@ -42,8 +42,8 @@ typedef struct {
     QueueHandle_t tx_ret_queue;
     QueueHandle_t rx_trans_queue;
     QueueHandle_t rx_ret_queue;
-    QueueHandle_t tx_cnting_sem;
-    QueueHandle_t rx_cnting_sem;
+    SemaphoreHandle_t tx_cnting_sem;
+    SemaphoreHandle_t rx_cnting_sem;
 
     spi_slave_hd_data_t *tx_desc;
     spi_slave_hd_data_t *rx_desc;
@@ -291,16 +291,14 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
     awoken |= intr_check_clear_callback(host, SPI_EV_CMD9,   callback->cb_cmd9);
     awoken |= intr_check_clear_callback(host, SPI_EV_CMDA,   callback->cb_cmdA);
 
-    bool tx_done = false;
-    bool rx_done = false;
+    bool tx_done = false, rx_done = false;
+    bool tx_event = false, rx_event = false;
 
     portENTER_CRITICAL_ISR(&host->int_spinlock);
-    if (host->tx_desc && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND)) {
-        tx_done = true;
-    }
-    if (host->rx_desc && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV)) {
-        rx_done = true;
-    }
+    tx_event = spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND);
+    rx_event = spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV);
+    tx_done = host->tx_desc && tx_event;
+    rx_done = host->rx_desc && rx_event;
     portEXIT_CRITICAL_ISR(&host->int_spinlock);
 
     if (tx_done) {
