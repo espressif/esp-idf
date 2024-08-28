@@ -279,6 +279,12 @@ BaseType_t xPortCheckIfInISR(void)
     return uxInterruptNesting;
 }
 
+void vPortAssertIfInISR(void)
+{
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortCheckIfInISR() == 0);
+}
+
 // ------------------ Critical Sections --------------------
 
 void IRAM_ATTR vPortTakeLock( portMUX_TYPE *lock )
