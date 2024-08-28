@@ -585,6 +585,7 @@ static void btc_gap_bt_set_cod(btc_gap_bt_args_t *arg)
 {
     tBTA_UTL_COD p_cod;
     esp_bt_cod_t *cod = &(arg->set_cod.cod);
+    p_cod.reserved_2 = cod->reserved_2;
     p_cod.minor = cod->minor << 2;
     p_cod.major = cod->major;
     p_cod.service = cod->service << 5;
@@ -602,6 +603,7 @@ esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod)
         BTC_TRACE_ERROR("%s get class of device failed!",__func__);
         return ESP_BT_STATUS_FAIL;
     }
+    cod->reserved_2 = p_cod.reserved_2;
     cod->minor = p_cod.minor >> 2;
     cod->major = p_cod.major;
     cod->service = p_cod.service >> 5;
