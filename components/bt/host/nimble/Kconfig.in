@@ -1158,3 +1158,10 @@ config BT_NIMBLE_EATT_CHAN_NUM
     depends on BT_NIMBLE_ENABLED
     help
         Defines the number of channels EATT bearers can use
+
+config BT_NIMBLE_SUBRATE
+    bool "Enable Subrate Change"
+    default n
+    depends on BT_NIMBLE_ENABLED
+    help
+        Enable connection subrate change feature
