@@ -238,7 +238,7 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 #if SOC_DEEP_SLEEP_SUPPORTED && SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// These pads' default configuration is low level
+// The default configuration of these pads is low level
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
 {

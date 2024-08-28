@@ -262,9 +262,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
-    // Ensure no other output signal is routed via GPIO matrix to this pin
-    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4),
-              SIG_GPIO_OUT_IDX);
 }
 
 /**
@@ -300,6 +297,18 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 1;
+}
+
+/**
+ * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4), SIG_GPIO_OUT_IDX);
 }
 
 /**

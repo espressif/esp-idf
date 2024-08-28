@@ -52,6 +52,39 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num);
   */
 esp_err_t gpio_func_sel(gpio_num_t gpio_num, uint32_t func);
 
+/**
+ * @brief Disable output for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_output_disable(gpio_num_t gpio_num);
+
+/**
+ * @brief Enable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_disable(gpio_num_t gpio_num);
+
+/**
+ * @brief Disable open-drain for an IO
+ *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_od_enable(gpio_num_t gpio_num);
+
 #ifdef __cplusplus
 }
 #endif

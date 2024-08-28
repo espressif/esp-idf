@@ -85,6 +85,8 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
 
 TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -92,7 +94,6 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
         .level_gpio_num = -1,
-        .flags.io_loop_back = true,
     };
     pcnt_unit_handle_t units[SOC_PCNT_UNITS_PER_GROUP];
     pcnt_channel_handle_t chans[SOC_PCNT_UNITS_PER_GROUP][SOC_PCNT_CHANNELS_PER_UNIT];
@@ -172,6 +173,9 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
 
 TEST_CASE("pcnt_multiple_units_pulse_count", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
+
     printf("install pcnt units\r\n");
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
@@ -186,7 +190,6 @@ TEST_CASE("pcnt_multiple_units_pulse_count", "[pcnt]")
     const int channel_gpios[] = {TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B};
     pcnt_chan_config_t chan_config = {
         .level_gpio_num = -1,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t chans[2];
     for (int i = 0; i < 2; i++) {
@@ -238,6 +241,9 @@ static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, co
 
 TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -255,7 +261,6 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     pcnt_chan_config_t channel_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A,
         .level_gpio_num = TEST_PCNT_GPIO_B,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channelA = NULL;
     TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelA));
@@ -367,6 +372,8 @@ static bool test_pcnt_on_zero_cross(pcnt_unit_handle_t handle, const pcnt_watch_
 
 TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -390,7 +397,6 @@ TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
     pcnt_chan_config_t channel_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A,
         .level_gpio_num = -1,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channelA = NULL;
     pcnt_channel_handle_t channelB = NULL;
@@ -459,6 +465,8 @@ TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
 
 TEST_CASE("pcnt_virtual_io", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -466,7 +474,6 @@ TEST_CASE("pcnt_virtual_io", "[pcnt]")
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
         .level_gpio_num = -1,              // level signal is connected to a virtual IO internally
-        .flags.io_loop_back = true,
         .flags.virt_level_io_level = 1,    // the level input is connected to high level, internally
     };
     pcnt_unit_handle_t unit = NULL;
@@ -511,6 +518,9 @@ TEST_CASE("pcnt_virtual_io", "[pcnt]")
 #if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_Z);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -1000,
         .high_limit = 1000,
@@ -522,7 +532,6 @@ TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 
     pcnt_clear_signal_config_t clear_signal_config = {
         .clear_signal_gpio_num = TEST_PCNT_GPIO_Z,
-        .flags.io_loop_back = true,
     };
 
     TEST_ESP_OK(pcnt_unit_set_clear_signal(unit, &clear_signal_config));
@@ -531,7 +540,6 @@ TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
     pcnt_chan_config_t chan_config = {
         .level_gpio_num = -1,
         .edge_gpio_num = TEST_PCNT_GPIO_A,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channel;
 
@@ -590,6 +598,9 @@ TEST_CASE("pcnt_zero_input_signal", "[pcnt]")
 
 TEST_CASE("pcnt overflow accumulation", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -613,7 +624,6 @@ TEST_CASE("pcnt overflow accumulation", "[pcnt]")
     pcnt_chan_config_t channel_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A,
         .level_gpio_num = TEST_PCNT_GPIO_B,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channelA = NULL;
     TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelA));
@@ -667,6 +677,9 @@ TEST_CASE("pcnt overflow accumulation", "[pcnt]")
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
 TEST_CASE("pcnt_step_notify_event", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100,
@@ -687,7 +700,6 @@ TEST_CASE("pcnt_step_notify_event", "[pcnt]")
     pcnt_chan_config_t channel_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A,
         .level_gpio_num = TEST_PCNT_GPIO_B,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channelA = NULL;
     TEST_ESP_OK(pcnt_new_channel(unit, &channel_config, &channelA));

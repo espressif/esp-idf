@@ -29,8 +29,20 @@ GPIO 汇总
         - 使用 ADC/DAC 等模拟功能时
         :SOC_LP_PERIPHERALS_SUPPORTED: - 使用低功耗外设时，例如： LP_UART ， LP_I2C 等
 
+IO 管脚配置
+-----------
+
+IO 可以有两种使用方式：
+
+- 作为简单的 GPIO 输入读取引脚上的电平，或作为简单的 GPIO 输出以输出所需的电平。
+- 作为外设信号的输入/输出。
+
+IDF 外设驱动内部会处理需要应用到引脚上的必要 IO 配置，以便它们可以用作外设信号的输入或输出。这意味着用户通常自己只需负责将 IO 配置为简单的输入或输出。:cpp:func:`gpio_config` 是一个一体化的 API，可用于配置 I/O 模式、内部上拉/下拉电阻等管脚设置。
+
+在一些应用中，IO 管脚可以同时发挥双重作用。例如，输出 LEDC PWM 信号的 IO 也可以作为 GPIO 输入生成中断或 GPIO ETM 事件。这种双重用途的 IO 管脚在配置时需要特别注意。由于 :cpp:func:`gpio_config` 是一个会覆盖所有当前配置的 API ，因此必须先调用它将管脚模式设置为 :cpp:enumerator:`gpio_mode_t::GPIO_MODE_INPUT`，然后才能调用 LEDC 驱动 API 将输出信号连接到引脚上。作为替代方案，如果除了使管脚输入启用之外不需要其他额外配置，可以随时调用 :cpp:func:`gpio_input_enable` 以实现相同的目的。
+
 获取 IO 管脚实时配置状态
---------------------------------------------
+------------------------
 
 GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。例如，以下命令可用于输出 GPIO4，GPIO8 与 GPIO26 的配置状态：
 
@@ -75,7 +87,7 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
 
 请不要依赖技术参考手册中记录的 GPIO 默认配置状态，因为特殊用途的 GPIO 可能会在 app_main 之前被引导程序或应用程序启动阶段的代码更改。
 
-.. only:: esp32c3 or esp32c6 or esp32h2 or esp32p4 or esp32s2 or esp32s3 or esp32c5
+.. only:: esp32c3 or esp32c6 or esp32h2 or esp32p4 or esp32s2 or esp32s3 or esp32c5 or esp32c61
 
     配置 USB PHY 管脚 为普通 GPIO 管脚
     ---------------------------------------

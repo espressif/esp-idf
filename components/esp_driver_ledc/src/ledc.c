@@ -650,8 +650,6 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
 esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
-    gpio_set_level(gpio_num, out_inv);
-    gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(gpio_num));
     // check if the GPIO is already used by others, LEDC signal only uses the output path of the GPIO

@@ -87,7 +87,6 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 -  :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 与 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 用于指定 **边沿** 信号和 **电平** 信号对应的 GPIO 编号。请注意，这两个参数未被使用时，可以设置为 `-1`，即成为 **虚拟 IO** 。对于一些简单的脉冲计数应用，电平信号或边沿信号是固定的（即不会发生改变），可将其设置为虚拟 IO，然后该信号会被连接到一个固定的高/低逻辑电平，这样就可以在通道分配时回收一个 GPIO，节省一个 GPIO 管脚资源。
 -  :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` 与 :cpp:member:`pcnt_chan_config_t::virt_level_io_level` 用于指定 **边沿** 信号和 **电平** 信号的虚拟 IO 电平，以保证这些控制信号处于确定状态。请注意，只有在 :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 或 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 设置为 `-1` 时，这两个参数才有效。
 -  :cpp:member:`pcnt_chan_config_t::invert_edge_input` 与 :cpp:member:`pcnt_chan_config_t::invert_level_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵（不是 PCNT 单元）执行。
--  :cpp:member:`pcnt_chan_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲信号。
 
 调用函数 :cpp:func:`pcnt_new_channel`，将 :cpp:type:`pcnt_chan_config_t` 作为输入值并调用 :cpp:func:`pcnt_new_unit` 返回的 PCNT 单元句柄，可对 PCNT 通道进行分配和初始化。如果该函数正常运行，会返回一个 PCNT 通道句柄。如果没有可用的 PCNT 通道（PCNT 通道资源全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 通道总数记录在 :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT`，以供参考。注意，为某个单元安装 PCNT 通道时，应确保该单元处于初始状态，否则函数 :cpp:func:`pcnt_new_channel` 会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
@@ -247,7 +246,6 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
         -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
         -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。驱动会使能上拉输入，以确保信号在未连接时保持高电平。
-        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过 :cpp:func:`gpio_set_level` 函数来模拟外部输入的清零信号。
 
     该输入信号的作用与调用 :cpp:func:`pcnt_unit_clear_count` 函数相同，但它不受软件延迟的限制，更适用于需要低延迟的场合。请注意，该信号的翻转频率不能太高。
 
