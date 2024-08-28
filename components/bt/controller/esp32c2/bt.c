@@ -73,11 +73,6 @@
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 #define BT_ASSERT_PRINT              ets_printf
-typedef enum ble_rtc_slow_clk_src {
-    BT_SLOW_CLK_SRC_MAIN_XTAL,
-    BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0,
-} ble_rtc_slow_clk_src_t;
-
 /* Types definition
  ************************************************************************
  */
@@ -441,6 +436,7 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif // CONFIG_PM_ENABLE
+static DRAM_ATTR ble_rtc_slow_clk_src_t s_bt_lpclk_src = BT_SLOW_CLK_SRC_INVALID;
 
 #define BLE_RTC_DELAY_US                    (1800)
 
@@ -554,6 +550,20 @@ void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
     esp_ble_set_wakeup_overhead(overhead);
 }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+
+ble_rtc_slow_clk_src_t esp_bt_get_lpclk_src(void)
+{
+    return s_bt_lpclk_src;
+}
+
+void esp_bt_set_lpclk_src(ble_rtc_slow_clk_src_t clk_src)
+{
+    if (clk_src >= BT_SLOW_CLK_SRC_MAX) {
+        return;
+    }
+
+    s_bt_lpclk_src = clk_src;
+}
 
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
@@ -680,31 +690,30 @@ static void esp_bt_rtc_slow_clk_select(ble_rtc_slow_clk_src_t slow_clk_src)
 
 static ble_rtc_slow_clk_src_t ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
 {
-    ble_rtc_slow_clk_src_t slow_clk_src;
-
+    if (s_bt_lpclk_src == BT_SLOW_CLK_SRC_INVALID) {
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
-#ifdef CONFIG_XTAL_FREQ_26
-   cfg->rtc_freq = 40000;
+        s_bt_lpclk_src = BT_SLOW_CLK_SRC_MAIN_XTAL;
 #else
-   cfg->rtc_freq = 32000;
-#endif // CONFIG_XTAL_FREQ_26
-    slow_clk_src = BT_SLOW_CLK_SRC_MAIN_XTAL;
-#else
-    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+            s_bt_lpclk_src = BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0;
+        } else {
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
+            s_bt_lpclk_src = BT_SLOW_CLK_SRC_MAIN_XTAL;
+        }
+#endif // CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+    }
+
+    if (s_bt_lpclk_src == BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0) {
         cfg->rtc_freq = 32768;
-        slow_clk_src = BT_SLOW_CLK_SRC_32K_XTAL_ON_PIN0;
-    } else {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
+    } else if (s_bt_lpclk_src == BT_SLOW_CLK_SRC_MAIN_XTAL) {
 #ifdef CONFIG_XTAL_FREQ_26
         cfg->rtc_freq = 40000;
 #else
         cfg->rtc_freq = 32000;
 #endif // CONFIG_XTAL_FREQ_26
-        slow_clk_src = BT_SLOW_CLK_SRC_MAIN_XTAL;
     }
-#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
-    esp_bt_rtc_slow_clk_select(slow_clk_src);
-    return slow_clk_src;
+    esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
+    return s_bt_lpclk_src;
 }
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -733,6 +742,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
     ble_rtc_slow_clk_src_t rtc_clk_src;
+
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
