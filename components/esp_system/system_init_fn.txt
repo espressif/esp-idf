@@ -59,7 +59,6 @@ CORE: 113: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
 CORE: 114: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
 CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
 
-CORE: 120: init_pthread in components/pthread/pthread.c on BIT(0)
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
 CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)

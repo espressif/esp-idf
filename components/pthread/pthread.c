@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/lock.h>
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"
@@ -26,6 +27,7 @@
 #include "pthread_internal.h"
 #include "esp_pthread.h"
 #include "esp_compiler.h"
+#include "esp_check.h"
 
 #include "esp_log.h"
 const static char *TAG = "pthread";
@@ -60,7 +62,7 @@ typedef struct {
     int                 type;       ///< Mutex type. Currently supported PTHREAD_MUTEX_NORMAL and PTHREAD_MUTEX_RECURSIVE
 } esp_pthread_mutex_t;
 
-static SemaphoreHandle_t s_threads_mux  = NULL;
+static _lock_t s_threads_lock;
 portMUX_TYPE pthread_lazy_init_lock  = portMUX_INITIALIZER_UNLOCKED; // Used for mutexes and cond vars and rwlocks
 static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
     = SLIST_HEAD_INITIALIZER(s_threads_list);
@@ -73,21 +75,23 @@ static void esp_pthread_cfg_key_destructor(void *value)
     free(value);
 }
 
-ESP_SYSTEM_INIT_FN(init_pthread, CORE, BIT(0), 120)
+static esp_err_t lazy_init_pthread_cfg_key(void)
 {
-    return esp_pthread_init();
+    if (s_pthread_cfg_key != 0) {
+        return ESP_OK;
+    }
+
+    if (pthread_key_create(&s_pthread_cfg_key, esp_pthread_cfg_key_destructor) != 0) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t esp_pthread_init(void)
 {
-    if (pthread_key_create(&s_pthread_cfg_key, esp_pthread_cfg_key_destructor) != 0) {
-        return ESP_ERR_NO_MEM;
-    }
-    s_threads_mux = xSemaphoreCreateMutex();
-    if (s_threads_mux == NULL) {
-        pthread_key_delete(s_pthread_cfg_key);
-        return ESP_ERR_NO_MEM;
-    }
+    lazy_init_pthread_cfg_key();
+
     return ESP_OK;
 }
 
@@ -155,6 +159,8 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
         heap_caps = cfg->stack_alloc_caps;
     }
 
+    ESP_RETURN_ON_ERROR(lazy_init_pthread_cfg_key(), TAG, "Failed to initialize pthread key");
+
     /* If a value is already set, update that value */
     esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
     if (!p) {
@@ -174,6 +180,8 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
 {
+    ESP_RETURN_ON_ERROR(lazy_init_pthread_cfg_key(), TAG, "Failed to initialize pthread key");
+
     esp_pthread_cfg_t *cfg = pthread_getspecific(s_pthread_cfg_key);
     if (cfg) {
         *p = *cfg;
@@ -287,6 +295,12 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     TaskHandle_t xHandle = NULL;
 
     ESP_LOGV(TAG, "%s", __FUNCTION__);
+
+    if (lazy_init_pthread_cfg_key() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to allocate pthread cfg key!");
+        return ENOMEM;
+    }
+
     esp_pthread_task_arg_t *task_arg = calloc(1, sizeof(esp_pthread_task_arg_t));
     if (task_arg == NULL) {
         ESP_LOGE(TAG, "Failed to allocate task args!");
@@ -383,11 +397,10 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     }
     pthread->handle = xHandle;
 
-    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-        assert(false && "Failed to lock threads list!");
-    }
+    _lock_acquire(&s_threads_lock);
+
     SLIST_INSERT_HEAD(&s_threads_list, pthread, list_node);
-    xSemaphoreGive(s_threads_mux);
+    _lock_release(&s_threads_lock);
 
     // start task
     xTaskNotify(xHandle, 0, eNoAction);
@@ -409,9 +422,8 @@ int pthread_join(pthread_t thread, void **retval)
     ESP_LOGV(TAG, "%s %p", __FUNCTION__, pthread);
 
     // find task
-    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-        assert(false && "Failed to lock threads list!");
-    }
+    _lock_acquire(&s_threads_lock);
+
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
         // not found
@@ -440,17 +452,15 @@ int pthread_join(pthread_t thread, void **retval)
             }
         }
     }
-    xSemaphoreGive(s_threads_mux);
+    _lock_release(&s_threads_lock);
 
     if (ret == 0) {
         if (wait) {
             xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
-            if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-                assert(false && "Failed to lock threads list!");
-            }
+            _lock_acquire(&s_threads_lock);
             child_task_retval = pthread->retval;
             pthread_delete(pthread);
-            xSemaphoreGive(s_threads_mux);
+            _lock_release(&s_threads_lock);
         }
         /* clean up thread local storage before task deletion */
         pthread_internal_local_storage_destructor_callback(handle);
@@ -470,9 +480,8 @@ int pthread_detach(pthread_t thread)
     esp_pthread_t *pthread = (esp_pthread_t *)thread;
     int ret = 0;
 
-    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-        assert(false && "Failed to lock threads list!");
-    }
+    _lock_acquire(&s_threads_lock);
+
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
         ret = ESRCH;
@@ -492,7 +501,7 @@ int pthread_detach(pthread_t thread)
         pthread_internal_local_storage_destructor_callback(handle);
         vTaskDelete(handle);
     }
-    xSemaphoreGive(s_threads_mux);
+    _lock_release(&s_threads_lock);
     ESP_LOGV(TAG, "%s %p EXIT %d", __FUNCTION__, pthread, ret);
     return ret;
 }
@@ -503,9 +512,8 @@ void pthread_exit(void *value_ptr)
     /* clean up thread local storage before task deletion */
     pthread_internal_local_storage_destructor_callback(NULL);
 
-    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-        assert(false && "Failed to lock threads list!");
-    }
+    _lock_acquire(&s_threads_lock);
+
     esp_pthread_t *pthread = pthread_find(xTaskGetCurrentTaskHandle());
     if (!pthread) {
         assert(false && "Failed to find pthread for current task!");
@@ -531,7 +539,7 @@ void pthread_exit(void *value_ptr)
 
     ESP_LOGD(TAG, "Task stk_wm = %d", (int)uxTaskGetStackHighWaterMark(NULL));
 
-    xSemaphoreGive(s_threads_mux);
+    _lock_release(&s_threads_lock);
     // note: if this thread is joinable then after giving back s_threads_mux
     // this task could be deleted at any time, so don't take another lock or
     // do anything that might lock (such as printing to stdout)
@@ -560,14 +568,13 @@ int sched_yield(void)
 
 pthread_t pthread_self(void)
 {
-    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
-        assert(false && "Failed to lock threads list!");
-    }
+    _lock_acquire(&s_threads_lock);
+
     esp_pthread_t *pthread = pthread_find(xTaskGetCurrentTaskHandle());
     if (!pthread) {
         assert(false && "Failed to find current thread ID!");
     }
-    xSemaphoreGive(s_threads_mux);
+    _lock_release(&s_threads_lock);
     return (pthread_t)pthread;
 }
 
