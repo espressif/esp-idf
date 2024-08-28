@@ -315,6 +315,12 @@ examples/system/ulp/lp_core/interrupt:
   depends_components:
     - ulp
 
+examples/system/ulp/lp_core/lp_adc:
+  disable:
+    - if: (SOC_LP_ADC_SUPPORTED != 1)
+  depends_components:
+    - ulp, esp_adc
+
 examples/system/ulp/lp_core/lp_i2c:
   enable:
     - if: SOC_LP_I2C_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
