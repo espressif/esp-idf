@@ -218,12 +218,12 @@ void uhci_uart_install(void)
         .flags.reserve_sibling = 1,
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-    ESP_ERROR_CHECK(gdma_new_channel(&tx_channel_config, &s_tx_channel));
+    ESP_ERROR_CHECK(gdma_new_ahb_channel(&tx_channel_config, &s_tx_channel));
     gdma_channel_alloc_config_t rx_channel_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
         .sibling_chan = s_tx_channel,
     };
-    ESP_ERROR_CHECK(gdma_new_channel(&rx_channel_config, &s_rx_channel));
+    ESP_ERROR_CHECK(gdma_new_ahb_channel(&rx_channel_config, &s_rx_channel));
 
     gdma_connect(s_tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     gdma_connect(s_rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
