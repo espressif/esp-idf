@@ -474,7 +474,7 @@ typedef struct pmu_sleep_machine_constant {
         .analog_wait_time_us            = 154,  \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
-        .power_supply_wait_time_us      = 2,    \
+        .power_supply_wait_time_us      = 20,   \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 172,  \
         .regdma_s2a_work_time_us        = 480,  \

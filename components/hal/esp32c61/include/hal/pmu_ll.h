@@ -680,6 +680,9 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_analog_wait_target_cycle(pmu_dev_t *hw)
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_digital_power_supply_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
+    if (cycle > 0x1FF) {
+        cycle = 0x1FF;
+    }
     hw->power.wait_timer0.wait_timer = cycle;
 }
 
