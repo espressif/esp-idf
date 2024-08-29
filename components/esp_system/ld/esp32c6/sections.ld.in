@@ -173,6 +173,9 @@ SECTIONS
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
+    /* Align the end of code region as per PMP region granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
     ALIGNED_SYMBOL(4, _iram_text_end)
   } > sram_seg
 
