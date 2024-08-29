@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,17 +8,12 @@
 #include "sdkconfig.h"
 #include "soc/interrupts.h"
 
-#if CONFIG_IDF_TARGET_ESP32C3
-
-/**
- * @brief Since ESP32-C3 target in QEMU doesn't support Wifi, re-use its interrupt source for ethernet
+/*
+ * For targets which don't have an ethernet MAC and the associated interrupt source,
+ * we can reuse the Wifi interrupt source for ethernet, since QEMU doesn't emulate Wifi (yet).
+ * We also map the EMAC registers to an unused address range.
  */
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
 #define ETS_ETH_MAC_INTR_SOURCE     ETS_WIFI_MAC_INTR_SOURCE
-
-
-/**
- * @brief Use an empty I/O range for the ethernet registers
- */
 #define DR_REG_EMAC_BASE            0x600CD000
-
-#endif // CONFIG_IDF_TARGET_ESP32C3
+#endif
