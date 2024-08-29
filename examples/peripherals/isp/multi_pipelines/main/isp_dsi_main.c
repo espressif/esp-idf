@@ -17,8 +17,6 @@
 #include "esp_cache.h"
 #include "driver/i2c_master.h"
 #include "driver/isp.h"
-#include "driver/isp_gamma.h"
-#include "driver/isp_sharpen.h"
 #include "isp_af_scheme_sa.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
@@ -306,6 +304,15 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
     ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
+
+    esp_isp_demosaic_config_t demosaic_config = {
+        .grad_ratio = {
+            .integer = 2,
+            .decimal = 5,
+        },
+    };
+    ESP_ERROR_CHECK(esp_isp_demosaic_configure(isp_proc, &demosaic_config));
+    ESP_ERROR_CHECK(esp_isp_demosaic_enable(isp_proc));
 
     isp_gamma_curve_points_t pts = {};
     ESP_ERROR_CHECK(esp_isp_gamma_fill_curve_points(s_gamma_correction_curve, &pts));

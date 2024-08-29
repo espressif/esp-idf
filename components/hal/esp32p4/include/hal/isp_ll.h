@@ -1328,6 +1328,91 @@ static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
 }
 
 /*---------------------------------------------------------------
+                      Demosaic
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable demosaic clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_demosaic_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_demosaic_force_on = enable;
+}
+
+/**
+ * @brief Enable / Disable demosaic
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_demosaic_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.demosaic_en = enable;
+}
+
+/**
+ * @brief Set demosaic low thresh
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] thresh  Thresh
+ */
+__attribute__((always_inline))
+static inline void isp_ll_demosaic_set_grad_ratio(isp_dev_t *hw, isp_demosaic_grad_ratio_t grad_ratio)
+{
+    hw->demosaic_grad_ratio.demosaic_grad_ratio = grad_ratio.val;
+}
+
+/**
+ * @brief Set ISP demosaic padding mode
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_mode  padding mode
+ */
+__attribute__((always_inline))
+static inline void isp_ll_demosaic_set_padding_mode(isp_dev_t *hw, isp_demosaic_edge_padding_mode_t padding_mode)
+{
+    hw->demosaic_matrix_ctrl.demosaic_padding_mode = padding_mode;
+}
+
+/**
+ * @brief Set ISP demosaic padding data
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_data  padding data
+ */
+__attribute__((always_inline))
+static inline void isp_ll_demosaic_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
+{
+    hw->demosaic_matrix_ctrl.demosaic_padding_data = padding_data;
+}
+
+/**
+ * @brief Set ISP demosaic tail start pulse pixel
+ *
+ * @param[in] hw           Hardware instance address
+ * @param[in] start_pixel  start pixel value
+ */
+__attribute__((always_inline))
+static inline void isp_ll_demosaic_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
+{
+    hw->demosaic_matrix_ctrl.demosaic_tail_pixen_pulse_tl = start_pixel;
+}
+
+/**
+ * @brief Set ISP demosaic tail pulse end pixel
+ *
+ * @param[in] hw         Hardware instance address
+ * @param[in] end_pixel  end pixel value
+ */
+__attribute__((always_inline))
+static inline void isp_ll_demosaic_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
+{
+    hw->demosaic_matrix_ctrl.demosaic_tail_pixen_pulse_th = end_pixel;
+}
+
+/*---------------------------------------------------------------
                       Sharpen
 ---------------------------------------------------------------*/
 /**
@@ -1396,7 +1481,7 @@ static inline void isp_ll_sharp_set_medium_freq_coeff(isp_dev_t *hw, isp_sharpen
  * @param[in] coeff  coeff
  */
 __attribute__((always_inline))
-static inline void isp_ll_sharp_set_high_freq_coeff(isp_dev_t *hw, isp_sharpen_h_freq_coeff coeff)
+static inline void isp_ll_sharp_set_high_freq_coeff(isp_dev_t *hw, isp_sharpen_h_freq_coeff_t coeff)
 {
     //val higher than `sharp_threshold_high` will be multiplied by `sharp_amount_high`
     hw->sharp_ctrl0.sharp_amount_high = coeff.val;

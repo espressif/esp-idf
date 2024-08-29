@@ -334,6 +334,7 @@
 /*-------------------------- ISP CAPS ----------------------------------------*/
 #define SOC_ISP_BF_SUPPORTED                     1
 #define SOC_ISP_CCM_SUPPORTED                    1
+#define SOC_ISP_DEMOSAIC_SUPPORTED               1
 #define SOC_ISP_DVP_SUPPORTED                    1
 #define SOC_ISP_SHARPEN_SUPPORTED                1
 #define SOC_ISP_SHARE_CSI_BRG                    1
@@ -348,6 +349,9 @@
 #define SOC_ISP_BF_TEMPLATE_X_NUMS               3
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS               3
 #define SOC_ISP_CCM_DIMENSION                    3
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_INT_BITS     2
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS     4
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_RES_BITS     26
 #define SOC_ISP_DVP_DATA_WIDTH_MAX               16
 #define SOC_ISP_SHARPEN_TEMPLATE_X_NUMS          3
 #define SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS          3
