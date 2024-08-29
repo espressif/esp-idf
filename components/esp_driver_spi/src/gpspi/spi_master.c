@@ -314,6 +314,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         spi_ll_enable_clock(host_id, true);
     }
     spi_hal_init(&host->hal, host_id);
+    spi_hal_config_io_default_level(&host->hal, bus_attr->bus_cfg.data_io_default_level);
 
     if (host_id != SPI1_HOST) {
         //SPI1 attributes are already initialized at start up.

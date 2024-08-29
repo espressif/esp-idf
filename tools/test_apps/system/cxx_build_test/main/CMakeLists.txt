@@ -1,6 +1,7 @@
 set(srcs cxx_build_test_main.cpp
          test_soc_reg_macros.cpp
-         test_cxx_standard.cpp)
+         test_cxx_standard.cpp
+         test_sdmmc_sdspi_init.cpp)
 
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs test_i2c_lcd.cpp)
