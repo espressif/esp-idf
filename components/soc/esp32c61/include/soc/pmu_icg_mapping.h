@@ -6,8 +6,6 @@
 
 #pragma once
 
-#define PMU_ICG_APB_ENA_CAN0                    18
-#define PMU_ICG_APB_ENA_CAN1                    19
 #define PMU_ICG_APB_ENA_GDMA                    1
 #define PMU_ICG_APB_ENA_I2C                     13
 #define PMU_ICG_APB_ENA_I2S                     4
@@ -30,8 +28,6 @@
 #define PMU_ICG_APB_ENA_UART1                   7
 #define PMU_ICG_APB_ENA_UHCI                    8
 #define PMU_ICG_APB_ENA_USB_DEVICE              17
-#define PMU_ICG_FUNC_ENA_CAN0                   31
-#define PMU_ICG_FUNC_ENA_CAN1                   30
 #define PMU_ICG_FUNC_ENA_I2C                    29
 #define PMU_ICG_FUNC_ENA_I2S_RX                 2
 #define PMU_ICG_FUNC_ENA_I2S_TX                 7

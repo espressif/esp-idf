@@ -275,21 +275,6 @@ typedef enum {
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
 } soc_periph_glitch_filter_clk_src_t;
 
-//////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
-
-/**
- * @brief Array initializer for all supported clock sources of TWAI
- */
-#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL}
-
-/**
- * @brief TWAI clock source
- */
-typedef enum {
-    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the source clock */
-    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL, /*!< Select XTAL as the default clock choice */
-} soc_periph_twai_clk_src_t;
-
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
 
 /**
