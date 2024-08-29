@@ -216,6 +216,16 @@ examples/bluetooth/nimble/ble_multi_conn:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_pawr_adv:
+  <<: *bt_default_depends
+  enable:
+    - if: IDF_TARGET == "esp32c6"
+
+examples/bluetooth/nimble/ble_pawr_adv_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: IDF_TARGET == "esp32c6"
+
 examples/bluetooth/nimble/ble_periodic_adv:
   <<: *bt_default_depends
   enable:
