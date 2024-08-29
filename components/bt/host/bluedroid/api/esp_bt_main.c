@@ -238,3 +238,14 @@ esp_err_t esp_bluedroid_deinit(void)
 
     return ESP_OK;
 }
+
+#if defined(CONFIG_EXAMPLE_CI_ID) && defined(CONFIG_EXAMPLE_CI_PIPELINE_ID)
+char *esp_bluedroid_get_example_name(void)
+{
+    static char example_name[ESP_BLE_ADV_NAME_LEN_MAX];
+    memset(example_name, 0, sizeof(example_name));
+    sprintf(example_name, "BE%02X_%05X_%02X", CONFIG_EXAMPLE_CI_ID & 0xFF,
+            CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF, CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
