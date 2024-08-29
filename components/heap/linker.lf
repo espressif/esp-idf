@@ -5,9 +5,6 @@ entries:
         if HEAP_TLSF_USE_ROM_IMPL = n:
             tlsf:tlsf_block_size (noflash)
             tlsf:tlsf_size (noflash)
-            tlsf:tlsf_align_size (noflash)
-            tlsf:tlsf_block_size_min (noflash)
-            tlsf:tlsf_block_size_max (noflash)
             tlsf:tlsf_alloc_overhead (noflash)
             tlsf:tlsf_get_pool (noflash)
             tlsf:tlsf_malloc (noflash)
