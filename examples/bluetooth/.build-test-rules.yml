@@ -206,6 +206,18 @@ examples/bluetooth/nimble/ble_multi_conn:
       temporary: true
       reason: The runner doesn't support yet
 
+examples/bluetooth/nimble/ble_pawr_adv:
+  enable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/bluetooth/nimble/ble_pawr_adv_conn:
+  enable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: the other targets are not tested yet
+
 examples/bluetooth/nimble/ble_periodic_adv:
   enable:
     - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
