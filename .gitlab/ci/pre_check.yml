@@ -44,6 +44,8 @@ check_MR_style_dangerjs:
     - danger ci --dangerfile=".gitlab/dangerjs/dangerfile.js" --failOnErrors -v
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  tags:
+    - dangerjs
 
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
