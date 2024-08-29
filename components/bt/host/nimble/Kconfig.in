@@ -659,6 +659,13 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
         default n
         help
             Set this option to enable the Power Control feature
+
+    config BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES
+        bool "Enable Periodic Advertisement with Response (EXPERIMENTAL)"
+        depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+        default n
+        help
+                This enables controller PAwR (Periodic Advertisement with Response).
 endif
 
 menuconfig BT_NIMBLE_GATT_CACHING

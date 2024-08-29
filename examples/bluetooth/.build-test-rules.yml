@@ -137,6 +137,22 @@ examples/bluetooth/nimble/ble_multi_adv:
       temporary: true
       reason: The runner doesn't support yet
 
+examples/bluetooth/nimble/ble_pawr_adv:
+  enable:
+    - if: IDF_TARGET == ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2"]
+
+examples/bluetooth/nimble/ble_pawr_adv_conn:
+  enable:
+    - if: IDF_TARGET == ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2"]
+
+examples/bluetooth/nimble/ble_pawr_sync:
+  enable:
+    - if: IDF_TARGET == ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2"]
+
+examples/bluetooth/nimble/ble_pawr_sync_conn:
+  enable:
+    - if: IDF_TARGET == ["esp32", "esp32s2", "esp32c3", "esp32s3", "esp32c2"]
+
 examples/bluetooth/nimble/ble_periodic_adv:
   enable:
     - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3" ]
