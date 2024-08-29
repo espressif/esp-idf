@@ -12,6 +12,7 @@
 #include "pmu_param.h"
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
+#include "soc/clk_tree_defs.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -66,29 +67,29 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     return &hp_power[mode];
 }
 
-#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {  \
-    .icg_func   = 0xffffffff,                   \
-    .icg_apb    = 0xffffffff,                   \
-    .icg_modem  = 0,                            \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 0,                  \
-        .icg_slp_sel      = 0,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {    \
+    .icg_func   = 0xffffffff,                     \
+    .icg_apb    = 0xffffffff,                     \
+    .icg_modem  = 0,                              \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 1,                    \
+        .sysclk_slp_sel   = 0,                    \
+        .icg_slp_sel      = 0,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
-#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = 0,                            \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 0,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {     \
+    .icg_func   = 0,                              \
+    .icg_apb    = 0,                              \
+    .icg_modem  = 0,                              \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 0,                    \
+        .sysclk_slp_sel   = 1,                    \
+        .icg_slp_sel      = 1,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 

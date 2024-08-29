@@ -81,7 +81,9 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_flash_spimem_retention
     return ESP_OK;
 }
 
-#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
+/* TODO: PM-205, In the ESP32C5, Flash and PSRAM use the same set of SPIMEM hardware, while in P4, Flash and PSRAM each have their own SPIMEM hardware.
+ * It’s necessary to confirm whether the ESP32C5 can independently manage SPIMEM retention for Flash and PSRAM in software. */
 static __attribute__((unused)) esp_err_t sleep_sys_periph_psram_spimem_retention_init(void *arg)
 {
     esp_err_t err = sleep_retention_entries_create(psram_spimem_regs_retention, ARRAY_SIZE(psram_spimem_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
@@ -142,7 +144,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     if(err) goto error;
     err = sleep_sys_periph_flash_spimem_retention_init(arg);
     if(err) goto error;
-#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
     err = sleep_sys_periph_psram_spimem_retention_init(arg);
     if(err) goto error;
 #endif

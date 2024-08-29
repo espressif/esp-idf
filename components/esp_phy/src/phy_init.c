@@ -895,11 +895,11 @@ void esp_phy_load_cal_and_init(void)
 #else
     esp_phy_release_init_data(init_data);
 #endif
-#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
     ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_close_rf));
 #endif
 #if !CONFIG_IDF_TARGET_ESP32
-#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
+#if CONFIG_ESP_PHY_ENABLED && SOC_DEEP_SLEEP_SUPPORTED
     ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_xpd_tsens));
 #endif
 #endif

@@ -68,8 +68,7 @@ typedef struct {
 static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 
 #define CUSTOM_CSR_MTVT               (0x307)
-#define CUSTOM_CSR_MNXTI              (0x345)
-#define CUSTOM_CSR_MINTSTATUS         (0x346)
+#define CUSTOM_CSR_MINTTHRESH         (0x347)
 #define CUSTOM_CSR_MXSTATUS           (0x7c0)
 #define CUSTOM_CSR_MHCR               (0x7c1)
 #define CUSTOM_CSR_MHINT              (0x7c5)
@@ -104,8 +103,7 @@ static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_reg
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
-        { .start = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
+        { .start = CACHE_L1_ICACHE_CTRL_REG, .end = CACHE_L1_BYPASS_CACHE_CONF_REG + 4 }
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
@@ -113,7 +111,10 @@ static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 static inline void * cpu_domain_clint_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CLINT_MINT_SIP_REG, .end = CLINT_MINT_MTIMECMP_H_REG + 4 },
+        { .start = CLINT_MINT_SIP_REG,        .end = CLINT_MINT_SIP_REG + 4        },
+        { .start = CLINT_MINT_MTIMECMP_L_REG, .end = CLINT_MINT_MTIMECMP_H_REG + 4 },
+        { .start = CLINT_MINT_TIMECTL_REG,    .end = CLINT_MINT_TIMECTL_REG + 4    },
+        { .start = CLINT_MINT_MTIME_L_REG,    .end = CLINT_MINT_MTIME_H_REG + 4    }
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
@@ -275,8 +276,7 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->mcycle     = RV_READ_CSR(mcycle);
 
     frame->mtvt       = RV_READ_CSR(CUSTOM_CSR_MTVT);
-    frame->mnxti      = RV_READ_CSR(CUSTOM_CSR_MNXTI);
-    frame->mintstatus = RV_READ_CSR(CUSTOM_CSR_MINTSTATUS);
+    frame->mintthresh = RV_READ_CSR(CUSTOM_CSR_MINTTHRESH);
     frame->mxstatus   = RV_READ_CSR(CUSTOM_CSR_MXSTATUS);
     frame->mhcr       = RV_READ_CSR(CUSTOM_CSR_MHCR);
     frame->mhint      = RV_READ_CSR(CUSTOM_CSR_MHINT);
@@ -351,8 +351,7 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(RvCoreNonCriticalSleepFra
     RV_WRITE_CSR(mcycle,   frame->mcycle);
 
     RV_WRITE_CSR(CUSTOM_CSR_MTVT, frame->mtvt);
-    RV_WRITE_CSR(CUSTOM_CSR_MNXTI, frame->mnxti);
-    RV_WRITE_CSR(CUSTOM_CSR_MINTSTATUS, frame->mintstatus);
+    RV_WRITE_CSR(CUSTOM_CSR_MINTTHRESH, frame->mintthresh);
     RV_WRITE_CSR(CUSTOM_CSR_MXSTATUS, frame->mxstatus);
     RV_WRITE_CSR(CUSTOM_CSR_MHCR, frame->mhcr);
     RV_WRITE_CSR(CUSTOM_CSR_MHINT, frame->mhint);
@@ -453,7 +452,6 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     /* Minus sizeof(long) is for bypass `frame_crc` field */
     update_retention_frame_crc((uint32_t*)frame, sizeof(RvCoreNonCriticalSleepFrame) - sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
-
     esp_err_t err = do_cpu_retention(goto_sleep, wakeup_opt, reject_opt, lslp_mem_inf_fpu, dslp);
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME

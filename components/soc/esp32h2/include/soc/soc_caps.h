@@ -528,11 +528,18 @@
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 #define SOC_PM_SUPPORT_TOP_PD           (1)
-#define SOC_PM_PAU_LINK_NUM             (4)
-#define SOC_PM_CPU_RETENTION_BY_SW      (1)
+
+#define SOC_PM_PAU_LINK_NUM                 (4)
+#define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
+#define SOC_PM_PAU_REGDMA_LINK_WIFIMAC      (1)
+
+#define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
+
+#define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN        (1)
+#define SOC_PM_CPU_RETENTION_BY_SW                 (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
-#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
-#define SOC_PM_RETENTION_SW_TRIGGER_REGDMA      (1)    /*!< In esp32H2, regdma will power off when entering sleep */
+#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1)  /*!<Supports CRC only the stub code in RTC memory */
+#define SOC_PM_RETENTION_SW_TRIGGER_REGDMA         (1)  /*!< In esp32H2, regdma will power off when entering sleep */
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)

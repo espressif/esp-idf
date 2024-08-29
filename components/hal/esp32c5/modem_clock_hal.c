@@ -59,7 +59,7 @@ void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_conte
     }
 }
 
-uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
+uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
     uint32_t bitmap = 0;

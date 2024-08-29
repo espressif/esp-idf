@@ -14,10 +14,14 @@
 #include "soc/soc_caps.h"
 #include "esp_private/esp_pau.h"
 #include "esp_private/periph_ctrl.h"
-
 #if SOC_PAU_IN_TOP_DOMAIN
 #include "hal/lp_sys_ll.h"
 #endif
+
+#define PAU_REGDMA_LINK_LOOP                (0x3FF)
+#define PAU_REGDMA_REG_ACCESS_TIME          (0x3FF)
+#define PAU_REGDMA_LINK_WAIT_RETRY_COUNT    (1000)
+#define PAU_REGDMA_LINK_WAIT_READ_INTERNAL  (32)
 
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
@@ -36,6 +40,11 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
         pau_hal_enable_bus_clock(true);
+        pau_hal_set_regdma_wait_timeout(&pau_hal, PAU_REGDMA_LINK_WAIT_RETRY_COUNT, PAU_REGDMA_LINK_WAIT_READ_INTERNAL);
+        pau_hal_set_regdma_work_timeout(&pau_hal, PAU_REGDMA_LINK_LOOP, PAU_REGDMA_REG_ACCESS_TIME);
+#if SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
+        pau_hal_regdma_link_count_config(&pau_hal, SOC_PM_PAU_LINK_NUM);
+#endif
 #if SOC_PAU_IN_TOP_DOMAIN
         pau_hal_lp_sys_initialize();
 #endif
@@ -51,18 +60,20 @@ void pau_regdma_set_entry_link_addr(pau_regdma_link_addr_t *link_entries)
 }
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_PAU_REGDMA_LINK_WIFIMAC
 void pau_regdma_set_modem_link_addr(void *link_addr)
 {
     pau_hal_set_regdma_modem_link_addr(PAU_instance()->hal, link_addr);
 }
+#endif
 
-void pau_regdma_trigger_modem_link_backup(void)
+void IRAM_ATTR pau_regdma_trigger_modem_link_backup(void)
 {
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, true);
     pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
 }
 
-void pau_regdma_trigger_modem_link_restore(void)
+void IRAM_ATTR pau_regdma_trigger_modem_link_restore(void)
 {
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
@@ -79,7 +90,9 @@ void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)
      * a relatively large amount of memory space. */
 
     pau_hal_regdma_clock_configure(PAU_instance()->hal, true);
+#if SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
     pau_hal_set_regdma_system_link_addr(PAU_instance()->hal, link_addr);
+#endif
 }
 
 void IRAM_ATTR pau_regdma_trigger_system_link_backup(void)
@@ -97,7 +110,9 @@ void IRAM_ATTR pau_regdma_trigger_system_link_restore(void)
 
 void IRAM_ATTR pau_regdma_set_extra_link_addr(void *link_addr)
 {
+#if SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
     pau_hal_set_regdma_extra_link_addr(PAU_instance()->hal, link_addr);
+#endif
 }
 
 void IRAM_ATTR pau_regdma_trigger_extra_link_backup(void)

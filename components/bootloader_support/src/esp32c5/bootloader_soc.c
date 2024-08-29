@@ -19,6 +19,6 @@ void bootloader_ana_super_wdt_reset_config(bool enable)
 //Not supported but common bootloader calls the function. Do nothing
 void bootloader_ana_clock_glitch_reset_config(bool enable)
 {
-     // TODO: [ESP32C5] IDF-8667
+     // TODO: [ESP32C5] IDF-8667, PM-207
     (void)enable;
 }

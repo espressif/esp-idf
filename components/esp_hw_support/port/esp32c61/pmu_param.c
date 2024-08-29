@@ -16,6 +16,7 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
+#include "soc/clk_tree_defs.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -98,48 +99,48 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     return &hp_power[mode];
 }
 
-#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {  \
-    .icg_func   = 0xffffffff,                   \
-    .icg_apb    = 0xffffffff,                   \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE    \
+#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {    \
+    .icg_func   = 0xffffffff,                     \
+    .icg_apb    = 0xffffffff,                     \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE      \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 0,                  \
-        .icg_slp_sel      = 0,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 1,                    \
+        .sysclk_slp_sel   = 0,                    \
+        .icg_slp_sel      = 0,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
-#define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_MODEM     \
+#define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {           \
+    .icg_func   = 0,                                    \
+    .icg_apb    = 0,                                    \
+    .icg_modem  = {                                     \
+        .code = PMU_HP_ICG_MODEM_CODE_MODEM             \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_PLL   \
+    .sysclk     = {                                     \
+        .dig_sysclk_nodiv = 0,                          \
+        .icg_sysclk_en    = 1,                          \
+        .sysclk_slp_sel   = 1,                          \
+        .icg_slp_sel      = 1,                          \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_PLL_F160M   \
     } \
 }
 
-#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_SLEEP     \
+#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {     \
+    .icg_func   = 0,                              \
+    .icg_apb    = 0,                              \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_SLEEP       \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 0,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 0,                    \
+        .sysclk_slp_sel   = 1,                    \
+        .icg_slp_sel      = 1,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 

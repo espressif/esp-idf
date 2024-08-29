@@ -34,138 +34,107 @@ static inline void pau_ll_enable_bus_clock(bool enable)
 
 static inline uint32_t pau_ll_get_regdma_backup_flow_error(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->regdma_conf.flow_err;
 }
 
 static inline void pau_ll_select_regdma_entry_link(pau_dev_t *dev, int link)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.link_sel = link;
 }
 
 static inline void pau_ll_set_regdma_entry_link_backup_direction(pau_dev_t *dev, bool to_mem)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.to_mem = to_mem ? 1 : 0;
 }
 
 static inline void pau_ll_set_regdma_entry_link_backup_start_enable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.start = 1;
 }
 
 static inline void pau_ll_set_regdma_entry_link_backup_start_disable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.start = 0;
 }
 
 static inline void pau_ll_set_regdma_select_wifimac_link(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.sel_mac = 1;
 }
 
 static inline void pau_ll_set_regdma_deselect_wifimac_link(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.sel_mac = 0;
 }
 
 static inline void pau_ll_set_regdma_wifimac_link_backup_direction(pau_dev_t *dev, bool to_mem)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.to_mem_mac = to_mem ? 1 : 0;
 }
 
 static inline void pau_ll_set_regdma_wifimac_link_backup_start_enable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.start_mac = 1;
 }
 
 static inline void pau_ll_set_regdma_wifimac_link_backup_start_disable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-}
-
-static inline void pau_ll_set_regdma_link0_addr(pau_dev_t *dev, void *link_addr)
-{
-    HAL_ASSERT(false && "pau not supported yet");
-}
-
-static inline void pau_ll_set_regdma_link1_addr(pau_dev_t *dev, void *link_addr)
-{
-    HAL_ASSERT(false && "pau not supported yet");
-}
-
-static inline void pau_ll_set_regdma_link2_addr(pau_dev_t *dev, void *link_addr)
-{
-    HAL_ASSERT(false && "pau not supported yet");
-}
-
-static inline void pau_ll_set_regdma_link3_addr(pau_dev_t *dev, void *link_addr)
-{
-    HAL_ASSERT(false && "pau not supported yet");
-}
-
-static inline void pau_ll_set_regdma_wifimac_link_addr(pau_dev_t *dev, void *link_addr)
-{
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->regdma_conf.start_mac = 0;
 }
 
 static inline uint32_t pau_ll_get_regdma_current_link_addr(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->regdma_current_link_addr.val;
 }
 
 static inline uint32_t pau_ll_get_regdma_backup_addr(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->regdma_peri_addr.val;
 }
 
 static inline uint32_t pau_ll_get_regdma_memory_addr(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->regdma_mem_addr.val;
 }
 
 static inline uint32_t pau_ll_get_regdma_intr_raw_signal(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->int_raw.val;
 }
 
 static inline uint32_t pau_ll_get_regdma_intr_status(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
-    return 0;
+    return dev->int_st.val;
 }
 
 static inline void pau_ll_set_regdma_backup_done_intr_enable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_ena.done_int_ena = 1;
 }
 
 static inline void pau_ll_set_regdma_backup_done_intr_disable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_ena.done_int_ena = 0;
 }
 
 static inline void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_ena.error_int_ena = 1;
 }
 
 static inline void pau_ll_set_regdma_backup_error_intr_disable(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_ena.error_int_ena = 0;
 }
 
 static inline void pau_ll_clear_regdma_backup_done_intr_state(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_clr.done_int_clr = 1;
 }
 
 static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
 {
-    HAL_ASSERT(false && "pau not supported yet");
+    dev->int_clr.error_int_clr = 1;
 }
 
 #ifdef __cplusplus

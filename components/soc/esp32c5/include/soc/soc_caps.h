@@ -59,10 +59,10 @@
 #define SOC_IEEE802154_SUPPORTED        1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
-#define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
-// #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
+#define SOC_PMU_SUPPORTED               1
+#define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
+#define SOC_LP_AON_SUPPORTED            1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
 #define SOC_ULP_LP_UART_SUPPORTED       1
@@ -75,10 +75,11 @@
 #define SOC_RNG_SUPPORTED               1
 // #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1  // TODO: [ESP32C5] IDF-8640
-// #define SOC_DEEP_SLEEP_SUPPORTED        1  // TODO: [ESP32C5] IDF-8638
 #define SOC_MODEM_CLOCK_SUPPORTED       1
-// #define SOC_PM_SUPPORTED                1  // TODO: [ESP32C5] IDF-8643
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_PM_SUPPORTED                1
+
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_BT_SUPPORTED                1
 #define SOC_PHY_SUPPORTED               1
@@ -437,6 +438,7 @@
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
+#define SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT   1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 // TODO: [ESP32C5] IDF-8707
@@ -462,10 +464,11 @@
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
-// #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 // #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 // #define SOC_TWAI_CONTROLLER_NUM         2
@@ -503,17 +506,18 @@
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C5 has 3 UARTs (2 HP UART, and 1 LP UART)
-#define SOC_UART_NUM                    (3)
-#define SOC_UART_HP_NUM                 (2)
-#define SOC_UART_LP_NUM                 (1U)
-#define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
-#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
-#define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
-#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
-#define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
-#define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
-#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
-#define SOC_UART_HAS_LP_UART            (1)         /*!< Support LP UART */
+#define SOC_UART_NUM                       (3)
+#define SOC_UART_HP_NUM                    (2)
+#define SOC_UART_LP_NUM                    (1U)
+#define SOC_UART_FIFO_LEN                  (128)       /*!< The UART hardware FIFO length */
+#define SOC_LP_UART_FIFO_LEN               (16)        /*!< The LP UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX               (5000000)   /*!< Max bit rate supported by UART */
+#define SOC_UART_SUPPORT_PLL_F80M_CLK      (1)         /*!< Support PLL_F80M as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK           (1)         /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK          (1)         /*!< Support XTAL clock as the clock source */
+#define SOC_UART_SUPPORT_WAKEUP_INT        (1)         /*!< Support UART wakeup interrupt */
+#define SOC_UART_HAS_LP_UART               (1)         /*!< Support LP UART */
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
@@ -535,12 +539,12 @@
 // #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 // #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
-// #define SOC_PM_SUPPORT_CPU_PD           (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
-// #define SOC_PM_SUPPORT_RC32K_PD         (1)
+#define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 #define SOC_PM_SUPPORT_TOP_PD           (1)
@@ -552,13 +556,17 @@
 /* macro redefine for pass esp_wifi headers md5sum check */
 // #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
-// #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
-// #define SOC_PM_CPU_RETENTION_BY_SW          (1)
-// #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
-// #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
+#define SOC_PM_CPU_RETENTION_BY_SW                 (1)
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
+#define SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD     (1)
+#define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN        (1)
 
-// #define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PM_PAU_LINK_NUM                 (5)
+#define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
+
+#define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
@@ -567,7 +575,7 @@
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
 #define SOC_CLK_LP_FAST_SUPPORT_XTAL              (1)     /*!< Support XTAL clock as the LP_FAST clock source */
-
+#define SOC_CLK_RC32K_NOT_TO_USE                  (1)     /*!< Due to the poor low-temperature characteristics of RC32K (it cannot operate below -40 degrees Celsius), please avoid using it whenever possible. */
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/

@@ -12,6 +12,7 @@
 #include "pmu_param.h"
 #include "soc/pmu_icg_mapping.h"
 #include "esp_private/esp_pmu.h"
+#include "soc/clk_tree_defs.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
@@ -94,48 +95,49 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     return &hp_power[mode];
 }
 
-#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {  \
-    .icg_func   = 0xffffffff,                   \
-    .icg_apb    = 0xffffffff,                   \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE    \
+#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {    \
+    .icg_func   = 0xffffffff,                     \
+    .icg_apb    = 0xffffffff,                     \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE      \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 0,                  \
-        .icg_slp_sel      = 0,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 1,                    \
+        .sysclk_slp_sel   = 0,                    \
+        .icg_slp_sel      = 0,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
-#define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_MODEM     \
+// TODO： PM-208
+#define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {          \
+    .icg_func   = 0,                                   \
+    .icg_apb    = 0,                                   \
+    .icg_modem  = {                                    \
+        .code = PMU_HP_ICG_MODEM_CODE_MODEM            \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_PLL   \
+    .sysclk     = {                                    \
+        .dig_sysclk_nodiv = 0,                         \
+        .icg_sysclk_en    = 1,                         \
+        .sysclk_slp_sel   = 1,                         \
+        .icg_slp_sel      = 1,                         \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_PLL_F160M  \
     } \
 }
 
-#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_SLEEP     \
+#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {     \
+    .icg_func   = 0,                              \
+    .icg_apb    = 0,                              \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_SLEEP       \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 0,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 0,                    \
+        .sysclk_slp_sel   = 1,                    \
+        .icg_slp_sel      = 1,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
@@ -195,66 +197,69 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 }
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 1,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                                       \
+        .xpd_bias        = 1,                       \
+        .dbg_atten       = 0x0,                     \
+        .pd_cur          = 0,                       \
+        .bias_sleep      = 0                        \
     }, \
-    .regulator0 = {             \
-        .lp_dbias_vol    = 0xd, \
-        .hp_dbias_vol    = 0x1c,\
-        .dbias_sel       = 1,   \
-        .dbias_init      = 1,   \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                                 \
+        .slp_connect_en  = 0,                       \
+        .lp_dbias_vol    = 0xd,                     \
+        .hp_dbias_vol    = 0x1c,                    \
+        .dbias_sel       = 1,                       \
+        .dbias_init      = 1,                       \
+        .slp_mem_xpd     = 0,                       \
+        .slp_logic_xpd   = 0,                       \
+        .xpd             = 1,                       \
+        .slp_mem_dbias   = 0,                       \
+        .slp_logic_dbias = 0,                       \
+        .dbias           = HP_CALI_DBIAS_DEFAULT    \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                                 \
+        .drv_b           = 0x0                      \
     } \
 }
 
 #define PMU_HP_MODEM_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                                       \
+        .xpd_bias        = 0,                       \
+        .dbg_atten       = 0x0,                     \
+        .pd_cur          = 0,                       \
+        .bias_sleep      = 0                        \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                                 \
+        .slp_connect_en  = 0,                       \
+        .slp_mem_xpd     = 0,                       \
+        .slp_logic_xpd   = 0,                       \
+        .xpd             = 1,                       \
+        .slp_mem_dbias   = 0,                       \
+        .slp_logic_dbias = 0,                       \
+        .dbias           = HP_CALI_DBIAS_DEFAULT    \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                                 \
+        .drv_b           = 0x0                      \
     } \
 }
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                               \
+        .xpd_bias        = 0,               \
+        .dbg_atten       = 0x0,             \
+        .pd_cur          = 0,               \
+        .bias_sleep      = 0                \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = 1 \
+    .regulator0 = {                         \
+        .slp_connect_en  = 0,               \
+        .slp_mem_xpd     = 0,               \
+        .slp_logic_xpd   = 0,               \
+        .xpd             = 1,               \
+        .slp_mem_dbias   = 0,               \
+        .slp_logic_dbias = 0,               \
+        .dbias           = 1                \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                         \
+        .drv_b           = 0x0              \
     } \
 }
 
@@ -269,8 +274,9 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
     return &hp_analog[mode];
 }
 
-#define PMU_HP_RETENTION_REGDMA_CONFIG(dir, entry)  ((((dir)<<2) | (entry & 0x3)) & 0x7)
+#define PMU_HP_RETENTION_REGDMA_CONFIG(dir, entry)  ((((dir)<<4) | (entry & 0xf)) & 0x1f)
 
+// TODO： PM-208
 #define PMU_HP_ACTIVE_RETENTION_CONFIG_DEFAULT() {  \
     .retention = {                                  \
         .hp_sleep2active_backup_modem_clk_code = 2, \
@@ -278,8 +284,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_active_retention_mode       = 0, \
         .hp_sleep2active_retention_en   = 0, \
         .hp_modem2active_retention_en   = 0, \
-        .hp_sleep2active_backup_clk_sel = 0, \
-        .hp_modem2active_backup_clk_sel = 1, \
+        .hp_sleep2active_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL,      \
+        .hp_modem2active_backup_clk_sel = SOC_CPU_CLK_SRC_PLL_F160M, \
         .hp_sleep2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 0), \
         .hp_modem2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 2), \
         .hp_sleep2active_backup_en      = 0, \
@@ -303,7 +309,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2modem_backup_modem_clk_code  = 1, \
         .hp_modem_retention_mode        = 0, \
         .hp_sleep2modem_retention_en    = 0, \
-        .hp_sleep2modem_backup_clk_sel  = 0, \
+        .hp_sleep2modem_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
         .hp_sleep2modem_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(0, 1), \
         .hp_sleep2modem_backup_en       = 0, \
     }, \
@@ -327,8 +333,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep_retention_mode        = 0, \
         .hp_modem2sleep_retention_en    = 0, \
         .hp_active2sleep_retention_en   = 0, \
-        .hp_modem2sleep_backup_clk_sel  = 0, \
-        .hp_active2sleep_backup_clk_sel = 0, \
+        .hp_modem2sleep_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
+        .hp_active2sleep_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL, \
         .hp_modem2sleep_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(1, 1), \
         .hp_active2sleep_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(1, 0), \
         .hp_modem2sleep_backup_en       = 0, \

@@ -21,6 +21,9 @@
 #include "sdkconfig.h"
 #include "esp_pmu.h"
 
+#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE && CONFIG_IDF_TARGET_ESP32C5 // TODO: PM-202
+#include "soc/pmu_reg.h" // for PMU_DATE_REG, it can provide full 32 bit read and write access
+#endif
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_ll.h"
 #endif
@@ -175,9 +178,11 @@ typedef struct {
 #define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(-1)) /* the final node does not belong to any module */
     struct {
         sleep_retention_entries_t entries;
-        uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM,
-                 runtime_bitmap: REGDMA_LINK_ENTRY_NUM,
-                 reserved: 32-(2*REGDMA_LINK_ENTRY_NUM);
+        uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM;
+        uint32_t runtime_bitmap: REGDMA_LINK_ENTRY_NUM;
+#if REGDMA_LINK_ENTRY_NUM < 16
+        uint32_t reserved: 32-(2*REGDMA_LINK_ENTRY_NUM);
+#endif
         void *entries_tail;
     } lists[SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES];
     _lock_t lock;
@@ -245,6 +250,9 @@ static void sleep_retention_entries_update(uint32_t owner, void *new_link, regdm
         (owner & BIT(1)) ? new_link : s_retention.lists[priority].entries[1],
         (owner & BIT(2)) ? new_link : s_retention.lists[priority].entries[2],
         (owner & BIT(3)) ? new_link : s_retention.lists[priority].entries[3]
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+        , (owner & BIT(4)) ? new_link : s_retention.lists[priority].entries[4]
+#endif
     };
     if (s_retention.lists[priority].entries_bitmap == 0) {
         s_retention.lists[priority].entries_tail = new_link;
@@ -270,6 +278,9 @@ static void * sleep_retention_entries_try_create(const regdma_link_config_t *con
                         (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                         (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
                         (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                        , (owner & BIT(4)) ? s_retention.lists[priority].entries[4] : NULL
+#endif
                     );
         }
     } else {
@@ -289,6 +300,9 @@ static void * sleep_retention_entries_try_create_bonding(const regdma_link_confi
                 (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                 (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
                 (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                , (owner & BIT(4)) ? s_retention.lists[priority].entries[4] : NULL
+#endif
             );
     _lock_release_recursive(&s_retention.lock);
     return link;
@@ -399,11 +413,18 @@ static bool sleep_retention_entries_dettach(regdma_link_priority_t priority, sle
     } else if (is_tail) {
         s_retention.lists[priority].entries_tail = prev_tail;
     } else {
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+        regdma_link_update_next_safe(prev_tail, (*next_entries)[0], (*next_entries)[1], (*next_entries)[2], (*next_entries)[3], (*next_entries)[4]);
+#else
         regdma_link_update_next_safe(prev_tail, (*next_entries)[0], (*next_entries)[1], (*next_entries)[2], (*next_entries)[3]);
+#endif
     }
     sleep_retention_entries_context_update(priority);
-
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+    regdma_link_update_next_safe(destroy_tail, NULL, NULL, NULL, NULL, NULL);
+#else
     regdma_link_update_next_safe(destroy_tail, NULL, NULL, NULL, NULL);
+#endif
     _lock_release_recursive(&s_retention.lock);
     return (is_head || is_tail);
 }
@@ -475,8 +496,9 @@ static void sleep_retention_entries_destroy(sleep_retention_module_t module)
 
 static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
+    esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
-    for (int i = num - 1; i >= 0; i--) {
+    for (int i = num - 1; (i >= 0) && (err == ESP_OK); i--) {
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
         if ((retent[i].owner > BIT(EXTRA_LINK_NUM)) && (retent[i].config.id != 0xffff)) {
             _lock_release_recursive(&s_retention.lock);
@@ -484,16 +506,40 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
             return ESP_ERR_NOT_SUPPORTED;
         }
 #endif
-        void *link = sleep_retention_entries_try_create(&retent[i].config, retent[i].owner, priority, module);
-        if (link == NULL) {
-            _lock_release_recursive(&s_retention.lock);
-            sleep_retention_entries_do_destroy(module);
-            return ESP_ERR_NO_MEM;
+#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE && CONFIG_IDF_TARGET_ESP32C5 // TODO: PM-202
+        /* There is a bug in REGDMA wait mode, when two wait nodes need to wait for the
+         * same value (_val & _mask), the second wait node will immediately return to
+         * wait done, The reason is that the wait mode comparison output logic immediate
+         * compares the value of the previous wait register cached inside the
+         * digital logic before reading out he register contents specified by _backup.
+         */
+        #define config_is_wait_mode(_config)   (regdma_link_get_config_mode(_config) == REGDMA_LINK_MODE_WAIT)
+        if ((retent[i].config.id != 0xffff) && config_is_wait_mode(&(retent[i].config)) && (retent[i].config.id != 0xfffe)) {
+            uint32_t value = retent[i].config.write_wait.value;
+            uint32_t mask  = retent[i].config.write_wait.mask;
+            bool skip_b = retent[i].config.head.skip_b;
+            bool skip_r = retent[i].config.head.skip_r;
+            sleep_retention_entries_config_t wait_bug_workaround[] = {
+                [0] = { .config = REGDMA_LINK_WRITE_INIT(0xfffe, PMU_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner },
+                [1] = { .config = REGDMA_LINK_WAIT_INIT (0xfffe, PMU_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner }
+            };
+            err = sleep_retention_entries_create_impl(wait_bug_workaround, ARRAY_SIZE(wait_bug_workaround), priority, module);
         }
-        sleep_retention_entries_update(retent[i].owner, link, priority);
+#endif
+        if (err == ESP_OK) {
+            void *link = sleep_retention_entries_try_create(&retent[i].config, retent[i].owner, priority, module);
+            if (link == NULL) {
+                _lock_release_recursive(&s_retention.lock);
+                sleep_retention_entries_do_destroy(module);
+                return ESP_ERR_NO_MEM;
+            }
+            sleep_retention_entries_update(retent[i].owner, link, priority);
+        } else {
+            break;
+        }
     }
     _lock_release_recursive(&s_retention.lock);
-    return ESP_OK;
+    return err;
 }
 
 static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t priority, sleep_retention_module_t module)
@@ -527,6 +573,9 @@ static void sleep_retention_entries_join(void)
                     s_retention.lists[priority].entries[1],
                     s_retention.lists[priority].entries[2],
                     s_retention.lists[priority].entries[3]
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                    , s_retention.lists[priority].entries[4]
+#endif
                 );
         }
         entries_tail = s_retention.lists[priority].entries_tail;

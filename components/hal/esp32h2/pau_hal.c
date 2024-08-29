@@ -42,6 +42,17 @@ void IRAM_ATTR pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enabl
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.regdma_conf, regdma_clk_en, enable);
 }
 
+void pau_hal_set_regdma_work_timeout(pau_hal_context_t *hal, uint32_t loop_num, uint32_t time)
+{
+}
+
+void pau_hal_set_regdma_wait_timeout(pau_hal_context_t *hal, int count, int interval)
+{
+    HAL_ASSERT(count > 0 && interval > 0);
+    pau_ll_set_regdma_link_wait_retry_count(hal->dev, count);
+    pau_ll_set_regdma_link_wait_read_interval(hal->dev, interval);
+}
+
 void IRAM_ATTR pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_restore)
 {
     pau_ll_clear_regdma_backup_done_intr_state(hal->dev);

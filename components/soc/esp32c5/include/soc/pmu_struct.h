@@ -87,10 +87,9 @@ typedef union {
         uint32_t reserved2                            : 1;
         uint32_t hp_sleep2active_backup_clk_sel       : 2;
         uint32_t hp_modem2active_backup_clk_sel       : 2;
-        uint32_t reserved3                            : 2;
-        uint32_t hp_sleep2active_backup_mode          : 3;
-        uint32_t hp_modem2active_backup_mode          : 3;
-        uint32_t reserved4                            : 3;
+        uint32_t hp_sleep2active_backup_mode          : 5;
+        uint32_t hp_modem2active_backup_mode          : 5;
+        uint32_t reserved4                            : 1;
         uint32_t hp_sleep2active_backup_en            : 1;
         uint32_t hp_modem2active_backup_en            : 1;
         uint32_t reserved5                            : 1;
@@ -104,8 +103,8 @@ typedef union {
         uint32_t reserved8                            : 2;
         uint32_t hp_sleep2modem_backup_clk_sel        : 2;
         uint32_t reserved9                            : 4;
-        uint32_t hp_sleep2modem_backup_mode           : 3;
-        uint32_t reserved10                           : 6;
+        uint32_t hp_sleep2modem_backup_mode           : 5;
+        uint32_t reserved10                           : 4;
         uint32_t hp_sleep2modem_backup_en             : 1;
         uint32_t reserved11                           : 2;
     };
@@ -120,10 +119,8 @@ typedef union {
         uint32_t reserved14                           : 2;
         uint32_t hp_modem2sleep_backup_clk_sel        : 2;
         uint32_t hp_active2sleep_backup_clk_sel       : 2;
-        uint32_t reserved15                           : 3;
-        uint32_t hp_modem2sleep_backup_mode           : 3;
-        uint32_t hp_active2sleep_backup_mode          : 3;
-        uint32_t reserved16                           : 1;
+        uint32_t hp_modem2sleep_backup_mode           : 5;
+        uint32_t hp_active2sleep_backup_mode          : 5;
         uint32_t hp_modem2sleep_backup_en             : 1;
         uint32_t hp_active2sleep_backup_en            : 1;
     };
@@ -144,11 +141,12 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0      : 4;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t reserved0      : 3;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t dbias_init     : 1;    /* Only HP_ACTIVE modem under hp system is valid */
         uint32_t lp_dbias_vol   : 5;    /* Only HP_ACTIVE modem under hp system is valid */
         uint32_t hp_dbias_vol   : 5;    /* Only HP_ACTIVE modem under hp system is valid */
         uint32_t dbias_sel      : 1;    /* Only HP_ACTIVE modem under hp system is valid */
-        uint32_t dbias_init     : 1;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t slp_connect_en : 1;
         uint32_t slp_mem_xpd    : 1;
         uint32_t slp_logic_xpd  : 1;
         uint32_t xpd            : 1;
@@ -378,10 +376,10 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0      : 9;
-        uint32_t powerdown_timer: 7;
-        uint32_t powerup_timer  : 7;
-        uint32_t wait_timer     : 9;
+        uint32_t lp_iso_wait_timer : 8;
+        uint32_t lp_rst_wait_timer : 8;
+        uint32_t hp_iso_wait_timer : 8;
+        uint32_t hp_rst_wait_timer : 8;
     };
     uint32_t val;
 } pmu_power_wait_timer2_reg_t;
@@ -565,7 +563,10 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0     : 26;
+        uint32_t reserved0     : 23;
+        uint32_t xpd_ckgen5g   : 1;
+        uint32_t xpd_tc5g_i2c  : 1;
+        uint32_t xpd_rx5g_i2c  : 1;
         uint32_t perif_i2c_rstb: 1;
         uint32_t xpd_perif_i2c : 1;
         uint32_t xpd_txrf_i2c  : 1;
@@ -754,9 +755,7 @@ typedef struct pmu_dev_t{
 extern pmu_dev_t PMU;
 
 #ifndef __cplusplus
-
-//_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_VDD_SPI_STATUS_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure"); TODO IDF-8643
-
+_Static_assert(sizeof(pmu_dev_t) == 0x1ac, "Invalid size of pmu_dev_t structure");
 #endif
 
 #ifdef __cplusplus

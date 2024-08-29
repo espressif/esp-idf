@@ -1799,6 +1799,10 @@ config SOC_CPU_IN_TOP_DOMAIN
     bool
     default y
 
+config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
+
 config SOC_PSRAM_VDD_POWER_MPLL
     bool
     default y

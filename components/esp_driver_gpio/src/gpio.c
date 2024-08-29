@@ -975,7 +975,7 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
 }
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
@@ -1015,7 +1015,7 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
-#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 
 esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
 {

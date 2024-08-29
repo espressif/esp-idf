@@ -75,23 +75,21 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_ALL          = (uint32_t) -1
 } periph_retention_module_bitmap_t;
 
-#define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM  \
-                                    | SLEEP_RETENTION_MODULE_BM_CLOCK_MODEM \
-                                    | SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
-                                    | SLEEP_RETENTION_MODULE_BM_TASK_WDT    \
-                                    | SLEEP_RETENTION_MODULE_BM_INT_WDT     \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER   \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER   \
-                                    | SLEEP_RETENTION_MODULE_BM_GDMA_CH0    \
-                                    | SLEEP_RETENTION_MODULE_BM_GDMA_CH1    \
-                                    | SLEEP_RETENTION_MODULE_BM_GDMA_CH2    \
-                                    | SLEEP_RETENTION_MODULE_BM_ADC         \
-                                    | SLEEP_RETENTION_MODULE_BM_I2C0        \
-                                    | SLEEP_RETENTION_MODULE_BM_I2C1        \
-                                    | SLEEP_RETENTION_MODULE_BM_RMT0        \
-                                    | SLEEP_RETENTION_MODULE_BM_UART0       \
-                                    | SLEEP_RETENTION_MODULE_BM_UART1       \
-                                   )
+#define TOP_DOMAIN_PERIPHERALS_BM ( SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
+                                  | SLEEP_RETENTION_MODULE_BM_TASK_WDT    \
+                                  | SLEEP_RETENTION_MODULE_BM_INT_WDT     \
+                                  | SLEEP_RETENTION_MODULE_BM_TG0_TIMER   \
+                                  | SLEEP_RETENTION_MODULE_BM_TG1_TIMER   \
+                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH0    \
+                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH1    \
+                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH2    \
+                                  | SLEEP_RETENTION_MODULE_BM_ADC         \
+                                  | SLEEP_RETENTION_MODULE_BM_I2C0        \
+                                  | SLEEP_RETENTION_MODULE_BM_I2C1        \
+                                  | SLEEP_RETENTION_MODULE_BM_RMT0        \
+                                  | SLEEP_RETENTION_MODULE_BM_UART0       \
+                                  | SLEEP_RETENTION_MODULE_BM_UART1       \
+                                  )
 
 #ifdef __cplusplus
 }
