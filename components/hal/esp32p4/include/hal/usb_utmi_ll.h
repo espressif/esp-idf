@@ -16,12 +16,27 @@
 extern "C" {
 #endif
 
+/* ---------------------------- USB PHY Control  ---------------------------- */
+
+/**
+ * @brief Configure Low-Speed mode
+ *
+ * @param[in] hw       Beginning address of the peripheral registers
+ * @param[in] parallel Parallel or serial LS mode
+ * @return FORCE_INLINE_ATTR
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_configure_ls(usb_utmi_dev_t *hw, bool parallel)
+{
+    hw->fc_06.ls_par_en = parallel;
+    hw->fc_06.ls_kpalv_en = 1;
+}
+
 /* ----------------------------- RCC Functions  ----------------------------- */
 
 /**
  * @brief Enable the bus clock for the USB UTMI PHY and USB_DWC_HS controller
  *
- * @param clk_en True to enable, false to disable
+ * @param[in] clk_en True to enable, false to disable
  */
 FORCE_INLINE_ATTR void usb_utmi_ll_enable_bus_clock(bool clk_en)
 {
@@ -39,8 +54,11 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_bus_clock(bool clk_en)
  */
 FORCE_INLINE_ATTR void usb_utmi_ll_reset_register(void)
 {
+    //@todo call this function somewhere
     // Reset the USB_UTMI and USB_DWC_HS
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20 = 1;
+    LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20_phy = 1;
+    LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20_phy = 0;
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20 = 0;
 }
 
