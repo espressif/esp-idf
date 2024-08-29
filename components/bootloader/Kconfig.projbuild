@@ -20,14 +20,14 @@ menu "Bootloader config"
             This option sets compiler optimization level (gcc -O argument)
             for the bootloader.
 
-            - The default "Size" setting will add the -0s flag to CFLAGS.
+            - The default "Size" setting will add the -Os (-Oz with clang) flag to CFLAGS.
             - The "Debug" setting will add the -Og flag to CFLAGS.
             - The "Performance" setting will add the -O2 flag to CFLAGS.
 
             Note that custom optimization levels may be unsupported.
 
         config BOOTLOADER_COMPILER_OPTIMIZATION_SIZE
-            bool "Size (-Os)"
+            bool "Size (-Os with GCC, -Oz with Clang)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG
             bool "Debug (-Og)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
