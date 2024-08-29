@@ -436,6 +436,22 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             sign_data_args += [extra_args['datafile']]
         RunTool('espsecure', sign_data_args, args.build_dir)()
 
+    def secure_verify_signature(action: str,
+                                ctx: click.core.Context,
+                                args: PropertyDict,
+                                version: str,
+                                keyfile: str,
+                                **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        verify_signature_args = [PYTHON, '-m', 'espsecure', 'verify_signature']
+        if version:
+            verify_signature_args += ['--version', version]
+        if keyfile:
+            verify_signature_args += ['--keyfile', keyfile]
+        if extra_args['datafile']:
+            verify_signature_args += [extra_args['datafile']]
+        RunTool('espsecure', verify_signature_args, args.build_dir)()
+
     def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
         efuse_args = []
         if args.port:
@@ -783,6 +799,28 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'help': (
                             'Output file for signed digest image. Default is to sign the input file.'
                         ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['datafile'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-verify-signature': {
+                'callback': secure_verify_signature,
+                'help': ('Verify a previously signed binary image, using the ECDSA (V1) or either RSA or ECDSA (V2) public key.'),
+                'options': [
+                    {
+                        'names': ['--version', '-v'],
+                        'help': ('Version of the secure boot signing scheme to use.'),
+                        'type': click.Choice(['1', '2']),
+                        'default': '2',
+                    },
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('Public key file for verification. Can be private or public key in PEM format.'),
                     },
                 ],
                 'arguments': [
