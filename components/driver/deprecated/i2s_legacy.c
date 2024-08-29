@@ -371,7 +371,7 @@ static esp_err_t i2s_dma_intr_init(i2s_port_t i2s_num, int intr_flag)
     if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_TX;
         /* Register a new GDMA tx channel */
-        ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->tx_dma_chan), TAG, "Register tx dma channel error");
+        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &p_i2s[i2s_num]->tx_dma_chan), TAG, "Register tx dma channel error");
         ESP_RETURN_ON_ERROR(gdma_connect(p_i2s[i2s_num]->tx_dma_chan, trig), TAG, "Connect tx dma channel error");
         gdma_tx_event_callbacks_t cb = {.on_trans_eof = i2s_dma_tx_callback};
         /* Set callback function for GDMA, the interrupt is triggered by GDMA, then the GDMA ISR will call the  callback function */
@@ -380,7 +380,7 @@ static esp_err_t i2s_dma_intr_init(i2s_port_t i2s_num, int intr_flag)
     if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_RX;
         /* Register a new GDMA rx channel */
-        ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->rx_dma_chan), TAG, "Register rx dma channel error");
+        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &p_i2s[i2s_num]->rx_dma_chan), TAG, "Register rx dma channel error");
         ESP_RETURN_ON_ERROR(gdma_connect(p_i2s[i2s_num]->rx_dma_chan, trig), TAG, "Connect rx dma channel error");
         gdma_rx_event_callbacks_t cb = {.on_recv_eof = i2s_dma_rx_callback};
         /* Set callback function for GDMA, the interrupt is triggered by GDMA, then the GDMA ISR will call the  callback function */

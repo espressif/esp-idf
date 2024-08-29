@@ -290,7 +290,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
-    ret = gdma_new_channel(&rx_alloc_config, &s_adc_digi_ctx->rx_dma_channel);
+    ret = gdma_new_ahb_channel(&rx_alloc_config, &s_adc_digi_ctx->rx_dma_channel);
     if (ret != ESP_OK) {
         goto cleanup;
     }
