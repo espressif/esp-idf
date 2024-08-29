@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hp_system_struct.h"
 #include "soc/usb_utmi_struct.h"
 
 #ifdef __cplusplus
@@ -54,7 +55,6 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_bus_clock(bool clk_en)
  */
 FORCE_INLINE_ATTR void usb_utmi_ll_reset_register(void)
 {
-    //@todo call this function somewhere
     // Reset the USB_UTMI and USB_DWC_HS
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20 = 1;
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20_phy = 1;
@@ -62,8 +62,19 @@ FORCE_INLINE_ATTR void usb_utmi_ll_reset_register(void)
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20 = 0;
 }
 
-// P_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
+// P_AON_CLKRST.hp_usb_clkrst_ctrlx is shared register, so this function must be used in an atomic way
 #define usb_utmi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_utmi_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief Enable precise detection of VBUS
+ *
+ * @param[in] enable Enable/Disable precise detection
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_enable_precise_detection(bool enable)
+{
+    // Enable VBUS precise detection
+    HP_SYSTEM.sys_usbotg20_ctrl.sys_otg_suspendm = enable;
+}
 
 #ifdef __cplusplus
 }
