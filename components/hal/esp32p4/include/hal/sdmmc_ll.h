@@ -14,8 +14,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "esp_bit_defs.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
+#include "hal/sd_types.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/sdmmc_struct.h"
 #include "soc/sdmmc_reg.h"
@@ -29,21 +32,49 @@ extern "C" {
 
 #define SDMMC_LL_GET_HW(id)   (((id) == 0) ? (&SDMMC) : NULL)
 
+#define SDMMC_LL_EVENT_IO_SLOT1  (1<<17)
+#define SDMMC_LL_EVENT_IO_SLOT0  (1<<16)
+#define SDMMC_LL_EVENT_EBE       (1<<15)
+#define SDMMC_LL_EVENT_ACD       (1<<14)
+#define SDMMC_LL_EVENT_SBE       (1<<13)
+#define SDMMC_LL_EVENT_BCI       (1<<13)
+#define SDMMC_LL_EVENT_HLE       (1<<12)
+#define SDMMC_LL_EVENT_FRUN      (1<<11)
+#define SDMMC_LL_EVENT_HTO       (1<<10)
+#define SDMMC_LL_EVENT_DTO       (1<<9)
+#define SDMMC_LL_EVENT_RTO       (1<<8)
+#define SDMMC_LL_EVENT_DCRC      (1<<7)
+#define SDMMC_LL_EVENT_RCRC      (1<<6)
+#define SDMMC_LL_EVENT_RXDR      (1<<5)
+#define SDMMC_LL_EVENT_TXDR      (1<<4)
+#define SDMMC_LL_EVENT_DATA_OVER (1<<3)
+#define SDMMC_LL_EVENT_CMD_DONE  (1<<2)
+#define SDMMC_LL_EVENT_RESP_ERR  (1<<1)
+#define SDMMC_LL_EVENT_CD        (1<<0)
+
 /* Default disabled interrupts (on init):
- *  SDMMC_INTMASK_RXDR,
- *  SDMMC_INTMASK_TXDR,
- *  SDMMC_INTMASK_BCI,
- *  SDMMC_INTMASK_ACD,
- *  SDMMC_INTMASK_IO_SLOT1,
- *  SDMMC_INTMASK_IO_SLOT0
+ *  SDMMC_LL_EVENT_RXDR,
+ *  SDMMC_LL_EVENT_TXDR,
+ *  SDMMC_LL_EVENT_BCI,
+ *  SDMMC_LL_EVENT_ACD,
+ *  SDMMC_LL_EVENT_IO_SLOT1,
+ *  SDMMC_LL_EVENT_IO_SLOT0
  */
 // Default enabled interrupts (sdio is enabled only when use):
-#define SDMMC_LL_INTMASK_DEFAULT \
-    (SDMMC_INTMASK_CD | SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER | \
-    SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | \
-    SDMMC_INTMASK_HLE | \
-    SDMMC_INTMASK_SBE | \
-    SDMMC_INTMASK_EBE)
+#define SDMMC_LL_EVENT_DEFAULT \
+    (SDMMC_LL_EVENT_CD | SDMMC_LL_EVENT_RESP_ERR | SDMMC_LL_EVENT_CMD_DONE | SDMMC_LL_EVENT_DATA_OVER | \
+    SDMMC_LL_EVENT_RCRC | SDMMC_LL_EVENT_DCRC | SDMMC_LL_EVENT_RTO | SDMMC_LL_EVENT_DTO | SDMMC_LL_EVENT_HTO | \
+    SDMMC_LL_EVENT_HLE | \
+    SDMMC_LL_EVENT_SBE | \
+    SDMMC_LL_EVENT_EBE)
+
+#define SDMMC_LL_SD_EVENT_MASK \
+    (SDMMC_LL_EVENT_CD | SDMMC_LL_EVENT_RESP_ERR | SDMMC_LL_EVENT_CMD_DONE | SDMMC_LL_EVENT_DATA_OVER | \
+    SDMMC_LL_EVENT_TXDR | SDMMC_LL_EVENT_RXDR |\
+    SDMMC_LL_EVENT_RCRC | SDMMC_LL_EVENT_DCRC | SDMMC_LL_EVENT_RTO | SDMMC_LL_EVENT_DTO | SDMMC_LL_EVENT_HTO | \
+    SDMMC_LL_EVENT_FRUN | SDMMC_LL_EVENT_HLE |\
+    SDMMC_LL_EVENT_SBE | SDMMC_LL_EVENT_ACD |\
+    SDMMC_LL_EVENT_EBE)
 
 /**
  * SDMMC capabilities
@@ -60,6 +91,9 @@ typedef enum {
 } sdmmc_ll_delay_phase_t;
 
 
+/*---------------------------------------------------------------
+                    Clock & Reset
+---------------------------------------------------------------*/
 /**
  * @brief Enable the bus clock for SDMMC module
  *
@@ -239,10 +273,10 @@ static inline void sdmmc_ll_set_card_clock_div(sdmmc_dev_t *hw, uint32_t slot, u
 {
     if (slot == 0) {
         hw->clksrc.card0 = 0;
-        hw->clkdiv.clk_divider0 = card_div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, clk_divider0, card_div);
     } else if (slot == 1) {
         hw->clksrc.card1 = 1;
-        hw->clkdiv.clk_divider1 = card_div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, clk_divider1, card_div);
     } else {
         HAL_ASSERT(false);
     }
@@ -262,10 +296,10 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
 
     if (slot == 0) {
         HAL_ASSERT(hw->clksrc.card0 == 0);
-        card_div = hw->clkdiv.clk_divider0;
+        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider0);
     } else if (slot == 1) {
         HAL_ASSERT(hw->clksrc.card1 == 1);
-        card_div = hw->clkdiv.clk_divider1;
+        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider1);
     } else {
         HAL_ASSERT(false);
     }
@@ -290,6 +324,81 @@ static inline void sdmmc_ll_enable_card_clock_low_power(sdmmc_dev_t *hw, uint32_
 }
 
 /**
+ * @brief Reset controller
+ *
+ * @note Self clear after two AHB clock cycles, needs wait done
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_reset_controller(sdmmc_dev_t *hw)
+{
+    hw->ctrl.controller_reset = 1;
+}
+
+/**
+ * @brief Get if controller reset is done
+ *
+ * @param hw    hardware instance address
+ *
+ * @return true: done; false: not done
+ */
+static inline bool sdmmc_ll_is_controller_reset_done(sdmmc_dev_t *hw)
+{
+    return hw->ctrl.controller_reset == 0;
+}
+
+/**
+ * @brief Reset DMA
+ *
+ * @note Self clear after two AHB clock cycles, needs wait done
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_reset_dma(sdmmc_dev_t *hw)
+{
+    hw->ctrl.dma_reset = 1;
+}
+
+/**
+ * @brief Get if dma reset is done
+ *
+ * @param hw    hardware instance address
+ *
+ * @return true: done; false: not done
+ */
+static inline bool sdmmc_ll_is_dma_reset_done(sdmmc_dev_t *hw)
+{
+    return hw->ctrl.dma_reset == 0;
+}
+
+/**
+ * @brief Reset fifo
+ *
+ * @note Self clear after reset done, needs wait done
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_reset_fifo(sdmmc_dev_t *hw)
+{
+    hw->ctrl.fifo_reset = 1;
+}
+
+/**
+ * @brief Get if fifo reset is done
+ *
+ * @param hw    hardware instance address
+ *
+ * @return true: done; false: not done
+ */
+static inline bool sdmmc_ll_is_fifo_reset_done(sdmmc_dev_t *hw)
+{
+    return hw->ctrl.fifo_reset == 0;
+}
+
+/*---------------------------------------------------------------
+                      MISC
+---------------------------------------------------------------*/
+/**
  * @brief Set card data read timeout cycles
  *
  * @param hw              hardware instance address
@@ -312,7 +421,7 @@ static inline void sdmmc_ll_set_data_timeout(sdmmc_dev_t *hw, uint32_t timeout_c
  */
 static inline void sdmmc_ll_set_response_timeout(sdmmc_dev_t *hw, uint32_t timeout_cycles)
 {
-    hw->tmout.response_timeout = timeout_cycles;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tmout, response_timeout, timeout_cycles);
 }
 
 /**
@@ -379,7 +488,7 @@ static inline void sdmmc_ll_set_data_transfer_len(sdmmc_dev_t *hw, uint32_t len)
  */
 static inline void sdmmc_ll_set_block_size(sdmmc_dev_t *hw, uint32_t block_size)
 {
-    hw->blksiz.block_size = block_size;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->blksiz, block_size, block_size);
 }
 
 /**
@@ -394,10 +503,137 @@ static inline void sdmmc_ll_set_desc_addr(sdmmc_dev_t *hw, uint32_t desc_addr)
 }
 
 /**
+ * @brief Poll demand
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_poll_demand(sdmmc_dev_t *hw)
+{
+    hw->pldmnd.pldmnd_pd = 1;
+}
+
+/**
+ * @brief Set command
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_set_command(sdmmc_dev_t *hw, sdmmc_hw_cmd_t cmd)
+{
+    memcpy((void *)&hw->cmd, &cmd, sizeof(sdmmc_hw_cmd_t));
+}
+
+/**
+ * @brief Get if command is taken by CIU
+ *
+ * @param hw    hardware instance address
+ *
+ * @return 1: is taken; 0: not taken, should not write to any command regs
+ */
+static inline bool sdmmc_ll_is_command_taken(sdmmc_dev_t *hw)
+{
+    return hw->cmd.start_command == 0;
+}
+
+/**
+ * @brief Set command argument
+ *
+ * @param hw    hardware instance address
+ * @param arg   value indicates command argument to be passed to card
+ */
+static inline void sdmmc_ll_set_command_arg(sdmmc_dev_t *hw, uint32_t arg)
+{
+    hw->cmdarg = arg;
+}
+
+/**
+ * @brief Get version ID
+ *
+ * @param hw    hardware instance address
+ *
+ * @return version ID
+ */
+static inline uint32_t sdmmc_ll_get_version_id(sdmmc_dev_t *hw)
+{
+    return hw->verid;
+}
+
+/**
+ * @brief Get hardware configuration info
+ *
+ * @param hw    hardware instance address
+ *
+ * @return hardware configurations
+ */
+static inline uint32_t sdmmc_ll_get_hw_config_info(sdmmc_dev_t *hw)
+{
+    return hw->hcon.val;
+}
+
+/**
+ * @brief Set card width
+ *
+ * @param hw    hardware instance address
+ * @param slot  slot ID
+ * @param width card width
+ */
+static inline void sdmmc_ll_set_card_width(sdmmc_dev_t *hw, uint32_t slot, sd_bus_width_t width)
+{
+    uint16_t mask = 1 << slot;
+
+    switch (width) {
+    case SD_BUS_WIDTH_1_BIT:
+        hw->ctype.card_width_8 &= ~mask;
+        hw->ctype.card_width &= ~mask;
+        break;
+    case SD_BUS_WIDTH_4_BIT:
+        hw->ctype.card_width_8 &= ~mask;
+        hw->ctype.card_width |= mask;
+        break;
+    case SD_BUS_WIDTH_8_BIT:
+        hw->ctype.card_width_8 |= mask;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Is card data busy
+ *
+ * @param hw    hardware instance address
+ *
+ * @return 1: busy; 0: idle
+ */
+static inline bool sdmmc_ll_is_card_data_busy(sdmmc_dev_t *hw)
+{
+    return hw->status.data_busy == 1;
+}
+
+/*---------------------------------------------------------------
+                      DMA
+---------------------------------------------------------------*/
+/**
+ * @brief Init DMA
+ *        - enable dma
+ *        - clear bus mode reg and reset all dmac internal regs
+ *        - enable internal dmac interrupt
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_init_dma(sdmmc_dev_t *hw)
+{
+    hw->ctrl.dma_enable = 1;
+    hw->bmod.val = 0;
+    hw->bmod.sw_reset = 1;
+    hw->idinten.ni = 1;
+    hw->idinten.ri = 1;
+    hw->idinten.ti = 1;
+}
+
+/**
  * @brief Enable DMA
  *
  * @param hw    hardware instance address
- * @param slot  slot
  * @param en    enable / disable
  */
 static inline void sdmmc_ll_enable_dma(sdmmc_dev_t *hw, bool en)
@@ -409,17 +645,23 @@ static inline void sdmmc_ll_enable_dma(sdmmc_dev_t *hw, bool en)
 }
 
 /**
- * @brief Poll demand
+ * @brief Stop DMA
  *
  * @param hw    hardware instance address
  */
-static inline void sdmmc_ll_poll_demand(sdmmc_dev_t *hw)
+static inline void sdmmc_ll_stop_dma(sdmmc_dev_t *hw)
 {
-    hw->pldmnd.pldmnd_pd = 1;
+    hw->ctrl.use_internal_dma = 0;
+    hw->ctrl.dma_reset = 1;     //here might be an issue as we don't wait the `dma_reset` to be self-cleared, check in next steps
+    hw->bmod.fb = 0;
+    hw->bmod.enable = 0;
 }
 
+/*---------------------------------------------------------------
+                      INTR
+---------------------------------------------------------------*/
 /**
- * @brief Get interrupt status
+ * @brief Get masked interrupt-status register value
  *
  * @param hw    hardware instance address
  */
@@ -445,6 +687,14 @@ static inline void sdmmc_ll_enable_interrupt(sdmmc_dev_t *hw, uint32_t mask, boo
 }
 
 /**
+ * @brief Get RAW interrupt-status register value
+ */
+static inline uint32_t sdmmc_ll_get_interrupt_raw(sdmmc_dev_t *hw)
+{
+    return hw->rintsts.val;
+}
+
+/**
  * @brief Clear interrupt
  *
  * @param hw    hardware instance address
@@ -464,6 +714,36 @@ static inline void sdmmc_ll_clear_interrupt(sdmmc_dev_t *hw, uint32_t mask)
 static inline void sdmmc_ll_enable_global_interrupt(sdmmc_dev_t *hw, bool en)
 {
     hw->ctrl.int_enable = (uint32_t)en;
+}
+
+/**
+ * @brief Enable / disable busy clear interrupt
+ *
+ * @param hw  hardware instance address
+ * @param en  enable / disable
+ */
+static inline void sdmmc_ll_enable_busy_clear_interrupt(sdmmc_dev_t *hw, bool en)
+{
+    hw->cardthrctl.busy_clr_int_en = en;
+}
+
+/**
+ * @brief Get internal dmac status register val
+ */
+static inline uint32_t sdmmc_ll_get_idsts_interrupt_raw(sdmmc_dev_t *hw)
+{
+    return hw->idsts.val;
+}
+
+/**
+ * @brief Clear internal dmac status register events
+ *
+ * @param hw    hardware instance address
+ * @param mask  interrupt mask
+ */
+static inline void sdmmc_ll_clear_idsts_interrupt(sdmmc_dev_t *hw, uint32_t mask)
+{
+    hw->idsts.val = mask;
 }
 
 #ifdef __cplusplus
