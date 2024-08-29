@@ -626,6 +626,13 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
             default y
             help
                     This enables controller transfer periodic sync events to host
+
+        config BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES
+            bool "Enable Periodic Advertisement with Response (EXPERIMENTAL)"
+            depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+            default n
+            help
+                    This enables controller PAwR (Periodic Advertisement with Response).
     endif
 
     config BT_NIMBLE_EXT_SCAN
