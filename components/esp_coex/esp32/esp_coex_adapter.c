@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "esp_timer.h"
 #include "private/esp_coexist_adapter.h"
 #include "esp32/rom/ets_sys.h"
+#include "private/esp_coexist_debug.h"
 
 #define TAG "esp_coex_adapter"
 
@@ -206,6 +207,15 @@ static int32_t esp_coex_internal_semphr_give_wrapper(void *semphr)
     return (int32_t)xSemaphoreGive(((modem_static_queue_t *)semphr)->handle);
 }
 
+static int esp_coexist_debug_matrix_init_wrapper(int evt, int sig, bool rev)
+{
+#if CONFIG_ESP_COEX_GPIO_DEBUG
+    return esp_coexist_debug_matrix_init(evt, sig, rev);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._version = COEX_ADAPTER_VERSION,
     ._spin_lock_create = esp_coex_common_spin_lock_create_wrapper,
@@ -227,5 +237,6 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._timer_done = esp_coex_common_timer_done_wrapper,
     ._timer_setfn = esp_coex_common_timer_setfn_wrapper,
     ._timer_arm_us = esp_coex_common_timer_arm_us_wrapper,
+    ._debug_matrix_init = esp_coexist_debug_matrix_init_wrapper,
     ._magic = COEX_ADAPTER_MAGIC,
 };
