@@ -24,45 +24,46 @@
 static const char* TAG = "quad_psram";
 
 //Commands for PSRAM chip
-#define PSRAM_READ                 0x03
-#define PSRAM_FAST_READ            0x0B
-#define PSRAM_FAST_READ_QUAD       0xEB
-#define PSRAM_WRITE                0x02
-#define PSRAM_QUAD_WRITE           0x38
-#define PSRAM_ENTER_QMODE          0x35
-#define PSRAM_EXIT_QMODE           0xF5
-#define PSRAM_RESET_EN             0x66
-#define PSRAM_RESET                0x99
-#define PSRAM_SET_BURST_LEN        0xC0
-#define PSRAM_DEVICE_ID            0x9F
+#define PSRAM_READ                   0x03
+#define PSRAM_FAST_READ              0x0B
+#define PSRAM_FAST_READ_QUAD         0xEB
+#define PSRAM_WRITE                  0x02
+#define PSRAM_QUAD_WRITE             0x38
+#define PSRAM_ENTER_QMODE            0x35
+#define PSRAM_EXIT_QMODE             0xF5
+#define PSRAM_RESET_EN               0x66
+#define PSRAM_RESET                  0x99
+#define PSRAM_SET_BURST_LEN          0xC0
+#define PSRAM_DEVICE_ID              0x9F
 
-#define PSRAM_FAST_READ_DUMMY      4
-#define PSRAM_FAST_READ_QUAD_DUMMY 6
+#define PSRAM_FAST_READ_DUMMY        4
+#define PSRAM_FAST_READ_QUAD_DUMMY   6
 
 // ID
-#define PSRAM_ID_KGD_M          0xff
-#define PSRAM_ID_KGD_S             8
-#define PSRAM_ID_KGD            0x5d
-#define PSRAM_ID_EID_M          0xff
-#define PSRAM_ID_EID_S            16
+#define PSRAM_ID_BITS_NUM            24
+#define PSRAM_EID_BITS_NUM           48
+#define PSRAM_ID_KGD_M               0xff
+#define PSRAM_ID_KGD_S               8
+#define PSRAM_ID_KGD                 0x5d
+#define PSRAM_ID_EID_BIT_47_40_M     0xff
+#define PSRAM_ID_EID_BIT_47_40_S     16
 
-// Use the [7:5](bit7~bit5) of EID to distinguish the psram size:
+// Use the [47:45](bit47~bit45) of EID to distinguish the psram size:
 //
-//   BIT7  |  BIT6  |  BIT5  |  SIZE(MBIT)
+//   BIT47  |  BIT46  |  BIT45  |  SIZE(MBIT)
 //   -------------------------------------
-//    0    |   0    |   0    |     16
-//    0    |   0    |   1    |     32
-//    0    |   1    |   0    |     64
-#define PSRAM_EID_SIZE_M         0x07
-#define PSRAM_EID_SIZE_S            5
+//    0     |   0     |   0     |     16
+//    0     |   0     |   1     |     32
+//    0     |   1     |   0     |     64
+#define PSRAM_EID_BIT_47_45_M        0x07
+#define PSRAM_EID_BIT_47_45_S        5
 
-#define PSRAM_KGD(id)         (((id) >> PSRAM_ID_KGD_S) & PSRAM_ID_KGD_M)
-#define PSRAM_EID(id)         (((id) >> PSRAM_ID_EID_S) & PSRAM_ID_EID_M)
-#define PSRAM_SIZE_ID(id)     ((PSRAM_EID(id) >> PSRAM_EID_SIZE_S) & PSRAM_EID_SIZE_M)
-#define PSRAM_IS_VALID(id)    (PSRAM_KGD(id) == PSRAM_ID_KGD)
+#define PSRAM_KGD(id)                (((id) >> PSRAM_ID_KGD_S) & PSRAM_ID_KGD_M)
+#define PSRAM_EID_BIT_47_40(id)      (((id) >> PSRAM_ID_EID_BIT_47_40_S) & PSRAM_ID_EID_BIT_47_40_M)
+#define PSRAM_SIZE_ID(id)            ((PSRAM_EID_BIT_47_40(id) >> PSRAM_EID_BIT_47_45_S) & PSRAM_EID_BIT_47_45_M)
+#define PSRAM_IS_VALID(id)           (PSRAM_KGD(id) == PSRAM_ID_KGD)
 
-#define PSRAM_IS_64MBIT_TRIAL(id) (PSRAM_EID(id) == 0x26)
-#define PSRAM_IS_2T_APS3204(id)   ((((id) >> 21) && 0xfffff) == 1)
+#define PSRAM_IS_64MBIT_TRIAL(id)    (PSRAM_EID_BIT_47_40(id) == 0x26)
 
 // IO-pins for PSRAM.
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
@@ -242,14 +243,14 @@ bool psram_support_wrap_size(uint32_t wrap_size)
 }
 
 //Read ID operation only supports SPI CMD and mode, should issue `psram_disable_qio_mode` before calling this
-static void psram_read_id(int spi_num, uint32_t* dev_id)
+static void psram_read_id(int spi_num, uint8_t* dev_id, int id_bits)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
                    PSRAM_DEVICE_ID, 8,               /* command and command bit len*/
                    0, 24,                            /* address and address bit len*/
                    0,                                /* dummy bit len */
                    NULL, 0,                          /* tx data and tx bit len*/
-                   (uint8_t*) dev_id, 24,            /* rx data and rx bit len*/
+                   dev_id, id_bits,                  /* rx data and rx bit len*/
                    CS_PSRAM_SEL,                     /* cs bit mask*/
                    false);                           /* whether is program/erase operation */
 }
@@ -303,6 +304,24 @@ static void psram_gpio_config(void)
     esp_gpio_reserve_pins(BIT64(cs1_io) | BIT64(wp_io));
 }
 
+/**
+ * For certain wafer version and 8MB case, we consider it as 4MB mode as it uses 2T mode
+ */
+bool s_check_aps3204_2tmode(void)
+{
+    uint64_t full_eid = 0;
+    psram_read_id(SPI1_NUM, (uint8_t *)&full_eid, PSRAM_EID_BITS_NUM);
+
+    bool is_2t = false;
+    uint32_t eid_47_16 = __builtin_bswap32((full_eid >> 16) & UINT32_MAX);
+    ESP_EARLY_LOGD(TAG, "full_eid: 0x%" PRIx64", eid_47_16: 0x%"PRIx32", (eid_47_16 >> 5) & 0xfffff: 0x%"PRIx32, full_eid, eid_47_16, (eid_47_16 >> 5) & 0xfffff);
+    if (((eid_47_16 >> 5) & 0xfffff) == 0x8a445) {
+        is_2t = true;
+    }
+
+    return is_2t;
+}
+
 esp_err_t esp_psram_impl_enable(void)   //psram init
 {
     psram_gpio_config();
@@ -313,13 +332,13 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
 
     //We use SPI1 to init PSRAM
     psram_disable_qio_mode(SPI1_NUM);
-    psram_read_id(SPI1_NUM, &s_psram_id);
+    psram_read_id(SPI1_NUM, (uint8_t *)&s_psram_id, PSRAM_ID_BITS_NUM);
     if (!PSRAM_IS_VALID(s_psram_id)) {
         /* 16Mbit psram ID read error workaround:
          * treat the first read id as a dummy one as the pre-condition,
          * Send Read ID command again
          */
-        psram_read_id(SPI1_NUM, &s_psram_id);
+        psram_read_id(SPI1_NUM, (uint8_t *)&s_psram_id, PSRAM_ID_BITS_NUM);
         if (!PSRAM_IS_VALID(s_psram_id)) {
             ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
@@ -328,13 +347,15 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
 
     if (PSRAM_IS_64MBIT_TRIAL(s_psram_id)) {
         s_psram_size = PSRAM_SIZE_8MB;
-    } else if (PSRAM_IS_2T_APS3204(s_psram_id)) {
-        s_psram_size = PSRAM_SIZE_4MB;
     } else {
         uint8_t density = PSRAM_SIZE_ID(s_psram_id);
         s_psram_size = density == 0x0 ? PSRAM_SIZE_2MB :
                        density == 0x1 ? PSRAM_SIZE_4MB :
                        density == 0x2 ? PSRAM_SIZE_8MB : 0;
+    }
+
+    if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_aps3204_2tmode()) {
+        s_psram_size = PSRAM_SIZE_4MB;
     }
 
     //SPI1: send psram reset command
