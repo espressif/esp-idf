@@ -12,4 +12,16 @@ menu "Example Configuration"
         help
             Enable this option, you can visualize the FPS by attaching a logic analyzer to a specific GPIO.
             The GPIO will output a square wave with the frequency of FPS/2.
+
+    choice
+        prompt "Select MIPI LCD model"
+        default EXAMPLE_LCD_EK79007_SUPPORT
+        help
+            Select LCD controller model.
+
+        config EXAMPLE_LCD_USE_EK79007
+            bool "EK79007"
+        config EXAMPLE_LCD_USE_ILI9881C
+            bool "ILI9881C"
+    endchoice
 endmenu
