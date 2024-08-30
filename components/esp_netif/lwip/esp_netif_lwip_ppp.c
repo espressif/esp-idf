@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,10 @@ typedef struct lwip_peer2peer_ctx {
     bool ppp_error_event_enabled;
 #ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
     bool ppp_lcp_echo_disabled;
+#endif
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    esp_ip4_addr_t ppp_our_ip4_addr;      // our desired IP (IPADDR_ANY if no preference)
+    esp_ip4_addr_t ppp_their_ip4_addr;    // their desired IP (IPADDR_ANY if no preference)
 #endif
     ppp_pcb *ppp;
 } lwip_peer2peer_ctx_t;
@@ -247,13 +251,29 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
         ppp_ctx->ppp->settings.lcp_echo_fails = LCP_MAXECHOFAILS;
     }
 #endif
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    if (ppp_ctx->ppp_our_ip4_addr.addr != IPADDR_ANY) {
+        // Set our preferred address, and accept the remote
+        ppp_ctx->ppp->ipcp_wantoptions.ouraddr = ppp_ctx->ppp_our_ip4_addr.addr;
+        ppp_ctx->ppp->ipcp_wantoptions.accept_remote = 1;
+    }
+    if (ppp_ctx->ppp_their_ip4_addr.addr != IPADDR_ANY) {
+        // Set their preferred address, and accept the local
+        ppp_ctx->ppp->ipcp_wantoptions.hisaddr = ppp_ctx->ppp_their_ip4_addr.addr;
+        ppp_ctx->ppp->ipcp_wantoptions.accept_local = 1;
+    }
+#endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 
 #if ESP_IPV6_AUTOCONFIG
     ppp_ctx->ppp->netif->ip6_autoconfig_enabled = 1;
 #endif
 
     ESP_LOGD(TAG, "%s: Starting PPP connection: %p", __func__, ppp_ctx->ppp);
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    esp_err_t err = ppp_listen(ppp_ctx->ppp);
+#else
     err_t err = ppp_connect(ppp_ctx->ppp, 0);
+#endif
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: PPP connection cannot be started", __func__);
         if (ppp_ctx->ppp_error_event_enabled) {
@@ -309,6 +329,10 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
 #ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
     obj->ppp_lcp_echo_disabled = config->ppp_lcp_echo_disabled;
 #endif
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    obj->ppp_our_ip4_addr = config->ppp_our_ip4_addr;
+    obj->ppp_their_ip4_addr = config->ppp_their_ip4_addr;
+#endif
     return ESP_OK;
 }
 
@@ -324,5 +348,10 @@ esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *c
 #ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
     config->ppp_lcp_echo_disabled = obj->ppp_lcp_echo_disabled;
 #endif
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    config->ppp_our_ip4_addr = obj->ppp_our_ip4_addr;
+    config->ppp_their_ip4_addr = obj->ppp_their_ip4_addr;
+#endif
+
     return ESP_OK;
 }
