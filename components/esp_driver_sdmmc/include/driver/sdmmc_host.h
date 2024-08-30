@@ -94,6 +94,7 @@ esp_err_t sdmmc_host_init(void);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if host has not been initialized using sdmmc_host_init
+ *      - ESP_ERR_INVALID_ARG if GPIO pins from slot_config are not valid
  */
 esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config);
 

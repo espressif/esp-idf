@@ -46,12 +46,19 @@
 #define SDMMC_CLK_SRC_ATOMIC()
 #endif
 
+static const char *TAG = "sdmmc_periph";
+
 #define SLOT_CHECK(slot_num) \
 if (slot_num < 0 || slot_num >= SOC_SDMMC_NUM_SLOTS) { \
     return ESP_ERR_INVALID_ARG; \
 }
 
-static const char *TAG = "sdmmc_periph";
+#define GPIO_NUM_CHECK(_gpio_num) \
+if (!GPIO_IS_VALID_GPIO(_gpio_num)) { \
+    esp_err_t _err = ESP_ERR_INVALID_ARG; \
+    ESP_LOGE(TAG, "%s: Invalid GPIO number %d, returned 0x%x", __func__, _gpio_num, _err); \
+    return _err; \
+}
 
 /**
  * Slot contexts
@@ -580,6 +587,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 
     // Configure pins
     const sdmmc_slot_info_t *slot_info = &sdmmc_slot_info[slot];
+    sdmmc_slot_io_info_t *slot_gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
 
     if (slot_width == SDMMC_SLOT_WIDTH_DEFAULT) {
         slot_width = slot_info->width;
@@ -587,8 +595,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ESP_ERR_INVALID_ARG;
     }
     s_host_ctx.slot_ctx[slot].slot_width = slot_width;
-    s_host_ctx.slot_ctx[slot].slot_gpio_num.cd = gpio_cd;
-    s_host_ctx.slot_ctx[slot].slot_gpio_num.wp = gpio_wp;
+    slot_gpio->cd = gpio_cd;
+    slot_gpio->wp = gpio_wp;
 
     bool pin_not_set = s_check_pin_not_set(slot_config);
     //SD driver behaviour is: all pins not defined == using iomux
@@ -608,36 +616,36 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 #if SOC_SDMMC_USE_GPIO_MATRIX
     if (use_gpio_matrix) {
         /* Save pin configuration for this slot */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.clk = slot_config->clk;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd = slot_config->cmd;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d0 = slot_config->d0;
+        slot_gpio->clk = slot_config->clk;
+        slot_gpio->cmd = slot_config->cmd;
+        slot_gpio->d0 = slot_config->d0;
         /* Save d1 even in 1-line mode, it might be needed for SDIO INT line */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d1 = slot_config->d1;
+        slot_gpio->d1 = slot_config->d1;
         if (slot_width >= 4) {
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d2 = slot_config->d2;
+            slot_gpio->d2 = slot_config->d2;
         }
         /* Save d3 even for 1-line mode, as it needs to be set high */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d3 = slot_config->d3;
+        slot_gpio->d3 = slot_config->d3;
         if (slot_width >= 8) {
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d4 = slot_config->d4;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d5 = slot_config->d5;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d6 = slot_config->d6;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d7 = slot_config->d7;
+            slot_gpio->d4 = slot_config->d4;
+            slot_gpio->d5 = slot_config->d5;
+            slot_gpio->d6 = slot_config->d6;
+            slot_gpio->d7 = slot_config->d7;
         }
     } else
 #endif  //#if SOC_SDMMC_USE_GPIO_MATRIX
     {
         /* init pin configuration for this slot */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.clk = sdmmc_slot_gpio_num[slot].clk;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd = sdmmc_slot_gpio_num[slot].cmd;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d0 = sdmmc_slot_gpio_num[slot].d0;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d1 = sdmmc_slot_gpio_num[slot].d1;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d2 = sdmmc_slot_gpio_num[slot].d2;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d3 = sdmmc_slot_gpio_num[slot].d3;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d4 = sdmmc_slot_gpio_num[slot].d4;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d5 = sdmmc_slot_gpio_num[slot].d5;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d6 = sdmmc_slot_gpio_num[slot].d6;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d7 = sdmmc_slot_gpio_num[slot].d7;
+        slot_gpio->clk = sdmmc_slot_gpio_num[slot].clk;
+        slot_gpio->cmd = sdmmc_slot_gpio_num[slot].cmd;
+        slot_gpio->d0 = sdmmc_slot_gpio_num[slot].d0;
+        slot_gpio->d1 = sdmmc_slot_gpio_num[slot].d1;
+        slot_gpio->d2 = sdmmc_slot_gpio_num[slot].d2;
+        slot_gpio->d3 = sdmmc_slot_gpio_num[slot].d3;
+        slot_gpio->d4 = sdmmc_slot_gpio_num[slot].d4;
+        slot_gpio->d5 = sdmmc_slot_gpio_num[slot].d5;
+        slot_gpio->d6 = sdmmc_slot_gpio_num[slot].d6;
+        slot_gpio->d7 = sdmmc_slot_gpio_num[slot].d7;
     }
 
     bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
@@ -645,30 +653,49 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         sdmmc_host_pullup_en_internal(slot, s_host_ctx.slot_ctx[slot].slot_width);
     }
 
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.clk, sdmmc_slot_gpio_sig[slot].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd, sdmmc_slot_gpio_sig[slot].cmd, GPIO_MODE_INPUT_OUTPUT, "cmd", use_gpio_matrix);
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d0, sdmmc_slot_gpio_sig[slot].d0, GPIO_MODE_INPUT_OUTPUT, "d0", use_gpio_matrix);
-
+    if (slot_width >= 1) {
+        GPIO_NUM_CHECK(slot_gpio->clk);
+        GPIO_NUM_CHECK(slot_gpio->cmd);
+        GPIO_NUM_CHECK(slot_gpio->d0);
+    }
     if (slot_width >= 4) {
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d1, sdmmc_slot_gpio_sig[slot].d1, GPIO_MODE_INPUT_OUTPUT, "d1", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d2, sdmmc_slot_gpio_sig[slot].d2, GPIO_MODE_INPUT_OUTPUT, "d2", use_gpio_matrix);
-        // Force D3 high to make slave enter SD mode.
-        // Connect to peripheral after width configuration.
-        gpio_config_t gpio_conf = {
-            .pin_bit_mask = BIT64(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3),
-            .mode = GPIO_MODE_OUTPUT,
-            .pull_up_en = 0,
-            .pull_down_en = 0,
-            .intr_type = GPIO_INTR_DISABLE,
-        };
-        gpio_config(&gpio_conf);
-        gpio_set_level(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, 1);
+        GPIO_NUM_CHECK(slot_gpio->d1);
+        GPIO_NUM_CHECK(slot_gpio->d2);
+        GPIO_NUM_CHECK(slot_gpio->d3);
     }
     if (slot_width == 8) {
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d4, sdmmc_slot_gpio_sig[slot].d4, GPIO_MODE_INPUT_OUTPUT, "d4", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d5, sdmmc_slot_gpio_sig[slot].d5, GPIO_MODE_INPUT_OUTPUT, "d5", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d6, sdmmc_slot_gpio_sig[slot].d6, GPIO_MODE_INPUT_OUTPUT, "d6", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d7, sdmmc_slot_gpio_sig[slot].d7, GPIO_MODE_INPUT_OUTPUT, "d7", use_gpio_matrix);
+        GPIO_NUM_CHECK(slot_gpio->d4);
+        GPIO_NUM_CHECK(slot_gpio->d5);
+        GPIO_NUM_CHECK(slot_gpio->d6);
+        GPIO_NUM_CHECK(slot_gpio->d7);
+    }
+
+    configure_pin(slot_gpio->clk, sdmmc_slot_gpio_sig[slot].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
+    configure_pin(slot_gpio->cmd, sdmmc_slot_gpio_sig[slot].cmd, GPIO_MODE_INPUT_OUTPUT, "cmd", use_gpio_matrix);
+    configure_pin(slot_gpio->d0, sdmmc_slot_gpio_sig[slot].d0, GPIO_MODE_INPUT_OUTPUT, "d0", use_gpio_matrix);
+
+    if (slot_width >= 4) {
+        configure_pin(slot_gpio->d1, sdmmc_slot_gpio_sig[slot].d1, GPIO_MODE_INPUT_OUTPUT, "d1", use_gpio_matrix);
+        configure_pin(slot_gpio->d2, sdmmc_slot_gpio_sig[slot].d2, GPIO_MODE_INPUT_OUTPUT, "d2", use_gpio_matrix);
+        // Force D3 high to make slave enter SD mode.
+        // Connect to peripheral after width configuration.
+        if (slot_gpio->d3 > GPIO_NUM_NC) {
+            gpio_config_t gpio_conf = {
+                .pin_bit_mask = BIT64(slot_gpio->d3),
+                .mode = GPIO_MODE_OUTPUT,
+                .pull_up_en = 0,
+                .pull_down_en = 0,
+                .intr_type = GPIO_INTR_DISABLE,
+            };
+            gpio_config(&gpio_conf);
+            gpio_set_level(slot_gpio->d3, 1);
+        }
+    }
+    if (slot_width == 8) {
+        configure_pin(slot_gpio->d4, sdmmc_slot_gpio_sig[slot].d4, GPIO_MODE_INPUT_OUTPUT, "d4", use_gpio_matrix);
+        configure_pin(slot_gpio->d5, sdmmc_slot_gpio_sig[slot].d5, GPIO_MODE_INPUT_OUTPUT, "d5", use_gpio_matrix);
+        configure_pin(slot_gpio->d6, sdmmc_slot_gpio_sig[slot].d6, GPIO_MODE_INPUT_OUTPUT, "d6", use_gpio_matrix);
+        configure_pin(slot_gpio->d7, sdmmc_slot_gpio_sig[slot].d7, GPIO_MODE_INPUT_OUTPUT, "d7", use_gpio_matrix);
     }
 
     // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
