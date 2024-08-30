@@ -9,6 +9,7 @@
 #include "hal/spi_hal.h"
 #include "hal/log.h"
 #include "hal/assert.h"
+#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 
@@ -115,7 +116,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
     const int apbclk_kHz = source_freq_hz / 1000;
     //how many apb clocks a period has
     const int spiclk_apb_n = source_freq_hz / eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
@@ -146,7 +150,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;

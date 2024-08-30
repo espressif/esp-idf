@@ -324,7 +324,7 @@ static inline void spi_ll_apply_config(spi_dev_t *hw)
 
 /**
  * Trigger start of user-defined transaction.
- * The synchronization between two clock domains is required in ESP32-S3
+ * The synchronization between two clock domains is required in ESP32P4
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -919,7 +919,7 @@ static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
 /**
  * Set the delay of SPI clocks before the first SPI clock after the CS active edge.
  *
- * Note ESP32 doesn't support to use this feature when command/address phases
+ * Note ESP32P4 doesn't support to use this feature when command/address phases
  * are used in full duplex mode.
  *
  * @param hw    Beginning address of the peripheral registers.
