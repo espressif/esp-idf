@@ -27,7 +27,7 @@ inline static void format_addr(char *addr_str, uint8_t addr[]) {
 
 static void print_conn_desc(struct ble_gap_conn_desc *desc) {
     /* Local variables */
-    char addr_str[12] = {0};
+    char addr_str[18] = {0};
 
     /* Connection handle */
     ESP_LOGI(TAG, "connection handle: %d", desc->conn_handle);
