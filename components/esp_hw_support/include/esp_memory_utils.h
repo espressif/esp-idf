@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -307,12 +307,35 @@ inline static bool esp_ptr_in_drom(const void *p) {
     /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
      * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
      * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
-     * The drom_start_addr has to be moved by 0x4000 (16kB) to accomodate
+     * The drom_start_addr has to be moved by 0x4000 (16kB) to accommodate
      * this addition. */
     drom_start_addr += 0x4000;
 #endif
 
     return ((intptr_t)p >= drom_start_addr && (intptr_t)p < SOC_DROM_HIGH);
+}
+
+
+/**
+ * @brief Check if the given pointer is in ROM
+ *
+ * @param ptr Pointer to check
+ *
+ * @return true if `ptr` points to ROM, false else
+ */
+__attribute__((always_inline))
+inline static bool esp_ptr_in_rom(const void *p)
+{
+    intptr_t ip = (intptr_t) p;
+    return
+    /**
+     * The following DROM macros are only defined on RISC-V targets, moreover, to prevent
+     * the compiler from generating a `logical-op` warning, make sure the macros are
+     * distinct. */
+#if CONFIG_IDF_TARGET_ARCH_RISCV && SOC_DROM_MASK_LOW != SOC_IROM_MASK_LOW
+        (ip >= SOC_DROM_MASK_LOW && ip < SOC_DROM_MASK_HIGH) ||
+#endif
+        (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH);
 }
 
 /**

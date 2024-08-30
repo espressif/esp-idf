@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,6 +316,18 @@ static inline int esp_intr_level_to_flags(int level)
  * @return ESP_OK on success
  */
 esp_err_t esp_intr_dump(FILE *stream);
+
+
+/**
+ * @brief Check if the given pointer is in the safe ISR area.
+ * In other words, make sure that the pointer's content is accessible at
+ * any time, regardless of the cache status
+ *
+ * @param ptr Pointer to check
+ *
+ * @return true if `ptr` points to ISR area, false else
+ */
+bool esp_intr_ptr_in_isr_region(void* ptr);
 
 /**@}*/
 
