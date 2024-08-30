@@ -316,7 +316,7 @@
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_APLL       (1) // TODO: IDF-8884
+#define SOC_I2S_SUPPORTS_APLL       (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
@@ -697,7 +697,7 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
-// #define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */ TODO: IDF-8884
+#define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
 #define SOC_CLK_MPLL_SUPPORTED                    (1)     /*!< Support MSPI PLL */
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */

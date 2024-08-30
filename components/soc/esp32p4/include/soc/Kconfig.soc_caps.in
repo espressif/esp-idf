@@ -787,6 +787,10 @@ config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
 
+config SOC_I2S_SUPPORTS_APLL
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PCM
     bool
     default y
@@ -1814,6 +1818,10 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default n
+
+config SOC_CLK_APLL_SUPPORTED
+    bool
+    default y
 
 config SOC_CLK_MPLL_SUPPORTED
     bool
