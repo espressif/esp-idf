@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,10 @@
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-
 #include "nvs_flash.h"
 #include "nvs_sec_provider.h"
 
+#include "esp_private/startup_internal.h"
 #if SOC_HMAC_SUPPORTED
 #include "bootloader_random.h"
 #include "esp_random.h"
@@ -79,14 +79,27 @@ esp_err_t nvs_sec_provider_register_flash_enc(const nvs_sec_config_flash_enc_t *
     return ESP_OK;
 }
 
-static void __attribute__((constructor)) nvs_sec_provider_register_flash_enc_ctr(void)
+
+ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0), 150)
 {
     ESP_EARLY_LOGI(TAG, "NVS Encryption - Registering Flash encryption-based scheme...");
 
     nvs_sec_config_flash_enc_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_FLASH_ENC_DEFAULT();
+
+     /*
+     * This checks partition with subtype nvs_keys from partition table, if NVS Encryption is enabled
+     * and "nvs_keys" do not exist in partition table, then execution gets aborted. To fix the problem,
+     * please introduce partition with subtype "nvs_keys" in the partition table.
+     */
+
+    if (sec_scheme_cfg.nvs_keys_part == NULL) {
+        ESP_EARLY_LOGE(TAG, "partition with subtype \"nvs_keys\" not found");
+        return ESP_FAIL;
+    }
+
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
 
-    nvs_sec_provider_register_flash_enc(&sec_scheme_cfg, &sec_scheme_handle_out);
+    return nvs_sec_provider_register_flash_enc(&sec_scheme_cfg, &sec_scheme_handle_out);
 }
 
 #endif
@@ -251,14 +264,15 @@ esp_err_t nvs_sec_provider_register_hmac(const nvs_sec_config_hmac_t *sec_scheme
 }
 
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
-static void __attribute__((constructor)) nvs_sec_provider_register_hmac_ctr(void)
+ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_hmac_scheme, SECONDARY, BIT(0), 151)
 {
     ESP_EARLY_LOGI(TAG, "NVS Encryption - Registering HMAC-based scheme...");
 
     nvs_sec_config_hmac_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_HMAC_DEFAULT();
+
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
 
-    nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle_out);
+    return nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle_out);
 }
 #endif  // CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
 
