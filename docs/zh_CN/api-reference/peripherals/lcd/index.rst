@@ -78,12 +78,13 @@ LCD 数据面板操作
 
 .. list::
 
-    * 软件 JPEG 解码与显示 - :example:`peripherals/lcd/tjpgd`
-    :SOC_GPSPI_SUPPORTED: * 带有 SPI 触摸的通用 SPI LCD 示例 - :example:`peripherals/lcd/spi_lcd_touch`
-    :SOC_LCD_I80_SUPPORTED: * 基于 i80 控制器的 LCD 和 LVGL 动画 UI - :example:`peripherals/lcd/i80_controller`
-    :SOC_LCD_RGB_SUPPORTED: * 带有散点图 UI 的 RGB 面板示例 - :example:`peripherals/lcd/rgb_panel`
-    :SOC_I2C_SUPPORTED: * 带有 I2C 接口的 OLED 显示滚动文本 - :example:`peripherals/lcd/i2c_oled`
-    :SOC_MIPI_DSI_SUPPORTED: * MIPI DSI 显示示例 - :example:`peripherals/lcd/mipi_dsi`
+    * :example:`peripherals/lcd/tjpgd` 演示了如何解码 JPEG 图像并在 SPI 接口的 LCD 上显示图像，同时周期性地旋转图像。
+    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` 演示了如何在 ESP-IDF 项目中使用 `esp_lcd` 组件为 LCD 屏幕添加自定义驱动，例如 GC9A01 或 ILI9341，以及如何启用 STMPE610 触摸控制器。
+    :SOC_LCD_I80_SUPPORTED: * :example:`peripherals/lcd/i80_controller` 演示了如何将 LVGL 库移植到 `esp_lcd` 驱动层，以创建图形用户界面。
+    :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` 展示了如何安装 RGB 面板驱动程序，并基于 LVGL 库在屏幕上显示散点图。
+    :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` 演示了如何使用 `esp_lcd` 组件中的 SSD1306 面板驱动来简化移植 LVGL 库，并在 OLED 屏幕上显示滚动文本。
+    :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` 演示了如何安装 MIPI DSI LCD 驱动程序，并在屏幕上显示一个 LVGL 小部件。
+
 
 API 参考
 --------
