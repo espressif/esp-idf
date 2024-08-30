@@ -259,7 +259,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
 void adv_init(void) {
     /* Local variables */
     int rc = 0;
-    char addr_str[12] = {0};
+    char addr_str[18] = {0};
 
     /* Make sure we have proper BT identity address set (random preferred) */
     rc = ble_hs_util_ensure_addr(0);
