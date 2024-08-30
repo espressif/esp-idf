@@ -213,8 +213,35 @@ endif()
 list(APPEND link_options "-fno-lto")
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    # Not all versions of the MacOS linker support the -warn_commons flag.
+    # ld version 1053.12 (and above) have been tested to support it.
+    # Hence, we extract the version string from the linker output
+    # before including the flag.
+
+    # Get the ld version, capturing both stdout and stderr
+    execute_process(
+        COMMAND ${CMAKE_LINKER} -v
+        OUTPUT_VARIABLE LD_VERSION_OUTPUT
+        ERROR_VARIABLE LD_VERSION_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Combine stdout and stderr
+    set(LD_VERSION_OUTPUT "${LD_VERSION_OUTPUT}\n${LD_VERSION_ERROR}")
+
+    # Extract the version string
+    string(REGEX MATCH "PROJECT:(ld|dyld)-([0-9]+)\\.([0-9]+)" LD_VERSION_MATCH "${LD_VERSION_OUTPUT}")
+    set(LD_VERSION_MAJOR_MINOR "${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
+
+    message(STATUS "Linker Version: ${LD_VERSION_MAJOR_MINOR}")
+
+    # Compare the version with 1053.12
+    if(LD_VERSION_MAJOR_MINOR VERSION_GREATER_EQUAL "1053.12")
+        list(APPEND link_options "-Wl,-warn_commons")
+    endif()
+
     list(APPEND link_options "-Wl,-dead_strip")
-    list(APPEND link_options "-Wl,-warn_commons")
 else()
     list(APPEND link_options "-Wl,--gc-sections")
     list(APPEND link_options "-Wl,--warn-common")
