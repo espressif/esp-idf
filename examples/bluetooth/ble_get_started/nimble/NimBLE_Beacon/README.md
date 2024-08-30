@@ -85,7 +85,7 @@ void app_main(void) {
 }
 ```
 
-Then, call `nimble_port_init` function to initialize NimBLE host stack. 
+Then, call `nimble_port_init` function to initialize NimBLE host stack.
 
 ``` C
 void app_main(void) {
@@ -186,7 +186,7 @@ void app_main(void) {
 
     /* Start NimBLE host task thread and return */
     xTaskCreate(nimble_host_task, "NimBLE Host", 4*1024, NULL, 5, NULL);
-    return;   
+    return;
 }
 ```
 
@@ -205,7 +205,7 @@ static void on_stack_sync(void) {
 void adv_init(void) {
     /* Local variables */
     int rc = 0;
-    char addr_str[12] = {0};
+    char addr_str[18] = {0};
 
     /* Make sure we have proper BT identity address set */
     rc = ble_hs_util_ensure_addr(0);
