@@ -811,7 +811,7 @@ Association Phase
 +++++++++++++++++++++
 
  - s3.1: The association request is sent and the association timer is enabled.
- - s3.2: If the association response is not received before the association timer times out, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason code will be ``WIFI_REASON_ASSOC_EXPIRE``. Refer to `Wi-Fi Reason Code`_.
+ - s3.2: If the association response is not received before the association timer times out, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason code will be ``WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY``. Refer to `Wi-Fi Reason Code`_.
  - s3.3: The association response is received and the association timer is stopped.
  - s3.4: The AP rejects the association in the response and `WIFI_EVENT_STA_DISCONNECTED`_ arises, while the reason code is the one specified in the association response. Refer to `Wi-Fi Reason Code`_.
 
@@ -875,19 +875,15 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
-   * - ASSOC_EXPIRE
+   * - DISASSOC_DUE_TO_INACTIVITY
      - 4
      - Disassociated due to inactivity.
 
        For the ESP station, this reason is reported when:
 
+       - assoc is timed out.
        - it is received from the AP.
 
-       For the ESP AP, this reason is reported when:
-
-       - the AP has not received any packets from the station in the past five minutes.
-       - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.
-       - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
    * - ASSOC_TOOMANY
      - 5
      - Disassociated, because the AP is unable to handle all currently associated STAs at the same time.
@@ -899,7 +895,7 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
        For the ESP AP, this reason is reported when:
 
        - the stations associated with the AP reach the maximum number that the AP can support.
-   * - NOT_AUTHED
+   * - CLASS2_FRAME_FROM_NONAUTH_STA
      - 6
      - Class-2 frame received from a non-authenticated STA.
 
@@ -910,7 +906,7 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
        For the ESP AP, this reason is reported when:
 
        - the AP receives a packet with data from a non-authenticated station.
-   * - NOT_ASSOCED
+   * - CLASS3_FRAME_FROM_NONASSOC_STA
      - 7
      - Class-3 frame received from a non-associated STA.
 
@@ -1137,7 +1133,7 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
      - Espressif-specific Wi-Fi reason code: the authentication fails, but not because of a timeout.
    * - ASSOC_FAIL
      - 203
-     - Espressif-specific Wi-Fi reason code: the association fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.
+     - Espressif-specific Wi-Fi reason code: the association fails, but not because of DISASSOC_DUE_TO_INACTIVITY or ASSOC_TOOMANY.
    * - HANDSHAKE_TIMEOUT
      - 204
      - Espressif-specific Wi-Fi reason code: the handshake fails for the same reason as that in WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.

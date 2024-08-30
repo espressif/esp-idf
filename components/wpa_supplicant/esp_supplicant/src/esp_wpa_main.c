@@ -251,8 +251,8 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
         case WIFI_REASON_AUTH_EXPIRE:
-        case WIFI_REASON_NOT_AUTHED:
-        case WIFI_REASON_NOT_ASSOCED:
+        case WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA:
+        case WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA:
         case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
         case WIFI_REASON_INVALID_PMKID:
         case WIFI_REASON_AUTH_FAIL:
