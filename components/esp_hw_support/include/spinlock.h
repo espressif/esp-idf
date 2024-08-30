@@ -69,7 +69,7 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
  *       function reenables interrupts once the spinlock is acquired). For critical
  *       sections, use the interface provided by the operating system.
  * @param lock - target spinlock object
- * @param timeout - cycles to wait, passing SPINLOCK_WAIT_FOREVER blocs indefinitely
+ * @param timeout - cycles to wait, passing SPINLOCK_WAIT_FOREVER blocks indefinitely
  */
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
@@ -132,7 +132,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
             break;
         }
         // Keep looping if we are waiting forever, or check if we have timed out
-    } while ((timeout == SPINLOCK_WAIT_FOREVER) || (esp_cpu_get_cycle_count() - start_count) <= timeout);
+    } while ((timeout == SPINLOCK_WAIT_FOREVER) || (esp_cpu_get_cycle_count() - start_count) <= (esp_cpu_cycle_count_t)timeout);
 
 exit:
     if (lock_set) {
