@@ -230,10 +230,9 @@ class ReportGenerator:
     def _get_report_str(self) -> str:
         raise NotImplementedError
 
-    def post_report(self, print_report_path: bool = True) -> None:
-        # report in html format, otherwise will exceed the limit
+    def _generate_comment(self, print_report_path: bool) -> str:
+        # Report in HTML format to avoid exceeding length limits
         comment = f'#### {self.title}\n'
-
         report_str = self._get_report_str()
 
         if self.additional_info:
@@ -241,33 +240,56 @@ class ReportGenerator:
 
         report_url_path = self.write_report_to_file(report_str, self.job_id, self.output_filepath)
         if print_report_path and report_url_path:
-            comment += dedent(f"""
-            Full {self.title} here: {report_url_path} (with commit {self.commit_id[:8]}
+            comment += dedent(
+                f"""
+            Full {self.title} here: {report_url_path} (with commit {self.commit_id[:8]})
 
-            """)
+            """
+            )
+        return comment
+
+    def _update_mr_comment(self, comment: str, print_retry_jobs_message: bool) -> None:
+        retry_job_picture_comment = (f'{RETRY_JOB_TITLE}\n\n' f'{RETRY_JOB_PICTURE_LINK}').format(
+            pic_url=get_repository_file_url(RETRY_JOB_PICTURE_PATH)
+        )
+        del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
+
+        for note in self.mr.notes.list(iterator=True):
+            if note.body.startswith(COMMENT_START_MARKER):
+                updated_str = self._get_updated_comment(note.body, comment)
+
+                # Add retry job message only if any job has failed
+                if print_retry_jobs_message:
+                    updated_str = re.sub(del_retry_job_pic_pattern, '', updated_str, flags=re.DOTALL)
+                    updated_str += retry_job_picture_comment
+
+                note.body = updated_str
+                note.save()
+                break
+        else:
+            # Create a new comment if no existing comment is found
+            new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
+            if print_retry_jobs_message:
+                new_comment += retry_job_picture_comment
+
+            self.mr.notes.create({'body': new_comment})
+
+    def _get_updated_comment(self, existing_comment: str, new_comment: str) -> str:
+        updated_str = re.sub(self.REGEX_PATTERN.format(self.title), new_comment, existing_comment)
+        if updated_str == existing_comment:
+            updated_str = f'{existing_comment.strip()}\n\n{new_comment}'
+        return updated_str
+
+    def post_report(self, print_report_path: bool = True, print_retry_jobs_message: bool = False) -> None:
+        comment = self._generate_comment(print_report_path)
+
         print(comment)
 
         if self.mr is None:
             print('No MR found, skip posting comment')
             return
-        retry_job_picture_comment = (f'{RETRY_JOB_TITLE}\n\n'
-                                     f'{RETRY_JOB_PICTURE_LINK}').format(pic_url=get_repository_file_url(RETRY_JOB_PICTURE_PATH))
-        del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
-        for note in self.mr.notes.list(iterator=True):
-            if note.body.startswith(COMMENT_START_MARKER):
-                updated_str = re.sub(self.REGEX_PATTERN.format(self.title), comment, note.body)
-                if updated_str == note.body:  # not updated
-                    updated_str = f'{note.body.strip()}\n\n{comment}'
 
-                updated_str = re.sub(del_retry_job_pic_pattern, '', updated_str, flags=re.DOTALL)
-                note.body = updated_str + retry_job_picture_comment
-                note.save()
-                break
-        else:
-            new_comment = f"""{COMMENT_START_MARKER}
-
-{comment}{retry_job_picture_comment}"""
-            self.mr.notes.create({'body': new_comment})
+        self._update_mr_comment(comment, print_retry_jobs_message=print_retry_jobs_message)
 
 
 class BuildReportGenerator(ReportGenerator):
