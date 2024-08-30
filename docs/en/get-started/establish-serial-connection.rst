@@ -300,25 +300,11 @@ Run terminal and set identified serial port. Baud rate = 115200 (if needed, chan
 
     Setting Serial Communication in PuTTY on Linux
 
-Then open serial port in terminal and check, if you see any log printed out by {IDF_TARGET_NAME}. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. Reset the board if no log has been printed out.
+Then open serial port in terminal and check, if you see any log printed out by {IDF_TARGET_NAME}. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. If no log has been printed out, see `Troubleshooting`_.
 
 .. note::
 
    Close the serial terminal after verification that communication is working. If you keep the terminal session open, the serial port will be inaccessible for uploading firmware later.
-
-.. note::
-
-   If there is no log output, check
-
-   - if the required power is supplied to {IDF_TARGET_NAME}
-   - if the board was reset after starting the terminal program
-   - if the selected serial port is the correct one by using the method stated in `Check Port on Windows`_ and `Check Port on Linux and macOS`_
-   - if the serial port is not being used by another program
-   - if the identified port has been selected in serial terminal programs you are using, as stated in `Windows and Linux`_
-   - if settings of the serial port in serial terminal programs are applicable to corresponding applications
-   - if the correct USB connector (UART) is used on the development board
-   - if your application is expected to output some log
-   - if the log output has not been disabled (use :example:`hello world application <get-started/hello_world>` to test)
 
 macOS
 ^^^^^
@@ -339,11 +325,24 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 
   Replace ``device_name`` with the name found running ``ls /dev/cu.*``.
 
-- What you are looking for is some log displayed by the **screen**. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. To exit the current **screen** session, type ``Ctrl-A + K``.
+- What you are looking for is some log displayed by the **screen**. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. If no log has been printed out, see `Troubleshooting`_. To exit the current **screen** session, type ``Ctrl-A + K``.
 
 .. note::
 
    Do not forget to **exit the current screen session** after verifying that the communication is working. If you fail to do it and just close the terminal window, the serial port will be inaccessible for uploading firmware later.
+
+Troubleshooting
+^^^^^^^^^^^^^^^
+
+If there is no log output, check
+
+- if the required power is supplied to {IDF_TARGET_NAME}
+- if the board was reset after starting the terminal program
+- if the selected serial port is the correct one by using the method stated in `Check Port on Windows`_ and `Check Port on Linux and macOS`_
+- if the serial port is not being used by another program
+- if settings of the serial port in serial terminal programs are applicable to corresponding applications
+- if your application is expected to output some log. In details, if ``Component config`` > ``Log`` > ``Log Level`` > ``Default log verbosity (Info)`` is set to ``No output``, no log will be printed out. You can change this setting in ``menuconfig``.
+- if the log output has not been disabled (use :example:`hello world application <get-started/hello_world>` to test)
 
 Example Output
 ^^^^^^^^^^^^^^
