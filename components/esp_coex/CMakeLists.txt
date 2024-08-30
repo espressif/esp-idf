@@ -17,7 +17,9 @@ if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
 endif()
 
 if(CONFIG_ESP_WIFI_ENABLED)
-    list(APPEND srcs "${idf_target}/esp_coex_adapter.c")
+    list(APPEND srcs "${idf_target}/esp_coex_adapter.c"
+                        "src/coexist_debug_diagram.c"
+                        "src/coexist_debug.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
