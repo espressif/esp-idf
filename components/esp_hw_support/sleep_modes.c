@@ -271,7 +271,6 @@ static bool s_light_sleep_wakeup = false;
 static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
-static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
 static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 static bool s_ultra_low_enabled = false;
@@ -679,7 +678,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 
 #if !CONFIG_IDF_TARGET_ESP32P4
     // TODO: IDF-7370
-    if (!(deep_sleep && s_adc_tsen_enabled)){
+    if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
         sar_periph_ctrl_power_disable();
     }
 #endif
@@ -902,7 +901,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     //Append some flags in addition to power domains
     uint32_t sleep_flags = pd_flags;
-    if (s_adc_tsen_enabled) {
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE]) {
         sleep_flags |= RTC_SLEEP_USE_ADC_TESEN_MONITOR;
     }
     if (!s_ultra_low_enabled) {

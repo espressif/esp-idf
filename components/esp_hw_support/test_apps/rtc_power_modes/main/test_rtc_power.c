@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ static void test_deepsleep(void)
 // Deepsleep (with 8MD256 or ADC/TSEN in monitor)
 TEST_CASE("Power Test: DSLP_8MD256", "[pm]")
 {
-    esp_sleep_enable_adc_tsens_monitor(true);
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, true);
 
     test_deepsleep();
 }
@@ -40,7 +40,7 @@ TEST_CASE("Power Test: DSLP_8MD256", "[pm]")
 // Deepsleep (default)
 TEST_CASE("Power Test: DSLP_DEFAULT", "[pm]")
 {
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
 
     test_deepsleep();
 }
@@ -48,7 +48,7 @@ TEST_CASE("Power Test: DSLP_DEFAULT", "[pm]")
 // Deepsleep (ultra-low power)
 TEST_CASE("Power Test: DSLP_ULTRA_LOW", "[pm]")
 {
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
 
     extern void rtc_sleep_enable_ultra_low(bool);
     rtc_sleep_enable_ultra_low(true);
@@ -125,8 +125,7 @@ TEST_CASE("Power Test: LSLP_8MD256", "[pm]")
 // Lightsleep (with ADC/TSEN in monitor)
 TEST_CASE("Power Test: LSLP_ADC_TSENS", "[pm]")
 {
-    extern void esp_sleep_enable_adc_tsens_monitor(bool);
-    esp_sleep_enable_adc_tsens_monitor(true);
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, true);
 
     test_lightsleep();
 }
@@ -134,7 +133,7 @@ TEST_CASE("Power Test: LSLP_ADC_TSENS", "[pm]")
 // Lightsleep (default)
 TEST_CASE("Power Test: LSLP_DEFAULT", "[pm]")
 {
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
 
     test_lightsleep();
 }
