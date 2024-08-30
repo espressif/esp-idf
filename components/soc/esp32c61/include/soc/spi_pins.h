@@ -4,13 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SPI_FUNC_NUM            0
-#define SPI_IOMUX_PIN_NUM_CS    24
-#define SPI_IOMUX_PIN_NUM_CLK   29
-#define SPI_IOMUX_PIN_NUM_MOSI  30
-#define SPI_IOMUX_PIN_NUM_MISO  25
-#define SPI_IOMUX_PIN_NUM_WP    26
-#define SPI_IOMUX_PIN_NUM_HD    28
+#pragma once
+
+// MSPI IOMUX PINs
+#define MSPI_FUNC_NUM               0
+#define MSPI_IOMUX_PIN_NUM_CS1      14
+#define MSPI_IOMUX_PIN_NUM_CS0      15
+#define MSPI_IOMUX_PIN_NUM_CLK      20
+#define MSPI_IOMUX_PIN_NUM_MOSI     21
+#define MSPI_IOMUX_PIN_NUM_MISO     16
+#define MSPI_IOMUX_PIN_NUM_WP       17
+#define MSPI_IOMUX_PIN_NUM_HD       19
 
 // GPSPI2 IOMUX PINs
 #define SPI2_FUNC_NUM               2

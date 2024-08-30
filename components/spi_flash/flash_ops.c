@@ -157,8 +157,12 @@ void IRAM_ATTR esp_mspi_pin_init(void)
 void esp_mspi_pin_reserve(void)
 {
     uint64_t reserve_pin_mask = 0;
+    uint8_t mspi_io;
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
-        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
+        mspi_io = esp_mspi_get_io(i);
+        if (mspi_io < 64) {     // 'reserve_pin_mask' have 64 bits length
+            reserve_pin_mask |= BIT64(mspi_io);
+        }
     }
     esp_gpio_reserve(reserve_pin_mask);
 }
@@ -207,18 +211,18 @@ void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
 #endif
 
 static const uint8_t s_mspi_io_num_default[] = {
-    SPI_CLK_GPIO_NUM,
-    SPI_Q_GPIO_NUM,
-    SPI_D_GPIO_NUM,
-    SPI_CS0_GPIO_NUM,
-    SPI_HD_GPIO_NUM,
-    SPI_WP_GPIO_NUM,
+    MSPI_IOMUX_PIN_NUM_CLK,
+    MSPI_IOMUX_PIN_NUM_MISO,
+    MSPI_IOMUX_PIN_NUM_MOSI,
+    MSPI_IOMUX_PIN_NUM_CS0,
+    MSPI_IOMUX_PIN_NUM_HD,
+    MSPI_IOMUX_PIN_NUM_WP,
 #if SOC_SPI_MEM_SUPPORT_OPI_MODE
-    SPI_DQS_GPIO_NUM,
-    SPI_D4_GPIO_NUM,
-    SPI_D5_GPIO_NUM,
-    SPI_D6_GPIO_NUM,
-    SPI_D7_GPIO_NUM
+    MSPI_IOMUX_PIN_NUM_DQS,
+    MSPI_IOMUX_PIN_NUM_D4,
+    MSPI_IOMUX_PIN_NUM_D5,
+    MSPI_IOMUX_PIN_NUM_D6,
+    MSPI_IOMUX_PIN_NUM_D7
 #endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
 };
 

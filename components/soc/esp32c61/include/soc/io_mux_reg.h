@@ -124,14 +124,6 @@ extern "C" {
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
-#define SPI_HD_GPIO_NUM              19
-#define SPI_WP_GPIO_NUM              17
-#define SPI_CS0_GPIO_NUM             15
-#define SPI_CLK_GPIO_NUM             20
-#define SPI_D_GPIO_NUM               21
-#define SPI_Q_GPIO_NUM               16
-#define SPI_CS1_GPIO_NUM             14
-
 #define USB_INT_PHY0_DM_GPIO_NUM     12
 #define USB_INT_PHY0_DP_GPIO_NUM     13
 

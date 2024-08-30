@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "soc/io_mux_reg.h"
+#include "soc/spi_pins.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,18 +57,18 @@ extern "C" {
 
 // IO-pins for PSRAM.
 // PSRAM clock and cs IO should be configured based on hardware design.
-#define PSRAM_CLK_IO          SPI_CLK_GPIO_NUM
-#define PSRAM_CS_IO           SPI_CS1_GPIO_NUM
-#define PSRAM_SPIQ_SD0_IO     SPI_Q_GPIO_NUM
-#define PSRAM_SPID_SD1_IO     SPI_D_GPIO_NUM
-#define PSRAM_SPIWP_SD3_IO    SPI_WP_GPIO_NUM
-#define PSRAM_SPIHD_SD2_IO    SPI_HD_GPIO_NUM
+#define PSRAM_CLK_IO            MSPI_IOMUX_PIN_NUM_CLK
+#define PSRAM_CS_IO             MSPI_IOMUX_PIN_NUM_CS1
+#define PSRAM_SPIQ_SD0_IO       MSPI_IOMUX_PIN_NUM_MISO
+#define PSRAM_SPID_SD1_IO       MSPI_IOMUX_PIN_NUM_MOSI
+#define PSRAM_SPIWP_SD3_IO      MSPI_IOMUX_PIN_NUM_WP
+#define PSRAM_SPIHD_SD2_IO      MSPI_IOMUX_PIN_NUM_HD
 
-#define PSRAM_CMD_LENGTH      8
-#define PSRAM_ADDR_LENGTH     24
+#define PSRAM_CMD_LENGTH        8
+#define PSRAM_ADDR_LENGTH       24
 
-#define PSRAM_CS_HOLD_VAL      1
-#define PSRAM_CS_SETUP_VAL     1
+#define PSRAM_CS_HOLD_VAL       1
+#define PSRAM_CS_SETUP_VAL      1
 
 #ifdef __cplusplus
 }

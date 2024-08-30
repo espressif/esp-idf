@@ -32,7 +32,7 @@
 #define OCT_PSRAM_ADDR_BITLEN           32
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
-#define OCT_PSRAM_CS1_IO                SPI_CS1_GPIO_NUM
+#define OCT_PSRAM_CS1_IO                MSPI_IOMUX_PIN_NUM_CS1
 #define OCT_PSRAM_VENDOR_ID             0xD
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
