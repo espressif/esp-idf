@@ -439,8 +439,9 @@ void app_main(void)
     esp_bt_gap_set_device_name(local_device_name);
 
     ESP_LOGI(TAG, "setting cod major, peripheral");
-    esp_bt_cod_t cod;
+    esp_bt_cod_t cod = {0};
     cod.major = ESP_BT_COD_MAJOR_DEV_PERIPHERAL;
+    cod.minor = ESP_BT_COD_MINOR_PERIPHERAL_POINTING;
     esp_bt_gap_set_cod(cod, ESP_BT_SET_COD_MAJOR_MINOR);
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -451,7 +452,7 @@ void app_main(void)
         s_local_param.app_param.name = "Mouse";
         s_local_param.app_param.description = "Mouse Example";
         s_local_param.app_param.provider = "ESP32";
-        s_local_param.app_param.subclass = ESP_HID_CLASS_MIC;
+        s_local_param.app_param.subclass = ESP_HID_CLASS_MIC; // keep same with minor class of COD
         s_local_param.app_param.desc_list = hid_mouse_descriptor;
         s_local_param.app_param.desc_list_len = hid_mouse_descriptor_len;
 
