@@ -236,6 +236,21 @@ int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle);
 
 
 /**
+ * @brief  This function returns the HTTP status code of the last HTTP response.
+ *
+ * @note   This API should be called only after esp_https_ota_begin() has been called.
+ *         This can be used to check the HTTP status code of the OTA download process.
+ *
+ * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
+ *
+ * @return
+ *    - -1    On failure
+ *    - HTTP status code
+ */
+int esp_https_ota_get_status_code(esp_https_ota_handle_t https_ota_handle);
+
+
+/**
 * @brief  This function returns OTA image total size.
 *
 * @note   This API should be called after esp_https_ota_begin() has been already called.
