@@ -78,12 +78,13 @@ Application Example
 
 .. list::
 
-    * Software JPEG decoding and display - :example:`peripherals/lcd/tjpgd`
-    :SOC_GPSPI_SUPPORTED: * Universal SPI LCD example with SPI touch - :example:`peripherals/lcd/spi_lcd_touch`
-    :SOC_LCD_I80_SUPPORTED: * i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
-    :SOC_LCD_RGB_SUPPORTED: * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
-    :SOC_I2C_SUPPORTED: * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
-    :SOC_MIPI_DSI_SUPPORTED: * MIPI DSI display example - :example:`peripherals/lcd/mipi_dsi`
+    * :example:`peripherals/lcd/tjpgd` shows how to decode a JPEG image and display it on an SPI-interfaced LCD, and rotate the image periodically.
+    :SOC_GPSPI_SUPPORTED: * :example:`peripherals/lcd/spi_lcd_touch` demonstrates how to use the `esp_lcd` component to add custom panel drivers, specifically GC9A01 or ILI9341, in an ESP-IDF project, and how to enable the STMPE610 touch controller.
+    :SOC_LCD_I80_SUPPORTED: * :example:`peripherals/lcd/i80_controller` demonstrates how to port the LVGL library onto the `esp_lcd` driver layer to create GUIs.
+    :SOC_LCD_RGB_SUPPORTED: * :example:`peripherals/lcd/rgb_panel` demonstrates how to install an RGB panel driver, display a scatter chart on the screen based on the LVGL library.
+    :SOC_I2C_SUPPORTED: * :example:`peripherals/lcd/i2c_oled` demonstrates how to use the SSD1306 panel driver from the `esp_lcd` component to facilitate the porting of LVGL library and display a scrolling text on the OLED screen.
+    :SOC_MIPI_DSI_SUPPORTED: * :example:`peripherals/lcd/mipi_dsi` demonstrates the general process of installing a MIPI DSI LCD driver, and displays a LVGL widget on the screen.
+
 
 API Reference
 -------------
