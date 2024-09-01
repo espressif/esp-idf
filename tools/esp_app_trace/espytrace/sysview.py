@@ -30,6 +30,7 @@ SYSVIEW_EVTID_TIMER_ENTER         = 19
 SYSVIEW_EVTID_TIMER_EXIT          = 20
 SYSVIEW_EVTID_STACK_INFO          = 21
 SYSVIEW_EVTID_MODULEDESC          = 22
+SYSVIEW_EVTID_DATA_SAMPLE         = 23
 SYSVIEW_EVTID_INIT                = 24
 SYSVIEW_EVENT_ID_PREDEF_LEN_MAX   = SYSVIEW_EVTID_INIT
 SYSVIEW_EVTID_NAME_RESOURCE       = 25
@@ -66,7 +67,8 @@ _sysview_events_map = {
     'SYS_TIMER_ENTER': SYSVIEW_EVTID_TIMER_ENTER,
     'SYS_TIMER_EXIT': SYSVIEW_EVTID_TIMER_EXIT,
     'SYS_STACK_INFO': SYSVIEW_EVTID_STACK_INFO,
-    'SYS_MODULEDESC': SYSVIEW_EVTID_INIT,
+    'SYS_MODULEDESC': SYSVIEW_EVTID_MODULEDESC,
+    'SYS_DATA_SAMPLE': SYSVIEW_EVTID_DATA_SAMPLE,
     'SYS_INIT': SYSVIEW_EVTID_INIT,
     'SYS_NAME_RESOURCE': SYSVIEW_EVTID_NAME_RESOURCE,
     'SYS_PRINT_FORMATTED': SYSVIEW_EVTID_PRINT_FORMATTED,
@@ -263,7 +265,7 @@ def _decode_str(reader):
     sz, = struct.unpack('<B', reader.read(1))
     if sz == 0xFF:
         buf = struct.unpack('<2B', reader.read(2))
-        sz = (buf[1] << 8) | buf[0]
+        sz = (buf[0] << 8) | buf[1]
     val, = struct.unpack('<%ds' % sz, reader.read(sz))
     val = val.decode('utf-8')
     if sz < 0xFF:
@@ -510,6 +512,7 @@ class SysViewPredefinedEvent(SysViewEvent):
                                                     SysViewEventParamSimple('cpu_freq', _decode_u32),
                                                     SysViewEventParamSimple('ram_base', _decode_u32),
                                                     SysViewEventParamSimple('id_shift', _decode_u32)]),
+        SYSVIEW_EVTID_DATA_SAMPLE:      ('svDataSample', []),
         SYSVIEW_EVTID_NAME_RESOURCE:    ('svNameResource', [SysViewEventParamSimple('res_id', _decode_u32),
                                                             SysViewEventParamSimple('name', _decode_str)]),
         SYSVIEW_EVTID_PRINT_FORMATTED:  ('svPrint', [SysViewEventParamSimple('msg', _decode_str),

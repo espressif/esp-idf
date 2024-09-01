@@ -1,5 +1,5 @@
 name: 'SystemView'
-version: '3.42'
+version: '3.56'
 cpe: cpe:2.3:a:segger:systemview:{}:*:*:*:*:*:*:*
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: SEGGER Microcontroller GmbH'
