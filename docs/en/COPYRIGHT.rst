@@ -67,7 +67,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`HTTP Parser <http_parser>` is based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file <http_parser/LICENSE.txt>`.
 
-* `SEGGER SystemView`_ target-side library, Copyright (C) 1995-2021 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
+* `SEGGER SystemView`_ target-side library, Copyright (C) 1995-2024 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
 
 * `protobuf-c`_ is Protocol Buffers implementation in C, Copyright (C) 2008-2022 Dave Benson and the protobuf-c authors. For details please check :component_file:`LICENSE file <protobuf-c/protobuf-c/LICENSE>`.
 
