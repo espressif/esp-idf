@@ -10,9 +10,7 @@
  ******************************************************************************/
 
 #pragma once
-#include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -21,7 +19,6 @@
 #include "hal/key_mgr_types.h"
 #include "soc/keymng_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
-#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,29 +26,32 @@ extern "C" {
 
 /**
  * @brief Enable the bus clock for Key Manager peripheral
- *
+ * Note: Please use key_mgr_ll_enable_bus_clock which requires the critical section
+ *       and do not use _key_mgr_ll_enable_bus_clock
  * @param true to enable, false to disable
  */
-static inline void key_mgr_ll_enable_bus_clock(bool enable)
+static inline void _key_mgr_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_key_manager_sys_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; key_mgr_ll_enable_bus_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Enable the peripheral clock for Key Manager
  *
+ * Note: Please use key_mgr_ll_enable_peripheral_clock which requires the critical section
+ *       and do not use _key_mgr_ll_enable_peripheral_clock
  * @param true to enable, false to disable
  */
-static inline void key_mgr_ll_enable_peripheral_clock(bool enable)
+static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
 {
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = enable;
 }
 
-#define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; key_mgr_ll_enable_bus_clock(__VA_ARGS__)
+#define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the Key Manager peripheral */
@@ -344,5 +344,4 @@ static inline uint32_t key_mgr_ll_get_date_info(void)
 
 #ifdef __cplusplus
 }
-#endif
 #endif

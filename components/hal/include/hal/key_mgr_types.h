@@ -5,9 +5,6 @@
  */
 #pragma once
 
-#include "soc/soc_caps.h"
-
-#if SOC_KEY_MANAGER_SUPPORTED
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -24,7 +21,7 @@ extern "C" {
  */
 typedef enum {
     ESP_KEY_MGR_STATE_IDLE = 0, /* Key Manager is idle */
-    ESP_KEY_MGR_STATE_LOAD = 1,     /* Key Manager is ready to recieve input */
+    ESP_KEY_MGR_STATE_LOAD = 1,     /* Key Manager is ready to receive input */
     ESP_KEY_MGR_STATE_GAIN = 2,     /* Key Manager is ready to provide output */
     ESP_KEY_MGR_STATE_BUSY = 3,      /* Key Manager is busy */
 } esp_key_mgr_state_t;
@@ -113,6 +110,4 @@ typedef struct WORD_ALIGNED_ATTR PACKED_ATTR {
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
