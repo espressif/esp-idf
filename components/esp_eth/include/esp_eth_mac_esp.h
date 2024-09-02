@@ -51,6 +51,8 @@ typedef enum {
 /**
  * @brief RMII Clock GPIO number Options for ESP32
  *
+ * @warning If you want the Ethernet to work with WiFi, don’t select ESP32 as RMII CLK output as it would result in clock instability.
+ *
  */
 typedef enum {
     /**
@@ -64,10 +66,8 @@ typedef enum {
     /**
      * @brief Output RMII Clock from internal APLL Clock available at GPIO0
      *
-     * @note GPIO0 can be set to output a pre-divided PLL clock (test only!). Enabling this option will configure GPIO0 to output a 50MHz clock.
-     * In fact this clock doesn’t have directly relationship with EMAC peripheral. Sometimes this clock won’t work well with your PHY chip.
-     * You might need to add some extra devices after GPIO0 (e.g. inverter). Note that outputting RMII clock on GPIO0 is an experimental practice.
-     * If you want the Ethernet to work with WiFi, don’t select GPIO0 output mode for stability.
+     * @note GPIO0 can be set to output a pre-divided PLL clock. Enabling this option will configure GPIO0 to output a 50MHz clock.
+     * In fact this clock doesn’t have directly relationship with EMAC peripheral. Sometimes this clock may not work well with your PHY chip.
      *
      */
     EMAC_APPL_CLK_OUT_GPIO = 0,
