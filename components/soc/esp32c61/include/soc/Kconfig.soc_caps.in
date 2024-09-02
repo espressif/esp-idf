@@ -847,6 +847,10 @@ config SOC_WIFI_HE_SUPPORT
     bool
     default y
 
+config SOC_WIFI_MAC_VERSION_NUM
+    int
+    default 3
+
 config SOC_PHY_COMBO_MODULE
     bool
     default y
