@@ -435,22 +435,22 @@ typedef void (tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK) (UINT8 status);
 #define BTM_COD_SERVICE_INFORMATION         0x8000
 
 /* class of device field macros */
-#define BTM_COD_FORMAT_TYPE(u8, pd)         {u8  = pd[2]&0x03;}
+#define BTM_COD_RESERVED_2(u8, pd)          {u8  = pd[2]&0x03;}
 #define BTM_COD_MINOR_CLASS(u8, pd)         {u8  = pd[2]&0xFC;}
 #define BTM_COD_MAJOR_CLASS(u8, pd)         {u8  = pd[1]&0x1F;}
 #define BTM_COD_SERVICE_CLASS(u16, pd)      {u16 = pd[0]; u16<<=8; u16 += pd[1]&0xE0;}
 
 /* to set the fields (assumes that format type is always 0) */
-#define FIELDS_TO_COD(pd, mn, mj, sv) {pd[2] = mn; pd[1] =              \
-                                       mj+ ((sv)&BTM_COD_SERVICE_CLASS_LO_B); \
-                                       pd[0] = (sv) >> 8;}
+#define FIELDS_TO_COD(pd, rs, mn, mj, sv) {pd[2] = (mn & BTM_COD_MINOR_CLASS_MASK) + (rs & BTM_COD_RESERVED_2_MASK);   \
+                                           pd[1] = mj+ ((sv)&BTM_COD_SERVICE_CLASS_LO_B); \
+                                           pd[0] = (sv) >> 8;}
 
 /* the COD masks */
-#define BTM_COD_FORMAT_TYPE_MASK      0x03
 #define BTM_COD_MINOR_CLASS_MASK      0xFC
 #define BTM_COD_MAJOR_CLASS_MASK      0x1F
 #define BTM_COD_SERVICE_CLASS_LO_B    0x00E0
 #define BTM_COD_SERVICE_CLASS_MASK    0xFFE0
+#define BTM_COD_RESERVED_2_MASK       0x03
 
 
 /* BTM service definitions

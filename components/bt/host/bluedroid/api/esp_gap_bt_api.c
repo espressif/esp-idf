@@ -180,6 +180,7 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
     }
 
     switch (mode) {
+    case ESP_BT_SET_COD_RESERVED_2:
     case ESP_BT_SET_COD_MAJOR_MINOR:
     case ESP_BT_SET_COD_SERVICE_CLASS:
     case ESP_BT_CLR_COD_SERVICE_CLASS:
