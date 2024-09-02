@@ -119,3 +119,5 @@ This will ensure the linker to always includes the file defining ``ld_include_my
 - In theory, medium priority interrupts could also be handled in this way. ESP-IDF does not support this yet.
 
 - To check Xtensa instruction set architecture (ISA), please refer to `Xtensa ISA Summary <https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf>`_.
+
+See :example:`system/nmi_isr` for an example of how to implement a custom NMI handler on Xtensa-based targets.
