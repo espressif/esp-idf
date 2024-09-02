@@ -143,7 +143,7 @@ typedef struct {
 /**
  * @brief Prototype of ISP hist event callback
  *
- * @param[in] handle    ISP hist controller handle
+ * @param[in] hist_ctlr    ISP hist controller handle
  * @param[in] edata     ISP hist event data
  * @param[in] user_data User registered context, registered when in `esp_isp_hist_register_event_callbacks()`
  *

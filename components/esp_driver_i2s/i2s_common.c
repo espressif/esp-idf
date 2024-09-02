@@ -371,7 +371,7 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
     for (int sign = 1; bufsize % alignment != 0; aligned_frame_num += sign) {
         bufsize = aligned_frame_num * bytes_per_frame;
         /* If the buffer size exceed the max dma size */
-        if (bufsize > I2S_DMA_BUFFER_MAX_SIZE) {
+        if (bufsize > I2S_DMA_BUFFER_MAX_SIZE && sign == 1) {
             sign = -1; // toggle the search sign
             aligned_frame_num = dma_frame_num;              // Reset the frame num
             bufsize = aligned_frame_num * bytes_per_frame;  // Reset the bufsize
