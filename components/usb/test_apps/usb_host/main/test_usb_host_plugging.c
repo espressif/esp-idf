@@ -33,7 +33,7 @@ Procedure:
 
 #define TEST_DCONN_NO_CLIENT_ITERATIONS     3
 
-TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_speed][low_speed]")
+TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][low_speed][full_speed][high_speed]")
 {
     bool connected = false;
     int dconn_iter = 0;
@@ -83,7 +83,7 @@ Procedure:
 #define TEST_FORCE_DCONN_NUM_TRANSFERS      3
 #define TEST_MSC_SCSI_TAG                   0xDEADBEEF
 
-TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed][high_speed]")
 {
     // Create task to run client that communicates with MSC SCSI interface
     const dev_msc_info_t *dev_info = dev_msc_get_info();
@@ -132,7 +132,7 @@ Procedure:
 
 #define TEST_ENUM_ITERATIONS    3
 
-TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed][high_speed]")
 {
     // Create task to run client that checks the enumeration of the device
     TaskHandle_t task_hdl;

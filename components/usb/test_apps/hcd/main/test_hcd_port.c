@@ -30,7 +30,7 @@ Procedure:
     - Trigger the port disconnection event
     - Teardown port and HCD
 */
-TEST_CASE("Test HCD port disconnect event, port enabled", "[port][low_speed][full_speed]")
+TEST_CASE("Test HCD port disconnect event, port enabled", "[port][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl); // Trigger a connection
     printf("Connected %s speed device \n", (char*[]) {
@@ -63,7 +63,7 @@ Procedure:
     - Teardown port and HCD
 */
 
-TEST_CASE("Test HCD port sudden disconnect", "[port][low_speed][full_speed]")
+TEST_CASE("Test HCD port sudden disconnect", "[port][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
@@ -153,7 +153,7 @@ Procedure:
     - Cleanup default pipe
     - Trigger disconnection and teardown
 */
-TEST_CASE("Test HCD port suspend and resume", "[port][low_speed][full_speed]")
+TEST_CASE("Test HCD port suspend and resume", "[port][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
@@ -207,7 +207,7 @@ Procedure:
     - Check that a disconnection still works after disable
     - Teardown
 */
-TEST_CASE("Test HCD port disable", "[port][low_speed][full_speed]")
+TEST_CASE("Test HCD port disable", "[port][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
@@ -295,7 +295,7 @@ static void concurrent_task(void *arg)
     vTaskDelay(portMAX_DELAY);  // Block forever and wait to be deleted
 }
 
-TEST_CASE("Test HCD port command bailout", "[port][low_speed][full_speed]")
+TEST_CASE("Test HCD port command bailout", "[port][low_speed][full_speed][high_speed]")
 {
     test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
