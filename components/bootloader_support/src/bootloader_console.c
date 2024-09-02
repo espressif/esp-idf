@@ -48,8 +48,8 @@ void bootloader_console_init(void)
 
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
-    const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
-    const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
+    const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
+    const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
 
     // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
     esp_rom_output_set_as_console(uart_num);
