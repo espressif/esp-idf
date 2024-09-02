@@ -190,6 +190,11 @@ static void controller_rcv_pkt_ready(void)
     }
 }
 
+static void dummy_controller_rcv_pkt_ready(void)
+{
+  /* Dummy function */
+}
+
 void bt_record_hci_data(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
@@ -201,6 +206,12 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
+}
+
+static int dummy_host_rcv_pkt(uint8_t *data, uint16_t len)
+{
+    /* Dummy function */
+    return 0;
 }
 
 /*
@@ -264,6 +275,11 @@ static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_recv = host_rcv_pkt,
 };
 
+static const esp_vhci_host_callback_t dummy_vhci_host_cb = {
+    .notify_host_send_available = dummy_controller_rcv_pkt_ready,
+    .notify_host_recv = dummy_host_rcv_pkt,
+};
+
 
 extern void ble_transport_init(void);
 extern esp_err_t ble_buf_alloc(void);
@@ -312,6 +328,8 @@ esp_err_t esp_nimble_hci_deinit(void)
         vhci_send_sem = NULL;
     }
     ble_transport_deinit();
+
+    esp_vhci_host_register_callback(&dummy_vhci_host_cb);
 
     ble_buf_free();
 
