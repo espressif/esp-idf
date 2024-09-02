@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -280,7 +280,12 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40000000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40070000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40078000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
+#else
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)
@@ -297,11 +302,6 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_IRAM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_DRAM_ADDR, start, 16));
-#else
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40000000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40070000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40078000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
 #endif
 }
 
