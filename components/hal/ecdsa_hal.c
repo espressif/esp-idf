@@ -9,7 +9,11 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/efuse_hal.h"
 
-#ifdef SOC_KEY_MANAGER_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32C5
+#include "soc/keymng_reg.h"
+#endif
+
+#ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 #include "hal/key_mgr_hal.h"
 #endif
 
@@ -19,16 +23,21 @@
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
 
-
     if (conf->use_km_key == 0) {
         efuse_hal_set_ecdsa_key(conf->efuse_key_blk);
-#if SOC_KEY_MANAGER_SUPPORTED
-        key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+
+#if CONFIG_IDF_TARGET_ESP32C5
+        REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 1);
+#endif
+
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+        // Force Key Manager to use eFuse key for XTS-AES operation
+        key_mgr_ll_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     }
 #if SOC_KEY_MANAGER_SUPPORTED
     else {
-        key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_OWN_KEY);
+        key_mgr_ll_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_OWN_KEY);
     }
 #endif
 
