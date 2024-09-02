@@ -5,18 +5,18 @@ Introduction to Low Power Mode in Wi-Fi Scenarios
 
 After the previous introduction to low power mode from a systemic perspective, this section delves into low power mode in Wi-Fi scenarios. Due to the complexity of Wi-Fi scenarios, basic principles of Wi-Fi power saving will be introduced before specific low power mode. This section is focused on station mode.
 
-Choosing Low Power Mode in Wi-Fi Scenarios
----------------------------------------------
+.. todo - add sleep-current/esp32c5_summary.inc and sleep-current/esp32c61_summary.inc
 
-To help users select appropriate low power mode, a summary table of low power modes in Wi-Fi scenarios is provided before detailed introduction.
+.. only:: not esp32c5 and not esp32c61
 
-.. todo - add sleep-current/esp32c5_summary.inc
+  Choosing Low Power Mode in Wi-Fi Scenarios
+  ---------------------------------------------
 
-.. only:: not esp32c5
+  To help users select appropriate low power mode, a summary table of low power modes in Wi-Fi scenarios is provided before detailed introduction.
 
-    .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
+  .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
 
-.. note::
+  .. note::
 
       All currents in the table are average currents, and the terms in the table are explained in the following text. Users can refer to them as needed.
 
@@ -363,13 +363,13 @@ Modem-sleep Mode Configuration
         * - ``light_sleep_enable``
           - false
 
-- Configuration Performance
+    .. todo - add sleep-current/esp32c5_modem_sleep.inc sleep-current/esp32c61_modem_sleep.inc
 
-  .. todo - add sleep-current/esp32c5_modem_sleep.inc
+    .. only:: not esp32c5 and not esp32c61
 
-  .. only:: not esp32c5
+      - Configuration Performance
 
-      .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
+          .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
 
 
 Auto Light-sleep Mode + Wi-Fi Scenario Configuration
@@ -377,15 +377,15 @@ Auto Light-sleep Mode + Wi-Fi Scenario Configuration
 
 Auto Light-sleep mode in Wi-Fi scenarios does not require wake-up source configuration compared with a pure system. But the remaining part of configuration is basically the same in the two operation scenarios. Therefore, detailed introduction of configurable options, configuration steps, and recommended configurations can be found in the previous section :ref:`Deep-sleep Mode`, with the Wi-Fi-related configurations set to default.
 
-- Configuration Performance
+.. todo - add sleep-current/esp32c5_light_sleep.inc and leep-current/esp32c61_light_sleep.inc
 
-    The configuration performance mirrors that of the recommended Auto Light-sleep mode configuration in a pure system, combined with the default Wi-Fi-related configurations in the Wi-Fi environment.
+.. only:: not esp32c5 and not esp32c61
 
-    .. todo - add sleep-current/esp32c5_light_sleep.inc
+  - Configuration Performance
 
-    .. only:: not esp32c5
+      The configuration performance mirrors that of the recommended Auto Light-sleep mode configuration in a pure system, combined with the default Wi-Fi-related configurations in the Wi-Fi environment.
 
-        .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
+      .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
 
 Deep-sleep Mode + Wi-Fi Scenario Configuration
 ++++++++++++++++++++++++++++++++++++++++++++++++

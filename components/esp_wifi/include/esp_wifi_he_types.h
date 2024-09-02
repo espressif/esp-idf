@@ -41,7 +41,7 @@ enum {
 /**
   * @brief Channel state information(CSI) configuration type
   */
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 typedef struct {
     uint32_t enable                 : 1;    /**< enable to acquire CSI */
     uint32_t acquire_csi_legacy     : 1;    /**< enable to acquire L-LTF */
@@ -172,7 +172,7 @@ typedef enum {
 /**
   * @brief RxControl Info
   */
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 typedef struct {
     signed rssi: 8;                               /**< the RSSI of the reception frame */
     unsigned rate: 5;                             /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */

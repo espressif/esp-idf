@@ -45,7 +45,7 @@
 #ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
 #endif
-#include "esp32c5/rom/ets_sys.h"
+#include "esp32c61/rom/ets_sys.h"
 #include "private/esp_modem_wrapper.h"
 #include "esp_private/esp_modem_clock.h"
 

@@ -189,7 +189,7 @@ typedef struct {
         uint32_t txbf;
         uint32_t dcm;
     } nonmimo[ESP_TEST_RX_MU_USER_NUM];
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     uint32_t mu_bru_id_0: 16;
     uint32_t mu_bru_id_bssidx: 16;
     uint32_t mu_bru_id_2047: 16;
@@ -200,7 +200,7 @@ typedef struct {
 #endif
 } esp_test_rx_mu_statistics_t; //10932 bytes
 
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 typedef struct {
     uint32_t legacy;
     uint32_t legacy_noeb;
@@ -406,7 +406,7 @@ typedef struct {
     uint16_t rxhung_statis;
     uint16_t txhung_statis;
     uint32_t rxtxhung;
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     uint32_t rxtxpanic;
     uint8_t bf_ndp_timeout;
     uint8_t bf_report_err;

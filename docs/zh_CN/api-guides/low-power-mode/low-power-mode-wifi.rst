@@ -5,18 +5,19 @@ Wi-Fi 场景下低功耗模式介绍
 
 本节将结合纯系统下的功耗模式来介绍 Wi-Fi 场景下的低功耗模式。因为 Wi-Fi 场景的复杂性，本节会首先介绍 Wi-Fi 省电的基本原理，然后再介绍具体的低功耗模式。本节主要针对 station 模式。
 
-Wi-Fi 场景如何选择低功耗模式
---------------------------------------
+.. todo - add sleep-current/esp32c5_summary.inc and sleep-current/esp32c61_summary.inc
 
-在介绍具体内容前先给出 Wi-Fi 场景下低功耗模式总结表，以方便用户根据需求快速选择想要了解的内容，选择合适的低功耗模式。
+.. only:: not esp32c5 and not esp32c61
 
-.. todo - add sleep-current/esp32c5_summary.inc
+  Wi-Fi 场景如何选择低功耗模式
+  --------------------------------------
 
-.. only:: not esp32c5
+  在介绍具体内容前先给出 Wi-Fi 场景下低功耗模式总结表，以方便用户根据需求快速选择想要了解的内容，选择合适的低功耗模式。
 
-    .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
 
-.. note::
+  .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
+
+  .. note::
 
       上表中所有电流均为平均电流，表中术语在下文均有介绍，用户可根据需求进行查看。
 
@@ -363,13 +364,13 @@ Modem-sleep 模式配置
         * - ``light_sleep_enable``
           - false
 
-- 配置表现
+    .. todo - add sleep-current/esp32c5_modem_sleep.inc sleep-current/esp32c61_modem_sleep.inc
 
-  .. todo - add sleep-current/esp32c5_modem_sleep.inc
+    .. only:: not esp32c5 and not esp32c61
 
-  .. only:: not esp32c5
+      - 配置表现
 
-      .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
+          .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
 
 
 Auto Light-sleep 模式 + Wi-Fi 场景配置
@@ -377,15 +378,15 @@ Auto Light-sleep 模式 + Wi-Fi 场景配置
 
 Auto Light-sleep 在 Wi-Fi 场景下的配置比纯系统下少了唤醒源的配置要求，其余几乎与纯系统下配置一致，因此可配置选项、配置步骤、推荐配置的详细介绍可以参考上文 :ref:`Deep-sleep 模式`。同时 Wi-Fi 相关配置保持默认。
 
-- 配置表现
+.. todo - add sleep-current/esp32c5_light_sleep.inc and leep-current/esp32c61_light_sleep.inc
 
-    该配置表现为 Auto Light-sleep 模式纯系统推荐配置 + 默认的 Wi-Fi 相关配置在 Wi-Fi 场景的表现。
+.. only:: not esp32c5 and not esp32c61
 
-    .. todo - add sleep-current/esp32c5_light_sleep.inc
+  - 配置表现
 
-    .. only:: not esp32c5
+      该配置表现为 Auto Light-sleep 模式纯系统推荐配置 + 默认的 Wi-Fi 相关配置在 Wi-Fi 场景的表现。
 
-        .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
+      .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
 
 Deep-sleep 模式 + Wi-Fi 场景配置
 +++++++++++++++++++++++++++++++++++
