@@ -139,6 +139,10 @@ esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
 void
 esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
+    if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return;
+    }
+
     hci_driver_vhci_tx(data[0], data, len, HCI_DRIVER_DIR_H2C);
 }
 
