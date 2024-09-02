@@ -191,11 +191,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 - :example:`system/console/basic` 演示了如何使用控制台组件的 REPL（读-评估-打印循环）API 在 {IDF_TARGET_NAME} 上创建一个交互式 Shell，该 Shell 可以通过串行接口控制，支持 UART 和 USB 接口，并可以作为需要命令行接口的应用程序的基础。
 
-- :example:`system/console/advanced` 演示了如何使用控制台组件在 {IDF_TARGET_NAME} 上创建一个交互式 Shell，该 Shell 可以通过串行端口控制，为需要命令行接口的应用程序提供基础。
-
-.. only:: esp32s3
-
-    - :example:`system/console/advanced_usb_cdc` 演示了如何通过 {IDF_TARGET_NAME} 的 USB_OTG 外设创建并与具有命令行接口的交互式 Shell 进行交互。
+- :example:`system/console/advanced` 演示了如何使用控制台组件在 {IDF_TARGET_NAME} 上创建一个交互式 Shell，该 Shell 可以通过串行接口控制，支持 UART 和 USB 接口，可作为需要命令行接口的应用程序的基础。
 
 API 参考
 --------

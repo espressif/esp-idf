@@ -12,15 +12,8 @@ examples/system/base_mac_address:
 
 examples/system/console/advanced:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3"] # IDF-9120 and IDF-9133
       reason: Sufficient to run this app on one chip with each architecture
-  depends_components:
-    - console
-    - vfs
-
-examples/system/console/advanced_usb_cdc:
-  disable:
-    - if: SOC_USB_OTG_SUPPORTED != 1 or IDF_TARGET == "esp32p4" # TODO: IDF-8078, IDF-9120 and IDF-9133
   depends_components:
     - console
     - vfs
