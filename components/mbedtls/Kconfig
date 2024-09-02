@@ -379,7 +379,6 @@ menu "mbedTLS"
 
     config MBEDTLS_CMAC_C
         bool "Enable CMAC mode for block ciphers"
-        default y if MBEDTLS_USE_CRYPTO_ROM_IMPL
         default n
         depends on MBEDTLS_AES_C || MBEDTLS_DES_C
         help
@@ -1144,6 +1143,7 @@ menu "mbedTLS"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C
         select MBEDTLS_CCM_C
+        select MBEDTLS_CMAC_C
         select MBEDTLS_ROM_MD5
         select MBEDTLS_HARDWARE_SHA
         select MBEDTLS_ECP_RESTARTABLE
