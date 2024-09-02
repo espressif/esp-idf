@@ -12,12 +12,13 @@
 #include "esp_timer.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
-#include "esp_lcd_ili9881c.h"
 #include "esp_ldo_regulator.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "lvgl.h"
+#include "esp_lcd_ili9881c.h"
+#include "esp_lcd_ek79007.h"
 
 static const char *TAG = "example";
 
@@ -25,6 +26,7 @@ static const char *TAG = "example";
 //////////////////// Please update the following configuration according to your LCD Spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if CONFIG_EXAMPLE_LCD_USE_ILI9881C
 // FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ  80
 #define EXAMPLE_MIPI_DSI_LCD_H_RES    800
@@ -35,6 +37,18 @@ static const char *TAG = "example";
 #define EXAMPLE_MIPI_DSI_LCD_VSYNC    4
 #define EXAMPLE_MIPI_DSI_LCD_VBP      16
 #define EXAMPLE_MIPI_DSI_LCD_VFP      16
+#elif CONFIG_EXAMPLE_LCD_USE_EK79007
+// FPS = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
+#define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ  48
+#define EXAMPLE_MIPI_DSI_LCD_H_RES    1024
+#define EXAMPLE_MIPI_DSI_LCD_V_RES    600
+#define EXAMPLE_MIPI_DSI_LCD_HSYNC    10
+#define EXAMPLE_MIPI_DSI_LCD_HBP      120
+#define EXAMPLE_MIPI_DSI_LCD_HFP      120
+#define EXAMPLE_MIPI_DSI_LCD_VSYNC    1
+#define EXAMPLE_MIPI_DSI_LCD_VBP      20
+#define EXAMPLE_MIPI_DSI_LCD_VFP      10
+#endif
 
 #define EXAMPLE_MIPI_DSI_LANE_NUM          2    // 2 data lanes
 #define EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS 1000 // 1Gbps
@@ -201,29 +215,18 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
-    ESP_LOGI(TAG, "Install MIPI DSI LCD control panel");
+    ESP_LOGI(TAG, "Install MIPI DSI LCD control IO");
     esp_lcd_panel_io_handle_t mipi_dbi_io;
     // we use DBI interface to send LCD commands and parameters
     esp_lcd_dbi_io_config_t dbi_config = {
         .virtual_channel = 0,
-        .lcd_cmd_bits = 8,   // according to the LCD ILI9881C spec
-        .lcd_param_bits = 8, // according to the LCD ILI9881C spec
+        .lcd_cmd_bits = 8,   // according to the LCD spec
+        .lcd_param_bits = 8, // according to the LCD spec
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
-    // create ILI9881C control panel
-    esp_lcd_panel_handle_t ili9881c_ctrl_panel;
-    esp_lcd_panel_dev_config_t lcd_dev_config = {
-        .bits_per_pixel = 24,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
-    };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(mipi_dbi_io, &lcd_dev_config, &ili9881c_ctrl_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(ili9881c_ctrl_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_init(ili9881c_ctrl_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(ili9881c_ctrl_panel, true));
 
     ESP_LOGI(TAG, "Install MIPI DSI LCD data panel");
-    esp_lcd_panel_handle_t mipi_dpi_panel;
+    esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
     esp_lcd_dpi_panel_config_t dpi_config = {
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
@@ -243,7 +246,39 @@ void app_main(void)
         .flags.use_dma2d = true,
 #endif
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
+
+#if CONFIG_EXAMPLE_LCD_USE_ILI9881C
+    ili9881c_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+            .lane_num = EXAMPLE_MIPI_DSI_LANE_NUM,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .bits_per_pixel = 24,
+        .vendor_config = &vendor_config,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(mipi_dbi_io, &lcd_dev_config, &mipi_dpi_panel));
+#elif CONFIG_EXAMPLE_LCD_USE_EK79007
+    ek79007_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .bits_per_pixel = 24,
+        .vendor_config = &vendor_config,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ek79007(mipi_dbi_io, &lcd_dev_config, &mipi_dpi_panel));
+#endif
+
+    ESP_ERROR_CHECK(esp_lcd_panel_reset(mipi_dpi_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
     // turn on backlight
     example_bsp_set_lcd_backlight(EXAMPLE_LCD_BK_LIGHT_ON_LEVEL);
