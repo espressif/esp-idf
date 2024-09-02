@@ -1,0 +1,6 @@
+[mapping:parlio_driver_gdma]
+archive: libesp_hw_support.a
+entries:
+    if PARLIO_ISR_IRAM_SAFE:
+        gdma_link: gdma_link_mount_buffers (noflash)
+        gdma_link: gdma_link_get_head_addr (noflash)
