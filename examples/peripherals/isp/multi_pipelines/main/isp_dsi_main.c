@@ -344,6 +344,21 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_sharpen_configure(isp_proc, &sharpen_config));
     ESP_ERROR_CHECK(esp_isp_sharpen_enable(isp_proc));
 
+    esp_isp_color_config_t color_config = {
+        .color_contrast = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_saturation = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_hue = 0,
+        .color_brightness = 0,
+    };
+    ESP_ERROR_CHECK(esp_isp_color_configure(isp_proc, &color_config));
+    ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
+
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
         esp_sccb_io_handle_t dw9714_io_handle;

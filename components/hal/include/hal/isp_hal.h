@@ -84,6 +84,17 @@ typedef struct {
 void isp_hal_init(isp_hal_context_t *hal, int isp_id);
 
 
+/**
+ * @brief Color configurations
+ */
+typedef struct {
+    isp_color_contrast_t color_contrast;          ///< The color contrast value, range 0~1, decimal value should be 0~127
+    isp_color_saturation_t color_saturation;      ///< The color saturation value, range 0~1, decimal value should be 0~127
+    uint32_t color_hue;                           ///< The color hue angle value, range 0-360
+    int color_brightness;                         ///< The color brightness value, range -128~127
+} isp_hal_color_cfg_t;
+
+
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
@@ -224,6 +235,18 @@ void isp_hal_sharpen_config(isp_hal_context_t *hal, isp_hal_sharpen_cfg_t *confi
  * @param[in] window     Window info, see `isp_window_t`
  */
 void isp_hal_hist_window_config(isp_hal_context_t *hal, const isp_window_t *window);
+
+/*---------------------------------------------------------------
+                      Color
+---------------------------------------------------------------*/
+
+/**
+ * @brief   Set the color config
+ *
+ * @param[in] hal                       Context of the HAL layer
+ * @param[in] config                    Color config, set NULL to de-config the ISP color
+ */
+void isp_hal_color_config(isp_hal_context_t *hal, const isp_hal_color_cfg_t *config);
 
 #ifdef __cplusplus
 }

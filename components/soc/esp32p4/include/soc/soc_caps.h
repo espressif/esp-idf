@@ -337,6 +337,7 @@
 #define SOC_ISP_DEMOSAIC_SUPPORTED               1
 #define SOC_ISP_DVP_SUPPORTED                    1
 #define SOC_ISP_SHARPEN_SUPPORTED                1
+#define SOC_ISP_COLOR_SUPPORTED                  1
 #define SOC_ISP_SHARE_CSI_BRG                    1
 
 #define SOC_ISP_NUMS                             1U

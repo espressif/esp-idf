@@ -30,6 +30,10 @@ if(CONFIG_SOC_ISP_SHARPEN_SUPPORTED)
     list(APPEND srcs "src/isp_sharpen.c")
 endif()
 
+if(CONFIG_SOC_ISP_COLOR_SUPPORTED)
+    list(APPEND srcs "src/isp_color.c")
+endif()
+
 if(NOT ${target} STREQUAL "linux")
     list(APPEND requires esp_mm)
 endif()

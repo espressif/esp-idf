@@ -190,6 +190,32 @@ void isp_hal_demosaic_config(isp_hal_context_t *hal, isp_hal_demosaic_cfg_t *con
 }
 
 /*---------------------------------------------------------------
+                      Color
+---------------------------------------------------------------*/
+void isp_hal_color_config(isp_hal_context_t *hal, const isp_hal_color_cfg_t *config)
+{
+    if (config) {
+        isp_ll_color_set_contrast(hal->hw, config->color_contrast);
+        isp_ll_color_set_saturation(hal->hw, config->color_saturation);
+        isp_ll_color_set_hue(hal->hw, (config->color_hue * 256) / 360);
+        isp_ll_color_set_brigntness(hal->hw, (int8_t)config->color_brightness);
+    } else {
+        isp_color_contrast_t color_contrast_default = {
+            .integer = 1,
+            .decimal = 0,
+        };
+        isp_color_saturation_t color_saturation_default = {
+            .integer = 1,
+            .decimal = 0,
+        };
+        isp_ll_color_set_contrast(hal->hw, color_contrast_default);
+        isp_ll_color_set_saturation(hal->hw, color_saturation_default);
+        isp_ll_color_set_hue(hal->hw, 0);
+        isp_ll_color_set_brigntness(hal->hw, 0);
+    }
+}
+
+/*---------------------------------------------------------------
                       Histogram
 ---------------------------------------------------------------*/
 void isp_hal_hist_window_config(isp_hal_context_t *hal, const isp_window_t *window)

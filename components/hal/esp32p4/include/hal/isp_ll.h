@@ -69,6 +69,7 @@ extern "C" {
 #define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE)
 #define ISP_LL_EVENT_SHARP_MASK               (ISP_LL_EVENT_SHARP_FRAME)
 #define ISP_LL_EVENT_HIST_MASK                (ISP_LL_EVENT_HIST_FDONE)
+#define ISP_LL_EVENT_COLOR_MASK               (ISP_LL_EVENT_COLOR_FRAME)
 
 /*---------------------------------------------------------------
                       AF
@@ -91,6 +92,15 @@ extern "C" {
 #define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
 #define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
 #define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
+
+/*---------------------------------------------------------------
+                      Color
+---------------------------------------------------------------*/
+#define ISP_LL_COLOR_CONTRAST_MAX       0x80
+#define ISP_LL_COLOR_SATURATION_MAX     0x80
+#define ISP_LL_COLOR_HUE_MAX            360
+#define ISP_LL_COLOR_BRIGNTNESS_MIN     -128
+#define ISP_LL_COLOR_BRIGNTNESS_MAX     127
 
 /*---------------------------------------------------------------
                       AWB
@@ -857,6 +867,50 @@ static inline void isp_ll_color_clk_enable(isp_dev_t *hw, bool enable)
 static inline void isp_ll_color_enable(isp_dev_t *hw, bool enable)
 {
     hw->cntl.color_en = enable;
+}
+
+/**
+ * @brief Set color contrast
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] color_contrast  Color contrast value
+ */
+static inline void isp_ll_color_set_contrast(isp_dev_t *hw, isp_color_contrast_t color_contrast)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_contrast, color_contrast.val);
+}
+
+/**
+ * @brief Set color saturation
+ *
+ * @param[in] hw                Hardware instance address
+ * @param[in] color_saturation  Color saturation value
+ */
+static inline void isp_ll_color_set_saturation(isp_dev_t *hw, isp_color_saturation_t color_saturation)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_saturation, color_saturation.val);
+}
+
+/**
+ * @brief Set color hue
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] color_hue       Color hue angle
+ */
+static inline void isp_ll_color_set_hue(isp_dev_t *hw, uint32_t color_hue)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_hue, color_hue);
+}
+
+/**
+ * @brief Set color brightness
+ *
+ * @param[in] hw                Hardware instance address
+ * @param[in] color_brightness  Color brightness value, signed 2's complement
+ */
+static inline void isp_ll_color_set_brigntness(isp_dev_t *hw, int8_t color_brightness)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->color_ctrl, color_brightness, color_brightness);
 }
 
 /*---------------------------------------------------------------

@@ -359,6 +359,39 @@ typedef struct {
     uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];  ///< Histogram value, represents the number of pixels that the histogram window's brightness results fall into the segment X.
 } isp_hist_result_t;
 
+/*---------------------------------------------------------------
+                      Color
+---------------------------------------------------------------*/
+#define ISP_COLOR_CONTRAST_INT_BITS         1
+#define ISP_COLOR_CONTRAST_DEC_BITS         7
+#define ISP_COLOR_CONTRAST_RES_BITS         24
+#define ISP_COLOR_SATURATION_INT_BITS       1
+#define ISP_COLOR_SATURATION_DEC_BITS       7
+#define ISP_COLOR_SATURATION_RES_BITS       24
+
+/**
+ * @brief Color contrast value
+ */
+typedef union {
+    struct {
+        uint32_t decimal:ISP_COLOR_CONTRAST_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_COLOR_CONTRAST_INT_BITS;    ///< Integer part
+        uint32_t reserved:ISP_COLOR_CONTRAST_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;       ///< 32-bit color contrast value
+} isp_color_contrast_t;
+
+/**
+ * @brief Color saturation value
+ */
+typedef union {
+    struct {
+        uint32_t decimal:ISP_COLOR_SATURATION_DEC_BITS;    ///< Decimal part
+        uint32_t integer:ISP_COLOR_SATURATION_INT_BITS;    ///< Integer part
+        uint32_t reserved:ISP_COLOR_SATURATION_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;       ///< 32-bit color saturation value
+} isp_color_saturation_t;
 
 #ifdef __cplusplus
 }
