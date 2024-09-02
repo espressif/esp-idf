@@ -91,6 +91,19 @@ static void configure_led(void)
 void app_main(void)
 {
 
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    /* In ESP32TinyS3 LED is powered by pin IO17 and controlled by IO18.
+     *
+     * Don't forget to run idf.py menuconfig and set
+     * Blink LED type: strip, periferal to RMT
+     * Blink GPIO Number: 18
+     *
+     * */
+    gpio_set_direction(GPIO_NUM_17, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_17, 1);
+#endif
+
+    
     /* Configure the peripheral according to the LED type */
     configure_led();
 
