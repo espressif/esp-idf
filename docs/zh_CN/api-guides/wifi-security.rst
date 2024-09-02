@@ -62,7 +62,9 @@ API 及用法
      - MSCHAP 和 MSCHAP-V2
   - EAP-FAST：该认证方法基于受保护访问凭证 (PAC) 实现，同时也使用身份和密码。目前，需禁用 :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` 标志以使用此功能。
 
-示例 :example:`wifi/wifi_enterprise` 展示了除 EAP-FAST 之外的所有支持的企业级 Wi-Fi 方法。有关 ESP-FAST 的示例，请参阅 :example:`wifi/wifi_eap_fast`。可以在 ``idf.py menuconfig`` 的示例配置菜单中选择 EAP 方法。请参阅 :idf_file:`examples/wifi/wifi_enterprise/README.md` 了解如何生成证书及如何运行示例。
+- :example:`wifi/wifi_eap_fast` 演示如何使用 EAP-FAST 通过企业级 Wi-Fi 认证将 {IDF_TARGET_NAME} 连接到 AP，包括 CA 证书的安装、用户凭据的设置、启用 Wi-Fi 企业模式以及如何连接到 AP。
+
+- :example:`wifi/wifi_enterprise` 演示如何使用除 ESP-FAST 之外的其他 EAP 方法（如 EAP-TLS、EAP-PEAP、EAP-TTLS）通过 Wi-Fi 企业认证将 {IDF_TARGET_NAME} 连接到 AP。有关使用 OpenSSL 命令生成证书和运行示例的详细信息，请参阅 :example_file:`wifi/wifi_enterprise/README.md`。
 
 个人级 WPA3
 -------------

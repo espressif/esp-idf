@@ -18,10 +18,10 @@ Please refer to Wi-Fi Alliance's official page on `Easy Connect <https://www.wi-
 
 Easy Connect is still an evolving protocol. Of known platforms that support the QR Code method are some Android smartphones with Android 10 or higher. To use Easy Connect, no additional App needs to be installed on the supported smartphone.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Example on how to provision {IDF_TARGET_NAME} using a supported smartphone: :example:`wifi/wifi_easy_connect/dpp-enrollee`.
+- :example:`wifi/wifi_easy_connect/dpp-enrollee` demonstrates how to configure {IDF_TARGET_NAME} as an enrollee using DPP to securely onboard ESP devices to a network with the help of a QR code and an Android 10+ device.
 
 API Reference
 -------------

@@ -62,7 +62,9 @@ Enterprise security is the secure authentication mechanism for enterprise wirele
      - MSCHAP and MSCHAP-V2.
   - EAP-FAST: This is an authentication method based on Protected Access Credentials (PAC) which also uses identity and password. Currently, :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` flag should be disabled to use this feature.
 
-Example :example:`wifi/wifi_enterprise` demonstrates all the supported Wi-Fi Enterprise methods except EAP-FAST. Please refer :example:`wifi/wifi_eap_fast` for the EAP-FAST example. EAP method can be selected from the Example Configuration menu in ``idf.py menuconfig``. Refer to :idf_file:`examples/wifi/wifi_enterprise/README.md` for information on how to generate certificates and run the example.
+- :example:`wifi/wifi_eap_fast` demonstrates how to connect {IDF_TARGET_NAME} to an AP with Wi-Fi Enterprise authentication using EAP-FAST, including the installation of a CA certificate, setting user credentials, enabling Wi-Fi Enterprise mode, and handling connection to the AP.
+
+- :example:`wifi/wifi_enterprise` demonstrates how to connect {IDF_TARGET_NAME} to an AP with Wi-Fi Enterprise authentication using other EAP methods, such as EAP-TLS, EAP-PEAP, EAP-TTLS. For details on generating certificates with OpenSSL commands and running the example, refer to :example_file:`wifi/wifi_enterprise/README.md`.
 
 WPA3-Personal
 -------------
