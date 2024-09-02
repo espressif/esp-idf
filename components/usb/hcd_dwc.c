@@ -62,7 +62,7 @@
 // FS: Must be 2-64. HS: Must be 8-256. See USB-OTG databook Table 5-47
 #define XFER_LIST_LEN_INTR                      FRAME_LIST_LEN
 #define XFER_LIST_LEN_ISOC                      64  // Implement longer ISOC transfer list to give us enough space for additional timing margin
-#define XFER_LIST_ISOC_MARGIN                   2   // The 1st ISOC transfer is scheduled 2 (micro)frames later so we have enough timing margin
+#define XFER_LIST_ISOC_MARGIN                   3   // The 1st ISOC transfer is scheduled 3 (micro)frames later so we have enough timing margin
 
 // ------------------------ Flags --------------------------
 

@@ -181,7 +181,7 @@ static void test_async_client_cb(const usb_host_client_event_msg_t *event_msg, v
     }
 }
 
-TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
+TEST_CASE("Test USB Host async API", "[usb_host][low_speed][full_speed][high_speed]")
 {
     // Register two clients
     client_test_stage_t client0_stage = CLIENT_TEST_STAGE_NONE;

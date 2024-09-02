@@ -39,7 +39,7 @@ Procedure:
     - Teardown
 */
 
-TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
@@ -114,7 +114,7 @@ Procedure:
     - Deallocate URBs
     - Teardown
 */
-TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
@@ -163,7 +163,7 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
             }
 
             // Add a delay so we start scheduling the transactions at different time in USB frame
-            esp_rom_delay_us(ENQUEUE_DELAY * interval + ENQUEUE_DELAY * channel);
+            esp_rom_delay_us(ENQUEUE_DELAY * (interval - 1) + ENQUEUE_DELAY * channel);
 
             // Enqueue URBs
             for (int i = 0; i < NUM_URBS; i++) {
@@ -226,7 +226,7 @@ Procedure:
     - Free both pipes
     - Teardown
 */
-TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
