@@ -101,6 +101,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"
+        default EXAMPLE_MIN_CPU_FREQ_48M if IDF_TARGET_ESP32C5
         default EXAMPLE_MIN_CPU_FREQ_10M
         depends on PM_ENABLE
         help
