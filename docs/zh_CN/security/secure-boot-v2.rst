@@ -5,9 +5,9 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS 或 ECDSA", esp32h2="RSA-PSS 或 ECDSA", esp32p4="RSA-PSS 或 ECDSA", esp32c5="RSA-PSS 或 ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS 或 ECDSA", esp32h2="RSA-PSS 或 ECDSA", esp32p4="RSA-PSS 或 ECDSA", esp32c5="RSA-PSS 或 ECDSA", esp32c61="ECDSA}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256、或 ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256、或 ECDSA-192", esp32c61="ECDSA-256 或 ECDSA-192"}
 
 {IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。"}
 
@@ -19,7 +19,7 @@
 
 {IDF_TARGET_CPU_FREQ:default="", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
 
-{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (v2)"}
+{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2="ECDSA (v2), esp32c5="ECDSA (v2), esp32c61="ECDSA (v2)"}
 
 {IDF_TARGET_EFUSE_WR_DIS_RD_DIS:default="ESP_EFUSE_WR_DIS_RD_DIS", esp32="ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE"}
 
