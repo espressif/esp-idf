@@ -123,7 +123,7 @@ If you decide for any reason to use ``fatfs_create_rawflash_image`` (without wea
 
 The arguments of the function are as follows:
 
-#. partition - the name of the partition as defined in the partition table (e.g., :example_file:`storage/fatfsgen/partitions_example.csv`).
+#. partition - the name of the partition as defined in the partition table (e.g., :example_file:`storage/fatfs/fatfsgen/partitions_example.csv`).
 
 #. base_dir - the directory that will be encoded to FatFs partition and optionally flashed into the device. Beware that you have to specify the suitable size of the partition in the partition table.
 
@@ -139,7 +139,7 @@ For example::
 
 If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
 
-For an example, see :example:`storage/fatfsgen`.
+For an example, see :example:`storage/fatfs/fatfsgen`.
 
 
 .. _fatfs-partition-analyzer:
