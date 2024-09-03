@@ -270,23 +270,15 @@ If the MSC ``CONFIG_TINYUSB_MSC_ENABLED`` option is enabled in Menuconfig, the E
 Application Examples
 --------------------
 
-The table below describes the code examples available in the directory :example:`peripherals/usb/device`:
+The examples can be found in the directory :example:`peripherals/usb/device`.
 
-.. list-table::
-   :widths: 35 65
-   :header-rows: 1
+- :example:`peripherals/usb/device/tusb_console` demonstrates how to set up {IDF_TARGET_NAME} to get log output via a Serial Device connection using the TinyUSB component, applicable for any Espressif boards that support USB-OTG.
+- :example:`peripherals/usb/device/tusb_serial_device` demonstrates how to set up {IDF_TARGET_NAME} to function as a USB Serial Device using the TinyUSB component, with the ability to be configured as a double serial device.
+- :example:`peripherals/usb/device/tusb_midi` demonstrates how to set up {IDF_TARGET_NAME} to function as a USB MIDI Device, outputting a MIDI note sequence via the native USB port using the TinyUSB component.
+- :example:`peripherals/usb/device/tusb_hid` demonstrates how to implement a USB keyboard and mouse using the TinyUSB component, which sends 'key a/A pressed & released' events and moves the mouse in a square trajectory upon connection to a USB host.
+- :example:`peripherals/usb/device/tusb_msc` demonstrates how to use the USB capabilities to create a Mass Storage Device that can be recognized by USB-hosts, allowing access to its internal data storage, with support for SPI Flash and SD MMC Card storage media.
+- :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` demonstrates how to set up {IDF_TARGET_NAME} to function simultaneously as both a USB Serial Device and an MSC device (SPI-Flash as the storage media) using the TinyUSB component.
 
-   * - Code Example
-     - Description
-   * - :example:`peripherals/usb/device/tusb_console`
-     - How to set up {IDF_TARGET_NAME} chip to get log output via Serial Device connection
-   * - :example:`peripherals/usb/device/tusb_serial_device`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
-   * - :example:`peripherals/usb/device/tusb_midi`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
-   * - :example:`peripherals/usb/device/tusb_hid`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
-   * - :example:`peripherals/usb/device/tusb_msc`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Mass Storage Device
-   * - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice`
-     - How to set up {IDF_TARGET_NAME} chip to work as a Composite USB Device (MSC + CDC)
+.. only:: not esp32p4
+
+  - :example:`peripherals/usb/device/tusb_ncm` demonstrates how to transmit Wi-Fi data to a Linux or Windows host via USB using the Network Control Model (NCM), a sub-class of Communication Device Class (CDC) USB Device for Ethernet-over-USB applications, with the help of a TinyUSB component.

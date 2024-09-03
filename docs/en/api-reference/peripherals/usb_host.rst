@@ -365,7 +365,7 @@ Examples
 Host Library Examples
 ^^^^^^^^^^^^^^^^^^^^^
 
-The :example:`peripherals/usb/host/usb_host_lib` demonstrates basic usage of the USB Host Library's API to implement a pseudo-class driver.
+- :example:`peripherals/usb/host/usb_host_lib` demonstrates how to use the USB Host Library API to install and register a client, wait for a device connection, print the device's information, handle disconnection, and repeat these steps until a user quits the application.
 
 Class Driver Examples
 ^^^^^^^^^^^^^^^^^^^^^
@@ -376,27 +376,27 @@ CDC-ACM
 """""""
 
 * A host class driver for the Communication Device Class (Abstract Control Model) is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__.
-* The :example:`peripherals/usb/host/cdc/cdc_acm_host` example uses the CDC-ACM host driver component to communicate with CDC-ACM devices.
-* The :example:`peripherals/usb/host/cdc/cdc_acm_vcp` example shows how can you extend the CDC-ACM host driver to interface Virtual COM Port devices.
+* :example:`peripherals/usb/host/cdc/cdc_acm_host` demonstrates how to use the CDC-ACM Host Driver to enable communication between {IDF_TARGET_NAME} and a USB CDC-ACM device.
+* :example:`peripherals/usb/host/cdc/cdc_acm_vcp` demonstrates how to extend the CDC-ACM driver for Virtual Communication Port (VCP) devices like CP210x, FTDI FT23x or CH34x devices, and how to control the device and send data using the CDC-ACM API.
 * The CDC-ACM driver is also used in `esp_modem examples <https://github.com/espressif/esp-protocols/tree/master/components/esp_modem/examples>`__, where it is used for communication with cellular modems.
 
 MSC
 """
 
 * A host class driver for the Mass Storage Class (Bulk-Only Transport) is deployed to `ESP Component Registry <https://components.espressif.com/component/espressif/usb_host_msc>`__.
-* The :example:`peripherals/usb/host/msc` example demonstrates the usage of the MSC host driver to read and write to a USB flash drive.
+* :example:`peripherals/usb/host/msc` demonstrates how to use USB Mass Storage Class to access, read, write, and perform operations on a USB flash drive, including handling USB reconnections and deinitializing the USB Host Stack.
 
 HID
 """
 
 * A host class driver for the HID (Human interface device) is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/components/espressif/usb_host_hid>`__.
-* The :example:`peripherals/usb/host/hid` example demonstrates the possibility to receive reports from a USB HID device with several interfaces.
+* :example:`peripherals/usb/host/hid` demonstrates how to implement a basic USB Host HID Class Driver on {IDF_TARGET_NAME}, enabling communication with USB HID devices like keyboards and mice, and continuously scans for their connection, fetching HID reports once connected.
 
 UVC
 """
 
 * A host class driver for the USB Video Device Class is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/component/espressif/usb_host_uvc>`__.
-* The :example:`peripherals/usb/host/uvc` example demonstrates the usage of the UVC host driver to receive a video stream from a USB camera and optionally forward that stream over Wi-Fi.
+* :example:`peripherals/usb/host/uvc` demonstrates how to capture video from a USB camera using the `libuvc` library and stream the video over Wi-Fi by hosting a TCP server, with the option to visualize the captured video on a PC using the provided `player.py` script.
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
