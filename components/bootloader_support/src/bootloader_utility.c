@@ -875,7 +875,7 @@ static void set_cache_and_start_app(
     }
     //we use the MMU_LL_END_DROM_ENTRY_ID mmu entry as a map page for app to find the boot partition
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, MMU_LL_END_DROM_ENTRY_VADDR, drom_addr_aligned, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "mapped one page of the rodata, from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "mapped one page of the rodata, from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, MMU_LL_END_DROM_ENTRY_VADDR, actual_mapped_len);
 #endif
 
     //-----------------------MAP IROM--------------------------

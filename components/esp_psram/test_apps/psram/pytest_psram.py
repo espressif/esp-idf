@@ -94,6 +94,7 @@ def test_psram_esp32p4(dut: Dut) -> None:
     'config',
     [
         'esp32c5_release',
+        'esp32c5_advanced',
     ],
     indirect=True,
 )
