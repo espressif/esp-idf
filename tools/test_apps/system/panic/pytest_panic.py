@@ -53,8 +53,9 @@ CONFIGS = [
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
     pytest.param('coredump_flash_custom_stack', marks=TARGETS_RISCV),
-    pytest.param('gdbstub', marks=TARGETS_ALL),
-    pytest.param('panic', marks=TARGETS_ALL),
+    # TODO: Move esp32c61 to TARGETS_RISCV once Core Dump is supported (IDF-9268)
+    pytest.param('gdbstub', marks=TARGETS_ALL + [pytest.mark.esp32c61]),
+    pytest.param('panic', marks=TARGETS_ALL + [pytest.mark.esp32c61]),
 ]
 
 CONFIGS_DUAL_CORE = [
@@ -83,6 +84,7 @@ CONFIGS_HW_STACK_GUARD = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_RISCV),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_RISCV),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_RISCV),
+    # TODO: Add stack guard support to the ESP32-C61: IDF-9269
     pytest.param('gdbstub', marks=TARGETS_RISCV),
     pytest.param('panic', marks=TARGETS_RISCV),
 ]
@@ -585,7 +587,6 @@ def cache_error_log_check(dut: PanicTestDut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9268 IDF-10994
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 def test_assert_cache_write_back_error_can_print_backtrace(
     dut: PanicTestDut, config: str, test_func_name: str
@@ -596,7 +597,6 @@ def test_assert_cache_write_back_error_can_print_backtrace(
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9268 IDF-10994
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 def test_assert_cache_write_back_error_can_print_backtrace2(
     dut: PanicTestDut, config: str, test_func_name: str
