@@ -94,7 +94,7 @@ def generate_jobs_report(args: argparse.Namespace) -> None:
         return
 
     report_generator = JobReportGenerator(args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, jobs=jobs)
-    report_generator.post_report(print_report_path=False)
+    report_generator.post_report(print_report_path=False, print_retry_jobs_message=any(job.is_failed for job in jobs))
 
 
 if __name__ == '__main__':
