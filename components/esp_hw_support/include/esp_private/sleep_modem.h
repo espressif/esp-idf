@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,7 +120,7 @@ bool modem_domain_pd_allowed(void);
 uint32_t sleep_modem_reject_triggers(void);
 
 /**
- * @brief Configure the parameters of the modem subsytem during the sleep process
+ * @brief Configure the parameters of the modem subsystem during the sleep process
  *
  * In light sleep mode, the wake-up early time of the WiFi module and the TBTT
  * interrupt early time (trigger enabling RF) are determined by the maximum and
@@ -132,7 +132,7 @@ uint32_t sleep_modem_reject_triggers(void);
  *
  * @param max_freq_mhz       the maximum frequency of system
  * @param min_freq_mhz       the minimum frequency of system
- * @param light_sleep_enable ture or false for enable or disable light sleep mode, respectively
+ * @param light_sleep_enable true or false for enable or disable light sleep mode, respectively
  *
  * @return
  *  - ESP_OK on success
@@ -225,6 +225,27 @@ void sleep_modem_wifi_modem_state_deinit(void);
   *   - false not skip light sleep
  */
 bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
+
+/**
+ * @brief Function to initialize and create the modem state phy link
+ * @param link_head the pointer that point to the head of the created phy link
+ * @return
+ *   - ESP_OK on success
+ *   - ESP_ERR_NO_MEM if no memory for link
+ *   - ESP_ERR_INVALID_ARG if value is out of range
+ *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
+ */
+esp_err_t sleep_modem_state_phy_link_init(void **link_head);
+
+/**
+ * @brief Function to destroy and de-initialize modem state phy link
+ * @param link_head the phy link head will be destroyed
+ * @return
+ *   - ESP_OK on success
+ *   - ESP_ERR_INVALID_ARG if value is out of range
+ *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
+ */
+esp_err_t sleep_modem_state_phy_link_deinit(void *link_head);
 #endif
 
 #ifdef __cplusplus
