@@ -85,7 +85,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
     flash_irom_paddr_start = ALIGN_DOWN_BY(flash_irom_paddr_start, CONFIG_MMU_PAGE_SIZE);
-    ESP_EARLY_LOGI(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
+    ESP_EARLY_LOGV(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
 
     if ((MMU_PAGE_TO_BYTES(start_page) + irom_size) > psram_size) {
         ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", irom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + irom_size);
@@ -106,6 +106,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     start_page += BYTES_TO_MMU_PAGE(irom_size);
     *out_page = start_page;
 
+    ESP_EARLY_LOGI(TAG, ".text xip on psram");
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
@@ -120,7 +121,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
     flash_drom_paddr_start = ALIGN_DOWN_BY(flash_drom_paddr_start, CONFIG_MMU_PAGE_SIZE);
-    ESP_EARLY_LOGI(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
+    ESP_EARLY_LOGV(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
 
     if ((MMU_PAGE_TO_BYTES(start_page) + drom_size) > psram_size) {
         ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash rodata, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", drom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + drom_size);
@@ -141,6 +142,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     start_page += BYTES_TO_MMU_PAGE(drom_size);
     *out_page = start_page;
 
+    ESP_EARLY_LOGI(TAG, ".rodata xip on psram");
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_RODATA

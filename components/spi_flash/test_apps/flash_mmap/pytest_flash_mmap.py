@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -38,6 +37,8 @@ def test_flash_mmap_rom_impl(dut: Dut) -> None:
 XIP_CONFIGS = [
     pytest.param('xip_psram_esp32s2', marks=[pytest.mark.esp32s2]),
     pytest.param('xip_psram_esp32s3', marks=[pytest.mark.esp32s3]),
+    pytest.param('xip_psram_esp32c5', marks=[pytest.mark.esp32c5]),
+    pytest.param('xip_psram_esp32c61', marks=[pytest.mark.esp32c61]),
 ]
 
 
