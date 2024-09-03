@@ -543,7 +543,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(UINT8 pm_id, tBTM_PM_MCB *p_cb, tBTM_PM_
 ** Function     btm_pm_snd_md_req
 ** Description  get the resulting mode and send the resuest to host controller
 ** Returns      tBTM_STATUS
-**, BOOLEAN *p_chg_ind
+**
 *******************************************************************************/
 static tBTM_STATUS btm_pm_snd_md_req(UINT8 pm_id, UINT16 link_hdl, tBTM_PM_PWR_MD *p_mode)
 {
@@ -565,6 +565,8 @@ static tBTM_STATUS btm_pm_snd_md_req(UINT8 pm_id, UINT16 link_hdl, tBTM_PM_PWR_M
         /* already in the resulting mode */
         if ( (mode == BTM_PM_MD_ACTIVE) ||
                 ((md_res.max >= p_cb->interval) && (md_res.min <= p_cb->interval)) ) {
+            // Clear request change indication because already in result mode
+            p_cb->chg_ind = FALSE;
             return BTM_CMD_STORED;
         }
         /* Otherwise, needs to wake, then sleep */
@@ -689,7 +691,7 @@ static void btm_pm_check_stored(void)
 ** Description      This function is called when an HCI command status event occurs
 **                  for power manager related commands.
 **
-** Input Parms      status - status of the event (HCI_SUCCESS if no errors)
+** Input Params     status - status of the event (HCI_SUCCESS if no errors)
 **
 ** Returns          none.
 **
@@ -717,7 +719,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
 #if BTM_PM_DEBUG == TRUE
         BTM_TRACE_DEBUG( "btm_pm_proc_cmd_status new state:0x%x", p_cb->state);
 #endif // BTM_PM_DEBUG
-    } else { /* the command was not successfull. Stay in the same state */
+    } else { /* the command was not successful. Stay in the same state */
         pm_status = BTM_PM_STS_ERROR;
     }
 
@@ -743,7 +745,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
 **
 ** Description      This function is called when an HCI mode change event occurs.
 **
-** Input Parms      hci_status - status of the event (HCI_SUCCESS if no errors)
+** Input Params     hci_status - status of the event (HCI_SUCCESS if no errors)
 **                  hci_handle - connection handle associated with the change
 **                  mode - HCI_MODE_ACTIVE, HCI_MODE_HOLD, HCI_MODE_SNIFF, or HCI_MODE_PARK
 **                  interval - number of baseband slots (meaning depends on mode)
