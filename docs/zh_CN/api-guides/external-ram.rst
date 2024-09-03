@@ -112,16 +112,14 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
 剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
 
-.. only:: esp32
+.. _external_ram_config_noinit:
 
-    .. _external_ram_config_noinit:
+允许 .noinit 段放入片外存储器
+-------------------------------------
 
-    允许 .noinit 段放入片外存储器
-    -------------------------------------
+通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
 
-    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，外部 RAM 中提供的地址空间区域将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
-
-    通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
+通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
