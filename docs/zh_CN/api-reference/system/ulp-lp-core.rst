@@ -16,7 +16,10 @@ ULP LP-Core 协处理器具有以下功能：
 编译 ULP LP-Core 代码
 ----------------------------------
 
-ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二进制文件，并自动嵌入到主项目的二进制文件中。编译操作如下：
+ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二进制文件，并自动嵌入到主项目的二进制文件中。编译可通过以下两种方式实现：
+
+使用 ``ulp_embed_binary``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. 将用 C 语言或汇编语言编写的 ULP LP-Core 代码（带有 ``.S`` 扩展名）放在组件目录下的专用目录中，例如 ``ulp/``。
 
@@ -32,7 +35,60 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
-``ulp_embed_binary`` 的第一个参数为 ULP 二进制文件的文件名，该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数为 ULP 源文件。第三个参数为组件源文件列表，用于包含要生成的头文件。要正确构建依赖关系、确保在编译这些文件前创建要生成的头文件，都需要此文件列表。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
+``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
+
+
+使用自定义的 CMake 项目
+~~~~~~~~~~~~~~~~~~~~~~~
+
+也可以为 LP-Core 创建自定义的 CMake 项目，从而更好地控制构建过程，并实现常规 CMake 项目的操作，例如设置编译选项、链接外部库等。
+
+请在组件的 ``CMakeLists.txt`` 文件中将 ULP 项目添加为外部项目：
+
+.. code-block:: cmake
+
+    ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
+
+请创建一个文件夹，并在文件夹中添加 ULP 项目文件及 ``CMakeLists.txt`` 文件，该文件夹的位置应与 ``ulp_add_project`` 函数中指定的路径一致。``CMakeLists.txt`` 文件应如下所示：
+
+.. code-block:: cmake
+
+    cmake_minimum_required(VERSION 3.16)
+
+    # 项目/目标名称由主项目传递，允许 IDF 依赖此目标
+    # 将二进制文件嵌入到主应用程序中
+    project(${ULP_APP_NAME})
+    add_executable(${ULP_APP_NAME} main.c)
+
+    # 导入 ULP 项目辅助函数
+    include(IDFULPProject)
+
+    # 应用默认的编译选项
+    ulp_apply_default_options(${ULP_APP_NAME})
+
+    # 应用 IDF ULP 组件提供的默认源文件
+    ulp_apply_default_sources(${ULP_APP_NAME})
+
+    # 添加构建二进制文件的目标，并添加链接脚本，用于将 ULP 共享变量导出到主应用程序
+    ulp_add_build_binary_targets(${ULP_APP_NAME})
+
+    # 以下内容是可选的，可以用于自定义构建过程
+
+    # 创建自定义库
+    set(lib_path "${CMAKE_CURRENT_LIST_DIR}/lib")
+    add_library(custom_lib STATIC "${lib_path}/lib_src.c")
+    target_include_directories(custom_lib PUBLIC "${lib_path}/")
+
+    # 链接到库
+    target_link_libraries(${ULP_APP_NAME} PRIVATE custom_lib)
+
+    # 设置自定义编译标志
+    target_compile_options(${ULP_APP_NAME} PRIVATE -msave-restore)
+
+构建项目
+~~~~~~~~
+
+若想编译和构建项目，请执行以下操作：
 
 1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将 :ref:`CONFIG_ULP_COPROC_TYPE` 设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
 
@@ -53,6 +109,7 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
     6. **创建一个 LD 导出脚本和一个头文件，** 即 ``ulp_app_name.ld`` 和 ``ulp_app_name.h``，并在其中包含 ``ulp_app_name.sym`` 中的符号。此步骤可以通过 ``esp32ulp_mapgen.py`` 实现。
 
     7. **将生成的二进制文件添加到要嵌入到应用程序中的二进制文件列表。**
+
 
 .. _ulp-lp-core-access-variables:
 
@@ -239,6 +296,8 @@ ULP LP-Core 中断
 * :example:`system/ulp/lp_core/interrupt` 展示了如何在 LP 内核上注册中断处理程序，接收由主 CPU 触发的中断。
 
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` 展示了如何在主 CPU 处于 Deep-sleep 模式时，使用 GPIO 中断为脉冲计数。
+
+* :example:`system/ulp/lp_core/build_system/` 演示了如何为 ULP 应用程序添加自定义的 ``CMakeLists.txt`` 文件。
 
 API 参考
 -------------
