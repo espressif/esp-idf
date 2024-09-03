@@ -65,7 +65,7 @@ There are cases where the contents of the base directory itself is generated at 
 
     spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
-For an example, see :example:`storage/spiffsgen`.
+For an example, see :example:`storage/spiffsgen`. This example demonstrates how to use the SPIFFS image generation tool to automatically create an SPIFFS image from a host folder during building.
 
 ``mkspiffs``
 ^^^^^^^^^^^^

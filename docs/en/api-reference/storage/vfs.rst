@@ -221,6 +221,7 @@ Application Examples
 
 - :example:`system/select` demonstrates how to use synchronous I/O multiplexing with the ``select()`` function, using UART and socket file descriptors, and configuring both to act as loopbacks to receive messages sent from other tasks.
 
+- :example:`storage/semihost_vfs` demonstrates how to use the semihosting VFS driver, including registering a host directory, redirecting stdout from UART to a file on the host, and reading and printing the content of a text file.
 
 API Reference
 -------------

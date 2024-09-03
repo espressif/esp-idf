@@ -157,7 +157,6 @@ FatFs 分区分析器
 
 生成文件夹结构之前，参数 --verbose 将根据 FatFs 镜像的引导扇区在终端打印详细信息。
 
-
 FATFS 最小分区大小及限制
 ------------------------
 
@@ -183,6 +182,14 @@ FATFS 组件支持 FAT12、FAT16 和 FAT32 文件系统类型。文件系统类�
 
 更多详情请参考 :doc:`文件系统注意事项 <../../api-guides/file-system-considerations>`。
 
+应用示例
+-----------------
+
+- :example:`storage/fatfs/getting_started` 演示了如何使用 FatFS 在 SPI flash 上存储永久数据的基本设置，包括挂载文件系统、打开文件、执行基本的读写操作以及卸载文件系统。
+
+- :example:`storage/fatfs/fs_operations` 演示了更全面的 FatFS 操作，包括读取和写入文件、创建、移动和删除文件及目录，以及检查文件详细信息。
+
+- :example:`storage/fatfs/ext_flash` 演示了如何操作使用 FatFS 格式化的外部 SPI flash，包括初始化 SPI 总线、配置 flash、将其注册为分区以及执行读写操作。
 
 高级 API 参考
 ------------------------

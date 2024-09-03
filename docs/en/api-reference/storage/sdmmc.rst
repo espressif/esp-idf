@@ -29,10 +29,16 @@ Host layer driver(s) implement the protocol layer driver by supporting these fun
     :align: center
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-An example which combines the SDMMC driver with the FATFS library is provided in the :example:`storage/sd_card` directory of ESP-IDF examples. This example initializes the card, then writes and reads data from it using POSIX and C library APIs. See README.md file in the example directory for more information.
+.. list::
+
+    :SOC_SDMMC_HOST_SUPPORTED: - :example:`storage/sd_card/sdmmc` demonstrates how to operate an SD card formatted with the FatFS file system via the SDMMC interface.
+
+    :SOC_SDMMC_HOST_SUPPORTED: - :example:`storage/emmc` demonstrates how to operate an eMMC chip formatted with the FatFS file system via the SDMMC interface.
+
+    :SOC_GPSPI_SUPPORTED: - :example:`storage/sd_card/sdspi` demonstrates how to operate an SD card formatted with the FatFS file system via the SPI interface.
 
 Protocol Layer API
 ------------------

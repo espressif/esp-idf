@@ -32,7 +32,13 @@ SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个�
 应用示例
 -------------------
 
-ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库组合使用的示例，演示了先初始化卡，然后使用 POSIX 和 C 库 API 向卡读写数据。请参考示例目录下 README.md 文件，查看更多详细信息。
+.. list::
+
+    :SOC_SDMMC_HOST_SUPPORTED: - :example:`storage/sd_card/sdmmc` 演示了如何通过 SDMMC 接口操作使用 FatFS 文件系统格式化的 SD 卡。
+
+    :SOC_SDMMC_HOST_SUPPORTED: - :example:`storage/emmc` 演示了如何通过 SDMMC 接口操作使用 FatFS 文件系统格式化的 eMMC 芯片。
+
+    :SOC_GPSPI_SUPPORTED: - :example:`storage/sd_card/sdspi` 演示了如何通过 SPI 接口操作使用 FatFS 文件系统格式化的 SD 卡。
 
 协议层 API
 ------------------
