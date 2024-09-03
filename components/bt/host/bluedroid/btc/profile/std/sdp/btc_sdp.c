@@ -32,6 +32,7 @@ typedef struct {
 } sdp_slot_t;
 
 typedef struct {
+    bool search_allowed;
     sdp_slot_t *sdp_slots[SDP_MAX_RECORDS];
     osi_mutex_t sdp_slot_mutex;
 } sdp_local_param_t;
@@ -49,6 +50,21 @@ static sdp_local_param_t *sdp_local_param_ptr;
 #define is_sdp_init() (&sdp_local_param != NULL && sdp_local_param.sdp_slot_mutex != NULL)
 #endif
 
+static void btc_sdp_cleanup(void)
+{
+#if SDP_DYNAMIC_MEMORY == TRUE
+    if (sdp_local_param_ptr) {
+#endif
+        if (sdp_local_param.sdp_slot_mutex) {
+            osi_mutex_free(sdp_local_param.sdp_slot_mutex);
+            sdp_local_param.sdp_slot_mutex = NULL;
+        }
+#if SDP_DYNAMIC_MEMORY == TRUE
+        osi_free(sdp_local_param_ptr);
+        sdp_local_param_ptr = NULL;
+    }
+#endif
+}
 
 static inline void btc_sdp_cb_to_app(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
 {
@@ -961,23 +977,27 @@ static void btc_sdp_init(void)
             ret = ESP_SDP_NO_RESOURCE;
             break;
         }
-        memset((void *)sdp_local_param_ptr, 0, sizeof(sdp_local_param_t));
 #endif
+        memset(&sdp_local_param, 0, sizeof(sdp_local_param_t));
 
         if (osi_mutex_new(&sdp_local_param.sdp_slot_mutex) != 0) {
-#if SDP_DYNAMIC_MEMORY == TRUE
-            osi_free(sdp_local_param_ptr);
-            sdp_local_param_ptr = NULL;
-#endif
             BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
             ret = ESP_SDP_NO_RESOURCE;
             break;
         }
 
         ret = BTA_SdpEnable(btc_sdp_dm_cback);
+        if (ret != ESP_SDP_SUCCESS) {
+            BTC_TRACE_ERROR("%s BTA_SdpEnable failed, ret = %d\n", __func__, ret);
+            ret = ESP_SDP_FAILURE;
+            break;
+        }
+
+        sdp_local_param.search_allowed = true;
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
+        btc_sdp_cleanup();
         param.init.status = ret;
         btc_sdp_cb_to_app(ESP_SDP_INIT_EVT, &param);
     }
@@ -1109,7 +1129,18 @@ static void btc_sdp_search(btc_sdp_args_t *arg)
             break;
         }
 
+        if (!sdp_local_param.search_allowed) {
+            BTC_TRACE_ERROR("%s SDP search is not allowed!", __func__);
+            ret = ESP_SDP_NO_RESOURCE;
+            break;
+        }
+
         BTA_SdpSearch(arg->search.bd_addr, &arg->search.sdp_uuid);
+        /**
+         * ESP_SDP_SEARCH_COMP_EVT will refer service name in BTA sdp database, so it is not allowed to be search until
+         * the previous search is completed
+         */
+        sdp_local_param.search_allowed = false;
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
@@ -1203,17 +1234,16 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         param.init.status = p_data->status;
         btc_sdp_cb_to_app(ESP_SDP_INIT_EVT, &param);
         break;
-    case BTA_SDP_DISENABLE_EVT:
-        BTA_SdpDisable();
-        osi_mutex_free(&sdp_local_param.sdp_slot_mutex);
- #if SDP_DYNAMIC_MEMORY == TRUE
-        osi_free(sdp_local_param_ptr);
-        sdp_local_param_ptr = NULL;
- #endif
+    case BTA_SDP_DISABLE_EVT:
+        BTA_SdpCleanup();
+        btc_sdp_cleanup();
         param.deinit.status = ESP_SDP_SUCCESS;
         btc_sdp_cb_to_app(ESP_SDP_DEINIT_EVT, &param);
         break;
     case BTA_SDP_SEARCH_COMP_EVT:
+        // SDP search completed, now can be searched again
+        sdp_local_param.search_allowed = true;
+
         param.search.status = p_data->sdp_search_comp.status;
         if (param.search.status == ESP_SDP_SUCCESS) {
             memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
