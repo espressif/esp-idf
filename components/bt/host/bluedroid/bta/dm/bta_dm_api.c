@@ -29,6 +29,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include <string.h>
+#include <assert.h>
 #include "bta/utl.h"
 #include "osi/allocator.h"
 
@@ -1061,18 +1062,63 @@ UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
 tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
                                     UINT32 *p_handle )
 {
-    tBTA_STATUS  status = BTA_FAILURE;
+    tBTA_STATUS status = BTA_FAILURE;
 
     if (bta_dm_di_cb.di_num < BTA_DI_NUM_MAX) {
         if (SDP_SetLocalDiRecord((tSDP_DI_RECORD *)p_device_info, p_handle) == SDP_SUCCESS) {
             if (!p_device_info->primary_record) {
-                bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = *p_handle;
-                bta_dm_di_cb.di_num ++;
+                for (uint8_t i = 1; i < BTA_DI_NUM_MAX; i++) {
+                    if (!bta_dm_di_cb.di_handle[i]) {
+                        bta_dm_di_cb.di_handle[i] = *p_handle;
+                        break;
+                    }
+                }
+                bta_dm_di_cb.di_num++;
+            } else if (!bta_dm_di_cb.di_handle[0]) {
+                bta_dm_di_cb.di_handle[0] = *p_handle;
+                bta_dm_di_cb.di_num++;
+            } else {
+                assert(bta_dm_di_cb.di_handle[0] == (*p_handle));
             }
 
-            bta_sys_add_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-            status =  BTA_SUCCESS;
+            if (!bta_dm_di_cb.uuid_added) {
+                bta_sys_add_uuid(UUID_SERVCLASS_PNP_INFORMATION);
+                bta_dm_di_cb.uuid_added = TRUE;
+            }
+
+            status = BTA_SUCCESS;
         }
+    }
+
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmRemoveLocalDiRecord
+**
+** Description      This function removes a DI record from the local SDP database.
+**
+** Returns          BTA_SUCCESS if record is removed successfully, otherwise error code.
+**
+*******************************************************************************/
+tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    for (uint8_t i = 0; i < BTA_DI_NUM_MAX; i++) {
+        if (bta_dm_di_cb.di_handle[i] == handle) {
+            if (SDP_DeleteRecord(handle)) {
+                bta_dm_di_cb.di_handle[i] = 0;
+                bta_dm_di_cb.di_num--;
+                status = BTA_SUCCESS;
+                break;
+            }
+        }
+    }
+
+    if (bta_dm_di_cb.di_num == 0 && bta_dm_di_cb.uuid_added) {
+        bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
     }
 
     return status;

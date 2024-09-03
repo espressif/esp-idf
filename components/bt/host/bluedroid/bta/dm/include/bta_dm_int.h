@@ -1575,6 +1575,7 @@ typedef struct {
 #if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_di_db;     /* pointer to the DI discovery database */
 #endif  ///SDP_INCLUDED == TRUE
+    BOOLEAN             uuid_added;
     UINT8               di_num;         /* total local DI record number */
     UINT32              di_handle[BTA_DI_NUM_MAX];  /* local DI record handle, the first one is primary record */
 } tBTA_DM_DI_CB;
