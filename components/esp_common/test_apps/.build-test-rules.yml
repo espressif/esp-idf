@@ -6,3 +6,7 @@ components/esp_common/test_apps/esp_common:
     - if: CONFIG_NAME == "psram" and IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: esp32p4 is not supported yet # TODO: IDF-7557
+    - if: CONFIG_NAME == "psram_noinit" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram_noinit" and IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: esp32p4 is not supported yet
