@@ -48,16 +48,16 @@
 
 //L2CAP
 #ifdef CONFIG_BT_L2CAP_ENABLED
-#define UC_BT_L2CAP_ENABLED                   CONFIG_BT_L2CAP_ENABLED
+#define UC_BT_L2CAP_ENABLED                 CONFIG_BT_L2CAP_ENABLED
 #else
-#define UC_BT_L2CAP_ENABLED                   FALSE
+#define UC_BT_L2CAP_ENABLED                 FALSE
 #endif
 
 //HFP(AG)
 #ifdef CONFIG_BT_HFP_AG_ENABLE
-#define UC_BT_HFP_AG_ENABLED            CONFIG_BT_HFP_AG_ENABLE
+#define UC_BT_HFP_AG_ENABLED                CONFIG_BT_HFP_AG_ENABLE
 #else
-#define UC_BT_HFP_AG_ENABLED            FALSE
+#define UC_BT_HFP_AG_ENABLED                FALSE
 #endif
 
 //HFP(Client)
