@@ -15,6 +15,7 @@ CONFIGS = [
 ]
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-10988
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_freertos(dut: Dut) -> None:
@@ -22,6 +23,7 @@ def test_freertos(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-10988
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['freertos_options'], indirect=True)
 def test_task_notify_too_high_index_fails(dut: Dut) -> None:
@@ -33,6 +35,7 @@ def test_task_notify_too_high_index_fails(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-10988
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['freertos_options'], indirect=True)
 def test_task_notify_wait_too_high_index_fails(dut: Dut) -> None:
@@ -44,6 +47,7 @@ def test_task_notify_wait_too_high_index_fails(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-10988
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_port_must_assert_in_isr(dut: Dut) -> None:

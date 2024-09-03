@@ -19,6 +19,8 @@ def run_multiple_stages(dut: Dut, test_case_num: int, stages: int) -> None:
 
 
 @pytest.mark.supported_targets
+# TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-10983
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C61 has not supported deep sleep')
 @pytest.mark.generic
 def test_app_update(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=90)

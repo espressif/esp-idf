@@ -13,6 +13,7 @@ CONFIGS = [
 @pytest.mark.esp32c3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
@@ -27,6 +28,7 @@ def test_gpio_filter(dut: IdfDut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3

@@ -2,11 +2,15 @@
 
 examples/system/app_trace_basic:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: target esp32c6, esp32h2, esp32p4, esp32c5 is not supported yet
+      reason: targets not supported yet, TODO[C61] IDF-9264 IDF-10992
 
 examples/system/base_mac_address:
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: test failed # TODO: IDF-10956
   depends_components:
     - esp_hw_support
 

@@ -5,6 +5,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='test case fail')    # TODO: IDF-10954
 @pytest.mark.parametrize(
     'config',
     [

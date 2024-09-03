@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9858 IDF-10989
 @pytest.mark.nightly_run
 @pytest.mark.parametrize(
     'config',
@@ -39,6 +40,7 @@ def test_heap_poisoning_qemu(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9858 IDF-10989
 @pytest.mark.parametrize(
     'config',
     [
@@ -101,6 +103,7 @@ def test_heap_trace_dump(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9858 IDF-10989
 @pytest.mark.parametrize(
     'config',
     [

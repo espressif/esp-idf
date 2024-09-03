@@ -26,7 +26,7 @@ def test_rtc_no_xtal32k(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-# TODO: [ESP32P4] IDF-8973 [ESP32C5] IDF-10309
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'], reason='c6/h2/p4/c5 support TBD')
+# TODO: [ESP32P4] IDF-8973 [ESP32C5] IDF-10309 [ESP32C61] IDF-9274 IDF-10984
+@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'], reason='support TBD')
 def test_rtc_calib(case_tester: Any) -> None:
     case_tester.run_all_multi_stage_cases()

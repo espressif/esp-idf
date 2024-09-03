@@ -584,6 +584,7 @@ def cache_error_log_check(dut: PanicTestDut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9268 IDF-10994
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 def test_assert_cache_write_back_error_can_print_backtrace(
     dut: PanicTestDut, config: str, test_func_name: str
@@ -594,6 +595,7 @@ def test_assert_cache_write_back_error_can_print_backtrace(
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9268 IDF-10994
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 def test_assert_cache_write_back_error_can_print_backtrace2(
     dut: PanicTestDut, config: str, test_func_name: str

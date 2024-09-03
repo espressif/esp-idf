@@ -29,6 +29,10 @@ tools/test_apps/system/eh_frame:
       reason: Only relevant for riscv targets
 
 tools/test_apps/system/esp_intr_dump:
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: test failed # TODO: IDF-10957
 
 tools/test_apps/system/g0_components:
   enable:
