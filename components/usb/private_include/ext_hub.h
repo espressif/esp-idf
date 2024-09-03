@@ -50,6 +50,7 @@ typedef struct {
     esp_err_t (*get_speed)(void *por_hdl, usb_speed_t *speed);
     esp_err_t (*get_status)(void *port_hdl);
     esp_err_t (*set_status)(void *port_hdl, const usb_port_status_t *status);
+    esp_err_t (*req_process)(void *port_hdl);
 } ext_hub_port_driver_t;
 
 /**
