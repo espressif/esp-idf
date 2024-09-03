@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,8 @@
 #endif
 #include "test_utils.h"
 
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;
 extern int _rtc_data_start;
@@ -29,7 +31,6 @@ extern int _ext_ram_noinit_start;
 extern int _ext_ram_noinit_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
-
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 //IDF-5045
@@ -95,7 +96,13 @@ static void write_spiram_and_reset(void)
     }
     printf("Flushing cache\n");
     // Flush the cache out to SPIRAM before resetting.
+#if CONFIG_IDF_TARGET_ESP32
     esp_psram_extram_writeback_cache();
+#else
+    uint32_t ext_noinit_size = sizeof(s_noinit_buffer);
+    extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
+    Cache_WriteBack_Addr((uint32_t)s_noinit_buffer, ext_noinit_size);
+#endif
 
     printf("Restarting\n");
     // Reset to test that noinit memory is left intact.

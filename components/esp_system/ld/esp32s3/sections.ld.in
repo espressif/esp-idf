@@ -421,6 +421,20 @@ SECTIONS
     _ext_ram_bss_end = ABSOLUTE(.);
   } > extern_ram_seg
 
+  /**
+   * This section holds data that won't be initialised when startup.
+   * This section locates in External RAM region.
+   */
+  .ext_ram_noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+    *(.ext_ram_noinit*)
+
+    . = ALIGN(4);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+  } > extern_ram_seg
+
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
