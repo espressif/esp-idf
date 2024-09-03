@@ -798,9 +798,10 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 应用示例
 -------------------
 
-查看使用 SPI 主机驱动程序在半双工模式下读取/写入 AT93C46D EEPROM（8 位模式）的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_master/hd_eeprom` 目录。
+- :example:`peripherals/spi_master/hd_eeprom` 演示了如何使用 SPI 主机驱动程序的半双工模式来读写 AT93C46D EEPROM（8 位模式）。
 
-查看使用 SPI 主机驱动程序在全双工模式下驱动 LCD 屏幕（如 ST7789V 或 ILI9341）的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_master/lcd` 目录。
+:example:`peripherals/spi_master/lcd` 演示了如何使用 SPI 主驱动程序在 LCD 上显示动画。借助 DMA，可以实现并行渲染和刷新。该示例还说明了如何使用 SPI 事务钩子函数来驱动 D/C 信号电平。
+
 
 API 参考 - SPI Common
 --------------------------

@@ -246,10 +246,14 @@ Restrictions and Known Issues
     If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
 The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave` directory of ESP-IDF examples.
+
+- :example: `peripherals/spi_slave/receiver` demonstrates how to configure an SPI slave to receive data from an SPI master and implement handshaking to manage data transfer readiness.
+
+- :example: `peripherals/spi_slave/sender` demonstrate how to configure an SPI master to send data to an SPI slave and use handshaking to ensure proper timing for data transmission.
 
 
 API Reference

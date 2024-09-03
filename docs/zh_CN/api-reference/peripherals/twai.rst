@@ -593,11 +593,11 @@ TWAI 驱动程序通过 :cpp:type:`twai_message_t` 结构体的不同位字段�
 应用示例
 ^^^^^^^^
 
-**网络示例：** TWAI 网络示例演示了如何通过 TWAI 驱动程序 API 在两个 {IDF_TARGET_NAME} 之间通信。其中一个 TWAI 节点为网络主节点，负责启动和终止与另一个网络从节点之间的数据传输。请参阅 :example:`peripherals/twai/twai_network`。
+**网络示例：** :example:`peripherals/twai/twai_network` 演示了如何通过 TWAI 驱动程序 API 在两个 {IDF_TARGET_NAME} 之间进行通信。其中一个 TWAI 节点为网络主节点，负责启动和终止与另一个网络从节点之间的数据传输。
 
-**报警和恢复示例：** 此示例演示了如何使用 TWAI 驱动程序的报警和离线恢复 API。该示例故意在总线上引入错误，将 TWAI 控制器置于离线状态。报警检测离线状态，并触发离线恢复过程。请参阅 :example:`peripherals/twai/twai_alert_and_recovery`。
+**报警和恢复示例：** :example:`peripherals/twai/twai_alert_and_recovery` 演示了如何在 {IDF_TARGET_NAME} 上使用 TWAI 驱动程序的报警和离线恢复 API。通过初始化驱动程序，该示例创建消息传输和警报处理任务，触发比特错误进入 Bus-Off 离线状态，报警检测离线状态，并触发 Bus-Off 离线恢复过程。
 
-**自测示例：** 此示例使用无应答模式和自接收请求，使 TWAI 控制器发送并同时接收一系列报文。此示例可用于验证 TWAI 控制器与外部收发器之间的连接是否正常。请参阅 :example:`peripherals/twai/twai_self_test`。
+**自测示例：** :example:`peripherals/twai/twai_self_test` 演示了节点如何使用 TWAI 驱动程序的无应答模式和自接收请求，向自身传输 TWAI 消息。此示例可用于测试目标芯片与外部收发器之间的连接是否正常。
 
 
 .. ---------------------------- API Reference ----------------------------------
