@@ -7,11 +7,11 @@
  * pthread port for Linux build
  */
 
+#include <pthread.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_pthread.h"
 #include "esp_heap_caps.h"
-
-#include <pthread.h>
 
 #include <string.h>
 #include "freertos/FreeRTOS.h"
