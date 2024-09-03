@@ -502,6 +502,58 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF pr
 
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 
+.. _isp-color:
+
+ISP Color Processor
+~~~~~~~~~~~~~~~~~~~
+
+This pipeline is used to adjust the image contrast, saturation, hue and brightness.
+
+Calling :cpp:func:`esp_isp_color_configure` to configure color function, you can take following code as reference.
+
+{IDF_TARGET_SOC_ISP_COLOR_CONTRAST_MAX:default="1.0", esp32p4="1.0"}
+{IDF_TARGET_SOC_ISP_COLOR_CONTRAST_DEFAULT:default="1.0", esp32p4="1.0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX:default="1.0", esp32p4="1.0"}
+{IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT:default="1.0", esp32p4="1.0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_HUE_MAX:default="360", esp32p4="360"}
+{IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT:default="0", esp32p4="0"}
+
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN:default="-127", esp32p4="-127"}
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MAX:default="128", esp32p4="128"}
+{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_DEFAULT:default="0", esp32p4="0"}
+
+.. list::
+
+    - Contrast value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_CONTRAST_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_CONTRAST_DEFAULT}
+    - Saturation value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_SATURATION_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_SATURATION_DEFAULT}
+    - Hue value should be 0 ~ {IDF_TARGET_SOC_ISP_COLOR_HUE_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_HUE_DEFAULT}
+    - Brightness value should be -{IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MIN} ~ {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_MAX}, default {IDF_TARGET_SOC_ISP_COLOR_BRIGHTNESS_DEFAULT}
+
+.. code:: c
+
+    esp_isp_color_config_t color_config = {
+        .color_contrast = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_saturation = {
+            .integer = 1,
+            .decimal = 0,
+        },
+        .color_hue = 0,
+        .color_brightness = 0,
+    };
+    ESP_ERROR_CHECK(esp_isp_color_configure(isp_proc, &color_config));
+    ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
+
+After calling :cpp:func:`esp_isp_color_configure`, you need to enable the ISP color processor, by calling :cpp:func:`esp_isp_color_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_color_disable` does the opposite, that is, put the driver back to the **init** state.
+
 .. _isp-ccm-config:
 
 Configure CCM
@@ -752,7 +804,8 @@ API Reference
 -------------
 
 .. include-build-file:: inc/isp.inc
-.. include-build-file:: inc/isp_types.inc
+.. include-build-file:: inc/components/hal/include/hal/isp_types.inc
+.. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/isp_af.inc
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
@@ -762,3 +815,4 @@ API Reference
 .. include-build-file:: inc/isp_sharpen.inc
 .. include-build-file:: inc/isp_gamma.inc
 .. include-build-file:: inc/isp_hist.inc
+.. include-build-file:: inc/isp_color.inc
