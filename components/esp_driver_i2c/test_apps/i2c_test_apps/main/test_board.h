@@ -26,8 +26,13 @@ extern "C" {
 #endif
 
 #if SOC_LP_I2C_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+#define LP_I2C_SCL_IO   4
+#define LP_I2C_SDA_IO   5
+#else
 #define LP_I2C_SCL_IO   7
 #define LP_I2C_SDA_IO   6
+#endif
 #endif
 
 #define ESP_SLAVE_ADDR 0x28         /*!< ESP_I2C slave address, you can set any 7bit value */
