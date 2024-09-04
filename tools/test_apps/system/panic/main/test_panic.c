@@ -312,8 +312,8 @@ void test_coredump_summary(void)
 
 void test_tcb_corrupted(void)
 {
-    uint32_t *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
-    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); ++i) {
+    uint32_t volatile *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
+    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); i++) {
         tcb_ptr[i] = 0xDEADBEE0;
     }
     vTaskDelay(2);
