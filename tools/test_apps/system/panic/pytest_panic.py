@@ -26,6 +26,7 @@ TARGETS_XTENSA = TARGETS_XTENSA_SINGLE_CORE + TARGETS_XTENSA_DUAL_CORE
 TARGETS_RISCV_SINGLE_CORE = [
     pytest.mark.esp32c2,
     pytest.mark.esp32c3,
+    pytest.mark.esp32c5,
     pytest.mark.esp32c6,
     pytest.mark.esp32h2,
 ]
@@ -976,6 +977,7 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     assert end_addr > start_addr
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO: IDF-8662')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
@@ -984,6 +986,7 @@ def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str
     common_test(dut, config)
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO: IDF-8662')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
