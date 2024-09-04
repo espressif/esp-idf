@@ -17,75 +17,13 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_pm.h"
 #include "driver/gptimer.h"
-#include "hal/timer_types.h"
-#include "hal/timer_hal.h"
-#include "hal/timer_ll.h"
-#include "soc/timer_periph.h"
 #include "esp_memory_utils.h"
-#include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_clk.h"
-#include "clk_ctrl_os.h"
-#include "esp_clk_tree.h"
 #include "gptimer_priv.h"
-
-#if GPTIMER_USE_RETENTION_LINK
-#include "esp_private/sleep_retention.h"
-#endif
 
 static const char *TAG = "gptimer";
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define GPTIMER_CLOCK_SRC_ATOMIC()
-#endif
-
-typedef struct gptimer_platform_t {
-    _lock_t mutex;                             // platform level mutex lock
-    gptimer_group_t *groups[SOC_TIMER_GROUPS]; // timer group pool
-    int group_ref_counts[SOC_TIMER_GROUPS];    // reference count used to protect group install/uninstall
-} gptimer_platform_t;
-
-// gptimer driver platform, it's always a singleton
-static gptimer_platform_t s_platform;
-
-static gptimer_group_t *gptimer_acquire_group_handle(int group_id);
-static void gptimer_release_group_handle(gptimer_group_t *group);
-static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
 static void gptimer_default_isr(void *args);
-
-#if GPTIMER_USE_RETENTION_LINK
-static esp_err_t sleep_tg_timer_retention_link_cb(void *arg)
-{
-    uint32_t group_id = *(uint32_t *)arg;
-    esp_err_t err = sleep_retention_entries_create(tg_timer_regs_retention[group_id].link_list,
-                                                   tg_timer_regs_retention[group_id].link_num,
-                                                   REGDMA_LINK_PRI_6,
-                                                   (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
-    if (err == ESP_OK) {
-        ESP_LOGD(TAG, "Timer group %ld retention initialization", group_id);
-    }
-    ESP_RETURN_ON_ERROR(err, TAG, "Failed to create sleep retention linked list for timer group %ld", group_id);
-    return err;
-}
-
-static void gptimer_create_retention_module(gptimer_group_t *group)
-{
-    _lock_acquire(&s_platform.mutex);
-    int group_id = group->group_id;
-    if ((group->sleep_retention_initialized == true) && (group->retention_link_created == false)) {
-        esp_err_t err = sleep_retention_module_allocate((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for timer group %d retention, power domain can't turn off", group_id);
-        } else {
-            group->retention_link_created = true;
-        }
-    }
-    _lock_release(&s_platform.mutex);
-}
-#endif
 
 static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
@@ -155,6 +93,10 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
         ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & GPTIMER_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
+
+#if !SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
     timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
@@ -392,8 +334,8 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         // the register used by the following LL functions are shared with other API,
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
-        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
+        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not enabled yet");
@@ -419,172 +361,6 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
     }
 
     atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
-    return ESP_OK;
-}
-
-static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
-{
-    bool new_group = false;
-    gptimer_group_t *group = NULL;
-
-    // prevent install timer group concurrently
-    _lock_acquire(&s_platform.mutex);
-    if (!s_platform.groups[group_id]) {
-        group = heap_caps_calloc(1, sizeof(gptimer_group_t), GPTIMER_MEM_ALLOC_CAPS);
-        if (group) {
-            new_group = true;
-            s_platform.groups[group_id] = group;
-            // initialize timer group members
-            group->group_id = group_id;
-            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-        }
-    } else {
-        group = s_platform.groups[group_id];
-    }
-    if (group) {
-        // someone acquired the group handle means we have a new object that refer to this group
-        s_platform.group_ref_counts[group_id]++;
-    }
-
-    if (new_group) {
-        // !!! HARDWARE SHARED RESOURCE !!!
-        // the gptimer and watchdog reside in the same the timer group
-        // we need to increase/decrease the reference count before enable/disable/reset the peripheral
-        PERIPH_RCC_ACQUIRE_ATOMIC(timer_group_periph_signals.groups[group_id].module, ref_count) {
-            if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, true);
-                timer_ll_reset_register(group_id);
-            }
-        }
-        ESP_LOGD(TAG, "new group (%d) @%p", group_id, group);
-#if GPTIMER_USE_RETENTION_LINK
-        if (group->sleep_retention_initialized != true) {
-            sleep_retention_module_init_param_t init_param = {
-                .cbs = {
-                    .create = {
-                        .handle = sleep_tg_timer_retention_link_cb,
-                        .arg = &group_id
-                    },
-                },
-                .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
-            };
-            esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER, &init_param);
-
-            if (err == ESP_OK) {
-                group->sleep_retention_initialized = true;
-            } else {
-                ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for timer group %d retention", group_id);
-            }
-        }
-#endif // GPTIMER_USE_RETENTION_LINK
-    }
-    _lock_release(&s_platform.mutex);
-
-    return group;
-}
-
-static void gptimer_release_group_handle(gptimer_group_t *group)
-{
-    int group_id = group->group_id;
-    bool do_deinitialize = false;
-
-    _lock_acquire(&s_platform.mutex);
-    s_platform.group_ref_counts[group_id]--;
-    if (s_platform.group_ref_counts[group_id] == 0) {
-        assert(s_platform.groups[group_id]);
-        do_deinitialize = true;
-        s_platform.groups[group_id] = NULL;
-    }
-
-    if (do_deinitialize) {
-        // disable bus clock for the timer group
-        PERIPH_RCC_RELEASE_ATOMIC(timer_group_periph_signals.groups[group_id].module, ref_count) {
-            if (ref_count == 0) {
-                timer_ll_enable_bus_clock(group_id, false);
-            }
-        }
-#if GPTIMER_USE_RETENTION_LINK
-        if (group->retention_link_created) {
-            sleep_retention_module_free((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
-        }
-        if (group->sleep_retention_initialized) {
-            sleep_retention_module_deinit((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
-        }
-#endif
-        free(group);
-        ESP_LOGD(TAG, "del group (%d)", group_id);
-    }
-    _lock_release(&s_platform.mutex);
-}
-
-static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz)
-{
-    uint32_t counter_src_hz = 0;
-    int timer_id = timer->timer_id;
-
-    // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
-        // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
-        // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
-
-    // get clock source frequency
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
-                        TAG, "get clock source frequency failed");
-
-#if CONFIG_PM_ENABLE
-    bool need_pm_lock = true;
-    // to make the gptimer work reliable, the source clock must stay alive and unchanged
-    // driver will create different pm lock for that purpose, according to different clock source
-    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
-
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
-        // RC_FAST won't be turn off in sleep and won't change its frequency during DFS
-        need_pm_lock = false;
-    }
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
-
-#if SOC_TIMER_GROUP_SUPPORT_APB
-    if (src_clk == GPTIMER_CLK_SRC_APB) {
-        // APB clock frequency can be changed during DFS
-        pm_lock_type = ESP_PM_APB_FREQ_MAX;
-    }
-#endif // SOC_TIMER_GROUP_SUPPORT_APB
-
-#if CONFIG_IDF_TARGET_ESP32C2
-    if (src_clk == GPTIMER_CLK_SRC_PLL_F40M) {
-        // although PLL_F40M clock is a fixed PLL clock, which is unchangeable
-        // on ESP32C2, PLL_F40M can be turned off even during DFS (unlike other PLL clocks)
-        // so we're acquiring a fake "APB" lock here to prevent the system from doing DFS
-        pm_lock_type = ESP_PM_APB_FREQ_MAX;
-    }
-#endif // CONFIG_IDF_TARGET_ESP32C2
-
-    if (need_pm_lock) {
-        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
-        ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer->pm_lock_name, &timer->pm_lock),
-                            TAG, "create pm lock failed");
-    }
-#endif // CONFIG_PM_ENABLE
-
-    // !!! HARDWARE SHARED RESOURCE !!!
-    // on some ESP chip, different peripheral's clock source setting are mixed in the same register
-    // so we need to make this done in an atomic way
-    GPTIMER_CLOCK_SRC_ATOMIC() {
-        timer_ll_set_clock_source(timer->hal.dev, timer_id, src_clk);
-        timer_ll_enable_clock(timer->hal.dev, timer_id, true);
-    }
-    timer->clk_src = src_clk;
-    uint32_t prescale = counter_src_hz / resolution_hz; // potential resolution loss here
-    timer_ll_set_clock_prescale(timer->hal.dev, timer_id, prescale);
-    timer->resolution_hz = counter_src_hz / prescale; // this is the real resolution
-    if (timer->resolution_hz != resolution_hz) {
-        ESP_LOGW(TAG, "resolution lost, expect %"PRIu32", real %"PRIu32, resolution_hz, timer->resolution_hz);
-    }
     return ESP_OK;
 }
 

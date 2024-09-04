@@ -17,9 +17,6 @@
 extern "C" {
 #endif
 
-/* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
-#define TIMG_WDT_WKEY_VALUE 0x50D83AA1
-
 typedef struct {
     struct {
         const periph_module_t module; // Peripheral module
@@ -31,13 +28,12 @@ extern const timer_group_signal_conn_t timer_group_periph_signals;
 
 #if SOC_TIMER_SUPPORT_SLEEP_RETENTION && SOC_PAU_SUPPORTED
 typedef struct {
-    const regdma_entries_config_t *link_list;
-    uint32_t link_num;
-} tg_reg_ctx_link_t;
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+} tg_timer_reg_retention_info_t;
 
-extern const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_TIMER_GROUPS];
-extern const tg_reg_ctx_link_t tg_timer_regs_retention[SOC_TIMER_GROUPS];
-#endif
+extern const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS];
+#endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
 #ifdef __cplusplus
 }
