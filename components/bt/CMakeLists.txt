@@ -411,6 +411,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/obex/obex_api.c"
                    "host/bluedroid/stack/obex/obex_main.c"
                    "host/bluedroid/stack/obex/obex_tl_l2cap.c"
+                   "host/bluedroid/stack/obex/obex_tl_rfcomm.c"
                    "host/bluedroid/stack/rfcomm/port_api.c"
                    "host/bluedroid/stack/rfcomm/port_rfc.c"
                    "host/bluedroid/stack/rfcomm/port_utils.c"

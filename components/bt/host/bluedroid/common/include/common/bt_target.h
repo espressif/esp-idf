@@ -177,6 +177,9 @@
 #endif /* UC_BT_HID_DEVICE_ENABLED */
 
 #if UC_BT_GOEPC_ENABLED
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
 #ifndef OBEX_INCLUDED
 #define OBEX_INCLUDED               TRUE
 #endif
