@@ -163,6 +163,7 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 
     /* If a value is already set, update that value */
     esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
     if (!p) {
         p = malloc(sizeof(esp_pthread_cfg_t));
         if (!p) {
@@ -173,7 +174,6 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
     p->stack_alloc_caps = heap_caps;
     pthread_setspecific(s_pthread_cfg_key, p);
 
-    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
     return 0;
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
