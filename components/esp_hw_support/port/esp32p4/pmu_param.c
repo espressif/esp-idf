@@ -292,7 +292,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
         .lp_pad_slp_sel = 0,    \
         .bod_source_sel = 0,    \
         .vddbat_mode    = 0,    \
-        .mem_dslp       = 1,    \
+        .mem_dslp       = 0,    \
         .peri_pd_en     = 0,    \
     }, \
     .clk_power = {              \

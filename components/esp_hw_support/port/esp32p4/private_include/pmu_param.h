@@ -303,7 +303,7 @@ typedef struct {
             .bod_source_sel = 0,                                            \
             .vddbat_mode    = 0,                                            \
             .peri_pd_en    = ((pd_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
-            .mem_dslp      = 1                                              \
+            .mem_dslp      = 0                                              \
         },                                                                  \
         .clk_power = {                                                      \
             .xpd_lppll     = 0,\
