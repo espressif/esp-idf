@@ -44,12 +44,10 @@ extern "C" {
 #endif
 
 #if (!defined(CONFIG_MBEDTLS_THREADING_C))
-typedef struct mbedtls_threading_mutex_t {
-    int dummy;
-} mbedtls_threading_mutex_t;
+#error CONFIG_MBEDTLS_THREADING_C
 #endif
 
-typedef void (*mbedtls_threading_set_alt_t)(void (*mutex_init)(mbedtls_threading_mutex_t *),
+typedef void (*_rom_mbedtls_threading_set_alt_t)(void (*mutex_init)(mbedtls_threading_mutex_t *),
                                           void (*mutex_free)(mbedtls_threading_mutex_t *),
                                           int (*mutex_lock)(mbedtls_threading_mutex_t *),
                                           int (*mutex_unlock)(mbedtls_threading_mutex_t *));
