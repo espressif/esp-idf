@@ -14,7 +14,7 @@
 
     * 将关键代码存放到 RAM 中以提高性能；
     * 将可执行代码存放到 IRAM 中，以便在缓存被禁用时运行这些代码；
-    :SOC_RTC_MEM_SUPPORTED: * 将代码存放到 RTC 存储器中，以便在 wake stub 中使用；
+    :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: * 将代码存放到 RTC 存储器中，以便在 wake stub 中使用；
     :SOC_ULP_SUPPORTED: * 将代码存放到 RTC 内存中，以便 ULP 协处理器使用。
 
 链接器脚本生成机制可以让用户指定代码和数据在 ESP-IDF 组件中的存放区域。组件包含如何存放符号、目标或完整库的信息。在构建应用程序时，组件中的这些信息会被收集、解析并处理；生成的存放规则用于链接应用程序。
