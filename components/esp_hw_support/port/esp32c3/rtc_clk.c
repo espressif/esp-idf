@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include "esp32c3/rom/rtc.h"
 #include "soc/rtc.h"
+#include "soc/io_mux_reg.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
@@ -49,6 +50,8 @@ void rtc_clk_32k_enable(bool enable)
 
 void rtc_clk_32k_enable_external(void)
 {
+    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
+    SET_PERI_REG_MASK(RTC_CNTL_PAD_HOLD_REG, RTC_CNTL_GPIO_PIN0_HOLD);
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
 }
 
