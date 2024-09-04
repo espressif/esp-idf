@@ -33,8 +33,6 @@
 #include "esp_private/spi_flash_os.h"
 #include "ccomp_timer.h"
 
-#define FUNC_SPI    1
-
 static uint8_t sector_buf[4096];
 
 static void get_chip_host(esp_flash_t* chip, spi_host_device_t* out_host_id, int* out_cs_id)

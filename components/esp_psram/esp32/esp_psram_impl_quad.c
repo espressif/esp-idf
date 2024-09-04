@@ -93,11 +93,12 @@ typedef enum {
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
 // hardcode the flash pins as well, making this code incompatible with either a setup
 // that has the flash on non-standard pins or ESP32s with built-in flash.
-#define PSRAM_SPIQ_SD0_IO          7
-#define PSRAM_SPID_SD1_IO          8
-#define PSRAM_SPIWP_SD3_IO         10
-#define PSRAM_SPIHD_SD2_IO         9
+#define PSRAM_SPIQ_SD0_IO          MSPI_IOMUX_PIN_NUM_MISO
+#define PSRAM_SPID_SD1_IO          MSPI_IOMUX_PIN_NUM_MOSI
+#define PSRAM_SPIHD_SD2_IO         MSPI_IOMUX_PIN_NUM_HD
+#define PSRAM_SPIWP_SD3_IO         MSPI_IOMUX_PIN_NUM_WP
 
+// HSPI Pins
 #define FLASH_HSPI_CLK_IO          14
 #define FLASH_HSPI_CS_IO           15
 #define PSRAM_HSPI_SPIQ_SD0_IO     12
@@ -800,7 +801,7 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     esp_rom_gpio_connect_in_signal(psram_io->psram_spihd_sd2_io, SPIHD_IN_IDX, 0);
 
     //select pin function gpio
-    if ((psram_io->flash_clk_io == SPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
+    if ((psram_io->flash_clk_io == MSPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
         //flash clock signal should come from IO MUX.
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUNC_SD_CLK_SPICLK);
     } else {
@@ -909,8 +910,8 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
 
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
-        psram_io.flash_clk_io       = SPI_IOMUX_PIN_NUM_CLK;
-        psram_io.flash_cs_io        = SPI_IOMUX_PIN_NUM_CS;
+        psram_io.flash_clk_io       = MSPI_IOMUX_PIN_NUM_CLK;
+        psram_io.flash_cs_io        = MSPI_IOMUX_PIN_NUM_CS0;
         psram_io.psram_spiq_sd0_io  = PSRAM_SPIQ_SD0_IO;
         psram_io.psram_spid_sd1_io  = PSRAM_SPID_SD1_IO;
         psram_io.psram_spiwp_sd3_io = PSRAM_SPIWP_SD3_IO;

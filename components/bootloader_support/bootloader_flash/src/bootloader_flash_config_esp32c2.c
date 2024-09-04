@@ -88,12 +88,12 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     // IDF-4066
     const uint32_t spiconfig = 0;
-    uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
-    uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
-    uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
-    uint8_t cs0_gpio_num = SPI_CS0_GPIO_NUM;
-    uint8_t hd_gpio_num  = SPI_HD_GPIO_NUM;
-    uint8_t wp_gpio_num  = SPI_WP_GPIO_NUM;
+    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
+    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
+    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
+    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
+    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
+    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
     if (spiconfig == 0) {
 
     }

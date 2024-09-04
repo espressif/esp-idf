@@ -852,7 +852,7 @@ static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
 /**
  * Set the delay of SPI clocks before the first SPI clock after the CS active edge.
  *
- * Note ESP32 doesn't support to use this feature when command/address phases
+ * Note ESP32H2 doesn't support to use this feature when command/address phases
  * are used in full duplex mode.
  *
  * @param hw    Beginning address of the peripheral registers.

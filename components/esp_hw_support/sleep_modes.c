@@ -26,6 +26,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
+#include "soc/spi_pins.h"
 #include "soc/chip_revision.h"
 #include "driver/rtc_io.h"
 #include "hal/efuse_hal.h"
@@ -51,7 +52,6 @@
 #include "hal/rtc_hal.h"
 
 #include "soc/rtc.h"
-#include "soc/soc_caps.h"
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
 #include "hal/cache_hal.h"
@@ -998,12 +998,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
                 /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
-                gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
 #endif
 #endif
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
                 /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
-                gpio_ll_hold_en(&GPIO, SPI_CS1_GPIO_NUM);
+                gpio_ll_hold_en(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
 #endif
             }
 #endif
@@ -1059,11 +1059,11 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO) && (pd_flags & PMU_SLEEP_PD_TOP)) {
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
 #if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
-                gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
+                gpio_ll_hold_dis(&GPIO, MSPI_IOMUX_PIN_NUM_CS0);
 #endif
 #endif
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
-                gpio_ll_hold_dis(&GPIO, SPI_CS1_GPIO_NUM);
+                gpio_ll_hold_dis(&GPIO, MSPI_IOMUX_PIN_NUM_CS1);
 #endif
             }
 #endif

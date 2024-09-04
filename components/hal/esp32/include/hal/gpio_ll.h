@@ -33,6 +33,9 @@ extern const uint8_t GPIO_PIN_MUX_REG_OFFSET[SOC_GPIO_PIN_COUNT];
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
+// the gpio matrix signal routing const time
+#define GPIO_LL_MATRIX_DELAY_NS       25
+
 #define GPIO_LL_APP_CPU_INTR_ENA      (BIT(0))
 #define GPIO_LL_APP_CPU_NMI_INTR_ENA  (BIT(1))
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(2))

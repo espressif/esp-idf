@@ -176,7 +176,7 @@ static void psram_gpio_config(void)
 {
     //CS1
     uint8_t cs1_io = PSRAM_CS_IO;
-    if (cs1_io == SPI_CS1_GPIO_NUM) {
+    if (cs1_io == MSPI_IOMUX_PIN_NUM_CS1) {
         gpio_ll_func_sel(&GPIO, cs1_io, FUNC_SPICS1_SPICS1);
     } else {
         esp_rom_gpio_connect_out_signal(cs1_io, FSPICS1_OUT_IDX, 0, 0);

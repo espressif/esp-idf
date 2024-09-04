@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,12 +94,12 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     uint8_t wp_pin = esp_rom_efuse_get_flash_wp_gpio();
-    uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
-    uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
-    uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
-    uint8_t cs0_gpio_num = SPI_CS0_GPIO_NUM;
-    uint8_t hd_gpio_num  = SPI_HD_GPIO_NUM;
-    uint8_t wp_gpio_num  = SPI_WP_GPIO_NUM;
+    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
+    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
+    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
+    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
+    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
+    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
     if (spiconfig == 0) {
 
     } else {

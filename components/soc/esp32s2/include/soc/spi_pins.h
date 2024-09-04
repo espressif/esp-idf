@@ -1,37 +1,36 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
-#define SPI_FUNC_NUM            0
-#define SPI_IOMUX_PIN_NUM_HD    27
-#define SPI_IOMUX_PIN_NUM_CS    29
-#define SPI_IOMUX_PIN_NUM_MOSI  32
-#define SPI_IOMUX_PIN_NUM_CLK   30
-#define SPI_IOMUX_PIN_NUM_MISO  31
-#define SPI_IOMUX_PIN_NUM_WP    28
+// MSPI IOMUX PINs
+#define MSPI_FUNC_NUM               0
+#define MSPI_IOMUX_PIN_NUM_CS1      26
+#define MSPI_IOMUX_PIN_NUM_HD       27
+#define MSPI_IOMUX_PIN_NUM_WP       28
+#define MSPI_IOMUX_PIN_NUM_CS0      29
+#define MSPI_IOMUX_PIN_NUM_CLK      30
+#define MSPI_IOMUX_PIN_NUM_MISO     31
+#define MSPI_IOMUX_PIN_NUM_MOSI     32
+#define MSPI_IOMUX_PIN_NUM_D4       33
+#define MSPI_IOMUX_PIN_NUM_D5       34
+#define MSPI_IOMUX_PIN_NUM_D6       35
+#define MSPI_IOMUX_PIN_NUM_D7       36
+#define MSPI_IOMUX_PIN_NUM_DQS      37
 
 // There are 2 sets of GPIO pins which could be routed to FSPICS0, FSPICLK, FSPID, FSPIQ, FSPIHD, FSPIWP.
 // However, there is only one set of GPIO pins which could be routed to FSPIIO4, FSPIIO5, FSPIIO6, FSPIIO7.
 // As default (when we are not going to use Octal SPI), we make use of SPI2_FUNC_NUM to route one of the 2 sets of GPIO pins to FSPICS0 ~ FSPIWP as follows.
-#define SPI2_FUNC_NUM           4
-#define SPI2_IOMUX_PIN_NUM_HD   9
-#define SPI2_IOMUX_PIN_NUM_CS   10
-#define SPI2_IOMUX_PIN_NUM_MOSI 11
-#define SPI2_IOMUX_PIN_NUM_CLK  12
-#define SPI2_IOMUX_PIN_NUM_MISO 13
-#define SPI2_IOMUX_PIN_NUM_WP   14
+#define SPI2_FUNC_NUM               4
+#define SPI2_IOMUX_PIN_NUM_HD       9
+#define SPI2_IOMUX_PIN_NUM_CS       10
+#define SPI2_IOMUX_PIN_NUM_MOSI     11
+#define SPI2_IOMUX_PIN_NUM_CLK      12
+#define SPI2_IOMUX_PIN_NUM_MISO     13
+#define SPI2_IOMUX_PIN_NUM_WP       14
 
 // When using Octal SPI, we make use of SPI2_FUNC_NUM_OCT to route them as follows.
 #define SPI2_FUNC_NUM_OCT           2
