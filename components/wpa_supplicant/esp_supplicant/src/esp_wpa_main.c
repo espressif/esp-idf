@@ -180,14 +180,14 @@ bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 
 void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 {
-    struct wpa_state_machine *sm = (struct wpa_state_machine *)sm_data;
+    struct sta_info *sta = sm_data;
 
-    if (!sm) {
+    if (!sta || !sta->wpa_sm) {
         return;
     }
 
-    *spp_cap = sm->spp_sup.capable;
-    *spp_req = sm->spp_sup.require;
+    *spp_cap = sta->wpa_sm->spp_sup.capable;
+    *spp_req = sta->wpa_sm->spp_sup.require;
 }
 
 bool wpa_deattach(void)
