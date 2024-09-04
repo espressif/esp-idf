@@ -12,6 +12,10 @@ endif()
 set(mbedtls_srcs "")
 set(mbedtls_include_dirs "port/include" "mbedtls/include" "mbedtls/library")
 
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    list(APPEND mbedtls_include_dirs "port/mbedtls_rom")
+endif()
+
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
     list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
@@ -87,6 +91,11 @@ set(Python3_EXECUTABLE ${python})
 
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_DIR}/port/include")
+
+# Needed to for mbedtls_rom includes to work from within mbedtls
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    include_directories("${COMPONENT_DIR}/port/mbedtls_rom")
+endif()
 
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
