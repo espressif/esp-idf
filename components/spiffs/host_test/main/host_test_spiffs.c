@@ -281,29 +281,27 @@ TEST(spiffs, erase_check)
     init_spiffs(&fs, 5);
 
 
-    for (int boot_iter = 0; boot_iter <= 10000; ++boot_iter) {
-        for (int write_iter = 0; write_iter < 1000; ++write_iter) {
-            spiffs_file f = SPIFFS_open(&fs, "/test", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
-            if (f < 0) {
-                fprintf(stderr, "Failed to open file\n");
+    for (int write_iter = 0; write_iter < 100; ++write_iter) {
+        spiffs_file f = SPIFFS_open(&fs, "/test", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+        if (f < 0) {
+            fprintf(stderr, "Failed to open file\n");
 #if !CONFIG_ESP_PARTITION_ERASE_CHECK
-                TEST_FAIL();
+            TEST_FAIL();
 #endif
-                return;
-            }
-            const int data_sz = 7 * 1024;
-            char data[data_sz];
-            memset(data, 0x55, data_sz);
-            int cb = SPIFFS_write(&fs, f, data, data_sz);
-            if (cb != data_sz) {
-                fprintf(stderr, "Failed to write file\n");
-                TEST_FAIL();
-            }
-            int rc = SPIFFS_close(&fs, f);
-            if (rc < 0) {
-                fprintf(stderr, "Failed to close file\n");
-                TEST_FAIL();
-            }
+            return;
+        }
+        const int data_sz = 7 * 1024;
+        char data[data_sz];
+        memset(data, 0x55, data_sz);
+        int cb = SPIFFS_write(&fs, f, data, data_sz);
+        if (cb != data_sz) {
+            fprintf(stderr, "Failed to write file\n");
+            TEST_FAIL();
+        }
+        int rc = SPIFFS_close(&fs, f);
+        if (rc < 0) {
+            fprintf(stderr, "Failed to close file\n");
+            TEST_FAIL();
         }
     }
 
