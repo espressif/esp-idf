@@ -230,6 +230,13 @@ config BT_NIMBLE_SM_LVL
         3. Authenticated pairing with encryption
         4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
 
+config BT_NIMBLE_SM_SC_ONLY
+    int "Enable Secure Connections Only Mode"
+    depends on BT_NIMBLE_SECURITY_ENABLE
+    default 0
+    help
+        Enable Secure Connections Only Mode
+
 config BT_NIMBLE_DEBUG
     bool "Enable extra runtime asserts and host debugging"
     default n
