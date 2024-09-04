@@ -40,12 +40,12 @@
 #include "esp_phy_init.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/retention_periph_defs.h"
-#include "esp_private/sleep_retention.h"
 #include "soc/regdma.h"
 #include "bt_osi_mem.h"
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_retention.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #include "freertos/FreeRTOS.h"
@@ -128,8 +128,8 @@ extern void r_ble_rtc_wake_up_state_clr(void);
 extern int os_msys_init(void);
 extern void os_msys_deinit(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
-extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
+extern sleep_retention_entries_config_t *r_esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
+extern void r_esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 extern void r_esp_ble_change_rtc_freq(uint32_t freq);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
@@ -303,12 +303,7 @@ void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
     switch (slow_clk_src) {
         case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
-            uint32_t chip_version = efuse_hal_chip_revision();
-            if (chip_version == 0) {
-                modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (400 - 1));
-            } else{
-                modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
-            }
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (480 - 1));
             break;
         case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
@@ -373,56 +368,47 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 }
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-// TODO: IDF-10765
-// static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
-// {
-    // uint8_t size;
-    // int extra = *(int *)arg;
-    // const sleep_retention_entries_config_t *ble_mac_modem_config = esp_ble_mac_retention_link_get(&size, extra);
-    // esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BLE_MAC);
-    // if (err == ESP_OK) {
-    //     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Modem BLE MAC retention initialization");
-    // }
-    // return err;
-//     return ESP_OK;
-// }
+static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
+{
+    uint8_t size;
+    int extra = *(int *)arg;
+    sleep_retention_entries_config_t *ble_mac_modem_config = r_esp_ble_mac_retention_link_get(&size, extra);
+    esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err == ESP_OK) {
+        ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Modem BLE MAC retention initialization");
+    }
+    return err;
+    return ESP_OK;
+}
 
 static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
 {
-    // TODO: IDF-10765
-    // int retention_args = extra;
-    // sleep_retention_module_init_param_t init_param = {
-    //     .cbs     = { .create = { .handle = sleep_modem_ble_mac_retention_init, .arg = &retention_args } },
-    //     .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB)
-    // };
-    // esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BLE_MAC, &init_param);
-    // if (err == ESP_OK) {
-    //     err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BLE_MAC);
-    // }
-    // return err;
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "This func temporary not supported for current target!");
-    return ESP_OK;
+    int retention_args = extra;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = sleep_modem_ble_mac_retention_init, .arg = &retention_args } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB)
+    };
+    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BLE_MAC, &init_param);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BLE_MAC);
+    }
+    return err;
 }
 
 static void sleep_modem_ble_mac_modem_state_deinit(void)
 {
-    // TODO: IDF-10765
-    // esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
-    // if (err == ESP_OK) {
-    //     err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
-    //     assert(err == ESP_OK);
-    // }
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "This func temporary not supported for current target!");
+    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
+        assert(err == ESP_OK);
+    }
 }
 
 void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
 {
-    // TODO: IDF-10765
-    // esp_ble_set_wakeup_overhead(overhead);
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "This func temporary not supported for current target!");
+    r_esp_ble_set_wakeup_overhead(overhead);
 }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
-
 
 esp_err_t controller_sleep_init(void)
 {
@@ -446,7 +432,7 @@ esp_err_t controller_sleep_init(void)
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     /* Create a new regdma link for BLE related register restoration */
-    rc = sleep_modem_ble_mac_modem_state_init(1);
+    rc = sleep_modem_ble_mac_modem_state_init(0);
     assert(rc == 0);
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");

@@ -2,9 +2,10 @@ menu "Example Configuration"
 
     choice EXAMPLE_MAX_CPU_FREQ
         prompt "Maximum CPU frequency"
-        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C5
         default EXAMPLE_MAX_CPU_FREQ_96 if IDF_TARGET_ESP32H2
         default EXAMPLE_MAX_CPU_FREQ_120 if IDF_TARGET_ESP32C2
+        default EXAMPLE_MAX_CPU_FREQ_240 if IDF_TARGET_ESP32C5
         depends on PM_ENABLE
         help
             Maximum CPU frequency to use for dynamic frequency scaling.
@@ -21,7 +22,7 @@ menu "Example Configuration"
             depends on IDF_TARGET_ESP32C2
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C5
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
@@ -34,7 +35,8 @@ menu "Example Configuration"
 
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"
-        default EXAMPLE_MIN_CPU_FREQ_40M if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+        default EXAMPLE_MIN_CPU_FREQ_40M if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C5
+        default EXAMPLE_MIN_CPU_FREQ_48M if IDF_TARGET_ESP32C5
         default EXAMPLE_MIN_CPU_FREQ_32M if IDF_TARGET_ESP32H2
         default EXAMPLE_MIN_CPU_FREQ_26M if IDF_TARGET_ESP32C2
         depends on PM_ENABLE
@@ -51,6 +53,9 @@ menu "Example Configuration"
                 BBPLL and then re-enable it with a different frequency.Since the
                 Bluetooth baseband works from PLL frequency, it will temporarily
                 lose its 80 MHz clock, while the BBPLL is disabled.
+        config EXAMPLE_MIN_CPU_FREQ_48M
+            bool "48 MHz (use with 48MHz XTAL)"
+            depends on XTAL_FREQ_48 || XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_40M
             bool "40 MHz (use with 40MHz XTAL)"
             depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
@@ -73,6 +78,7 @@ menu "Example Configuration"
     config EXAMPLE_MIN_CPU_FREQ_MHZ
         int
         default 80 if EXAMPLE_MIN_CPU_FREQ_80M
+        default 48 if EXAMPLE_MIN_CPU_FREQ_48M
         default 40 if EXAMPLE_MIN_CPU_FREQ_40M
         default 32 if EXAMPLE_MIN_CPU_FREQ_32M
         default 26 if EXAMPLE_MIN_CPU_FREQ_26M
