@@ -1149,15 +1149,22 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #endif
     }
 
-    if (rcv_ptr && bus_attr->dma_enabled && (!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned)) {
-        ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
-        //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
-        ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
-        rx_byte_len = (rx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
-        rcv_ptr = heap_caps_aligned_alloc(alignment, rx_byte_len, MALLOC_CAP_DMA);
-        if (rcv_ptr == NULL) {
-            goto clean_up;
+    if (rcv_ptr && bus_attr->dma_enabled) {
+        if ((!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned)) {
+            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
+            //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
+            ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
+            rx_byte_len = (rx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
+            rcv_ptr = heap_caps_aligned_alloc(alignment, rx_byte_len, MALLOC_CAP_DMA);
+            if (rcv_ptr == NULL) {
+                goto clean_up;
+            }
         }
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        // do invalid here to hold on cache status to avoid hardware auto write back during dma transaction
+        esp_err_t ret = esp_cache_msync((void *)rcv_ptr, rx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
     }
     priv_desc->buffer_to_send = send_ptr;
     priv_desc->buffer_to_rcv = rcv_ptr;
