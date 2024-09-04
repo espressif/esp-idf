@@ -24,8 +24,6 @@ extern "C" {
 #include "esp_assert.h"
 #include "hal/misc.h"
 
-// TODO: [ESP32C61] IDF-9257, inherit from c6
-
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
 #define MWDT_LL_DEFAULT_CLK_PRESCALER 20000
 
