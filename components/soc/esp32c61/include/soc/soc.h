@@ -161,12 +161,6 @@
 #define SOC_IRAM_HIGH   0x40850000
 #define SOC_DRAM_LOW    0x40800000
 #define SOC_DRAM_HIGH   0x40850000
-#define SOC_RTC_IRAM_LOW  0x50000000 // ESP32-C61 only has 16k LP memory
-#define SOC_RTC_IRAM_HIGH 0x50004000
-#define SOC_RTC_DRAM_LOW  0x50000000
-#define SOC_RTC_DRAM_HIGH 0x50004000
-#define SOC_RTC_DATA_LOW  0x50000000
-#define SOC_RTC_DATA_HIGH 0x50004000
 
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40800000

@@ -51,14 +51,6 @@ config SOC_EFUSE_SUPPORTED
     bool
     default y
 
-config SOC_RTC_FAST_MEM_SUPPORTED
-    bool
-    default y
-
-config SOC_RTC_MEM_SUPPORTED
-    bool
-    default y
-
 config SOC_GPSPI_SUPPORTED
     bool
     default y

@@ -547,6 +547,28 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(v
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
 
+/**
+ * @brief Store rtc_fix_us in RTC storage register
+ *
+ * @param rtc_fix_us The value used to correct the time obtained from the rtc timer when the calibration value changes
+ */
+static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_rtc_fix_us(uint64_t rtc_fix_us)
+{
+    // TODO IDF-11022
+    return;
+}
+
+/**
+ * @brief Load the rtc_fix_ticks from RTC storage register
+ *
+ * @return The value used to correct the time obtained from the rtc timer when the calibration value changes
+ */
+static inline __attribute__((always_inline)) uint64_t clk_ll_rtc_slow_load_rtc_fix_us(void)
+{
+    // TODO IDF-11022
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -60,39 +60,12 @@ MEMORY
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
-  /**
-   * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
-   */
-  lp_ram_seg(RW)  :                 org = 0x50000000, len = 0x4000 - RESERVE_RTC_MEM
-
-  /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
-     It reserves the amount of LP memory that we use for this memory segment.
-     This segment is intended for keeping:
-       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
-       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
-     The aim of this is to keep data that will not be moved around and have a fixed address.
-  */
-  lp_reserved_seg(RW) :        org = 0x50000000 + 0x4000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
-
     /* PSRAM seg */
   extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 }
 
 /* Heap ends at top of sram_seg */
 _heap_end = 0x40000000;
-
-_data_seg_org = ORIGIN(rtc_data_seg);
-
-/**
- *  The lines below define location alias for .rtc.data section
- *  C61 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
- *  Thus, the following region segments are not configurable like on other targets
- */
-REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
-REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_data_location", rtc_iram_seg );
-REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   REGION_ALIAS("default_code_seg", irom_seg);

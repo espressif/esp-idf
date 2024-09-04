@@ -56,17 +56,13 @@ static void esp_cpu_configure_invalid_regions(void)
     // This entry is also required to be set using PMA because the region needs to be configured as cacheable.
     PMA_ENTRY_SET_NAPOT(7, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RWX);
 
-    // 6. Gap between D_Cache & LP_RAM
+    // 6. Gap between D_Cache & peripheral addresses
     PMA_ENTRY_SET_TOR(8, SOC_DROM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(9, SOC_RTC_IRAM_LOW, PMA_TOR | PMA_NONE);
+    PMA_ENTRY_SET_TOR(9, SOC_PERIPHERAL_LOW, PMA_TOR | PMA_NONE);
 
-    // 7. Gap between LP memory & peripheral addresses
-    PMA_ENTRY_SET_TOR(10, SOC_RTC_IRAM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(11, SOC_PERIPHERAL_LOW, PMA_TOR | PMA_NONE);
-
-    // 8. End of address space
-    PMA_ENTRY_SET_TOR(12, SOC_PERIPHERAL_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(13, UINT32_MAX, PMA_TOR | PMA_NONE);
+    // 7. End of address space
+    PMA_ENTRY_SET_TOR(10, SOC_PERIPHERAL_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(11, UINT32_MAX, PMA_TOR | PMA_NONE);
 }
 
 void esp_cpu_configure_region_protection(void)
@@ -186,26 +182,8 @@ void esp_cpu_configure_region_protection(void)
     _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
 #endif
 
-    // 5. LP memory
-#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
-    extern int _rtc_text_end;
-    /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
-     * Bootloader might have given extra permissions and those won't be cleared
-     */
-    PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_CFG_RESET(11);
-    PMP_ENTRY_CFG_RESET(12);
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, NONE);
-    PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
-#else
-    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
-    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
-#endif
-
-    // 6. Peripheral addresses
-    const uint32_t pmpaddr13 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(13, pmpaddr13, PMP_NAPOT | RW);
+    // 5. Peripheral addresses
+    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
