@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,17 +149,19 @@ err:
 
 esp_err_t dac_dma_periph_deinit(void)
 {
+    if (!s_ddp) {
+        return ESP_OK;
+    }
+
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
     ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
     i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, false);
-    if (s_ddp) {
-        if (s_ddp->use_apll) {
-            periph_rtc_apll_release();
-            s_ddp->use_apll = false;
-        }
-        free(s_ddp);
-        s_ddp = NULL;
+    if (s_ddp->use_apll) {
+        periph_rtc_apll_release();
+        s_ddp->use_apll = false;
     }
+    free(s_ddp);
+    s_ddp = NULL;
 
     return ESP_OK;
 }

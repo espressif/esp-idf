@@ -158,6 +158,7 @@ err:
 
 esp_err_t dac_dma_periph_deinit(void)
 {
+    ESP_RETURN_ON_FALSE(s_ddp != NULL, ESP_ERR_INVALID_STATE, TAG, "DAC DMA peripheral is not initialized");
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
     if (s_ddp->dma_chan) {
         ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(s_ddp->spi_dma_ctx), TAG, "Failed to free dma peripheral channel");
