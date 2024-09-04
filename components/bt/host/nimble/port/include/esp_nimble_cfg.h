@@ -957,7 +957,11 @@
 #endif
 
 #ifndef MYNEWT_VAL_BLE_SM_SC_ONLY
+#ifdef CONFIG_BT_NIMBLE_SM_SC_ONLY
+#define MYNEWT_VAL_BLE_SM_SC_ONLY CONFIG_BT_NIMBLE_SM_SC_ONLY
+#else
 #define MYNEWT_VAL_BLE_SM_SC_ONLY (0)
+#endif
 #endif
 
 
