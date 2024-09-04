@@ -38,6 +38,7 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c"
                      "dma/esp_dma_utils.c"
+                     "dma/gdma_link.c"
                      "spi_share_hw_ctrl.c"
                      "spi_bus_lock.c")
 
