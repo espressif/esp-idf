@@ -34,6 +34,7 @@
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
 
 static const char *TAG = "parlio-tx";
 
@@ -49,8 +50,7 @@ typedef struct parlio_tx_unit_t {
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
-    parlio_dma_desc_t *dma_nodes;   // DMA descriptor nodes
-    parlio_dma_desc_t *dma_nodes_nc;// non-cached DMA descriptor nodes
+    gdma_link_list_handle_t dma_link; // DMA link list handle
     size_t dma_nodes_num;           // number of DMA descriptor nodes
 #if CONFIG_PM_ENABLE
     char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
@@ -123,8 +123,8 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
         // de-register from group
         parlio_unregister_unit_from_group(&tx_unit->base);
     }
-    if (tx_unit->dma_nodes) {
-        free(tx_unit->dma_nodes);
+    if (tx_unit->dma_link) {
+        ESP_RETURN_ON_ERROR(gdma_del_link_list(tx_unit->dma_link), TAG, "delete dma link list failed");
     }
     free(tx_unit);
     return ESP_OK;
@@ -191,11 +191,19 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
     };
     gdma_apply_strategy(tx_unit->dma_chan, &gdma_strategy_conf);
 
-    // Link the descriptors
+    // create DMA link list
     size_t dma_nodes_num = tx_unit->dma_nodes_num;
-    for (int i = 0; i < dma_nodes_num; i++) {
-        tx_unit->dma_nodes_nc[i].next = (i == dma_nodes_num - 1) ? NULL : &(tx_unit->dma_nodes[i + 1]);
-    }
+    gdma_link_list_config_t dma_link_config = {
+        .buffer_alignment = 1,
+        .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
+        .num_items = dma_nodes_num,
+        .flags = {
+            .check_owner = true,
+        },
+    };
+
+    // throw the error to the caller
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &tx_unit->dma_link), TAG, "create DMA link list failed");
     return ESP_OK;
 }
 
@@ -280,25 +288,8 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
     // create DMA descriptors
     // DMA descriptors must be placed in internal SRAM
-    mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
     size_t dma_nodes_num = config->max_transfer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    // the alignment should meet both the DMA and cache requirement
-    size_t alignment = MAX(data_cache_line_size, PARLIO_DMA_DESC_ALIGNMENT);
-    size_t dma_nodes_mem_size = ALIGN_UP(dma_nodes_num * sizeof(parlio_dma_desc_t), alignment);
-    parlio_dma_desc_t *dma_nodes = heap_caps_aligned_calloc(alignment, 1, dma_nodes_mem_size, mem_caps);
-    ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
-    unit->dma_nodes = dma_nodes;
     unit->dma_nodes_num = dma_nodes_num;
-
-    // write back and then invalidate the cached dma_nodes, we will skip the cache (by non-cacheable address) when access the dma_nodes
-    if (data_cache_line_size) {
-        ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, dma_nodes_mem_size,
-                                          ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
-                          err, TAG, "cache sync failed");
-    }
-    // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
-    unit->dma_nodes_nc = PARLIO_GET_NON_CACHED_DESC_ADDR(dma_nodes);
 
     unit->max_transfer_bits = config->max_transfer_size * 8;
     unit->base.dir = PARLIO_DIR_TX;
@@ -385,27 +376,6 @@ esp_err_t parlio_del_tx_unit(parlio_tx_unit_handle_t unit)
     return parlio_destroy_tx_unit(unit);
 }
 
-static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const void *buffer, size_t len)
-{
-    size_t prepared_length = 0;
-    uint8_t *data = (uint8_t *)buffer;
-    uint32_t mount_bytes = 0;
-    parlio_dma_desc_t *desc_nc = tx_unit->dma_nodes_nc;
-
-    while (len) {
-        assert(desc_nc);
-        mount_bytes = len > PARLIO_MAX_ALIGNED_DMA_BUF_SIZE ? PARLIO_MAX_ALIGNED_DMA_BUF_SIZE : len;
-        len -= mount_bytes;
-        desc_nc->dw0.suc_eof = (len == 0);    // whether the last frame
-        desc_nc->dw0.size = mount_bytes;
-        desc_nc->dw0.length = mount_bytes;
-        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc->buffer = &data[prepared_length];
-        desc_nc = PARLIO_GET_NON_CACHED_DESC_ADDR(desc_nc->next);
-        prepared_length += mount_bytes;
-    }
-}
-
 esp_err_t parlio_tx_unit_wait_all_done(parlio_tx_unit_handle_t tx_unit, int timeout_ms)
 {
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -448,7 +418,15 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     tx_unit->cur_trans = t;
 
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
-    parlio_tx_mount_dma_data(tx_unit, t->payload, (t->payload_bits + 7) / 8);
+    gdma_buffer_mount_config_t mount_config = {
+        .buffer = (void *)t->payload,
+        .length = (t->payload_bits + 7) / 8,
+        .flags = {
+            .mark_eof = true,
+            .mark_final = true, // singly link list, mark final descriptor
+        }
+    };
+    gdma_link_mount_buffers(tx_unit->dma_link, 0, &mount_config, 1, NULL);
 
     parlio_ll_tx_reset_fifo(hal->regs);
     PARLIO_RCC_ATOMIC() {
@@ -457,7 +435,7 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
 
-    gdma_start(tx_unit->dma_chan, (intptr_t)tx_unit->dma_nodes);
+    gdma_start(tx_unit->dma_chan, gdma_link_get_head_addr(tx_unit->dma_link));
     // wait until the data goes from the DMA to TX unit's FIFO
     while (parlio_ll_tx_is_ready(hal->regs) == false);
     // turn on the core clock after we start the TX unit
