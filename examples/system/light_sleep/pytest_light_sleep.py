@@ -8,7 +8,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='not supported light sleep')  # TODO: [ESP32C61] IDF-9247 IDF-10993
 @pytest.mark.generic
 def test_light_sleep(dut: Dut) -> None:
 
