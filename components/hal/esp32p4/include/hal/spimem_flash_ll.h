@@ -734,7 +734,7 @@ static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t ou
  * @param clk_src      clock source, see valid sources in type `soc_periph_flash_clk_src_t`
  */
 __attribute__((always_inline))
-static inline void spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
+static inline void _spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
 {
     (void)mspi_id;
     uint32_t clk_val = 0;
@@ -759,7 +759,7 @@ static inline void spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_perip
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spimem_flash_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; spimem_flash_ll_select_clk_source(__VA_ARGS__)
+#define spimem_flash_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_flash_ll_select_clk_source(__VA_ARGS__)
 
 /**
  * @brief Set FLASH core clock
@@ -768,7 +768,7 @@ static inline void spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_perip
  * @param freqdiv  Divider value
  */
 __attribute__((always_inline))
-static inline void spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t freqdiv)
+static inline void _spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t freqdiv)
 {
     (void)mspi_id;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
@@ -777,7 +777,7 @@ static inline void spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t freq
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spimem_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spimem_ctrlr_ll_set_core_clock(__VA_ARGS__)
+#define spimem_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_set_core_clock(__VA_ARGS__)
 
 /**
  * @brief Reset whole memory spi
