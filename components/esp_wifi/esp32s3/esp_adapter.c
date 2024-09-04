@@ -51,6 +51,9 @@
 #include "esp_rom_sys.h"
 #include "esp32s3/rom/ets_sys.h"
 #include "private/esp_modem_wrapper.h"
+#if __has_include("esp_psram.h")
+#include "esp_psram.h"
+#endif
 
 #define TAG "esp_adapter"
 
@@ -254,36 +257,31 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
 
 static void * queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-    /*
-     * Since release/v5.1, FreeRTOS has been updated to always use internal memory (i.e., DRAM)
-     * for dynamic memory allocation. Calling FreeRTOS creation functions (e.g., xTaskCreate(), xQueueCreate())
-     * will guarantee that the memory allocated for those tasks/objects is from internal memory.
-     * For more details, please refer to the Migration Guide in release/v5.1.
-     */
-#if CONFIG_SPIRAM_USE_MALLOC
-    /* Use xQueueCreateWithCaps() to allocate from SPIRAM */
-    return (void *)xQueueCreateWithCaps(queue_len, item_size, MALLOC_CAP_SPIRAM);
-#else
-    return (void *)xQueueCreate(queue_len, item_size);
-#endif
-#else
-    return (void *)xQueueCreate(queue_len, item_size);
-#endif
+    StaticQueue_t *queue_buffer = heap_caps_malloc_prefer(sizeof(StaticQueue_t) + (queue_len * item_size), 2,
+                                                          MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+                                                          MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    if (!queue_buffer) {
+        return NULL;
+    }
+    QueueHandle_t queue_handle = xQueueCreateStatic(queue_len, item_size, (uint8_t *)queue_buffer + sizeof(StaticQueue_t),
+                                                    queue_buffer);
+    if (!queue_handle) {
+        free(queue_buffer);
+        return NULL;
+    }
+
+    return (void *)queue_handle;
 }
 
 static void queue_delete_wrapper(void *queue)
 {
     if (queue) {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-#if CONFIG_SPIRAM_USE_MALLOC
-        vQueueDeleteWithCaps(queue);
-#else
+        StaticQueue_t *queue_buffer = NULL;
+        xQueueGetStaticBuffers(queue, NULL, &queue_buffer);
         vQueueDelete(queue);
-#endif
-#else
-        vQueueDelete(queue);
-#endif
+        if (queue_buffer) {
+            free(queue_buffer);
+        }
     }
 }
 
