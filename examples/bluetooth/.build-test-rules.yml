@@ -46,6 +46,9 @@ examples/bluetooth/bluedroid/classic_bt:
     - esp_driver_uart
   depends_filepatterns:
     - components/driver/dac/**/*
+    - examples/bluetooth/bluedroid/esp_hid_host/**/*
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
@@ -105,6 +108,14 @@ examples/bluetooth/esp_ble_mesh/wifi_coexist:
     - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
+
+examples/bluetooth/esp_hid_host:
+  disable_test:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: temporarily test esp32
+  disable:
+    - if: SOC_BT_SUPPORTED != 1
 
 examples/bluetooth/hci:
   <<: *bt_default_depends

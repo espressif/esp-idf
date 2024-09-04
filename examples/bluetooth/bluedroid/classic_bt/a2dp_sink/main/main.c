@@ -26,7 +26,7 @@
 #include "esp_avrc_api.h"
 
 /* device name */
-#define LOCAL_DEVICE_NAME    "ESP_SPEAKER"
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 
 /* event for stack up */
 enum {
@@ -148,7 +148,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     switch (event) {
     /* when do the stack up, this event comes */
     case BT_APP_EVT_STACK_UP: {
-        esp_bt_gap_set_device_name(LOCAL_DEVICE_NAME);
+        esp_bt_gap_set_device_name(local_device_name);
         esp_bt_dev_register_callback(bt_app_dev_cb);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 

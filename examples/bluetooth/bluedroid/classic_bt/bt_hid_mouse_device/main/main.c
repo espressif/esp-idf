@@ -23,6 +23,8 @@
 #define REPORT_PROTOCOL_MOUSE_REPORT_SIZE      (4)
 #define REPORT_BUFFER_SIZE                     REPORT_PROTOCOL_MOUSE_REPORT_SIZE
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
+
 typedef struct {
     esp_hidd_app_param_t app_param;
     esp_hidd_qos_param_t both_qos;
@@ -434,7 +436,7 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "setting device name");
-    esp_bt_gap_set_device_name("HID Mouse Example");
+    esp_bt_gap_set_device_name(local_device_name);
 
     ESP_LOGI(TAG, "setting cod major, peripheral");
     esp_bt_cod_t cod;
