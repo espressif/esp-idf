@@ -9,3 +9,4 @@ entries:
         text->iram0_text KEEP()
     if SOC_RTC_MEM_SUPPORTED = y:
         src1:func2 (rtc)
+    consts : const_array (noflash)
