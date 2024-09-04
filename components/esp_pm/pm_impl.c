@@ -438,7 +438,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
      * Bluetooth, etc..) APB clock frequency is 80 MHz */
     int apb_clk_freq = esp_clk_apb_freq() / MHZ;
-#if CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED
+#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED
     apb_clk_freq = MAX(apb_clk_freq, MODEM_REQUIRED_MIN_APB_CLK_FREQ / MHZ);
 #endif
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
