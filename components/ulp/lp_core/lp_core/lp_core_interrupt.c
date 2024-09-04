@@ -11,6 +11,7 @@
 #include "hal/lp_core_ll.h"
 #include "riscv/rv_utils.h"
 #include "riscv/rvruntime-frames.h"
+#include "ulp_lp_core_utils.h"
 
 #if SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 /* Enable interrupt 30, which all external interrupts are routed to*/
@@ -40,12 +41,12 @@ void ulp_lp_core_intr_disable(void)
 
 void  __attribute__((weak)) ulp_lp_core_panic_handler(RvExcFrame *frame, int exccause)
 {
-    abort();
+    ulp_lp_core_abort();
 }
 
 static void ulp_lp_core_default_intr_handler(void)
 {
-    abort();
+    ulp_lp_core_abort();
 }
 
 /* Default ISR handlers, intended to be overwritten by users */
