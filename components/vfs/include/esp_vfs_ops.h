@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,10 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 #ifndef _SYS_TYPES_FD_SET
 #error "VFS should be used with FD_SETSIZE and FD_SET from sys/types.h"
+#endif
 #endif
 
 /*

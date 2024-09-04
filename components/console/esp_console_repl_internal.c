@@ -16,8 +16,6 @@
 
 #include "esp_vfs_eventfd.h"
 
-#if CONFIG_VFS_SUPPORT_SELECT
-
 static const char *TAG = "console.repl.internal";
 
 static int s_interrupt_reading_fd = -1;
@@ -38,7 +36,7 @@ static ssize_t read_bytes(int fd, void *buf, size_t max_bytes)
         return -1;
     }
 
-    if (FD_ISSET(s_interrupt_reading_fd, &read_fds)) {
+    if (s_interrupt_reading_fd != -1 && FD_ISSET(s_interrupt_reading_fd, &read_fds)) {
         /* read termination request happened, return */
         int buf[sizeof(s_interrupt_reading_signal)];
         nread = read(s_interrupt_reading_fd, buf, sizeof(s_interrupt_reading_signal));
@@ -147,7 +145,6 @@ esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
 
     return ESP_OK;
 }
-#endif // CONFIG_VFS_SUPPORT_SELECT
 
 /* DO NOT move this function out of this file. All other definitions in this
  * file are strong definition of weak functions.

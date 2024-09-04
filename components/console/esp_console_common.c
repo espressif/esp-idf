@@ -106,7 +106,7 @@ esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_co
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback *)&esp_console_get_hint);
 
-#if CONFIG_VFS_SUPPORT_SELECT
+#if CONFIG_VFS_SUPPORT_SELECT  || CONFIG_IDF_TARGET_LINUX
     ret = esp_console_internal_set_event_fd(repl_com);
     if (ret != ESP_OK) {
         goto _exit;
