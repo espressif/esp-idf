@@ -1093,6 +1093,7 @@ menu "mbedTLS"
         select MBEDTLS_ROM_MD5
         select MBEDTLS_HARDWARE_SHA
         select MBEDTLS_ECP_RESTARTABLE
+        select MBEDTLS_THREADING_C
         help
             Enable this flag to use mbedtls crypto algorithm from ROM instead of ESP-IDF.
 
