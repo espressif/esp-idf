@@ -19,9 +19,13 @@ void mbedtls_rom_osi_functions_init(void);
 
 static void mbedtls_rom_mutex_init( mbedtls_threading_mutex_t *mutex )
 {
-#if (!defined(CONFIG_MBEDTLS_THREADING_C))
-    ((void) mutex);
-    return;
+    if (mutex == NULL) {
+        return;
+    }
+
+#if defined(MBEDTLS_THREADING_ALT)
+    mutex->mutex = xSemaphoreCreateMutex();
+    assert(mutex->mutex != NULL);
 #else
     mbedtls_mutex_init(mutex);
 #endif
@@ -29,9 +33,12 @@ static void mbedtls_rom_mutex_init( mbedtls_threading_mutex_t *mutex )
 
 static void mbedtls_rom_mutex_free( mbedtls_threading_mutex_t *mutex )
 {
-#if (!defined(CONFIG_MBEDTLS_THREADING_C))
-    ((void) mutex);
-    return;
+    if (mutex == NULL) {
+        return;
+    }
+
+#if defined(MBEDTLS_THREADING_ALT)
+    vSemaphoreDelete(mutex->mutex);
 #else
     mbedtls_mutex_free(mutex);
 #endif
@@ -39,8 +46,14 @@ static void mbedtls_rom_mutex_free( mbedtls_threading_mutex_t *mutex )
 
 static int mbedtls_rom_mutex_lock( mbedtls_threading_mutex_t *mutex )
 {
-#if (!defined(CONFIG_MBEDTLS_THREADING_C))
-    ((void) mutex);
+    if (mutex == NULL) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+#if defined(MBEDTLS_THREADING_ALT)
+    if (xSemaphoreTake(mutex->mutex, portMAX_DELAY) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
     return 0;
 #else
     return mbedtls_mutex_lock(mutex);
@@ -49,8 +62,14 @@ static int mbedtls_rom_mutex_lock( mbedtls_threading_mutex_t *mutex )
 
 static int mbedtls_rom_mutex_unlock( mbedtls_threading_mutex_t *mutex )
 {
-#if (!defined(CONFIG_MBEDTLS_THREADING_C))
-    ((void) mutex);
+    if (mutex == NULL) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+#if defined(MBEDTLS_THREADING_ALT)
+    if (xSemaphoreGive(mutex->mutex) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
     return 0;
 #else
     return mbedtls_mutex_unlock(mutex);
@@ -430,11 +449,15 @@ __attribute__((constructor)) void mbedtls_rom_osi_functions_init(void)
     /* Export the rom mbedtls functions table pointer */
     extern void *mbedtls_rom_osi_funcs_ptr;
 
+#if defined(MBEDTLS_THREADING_ALT)
+    mbedtls_threading_set_alt(mbedtls_rom_mutex_init, mbedtls_rom_mutex_free, mbedtls_rom_mutex_lock, mbedtls_rom_mutex_unlock);
+#endif
+
     unsigned chip_version = efuse_hal_chip_revision();
     if ( ESP_CHIP_REV_ABOVE(chip_version, 200) ) {
         /* Initialize the rom function mbedtls_threading_set_alt on chip rev2.0 with rom eco4 */
-        mbedtls_threading_set_alt_t mbedtls_threading_set_alt = (mbedtls_threading_set_alt_t)0x40002c0c;
-        mbedtls_threading_set_alt(mbedtls_rom_mutex_init, mbedtls_rom_mutex_free, mbedtls_rom_mutex_lock, mbedtls_rom_mutex_unlock);
+        _rom_mbedtls_threading_set_alt_t rom_mbedtls_threading_set_alt = (_rom_mbedtls_threading_set_alt_t)0x40002c0c;
+        rom_mbedtls_threading_set_alt(mbedtls_rom_mutex_init, mbedtls_rom_mutex_free, mbedtls_rom_mutex_lock, mbedtls_rom_mutex_unlock);
 
         /* Initialize the pointer of rom eco4 mbedtls functions table. */
         mbedtls_rom_osi_funcs_ptr = (mbedtls_rom_eco4_funcs_t *)&mbedtls_rom_eco4_funcs_table;
