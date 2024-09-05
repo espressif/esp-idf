@@ -270,6 +270,8 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     tx_unit->out_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
 #endif
     PARLIO_CLOCK_SRC_ATOMIC() {
+        // turn on the tx module clock to sync the register configuration to the module
+        parlio_ll_tx_enable_clock(hal->regs, true);
         parlio_ll_tx_set_clock_source(hal->regs, clk_src);
         // set clock division
         parlio_ll_tx_set_clock_div(hal->regs, &clk_div);
@@ -371,8 +373,8 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
 
 #if SOC_PARLIO_TX_SIZE_BY_DMA
-    // Always use DMA EOF as the Parlio TX EOF
-    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+    // Always use DATA LEN EOF as the Parlio TX EOF
+    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
 #endif  // SOC_PARLIO_TX_SIZE_BY_DMA
 
     // clear any pending interrupt
