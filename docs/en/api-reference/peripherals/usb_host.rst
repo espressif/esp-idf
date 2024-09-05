@@ -25,18 +25,26 @@ Features & Limitations
 
 The Host Library has the following features:
 
-- Supports Full Speed (FS) and Low Speed (LS) Devices.
-- Supports all four transfer types, i.e., Control, Bulk, Interrupt, and Isochronous.
-- Allows multiple class drivers to run simultaneously, i.e., multiple clients of the Host Library.
-- A single device can be used by multiple clients simultaneously, e.g., composite devices.
-- The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
+.. list::
+
+    :esp32s2 or esp32s3: - Supports Full Speed (FS) and Low Speed (LS) Devices.
+    :esp32p4: - Supports High Speed (HS), Full Speed (FS) and Low Speed (LS) Devices.
+    - Supports all four transfer types: Control, Bulk, Interrupt, and Isochronous.
+    :esp32p4: - Supports High-Bandwidth Isochronous endpoints.
+    - Allows multiple class drivers to run simultaneously, i.e., multiple clients of the Host Library.
+    - A single device can be used by multiple clients simultaneously, e.g., composite devices.
+    - The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
 
 Currently, the Host Library and the underlying Host Stack has the following limitations:
 
-- Only supports a single device, but the Host Library's API is designed for multiple device support.
-- Only supports Asynchronous transfers.
-- Only supports using the first configuration found. Changing to other configurations is not supported yet.
-- Transfer timeouts are not supported yet.
+.. list::
+
+    - Only supports a single device, but the Host Library's API is designed for multiple device support.
+    - Only supports Asynchronous transfers.
+    - Only supports using one configuration. Changing to other configurations after enumeration is not supported yet.
+    - Transfer timeouts are not supported yet.
+    :esp32p4: - {IDF_TARGET_NAME} contains two USB-OTG peripherals USB 2.0 OTG High-Speed and USB 2.0 OTG Full-Speed. Only the High-Speed instance is supported now.
+    :esp32p4: - {IDF_TARGET_NAME} cannot enumerate Low-Speed devices yet.
 
 
 .. -------------------------------------------------- Architecture -----------------------------------------------------
@@ -89,7 +97,7 @@ Therefore, in addition to the client tasks, the Host Library also requires a tas
 Devices
 ^^^^^^^
 
-The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. During enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``.
+The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. By default during enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``. If option  :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` is enabled, a different ``bConfigurationValue`` can be selected, see `Multiple configuration Support`_ for more details.
 
 It is possible for two or more clients to simultaneously communicate with the same device as long as they are not communicating to the same interface. However, multiple clients can simultaneously communicate with the same device's default endpoint (i.e., EP0), which will result in their control transfers being serialized.
 
