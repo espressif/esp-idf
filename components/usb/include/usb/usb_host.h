@@ -131,14 +131,20 @@ typedef struct {
 /**
  * @brief Install the USB Host Library
  *
- * - This function should only once to install the USB Host Library
+ * - This function should be called only once to install the USB Host Library
  * - This function should be called before any other USB Host Library functions are called
  *
  * @note If skip_phy_setup is set in the install configuration, the user is responsible for ensuring that the underlying
  *       Host Controller is enabled and the USB PHY (internal or external) is already setup before this function is
  *       called.
  * @param[in] config USB Host Library configuration
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USB Host installed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not in correct state to be installed
+ *      (eg. the library itself of one of it's drivers is already installed)
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usb_host_install(const usb_host_config_t *config);
 
@@ -152,7 +158,10 @@ esp_err_t usb_host_install(const usb_host_config_t *config);
  *
  * @note If skip_phy_setup was set when the Host Library was installed, the user is responsible for disabling the
  *       underlying Host Controller and USB PHY (internal or external).
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USB Host uninstalled successfully
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed, or has unfinished actions
  */
 esp_err_t usb_host_uninstall(void);
 
@@ -166,7 +175,11 @@ esp_err_t usb_host_uninstall(void);
  * @note This function can block
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
  * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred.
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: No events to be handled
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed
+ *    - ESP_ERR_TIMEOUT: Semaphore waiting for events has timed out
  */
 esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_flags_ret);
 
@@ -175,7 +188,9 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
  *
  * - This function simply unblocks the USB Host Library event handling function (usb_host_lib_handle_events())
  *
- * @return esp_err_t
+ * @return
+ *    - ESP_OK: USB Host library unblocked successfully
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed
  */
 esp_err_t usb_host_lib_unblock(void);
 
@@ -183,7 +198,11 @@ esp_err_t usb_host_lib_unblock(void);
  * @brief Get current information about the USB Host Library
  *
  * @param[out] info_ret USB Host Library Information
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USB Host Library info obtained successfully
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
 
@@ -197,7 +216,12 @@ esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
  *
  * @param[in] client_config Client configuration
  * @param[out] client_hdl_ret Client handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USB Host Library client registered successfully
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config, usb_host_client_handle_t *client_hdl_ret);
 
@@ -208,7 +232,10 @@ esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config
  * - The client must have closed all previously opened devices before attempting to deregister
  *
  * @param[in] client_hdl Client handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: USB Host Library client deregistered successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl);
 
@@ -221,7 +248,12 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl);
  * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: No event to be handled
+ *    - ESP_ERR_INVALID_STATE: USB Host Library is not installed
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_TIMEOUT: Semaphore waiting for events has timed out
  */
 esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, TickType_t timeout_ticks);
 
@@ -232,7 +264,10 @@ esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, Tic
  * - This function is useful when need to unblock a client in order to deregister it.
  *
  * @param[in] client_hdl Client handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Client unblocked successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_client_unblock(usb_host_client_handle_t client_hdl);
 
@@ -247,7 +282,10 @@ esp_err_t usb_host_client_unblock(usb_host_client_handle_t client_hdl);
  * @param[in] client_hdl Client handle
  * @param[in] dev_addr Device's address
  * @param[out] dev_hdl_ret Device's handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device opened successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_addr, usb_device_handle_t *dev_hdl_ret);
 
@@ -256,12 +294,18 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
  *
  * - This function allows a client to close a device
  * - A client must close a device after it has finished using the device (claimed interfaces must also be released)
- * - A client must close all devices it has opened before deregistering
+ * - A client must close all devices it has opened before de-registering
  *
  * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] dev_hdl Device handle
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device closed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Device address not found among opened devices
+ *    - ESP_ERR_INVALID_STATE: The client never opened the device, or the client has not released
+ *      all the interfaces from the device
  */
 esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl);
 
@@ -276,9 +320,10 @@ esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_
  * - This function is useful when cleaning up devices before uninstalling the USB Host Library
  *
  * @return
- *  - ESP_ERR_NOT_FINISHED: There are one or more devices that still need to be freed. Wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event
- *  - ESP_OK: All devices already freed (i.e., there were no devices)
- *  - Other: Error
+ *    - ESP_OK: All devices already freed (i.e., there were no devices)
+ *    - ESP_ERR_INVALID_STATE: Client must be deregistered
+ *    - ESP_ERR_NOT_FINISHED: There are one or more devices that still need to be freed,
+ *      wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event
  */
 esp_err_t usb_host_device_free_all(void);
 
@@ -292,7 +337,10 @@ esp_err_t usb_host_device_free_all(void);
  * @param[in] list_len Length of the empty list
  * @param[inout] dev_addr_list Empty list to be filled
  * @param[out] num_dev_ret Number of devices
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device list filled successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
 
@@ -309,7 +357,10 @@ esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, i
  * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[out] dev_info Device information
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device information obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_device_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_info);
 
@@ -327,7 +378,10 @@ esp_err_t usb_host_device_info(usb_device_handle_t dev_hdl, usb_device_info_t *d
  * @note No control transfer is sent. The device's descriptor is cached on enumeration
  * @param[in] dev_hdl Device handle
  * @param[out] device_desc Device descriptor
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Device descriptor obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_get_device_descriptor(usb_device_handle_t dev_hdl, const usb_device_desc_t **device_desc);
 
@@ -342,7 +396,10 @@ esp_err_t usb_host_get_device_descriptor(usb_device_handle_t dev_hdl, const usb_
  * @note No control transfer is sent. A device's active configuration descriptor is cached on enumeration
  * @param[in] dev_hdl Device handle
  * @param[out] config_desc Configuration descriptor
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Active configuration descriptor obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, const usb_config_desc_t **config_desc);
 
@@ -351,17 +408,24 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
  *
  * - The USB Host library only caches a device's active configuration descriptor.
  * - This function reads any configuration descriptor of a particular device (specified by bConfigurationValue).
- * - This function will read the specified configuration descriptor via control transfers, and allocate memory to store that descriptor.
+ * - This function will read the specified configuration descriptor via control transfers, and allocate memory
+ *   to store that descriptor.
  * - Users can call usb_host_free_config_desc() to free the descriptor's memory afterwards.
  *
  * @note This function can block
  * @note A client must call usb_host_device_open() on the device first
- * @param[in] client_hdl Client handle - usb_host_client_handle_events() should be called repeatedly in a separate task to handle client events
+ * @param[in] client_hdl Client handle - usb_host_client_handle_events() should be called repeatedly in a separate task
+ *            to handle client events
  * @param[in] dev_hdl Device handle
- * @param[out] config_desc_ret Returned configuration descriptor
  * @param[in] bConfigurationValue Index of device's configuration descriptor to be read
+ * @param[out] config_desc_ret Returned configuration descriptor
  * @note bConfigurationValue starts from index 1
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Configuration descriptor obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_SUPPORTED: Invalid bConfigurationValue value (the device does not have this configuration value)
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bConfigurationValue, const usb_config_desc_t **config_desc_ret);
 
@@ -371,7 +435,10 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
  * This function frees a configuration descriptor that was returned by usb_host_get_config_desc()
  *
  * @param[out] config_desc Configuration descriptor
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Configuration descriptor freed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_free_config_desc(const usb_config_desc_t *config_desc);
 
@@ -388,7 +455,13 @@ esp_err_t usb_host_free_config_desc(const usb_config_desc_t *config_desc);
  * @param[in] dev_hdl Device handle
  * @param[in] bInterfaceNumber Interface number
  * @param[in] bAlternateSetting Interface alternate setting number
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Interface claimed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: USB Host is not a correct state to claim an interface
+ *    - ESP_ERR_NOT_FOUND: Interface or EP not found
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bInterfaceNumber, uint8_t bAlternateSetting);
 
@@ -402,7 +475,12 @@ esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_devi
  * @param[in] client_hdl Client handle
  * @param[in] dev_hdl Device handle
  * @param[in] bInterfaceNumber Interface number
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Interface released successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_STATE: Client never opened the USB Device, or interface currently can not be freed
+ *    - ESP_ERR_NOT_FOUND: Interface number not found in the list of interfaces
  */
 esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bInterfaceNumber);
 
@@ -414,9 +492,14 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
  * - Once halted, the endpoint must be cleared using usb_host_endpoint_clear() before it can communicate again
  *
  * @note This function can block
- * @param dev_hdl Device handle
- * @param bEndpointAddress Endpoint address
- * @return esp_err_t
+ * @param[in] dev_hdl Device handle
+ * @param[in] bEndpointAddress Endpoint address
+ *
+ * @return
+ *    - ESP_OK: Endpoint halted successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Endpoint address not found
+ *    - ESP_ERR_INVALID_STATE: Endpoint pipe is not in the correct state/condition to execute a command
  */
 esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
 
@@ -429,9 +512,14 @@ esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointA
  * - Flushing an endpoint will caused an queued up transfers to be canceled
  *
  * @note This function can block
- * @param dev_hdl Device handle
- * @param bEndpointAddress Endpoint address
- * @return esp_err_t
+ * @param[in] dev_hdl Device handle
+ * @param[in] bEndpointAddress Endpoint address
+ *
+ * @return
+ *    - ESP_OK: Endpoint flushed successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Endpoint address not found
+ *    - ESP_ERR_INVALID_STATE: Endpoint pipe is not in the correct state/condition to execute a command
  */
 esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
 
@@ -444,9 +532,14 @@ esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpoint
  * - If the endpoint has any queued up transfers, clearing a halt will resume their execution
  *
  * @note This function can block
- * @param dev_hdl Device handle
- * @param bEndpointAddress Endpoint address
- * @return esp_err_t
+ * @param[in] dev_hdl Device handle
+ * @param[in] bEndpointAddress Endpoint address
+ *
+ * @return
+ *    - ESP_OK: Endpoint cleared successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FOUND: Endpoint address not found
+ *    - ESP_ERR_INVALID_STATE: Endpoint pipe is not in the correct state/condition to execute a command
  */
 esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
 
@@ -463,7 +556,10 @@ esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpoint
  * @param[in] data_buffer_size Size of the transfer's data buffer
  * @param[in] num_isoc_packets Number of isochronous packets in transfer (set to 0 for non-isochronous transfers)
  * @param[out] transfer Transfer object
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Transfer object allocated successfully
+ *    - ESP_ERR_NO_MEM: Insufficient memory
  */
 esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets, usb_transfer_t **transfer);
 
@@ -475,7 +571,9 @@ esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets,
  * - If a NULL pointer is passed, this function will simply return ESP_OK
  *
  * @param[in] transfer Transfer object
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Transfer object freed successfully
  */
 esp_err_t usb_host_transfer_free(usb_transfer_t *transfer);
 
@@ -487,7 +585,13 @@ esp_err_t usb_host_transfer_free(usb_transfer_t *transfer);
  * - On completion, the transfer's callback will be called from the client's usb_host_client_handle_events() function.
  *
  * @param[in] transfer Initialized transfer object
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Transfer submitted successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FINISHED: Transfer already in-flight
+ *    - ESP_ERR_NOT_FOUND: Endpoint address not found
+ *    - ESP_ERR_INVALID_STATE: Endpoint pipe is not in a correct state to submit transfer
  */
 esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer);
 
@@ -501,7 +605,13 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer);
  *
  * @param[in] client_hdl Client handle
  * @param[in] transfer Initialized transfer object
- * @return esp_err_t
+ *
+ * @return
+ *    - ESP_OK: Control transfer submitted successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_NOT_FINISHED: Transfer already in-flight
+ *    - ESP_ERR_NOT_FOUND: Endpoint address not found
+ *    - ESP_ERR_INVALID_STATE: Endpoint pipe is not in a correct state to submit transfer
  */
 esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer);
 

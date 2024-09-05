@@ -477,6 +477,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         };
         ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
         if (ret != ESP_OK) {
+            ESP_LOGE(USB_HOST_TAG, "PHY install error: %s", esp_err_to_name(ret));
             goto phy_err;
         }
     }
@@ -487,6 +488,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = hcd_install(&hcd_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "HCD install error: %s", esp_err_to_name(ret));
         goto hcd_err;
     }
 
@@ -499,6 +501,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = usbh_install(&usbh_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "USBH install error: %s", esp_err_to_name(ret));
         goto usbh_err;
     }
 
@@ -515,6 +518,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = enum_install(&enum_config, &host_lib_obj->constant.enum_client);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Enum. driver install error: %s", esp_err_to_name(ret));
         goto enum_err;
     }
 
@@ -527,6 +531,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = hub_install(&hub_config, &host_lib_obj->constant.hub_client);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Hub driver Install error: %s", esp_err_to_name(ret));
         goto hub_err;
     }
 
@@ -937,6 +942,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
     usb_device_handle_t dev_hdl;
     ret = usbh_devs_open(dev_addr, &dev_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "usbh_devs_open error: %s", esp_err_to_name(ret));
         goto exit;
     }
 
@@ -1012,10 +1018,16 @@ esp_err_t usb_host_device_free_all(void)
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
 #if ENABLE_USB_HUBS
-    hub_notify_all_free();
+    ret = hub_notify_all_free();
+    if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Marking all devices as free in HUB error: %s", esp_err_to_name(ret));
+    }
 #endif // ENABLE_USB_HUBS
     ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
+    if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Marking all devices as free in USBH error: %s", esp_err_to_name(ret));
+    }
     return ret;
 }
 
@@ -1078,7 +1090,7 @@ static esp_err_t get_config_desc_transfer(usb_host_client_handle_t client_hdl, u
     // Submit control transfer
     esp_err_t ret = usb_host_transfer_submit_control(client_hdl, ctrl_transfer);
     if (ret != ESP_OK) {
-        ESP_LOGE(USB_HOST_TAG, "Submit ctrl transfer failed");
+        ESP_LOGE(USB_HOST_TAG, "Submit ctrl transfer failed %s", esp_err_to_name(ret));
         return ret;
     }
 
@@ -1138,6 +1150,7 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
     // Initiate control transfer for short config descriptor
     ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, SHORT_DESC_REQ_LEN);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Get short config desc. failed %s", esp_err_to_name(ret));
         goto exit;
     }
 
@@ -1147,6 +1160,7 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
     // Initiate control transfer for full config descriptor
     ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, config_desc_short->wTotalLength);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Get full config desc. failed %s", esp_err_to_name(ret));
         goto exit;
     }
 
@@ -1202,6 +1216,7 @@ static esp_err_t ep_wrapper_alloc(usb_device_handle_t dev_hdl, const usb_ep_desc
     };
     ret = usbh_ep_alloc(dev_hdl, &ep_config, &ep_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "EP allocation error %s", esp_err_to_name(ret));
         goto alloc_err;
     }
     // Initialize endpoint wrapper item
@@ -1259,6 +1274,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     int offset_intf;
     const usb_intf_desc_t *intf_desc = usb_parse_interface_descriptor(config_desc, bInterfaceNumber, bAlternateSetting, &offset_intf);
     if (intf_desc == NULL) {
+        ESP_LOGE(USB_HOST_TAG, "Interface %d not found in config. desc.", bInterfaceNumber);
         ret = ESP_ERR_NOT_FOUND;
         goto exit;
     }
@@ -1273,6 +1289,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
         int offset_ep = offset_intf;
         const usb_ep_desc_t *ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, i, config_desc->wTotalLength, &offset_ep);
         if (ep_desc == NULL) {
+            ESP_LOGE(USB_HOST_TAG, "EP desc. %d not found in Interface desc.", bInterfaceNumber);
             ret = ESP_ERR_NOT_FOUND;
             goto ep_alloc_err;
         }
@@ -1387,6 +1404,7 @@ esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_devi
     // Claim interface
     ret = interface_claim(client_obj, dev_hdl, config_desc, bInterfaceNumber, bAlternateSetting, &intf_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Claiming interface error: %s", esp_err_to_name(ret));
         goto exit;
     }
     ret = ESP_OK;
@@ -1430,6 +1448,18 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
     return ret;
 }
 
+/* Just print error returned from usbh_ep_get_handle() */
+static void print_error_ep_get_handle(esp_err_t err)
+{
+    ESP_LOGE(USB_HOST_TAG, "Get EP handle error: %s", esp_err_to_name(err));
+}
+
+/* Just print error returned from usbh_ep_command() */
+static void print_error_ep_command(esp_err_t err)
+{
+    ESP_LOGE(USB_HOST_TAG, "EP command error: %s", esp_err_to_name(err));
+}
+
 esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
 {
     esp_err_t ret;
@@ -1437,9 +1467,13 @@ esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointA
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_HALT);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1452,9 +1486,13 @@ esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpoint
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_FLUSH);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1467,9 +1505,13 @@ esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpoint
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_CLEAR);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1513,6 +1555,7 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
 
     ret = usbh_ep_get_handle(transfer->device_handle, transfer->bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto err;
     }
     ep_wrap = usbh_ep_get_context(ep_hdl);
@@ -1526,6 +1569,7 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
 
     ret = usbh_ep_enqueue_urb(ep_hdl, urb_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Enqueue URB error: %s", esp_err_to_name(ret));
         goto submit_err;
     }
     return ret;
@@ -1558,6 +1602,7 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     esp_err_t ret;
     ret = usbh_dev_submit_ctrl_urb(dev_hdl, urb_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Submit CTRL URB error: %s", esp_err_to_name(ret));
         urb_obj->usb_host_inflight = false;
     }
     return ret;
