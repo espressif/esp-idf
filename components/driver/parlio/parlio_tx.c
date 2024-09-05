@@ -250,7 +250,8 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
         ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
     }
 #endif
-
+    // turn on the tx module clock to sync the register configuration to the module
+    parlio_ll_tx_enable_clock(hal->regs, true);
     parlio_ll_tx_set_clock_source(hal->regs, clk_src);
     // set clock division, round up
     uint32_t div = (periph_src_clk_hz + config->output_clk_freq_hz - 1) / config->output_clk_freq_hz;
