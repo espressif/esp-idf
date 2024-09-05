@@ -1432,6 +1432,14 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         .name  = "BT Controller Data"
     };
 
+    /*
+     * Free data and BSS section for Bluetooth controller ROM code.
+     * Note that rom mem release must be performed before section _bt_data_start to _bt_data_end is released,
+     * otherwise `btdm_dram_available_region` will no longer be available when performing rom mem release and
+     * thus causing heap corruption.
+     */
+    ret = esp_bt_controller_rom_mem_release(mode);
+
     if (mode == ESP_BT_MODE_BTDM) {
         /* Start by freeing Bluetooth BSS section */
         if (ret == ESP_OK) {
@@ -1442,11 +1450,6 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         if (ret == ESP_OK) {
             ret = esp_bt_mem_release_areas(&data, &cont_data);
         }
-    }
-
-    /* free data and BSS section for Bluetooth controller ROM code */
-    if (ret == ESP_OK) {
-        ret = esp_bt_controller_rom_mem_release(mode);
     }
 
     return ret;
