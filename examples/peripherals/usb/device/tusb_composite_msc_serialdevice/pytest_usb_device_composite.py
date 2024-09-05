@@ -30,3 +30,5 @@ def test_usb_composite_device_serial_example(dut: Dut) -> None:
                 res = s.readline()  # Check COM echo
                 assert b'text\r\n' in res
             return
+
+    raise Exception('TinyUSB COM port not found')
