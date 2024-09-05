@@ -137,6 +137,9 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
         * Force the PHY device to reset status (as the case *a* in the picture). **This could fail for some PHY device** (i.e. it still outputs signals to GPIO0 even in reset state).
 
+    .. warning::
+        If you want the **Ethernet to work with Wi-Fi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
+
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
     .. note::

@@ -59,13 +59,11 @@ menu "Ethernet"
                 bool "Output RMII clock from GPIO0 (Experimental!)"
                 default n
                 help
-                    GPIO0 can be set to output a pre-divided PLL clock (test only!).
-                    Enabling this option will configure GPIO0 to output a 50MHz clock.
-                    In fact this clock doesn't have directly relationship with EMAC peripheral.
-                    Sometimes this clock won't work well with your PHY chip. You might need to
-                    add some extra devices after GPIO0 (e.g. inverter).
-                    Note that outputting RMII clock on GPIO0 is an experimental practice.
-                    If you want the Ethernet to work with WiFi, don't select GPIO0 output mode for stability.
+                    GPIO0 can be set to output a pre-divided PLL clock. Enabling this option will configure
+                    GPIO0 to output a 50MHz clock. In fact this clock doesn't have directly relationship with
+                    EMAC peripheral. Sometimes this clock may not work well with your PHY chip.
+                    WARNING: If you want the Ethernet to work with WiFi, don’t select ESP32 as RMII CLK output
+                    as it would result in clock instability!
 
             if !ETH_RMII_CLK_OUTPUT_GPIO0
                 config ETH_RMII_CLK_OUT_GPIO
@@ -74,6 +72,8 @@ menu "Ethernet"
                     default 17
                     help
                         Set the GPIO number to output RMII Clock.
+                        WARNING: If you want the Ethernet to work with WiFi, don’t select ESP32 as RMII CLK output
+                        as it would result in clock instability!
             endif # !ETH_RMII_CLK_OUTPUT_GPIO0
         endif # ETH_RMII_CLK_OUTPUT
 
