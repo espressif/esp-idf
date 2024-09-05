@@ -369,6 +369,11 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
     return http_header_delete(client->request->headers, key);
 }
 
+esp_err_t esp_http_client_delete_headers(esp_http_client_handle_t client)
+{
+    return http_header_clean(client->request->headers);
+}
+
 esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **value)
 {
     if (client == NULL || value == NULL) {
