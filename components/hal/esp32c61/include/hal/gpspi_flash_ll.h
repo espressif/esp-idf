@@ -24,8 +24,6 @@
 #include <string.h>
 #include "hal/misc.h"
 
-// TODO: [ESP32C61] IDF-9314, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif
