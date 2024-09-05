@@ -39,6 +39,9 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = rate * clk_cfg->mclk_multiple;
         clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
+        if (clk_info->mclk % clk_info->bclk != 0) {
+            ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
+        }
     } else {
         /* For slave mode, mclk >= bclk * 8, so fix bclk_div to 2 first */
         clk_info->bclk_div = 8;
