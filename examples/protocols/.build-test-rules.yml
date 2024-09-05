@@ -154,10 +154,6 @@ examples/protocols/https_x509_bundle:
 
 examples/protocols/icmp_echo:
   <<: *default_dependencies
-  disable:
-    - if: IDF_TARGET in ["esp32c61"]
-      temporary: true
-      reason: not supported on c61  # TODO: [ESP32-C5] IDF-8697, [ESP32C61] IDF-9298
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
 

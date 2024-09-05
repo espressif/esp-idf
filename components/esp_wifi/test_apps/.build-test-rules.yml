@@ -3,13 +3,7 @@
 components/esp_wifi/test_apps/wifi_connect:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c2"]
-      reason: lack of runner
 
 components/esp_wifi/test_apps/wifi_function:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c61"
-      reason: lack of runner

@@ -40,6 +40,7 @@ def _run_test(dut: Dut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_ap
 def test_protocols_icmp_echo(dut: Dut) -> None:
     _run_test(dut)

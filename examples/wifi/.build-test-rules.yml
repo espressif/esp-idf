@@ -29,10 +29,6 @@ examples/wifi/getting_started:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET not in  ["esp32", "esp32c3", "esp32c2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
   depends_filepatterns:
     - examples/wifi/getting_started/**/*
 
