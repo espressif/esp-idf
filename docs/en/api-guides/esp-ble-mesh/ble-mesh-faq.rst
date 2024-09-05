@@ -1,5 +1,5 @@
-ESP-BLE-MESH FAQ
-================
+FAQ
+=====
 
 :link_to_translation:`zh_CN:[中文]`
 
