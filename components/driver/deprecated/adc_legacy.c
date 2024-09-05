@@ -16,6 +16,7 @@
 #include "esp_check.h"
 #include "esp_pm.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "sys/lock.h"
 #include "driver/gpio.h"
@@ -26,6 +27,7 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_hal_common.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
 #include "esp_clk_tree.h"
@@ -775,6 +777,7 @@ int adc1_get_raw(adc1_channel_t channel)
 
     adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
+    esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_atten_t atten = s_atten1_single[channel];
@@ -832,6 +835,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
+    esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();

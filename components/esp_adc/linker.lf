@@ -4,6 +4,12 @@ entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot: adc_oneshot_read_isr (noflash)
 
+[mapping:esp_hw_support_adc]
+archive: libesp_hw_support.a
+entries:
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        esp_clk_tree: esp_clk_tree_enable_src (noflash)
+
 [mapping:adc_hal]
 archive: libhal.a
 entries:

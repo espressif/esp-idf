@@ -21,9 +21,11 @@
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
+#include "soc/soc_caps.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gpio.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_clk_tree.h"
@@ -906,6 +908,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
+        esp_clk_tree_enable_src((soc_module_clk_t)uart_sclk_sel, true);
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);

@@ -7,10 +7,12 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/gpio_ll.h"
 #include "hal/rtc_io_ll.h"
+#include "soc/soc_caps.h"
 
 #define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
@@ -40,6 +42,8 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
     if (clk_conflict) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PERIPH_RCC_ATOMIC() {
         gpio_ll_iomux_set_clk_src(clk_src);
     }

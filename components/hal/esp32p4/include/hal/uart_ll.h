@@ -431,7 +431,6 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
         sel_value = 1;
         break;
     case UART_SCLK_PLL_F80M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_80m_clk_en = 1;
         sel_value = 2;
         break;
     default:

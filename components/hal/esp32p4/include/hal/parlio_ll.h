@@ -103,7 +103,6 @@ static inline void _parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clo
         clk_sel = 1;
         break;
     case PARLIO_CLK_SRC_PLL_F160M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_sel = 2;
         break;
     case PARLIO_CLK_SRC_EXTERNAL:
@@ -428,7 +427,6 @@ static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clo
         clk_sel = 1;
         break;
     case PARLIO_CLK_SRC_PLL_F160M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_sel = 2;
         break;
     case PARLIO_CLK_SRC_EXTERNAL:

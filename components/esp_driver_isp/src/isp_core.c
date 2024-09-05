@@ -19,6 +19,8 @@
 #include "hal/hal_utils.h"
 #include "soc/mipi_csi_bridge_struct.h"
 #include "soc/isp_periph.h"
+#include "soc/soc_caps.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/isp_private.h"
 
 typedef struct isp_platform_t {
@@ -106,6 +108,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     }
     ;
     isp_hal_init(&proc->hal, proc->proc_id);
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PERIPH_RCC_ATOMIC() {
         isp_ll_select_clk_source(proc->hal.hw, clk_src);
         isp_ll_set_clock_div(proc->hal.hw, &clk_div);

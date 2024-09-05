@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "xtensa/hal.h"
 #include "esp_types.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,6 +28,7 @@
 #include "soc/dport_reg.h"
 #include "dport_access.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_task.h"
@@ -142,6 +144,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
 
         esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         rtc_clk_cpu_freq_set_config(&new_config);
+        esp_clk_tree_enable_src((soc_module_clk_t)UART_SCLK_DEFAULT, true);
         uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 
         uint32_t sclk_freq;
@@ -158,6 +161,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     // return old freq.
     esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     rtc_clk_cpu_freq_set_config(&old_config);
+    esp_clk_tree_enable_src((soc_module_clk_t)UART_SCLK_DEFAULT, true);
     uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 
     uint32_t sclk_freq;
@@ -439,7 +443,7 @@ TEST_CASE("Check pre-read workaround DPORT and Hi-interrupt", "[esp32]")
 static uint32_t s_shift_counter;
 
 /*
-The test_dport_access_reg_read() is similar DPORT_REG_READ() but has differents:
+The test_dport_access_reg_read() is similar DPORT_REG_READ() but has difference:
 - generate an interrupt by SET_CCOMPARE
 - additional branch command helps get good reproducing an issue with breaking the DPORT pre-read workaround
 - uncomment (1) and comment (2) it allows seeing the broken pre-read workaround

@@ -142,7 +142,6 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
         clk_id = 0;
         break;
     case GPTIMER_CLK_SRC_PLL_F80M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_80m_clk_en = 1;
         clk_id = 2;
         break;
     case GPTIMER_CLK_SRC_RC_FAST:

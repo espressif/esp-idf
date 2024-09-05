@@ -69,14 +69,12 @@ static inline void mipi_csi_ll_set_phy_clock_source(int group_id, mipi_csi_phy_c
     (void)group_id;
     switch (source) {
     case MIPI_CSI_PHY_CLK_SRC_PLL_F20M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_20m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 0;
         break;
     case MIPI_CSI_PHY_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 1;
         break;
     case MIPI_CSI_PHY_CLK_SRC_PLL_F25M:
-        HP_SYS_CLKRST.ref_clk_ctrl1.reg_ref_25m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_csi_dphy_clk_src_sel = 2;
         break;
     default:

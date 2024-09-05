@@ -27,12 +27,14 @@
 #include "esp_intr_alloc.h"
 #include "esp_pm.h"
 #include "soc/parlio_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/parlio_ll.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
 #include "parlio_private.h"
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
 
@@ -253,6 +255,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #else
     tx_unit->out_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
 #endif
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PARLIO_CLOCK_SRC_ATOMIC() {
         // turn on the tx module clock to sync the register configuration to the module
         parlio_ll_tx_enable_clock(hal->regs, true);

@@ -16,9 +16,11 @@
 #include "rmt_private.h"
 #include "clk_ctrl_os.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
 #include "soc/rmt_periph.h"
 #include "hal/rmt_ll.h"
 #include "driver/gpio.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "rmt";
@@ -207,6 +209,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     // no division for group clock source, to achieve highest resolution
     RMT_CLOCK_SRC_ATOMIC() {
         rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);

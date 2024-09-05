@@ -637,7 +637,6 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
         HP_SYS_CLKRST.peri_clk_ctrl26.reg_iomux_clk_src_sel = 0;
         break;
     case SOC_MOD_CLK_PLL_F80M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_80m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl26.reg_iomux_clk_src_sel = 1;
         break;
     default:

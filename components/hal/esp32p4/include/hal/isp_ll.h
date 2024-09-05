@@ -198,11 +198,9 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
         clk_val = 0;
         break;
     case ISP_CLK_SRC_PLL160:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         clk_val = 1;
         break;
     case ISP_CLK_SRC_PLL240:
-        HP_SYS_CLKRST.ref_clk_ctrl1.reg_ref_240m_clk_en = 1;
         clk_val = 2;
         break;
     default:

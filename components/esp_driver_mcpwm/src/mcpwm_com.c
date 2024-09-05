@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,10 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/mcpwm_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/mcpwm_ll.h"
 #include "mcpwm_private.h"
 
@@ -172,6 +174,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
         ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for MCPWM group(%d)", group->group_id);
 #endif // CONFIG_PM_ENABLE
 
+        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
         MCPWM_CLOCK_SRC_ATOMIC() {
             mcpwm_ll_group_set_clock_source(group->group_id, clk_src);
         }

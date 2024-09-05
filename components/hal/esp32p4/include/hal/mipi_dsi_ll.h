@@ -107,11 +107,9 @@ static inline void mipi_dsi_ll_set_dpi_clock_source(int group_id, mipi_dsi_dpi_c
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 0;
         break;
     case MIPI_DSI_DPI_CLK_SRC_PLL_F160M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_160m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 2;
         break;
     case MIPI_DSI_DPI_CLK_SRC_PLL_F240M:
-        // PLL240 has no gating by default in esp_perip_clk_init.
         HP_SYS_CLKRST.peri_clk_ctrl03.reg_mipi_dsi_dpiclk_src_sel = 1;
         break;
     default:
@@ -182,14 +180,12 @@ static inline void mipi_dsi_ll_set_phy_clock_source(int group_id, mipi_dsi_phy_c
     (void)group_id;
     switch (source) {
     case MIPI_DSI_PHY_CLK_SRC_PLL_F20M:
-        HP_SYS_CLKRST.ref_clk_ctrl2.reg_ref_20m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 0;
         break;
     case MIPI_DSI_PHY_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 1;
         break;
     case MIPI_DSI_PHY_CLK_SRC_PLL_F25M:
-        HP_SYS_CLKRST.ref_clk_ctrl1.reg_ref_25m_clk_en = 1;
         HP_SYS_CLKRST.peri_clk_ctrl02.reg_mipi_dsi_dphy_clk_src_sel = 2;
         break;
     default:
