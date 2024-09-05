@@ -364,6 +364,11 @@ tx_pwctrl_background = 0x40002548;
  ***************************************/
 
 /* Functions */
+systimer_hal_init = 0x400002a8;
+systimer_hal_get_time = 0x400002b0;
+systimer_hal_set_alarm_target = 0x400002b4;
+systimer_hal_set_alarm_period = 0x400002b8;
+systimer_hal_counter_value_advance = 0x400002c8;
 systimer_hal_deinit = 0x40002ea8;
 systimer_hal_set_tick_rate_ops = 0x40002eac;
 
