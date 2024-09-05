@@ -32,6 +32,7 @@ typedef struct {
                                       Note that, the valid signal will always occupy the MSB data bit */
     size_t trans_queue_depth; /*!< Depth of internal transaction queue */
     size_t max_transfer_size; /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
+    size_t dma_burst_size;    /*!< DMA burst size, in bytes */
     parlio_sample_edge_t sample_edge;       /*!< Parallel IO sample edge */
     parlio_bit_pack_order_t bit_pack_order; /*!< Set the order of packing the bits into bytes (only works when `data_width` < 8) */
     struct {
