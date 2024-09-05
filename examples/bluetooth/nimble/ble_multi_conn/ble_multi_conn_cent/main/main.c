@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,7 +93,7 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
 
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         if (event->connect.status == 0) {
             ESP_LOGI(TAG, "Connection established. Handle:%d, Total:%d", event->connect.conn_handle,
                      ++s_ble_multi_conn_num);
@@ -174,7 +174,7 @@ static int
 ble_cent_server_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* The connectable adv has been established. We will act as the peripheral. */
         if (event->connect.status == 0) {
             ESP_LOGI(TAG, "Peripheral connected to central. Handle:%d", event->connect.conn_handle);
