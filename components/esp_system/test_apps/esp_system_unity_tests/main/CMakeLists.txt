@@ -12,10 +12,13 @@ set(SRC  "test_app_main.c"
          "test_ipc.c"
          "test_reset_reason.c"
          "test_shared_stack_printf.c"
-         "test_sleep.c"
          "test_stack_check.c"
          "test_system_time.c"
          "test_task_wdt.c")
+
+if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED OR CONFIG_SOC_DEEP_SLEEP_SUPPORTED)
+    list(APPEND SRC "test_sleep.c")
+endif()
 
 if(CONFIG_ESP_IPC_ISR_ENABLE)
     list(APPEND SRC  "test_ipc_isr.c")

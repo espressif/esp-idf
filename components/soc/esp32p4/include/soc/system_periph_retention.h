@@ -62,18 +62,28 @@ extern const regdma_entries_config_t tg_regs_retention[TIMG_RETENTION_LINK_LEN];
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    2
+#define IOMUX_RETENTION_LINK_LEN    3
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**
- * @brief Provide access to spimem configuration registers retention
+ * @brief Provide access to FLASH spimem configuration registers retention
  * context definition.
  *
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define SPIMEM_RETENTION_LINK_LEN   8
-extern const regdma_entries_config_t spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
+#define SPIMEM_FLASH_RETENTION_LINK_LEN   8
+extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_FLASH_RETENTION_LINK_LEN];
+
+/**
+ * @brief Provide access to PSRAM spimem configuration registers retention
+ * context definition.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define SPIMEM_PSRAM_RETENTION_LINK_LEN   14
+extern const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION_LINK_LEN];
 
 /**
  * @brief Provide access to systimer configuration registers retention

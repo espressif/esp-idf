@@ -88,6 +88,7 @@ static void test_gptimer_sleep_retention(bool back_up_before_sleep)
         TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
     }
 #endif
+    esp_sleep_set_sleep_context(NULL);
 
     uint64_t count_value_after_sleep = 0;
     TEST_ESP_OK(gptimer_get_raw_count(timer, &count_value_after_sleep));
