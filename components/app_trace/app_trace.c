@@ -26,8 +26,6 @@
 #define ESP_APPTRACE_MAX_VPRINTF_ARGS 256
 #define ESP_APPTRACE_HOST_BUF_SIZE 256
 
-#define ESP_APPTRACE_PRINT_LOCK 0
-
 const static char *TAG = "esp_apptrace";
 
 /** tracing module internal data */
@@ -90,7 +88,7 @@ void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)
         return;
     }
     // currently down buffer is supported for JTAG interface only
-    // TODO: one more argument should be added to this function to specify HW inteface: JTAG, UART0 etc
+    // TODO: one more argument should be added to this function to specify HW interface: JTAG, UART0 etc
     ch = &s_trace_channels[ESP_APPTRACE_DEST_JTAG];
     if (ch->hw != NULL) {
         if (ch->hw->down_buffer_config != NULL) {
