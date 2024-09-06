@@ -12,7 +12,6 @@
 #include "unity.h"
 #include "dev_isoc.h"
 #include "usb/usb_types_ch9.h"
-#include "test_usb_common.h"
 #include "test_hcd_common.h"
 
 #define NUM_URBS                3
@@ -40,7 +39,7 @@ Procedure:
     - Teardown
 */
 
-TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
@@ -115,7 +114,7 @@ Procedure:
     - Deallocate URBs
     - Teardown
 */
-TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
@@ -164,7 +163,7 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
             }
 
             // Add a delay so we start scheduling the transactions at different time in USB frame
-            esp_rom_delay_us(ENQUEUE_DELAY * interval + ENQUEUE_DELAY * channel);
+            esp_rom_delay_us(ENQUEUE_DELAY * (interval - 1) + ENQUEUE_DELAY * channel);
 
             // Enqueue URBs
             for (int i = 0; i < NUM_URBS; i++) {
@@ -227,7 +226,7 @@ Procedure:
     - Free both pipes
     - Teardown
 */
-TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed]")
+TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
@@ -261,7 +260,8 @@ TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed]")
     }
     // Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
-    test_usb_set_phy_state(false, 0);
+    // Power-off the port to trigger a disconnection
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_OFF));
     // Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));

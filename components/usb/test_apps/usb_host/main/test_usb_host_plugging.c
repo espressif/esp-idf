@@ -9,7 +9,6 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "test_usb_common.h"
 #include "mock_msc.h"
 #include "dev_msc.h"
 #include "msc_client.h"
@@ -34,7 +33,7 @@ Procedure:
 
 #define TEST_DCONN_NO_CLIENT_ITERATIONS     3
 
-TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_speed][low_speed]")
+TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][low_speed][full_speed][high_speed]")
 {
     bool connected = false;
     int dconn_iter = 0;
@@ -49,7 +48,8 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_spe
                 // We've just connected. Trigger a disconnect
                 connected = true;
                 printf("Forcing Sudden Disconnect\n");
-                test_usb_set_phy_state(false, 0);
+                // Trigger a disconnect by powering OFF the root port
+                usb_host_lib_set_root_port_power(false);
             }
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
@@ -58,7 +58,8 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_spe
             if (++dconn_iter < TEST_DCONN_NO_CLIENT_ITERATIONS) {
                 // Start next iteration
                 connected = false;
-                test_usb_set_phy_state(true, 0);
+                // Allow connections again by powering ON the root port
+                usb_host_lib_set_root_port_power(true);
             } else {
                 break;
             }
@@ -82,7 +83,7 @@ Procedure:
 #define TEST_FORCE_DCONN_NUM_TRANSFERS      3
 #define TEST_MSC_SCSI_TAG                   0xDEADBEEF
 
-TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed][high_speed]")
 {
     // Create task to run client that communicates with MSC SCSI interface
     const dev_msc_info_t *dev_info = dev_msc_get_info();
@@ -131,7 +132,7 @@ Procedure:
 
 #define TEST_ENUM_ITERATIONS    3
 
-TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed][high_speed]")
 {
     // Create task to run client that checks the enumeration of the device
     TaskHandle_t task_hdl;

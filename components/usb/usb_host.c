@@ -545,8 +545,11 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     p_host_lib_obj = host_lib_obj;
     HOST_EXIT_CRITICAL();
 
-    // Start the root hub
-    ESP_ERROR_CHECK(hub_root_start());
+    if (!config->root_port_unpowered) {
+        // Start the root hub
+        ESP_ERROR_CHECK(hub_root_start());
+    }
+
     ret = ESP_OK;
     return ret;
 
@@ -697,6 +700,18 @@ esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret)
     info_ret->num_devices = num_devs_temp;
     info_ret->num_clients = num_clients_temp;
     return ESP_OK;
+}
+
+esp_err_t usb_host_lib_set_root_port_power(bool enable)
+{
+    esp_err_t ret;
+    if (enable) {
+        ret = hub_root_start();
+    } else {
+        ret = hub_root_stop();
+    }
+
+    return ret;
 }
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
