@@ -44,7 +44,7 @@ void mmu_init(int cpu_no);
   *
   * @param  int cpu_no : CPU number, 0 for PRO cpu, 1 for APP cpu.
   *
-  * @param  int pod : process identifier. Range 0~7.
+  * @param  int pid : process identifier. Range 0~7.
   *
   * @param  unsigned int vaddr : virtual address in CPU address space.
   *                              Can be IRam0, IRam1, IRom0 and DRom0 memory address.
@@ -87,7 +87,7 @@ static inline __attribute__((always_inline)) unsigned int IRAM_ATTR cache_flash_
   *
   * @param  int cpu_no : CPU number, 0 for PRO cpu, 1 for APP cpu.
   *
-  * @param  int pod : process identifier. Range 0~7.
+  * @param  int pid : process identifier. Range 0~7.
   *
   * @param  unsigned int vaddr : virtual address in CPU address space.
   *                              Can be IRam0, IRam1, IRom0 and DRom0 memory address.
