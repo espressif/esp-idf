@@ -33,8 +33,6 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1
-#define SOC_RTC_FAST_MEM_SUPPORTED      1
-#define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32C61] IDF-9274
 //  \#define SOC_I2S_SUPPORTED               1    //TODO: [ESP32C61] IDF-9312, IDF-9313
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_I2C_SUPPORTED               1
