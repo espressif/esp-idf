@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,15 @@
 extern "C" {
 #endif
 
-#include "interrupt_reg.h"
-#include "system_reg.h"
-#include "sensitive_reg.h"
-#include "soc.h"
+#include "soc/interrupt_reg.h"
+#include "soc/system_reg.h"
+#include "soc/sensitive_reg.h"
+#include "soc/soc.h"
 
 #define DPORT_DATE_REG SYSTEM_DATE_REG
 
 #ifndef __ASSEMBLER__
-#include "dport_access.h"
+#include "soc/dport_access.h"
 #endif
 
 #ifdef __cplusplus
