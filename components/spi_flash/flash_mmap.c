@@ -277,7 +277,7 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     mmu_target_t target = MMU_TARGET_FLASH0;
 
     __attribute__((unused)) uint32_t phys_page = phys_offs / CONFIG_MMU_PAGE_SIZE;
-#if !SOC_MMU_PER_EXT_MEM_TARGET
+#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
         target = MMU_TARGET_PSRAM0;
@@ -291,7 +291,7 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
         phys_offs -= rodata_flash2spiram_offset() * CONFIG_MMU_PAGE_SIZE;
     }
 #endif
-#endif  //#if !SOC_MMU_PER_EXT_MEM_TARGET
+#endif  //#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
 
     mmu_vaddr_t type = (memory == SPI_FLASH_MMAP_DATA) ? MMU_VADDR_DATA : MMU_VADDR_INSTRUCTION;
     ret = esp_mmu_paddr_to_vaddr(phys_offs, target, type, &ptr);
@@ -383,7 +383,7 @@ size_t spi_flash_cache2phys(const void *cached)
 
     int offset = 0;
 
-#if !SOC_MMU_PER_EXT_MEM_TARGET //TODO: IDF-9049
+#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
 #if CONFIG_SPIRAM_RODATA
     if ((uint32_t)cached >= (uint32_t)&_rodata_reserved_start && (uint32_t)cached <= (uint32_t)&_rodata_reserved_end) {
         offset = rodata_flash2spiram_offset();
@@ -394,7 +394,7 @@ size_t spi_flash_cache2phys(const void *cached)
         offset = instruction_flash2spiram_offset();
     }
 #endif
-#endif  //#if !SOC_MMU_PER_EXT_MEM_TARGET
+#endif  //#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
 
     return paddr + offset * CONFIG_MMU_PAGE_SIZE;
 }

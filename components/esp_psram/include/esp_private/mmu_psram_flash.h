@@ -30,7 +30,7 @@ extern "C" {
 #if CONFIG_IDF_TARGET_ESP32
 #define MMU_PAGE_SIZE                   0x8000
 #else
-#define MMU_PAGE_SIZE                   0x10000
+#define MMU_PAGE_SIZE                   CONFIG_MMU_PAGE_SIZE
 #define MMU_PAGE_TO_BYTES(page_id)      ((page_id) * MMU_PAGE_SIZE)
 #define BYTES_TO_MMU_PAGE(bytes)        ((bytes) / MMU_PAGE_SIZE)
 #endif

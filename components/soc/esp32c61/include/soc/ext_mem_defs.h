@@ -58,7 +58,7 @@ extern "C" {
  * valid bit + value bits
  * valid bit is BIT(9), so value bits are 0x1ff
  */
-#define SOC_MMU_VALID_VAL_MASK 0x3ff
+#define SOC_MMU_VALID_VAL_MASK (SOC_MMU_ACCESS_SPIRAM - 1)
 /**
  * Max MMU available paddr page num.
  * `SOC_MMU_MAX_PADDR_PAGE_NUM * SOC_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:

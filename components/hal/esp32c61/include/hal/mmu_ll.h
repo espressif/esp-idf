@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define MMU_LL_FLASH_MMU_ID                 0
+#define MMU_LL_PSRAM_MMU_ID                 0
 #define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
 #define MMU_LL_END_DROM_ENTRY_ID            (SOC_MMU_ENTRY_NUM - 1)
 
@@ -212,7 +214,6 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
 __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    (void)target;
     uint32_t mmu_raw_value;
     if (mmu_ll_cache_encryption_enabled()) {
         mmu_val |= SOC_MMU_SENSITIVE;
