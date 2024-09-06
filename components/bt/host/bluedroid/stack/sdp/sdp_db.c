@@ -276,7 +276,7 @@ static int sdp_compose_proto_list( UINT8 *p, UINT16 num_elem,
 **
 ** Description      This function is called to create a record in the database.
 **                  This would be through the SDP database maintenance API. The
-**                  record is created empty, teh application should then call
+**                  record is created empty, the application should then call
 **                  "add_attribute" to add the record's attributes.
 **
 ** Returns          Record handle if OK, else 0.
@@ -293,15 +293,15 @@ UINT32 SDP_CreateRecord (void)
 
     /* First, check if there is a free record */
     if (p_db->num_records < SDP_MAX_RECORDS) {
-        p_rec =(tSDP_RECORD *)osi_malloc(sizeof(tSDP_RECORD));
-	if (p_rec) {
-    	    memset(p_rec, 0, sizeof(tSDP_RECORD));
-    	    /* Save previous rec */
-    	    if (p_db->num_records) {
-    	        p_rec_prev = list_back(p_db->p_record_list);
-    	    }
-    	    /* Append new record */
-    	    list_append(p_db->p_record_list, p_rec);
+        p_rec = (tSDP_RECORD *)osi_malloc(sizeof(tSDP_RECORD));
+        if (p_rec) {
+            memset(p_rec, 0, sizeof(tSDP_RECORD));
+            /* Save previous rec */
+            if (p_db->num_records) {
+                p_rec_prev = list_back(p_db->p_record_list);
+            }
+            /* Append new record */
+            list_append(p_db->p_record_list, p_rec);
 
             /* We will use a handle of the first unreserved handle plus last record
             ** number + 1 */
@@ -321,10 +321,12 @@ UINT32 SDP_CreateRecord (void)
                               4, buf);
 
             return (p_rec->record_handle);
-	} else {
+        }
+        else {
             SDP_TRACE_ERROR("SDP_CreateRecord fail, memory allocation failed\n");
-	}
-    } else {
+        }
+    }
+    else {
         SDP_TRACE_ERROR("SDP_CreateRecord fail, exceed maximum records:%d\n", SDP_MAX_RECORDS);
     }
 #endif
@@ -354,17 +356,17 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
     if (handle == 0 || sdp_cb.server_db.num_records == 0) {
         /* Delete all records in the database */
         sdp_cb.server_db.num_records = 0;
-        for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-	    list_remove(sdp_cb.server_db.p_record_list, p_node);
-	}
+        for (p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+            list_remove(sdp_cb.server_db.p_record_list, p_node);
+        }
         /* require new DI record to be created in SDP_SetLocalDiRecord */
         sdp_cb.server_db.di_primary_handle = 0;
 
         return (TRUE);
     } else {
         /* Find the record in the database */
-        for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-	    p_rec = list_node(p_node);
+        for (p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
+            p_rec = list_node(p_node);
             if (p_rec->record_handle == handle) {
                 /* Found it. Shift everything up one */
                 list_remove(sdp_cb.server_db.p_record_list, p_rec);
@@ -374,7 +376,7 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
                 SDP_TRACE_DEBUG("SDP_DeleteRecord ok, num_records:%d\n", sdp_cb.server_db.num_records);
                 /* if we're deleting the primary DI record, clear the */
                 /* value in the control block */
-                if ( sdp_cb.server_db.di_primary_handle == handle ) {
+                if (sdp_cb.server_db.di_primary_handle == handle) {
                     sdp_cb.server_db.di_primary_handle = 0;
                 }
 

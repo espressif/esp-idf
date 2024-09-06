@@ -102,6 +102,13 @@ config BT_L2CAP_ENABLED
         This enables the Logical Link Control and Adaptation Layer Protocol.
         Only supported classic bluetooth.
 
+config BT_SDP_COMMON_ENABLED
+    bool "BT SDP COMMON"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables common SDP operation, such as SDP record creation and deletion.
+
 menuconfig BT_HFP_ENABLE
     bool "Hands Free/Handset Profile"
     depends on BT_CLASSIC_ENABLED
@@ -148,7 +155,7 @@ menuconfig BT_HID_ENABLED
     depends on BT_CLASSIC_ENABLED
     default n
     help
-        This enables the BT HID Host
+        This enables the BT HID functionalities
 
 config BT_HID_HOST_ENABLED
     bool "Classic BT HID Host"

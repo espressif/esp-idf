@@ -242,7 +242,7 @@ static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
 
 static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
 {
-    esp_bluetooth_sdp_record_t record = {0};
+    esp_bluetooth_sdp_raw_record_t record = {0};
     esp_sdp_cb_param_t *sdp_param = (esp_sdp_cb_param_t *)p_param;
 
     switch (event) {
@@ -250,14 +250,16 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         ESP_LOGI(SDP_TAG, "ESP_SDP_INIT_EVT: status:%d", sdp_param->init.status);
         if (sdp_param->init.status == ESP_SDP_SUCCESS) {
             record.hdr.type = ESP_SDP_TYPE_RAW;
-            record.hdr.uuid.len = sizeof(UUID_UNKNOWN);
-            memcpy(record.hdr.uuid.uuid.uuid128, UUID_UNKNOWN, sizeof(UUID_UNKNOWN));
             record.hdr.service_name_length = strlen(sdp_service_name) + 1;
             record.hdr.service_name = sdp_service_name;
             record.hdr.rfcomm_channel_number = BT_UNUSED_RFCOMM;
             record.hdr.l2cap_psm = BT_L2CAP_DYNMIC_PSM;
             record.hdr.profile_version = BT_UNKONWN_PROFILE_VERSION;
-            esp_sdp_create_record(&record);
+            record.uuid.len = sizeof(UUID_UNKNOWN);
+            memcpy(record.uuid.uuid.uuid128, UUID_UNKNOWN, sizeof(UUID_UNKNOWN));
+            record.user1_ptr = NULL;
+            record.user1_ptr_len = 0;
+            esp_sdp_create_record((esp_bluetooth_sdp_record_t *)&record);
         }
         break;
     case ESP_SDP_DEINIT_EVT:
