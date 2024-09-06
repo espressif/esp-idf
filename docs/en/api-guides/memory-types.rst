@@ -42,7 +42,7 @@ Constant data may also be placed into DRAM, for example if it is used in an non-
 
 The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noinit`` section. The values placed into this section will not be initialized at startup and should keep its value after software restart.
 
-.. only:: esp32
+.. only:: SOC_SPIRAM_SUPPORTED
 
     By applying the ``EXT_RAM_NOINIT_ATTR`` macro, non-initialized value could also be placed in external RAM. To do this, the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
 

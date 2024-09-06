@@ -42,7 +42,7 @@ DRAM（数据 RAM）
 
 可以将 ``__NOINIT_ATTR`` 宏用作属性，从而将数据放入 ``.noinit`` 部分。放入该部分的值在启动时不会被初始化，在软件重启后也会保持值不变。
 
-.. only:: esp32
+.. only:: SOC_SPIRAM_SUPPORTED
 
    通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
 
