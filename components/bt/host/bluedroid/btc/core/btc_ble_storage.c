@@ -15,7 +15,7 @@
 
 #if (SMP_INCLUDED == TRUE)
 
-//the maximum nubmer of bonded devices
+//the maximum number of bonded devices
 #define BONED_DEVICES_MAX_COUNT (BTM_SEC_MAX_DEVICE_RECORDS)
 
 static void _btc_storage_save(void)
@@ -58,7 +58,7 @@ static void _btc_storage_save(void)
         addr_section_count ++;
         iter = btc_config_section_next(iter);
     }
-    /*exceeded the maximum nubmer of bonded devices, delete them */
+    /*exceeded the maximum number of bonded devices, delete them */
     if (need_remove_iter) {
         while(need_remove_iter != btc_config_section_end()) {
             const char *need_remove_section = btc_config_section_name(need_remove_iter);
@@ -954,6 +954,7 @@ bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, 
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num)
 {
     bt_bdaddr_t bd_addr;
+    int addr_t;
     char buffer[sizeof(tBTM_LE_KEY_VALUE)] = {0};
 
     btc_config_lock();
@@ -975,6 +976,14 @@ bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev
 
         string_to_bdaddr(name, &bd_addr);
         memcpy(bond_dev->bd_addr, bd_addr.address, sizeof(bt_bdaddr_t));
+        //get address type
+        if (_btc_storage_get_remote_addr_type((bt_bdaddr_t *)bond_dev->bd_addr, &addr_t) == BT_STATUS_SUCCESS) {
+            bond_dev->bd_addr_type = (uint8_t) addr_t;
+        } else {
+            // Set an invalid address type
+            bond_dev->bd_addr_type = 0xFF;
+            BTC_TRACE_ERROR("%s, %s get address type fail", __func__, name);
+        }
         //resolve the peer device long term key
         if (_btc_storage_get_ble_bonding_key(&bd_addr, BTM_LE_KEY_PENC, buffer, sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) {
             bond_dev->bond_key.key_mask |= ESP_BLE_ENC_KEY_MASK;
