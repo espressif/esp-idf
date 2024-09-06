@@ -89,7 +89,7 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal)
     }
     if (!hal->use_dma && hal->rx_buffer) {
         //Copy result out
-        spi_ll_read_buffer(hal->hw, hal->rx_buffer, hal->bitlen);
+        spi_ll_read_buffer(hal->hw, hal->rx_buffer, (hal->rcv_bitlen > hal->bitlen) ? hal->bitlen : hal->rcv_bitlen);
     }
 }
 
