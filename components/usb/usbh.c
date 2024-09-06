@@ -574,7 +574,7 @@ static inline void handle_ep0_clear(device_t *dev_obj)
 static inline void handle_prop_gone_evt(device_t *dev_obj)
 {
     // Flush EP0's pipe. Then propagate a USBH_EVENT_DEV_GONE event
-    ESP_LOGE(USBH_TAG, "Device %d gone", dev_obj->constant.address);
+    ESP_LOGD(USBH_TAG, "Device %d gone", dev_obj->constant.address);
     usbh_event_data_t event_data = {
         .event = USBH_EVENT_DEV_GONE,
         .dev_gone_data = {
