@@ -52,6 +52,8 @@ typedef struct parlio_tx_unit_t {
     gdma_channel_handle_t dma_chan; // DMA channel
     gdma_link_list_handle_t dma_link; // DMA link list handle
     size_t dma_nodes_num;           // number of DMA descriptor nodes
+    size_t int_mem_align; // Alignment for internal memory
+    size_t ext_mem_align; // Alignment for external memory
 #if CONFIG_PM_ENABLE
     char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
@@ -178,7 +180,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
     return ESP_OK;
 }
 
-static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
+static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -190,6 +192,14 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
         .owner_check = true,
     };
     gdma_apply_strategy(tx_unit->dma_chan, &gdma_strategy_conf);
+
+    // configure DMA transfer parameters
+    gdma_transfer_config_t trans_cfg = {
+        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : 16, // Enable DMA burst transfer for better performance,
+        .access_ext_mem = true, // support transmit PSRAM buffer
+    };
+    ESP_RETURN_ON_ERROR(gdma_config_transfer(tx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
+    gdma_get_alignment_constraints(tx_unit->dma_chan, &tx_unit->int_mem_align, &tx_unit->ext_mem_align);
 
     // create DMA link list
     size_t dma_nodes_num = tx_unit->dma_nodes_num;
@@ -244,6 +254,8 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     tx_unit->out_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
 #endif
     PARLIO_CLOCK_SRC_ATOMIC() {
+        // turn on the tx module clock to sync the register configuration to the module
+        parlio_ll_tx_enable_clock(hal->regs, true);
         parlio_ll_tx_set_clock_source(hal->regs, clk_src);
         // set clock division
         parlio_ll_tx_set_clock_div(hal->regs, &clk_div);
@@ -312,7 +324,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
 
     // install DMA service
-    ESP_GOTO_ON_ERROR(parlio_tx_unit_init_dma(unit), err, TAG, "install tx DMA failed");
+    ESP_GOTO_ON_ERROR(parlio_tx_unit_init_dma(unit, config), err, TAG, "install tx DMA failed");
 
     // reset fifo and core clock domain
     PARLIO_RCC_ATOMIC() {
@@ -343,8 +355,8 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
 
 #if SOC_PARLIO_TX_SIZE_BY_DMA
-    // Always use DMA EOF as the Parlio TX EOF
-    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+    // Always use DATA LEN EOF as the Parlio TX EOF
+    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
 #endif  // SOC_PARLIO_TX_SIZE_BY_DMA
 
     // clear any pending interrupt
@@ -527,6 +539,21 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
 #endif // !SOC_PARLIO_TRANS_BIT_ALIGN
 
+    size_t cache_line_size = 0;
+    size_t alignment = 0;
+    uint8_t cache_type = 0;
+    esp_ptr_external_ram(payload) ? (alignment = tx_unit->ext_mem_align, cache_type = CACHE_LL_LEVEL_EXT_MEM) : (alignment = tx_unit->int_mem_align, cache_type = CACHE_LL_LEVEL_INT_MEM);
+    // check alignment
+    ESP_RETURN_ON_FALSE(((uint32_t)payload & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload address not aligned");
+    ESP_RETURN_ON_FALSE((payload_bits & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload size not aligned");
+    cache_line_size = cache_hal_get_cache_line_size(cache_type, CACHE_TYPE_DATA);
+
+    if (cache_line_size > 0) {
+        // Write back to cache to synchronize the cache before DMA start
+        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, (payload_bits + 7) / 8,
+                                            ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
+    }
+
     TickType_t queue_wait_ticks = portMAX_DELAY;
     if (config->flags.queue_nonblocking) {
         queue_wait_ticks = 0;
@@ -545,11 +572,6 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     t->payload = payload;
     t->payload_bits = payload_bits;
     t->idle_value = config->idle_value & tx_unit->idle_value_mask;
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // Write back to cache to synchronize the cache before DMA start
-    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, (payload_bits + 7) / 8,
-                                        ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
-#endif  // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
     // send the transaction descriptor to progress queue
     ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE,
