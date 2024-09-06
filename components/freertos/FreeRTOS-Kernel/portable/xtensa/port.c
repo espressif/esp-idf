@@ -497,9 +497,13 @@ void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNesting[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
