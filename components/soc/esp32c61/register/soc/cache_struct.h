@@ -5100,12 +5100,12 @@ typedef union {
     struct {
         /** l1_icache0_unalloc_clr : HRO; bitpos: [0]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 icache0 where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_icache0_unalloc_clr:1;
         /** l1_icache1_unalloc_clr : HRO; bitpos: [1]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 icache1 where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_icache1_unalloc_clr:1;
         /** l1_icache2_unalloc_clr : HRO; bitpos: [2]; default: 0;
@@ -5118,7 +5118,7 @@ typedef union {
         uint32_t l1_icache3_unalloc_clr:1;
         /** l1_cache_unalloc_clr : R/W; bitpos: [4]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 cache where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_cache_unalloc_clr:1;
         uint32_t reserved_5:27;
@@ -5134,7 +5134,7 @@ typedef union {
         uint32_t reserved_0:5;
         /** l2_cache_unalloc_clr : HRO; bitpos: [5]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l2 icache where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l2_cache_unalloc_clr:1;
         uint32_t reserved_6:26;

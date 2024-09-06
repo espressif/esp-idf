@@ -81,7 +81,7 @@ typedef union {
         uint32_t fifo_empty:1;
         /** work_status : RO; bitpos: [2:1]; default: 0;
          *  Represent the state of the encoder: \\0: Idle state \\1: Working state\\ 2: Wait
-         *  state becasue hart is halted or in reset \\3: Lost state\\
+         *  state because hart is halted or in reset \\3: Lost state\\
          */
         uint32_t work_status:2;
         uint32_t reserved_3:29;
@@ -184,7 +184,7 @@ typedef union {
          */
         uint32_t dm_trigger_ena:1;
         /** reset_ena : R/W; bitpos: [1]; default: 0;
-         *  Configure whether to reset, when enabeld, if cpu have reset, the encoder will
+         *  Configure whether to reset, when enabled, if cpu have reset, the encoder will
          *  output a packet to report the address of the last instruction, and upon reset
          *  deassertion, the encoder start again.\\0: Disable\\0: Enable\\
          */
@@ -202,7 +202,7 @@ typedef union {
          */
         uint32_t full_address:1;
         /** implicit_except : R/W; bitpos: [5]; default: 0;
-         *  Configure whether or not enabel implicit exception mode. When enabled,, do not sent
+         *  Configure whether or not enable implicit exception mode. When enabled,, do not sent
          *  exception address, only exception cause in exception packets.\\1: enabled\\0:
          *  disabled\\
          */
@@ -381,7 +381,7 @@ typedef union {
 typedef union {
     struct {
         /** hburst : R/W; bitpos: [2:0]; default: 0;
-         *  Configures the AHB burst mode. \\0: SIGNLE \\1: INCR(length not defined) \\2:INCR4
+         *  Configures the AHB burst mode. \\0: SINGLE \\1: INCR(length not defined) \\2:INCR4
          *  \\4:INCR8 \\Others:Invalid
          */
         uint32_t hburst:3;
@@ -404,7 +404,7 @@ typedef union {
         /** clk_en : R/W; bitpos: [0]; default: 1;
          *  Configures register clock gating. \\0: Support clock only when the application
          *  writes registers to save power. \\1:Always force the clock on for registers \\ This
-         *  bit does't affect register access.
+         *  bit doesn't affect register access.
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;

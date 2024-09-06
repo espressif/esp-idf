@@ -4077,7 +4077,7 @@ extern "C" {
 #define CACHE_L1_UNALLOCATE_BUFFER_CLEAR_REG (DR_REG_CACHE_BASE + 0x254)
 /** CACHE_L1_ICACHE0_UNALLOC_CLR : HRO; bitpos: [0]; default: 0;
  *  The bit is used to clear the unallocate request buffer of l1 icache0 where the
- *  unallocate request is responsed but not completed.
+ *  unallocate request is responded but not completed.
  */
 #define CACHE_L1_ICACHE0_UNALLOC_CLR    (BIT(0))
 #define CACHE_L1_ICACHE0_UNALLOC_CLR_M  (CACHE_L1_ICACHE0_UNALLOC_CLR_V << CACHE_L1_ICACHE0_UNALLOC_CLR_S)
@@ -4085,7 +4085,7 @@ extern "C" {
 #define CACHE_L1_ICACHE0_UNALLOC_CLR_S  0
 /** CACHE_L1_ICACHE1_UNALLOC_CLR : HRO; bitpos: [1]; default: 0;
  *  The bit is used to clear the unallocate request buffer of l1 icache1 where the
- *  unallocate request is responsed but not completed.
+ *  unallocate request is responded but not completed.
  */
 #define CACHE_L1_ICACHE1_UNALLOC_CLR    (BIT(1))
 #define CACHE_L1_ICACHE1_UNALLOC_CLR_M  (CACHE_L1_ICACHE1_UNALLOC_CLR_V << CACHE_L1_ICACHE1_UNALLOC_CLR_S)
@@ -4107,7 +4107,7 @@ extern "C" {
 #define CACHE_L1_ICACHE3_UNALLOC_CLR_S  3
 /** CACHE_L1_CACHE_UNALLOC_CLR : R/W; bitpos: [4]; default: 0;
  *  The bit is used to clear the unallocate request buffer of l1 cache where the
- *  unallocate request is responsed but not completed.
+ *  unallocate request is responded but not completed.
  */
 #define CACHE_L1_CACHE_UNALLOC_CLR    (BIT(4))
 #define CACHE_L1_CACHE_UNALLOC_CLR_M  (CACHE_L1_CACHE_UNALLOC_CLR_V << CACHE_L1_CACHE_UNALLOC_CLR_S)
@@ -5937,7 +5937,7 @@ extern "C" {
 #define CACHE_L2_UNALLOCATE_BUFFER_CLEAR_REG (DR_REG_CACHE_BASE + 0x3b0)
 /** CACHE_L2_CACHE_UNALLOC_CLR : HRO; bitpos: [5]; default: 0;
  *  The bit is used to clear the unallocate request buffer of l2 icache where the
- *  unallocate request is responsed but not completed.
+ *  unallocate request is responded but not completed.
  */
 #define CACHE_L2_CACHE_UNALLOC_CLR    (BIT(5))
 #define CACHE_L2_CACHE_UNALLOC_CLR_M  (CACHE_L2_CACHE_UNALLOC_CLR_V << CACHE_L2_CACHE_UNALLOC_CLR_S)

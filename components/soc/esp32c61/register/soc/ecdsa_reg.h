@@ -211,7 +211,7 @@ extern "C" {
  */
 #define ECDSA_START_REG (DR_REG_ECDSA_BASE + 0x1c)
 /** ECDSA_START : WT; bitpos: [0]; default: 0;
- *  Write 1 to start caculation of ECDSA Accelerator. This bit will be self-cleared
+ *  Write 1 to start calculation of ECDSA Accelerator. This bit will be self-cleared
  *  after configuration.
  */
 #define ECDSA_START    (BIT(0))
@@ -299,7 +299,7 @@ extern "C" {
  */
 #define ECDSA_SHA_START_REG (DR_REG_ECDSA_BASE + 0x210)
 /** ECDSA_SHA_START : WT; bitpos: [0]; default: 0;
- *  Write 1 to start the first caculation of SHA Calculator in ECDSA Accelerator. This
+ *  Write 1 to start the first calculation of SHA Calculator in ECDSA Accelerator. This
  *  bit will be self-cleared after configuration.
  */
 #define ECDSA_SHA_START    (BIT(0))
@@ -312,7 +312,7 @@ extern "C" {
  */
 #define ECDSA_SHA_CONTINUE_REG (DR_REG_ECDSA_BASE + 0x214)
 /** ECDSA_SHA_CONTINUE : WT; bitpos: [0]; default: 0;
- *  Write 1 to start the latter caculation of SHA Calculator in ECDSA Accelerator. This
+ *  Write 1 to start the latter calculation of SHA Calculator in ECDSA Accelerator. This
  *  bit will be self-cleared after configuration.
  */
 #define ECDSA_SHA_CONTINUE    (BIT(0))

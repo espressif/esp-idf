@@ -76,7 +76,7 @@ extern "C" {
 #define TRACE_FIFO_EMPTY_S  0
 /** TRACE_WORK_STATUS : RO; bitpos: [2:1]; default: 0;
  *  Represent the state of the encoder: \\0: Idle state \\1: Working state\\ 2: Wait
- *  state becasue hart is halted or in reset \\3: Lost state\\
+ *  state because hart is halted or in reset \\3: Lost state\\
  */
 #define TRACE_WORK_STATUS    0x00000003U
 #define TRACE_WORK_STATUS_M  (TRACE_WORK_STATUS_V << TRACE_WORK_STATUS_S)
@@ -186,7 +186,7 @@ extern "C" {
 #define TRACE_DM_TRIGGER_ENA_V  0x00000001U
 #define TRACE_DM_TRIGGER_ENA_S  0
 /** TRACE_RESET_ENA : R/W; bitpos: [1]; default: 0;
- *  Configure whether to reset, when enabeld, if cpu have reset, the encoder will
+ *  Configure whether to reset, when enabled, if cpu have reset, the encoder will
  *  output a packet to report the address of the last instruction, and upon reset
  *  deassertion, the encoder start again.\\0: Disable\\0: Enable\\
  */
@@ -216,7 +216,7 @@ extern "C" {
 #define TRACE_FULL_ADDRESS_V  0x00000001U
 #define TRACE_FULL_ADDRESS_S  4
 /** TRACE_IMPLICIT_EXCEPT : R/W; bitpos: [5]; default: 0;
- *  Configure whether or not enabel implicit exception mode. When enabled,, do not sent
+ *  Configure whether or not enable implicit exception mode. When enabled,, do not sent
  *  exception address, only exception cause in exception packets.\\1: enabled\\0:
  *  disabled\\
  */
@@ -418,7 +418,7 @@ extern "C" {
  */
 #define TRACE_AHB_CONFIG_REG (DR_REG_TRACE_BASE + 0x40)
 /** TRACE_HBURST : R/W; bitpos: [2:0]; default: 0;
- *  Configures the AHB burst mode. \\0: SIGNLE \\1: INCR(length not defined) \\2:INCR4
+ *  Configures the AHB burst mode. \\0: SINGLE \\1: INCR(length not defined) \\2:INCR4
  *  \\4:INCR8 \\Others:Invalid
  */
 #define TRACE_HBURST    0x00000007U
@@ -440,7 +440,7 @@ extern "C" {
 /** TRACE_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures register clock gating. \\0: Support clock only when the application
  *  writes registers to save power. \\1:Always force the clock on for registers \\ This
- *  bit does't affect register access.
+ *  bit doesn't affect register access.
  */
 #define TRACE_CLK_EN    (BIT(0))
 #define TRACE_CLK_EN_M  (TRACE_CLK_EN_V << TRACE_CLK_EN_S)

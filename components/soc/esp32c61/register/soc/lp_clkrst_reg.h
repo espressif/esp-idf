@@ -211,7 +211,7 @@ extern "C" {
 #define LP_CLKRST_ANA_PERI_RESET_EN_S  31
 
 /** LP_CLKRST_RESET_CAUSE_REG register
- *  Represents the reset casue
+ *  Represents the reset cause
  */
 #define LP_CLKRST_RESET_CAUSE_REG (DR_REG_LP_CLKRST_BASE + 0x10)
 /** LP_CLKRST_RESET_CAUSE : RO; bitpos: [4:0]; default: 0;

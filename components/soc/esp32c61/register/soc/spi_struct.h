@@ -819,7 +819,7 @@ typedef union {
         /** clk_equ_sysclk : R/W; bitpos: [31]; default: 1;
          *  Configures whether or not the SPI_CLK is equal to APB_CLK in master transfer.\\
          *  0: SPI_CLK is divided from APB_CLK.\\
-         *  1: SPI_CLK is eqaul to APB_CLK.\\
+         *  1: SPI_CLK is equal to APB_CLK.\\
          *  Can be configured in CONF state.
          */
         uint32_t clk_equ_sysclk:1;
