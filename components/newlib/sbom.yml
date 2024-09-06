@@ -4,3 +4,6 @@ cpe: cpe:2.3:a:newlib_project:newlib:{}:*:*:*:*:*:*:*
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: Red Hat Incorporated'
 description: An open-source C standard library implementation with additional features and patches from Espressif.
+cve-exclude-list:
+  - cve: CVE-2024-30949
+    reason: May affect RISCV binaries that are linked with libgloss. IDF does not link against this library.
