@@ -108,7 +108,7 @@ def detect_shell(args: Any) -> str:
     while True:
         parent_pid = psutil.Process(current_pid).ppid()
         parent_name = psutil.Process(parent_pid).name()
-        if not parent_name.startswith('python'):
+        if not parent_name.lower().startswith('python'):
             detected_shell_name = parent_name
             conf.DETECTED_SHELL_PATH = psutil.Process(parent_pid).exe()
             break
