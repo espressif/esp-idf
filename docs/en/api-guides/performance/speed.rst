@@ -299,15 +299,20 @@ Improving Network Speed
 Improving I/O Performance
 -------------------------
 
-Using standard C library functions like ``fread`` and ``fwrite`` instead of platform specific unbuffered syscalls such as ``read`` and ``write`` can be slow.These functions are designed to be portable, so they are not necessarily optimized for speed, have a certain overhead and are buffered.
+Using standard C library functions like ``fread`` and ``fwrite`` instead of platform-specific unbuffered syscalls such as ``read`` and ``write``, may result in slower performance.
 
-:doc:`/api-reference/storage/fatfs` specific information and tips:
+The ``fread`` and ``fwrite`` functions are designed for portability rather than speed, introducing some overhead due to their buffered nature. Check the example :example:`storage/fatfsgen` to see how to use these two functions.
+
+In contrast, the ``read`` and ``write`` functions are standard POSIX APIs that can be used directly when working with FatFs through VFS, with ESP-IDF handling the underlying implementation. Check the example :example:`storage/perf_benchmark` to see how to use the two functions.
+
+Additional tips are provided below, and further details can be found in :doc:`/api-reference/storage/fatfs`.
 
 .. list::
 
-    - Maximum size of the R/W request = FatFS cluster size (allocation unit size).
-    - Use ``read`` and ``write`` instead of ``fread`` and ``fwrite``.
-    - To increase speed of buffered reading functions like ``fread`` and ``fgets``, you can increase a size of the file buffer (Newlib's default is 128 bytes) to a higher number like 4096, 8192 or 16384. This can be done locally via the ``setvbuf`` function used on a certain file pointer or globally applied to all files via modifying :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE`.
+    - The maximum size of a read/write request is equal to the FatFS cluster size (allocation unit size).
+    - For better performance, prefer using ``read`` and ``write`` over ``fread`` and ``fwrite``.
+    - To improve the speed of buffered reading functions like ``fread`` and ``fgets``, consider increasing the file buffer size. The default size in Newlib is 128 bytes, but you can increase it to 4096, 8192, or 16384 bytes. This can be made locally using the ``setvbuf`` function for a specific file pointer or globally by modifying the ``CONFIG_FATFS_VFS_FSTAT_BLKSIZE`` setting.
 
         .. note::
-            Setting a bigger buffer size also increases the heap memory usage.
+
+            Increasing the buffer size will also increase heap memory usage.
