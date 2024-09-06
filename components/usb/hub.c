@@ -442,6 +442,20 @@ static esp_err_t root_port_recycle(void)
     return ESP_OK;
 }
 
+static esp_err_t root_port_disable(void)
+{
+    hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
+    HUB_DRIVER_CHECK(port_state == HCD_PORT_STATE_ENABLED, ESP_ERR_INVALID_STATE);
+
+    HUB_DRIVER_ENTER_CRITICAL();
+    p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_ROOT_REQ;
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
+    return ESP_OK;
+}
+
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------
 
 esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
@@ -604,8 +618,9 @@ esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port
         ret = hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_RESET);
         if (ret != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to issue root port reset");
+        } else {
+            ret = dev_tree_node_reset_completed(NULL, 0);
         }
-        ret = dev_tree_node_reset_completed(NULL, 0);
     } else {
 #if ENABLE_USB_HUBS
         ext_hub_handle_t ext_hub_hdl = NULL;
@@ -632,6 +647,26 @@ esp_err_t hub_port_active(usb_device_handle_t parent_dev_hdl, uint8_t parent_por
         ext_hub_handle_t ext_hub_hdl = NULL;
         ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
         ret = ext_hub_port_active(ext_hub_hdl, parent_port_num);
+#else
+        ESP_LOGW(HUB_DRIVER_TAG, "Activating External Port is not available (External Hub support disabled)");
+        ret = ESP_ERR_NOT_SUPPORTED;
+#endif // ENABLE_USB_HUBS
+    }
+    return ret;
+}
+
+esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num)
+{
+    esp_err_t ret;
+
+    if (parent_port_num == 0) {
+        ret = root_port_disable();
+    } else {
+#if ENABLE_USB_HUBS
+        // External Hub port
+        ext_hub_handle_t ext_hub_hdl = NULL;
+        ext_hub_get_handle(parent_dev_hdl, &ext_hub_hdl);
+        ret = ext_hub_port_disable(ext_hub_hdl, parent_port_num);
 #else
         ESP_LOGW(HUB_DRIVER_TAG, "Activating External Port is not available (External Hub support disabled)");
         ret = ESP_ERR_NOT_SUPPORTED;

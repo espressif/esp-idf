@@ -362,7 +362,6 @@ static void hub_event_callback(hub_event_data_t *event_data, void *arg)
         enum_start(event_data->connected.uid);
         break;
     case HUB_EVENT_RESET_COMPLETED:
-        // Proceed enumeration process
         ESP_ERROR_CHECK(enum_proceed(event_data->reset_completed.uid));
         break;
     case HUB_EVENT_DISCONNECTED:
@@ -386,6 +385,7 @@ static void enum_event_callback(enum_event_data_t *event_data, void *arg)
         // Enumeration process started
         break;
     case ENUM_EVENT_RESET_REQUIRED:
+        // Device may be gone, don't need to verify result
         hub_port_reset(event_data->reset_req.parent_dev_hdl, event_data->reset_req.parent_port_num);
         break;
     case ENUM_EVENT_COMPLETED:
@@ -395,7 +395,7 @@ static void enum_event_callback(enum_event_data_t *event_data, void *arg)
         ESP_ERROR_CHECK(usbh_devs_new_dev_event(event_data->complete.dev_hdl));
         break;
     case ENUM_EVENT_CANCELED:
-        // Enumeration canceled
+        hub_port_disable(event_data->canceled.parent_dev_hdl, event_data->canceled.parent_port_num);
         break;
     default:
         abort();    // Should never occur

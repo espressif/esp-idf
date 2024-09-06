@@ -43,6 +43,7 @@ typedef enum {
     ENUM_STAGE_GET_SHORT_DEV_DESC,          /**< Getting short dev desc (wLength is ENUM_SHORT_DESC_REQ_LEN) */
     ENUM_STAGE_CHECK_SHORT_DEV_DESC,        /**< Save bMaxPacketSize0 from the short dev desc. Update the MPS of the enum pipe */
     ENUM_STAGE_SECOND_RESET,                /**< Reset the device again (Workaround for old USB devices that get confused by the previous short dev desc request). */
+    ENUM_STAGE_SECOND_RESET_COMPLETE,       /**< Reset completed, re-trigger the FSM  */
     ENUM_STAGE_SET_ADDR,                    /**< Send SET_ADDRESS request */
     ENUM_STAGE_CHECK_ADDR,                  /**< Update the enum pipe's target address */
     ENUM_STAGE_SET_ADDR_RECOVERY,           /**< Wait SET ADDRESS recovery interval at least for 2ms due to usb_20, chapter 9.2.6.3 */
@@ -79,10 +80,11 @@ typedef enum {
 } enum_stage_t;
 
 const char *const enum_stage_strings[] = {
-    "NONE",
+    "IDLE",
     "GET_SHORT_DEV_DESC",
     "CHECK_SHORT_DEV_DESC",
     "SECOND_RESET",
+    "SECOND_RESET_COMPLETE",
     "SET_ADDR",
     "CHECK_ADDR",
     "SET_ADDR_RECOVERY",
@@ -129,18 +131,6 @@ typedef struct {
 
 typedef struct {
     struct {
-        union {
-            struct {
-                uint32_t processing: 1;             /**< Enumeration process is active */
-                uint32_t reserved31: 31;            /**< Reserved */
-            };
-            uint32_t val;
-        } flags;
-        enum_stage_t stage;                         /**< Current enumeration stage */
-        uint8_t next_dev_addr;                      /**< Device address for device under enumeration */
-    } dynamic;                                      /**< Dynamic members. Require a critical section */
-
-    struct {
         // Device related objects, initialized at start of a particular enumeration
         unsigned int dev_uid;                       /**< Unique device ID being enumerated */
         usb_device_handle_t dev_hdl;                /**< Handle of device being enumerated */
@@ -149,8 +139,10 @@ typedef struct {
         uint8_t parent_dev_addr;                    /**< Device's parent address */
         uint8_t parent_port_num;                    /**< Device's parent port number */
         // Parameters, updated during enumeration
+        enum_stage_t stage;                         /**< Current enumeration stage */
         enum_device_params_t dev_params;            /**< Parameters of device under enumeration */
         int expect_num_bytes;                       /**< Expected number of bytes for IN transfers stages. Set to 0 for OUT transfer */
+        uint8_t next_dev_addr;                      /**< Device address for device under enumeration */
     } single_thread;                                /**< Single thread members don't require a critical section so long as they are never accessed from multiple threads */
 
     struct {
@@ -169,27 +161,16 @@ typedef struct {
 } enum_driver_t;
 
 static enum_driver_t *p_enum_driver = NULL;
-static portMUX_TYPE enum_driver_lock = portMUX_INITIALIZER_UNLOCKED;
 
 const char *ENUM_TAG = "ENUM";
 
 // -----------------------------------------------------------------------------
 // ---------------------------- Helpers ----------------------------------------
 // -----------------------------------------------------------------------------
-#define ENUM_ENTER_CRITICAL()                     portENTER_CRITICAL(&enum_driver_lock)
-#define ENUM_EXIT_CRITICAL()                      portEXIT_CRITICAL(&enum_driver_lock)
-
 #define ENUM_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
             }                                                               \
-})
-
-#define ENUM_CHECK_FROM_CRIT(cond, ret_val) ({    \
-            if (!(cond)) {                                  \
-                ENUM_EXIT_CRITICAL();             \
-                return ret_val;                             \
-            }                                               \
 })
 
 // -----------------------------------------------------------------------------
@@ -199,13 +180,11 @@ static inline uint8_t get_next_dev_addr(void)
 {
     uint8_t ret = 0;
 
-    ENUM_ENTER_CRITICAL();
-    p_enum_driver->dynamic.next_dev_addr++;
-    if (p_enum_driver->dynamic.next_dev_addr > ENUM_MAX_ADDRESS) {
-        p_enum_driver->dynamic.next_dev_addr = ENUM_INIT_VALUE_DEV_ADDR;
+    p_enum_driver->single_thread.next_dev_addr++;
+    if (p_enum_driver->single_thread.next_dev_addr > ENUM_MAX_ADDRESS) {
+        p_enum_driver->single_thread.next_dev_addr = ENUM_INIT_VALUE_DEV_ADDR;
     }
-    ret = p_enum_driver->dynamic.next_dev_addr;
-    ENUM_EXIT_CRITICAL();
+    ret = p_enum_driver->single_thread.next_dev_addr;
 
     return ret;
 }
@@ -213,7 +192,7 @@ static inline uint8_t get_next_dev_addr(void)
 static uint8_t get_next_free_dev_addr(void)
 {
     usb_device_handle_t dev_hdl;
-    uint8_t new_dev_addr = p_enum_driver->dynamic.next_dev_addr;
+    uint8_t new_dev_addr = p_enum_driver->single_thread.next_dev_addr;
 
     while (1) {
         if (usbh_devs_open(new_dev_addr, &dev_hdl) == ESP_ERR_NOT_FOUND) {
@@ -295,7 +274,7 @@ static esp_err_t select_active_configuration(void)
     return ESP_OK;
 }
 
-static esp_err_t second_reset(void)
+static esp_err_t second_reset_request(void)
 {
     // Notify USB Host
     enum_event_data_t event_data = {
@@ -353,8 +332,10 @@ static inline void get_index_langid_for_stage(enum_stage_t stage, uint8_t *index
  * @brief Control request: General
  *
  * Prepares the Control request byte-data transfer for current stage of the enumerator
+ *
+ * @param[in] stage  Enumeration stage
  */
-static void control_request_general(void)
+static void control_request_general(enum_stage_t stage)
 {
     usb_transfer_t *transfer = &p_enum_driver->constant.urb->transfer;
     uint8_t ctrl_ep_mps = p_enum_driver->single_thread.dev_params.bMaxPacketSize0;
@@ -362,7 +343,7 @@ static void control_request_general(void)
     uint8_t bConfigurationValue = p_enum_driver->single_thread.dev_params.bConfigurationValue;
     uint8_t desc_index = get_configuration_descriptor_index(bConfigurationValue);
 
-    switch (p_enum_driver->dynamic.stage) {
+    switch (stage) {
     case ENUM_STAGE_GET_SHORT_DEV_DESC: {
         // Initialize a short device descriptor request
         USB_SETUP_PACKET_INIT_GET_DEVICE_DESC((usb_setup_packet_t *)transfer->data_buffer);
@@ -420,11 +401,12 @@ static void control_request_general(void)
  * @brief Control request: String
  *
  * Prepares the Control request string-data transfer for current stage of the enumerator
+ *
+ * @param[in] stage  Enumeration stage
  */
-static void control_request_string(void)
+static void control_request_string(enum_stage_t stage)
 {
     usb_transfer_t *transfer = &p_enum_driver->constant.urb->transfer;
-    enum_stage_t stage = p_enum_driver->dynamic.stage;
     uint8_t ctrl_ep_mps = p_enum_driver->single_thread.dev_params.bMaxPacketSize0;
     uint8_t bLength = p_enum_driver->single_thread.dev_params.str_desc_bLength;
     uint8_t index = 0;
@@ -707,11 +689,7 @@ static esp_err_t parse_full_str_desc(void)
     usb_device_handle_t dev_hdl = p_enum_driver->single_thread.dev_hdl;
     const usb_str_desc_t *str_desc = (usb_str_desc_t *)(transfer->data_buffer + sizeof(usb_setup_packet_t));
 
-    ENUM_ENTER_CRITICAL();
-    enum_stage_t stage = p_enum_driver->dynamic.stage;
-    ENUM_EXIT_CRITICAL();
-
-    return usbh_dev_set_str_desc(dev_hdl, str_desc, get_str_index(stage));
+    return usbh_dev_set_str_desc(dev_hdl, str_desc, get_str_index(p_enum_driver->single_thread.stage));
 }
 
 static esp_err_t check_config(void)
@@ -728,19 +706,21 @@ static esp_err_t check_config(void)
  * @brief Control request stage
  *
  * Based on the stage, does prepare General or String Control request
+ *
+ * @param[in] stage  Enumeration stage
  */
-static esp_err_t control_request(void)
+static esp_err_t control_request(enum_stage_t stage)
 {
     esp_err_t ret;
 
-    switch (p_enum_driver->dynamic.stage) {
+    switch (stage) {
     case ENUM_STAGE_GET_SHORT_DEV_DESC:
     case ENUM_STAGE_SET_ADDR:
     case ENUM_STAGE_GET_FULL_DEV_DESC:
     case ENUM_STAGE_GET_SHORT_CONFIG_DESC:
     case ENUM_STAGE_GET_FULL_CONFIG_DESC:
     case ENUM_STAGE_SET_CONFIG:
-        control_request_general();
+        control_request_general(stage);
         break;
     case ENUM_STAGE_GET_SHORT_LANGID_TABLE:
     case ENUM_STAGE_GET_FULL_LANGID_TABLE:
@@ -750,7 +730,7 @@ static esp_err_t control_request(void)
     case ENUM_STAGE_GET_FULL_PROD_STR_DESC:
     case ENUM_STAGE_GET_SHORT_SER_STR_DESC:
     case ENUM_STAGE_GET_FULL_SER_STR_DESC:
-        control_request_string();
+        control_request_string(stage);
         break;
     default:    // Should never occur
         ret = ESP_ERR_INVALID_STATE;
@@ -764,7 +744,7 @@ static esp_err_t control_request(void)
                  p_enum_driver->single_thread.parent_dev_addr,
                  p_enum_driver->single_thread.parent_port_num,
                  ret,
-                 enum_stage_strings[p_enum_driver->dynamic.stage]);
+                 enum_stage_strings[stage]);
     }
 
     return ret;
@@ -774,8 +754,10 @@ static esp_err_t control_request(void)
  * @brief Control request response handling stage
  *
  * Based on the stage, does parse the response data
+ *
+ * @param[in] stage  Enumeration stage
  */
-static esp_err_t control_response_handling(void)
+static esp_err_t control_response_handling(enum_stage_t stage)
 {
     esp_err_t ret = ESP_FAIL;
     // Check transfer status
@@ -785,9 +767,12 @@ static esp_err_t control_response_handling(void)
     if (ctrl_xfer->status != USB_TRANSFER_STATUS_COMPLETED) {
         ESP_LOGE(ENUM_TAG, "Bad transfer status %d: %s",
                  ctrl_xfer->status,
-                 enum_stage_strings[p_enum_driver->dynamic.stage]);
+                 enum_stage_strings[stage]);
         return ret;
     }
+
+    // Transfer completed, verbose data in ESP_LOG_VERBOSE is set
+    ESP_LOG_BUFFER_HEXDUMP(ENUM_TAG, ctrl_xfer->data_buffer, ctrl_xfer->actual_num_bytes, ESP_LOG_VERBOSE);
 
     // Check Control IN transfer returned the expected correct number of bytes
     if (expected_num_bytes != 0 && expected_num_bytes != ctrl_xfer->actual_num_bytes) {
@@ -806,7 +791,7 @@ static esp_err_t control_response_handling(void)
         // This violates the USB specs chapter 9.3.5, but we can continue
     }
 
-    switch (p_enum_driver->dynamic.stage) {
+    switch (stage) {
     case ENUM_STAGE_CHECK_SHORT_DEV_DESC:
         ret = parse_short_dev_desc();
         break;
@@ -862,11 +847,12 @@ static esp_err_t stage_cancel(void)
     usb_device_handle_t parent_dev_hdl = p_enum_driver->single_thread.parent_dev_hdl;
     uint8_t parent_port_num = p_enum_driver->single_thread.parent_port_num;
 
-    // Close the device
-    ESP_ERROR_CHECK(usbh_dev_enum_unlock(dev_hdl));
-    ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
+    if (dev_hdl) {
+        ESP_ERROR_CHECK(usbh_dev_enum_unlock(dev_hdl));
+        ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
+    }
 
-    // Release device from enumerator
+    // Clean up variables device from enumerator
     p_enum_driver->single_thread.dev_uid = 0;
     p_enum_driver->single_thread.dev_hdl = NULL;
     p_enum_driver->single_thread.parent_dev_hdl = NULL;
@@ -875,10 +861,7 @@ static esp_err_t stage_cancel(void)
 
     p_enum_driver->constant.urb->transfer.context = NULL;
 
-    ENUM_ENTER_CRITICAL();
-    p_enum_driver->dynamic.flags.processing = 0;
-    ENUM_EXIT_CRITICAL();
-
+    // Propagate the event
     enum_event_data_t event_data = {
         .event = ENUM_EVENT_CANCELED,
         .canceled = {
@@ -925,10 +908,6 @@ static esp_err_t stage_complete(void)
     // Increase device address to use new value during the next enumeration process
     get_next_dev_addr();
 
-    ENUM_ENTER_CRITICAL();
-    p_enum_driver->dynamic.flags.processing = 0;
-    ENUM_EXIT_CRITICAL();
-
     ESP_LOGD(ENUM_TAG, "[%d:%d] Processing complete, new device address %d",
              parent_dev_addr,
              parent_port_num,
@@ -952,6 +931,53 @@ static esp_err_t stage_complete(void)
 // -----------------------------------------------------------------------------
 
 /**
+ * @brief Returns the process requirement flag for the stage
+ *
+ * When stage doesn't have a control transfer callback which request processing, request process should be triggered immediately
+ *
+ * @param[in] stage  Enumeration process stage
+ * @return Processing for the stage is:
+ * @retval true Required
+ * @retval false Not required
+ */
+static bool stage_need_process(enum_stage_t stage)
+{
+    bool need_process_cb = false;
+
+    switch (stage) {
+    // Transfer submission stages
+    // Stages have transfer completion callback which will re-trigger the processing
+    case ENUM_STAGE_GET_SHORT_DEV_DESC:
+    case ENUM_STAGE_SET_ADDR:
+    case ENUM_STAGE_GET_FULL_DEV_DESC:
+    case ENUM_STAGE_GET_SHORT_CONFIG_DESC:
+    case ENUM_STAGE_GET_FULL_CONFIG_DESC:
+    case ENUM_STAGE_SET_CONFIG:
+    case ENUM_STAGE_GET_SHORT_LANGID_TABLE:
+    case ENUM_STAGE_GET_FULL_LANGID_TABLE:
+    case ENUM_STAGE_GET_SHORT_MANU_STR_DESC:
+    case ENUM_STAGE_GET_FULL_MANU_STR_DESC:
+    case ENUM_STAGE_GET_SHORT_PROD_STR_DESC:
+    case ENUM_STAGE_GET_FULL_PROD_STR_DESC:
+    case ENUM_STAGE_GET_SHORT_SER_STR_DESC:
+    case ENUM_STAGE_GET_FULL_SER_STR_DESC:
+    // Other stages
+    // Stages, require the re-triggering the processing
+    case ENUM_STAGE_SECOND_RESET:
+    case ENUM_STAGE_SET_ADDR_RECOVERY:
+    case ENUM_STAGE_SELECT_CONFIG:
+    case ENUM_STAGE_COMPLETE:
+    case ENUM_STAGE_CANCEL:
+        need_process_cb = true;
+        break;
+    default:
+        break;
+    }
+
+    return need_process_cb;
+}
+
+/**
  * @brief Set next stage
  *
  * Does set next stage, based on the successful completion of last stage
@@ -959,10 +985,14 @@ static esp_err_t stage_complete(void)
  * Some stages (i.e. string descriptors) are allowed to fail
  *
  * @param[in] last_stage_pass  Flag of successful completion last stage
+ *
+ * @return Processing for the next stage is:
+ * @retval true     Required
+ * @retval false    Not required
  */
-static void set_next_stage(bool last_stage_pass)
+static bool set_next_stage(bool last_stage_pass)
 {
-    enum_stage_t last_stage = p_enum_driver->dynamic.stage;
+    enum_stage_t last_stage = p_enum_driver->single_thread.stage;
     enum_stage_t next_stage;
 
     while (1) {
@@ -976,12 +1006,10 @@ static void set_next_stage(bool last_stage_pass)
                      p_enum_driver->single_thread.parent_port_num,
                      enum_stage_strings[last_stage]);
             // Get next stage
-            if (last_stage == ENUM_STAGE_COMPLETE) {
-                // Complete stage are terminal, move state machine to IDLE
+            if (last_stage == ENUM_STAGE_COMPLETE ||
+                    last_stage == ENUM_STAGE_CANCEL) {
+                // Stages are terminal, move state machine to IDLE
                 next_stage = ENUM_STAGE_IDLE;
-            } else if (last_stage == ENUM_STAGE_CANCEL) {
-                // CANCEL can be called anytime, keep the state and handle in the next process callback
-                next_stage = last_stage;
             } else {
                 // Simply increment to get the next stage
                 next_stage = last_stage + 1;
@@ -994,6 +1022,8 @@ static void set_next_stage(bool last_stage_pass)
             // These stages cannot fail
             assert(last_stage != ENUM_STAGE_SET_ADDR_RECOVERY &&
                    last_stage != ENUM_STAGE_SELECT_CONFIG &&
+                   last_stage != ENUM_STAGE_SECOND_RESET &&
+                   last_stage != ENUM_STAGE_SECOND_RESET_COMPLETE &&
                    last_stage != ENUM_STAGE_COMPLETE &&
                    last_stage != ENUM_STAGE_CANCEL);
 
@@ -1073,9 +1103,8 @@ static void set_next_stage(bool last_stage_pass)
             break;
         }
     }
-    ENUM_ENTER_CRITICAL();
-    p_enum_driver->dynamic.stage = next_stage;
-    ENUM_EXIT_CRITICAL();
+    p_enum_driver->single_thread.stage = next_stage;
+    return stage_need_process(next_stage);
 }
 
 /**
@@ -1092,25 +1121,6 @@ static void enum_control_transfer_complete(usb_transfer_t *ctrl_xfer)
     assert(ctrl_xfer->context);
     assert(p_enum_driver->single_thread.dev_hdl == ctrl_xfer->context);
 
-    switch (ctrl_xfer->status) {
-    case USB_TRANSFER_STATUS_COMPLETED:
-        ESP_LOG_BUFFER_HEXDUMP(ENUM_TAG, ctrl_xfer->data_buffer, ctrl_xfer->actual_num_bytes, ESP_LOG_VERBOSE);
-        goto process;
-        break;
-    case USB_TRANSFER_STATUS_STALL:
-        // Device can STALL some requests if it doesn't have the requested descriptors
-        goto process;
-        break;
-    default:
-        ESP_LOGE(ENUM_TAG, "[%d:%d] Control transfer failed, status=%d",
-                 p_enum_driver->single_thread.parent_dev_addr,
-                 p_enum_driver->single_thread.parent_port_num,
-                 ctrl_xfer->status);
-        break;
-    }
-    // Cancel enumeration process
-    enum_cancel(p_enum_driver->single_thread.dev_uid);
-process:
     // Request processing
     p_enum_driver->constant.proc_req_cb(USB_PROC_REQ_SOURCE_ENUM, false, p_enum_driver->constant.proc_req_cb_arg);
 }
@@ -1121,9 +1131,7 @@ process:
 
 esp_err_t enum_install(enum_config_t *config, void **client_ret)
 {
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver == NULL, ESP_ERR_INVALID_STATE);
-    ENUM_EXIT_CRITICAL();
+    ENUM_CHECK(p_enum_driver == NULL, ESP_ERR_INVALID_STATE);
     ENUM_CHECK(config != NULL, ESP_ERR_INVALID_ARG);
 
     esp_err_t ret;
@@ -1151,19 +1159,15 @@ esp_err_t enum_install(enum_config_t *config, void **client_ret)
     enum_drv->constant.enum_filter_cb_arg = config->enum_filter_cb_arg;
 #endif // ENABLE_ENUM_FILTER_CALLBACK
 
-    enum_drv->dynamic.flags.val = 0;
-    enum_drv->dynamic.stage = ENUM_STAGE_IDLE;
-    enum_drv->dynamic.next_dev_addr = ENUM_INIT_VALUE_DEV_ADDR;
+    enum_drv->single_thread.next_dev_addr = ENUM_INIT_VALUE_DEV_ADDR;
+    enum_drv->single_thread.stage = ENUM_STAGE_IDLE;
 
-    ENUM_ENTER_CRITICAL();
+    // Enumeration driver is single_threaded
     if (p_enum_driver != NULL) {
-        ENUM_EXIT_CRITICAL();
         ret = ESP_ERR_NOT_FINISHED;
         goto err;
     }
     p_enum_driver = enum_drv;
-    ENUM_EXIT_CRITICAL();
-
     // Write-back client_ret pointer
     *client_ret = (void *)enum_drv;
     return ESP_OK;
@@ -1177,15 +1181,10 @@ alloc_err:
 
 esp_err_t enum_uninstall(void)
 {
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
-    ENUM_EXIT_CRITICAL();
-
-    ENUM_ENTER_CRITICAL();
+    ENUM_CHECK(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
+    // Enumeration driver is single_threaded
     enum_driver_t *enum_drv = p_enum_driver;
     p_enum_driver = NULL;
-    ENUM_EXIT_CRITICAL();
-
     // Free resources
     urb_free(enum_drv->constant.urb);
     heap_caps_free(enum_drv);
@@ -1194,10 +1193,7 @@ esp_err_t enum_uninstall(void)
 
 esp_err_t enum_start(unsigned int uid)
 {
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
-    ENUM_CHECK_FROM_CRIT(p_enum_driver->dynamic.flags.processing == 0, ESP_ERR_INVALID_STATE);
-    ENUM_EXIT_CRITICAL();
+    ENUM_CHECK(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
 
     esp_err_t ret = ESP_FAIL;
 
@@ -1224,11 +1220,7 @@ esp_err_t enum_start(unsigned int uid)
              dev_info.parent.port_num,
              0);
 
-    ENUM_ENTER_CRITICAL();
-    p_enum_driver->dynamic.flags.processing = 1;
-    p_enum_driver->dynamic.stage = ENUM_STAGE_GET_SHORT_DEV_DESC;
-    ENUM_EXIT_CRITICAL();
-
+    p_enum_driver->single_thread.stage = ENUM_STAGE_GET_SHORT_DEV_DESC;
     p_enum_driver->single_thread.dev_uid = uid;
     p_enum_driver->single_thread.dev_hdl = dev_hdl;
     p_enum_driver->single_thread.parent_dev_hdl = dev_info.parent.dev_hdl;
@@ -1260,11 +1252,7 @@ esp_err_t enum_start(unsigned int uid)
 
 esp_err_t enum_proceed(unsigned int uid)
 {
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
-    ENUM_CHECK_FROM_CRIT(p_enum_driver->dynamic.flags.processing != 0, ESP_ERR_INVALID_STATE);
-    ENUM_EXIT_CRITICAL();
-
+    ENUM_CHECK(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
     // Request processing
     p_enum_driver->constant.proc_req_cb(USB_PROC_REQ_SOURCE_ENUM, false, p_enum_driver->constant.proc_req_cb_arg);
     return ESP_OK;
@@ -1272,34 +1260,51 @@ esp_err_t enum_proceed(unsigned int uid)
 
 esp_err_t enum_cancel(unsigned int uid)
 {
-    enum_stage_t stage = ENUM_STAGE_CANCEL;
+    ENUM_CHECK(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
 
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
-    ENUM_CHECK_FROM_CRIT(p_enum_driver->dynamic.flags.processing != 0, ESP_ERR_INVALID_STATE);
-    stage = p_enum_driver->dynamic.stage;
-    p_enum_driver->dynamic.stage = ENUM_STAGE_CANCEL;
-    ENUM_EXIT_CRITICAL();
+    enum_stage_t old_stage = p_enum_driver->single_thread.stage;
+
+    if (old_stage == ENUM_STAGE_IDLE ||
+            old_stage == ENUM_STAGE_CANCEL) {
+        // Nothing to cancel
+        return ESP_OK;
+    }
+
+    p_enum_driver->single_thread.stage = ENUM_STAGE_CANCEL;
 
     ESP_LOGV(ENUM_TAG, "[%d:%d] Cancel at %s",
              p_enum_driver->single_thread.parent_dev_addr,
              p_enum_driver->single_thread.parent_port_num,
-             enum_stage_strings[stage]);
+             enum_stage_strings[old_stage]);
 
-    // Nothing to do more here, will deal with that the very next enum_process()
+    if (stage_need_process(old_stage)) {
+        // These stages are required to trigger processing in the enum_process()
+        // This means, that there is no ongoing transfer and we can release the
+        // device from enumeration immediately
+        usb_device_handle_t dev_hdl = p_enum_driver->single_thread.dev_hdl;
+        if (dev_hdl) {
+            // Close the device
+            ESP_ERROR_CHECK(usbh_dev_enum_unlock(dev_hdl));
+            ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
+            p_enum_driver->single_thread.dev_hdl = NULL;
+        }
+    }
+
+    // SECOND_RESET_COMPLETE is the exceptional stage, as it awaits the notification after port reset completion via the enum_proceed() call.
+    // Meanwhile, the device could be detached during the reset, thus the device disconnect comes instead of reset completion.
+    if (old_stage == ENUM_STAGE_SECOND_RESET_COMPLETE) {
+        p_enum_driver->constant.proc_req_cb(USB_PROC_REQ_SOURCE_ENUM, false, p_enum_driver->constant.proc_req_cb_arg);
+    }
+
     return ESP_OK;
 }
 
 esp_err_t enum_process(void)
 {
-    ENUM_ENTER_CRITICAL();
-    ENUM_CHECK_FROM_CRIT(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
-    ENUM_CHECK_FROM_CRIT(p_enum_driver->dynamic.flags.processing != 0, ESP_ERR_INVALID_STATE);
-    ENUM_EXIT_CRITICAL();
+    ENUM_CHECK(p_enum_driver != NULL, ESP_ERR_INVALID_STATE);
 
     esp_err_t res = ESP_FAIL;
-    bool need_process_cb = true;
-    enum_stage_t stage = p_enum_driver->dynamic.stage;
+    enum_stage_t stage = p_enum_driver->single_thread.stage;
 
     switch (stage) {
     // Transfer submission stages
@@ -1317,8 +1322,7 @@ esp_err_t enum_process(void)
     case ENUM_STAGE_GET_FULL_PROD_STR_DESC:
     case ENUM_STAGE_GET_SHORT_SER_STR_DESC:
     case ENUM_STAGE_GET_FULL_SER_STR_DESC:
-        need_process_cb = false; // Do not need to request process callback, as we need to wait transfer completion
-        res = control_request();
+        res = control_request(stage);
         break;
     // Recovery interval
     case ENUM_STAGE_SET_ADDR_RECOVERY:
@@ -1341,21 +1345,23 @@ esp_err_t enum_process(void)
     case ENUM_STAGE_CHECK_FULL_PROD_STR_DESC:
     case ENUM_STAGE_CHECK_SHORT_SER_STR_DESC:
     case ENUM_STAGE_CHECK_FULL_SER_STR_DESC:
-        res = control_response_handling();
+        res = control_response_handling(stage);
         break;
     case ENUM_STAGE_SELECT_CONFIG:
         res = select_active_configuration();
         break;
     case ENUM_STAGE_SECOND_RESET:
-        need_process_cb = false; // We need to wait Hub driver to finish port reset
-        res = second_reset();
+        // We need to wait Hub driver to finish port reset
+        res = second_reset_request();
+        break;
+    case ENUM_STAGE_SECOND_RESET_COMPLETE:
+        // Second reset complete
+        res = ESP_OK;
         break;
     case ENUM_STAGE_CANCEL:
-        need_process_cb = false; // Terminal state
         res = stage_cancel();
         break;
     case ENUM_STAGE_COMPLETE:
-        need_process_cb = false; // Terminal state
         res = stage_complete();
         break;
     default:
@@ -1364,11 +1370,8 @@ esp_err_t enum_process(void)
         break;
     }
 
-    // Set nest stage of enumeration process, based on the stage result
-    set_next_stage(res == ESP_OK);
-
-    // Request process callback is necessary
-    if (need_process_cb) {
+    // Set nest stage of enumeration process, based on the stage pass result
+    if (set_next_stage(res == ESP_OK)) {
         p_enum_driver->constant.proc_req_cb(USB_PROC_REQ_SOURCE_ENUM, false, p_enum_driver->constant.proc_req_cb_arg);
     }
 
