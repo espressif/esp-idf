@@ -54,7 +54,7 @@ ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并�
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_noinit`
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_xip`
 
 .. _external_ram_config_memory_map:
@@ -181,7 +181,6 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
         启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后能在 PSRAM 中直接执行代码。通常放置在 flash 中的段，如 ``.text`` 部分的数据（用于指令）和 ``.rodata`` 部分的数据（用于只读数据），将被加载到 PSRAM 中。
 
         启用此选项后，SPI1 flash 操作期间 cache 保持启用状态，因此需要执行的代码在此期间不必放置在内部 RAM 中。由于 ESP32-P4 flash 和 PSRAM 使用两个独立的 SPI 总线，将 flash 内容移动到 PSRAM 实际上增加了 PSRAM MSPI 总线的负载，因此整体性能将取决于应用程序对 PSRAM 的使用。例如，因为 PSRAM 的总线速度可能远大于 flash 总线速度，如果那些之前存放在 flash 中的指令和只读数据（现在存放于 PSRAM 中）不被经常访问，那么整体性能将有可能更好。因此，建议先进行性能分析以确定启用此选项是否会显著影响应用程序性能。
-
 
 片外 RAM 使用限制
 ===================
