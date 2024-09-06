@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import print_function
-
 import os
 import re
 import sys
-from distutils.dir_util import copy_tree
+from shutil import copy
+from shutil import copytree
 from typing import Dict
 
 import click
@@ -40,10 +39,11 @@ def is_empty_and_create(path: str, action: str) -> None:
 
 
 def create_project(target_path: str, name: str) -> None:
-    copy_tree(
+    copytree(
         os.path.join(os.environ['IDF_PATH'], 'examples', 'get-started', 'sample_project'),
         target_path,
-        preserve_mode=0,
+        copy_function=copy,
+        dirs_exist_ok=True,
     )
     main_folder = os.path.join(target_path, 'main')
     os.rename(os.path.join(main_folder, 'main.c'), os.path.join(main_folder, '.'.join((name, 'c'))))
@@ -53,10 +53,11 @@ def create_project(target_path: str, name: str) -> None:
 
 
 def create_component(target_path: str, name: str) -> None:
-    copy_tree(
+    copytree(
         os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'),
         target_path,
-        preserve_mode=0,
+        copy_function=copy,
+        dirs_exist_ok=True,
     )
     os.rename(os.path.join(target_path, 'main.c'), os.path.join(target_path, '.'.join((name, 'c'))))
     os.rename(os.path.join(target_path, 'include', 'main.h'),
