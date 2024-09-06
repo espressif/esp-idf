@@ -1092,10 +1092,10 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     same_pin_func_sel(bus_cfg, dev_cfg, 0);
 
     uint32_t buf_size = 32;
-    uint8_t *mst_send_buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
-    uint8_t *mst_recv_buf = heap_caps_calloc(buf_size, 1, MALLOC_CAP_DMA);
-    uint8_t *slv_send_buf = heap_caps_malloc(buf_size, MALLOC_CAP_DMA);
-    uint8_t *slv_recv_buf = heap_caps_calloc(buf_size, 1, MALLOC_CAP_DMA);
+    uint8_t *mst_send_buf = spi_bus_dma_memory_alloc(TEST_SPI_HOST, buf_size, 0);
+    uint8_t *mst_recv_buf = spi_bus_dma_memory_alloc(TEST_SPI_HOST, buf_size, 0);
+    uint8_t *slv_send_buf = spi_bus_dma_memory_alloc(TEST_SLAVE_HOST, buf_size, 0);
+    uint8_t *slv_recv_buf = spi_bus_dma_memory_alloc(TEST_SLAVE_HOST, buf_size, 0);
 
     srand(199);
     for (int i = 0; i < buf_size; i++) {

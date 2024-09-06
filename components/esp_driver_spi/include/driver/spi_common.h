@@ -174,18 +174,13 @@ esp_err_t spi_bus_free(spi_host_device_t host_id);
  * @note This API will take care of the cache and hardware alignment internally.
  *       To free/release memory allocated by this helper function, simply calling `free()`
  *
- * @param[in]  size          Size in bytes, the amount of memory to allocate
- * @param[out] out_ptr       Pointer to the memory if allocated successfully
- * @param[in]  extra_heap_caps Extra heap caps based on MALLOC_CAP_DMA
- * @param[out] actual_size   Optional, Actual size for allocation in bytes, when the size you specified doesn't meet the internal alignment requirements,
- *                           This value might be bigger than the size you specified. Set NULL if don't care this value.
+ * @param[in]  host_id          SPI peripheral who will using the memory
+ * @param[in]  size             Size in bytes, the amount of memory to allocate
+ * @param[in]  extra_heap_caps  Extra heap caps based on MALLOC_CAP_DMA
  *
- * @return
- *        - ESP_ERR_INVALID_ARG     Invalid argument
- *        - ESP_ERR_NO_MEM          No enough memory for allocation
- *        - ESP_OK                  on success
+ * @return                      Pointer to the memory if allocated successfully
  */
-esp_err_t spi_bus_dma_memory_malloc(size_t size, void **out_ptr, uint32_t extra_heap_caps, size_t *actual_size);
+void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps);
 
 #ifdef __cplusplus
 }
