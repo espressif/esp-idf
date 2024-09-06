@@ -292,16 +292,18 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
 #define TEST_SOC_CACHE_RAM_BANK2_ADDR   (SOC_IRAM_LOW + 0x4000)
 #define TEST_SOC_CACHE_RAM_BANK3_ADDR   (SOC_IRAM_LOW + 0x6000)
 #define TEST_SOC_IRAM_ADDR              (SOC_IRAM_LOW + 0x8000)
-#define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
-#define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IROM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IRAM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK0_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK1_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK2_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, start, 16));
+#if SOC_RTC_FAST_MEM_SUPPORTED
+#define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
+#define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_IRAM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_DRAM_ADDR, start, 16));
+#endif // SOC_RTC_FAST_MEM_SUPPORTED
 #endif
 }
 
