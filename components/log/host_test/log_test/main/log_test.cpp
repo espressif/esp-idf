@@ -19,16 +19,25 @@
 
 using namespace std;
 
-#define EARLY_TIMESTAMP "[0-9]*"
-
 #if CONFIG_LOG_TIMESTAMP_SOURCE_RTOS
 #define TIMESTAMP "[0-9]*"
+#define TIMESTAMP_FORMAT "\\([0-9]*\\) "
 #elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM
 #define TIMESTAMP "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}"
+#define TIMESTAMP_FORMAT "\\([0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}\\) "
 #elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
 #define TIMESTAMP "[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}"
+#define TIMESTAMP_FORMAT "\\([0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}\\) "
 #else
 #define TIMESTAMP ""
+#define TIMESTAMP_FORMAT ""
+#define EARLY_TIMESTAMP ""
+#define EARLY_TIMESTAMP_FORMAT ""
+#endif
+
+#ifndef EARLY_TIMESTAMP
+#define EARLY_TIMESTAMP "[0-9]*"
+#define EARLY_TIMESTAMP_FORMAT "\\([0-9]*\\) "
 #endif
 
 static const char *TEST_TAG = "test";
@@ -150,7 +159,7 @@ PutcFixture *PutcFixture::instance = nullptr;
 TEST_CASE("verbose log level")
 {
     PrintFixture fix(ESP_LOG_VERBOSE);
-    const std::regex test_print("V \\(" TIMESTAMP "\\) test: verbose", std::regex::ECMAScript);
+    const std::regex test_print("V " TIMESTAMP_FORMAT "test: verbose", std::regex::ECMAScript);
 
     ESP_LOGV(TEST_TAG, "verbose");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -159,7 +168,7 @@ TEST_CASE("verbose log level")
 TEST_CASE("debug log level")
 {
     PrintFixture fix(ESP_LOG_DEBUG);
-    const std::regex test_print("D \\(" TIMESTAMP "\\) test: debug", std::regex::ECMAScript);
+    const std::regex test_print("D " TIMESTAMP_FORMAT "test: debug", std::regex::ECMAScript);
 
     ESP_LOGD(TEST_TAG, "debug");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -168,7 +177,7 @@ TEST_CASE("debug log level")
 TEST_CASE("info log level")
 {
     PrintFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\(" TIMESTAMP "\\) test: info", std::regex::ECMAScript);
+    const std::regex test_print("I " TIMESTAMP_FORMAT "test: info", std::regex::ECMAScript);
 
     ESP_LOGI(TEST_TAG, "info");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -177,7 +186,7 @@ TEST_CASE("info log level")
 TEST_CASE("warn log level")
 {
     PrintFixture fix(ESP_LOG_WARN);
-    const std::regex test_print("W \\(" TIMESTAMP "\\) test: warn", std::regex::ECMAScript);
+    const std::regex test_print("W " TIMESTAMP_FORMAT "test: warn", std::regex::ECMAScript);
 
     ESP_LOGW(TEST_TAG, "warn");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -186,7 +195,7 @@ TEST_CASE("warn log level")
 TEST_CASE("error log level")
 {
     PrintFixture fix(ESP_LOG_ERROR);
-    const std::regex test_print("E \\(" TIMESTAMP "\\) test: error", std::regex::ECMAScript);
+    const std::regex test_print("E " TIMESTAMP_FORMAT "test: error", std::regex::ECMAScript);
 
     ESP_LOGE(TEST_TAG, "error");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -196,7 +205,7 @@ TEST_CASE("error log level")
 TEST_CASE("changing log level")
 {
     PrintFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\(" TIMESTAMP "\\) test: must indeed be printed", std::regex::ECMAScript);
+    const std::regex test_print("I " TIMESTAMP_FORMAT "test: must indeed be printed", std::regex::ECMAScript);
 
     ESP_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -223,7 +232,7 @@ TEST_CASE("log buffer")
         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
     };
     ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
-    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: 01 02 03 04 05 06 07 08 11 12 13 14 15 16 17 18", std::regex::ECMAScript);
+    const std::regex buffer_regex("I " TIMESTAMP_FORMAT "test: 01 02 03 04 05 06 07 08 11 12 13 14 15 16 17 18", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
@@ -234,7 +243,7 @@ TEST_CASE("log bytes > 127")
         0xff, 0x80,
     };
     ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
-    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: ff 80", std::regex::ECMAScript);
+    const std::regex buffer_regex("I " TIMESTAMP_FORMAT "test: ff 80", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
@@ -242,11 +251,11 @@ TEST_CASE("log buffer char")
 {
     PrintFixture fix(ESP_LOG_INFO);
     const char g[] = "The way to get started is to quit talking and begin doing. - Walt Disney";
-    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: The way to get s.*\n\
-.*I \\(" TIMESTAMP "\\) test: tarted is to qui.*\n\
-.*I \\(" TIMESTAMP "\\) test: t talking and be.*\n\
-.*I \\(" TIMESTAMP "\\) test: gin doing. - Wal.*\n\
-.*I \\(" TIMESTAMP "\\) test: t Disney", std::regex::ECMAScript);
+    const std::regex buffer_regex("I " TIMESTAMP_FORMAT "test: The way to get s.*\n\
+.*I " TIMESTAMP_FORMAT "test: tarted is to qui.*\n\
+.*I " TIMESTAMP_FORMAT "test: t talking and be.*\n\
+.*I " TIMESTAMP_FORMAT "test: gin doing. - Wal.*\n\
+.*I " TIMESTAMP_FORMAT "test: t Disney", std::regex::ECMAScript);
     ESP_LOG_BUFFER_CHAR(TEST_TAG, g, sizeof(g));
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex) == true);
 }
@@ -259,7 +268,7 @@ TEST_CASE("log buffer dump")
         0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8
     };
     ESP_LOG_BUFFER_HEXDUMP(TEST_TAG, buffer, sizeof(buffer), ESP_LOG_INFO);
-    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: 0x[0-9a-f]+\\s+"
+    const std::regex buffer_regex("I " TIMESTAMP_FORMAT "test: 0x[0-9a-f]+\\s+"
                                   "00 00 00 00 05 06 07 08  ff fe fd fc fb fa f9 f8 "
                                   "\\s+|[\\.]{16}|", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
@@ -277,7 +286,7 @@ TEST_CASE("rom printf")
 TEST_CASE("early verbose log level")
 {
     PutcFixture fix;
-    const std::regex test_print("V \\(" EARLY_TIMESTAMP "\\) test: verbose", std::regex::ECMAScript);
+    const std::regex test_print("V " EARLY_TIMESTAMP_FORMAT "test: verbose", std::regex::ECMAScript);
 
     ESP_EARLY_LOGV(TEST_TAG, "verbose");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -286,7 +295,7 @@ TEST_CASE("early verbose log level")
 TEST_CASE("early debug log level")
 {
     PutcFixture fix;
-    const std::regex test_print("D \\(" EARLY_TIMESTAMP "\\) test: debug", std::regex::ECMAScript);
+    const std::regex test_print("D " EARLY_TIMESTAMP_FORMAT "test: debug", std::regex::ECMAScript);
 
     ESP_EARLY_LOGD(TEST_TAG, "debug");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -295,7 +304,7 @@ TEST_CASE("early debug log level")
 TEST_CASE("early info log level")
 {
     PutcFixture fix;
-    const std::regex test_print("I \\(" EARLY_TIMESTAMP "\\) test: info", std::regex::ECMAScript);
+    const std::regex test_print("I " EARLY_TIMESTAMP_FORMAT "test: info", std::regex::ECMAScript);
 
     ESP_EARLY_LOGI(TEST_TAG, "info");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -304,7 +313,7 @@ TEST_CASE("early info log level")
 TEST_CASE("early warn log level")
 {
     PutcFixture fix;
-    const std::regex test_print("W \\(" EARLY_TIMESTAMP "\\) test: warn", std::regex::ECMAScript);
+    const std::regex test_print("W " EARLY_TIMESTAMP_FORMAT "test: warn", std::regex::ECMAScript);
 
     ESP_EARLY_LOGW(TEST_TAG, "warn");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -313,7 +322,7 @@ TEST_CASE("early warn log level")
 TEST_CASE("early error log level")
 {
     PutcFixture fix;
-    const std::regex test_print("E \\(" EARLY_TIMESTAMP "\\) test: error", std::regex::ECMAScript);
+    const std::regex test_print("E " EARLY_TIMESTAMP_FORMAT "test: error", std::regex::ECMAScript);
 
     ESP_EARLY_LOGE(TEST_TAG, "error");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -323,7 +332,7 @@ TEST_CASE("early error log level")
 TEST_CASE("changing early log level")
 {
     PutcFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\(" EARLY_TIMESTAMP "\\) test: must indeed be printed", std::regex::ECMAScript);
+    const std::regex test_print("I " EARLY_TIMESTAMP_FORMAT "test: must indeed be printed", std::regex::ECMAScript);
 
     ESP_EARLY_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -406,6 +415,7 @@ TEST_CASE("esp_log_timestamp_str")
     CHECK(regex_search(string(buffer), test_print2) == true);
 }
 
+#if ESP_LOG_VERSION == 2
 TEST_CASE("esp_log with formatting")
 {
     PrintFixture fix(ESP_LOG_INFO);
@@ -415,8 +425,8 @@ TEST_CASE("esp_log with formatting")
             .log_level = ESP_LOG_NONE,
             .constrained_env = false,
             .require_formatting = true,
-            .dis_color = false,
-            .dis_timestamp = false,
+            .dis_color = ESP_LOG_COLOR_DISABLED,
+            .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
             .reserved = 0,
         }
     };
@@ -433,13 +443,13 @@ TEST_CASE("esp_log with formatting")
         esp_log(config, TEST_TAG, "Temp = %dC", i);
 
         if (5 <= i && i < 7) {
-            const std::regex test_print("I \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            const std::regex test_print("I " TIMESTAMP_FORMAT "test: Temp = [0-9]+C", std::regex::ECMAScript);
             CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
         } else if (7 <= i && i < 9) {
-            const std::regex test_print("W \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            const std::regex test_print("W " TIMESTAMP_FORMAT "test: Temp = [0-9]+C", std::regex::ECMAScript);
             CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
         } else if (9 <= i) {
-            const std::regex test_print("E \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            const std::regex test_print("E " TIMESTAMP_FORMAT "test: Temp = [0-9]+C", std::regex::ECMAScript);
             CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
         } else {
             const std::regex test_print("", std::regex::ECMAScript);
@@ -458,8 +468,8 @@ TEST_CASE("esp_log without formatting")
             .log_level = ESP_LOG_NONE,
             .constrained_env = false,
             .require_formatting = false, // print just text
-            .dis_color = false,
-            .dis_timestamp = false,
+            .dis_color = ESP_LOG_COLOR_DISABLED,
+            .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
             .reserved = 0,
         }
     };
@@ -495,15 +505,16 @@ TEST_CASE("esp_log TAG can be NULL")
             .log_level = ESP_LOG_ERROR,
             .constrained_env = false,
             .require_formatting = true,
-            .dis_color = false,
-            .dis_timestamp = false,
+            .dis_color = ESP_LOG_COLOR_DISABLED,
+            .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
             .reserved = 0,
         }
     };
 
     esp_log(config, NULL, "Temp = %dC", 120);
 
-    const std::regex test_print("E \\(" TIMESTAMP "\\) Temp = 120C", std::regex::ECMAScript);
+    const std::regex test_print("E " TIMESTAMP_FORMAT "Temp = 120C", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
     fix.reset_buffer();
 }
+#endif // ESP_LOG_VERSION == 2

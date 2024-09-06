@@ -46,13 +46,17 @@ menu "Format"
             - "System time (YY-MM-DD HH:MM:SS.sss)" it is the same as the above,
               but also prints the date as well.
 
+            - "Unix time in milliseconds" is the same as the two above,
+              but in Unix time format and in milliseconds.
+              e.g. (1718795571035).
+
             - NOTE: Currently this will not get used in logging from binary blobs
               (i.e WiFi & Bluetooth libraries), these will always print
               milliseconds since boot.
 
         config LOG_TIMESTAMP_SOURCE_NONE
             bool "None"
-            depends on NO_SYMBOL  # hide it now, turn it on final MR
+            depends on LOG_VERSION_2
 
         config LOG_TIMESTAMP_SOURCE_RTOS
             bool "Milliseconds Since Boot"
@@ -64,6 +68,11 @@ menu "Format"
 
         config LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
             bool "System Time (YY-MM-DD HH:MM:SS.sss)"
+            select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
+            depends on LOG_VERSION_2
+
+        config LOG_TIMESTAMP_SOURCE_UNIX
+            bool "Unix time in milliseconds"
             select LOG_TIMESTAMP_SUPPORT if LOG_VERSION_2
             depends on LOG_VERSION_2
 
