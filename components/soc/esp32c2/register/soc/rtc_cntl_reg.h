@@ -9,7 +9,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
+#include "soc/soc.h"
 #define RTC_CNTL_TIME0_REG		RTC_CNTL_TIME_LOW0_REG
 #define RTC_CNTL_TIME1_REG		RTC_CNTL_TIME_HIGH0_REG
 
@@ -1144,7 +1144,7 @@ RO CPU.*/
 #define RTC_CNTL_SWD_AUTO_FEED_EN_V  0x1
 #define RTC_CNTL_SWD_AUTO_FEED_EN_S  31
 /* RTC_CNTL_SWD_DISABLE :  ;bitpos:[30] ;default: 1'b0 ; */
-/*description: disabel SWD.*/
+/*description: disable SWD.*/
 #define RTC_CNTL_SWD_DISABLE    (BIT(30))
 #define RTC_CNTL_SWD_DISABLE_M  (BIT(30))
 #define RTC_CNTL_SWD_DISABLE_V  0x1

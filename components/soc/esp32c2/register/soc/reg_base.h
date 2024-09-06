@@ -43,5 +43,5 @@
 #define DR_REG_I2C_MST_BASE                     0x6004E800
 #define DR_REG_XTS_AES_BASE                     0x600CC000
 
-/* For backward compatability with the older register name */
+/* For backward compatibility with the older register name */
 #define DR_REG_AES_XTS_BASE                     DR_REG_XTS_AES_BASE

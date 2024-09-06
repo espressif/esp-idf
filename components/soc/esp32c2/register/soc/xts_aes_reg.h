@@ -119,7 +119,7 @@ extern "C" {
 #define XTS_AES_DATE_V  0x3FFFFFFFU
 #define XTS_AES_DATE_S  0
 
-/* For backward compatability with the older register names */
+/* For backward compatibility with the older register names */
 #define AES_XTS_PLAIN_BASE          XTS_AES_PLAIN_MEM
 #define AES_XTS_SIZE_REG            XTS_AES_LINESIZE_REG
 #define AES_XTS_DESTINATION_REG     XTS_AES_DESTINATION_REG

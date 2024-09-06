@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
+#include "soc/soc.h"
 
 typedef volatile struct spi_dev_s{
     union {
@@ -58,7 +58,7 @@ typedef volatile struct spi_dev_s{
             uint32_t clkcnt_n                      :    6;  /*In the master mode it is the divider of spi_clk. So spi_clk frequency is system/(spi_clkdiv_pre+1)/(spi_clkcnt_N+1). Can be configured in CONF state.*/
             uint32_t clkdiv_pre                    :    4;  /*In the master mode it is pre-divider of spi_clk.  Can be configured in CONF state.*/
             uint32_t reserved22                    :    9;  /*reserved*/
-            uint32_t clk_equ_sysclk                :    1;  /*In the master mode 1: spi_clk is eqaul to system 0: spi_clk is divided from system clock. Can be configured in CONF state.*/
+            uint32_t clk_equ_sysclk                :    1;  /*In the master mode 1: spi_clk is equal to system 0: spi_clk is divided from system clock. Can be configured in CONF state.*/
         };
         uint32_t val;
     } clock;
@@ -366,7 +366,7 @@ typedef volatile struct spi_dev_s{
     uint32_t reserved_dc;
     union {
         struct {
-            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on. Can be configured in CONF state.*/
+            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is always on. Can be configured in CONF state.*/
             uint32_t clk_mode_13                   :    1;  /*{CPOL, CPHA},1: support spi clk mode 1 and 3, first edge output data B[0]/B[7].  0: support spi clk mode 0 and 2, first edge output data B[1]/B[6].*/
             uint32_t rsck_data_out                 :    1;  /*It saves half a cycle when tsck is the same as rsck. 1: output data at rsck posedge   0: output data at tsck posedge */
             uint32_t reserved4                     :    4;  /*reserved*/
