@@ -47,6 +47,7 @@ examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
 install.fish
 install.sh
+tools/activate.py
 tools/check_python_dependencies.py
 tools/ci/build_template_app.sh
 tools/ci/check_api_violation.sh

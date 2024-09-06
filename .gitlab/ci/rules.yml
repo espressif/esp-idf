@@ -83,6 +83,8 @@
 
   - "tools/idf_monitor.py"
 
+  - "tools/activate.py"
+
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/test_idf_py/**/*"
@@ -95,6 +97,11 @@
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
+
+  - "tools/export_utils/utils.py"
+  - "tools/export_utils/shell_types.py"
+  - "tools/export_utils/console_output.py"
+  - "tools/export_utils/activate_venv.py"
 
   - "tools/requirements/*"
   - "tools/requirements.json"

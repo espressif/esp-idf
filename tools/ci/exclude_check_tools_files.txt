@@ -51,3 +51,7 @@ tools/esp_prov/**/*
 tools/ci/sort_yaml.py
 tools/ci/sg_rules/*
 tools/ci/previous_stage_job_status.py
+tools/legacy_exports/export_legacy.fish
+tools/legacy_exports/export_legacy.sh
+tools/legacy_exports/export_legacy.ps1
+tools/legacy_exports/export_legacy.bat
