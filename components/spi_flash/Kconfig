@@ -40,7 +40,7 @@ menu "Main Flash configuration"
             default SPI_FLASH_HPM_AUTO
             help
                 Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
-                enable this option as a confirmation. To be back-compatible with earlier IDF versionn, this option is
+                enable this option as a confirmation. To be back-compatible with earlier IDF version, this option is
                 automatically enabled with warning when Flash running > 80Mhz.
 
             config SPI_FLASH_HPM_ENA
@@ -83,17 +83,10 @@ menu "Main Flash configuration"
                 This is a helper config for HPM. Whether HPM-DC is enabled is also determined by bootloader.
                 Invisible for users.
 
-        config SPI_FLASH_SUSPEND_QVL_SUPPORTED
-            bool
-            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
-            default n
-            help
-                This is a helper config. Invisible for users.
-
         config SPI_FLASH_AUTO_SUSPEND
             bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
             default n
-            depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
+            depends on SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND && !SPI_FLASH_ROM_IMPL
             help
                 This option is disabled by default because it is supported only
                 for specific flash chips and for specific Espressif chips.
@@ -250,7 +243,7 @@ menu "SPI Flash driver"
             Please use this configuration together with ``SPI_FLASH_ERASE_YIELD_DURATION_MS`` and
             ``SPI_FLASH_ERASE_YIELD_TICKS`` after carefully checking flash datasheet to avoid a
             watchdog timeout.
-            For more information, please check `SPI Flash API` reference documenation
+            For more information, please check `SPI Flash API` reference documentation
             under section `OS Function`.
 
     config SPI_FLASH_ERASE_YIELD_DURATION_MS
@@ -352,7 +345,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
-            # ESP32 doens't usually use this chip, default n to save iram.
+            # ESP32 doesn't usually use this chip, default n to save iram.
             default y if SPI_FLASH_VENDOR_BOYA_SUPPORTED
             default n
             help
@@ -362,7 +355,7 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_TH_CHIP
             bool "TH"
-            # ESP32 doens't usually use this chip, default n to save iram.
+            # ESP32 doesn't usually use this chip, default n to save iram.
             default y if SPI_FLASH_VENDOR_TH_SUPPORTED
             default n
             help

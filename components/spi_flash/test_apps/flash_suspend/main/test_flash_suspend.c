@@ -77,6 +77,8 @@ static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gpt
 #endif
 #if CONFIG_IDF_TARGET_ESP32P4
     Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+    Cache_Invalidate_All();
 #else
     Cache_Invalidate_ICache_All();
 #endif
