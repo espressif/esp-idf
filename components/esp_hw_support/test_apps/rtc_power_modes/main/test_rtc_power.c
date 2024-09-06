@@ -49,9 +49,7 @@ TEST_CASE("Power Test: DSLP_DEFAULT", "[pm]")
 TEST_CASE("Power Test: DSLP_ULTRA_LOW", "[pm]")
 {
     esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE, false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
-
-    extern void rtc_sleep_enable_ultra_low(bool);
-    rtc_sleep_enable_ultra_low(true);
+    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, true);
 
     test_deepsleep();
 }

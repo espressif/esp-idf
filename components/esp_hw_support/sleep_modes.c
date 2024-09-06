@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/lock.h>
 #include <sys/param.h>
+#include <inttypes.h>
 
 #include "esp_attr.h"
 #include "esp_rom_caps.h"
@@ -273,7 +274,6 @@ static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 static const char *TAG = "sleep";
 static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
-static bool s_ultra_low_enabled = false;
 
 static bool s_periph_use_8m_flag = false;
 
@@ -904,7 +904,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TESEN_MONITOR_MODE]) {
         sleep_flags |= RTC_SLEEP_USE_ADC_TESEN_MONITOR;
     }
-    if (!s_ultra_low_enabled) {
+
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_ULTRA_LOW_MODE] == 0) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
     if (periph_using_8m) {
