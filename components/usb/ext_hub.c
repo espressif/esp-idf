@@ -1309,7 +1309,6 @@ esp_err_t ext_hub_new_dev(uint8_t dev_addr)
 
     ret = find_first_intf_desc(config_desc, &hub_config);
     if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "Finding HUB interface error %s", esp_err_to_name(ret));
         goto exit;
     }
 
