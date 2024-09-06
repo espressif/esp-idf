@@ -46,7 +46,7 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_noinit`
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_instructions`
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_rodata`
 
@@ -116,16 +116,14 @@ This option reduces the internal static memory used by the BSS segment.
 
 Remaining external RAM can also be added to the capability heap allocator using the method shown above.
 
-.. only:: esp32
+.. _external_ram_config_noinit:
 
-    .. _external_ram_config_noinit:
+Allow .noinit Segment to Be Placed in External Memory
+--------------------------------------------------------------
 
-    Allow .noinit Segment to Be Placed in External Memory
-    --------------------------------------------------------------
+Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
-
-    By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
+By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
