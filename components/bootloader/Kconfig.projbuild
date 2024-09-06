@@ -158,12 +158,22 @@ menu "Bootloader config"
         int "Number of the GPIO input for factory reset"
         depends on BOOTLOADER_FACTORY_RESET
         range 0 39 if IDF_TARGET_ESP32
-        range 0 44 if IDF_TARGET_ESP32S2
+        range 0 46 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 20 if IDF_TARGET_ESP32C2
+        range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
+        range 0 28 if IDF_TARGET_ESP32C5
+        range 0 30 if IDF_TARGET_ESP32C6
+        range 0 27 if IDF_TARGET_ESP32H2
+        range 0 54 if IDF_TARGET_ESP32P4
         default 4
         help
-            The selected GPIO will be configured as an input with internal pull-up enabled (note that on some SoCs.
-            not all pins have an internal pull-up, consult the hardware datasheet for details.) To trigger a factory
+            The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a factory
             reset, this GPIO must be held high or low (as configured) on startup.
+
+            Note that on some SoCs not all pins have an internal pull-up and certain pins are already
+            used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
+            details on the selected SoC.
 
     choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
         bool "Factory reset GPIO level"
@@ -210,14 +220,25 @@ menu "Bootloader config"
     config BOOTLOADER_NUM_PIN_APP_TEST
         int "Number of the GPIO input to boot TEST partition"
         depends on BOOTLOADER_APP_TEST
-        range 0 39
+        range 0 39 if IDF_TARGET_ESP32
+        range 0 46 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 20 if IDF_TARGET_ESP32C2
+        range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
+        range 0 28 if IDF_TARGET_ESP32C5
+        range 0 30 if IDF_TARGET_ESP32C6
+        range 0 27 if IDF_TARGET_ESP32H2
+        range 0 54 if IDF_TARGET_ESP32P4
         default 18
         help
             The selected GPIO will be configured as an input with internal pull-up enabled.
             To trigger a test app, this GPIO must be pulled low on reset.
             After the GPIO input is deactivated and the device reboots, the old application will boot.
             (factory or OTA[x]).
-            Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+            Note that on some SoCs not all pins have an internal pull-up and certain pins are already
+            used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
+            details on the selected SoC.
 
     choice BOOTLOADER_APP_TEST_PIN_LEVEL
         bool "App test GPIO level"
