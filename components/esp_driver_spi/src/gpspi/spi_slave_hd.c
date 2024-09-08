@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"
@@ -606,7 +607,9 @@ static esp_err_t s_spi_slave_hd_setup_priv_trans(spi_host_device_t host, spi_sla
         }
     }
     if (chan == SPI_SLAVE_CHAN_TX) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11086
         memcpy(priv_trans->aligned_buffer, orig_trans->data, orig_trans->len);
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
         esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync c2m(writeback) fail");
     } else {
