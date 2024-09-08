@@ -136,6 +136,12 @@ extern "C" {
     RV_CLEAR_CSR((CSR_PMPCFG0) + (ENTRY)/4, (0xFF) << (ENTRY%4)*8); \
     } while(0)
 
+/*Reset all permissions of a particular PMACFG entry*/
+#define PMA_ENTRY_CFG_RESET(ENTRY) do {\
+    RV_WRITE_CSR((CSR_PMACFG0) + (ENTRY) , 0); \
+    RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY) , 0); \
+    } while(0)
+
 /********************************************************
    Trigger Module register fields (Debug specification)
  ********************************************************/
