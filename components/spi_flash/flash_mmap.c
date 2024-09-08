@@ -366,52 +366,6 @@ uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return count;
 }
-const void *IRAM_ATTR spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
-{
-    uint32_t phys_page = phys_offs / SPI_FLASH_MMU_PAGE_SIZE;
-    int start, end, page_delta;
-    intptr_t base;
-
-    if (memory == SPI_FLASH_MMAP_DATA) {
-        start = SOC_MMU_DROM0_PAGES_START;
-        end = SOC_MMU_DROM0_PAGES_END;
-        base = SOC_MMU_VADDR0_START_ADDR;
-        page_delta = SOC_MMU_DROM0_PAGES_START;
-    } else {
-        start = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
-        end = SOC_MMU_IROM0_PAGES_END;
-        base = SOC_MMU_VADDR1_START_ADDR;
-        page_delta = SOC_MMU_IROM0_PAGES_START;
-    }
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    for (int i = start; i < end; i++) {
-        uint32_t mmu_value = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-        if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
-            if (mmu_value & MMU_ACCESS_SPIRAM) {
-                mmu_value += instruction_flash2spiram_offset();
-                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
-            }
-        }
-#endif
-#if CONFIG_SPIRAM_RODATA
-        if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
-            if (mmu_value & MMU_ACCESS_SPIRAM) {
-                mmu_value += rodata_flash2spiram_offset();
-                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
-            }
-        }
-#endif
-        if (mmu_value == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
-            i -= page_delta;
-            intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
-            spi_flash_enable_interrupts_caches_and_other_cpu();
-            return (const void *) (cache_page | (phys_offs & (SPI_FLASH_MMU_PAGE_SIZE-1)));
-        }
-    }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return NULL;
-}
 
 static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
 {
@@ -536,4 +490,51 @@ size_t spi_flash_cache2phys(const void *cached)
     uint32_t phys_offs = ((phys_page & SOC_MMU_ADDR_MASK) + offset) * SPI_FLASH_MMU_PAGE_SIZE;
     return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
 }
+
+const void *IRAM_ATTR spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
+{
+    uint32_t phys_page = phys_offs / SPI_FLASH_MMU_PAGE_SIZE;
+    int start, end, page_delta;
+    intptr_t base;
+
+    if (memory == SPI_FLASH_MMAP_DATA) {
+        start = SOC_MMU_DROM0_PAGES_START;
+        end = SOC_MMU_DROM0_PAGES_END;
+        base = SOC_MMU_VADDR0_START_ADDR;
+        page_delta = SOC_MMU_DROM0_PAGES_START;
+    } else {
+        start = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
+        end = SOC_MMU_IROM0_PAGES_END;
+        base = SOC_MMU_VADDR1_START_ADDR;
+        page_delta = SOC_MMU_IROM0_PAGES_START;
+    }
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    for (int i = start; i < end; i++) {
+        uint32_t mmu_value = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
+            if (mmu_value & MMU_ACCESS_SPIRAM) {
+                mmu_value += instruction_flash2spiram_offset();
+                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
+            }
+        }
 #endif
+#if CONFIG_SPIRAM_RODATA
+        if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
+            if (mmu_value & MMU_ACCESS_SPIRAM) {
+                mmu_value += rodata_flash2spiram_offset();
+                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
+            }
+        }
+#endif
+        if (mmu_value == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
+            i -= page_delta;
+            intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
+            spi_flash_enable_interrupts_caches_and_other_cpu();
+            return (const void *) (cache_page | (phys_offs & (SPI_FLASH_MMU_PAGE_SIZE-1)));
+        }
+    }
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    return NULL;
+}
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
