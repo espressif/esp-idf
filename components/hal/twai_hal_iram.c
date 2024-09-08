@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "esp_compiler.h"
 #include "hal/twai_hal.h"
 
 #ifdef CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
@@ -194,6 +195,8 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
         return;
     }
     //Save transmitted frame in case we need to retry
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11085
     memcpy(&hal_ctx->tx_frame_save, tx_frame, sizeof(twai_hal_frame_t));
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
 #endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 }
