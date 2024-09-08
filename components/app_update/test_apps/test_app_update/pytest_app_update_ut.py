@@ -23,8 +23,8 @@ def test_app_update(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=90)
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -37,8 +37,7 @@ def test_app_update_xip_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=90)
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
+@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
