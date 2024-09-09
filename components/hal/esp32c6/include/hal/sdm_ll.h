@@ -10,12 +10,13 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/gpio_ext_struct.h"
+#include "soc/gpio_ext_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SDM_LL_PRESCALE_MAX     256
+#define SDM_LL_PRESCALE_MAX     (GPIO_EXT_SD0_PRESCALE_V + 1)
 
 /**
  * @brief Set Sigma-delta enable

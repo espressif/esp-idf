@@ -10,12 +10,6 @@ Sigma-Delta 调制器 (SDM)
 
 Sigma-Delta 调制器可以将模拟电压信号转换为脉冲频率或脉冲密度，该过程称为脉冲密度调制 (PDM)（请参阅 |wiki_ref|_）。
 
-与 I2S 外设中的 PDM 模式和和数模转换器 (DAC) 相比，SDM 中的 PDM 主要有以下特点：
-
-1. SDM 没有时钟信号，类似于 PDM 的 DAC 模式；
-2. SDM 没有 DMA 支持，无法持续改变其输出密度。如果需要改变 SDM 的输出密度，可以在定时器的回调函数中进行操作；
-3. 基于以上两点，不同于 DAC，要还原模拟波形，还必须使用外部的有源或无源低通滤波器，详情请参阅 :ref:`convert_to_analog_signal`。
-
 Sigma-Delta 调制通道通常应用于以下场景：
 
 -  LED 调光
@@ -46,7 +40,7 @@ Sigma-Delta 调制通道通常应用于以下场景：
 
 - :cpp:member:`sdm_config_t::gpio_num` 设置 PDM 脉冲输出的 GPIO 管脚号。
 - :cpp:member:`sdm_config_t::clk_src` 选择 SDM 模块的时钟源。注意，所有通道选择的时钟源应保持一致。
-- :cpp:member:`sdm_config_t::sample_rate_hz` 设置 SDM 模块的采样率。
+- :cpp:member:`sdm_config_t::sample_rate_hz` 设置 SDM 模块的采样率。提高采样率可以提高输出信号的信噪比，更容易在后级通过滤波获取高精度的原始信号。
 - :cpp:member:`sdm_config_t::invert_out` 设置是否反转输出信号。
 - :cpp:member:`sdm_config_t::io_loop_back` 通过 GPIO 矩阵外设，启用 GPIO 的输入和输出功能。注意，该字段仅供调试使用。
 
@@ -141,6 +135,7 @@ Kconfig 选项
 
     Sallen-Key 拓扑低通滤波器
 
+（滤波前后的波形请参阅文档 :example_file:`peripherals/sigma_delta/sdm_dac/README.md`）
 
 应用示例
 --------
