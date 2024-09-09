@@ -175,6 +175,10 @@ if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
                                     "-Wno-dangling-reference")
 endif()
 
+if(CONFIG_COMPILER_DISABLE_GCC14_WARNINGS)
+    list(APPEND compile_options "-Wno-calloc-transposed-args")
+endif()
+
 if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
     if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
         idf_build_replace_option_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")

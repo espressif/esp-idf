@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "esp_macros.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_compiler.h"
@@ -442,7 +443,7 @@ void esp_panic_handler(panic_info_t *info)
     disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
     esp_system_reset_modules_on_exit();
-    while (1);
+    ESP_INFINITE_LOOP();
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
 #endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
 }
@@ -467,7 +468,7 @@ void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(cons
     asm("unimp");   // should be an invalid operation on RISC-V targets
 #endif
 
-    while (1);
+    ESP_INFINITE_LOOP();
 }
 
 /* Weak versions of reset reason hint functions.

@@ -55,18 +55,22 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
     clkout_channel_handle_t *allocated_channel = NULL;
 
 #if SOC_GPIO_CLOCKOUT_BY_IO_MUX
-    portENTER_CRITICAL(&s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].clkout_channel_lock);
-    if (!s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].is_mapped) {
-        s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].is_mapped = true;
-        allocated_channel = &s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)];
-    } else if ((s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_io_bmap & BIT(gpio_num)) &&
-               (s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_clock == clk_sig)) {
-        allocated_channel = &s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)];
+    int32_t channel_num = IONUM_TO_CLKOUT_CHANNEL(gpio_num);
+    if (channel_num < 0) {
+        return NULL;
+    }
+    portENTER_CRITICAL(&s_clkout_handle[channel_num].clkout_channel_lock);
+    if (!s_clkout_handle[channel_num].is_mapped) {
+        s_clkout_handle[channel_num].is_mapped = true;
+        allocated_channel = &s_clkout_handle[channel_num];
+    } else if ((s_clkout_handle[channel_num].mapped_io_bmap & BIT(gpio_num)) &&
+               (s_clkout_handle[channel_num].mapped_clock == clk_sig)) {
+        allocated_channel = &s_clkout_handle[channel_num];
     }
     if (allocated_channel != NULL) {
-        allocated_channel->channel_id = (clock_out_channel_t)IONUM_TO_CLKOUT_CHANNEL(gpio_num);
+        allocated_channel->channel_id = (clock_out_channel_t)channel_num;
     }
-    portEXIT_CRITICAL(&s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].clkout_channel_lock);
+    portEXIT_CRITICAL(&s_clkout_handle[channel_num].clkout_channel_lock);
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     for (uint32_t channel = 0; channel < CLKOUT_CHANNEL_MAX; channel++) {
         portENTER_CRITICAL(&s_clkout_handle[channel].clkout_channel_lock);

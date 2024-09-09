@@ -132,7 +132,7 @@ static esp_err_t load_partitions(void)
 #endif
 
         // allocate new linked list item and populate it with data from partition table
-        partition_list_item_t *item = (partition_list_item_t *) calloc(sizeof(partition_list_item_t), 1);
+        partition_list_item_t *item = (partition_list_item_t *) calloc(1, sizeof(partition_list_item_t));
         if (item == NULL) {
             err = ESP_ERR_NO_MEM;
             break;
@@ -406,7 +406,7 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
         return err;
     }
 
-    partition_list_item_t *item = (partition_list_item_t *) calloc(sizeof(partition_list_item_t), 1);
+    partition_list_item_t *item = (partition_list_item_t *) calloc(1, sizeof(partition_list_item_t));
     if (item == NULL) {
         return ESP_ERR_NO_MEM;
     }

@@ -98,7 +98,7 @@ class PublicHeaderChecker:
         self.static_assert = re.compile(r'(_Static_assert|static_assert)')
         self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
         self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/include/(soc|modem)/[a-zA-Z0-9_]+.h')
-        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute).*$'
+        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
         self.check_threads: List[Thread] = []
         self.stdc = '--std=c99'
         self.stdcpp = '--std=c++17'
@@ -259,7 +259,7 @@ class PublicHeaderChecker:
                 pass
 
     # Get compilation data from an example to list all public header files
-    def list_public_headers(self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: str=None) -> None:
+    def list_public_headers(self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: Optional[str]=None) -> None:
         idf_path = os.getenv('IDF_PATH')
         if idf_path is None:
             raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")

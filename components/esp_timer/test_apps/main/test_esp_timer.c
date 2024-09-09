@@ -389,7 +389,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 }
 
 #if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10955, test fail
-TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+static void IRAM_ATTR test_esp_timer_get_time_performance(void)
 {
     int64_t begin = esp_timer_get_time();
     volatile int64_t end;
@@ -399,6 +399,11 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     }
     int ns_per_call = (int)((end - begin) * 1000 / iter_count);
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
+}
+
+TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+{
+    test_esp_timer_get_time_performance();
 }
 #endif
 

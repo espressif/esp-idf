@@ -163,7 +163,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
         goto fail;
     }
 
-    ctx = calloc(sizeof(vfs_fat_spiflash_ctx_t), 1);
+    ctx = calloc(1, sizeof(vfs_fat_spiflash_ctx_t));
     ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, fail, TAG, "no mem");
     ctx->partition = data_partition;
     ctx->by_label = (partition_label != NULL);

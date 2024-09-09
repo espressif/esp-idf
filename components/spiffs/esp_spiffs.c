@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,7 +204,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_spiffs_t * efs = calloc(sizeof(esp_spiffs_t), 1);
+    esp_spiffs_t * efs = calloc(1, sizeof(esp_spiffs_t));
     if (efs == NULL) {
         ESP_LOGE(TAG, "esp_spiffs could not be malloced");
         return ESP_ERR_NO_MEM;
@@ -229,7 +229,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
     }
 
     efs->fds_sz = conf->max_files * sizeof(spiffs_fd);
-    efs->fds = calloc(efs->fds_sz, 1);
+    efs->fds = calloc(1, efs->fds_sz);
     if (efs->fds == NULL) {
         ESP_LOGE(TAG, "fd buffer could not be allocated");
         esp_spiffs_free(&efs);
@@ -239,7 +239,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
 #if SPIFFS_CACHE
     efs->cache_sz = sizeof(spiffs_cache) + conf->max_files * (sizeof(spiffs_cache_page)
                           + efs->cfg.log_page_size);
-    efs->cache = calloc(efs->cache_sz, 1);
+    efs->cache = calloc(1, efs->cache_sz);
     if (efs->cache == NULL) {
         ESP_LOGE(TAG, "cache buffer could not be allocated");
         esp_spiffs_free(&efs);
@@ -248,14 +248,14 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
 #endif
 
     const uint32_t work_sz = efs->cfg.log_page_size * 2;
-    efs->work = calloc(work_sz, 1);
+    efs->work = calloc(1, work_sz);
     if (efs->work == NULL) {
         ESP_LOGE(TAG, "work buffer could not be allocated");
         esp_spiffs_free(&efs);
         return ESP_ERR_NO_MEM;
     }
 
-    efs->fs = calloc(sizeof(spiffs), 1);
+    efs->fs = calloc(1, sizeof(spiffs));
     if (efs->fs == NULL) {
         ESP_LOGE(TAG, "spiffs could not be allocated");
         esp_spiffs_free(&efs);

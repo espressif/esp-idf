@@ -34,6 +34,8 @@ int scandir(const char *dirname, struct dirent ***out_dirlist,
     dir_ptr = opendir(dirname);
     ESP_GOTO_ON_FALSE(dir_ptr, -1, out, TAG, "Failed to open directory: %s", dirname);
 
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // Ignore intended return of allocated *out_dirlist
+
     while ((entry = readdir(dir_ptr)) != NULL) {
         /* skip entries that don't match the filter function */
         if (select_func != NULL && !select_func(entry)) {
@@ -72,7 +74,6 @@ out:
         free(entries);
     }
 
-    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // Ignore intended return of allocated *out_dirlist
     if (dir_ptr) {
         closedir(dir_ptr);
     }
