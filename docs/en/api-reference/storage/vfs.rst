@@ -192,6 +192,18 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
+Minified VFS
+------------
+
+To minimize RAM usage, most provided filesystems use alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_minified`.
+This version accepts :cpp:class:`esp_vfs_minified_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags,
+unlike :cpp:func:`esp_vfs_register` it can handle statically allocated struct, as long as the ``ESP_VFS_FLAG_STATIC`` is provided.
+
+The :cpp:class:`esp_vfs_minified_t` is split into separate structs based on features (directory operations, select support, termios support, ...).
+The main struct contains the basic functions (``read``, ``write``, ...), alongside pointers to the feature-specific structs, these pointers can be ``NULL`` indicating lack of support for all the functions provided by that struct, this decreases the required memory.
+
+This API is also available for users to use.
+
 Well Known VFS Devices
 ----------------------
 
@@ -212,6 +224,8 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_vfs.inc
+
+.. include-build-file:: inc/esp_vfs_minified.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
 

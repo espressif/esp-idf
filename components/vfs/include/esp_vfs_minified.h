@@ -52,6 +52,10 @@ typedef struct
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 
+/**
+ * @brief Struct containing function pointers to directory related functionality.
+ *
+ */
 typedef struct {
     union {
         int (*stat_p)(void* ctx, const char * path, struct stat * st);                               /*!< stat with context pointer */
@@ -123,6 +127,10 @@ typedef struct {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
+/**
+ * @brief Struct containing function pointers to termios related functionality.
+ *
+ */
 typedef struct {
     union {
         int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);       /*!< tcsetattr with context pointer */
@@ -158,6 +166,10 @@ typedef struct {
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
+/**
+ * @brief Struct containing function pointers to select related functionality.
+ *
+ */
 typedef struct {
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
@@ -180,6 +192,10 @@ typedef struct {
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
+/**
+ * @brief Main struct of the minified vfs API, containing basic function pointers as well as pointers to the other subcomponents.
+ *
+ */
 typedef struct {
     union {
         ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);                         /*!< Write with context pointer */
@@ -227,15 +243,15 @@ typedef struct {
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    esp_vfs_dir_t *dir;
+    esp_vfs_dir_t *dir;                                                                             /*!< pointer to the dir subcomponent */
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    esp_vfs_termios_t *termios;
+    esp_vfs_termios_t *termios;                                                                     /*!< pointer to the termios subcomponent */
 #endif
 
 #if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
-    esp_vfs_select_t *select;
+    esp_vfs_select_t *select;                                                                       /*!< pointer to the select subcomponent */
 #endif
 
 } esp_vfs_minified_t;
@@ -256,7 +272,7 @@ typedef struct {
  *                   matched by any other registered VFS.
  * @param vfs  Pointer to esp_vfs_minified_t, a structure which maps syscalls to
  *             the filesystem driver functions. VFS component does not assume ownership of this struct, but see flags for more info
- * @param flag Set of binary flags controlling how the registered FS should be treated
+ * @param flags Set of binary flags controlling how the registered FS should be treated
  *             - ESP_FLAG_VFS_STATIC - if this flag is specified VFS assumes the provided esp_vfs_minified_t is statically allocated,
  *                                     if it is not enabled a copy of the provided struct will be created, which will be managed by the VFS component
  * @param ctx  If vfs->flags has ESP_VFS_FLAG_CONTEXT_PTR set, a pointer
