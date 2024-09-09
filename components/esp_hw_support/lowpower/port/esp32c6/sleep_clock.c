@@ -15,7 +15,8 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0),   DR_REG_PCR_BASE,            DR_REG_PCR_BASE,            N_REGS_PCR(),   0, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0x1), PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_REG, 1,              0, 0), .owner = ENTRY(0) | ENTRY(2) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
