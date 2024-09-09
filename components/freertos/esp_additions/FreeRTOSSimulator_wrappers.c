@@ -6,6 +6,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <dlfcn.h>
+#include <assert.h>
 #include <sys/select.h>
 #include <errno.h>
 
@@ -25,6 +26,7 @@ int select(int fd, fd_set *rfds, fd_set *wfds, fd_set *efds, struct timeval *tva
     // Lookup the select symbol
     if (s_real_select == NULL) {
         s_real_select = (select_func_t)dlsym(RTLD_NEXT, "select");
+        assert(s_real_select);  // abort() if we cannot locate the symbol
     }
 
     // Calculate the end_ticks if a timeout is provided
@@ -64,21 +66,30 @@ int select(int fd, fd_set *rfds, fd_set *wfds, fd_set *efds, struct timeval *tva
             return ret;
         }
 
-        // Return on any error but EINTR
+        // Return on any error except EINTR
         if (ret == -1 && errno != EINTR) {
             return ret;
         }
 
-        if (tval != NULL && xTaskGetTickCount() >= end_ticks) {
-            errno = 0;
-            return 0;
-        }
-
         /**
-         * Sleep for 10 tick(s) to allow other tasks to run.
+         * Sleep for maximum 10 tick(s) to allow other tasks to run.
          * This can be any value greater than zero.
          * 10 is a good trade-off between CPU time usage and timeout resolution.
          */
-        vTaskDelay(10);
+        const TickType_t max_sleep_ticks = 10;
+        TickType_t sleep_ticks = max_sleep_ticks;
+
+        if (tval != NULL) {
+            TickType_t now_ticks = xTaskGetTickCount();
+            if (now_ticks >= end_ticks) {
+                errno = 0;
+                return 0;
+            }
+            // Sleep for the remaining time or a maximum of 10 tick
+            TickType_t remaining_ticks = end_ticks - now_ticks;
+            sleep_ticks = (remaining_ticks < max_sleep_ticks) ? remaining_ticks : max_sleep_ticks;
+        }
+
+        vTaskDelay(sleep_ticks);
     }
 }
