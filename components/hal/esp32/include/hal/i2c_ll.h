@@ -647,7 +647,7 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses, b
  */
 static inline bool i2c_ll_master_is_bus_clear_done(i2c_dev_t *hw)
 {
-    return true;
+    return false;
 }
 
 /**
