@@ -142,6 +142,10 @@ static void pthread_delete(esp_pthread_t *pthread)
 /* Call this function to configure pthread stacks in Pthreads */
 esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 {
+    if (cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (cfg->stack_size < PTHREAD_STACK_MIN) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -180,6 +184,10 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
 {
+    if (p == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_RETURN_ON_ERROR(lazy_init_pthread_cfg_key(), TAG, "Failed to initialize pthread key");
 
     esp_pthread_cfg_t *cfg = pthread_getspecific(s_pthread_cfg_key);

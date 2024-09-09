@@ -18,6 +18,12 @@ TEST_CASE("esp_pthread_get_default_config creates correct stack memory capabilit
     TEST_ASSERT_EQUAL_HEX(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, default_config.stack_alloc_caps);
 }
 
+TEST_CASE("null pointers are rejected", "[cfg]")
+{
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pthread_set_cfg(NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pthread_get_cfg(NULL));
+}
+
 TEST_CASE("wrong heap caps are rejected", "[cfg]")
 {
     esp_pthread_cfg_t default_config = esp_pthread_get_default_config();

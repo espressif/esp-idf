@@ -52,6 +52,10 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 {
     // Not checking the stack size here since PTHREAD_STACK_MIN has two conflicting declarations on Linux
 
+    if (cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     // 0 is treated as default value, hence change caps to MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL in that case
     int heap_caps;
     if (cfg->stack_alloc_caps == 0) {
@@ -86,6 +90,10 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
 
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
 {
+    if (p == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_pthread_cfg_t *cfg = pthread_getspecific(s_pthread_cfg_key);
     if (cfg) {
         *p = *cfg;
