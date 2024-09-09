@@ -254,9 +254,11 @@ typedef struct {
  *                   In the special case of an empty base_path, a "fallback"
  *                   VFS is registered. Such VFS will handle paths which are not
  *                   matched by any other registered VFS.
- * @param vfs  Pointer to esp_vfs_t, a structure which maps syscalls to
- *             the filesystem driver functions. VFS component doesn't
- *             assume ownership of this pointer.
+ * @param vfs  Pointer to esp_vfs_minified_t, a structure which maps syscalls to
+ *             the filesystem driver functions. VFS component does not assume ownership of this struct, but see flags for more info
+ * @param flag Set of binary flags controlling how the registered FS should be treated
+ *             - ESP_FLAG_VFS_STATIC - if this flag is specified VFS assumes the provided esp_vfs_minified_t is statically allocated,
+ *                                     if it is not enabled a copy of the provided struct will be created, which will be managed by the VFS component
  * @param ctx  If vfs->flags has ESP_VFS_FLAG_CONTEXT_PTR set, a pointer
  *             which should be passed to VFS functions. Otherwise, NULL.
  *
@@ -265,10 +267,20 @@ typedef struct {
  */
 esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minified_t* vfs, int flags, void* ctx);
 
+/**
+ * Analog of esp_vfs_register_with_id which accepts esp_vfs_minified_t instead.
+ *
+ */
 esp_err_t esp_vfs_register_minified_with_id(const esp_vfs_minified_t* vfs, int flags, void* ctx, int* id);
 
+/**
+ * Alias for esp_vfs_unregister for naming consistency
+ */
 esp_err_t esp_vfs_unregister_minified(const char* base_path);
 
+/**
+ * Alias for esp_vfs_unregister_with_id for naming consistency
+ */
 esp_err_t esp_vfs_unregister_minified_with_id(esp_vfs_id_t id);
 
 #ifdef __cplusplus
