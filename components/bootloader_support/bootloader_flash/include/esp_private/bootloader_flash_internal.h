@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 #include <stdint.h>
 #include <esp_err.h>
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,13 @@ esp_err_t bootloader_init_spi_flash(void);
  */
 void bootloader_flash_hardware_init(void);
 #endif
+
+#if SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT
+/**
+ * @brief Initialise flash core clock
+ */
+void bootloader_flash_init_core_clock(void);
+#endif  //SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT
 
 #ifdef __cplusplus
 }

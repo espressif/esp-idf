@@ -123,6 +123,7 @@ ENV_MARKERS = {
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
     'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
     'lp_i2s': 'lp_i2s runner tested with hp_i2s',
+    'ram_app': 'ram_app runners',
 }
 
 DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
