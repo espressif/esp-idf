@@ -132,7 +132,6 @@ api-reference/system/app_trace.rst
 api-reference/system/efuse.rst
 api-reference/system/chip_revision.rst
 api-reference/system/async_memcpy.rst
-api-reference/system/random.rst
 api-reference/system/esp_timer.rst
 api-reference/system/system_time.rst
 api-reference/system/power_management.rst
