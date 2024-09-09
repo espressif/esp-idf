@@ -592,15 +592,15 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
     if (sm->state == WAIT_START) {
         if (expd->opcode != WSC_Start) {
             wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d "
-                   "in WAIT_START state", expd->opcode);
-            return ESP_FAIL;
+                       "in WAIT_START state", expd->opcode);
+            return ESP_ERR_INVALID_STATE;
         }
         wpa_printf(MSG_DEBUG, "EAP-WSC: Received start");
         sm->state = WPA_MESG;
-    } else if (expd->opcode == WSC_Start){
+    } else if (expd->opcode == WSC_Start) {
         wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d",
-                expd->opcode);
-        return ESP_FAIL;
+                   expd->opcode);
+        return ESP_ERR_INVALID_STATE;
     }
 
     flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
@@ -1067,6 +1067,8 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
+            } else if (ret == ESP_ERR_INVALID_STATE) {
+                ret = ESP_OK;
             } else {
                 ret = ESP_FAIL;
             }
@@ -1630,6 +1632,7 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
         esp_wifi_set_config(0, &wifi_config);
 
         wpa_printf(MSG_DEBUG, "WPS: neg start");
+        wifi_config.sta.failure_retry_cnt = 2;
         esp_wifi_connect();
         sm->state = WAIT_START;
         eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
