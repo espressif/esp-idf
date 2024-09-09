@@ -296,7 +296,7 @@ static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
     }
     g_sae_data.state = SAE_ACCEPTED;
 
-    wpa_set_pmk(g_sae_data.pmk, g_sae_data.pmkid, true);
+    wpa_set_pmk(g_sae_data.pmk, g_sae_data.pmk_len, g_sae_data.pmkid, true);
 
     return ESP_OK;
 }
