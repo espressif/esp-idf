@@ -204,3 +204,13 @@ esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openth
     }
     return ESP_OK;
 }
+
+uint32_t esp_openthread_get_alloc_caps(void)
+{
+    return
+#if CONFIG_OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+    (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT);
+#endif
+}
