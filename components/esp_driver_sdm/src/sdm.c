@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/sdm_hal.h"
 #include "hal/sdm_ll.h"
+#include "hal/hal_utils.h"
 #include "soc/sdm_periph.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/io_mux.h"
@@ -242,7 +243,20 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     chan->gpio_num = config->gpio_num;
 
     // set prescale based on sample rate
-    uint32_t prescale = src_clk_hz / config->sample_rate_hz;
+    uint32_t prescale = 0;
+    hal_utils_clk_info_t clk_info = {
+        .src_freq_hz = src_clk_hz,
+        .exp_freq_hz = config->sample_rate_hz,
+        .max_integ = SDM_LL_PRESCALE_MAX + 1,
+        .min_integ = 1,
+        .round_opt = HAL_DIV_ROUND,
+    };
+    uint32_t actual_freq = hal_utils_calc_clk_div_integer(&clk_info, &prescale);
+    ESP_GOTO_ON_FALSE(actual_freq, ESP_ERR_INVALID_ARG, err, TAG,
+                      "sample rate out of range [%"PRIu32", %"PRIu32"] Hz", src_clk_hz / SDM_LL_PRESCALE_MAX, src_clk_hz);
+    if (actual_freq != config->sample_rate_hz) {
+        ESP_LOGW(TAG, "precision loss, expected sample rate %"PRIu32" Hz runs at %"PRIu32" Hz", config->sample_rate_hz, actual_freq);
+    }
     sdm_ll_set_prescale(group->hal.dev, chan_id, prescale);
     chan->sample_rate_hz = src_clk_hz / prescale;
     // preset the duty cycle to zero
