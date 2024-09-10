@@ -126,6 +126,7 @@ config BT_L2CAP_ENABLED
 config BT_SDP_COMMON_ENABLED
     bool "BT SDP COMMON"
     depends on BT_CLASSIC_ENABLED
+    default y if BT_L2CAP_ENABLED
     default n
     help
         This enables common SDP operation, such as SDP record creation and deletion.

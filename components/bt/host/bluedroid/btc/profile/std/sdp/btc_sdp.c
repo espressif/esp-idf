@@ -91,11 +91,6 @@ static int get_sdp_record_size(bluetooth_sdp_record* in_record)
         records_size = sizeof(bluetooth_sdp_record);
         break;
 
-    case SDP_TYPE_RAW:
-        if (record->raw.user1_ptr != NULL) {
-            records_size += record->raw.user1_ptr_len;
-        }
-        /* fall through */
     default:
         records_size += sizeof(bluetooth_sdp_record);
         records_size += record->hdr.service_name_length;
@@ -254,12 +249,6 @@ static void copy_sdp_record_common(bluetooth_sdp_record* in_record, bluetooth_sd
         *(free_ptr) = '\0'; // Set '\0' termination of string
         free_ptr++;
     }
-
-    if (in_record->hdr.type == SDP_TYPE_RAW && in_record->raw.user1_ptr != NULL) {
-        out_record->raw.user1_ptr = (UINT8 *)free_ptr;                            // Update pointer
-        memcpy(free_ptr, in_record->raw.user1_ptr, in_record->raw.user1_ptr_len); // Copy content
-        free_ptr += in_record->raw.user1_ptr_len;
-    }
 }
 
 static void copy_sdp_record(bluetooth_sdp_record* in_record, bluetooth_sdp_record* out_record)
@@ -402,6 +391,7 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
     UINT8               temp[LEN_UUID_128];
     UINT8*              p_temp = temp;
     UINT32              sdp_handle = 0;
+    const esp_bt_uuid_t *p_uuid = &rec->hdr.uuid;
 
     BTC_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s", __func__,
             rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm, rec->hdr.service_name);
@@ -411,15 +401,15 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
         return sdp_handle;
     }
 
-    if (rec->uuid.len == ESP_UUID_LEN_16) {
+    if (p_uuid->len == ESP_UUID_LEN_16) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-        UINT16_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid16);
-    } else if (rec->uuid.len == ESP_UUID_LEN_32) {
+        UINT16_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid16);
+    } else if (p_uuid->len == ESP_UUID_LEN_32) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
-        UINT32_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid32);
-    } else if (rec->uuid.len == ESP_UUID_LEN_128) {
+        UINT32_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid32);
+    } else if (p_uuid->len == ESP_UUID_LEN_128) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-        ARRAY_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid128, LEN_UUID_128);
+        ARRAY_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid128, LEN_UUID_128);
     } else {
         SDP_DeleteRecord(sdp_handle);
         sdp_handle = 0;
@@ -466,12 +456,12 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        if (rec->uuid.len == ESP_UUID_LEN_16) {
-            bta_sys_add_uuid(rec->uuid.uuid.uuid16);
-        } else if (rec->uuid.len == ESP_UUID_LEN_32) {
-            bta_sys_add_uuid_32(rec->uuid.uuid.uuid32);
-        } else if (rec->uuid.len == ESP_UUID_LEN_128) {
-            bta_sys_add_uuid_128((UINT8 *)&rec->uuid.uuid.uuid128);
+        if (p_uuid->len == ESP_UUID_LEN_16) {
+            bta_sys_add_uuid(p_uuid->uuid.uuid16);
+        } else if (p_uuid->len == ESP_UUID_LEN_32) {
+            bta_sys_add_uuid_32(p_uuid->uuid.uuid32);
+        } else if (p_uuid->len == ESP_UUID_LEN_128) {
+            bta_sys_add_uuid_128((UINT8 *)&p_uuid->uuid.uuid128);
         }
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
@@ -943,7 +933,7 @@ static int btc_handle_create_record_event(int id)
         switch (record->hdr.type) {
         case SDP_TYPE_RAW:
             sdp_handle = add_raw_sdp(&record->raw);
-            memcpy(&service_uuid, &record->raw.uuid, sizeof(esp_bt_uuid_t));
+            memcpy(&service_uuid, &record->hdr.uuid, sizeof(esp_bt_uuid_t));
             break;
         case SDP_TYPE_MAP_MAS:
             sdp_handle = add_maps_sdp(&record->mas);

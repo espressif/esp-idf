@@ -11,6 +11,4 @@ Bluedroid
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`
 
-        - structure ``esp_bluetooth_sdp_hdr_overlay_t`` has been renamed to ``esp_bluetooth_sdp_hdr_t``
-        - field ``uuid``, ``user1_ptr_len`` and ``user1_ptr`` in ``esp_bluetooth_sdp_hdr_overlay_t`` have been moved into ``esp_bluetooth_sdp_raw_record_t``
-        - field ``user2_ptr_len`` and ``user2_ptr`` in ``esp_bluetooth_sdp_hdr_overlay_t`` have been removed
+        - Field ``user2_ptr_len`` and ``user2_ptr`` is deprecated in structure ``esp_bluetooth_sdp_hdr_overlay_t``, since they are not used in SDP record creation or searching.

@@ -65,64 +65,66 @@ typedef enum {
 /**
  * @brief SDP header structure
  */
-typedef struct {
-    esp_bluetooth_sdp_types_t type; /*!< SDP type */
-    uint32_t service_name_length;   /*!< Service name length */
-    char *service_name;             /*!< Service name */
-    int32_t rfcomm_channel_number;  /*!< RFCOMM channel number, if not used set to -1*/
-    int32_t l2cap_psm;              /*!< L2CAP psm, if not used set to -1 */
-    int32_t profile_version;        /*!< Profile version */
-} esp_bluetooth_sdp_hdr_t;
+typedef struct bluetooth_sdp_hdr_overlay {
+    esp_bluetooth_sdp_types_t type;                 /*!< SDP type */
+    esp_bt_uuid_t uuid;                             /*!< UUID type, include uuid and uuid length, only needed to be set for RAW record creation */
+    uint32_t service_name_length;                   /*!< Service name length */
+    char *service_name;                             /*!< Service name */
+    int32_t rfcomm_channel_number;                  /*!< RFCOMM channel number, if not used set to -1*/
+    int32_t l2cap_psm;                              /*!< L2CAP psm, if not used set to -1 */
+    int32_t profile_version;                        /*!< Profile version */
+    int user1_ptr_len;                              /*!< User data1 length, only used for searching RAW record */
+    uint8_t *user1_ptr;                             /*!< User data1 pointer to the raw SDP response data, only used for searching RAW record */
+    int user2_ptr_len __attribute__((deprecated));  /*!< User data2 length, only used for searching RAW record */
+    uint8_t *user2_ptr __attribute__((deprecated)); /*!< User data2 pointer, only used for searching RAW record */
+} esp_bluetooth_sdp_hdr_overlay_t;
 
 /**
  * @brief Raw SDP record
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr; /*!< General info */
-    esp_bt_uuid_t uuid;          /*!< UUID type， include uuid and uuid length */
-    int user1_ptr_len;           /*!< Length of raw SDP data */
-    uint8_t *user1_ptr;          /*!< Raw SDP data */
+typedef struct bluetooth_sdp_raw_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
 } esp_bluetooth_sdp_raw_record_t;
 
 /**
  * @brief Message Access Profile - Server parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr;      /*!< General info */
-    uint32_t mas_instance_id;         /*!< MAS Instance ID */
-    uint32_t supported_features;      /*!< Map supported features */
-    uint32_t supported_message_types; /*!< Supported message types */
+typedef struct bluetooth_sdp_mas_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
+    uint32_t mas_instance_id;            /*!< MAS Instance ID */
+    uint32_t supported_features;         /*!< Map supported features */
+    uint32_t supported_message_types;    /*!< Supported message types */
 } esp_bluetooth_sdp_mas_record_t;
 
 /**
  * @brief Message Access Profile - Client (Notification Server) parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr; /*!< General info */
-    uint32_t supported_features; /*!< Supported features */
+typedef struct bluetooth_sdp_mns_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
+    uint32_t supported_features;         /*!< Supported features */
 } esp_bluetooth_sdp_mns_record_t;
 
 /**
  * @brief Phone Book Profile - Server parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr;     /*!< General info */
-    uint32_t supported_features;     /*!< PBAP Supported Features */
-    uint32_t supported_repositories; /*!< Supported Repositories */
+typedef struct bluetooth_sdp_pse_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
+    uint32_t supported_features;         /*!< PBAP Supported Features */
+    uint32_t supported_repositories;     /*!< Supported Repositories */
 } esp_bluetooth_sdp_pse_record_t;
 
 /**
  * @brief Phone Book Profile - Client parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr; /*!< General info */
+typedef struct bluetooth_sdp_pce_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
 } esp_bluetooth_sdp_pce_record_t;
 
 /**
  * @brief Object Push Profile parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr;                                          /*!< General info */
+typedef struct bluetooth_sdp_ops_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr;                                  /*!< General info */
     int supported_formats_list_len;                                       /*!< Supported formats list length */
     uint8_t supported_formats_list[SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH]; /*!< Supported formats list */
 } esp_bluetooth_sdp_ops_record_t;
@@ -130,8 +132,8 @@ typedef struct {
 /**
  * @brief SIM Access Profile parameters
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr;       /*!< General info */
+typedef struct bluetooth_sdp_sap_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
 } esp_bluetooth_sdp_sap_record_t;
 
 /**
@@ -148,21 +150,21 @@ typedef enum {
  * @note Only one primary Device Identification service record can be added in the SDP database. If primary
  * Device Identification service is created multiple times, only the last one will take effect.
  */
-typedef struct {
-    esp_bluetooth_sdp_hdr_t hdr;    /*!< General info */
-    uint16_t vendor;                /*!< Vendor ID */
-    uint16_t vendor_id_source;      /*!< Vendor ID source, 0x0001 for Bluetooth, 0x0002 for USB, other values reserved, see `esp_sdp_vendor_id_source_t` */
-    uint16_t product;               /*!< Product ID */
-    uint16_t version;               /*!< Release version in format 0xJJMN(JJ – major number, M – minor number, N – sub-minor number) */
-    bool primary_record;            /*!< Indicate if the record is primary, shall set to true if there is a only single device
-                                       record, others shall be set to false */
+typedef struct bluetooth_sdp_dip_record {
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
+    uint16_t vendor;                     /*!< Vendor ID */
+    uint16_t vendor_id_source;           /*!< Vendor ID source, 0x0001 for Bluetooth, 0x0002 for USB, other values reserved, see `esp_sdp_vendor_id_source_t` */
+    uint16_t product;                    /*!< Product ID */
+    uint16_t version;                    /*!< Release version in format 0xJJMN(JJ – major number, M – minor number, N – sub-minor number) */
+    bool primary_record;                 /*!< Indicate if the record is primary, shall set to true if there is a only single device
+                                            record, others shall be set to false */
 } esp_bluetooth_sdp_dip_record_t;
 
 /**
  * @brief SDP record parameters union
  */
 typedef union {
-    esp_bluetooth_sdp_hdr_t        hdr;  /*!< General info */
+    esp_bluetooth_sdp_hdr_overlay_t hdr; /*!< General info */
     esp_bluetooth_sdp_raw_record_t raw;  /*!< Raw SDP search data for unknown UUIDs */
     esp_bluetooth_sdp_mas_record_t mas;  /*!< Message Access Profile - Server */
     esp_bluetooth_sdp_mns_record_t mns;  /*!< Message Access Profile - Client (Notification Server) */
@@ -205,7 +207,7 @@ typedef union {
     /**
      * @brief ESP_SDP_CREATE_RECORD_COMP_EVT
      */
-    struct sdp_crate_record_evt_param {
+    struct sdp_create_record_evt_param {
         esp_sdp_status_t status; /*!< Status */
         int record_handle;       /*!< SDP record handle */
     } create_record;             /*!< SDP callback param of ESP_SDP_CREATE_RECORD_COMP_EVT */
