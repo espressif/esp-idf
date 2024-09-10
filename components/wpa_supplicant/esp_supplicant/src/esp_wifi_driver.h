@@ -128,7 +128,7 @@ struct wpa_funcs {
     bool (*wpa_sta_in_4way_handshake)(void);
     void *(*wpa_ap_init)(void);
     bool (*wpa_ap_deinit)(void *data);
-    bool (*wpa_ap_join)(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8* rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher);
+    bool (*wpa_ap_join)(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8* rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher);
     bool (*wpa_ap_remove)(u8 *bssid);
     uint8_t *(*wpa_ap_get_wpa_ie)(uint8_t *len);
     bool (*wpa_ap_rx_eapol)(void *hapd_data, void *sm, u8 *data, size_t data_len);
@@ -303,5 +303,6 @@ bool esp_wifi_eb_tx_status_success_internal(void *eb);
 uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 void esp_wifi_enable_sae_pk_only_mode_internal(void);
+uint8_t esp_wifi_ap_get_transition_disable_internal(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
