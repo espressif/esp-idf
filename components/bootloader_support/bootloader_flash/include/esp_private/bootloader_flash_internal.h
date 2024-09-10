@@ -28,12 +28,10 @@ esp_err_t bootloader_init_spi_flash(void);
 void bootloader_flash_hardware_init(void);
 #endif
 
-#if SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT
 /**
- * @brief Initialise flash core clock
+ * @brief Initialise mspi core clock
  */
-void bootloader_flash_init_core_clock(void);
-#endif  //SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT
+void bootloader_init_mspi_clock(void);
 
 #ifdef __cplusplus
 }

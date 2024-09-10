@@ -69,6 +69,8 @@ static void esp_cpu_configure_invalid_regions(void)
 
     // 8. End of address space
     PMA_ENTRY_SET_TOR(14, SOC_PERIPHERAL_HIGH, PMA_NONE);
+
+    PMA_ENTRY_CFG_RESET(15);
     PMA_ENTRY_SET_TOR(15, UINT32_MAX, PMA_TOR | PMA_NONE);
 }
 

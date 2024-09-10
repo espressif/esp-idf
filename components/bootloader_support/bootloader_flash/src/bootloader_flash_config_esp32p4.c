@@ -42,7 +42,7 @@ void IRAM_ATTR bootloader_flash_cs_timing_config(void)
     SET_PERI_REG_BITS(SPI_MEM_C_CTRL2_REG, SPI_MEM_C_CS_SETUP_TIME_V, 0, SPI_MEM_C_CS_SETUP_TIME_S);
 }
 
-void IRAM_ATTR bootloader_flash_init_core_clock(void)
+void IRAM_ATTR bootloader_init_mspi_clock(void)
 {
     _spimem_flash_ll_select_clk_source(0, FLASH_CLK_SRC_SPLL);
     _spimem_ctrlr_ll_set_core_clock(0, 6);
@@ -50,7 +50,7 @@ void IRAM_ATTR bootloader_flash_init_core_clock(void)
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
 {
-    bootloader_flash_init_core_clock();
+    bootloader_init_mspi_clock();
 
     uint32_t spi_clk_div = 0;
     switch (pfhdr->spi_speed) {

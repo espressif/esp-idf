@@ -112,7 +112,7 @@ static inline void bootloader_hardware_init(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     // IDF-10019 TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used.
     if (likely(ESP_CHIP_REV_ABOVE(chip_version, 1))) {
-        bootloader_flash_init_core_clock();
+        bootloader_init_mspi_clock();
     }
 #endif
 }
