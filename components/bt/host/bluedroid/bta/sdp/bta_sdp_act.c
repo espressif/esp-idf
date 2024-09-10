@@ -375,7 +375,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
         record->hdr.rfcomm_channel_number = pe.params[0];
     }
-    record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_size;
+    record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_used;
     record->hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
 }
 
@@ -525,6 +525,10 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     }
     SDP_InitDiscoveryDb (p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1,
                          bta_sdp_search_uuid, 0, NULL);
+
+    /* tell SDP to keep the raw data */
+    p_bta_sdp_cfg->p_sdp_db->raw_size = p_bta_sdp_cfg->sdp_raw_size;
+    p_bta_sdp_cfg->p_sdp_db->raw_data = p_bta_sdp_cfg->p_sdp_raw_data;
 
     if (!SDP_ServiceSearchAttributeRequest2(p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
                                             bta_sdp_search_cback, (void *)bta_sdp_search_uuid)) {
