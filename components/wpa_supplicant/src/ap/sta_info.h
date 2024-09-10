@@ -66,6 +66,7 @@ struct sta_info {
 				 * processing commit for that station  */
 	bool remove_pending;	/* Flag to indicate to free station when
 				 * whose mutex is taken by task */
+	struct wpabuf *sae_data;
 #endif /* CONFIG_SAE */
 #endif /* ESP_SUPPLICANT */
 
