@@ -95,10 +95,6 @@ components/driver/test_apps/touch_sensor_v2:
 components/driver/test_apps/twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8966
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:
