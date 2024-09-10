@@ -97,6 +97,10 @@ SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on 
 # esp_debug_stubs doesn't have init dependencies
 SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
 
+# Register NVS Encryption schemes
+SECONDARY: 150: nvs_sec_provider_register_flash_enc_scheme in components/nvs_sec_provider/nvs_sec_provider.c on BIT(0)
+SECONDARY: 151: nvs_sec_provider_register_hmac_scheme in components/nvs_sec_provider/nvs_sec_provider.c on BIT(0)
+
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
 SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
