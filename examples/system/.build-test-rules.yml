@@ -118,10 +118,6 @@ examples/system/ipc/ipc_isr/riscv:
   enable:
     - if: IDF_TARGET_ARCH_RISCV == 1 and ESP_IPC_ISR_ENABLE == 1
       reason: The test is intended only for multi-core chips
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
   depends_components:
     - esp_system
 
