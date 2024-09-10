@@ -180,13 +180,16 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
     if (sta->remove_pending) {
         reply_res = -1;
     } else {
-        reply_res = esp_send_sae_auth_reply(hapd, sta->addr, bssid, WLAN_AUTH_SAE, 2,
-                                       WLAN_STATUS_SUCCESS, wpabuf_head(data),
-                                       wpabuf_len(data));
+        if (sta->sae_data)
+            wpabuf_free(data);
+        sta->sae_data = data;
+        reply_res = 0;
+        /* confirm is sent in later stage when all the required processing for a sta is done*/
     }
+#else
+    wpabuf_free(data);
 #endif /* ESP_SUPPLICANT */
 
-    wpabuf_free(data);
     return reply_res;
 }
 
