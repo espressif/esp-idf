@@ -65,7 +65,9 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Malloc buffer for SDP configuration structure */
     p_bta_sdp_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_sdp_cfg->sdp_db_size);
-    if (p_bta_sdp_cfg->p_sdp_db == NULL) {
+    p_bta_sdp_cfg->p_sdp_raw_data = (UINT8 *)osi_malloc(p_bta_sdp_cfg->sdp_raw_size);
+    if (p_bta_sdp_cfg->p_sdp_db == NULL || p_bta_sdp_cfg->p_sdp_raw_data == NULL) {
+        BTA_SdpCleanup();
         return BTA_SDP_FAILURE;
     }
 #endif
@@ -118,8 +120,15 @@ tBTA_SDP_STATUS BTA_SdpCleanup(void)
     bta_sys_deregister(BTA_ID_SDP);
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Free buffer for SDP configuration structure */
-    osi_free(p_bta_sdp_cfg->p_sdp_db);
-    p_bta_sdp_cfg->p_sdp_db = NULL;
+    if (p_bta_sdp_cfg->p_sdp_db) {
+        osi_free(p_bta_sdp_cfg->p_sdp_db);
+        p_bta_sdp_cfg->p_sdp_db = NULL;
+    }
+
+    if (p_bta_sdp_cfg->p_sdp_raw_data) {
+        osi_free(p_bta_sdp_cfg->p_sdp_raw_data);
+        p_bta_sdp_cfg->p_sdp_raw_data = NULL;
+    }
 #endif
     return BTA_SDP_SUCCESS;
 }
