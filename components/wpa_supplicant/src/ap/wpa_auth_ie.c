@@ -388,6 +388,7 @@ u8 * wpa_add_kde(u8 *pos, u32 kde, const u8 *data, size_t data_len,
 	return pos;
 }
 
+
 enum wpa_validate_result
 wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			struct wpa_state_machine *sm,
@@ -563,8 +564,9 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			return WPA_MGMT_FRAME_PROTECTION_VIOLATION;
 		}
 
-		if (data.mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC) {
-			wpa_printf( MSG_DEBUG, "Unsupported management group "
+		if (data.mgmt_group_cipher != wpa_auth->conf.group_mgmt_cipher)
+		{
+			wpa_printf(MSG_DEBUG, "Unsupported management group "
 				   "cipher %d", data.mgmt_group_cipher);
 			return WPA_INVALID_MGMT_GROUP_CIPHER;
 		}
