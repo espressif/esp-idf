@@ -181,7 +181,7 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
         reply_res = -1;
     } else {
         if (sta->sae_data)
-            wpabuf_free(data);
+            wpabuf_free(sta->sae_data);
         sta->sae_data = data;
         reply_res = 0;
         /* confirm is sent in later stage when all the required processing for a sta is done*/
@@ -679,7 +679,7 @@ int auth_sae_queue(struct hostapd_data *hapd,
     unsigned int queue_len;
 
     queue_len = dl_list_len(&hapd->sae_commit_queue);
-    if (queue_len >= 5) {
+    if (queue_len >= hapd->conf->max_num_sta) {
         wpa_printf(MSG_DEBUG,
                    "SAE: No more room in message queue - drop the new frame from "
                    MACSTR, MAC2STR(bssid));
