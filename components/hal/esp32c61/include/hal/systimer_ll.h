@@ -12,8 +12,6 @@
 #include "soc/pcr_struct.h"
 #include "hal/assert.h"
 
-// TODO: [ESP32C61] IDF-9307, inherit from C6
-
 #ifdef __cplusplus
 extern "C" {
 #endif

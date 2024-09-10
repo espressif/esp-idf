@@ -51,8 +51,6 @@ examples/system/efuse:
     - bootloader_support
 
 examples/system/esp_timer:
-  disable:
-    - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
   depends_components:
     - esp_timer
 

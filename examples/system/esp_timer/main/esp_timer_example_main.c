@@ -58,6 +58,7 @@ void app_main(void)
         usleep(2000000);
     }
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
     /* Timekeeping continues in light sleep, and timers are scheduled
      * correctly after light sleep.
      */
@@ -71,6 +72,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Woke up from light sleep, time since boot: %lld us", t2);
 
     assert(llabs((t2 - t1) - 500000) < 1200);
+#endif
 
     /* Let the timer run for a little bit more */
     usleep(2000000);
