@@ -11,7 +11,6 @@
  *
  * See README and COPYING for more details.
  */
- #ifdef ESP_SUPPLICANT
 
 #include "utils/includes.h"
 
@@ -452,6 +451,3 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 
 	return ret;
 }
-
-
-#endif // ESP_SUPPLICANT
