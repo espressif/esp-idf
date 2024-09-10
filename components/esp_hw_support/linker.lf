@@ -26,7 +26,7 @@ entries:
     if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         pmu_init (noflash)
         pmu_param (noflash)
-    if SOC_PMU_PVT_SUPPORTED = y:
+    if SOC_PMU_PVT_SUPPORTED = y && ESP_ENABLE_PVT = y:
         pmu_pvt (noflash)
     if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
