@@ -89,71 +89,7 @@ menu "Serial flasher config"
         # information get from efuse, so don't care this dout choice.
         default "dout" if ESPTOOLPY_FLASHMODE_OPI
 
-    choice ESPTOOLPY_FLASHFREQ
-        prompt "Flash SPI speed"
-        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32
-        default ESPTOOLPY_FLASHFREQ_80M if ESPTOOLPY_FLASHFREQ_80M_DEFAULT
-        default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
-        config ESPTOOLPY_FLASHFREQ_120M
-            bool "120 MHz (READ DOCS FIRST)"
-            depends on SOC_MEMSPI_SRC_FREQ_120M && \
-                (SPI_FLASH_HPM_ON || ESPTOOLPY_OCT_FLASH) && \
-                (ESPTOOLPY_FLASH_SAMPLE_MODE_STR || IDF_EXPERIMENTAL_FEATURES)
-            help
-                - Optional feature for QSPI Flash. Read docs and enable `CONFIG_SPI_FLASH_HPM_ENA` first!
-                - Flash 120 MHz SDR mode is stable.
-                - Flash 120 MHz DDR mode is an experimental feature, it works when
-                  the temperature is stable.
-
-                    Risks:
-                        If your chip powers on at a certain temperature, then after the temperature
-                        increases or decreases by approximately 20 Celsius degrees (depending on the
-                        chip), the program will crash randomly.
-
-        config ESPTOOLPY_FLASHFREQ_80M
-            bool "80 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED && !ESP32P4_REV_MIN_0 # TODO IDF-10488
-        config ESPTOOLPY_FLASHFREQ_64M
-            bool "64 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_60M
-            bool "60 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_48M
-            bool "48 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_40M
-            bool "40 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_32M
-            bool "32 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_30M
-            bool "30 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_26M
-            bool "26 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_24M
-            bool "24 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_24M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_20M
-            bool "20 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_16M
-            bool "16 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
-        config ESPTOOLPY_FLASHFREQ_15M
-            bool "15 MHz"
-            depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
-    endchoice
-
-    config ESPTOOLPY_FLASHFREQ_80M_DEFAULT
-        bool
-        default y if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
-        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
-        help
-            This is an invisible item, used to define the targets that defaults to use 80MHz Flash SPI speed.
+    orsource "../spi_flash/$IDF_TARGET/Kconfig.flash_freq"
 
     config ESPTOOLPY_FLASHFREQ
         string
