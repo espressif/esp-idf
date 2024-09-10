@@ -1875,6 +1875,10 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
     }
 
     kde_len = wpa_ie_len + ieee80211w_kde_len(sm);
+
+    if (sm->wpa_auth->conf.transition_disable)
+        kde_len += 2 + RSN_SELECTOR_LEN + 1;
+
     if (gtk)
         kde_len += 2 + RSN_SELECTOR_LEN + 2 + gtk_len;
 #ifdef CONFIG_IEEE80211R_AP
@@ -1911,6 +1915,9 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
     }
     pos = ieee80211w_kde_add(sm, pos);
 
+    if (sm->wpa_auth->conf.transition_disable)
+        pos = wpa_add_kde(pos, WFA_KEY_DATA_TRANSITION_DISABLE,
+                &sm->wpa_auth->conf.transition_disable, 1, NULL, 0);
 #ifdef CONFIG_IEEE80211R_AP
     if (wpa_key_mgmt_ft(sm->wpa_key_mgmt)) {
         int res;
