@@ -1089,6 +1089,7 @@ menu "mbedTLS"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C
         select MBEDTLS_CCM_C
+        select MBEDTLS_CMAC_C
         select MBEDTLS_ROM_MD5
         select MBEDTLS_HARDWARE_SHA
         select MBEDTLS_ECP_RESTARTABLE
