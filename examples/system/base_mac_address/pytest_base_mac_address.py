@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='test case fail')    # TODO: IDF-10956
 @pytest.mark.generic
 def test_base_mac_address(dut: Dut) -> None:
     def get_hex_r(num_bytes: int) -> str:
