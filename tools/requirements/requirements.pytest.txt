@@ -15,21 +15,3 @@ minio
 # build
 python-gitlab
 idf-build-apps
-
-# dependencies in pytest test scripts
-scapy
-websocket-client
-netifaces
-rangehttpserver
-dbus-python; sys_platform == 'linux'
-protobuf
-bleak
-paho-mqtt
-paramiko
-netmiko
-
-# iperf_test_util
-pyecharts
-
-# for twai tests, communicate with socket can device (e.g. Canable)
-python-can
