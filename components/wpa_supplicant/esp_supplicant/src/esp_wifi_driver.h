@@ -304,5 +304,7 @@ uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 void esp_wifi_enable_sae_pk_only_mode_internal(void);
 uint8_t esp_wifi_ap_get_transition_disable_internal(void);
+int esp_wifi_softap_set_obss_overlap(bool overlap);
+void esp_wifi_set_sigma_internal(bool flag);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
