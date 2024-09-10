@@ -366,4 +366,15 @@ menu "Hardware Settings"
         help
             By default, only the 256-bit curve operations are allowed. If this configuration is enabled,
             it will set the eFuse to allow ECDSA operations using both the 192-bit and 256-bit curves
+
+    config ESP_ENABLE_PVT
+        bool "Auto adjust hp & lp voltage using pvt function (MUST ENABLE FOR MP)"
+        depends on SOC_PMU_PVT_SUPPORTED
+        default n if IDF_TARGET_ESP32C6
+        default y
+        help
+            If enabled, hp & lp voltage can be auto adjust by PVT characteristic.
+            Otherwise, internal voltage will be set to fix dbias.
+            This is a must for stable mass production. Disable for debugging only.
+
 endmenu

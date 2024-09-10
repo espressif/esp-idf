@@ -18,6 +18,10 @@ if(NOT BOOTLOADER_BUILD)
 
 endif()
 
+if(NOT BOOTLOADER_BUILD AND CONFIG_ESP_ENABLE_PVT)
+    list(APPEND srcs "pmu_pvt.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
