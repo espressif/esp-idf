@@ -257,7 +257,7 @@ static int wpa3_sae_is_group_enabled(int group)
 
 static int wpa3_check_sae_rejected_groups(const struct wpabuf *groups)
 {
-    size_t i, count;
+    size_t i, count, len;
     const u8 *pos;
 
     if (!groups) {
@@ -265,7 +265,14 @@ static int wpa3_check_sae_rejected_groups(const struct wpabuf *groups)
     }
 
     pos = wpabuf_head(groups);
-    count = wpabuf_len(groups) / 2;
+    len = wpabuf_len(groups);
+    if (len & 1) {
+        wpa_printf(MSG_DEBUG,
+                   "SAE: Invalid length of the Rejected Groups element payload: %zu",
+                   len);
+        return 1;
+    }
+    count = len / 2;
     for (i = 0; i < count; i++) {
         int enabled;
         u16 group;
