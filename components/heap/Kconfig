@@ -125,7 +125,7 @@ menu "Heap memory debugging"
 
     config HEAP_TLSF_CHECK_PATCH
         bool "Patch the tlsf_check_pool() for ROM HEAP TLSF implementation"
-        depends on IDF_TARGET_ESP32C2 && ESP32C2_REV_MIN_FULL < 200
+        depends on IDF_TARGET_ESP32C2
         default y
         help
             ROM does not contain the patch of tlsf_check_pool() allowing perform
