@@ -33,37 +33,37 @@ It is usually just enough to create a default network interface after startup an
 Initialization
 --------------
 
-Since the ESP-NETIF component uses system events, the typical network startup code looks like this (note, that error handling is omitted for clarity, see :example_file:`ethernet/basic/main/ethernet_example_main.c` for complete startup code):
+Since the ESP-NETIF component uses system events, the typical network startup code looks like this (note that error handling is omitted for clarity, see :example_file:`ethernet/basic/main/ethernet_example_main.c` for complete startup code):
 
 .. code-block:: c
 
-      // 1) Initialize the TCP/IP stack and the event loop
-      esp_netif_init();
-      esp_event_loop_create_default();
+    // 1) Initialize the TCP/IP stack and the event loop
+    esp_netif_init();
+    esp_event_loop_create_default();
 
-      // 2) Create the network interface handle
-      esp_netif = esp_netif_new(&config);
+    // 2) Create the network interface handle
+    esp_netif = esp_netif_new(&config);
 
-      // 3) Create the network interface driver (e.g. Ethernet) and it's network layer glue
-      // and register the ESP-NETIF event (e.g. to bring the interface up upon link-up event)
-      esp_netif_glue_t glue = driver_glue(driver);
+    // 3) Create the network interface driver (e.g., Ethernet) and it's network layer glue
+    // and register the ESP-NETIF event (e.g., to bring the interface up upon link-up event)
+    esp_netif_glue_t glue = driver_glue(driver);
 
-      // 4) Attach the driver's glue layer to the network interface handle
-      esp_netif_attach(esp_netif, glue);
+    // 4) Attach the driver's glue layer to the network interface handle
+    esp_netif_attach(esp_netif, glue);
 
-      // 5) Register user-side event handlers
-      esp_event_handler_register(DRIVER_EVENT, ...);  // to observe driver states, e.g. link-up
-      esp_event_handler_register(IP_EVENT, ...);      // to observe ESP-NETIF states, e.g. get an IP
+    // 5) Register user-side event handlers
+    esp_event_handler_register(DRIVER_EVENT, ...);  // to observe driver states, e.g., link-up
+    esp_event_handler_register(IP_EVENT, ...);      // to observe ESP-NETIF states, e.g., get an IP
 
 
 .. note::
 
-    These steps must be performed in the exact order shown above, primarily due to the default event loop used by network interface drivers to register system events.
+    These steps must be performed in the exact order shown above, as the network interface drivers use the default event loop when registering system events.
 
-      - The default event loop needs to be created **before** initializing an interface driver, as the driver typically needs to register system event handlers.
-      - Registering application event handlers must occur **after** calling :cpp:func:`esp_netif_attach`, because event handlers are called in the order they were registered. To ensure that system handlers are called first, you should register application handlers afterward.
+        - The default event loop needs to be created **before** initializing an interface driver, as the driver typically needs to register system event handlers.
+        - Registering application event handlers must occur **after** calling :cpp:func:`esp_netif_attach`, because event handlers are called in the order they were registered. To ensure that system handlers are called first, you should register application handlers afterward.
 
-    Steps ``2)``, ``3)`` and ``4)`` are quite complex for most common use-cases, so  ESP-NETIF provides some pre-configured interfaces and convenience functions that create the most common network interfaces in their most common configurations.
+    Steps ``2)``, ``3)`` and ``4)`` are quite complex for most common use-cases, so ESP-NETIF provides some pre-configured interfaces and convenience functions that create the most common network interfaces in their most common configurations.
 
 .. note::
 
@@ -71,6 +71,7 @@ Since the ESP-NETIF component uses system events, the typical network startup co
 
 
 Creating and configuring the interface and attaching the network interface driver to it (steps ``2)``, ``3)`` and ``4)``) is described in :ref:`create_esp_netif`.
+
 Using the ESP-NETIF event handlers (step ``5)``) is described in :ref:`esp-netif-ip-events`.
 
 
@@ -120,7 +121,7 @@ The initialization code as well as registering event handlers for default interf
 
 .. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
-    * When using Wi-Fi in ``AP+STA`` mode, both these interfaces have to be created. Please refer to the example :example_file:`wifi/softap_sta/main/softap_sta.c`
+    * When using Wi-Fi in ``AP+STA`` mode, both these interfaces have to be created. Please refer to the example :example_file:`wifi/softap_sta/main/softap_sta.c`.
 
 .. _esp-netif-ip-events:
 
@@ -137,7 +138,7 @@ Registering event handlers is crucial due to the asynchronous nature of networki
 
 .. note::
 
-    Lost IP events are triggered by a timer configurable by :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`. The timer is started upon losing the IP address and the event will be raised after the configured interval, which is 120s by default. The event could be disabled when setting the interval to 0.
+    Lost IP events are triggered by a timer configurable by :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`. The timer is started upon losing the IP address and the event will be raised after the configured interval, which is 120 s by default. The event could be disabled when setting the interval to 0.
 
 .. _esp-netif structure:
 
@@ -207,24 +208,24 @@ Overall application interaction with a specific IO driver for the communication 
 
 A) Initialization code
 
-  1) Initializes IO driver
-  2) Creates a new instance of ESP-NETIF and configure it with
+    1) Initializes IO driver
+    2) Creates a new instance of ESP-NETIF and configure it with
 
-    * ESP-NETIF specific options (flags, behavior, name)
-    * Network stack options (netif init and input functions, not publicly available)
-    * IO driver specific options (transmit, free rx buffer functions, IO driver handle)
+        * ESP-NETIF specific options (flags, behavior, name)
+        * Network stack options (netif init and input functions, not publicly available)
+        * IO driver specific options (transmit, free rx buffer functions, IO driver handle)
 
-  3) Attaches the IO driver handle to the ESP-NETIF instance created in the above steps
-  4) Configures event handlers
+    3) Attaches the IO driver handle to the ESP-NETIF instance created in the above steps
+    4) Configures event handlers
 
-    * Use default handlers for common interfaces defined in IO drivers; or define a specific handler for customized behavior or new interfaces
-    * Register handlers for app-related events (such as IP lost or acquired)
+        * Use default handlers for common interfaces defined in IO drivers; or define a specific handler for customized behavior or new interfaces
+        * Register handlers for app-related events (such as IP lost or acquired)
 
 B) Interaction with network interfaces using ESP-NETIF API
 
-  1) Gets and sets TCP/IP-related parameters (DHCP, IP, etc)
-  2) Receives IP events (connect or disconnect)
-  3) Controls application lifecycle (set interface up or down)
+    1) Gets and sets TCP/IP-related parameters (DHCP, IP, etc)
+    2) Receives IP events (connect or disconnect)
+    3) Controls application lifecycle (set interface up or down)
 
 
 B) Network Interface Driver
@@ -236,8 +237,8 @@ Network interface driver (also called I/O Driver, or Media Driver) plays these t
 
 2) Glue IO layer: Adapts the input or output functions to use ESP-NETIF transmit, receive, and free receive buffer
 
-  * Installs driver_transmit to the appropriate ESP-NETIF object so that outgoing packets from the network stack are passed to the IO driver
-  * Calls :cpp:func:`esp_netif_receive()` to pass incoming data to the network stack
+    * Installs driver_transmit to the appropriate ESP-NETIF object so that outgoing packets from the network stack are passed to the IO driver
+    * Calls :cpp:func:`esp_netif_receive()` to pass incoming data to the network stack
 
 
 C) ESP-NETIF
@@ -249,16 +250,16 @@ ESP-NETIF serves as an intermediary between an IO driver and a network stack, co
 2) Input or Output API (for passing data between IO driver and network stack)
 3) Event or Action API
 
-  * Used for network interface lifecycle management
-  * ESP-NETIF provides building blocks for designing event handlers
+    * Used for network interface lifecycle management
+    * ESP-NETIF provides building blocks for designing event handlers
 
 4) Setters and Getters API for basic network interface properties
 5) Network stack abstraction API: enabling user interaction with TCP/IP stack
 
-  * Set interface up or down
-  * DHCP server and client API
-  * DNS API
-  * :ref:`esp_netif-sntp-api`
+    * Set interface up or down
+    * DHCP server and client API
+    * DNS API
+    * :ref:`esp_netif-sntp-api`
 
 6) Driver conversion utilities API
 
@@ -271,6 +272,7 @@ The network stack has no public interaction with application code with regard to
 
 E) ESP-NETIF L2 TAP Interface
 '''''''''''''''''''''''''''''
+
 The ESP-NETIF L2 TAP interface is a mechanism in ESP-IDF used to access Data Link Layer (L2 per OSI/ISO) for frame reception and transmission from the user application. Its typical usage in the embedded world might be the implementation of non-IP-related protocols, e.g., PTP, Wake on LAN. Note that only Ethernet (IEEE 802.3) is currently supported. Please read more about L2 TAP in :ref:`esp_netif_l2tap`.
 
 .. _esp_netif_programmer:
