@@ -90,10 +90,17 @@ def run_idf_py(*args: str,
     ]
     cmd += args  # type: ignore
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
-    return subprocess.run(
-        cmd, env=env, cwd=workdir,
-        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+    try:
+        return subprocess.run(
+            cmd, env=env, cwd=workdir,
+            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+    except subprocess.CalledProcessError as e:
+        logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
+        logging.error('Working directory: {}'.format(workdir))
+        logging.error('Stdout: {}'.format(e.stdout))
+        logging.error('Stderr: {}'.format(e.stderr))
+        raise
 
 
 def run_cmake(*cmake_args: str,
@@ -120,10 +127,17 @@ def run_cmake(*cmake_args: str,
     cmd = ['cmake'] + list(cmake_args)
 
     logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
-    return subprocess.run(
-        cmd, env=env, cwd=build_dir,
-        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, encoding='utf-8', errors='backslashreplace')
+    try:
+        return subprocess.run(
+            cmd, env=env, cwd=build_dir,
+            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, encoding='utf-8', errors='backslashreplace')
+    except subprocess.CalledProcessError as e:
+        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
+        logging.error('Working directory: {}'.format(workdir))
+        logging.error('Stdout: {}'.format(e.stdout))
+        logging.error('Stderr: {}'.format(e.stderr))
+        raise
 
 
 def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
