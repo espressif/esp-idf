@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,3 +62,20 @@ TEST_CASE("xPortInIsrContext test", "[freertos]")
 
 
 #endif
+
+#if !CONFIG_FREERTOS_SMP // TODO: Enable when IDF-10540 is fixed
+
+static void testint_assert(void)
+{
+    esp_rom_printf("INT!\n");
+    portASSERT_IF_IN_ISR();
+}
+
+TEST_CASE("port must assert if in ISR context", "[ignore]")
+{
+    esp_err_t err = esp_register_freertos_tick_hook_for_cpu(testint_assert, xPortGetCoreID());
+    TEST_ASSERT_EQUAL_HEX32(ESP_OK, err);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    esp_deregister_freertos_tick_hook_for_cpu(testint_assert, xPortGetCoreID());
+}
+#endif // !CONFIG_FREERTOS_SMP

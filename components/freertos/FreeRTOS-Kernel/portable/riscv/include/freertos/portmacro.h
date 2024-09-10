@@ -134,6 +134,13 @@ typedef uint32_t TickType_t;
 BaseType_t xPortInIsrContext(void);
 
 /**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortInIsrContext() internally
+ */
+void vPortAssertIfInISR(void);
+
+/**
  * @brief Check if in ISR context from High priority ISRs
  *
  * - Called from High priority ISR
@@ -309,6 +316,11 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 #define portENABLE_INTERRUPTS()             portCLEAR_INTERRUPT_MASK_FROM_ISR(1)
 #define portSET_INTERRUPT_MASK_FROM_ISR()                       vPortSetInterruptMask()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedStatusValue)   vPortClearInterruptMask(uxSavedStatusValue)
+
+/**
+ * @brief Assert if in ISR context
+ */
+#define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 // ------------------ Critical Sections --------------------
 

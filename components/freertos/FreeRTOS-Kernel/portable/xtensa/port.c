@@ -423,7 +423,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     | Coproc Save Area          | (CPSA MUST BE FIRST)
     | ------------------------- |
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -477,7 +477,8 @@ BaseType_t xPortInIsrContext(void)
 
 void vPortAssertIfInISR(void)
 {
-    configASSERT(xPortInIsrContext());
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
 }
 
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
@@ -517,7 +518,7 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 {
     /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
+     * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
     spinlock_release(mux);

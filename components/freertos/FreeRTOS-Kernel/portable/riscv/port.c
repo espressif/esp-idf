@@ -306,6 +306,12 @@ BaseType_t xPortInIsrContext(void)
     return uxInterruptNesting;
 }
 
+void vPortAssertIfInISR(void)
+{
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
+}
+
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
     /* For single core, this can be the same as xPortInIsrContext() because reading it is atomic */
