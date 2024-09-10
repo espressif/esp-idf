@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import logging
 import subprocess
 from time import sleep
 
 import pytest
-from can import Bus, Message
+from can import Bus
+from can import Message
 from pytest_embedded import Dut
 
 
@@ -16,6 +16,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -46,6 +47,7 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.twai_std
 @pytest.mark.parametrize(
     'config',
@@ -79,6 +81,7 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.twai_std
 @pytest.mark.parametrize(
     'config',
