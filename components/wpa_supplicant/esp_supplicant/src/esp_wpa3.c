@@ -242,6 +242,53 @@ static u8 *wpa3_build_sae_msg(u8 *bssid, u32 sae_msg_type, size_t *sae_msg_len)
     return buf;
 }
 
+static int wpa3_sae_is_group_enabled(int group)
+{
+    int *groups = NULL;
+    int default_groups[] = { 19, 0 };
+    int i;
+
+    if (!groups) {
+        groups = default_groups;
+    }
+
+    for (i = 0; groups[i] > 0; i++) {
+        if (groups[i] == group) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int wpa3_check_sae_rejected_groups(const struct wpabuf *groups)
+{
+    size_t i, count;
+    const u8 *pos;
+
+    if (!groups) {
+        return 0;
+    }
+
+    pos = wpabuf_head(groups);
+    count = wpabuf_len(groups) / 2;
+    for (i = 0; i < count; i++) {
+        int enabled;
+        u16 group;
+
+        group = WPA_GET_LE16(pos);
+        pos += 2;
+        enabled = wpa3_sae_is_group_enabled(group);
+        wpa_printf(MSG_DEBUG, "SAE: Rejected group %u is %s",
+                   group, enabled ? "enabled" : "disabled");
+        if (enabled) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
 {
     int ret;
@@ -277,6 +324,9 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
     } else if (ret) {
         wpa_printf(MSG_ERROR, "wpa3: could not parse commit(%d)", ret);
         return ret;
+    }
+    if (g_sae_data.tmp && wpa3_check_sae_rejected_groups(g_sae_data.tmp->peer_rejected_groups)) {
+        return -1;
     }
 
     ret = sae_process_commit(&g_sae_data);
