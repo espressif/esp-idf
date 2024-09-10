@@ -6,7 +6,7 @@ SD/SDIO/MMC Driver
 Overview
 --------
 
-The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips. This is a protocol layer driver (:component_file:`sdmmc/include/sdmmc_cmd.h`) which can be implemented by:
+The SD/SDIO/MMC driver supports SD memory, SDIO cards, and eMMC chips. This is a protocol layer driver (:component_file:`sdmmc/include/sdmmc_cmd.h`) which can work together with:
 
 .. list::
     :SOC_SDMMC_HOST_SUPPORTED: - SDMMC host driver (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`), see :doc:`SDMMC Host API <../peripherals/sdmmc_host>` for more details.
@@ -15,7 +15,7 @@ The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips.
 Protocol Layer vs Host Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The SDMMC protocol layer described in this document handles the specifics of the SD protocol, such as the card initialization flow and variours data transfer command flows. The protocol layer works with the host via the :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
+The SDMMC protocol layer described in this document handles the specifics of the SD protocol, such as the card initialization flow and various data transfer command flows. The protocol layer works with the host via the :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
 
 Host layer driver(s) implement the protocol layer driver by supporting these functions:
 
@@ -34,22 +34,30 @@ Application Example
 
 An example which combines the SDMMC driver with the FATFS library is provided in the :example:`storage/sd_card` directory of ESP-IDF examples. This example initializes the card, then writes and reads data from it using POSIX and C library APIs. See README.md file in the example directory for more information.
 
+Protocol Layer API
+------------------
+
+The protocol layer is given the :cpp:class:`sdmmc_host_t` structure. This structure describes the SD/MMC host driver, lists its capabilities, and provides pointers to functions for the implementation driver. The protocol layer stores card-specific information in the :cpp:class:`sdmmc_card_t` structure. When sending commands to the SD/MMC host driver, the protocol layer uses the :cpp:class:`sdmmc_command_t` structure to describe the command, arguments, expected return values, and data to transfer if there is any.
+
+Using API with SD Memory Cards
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list::
+    :SOC_SDMMC_HOST_SUPPORTED: - To initialize the SDMMC host, call the host driver functions, e.g., :cpp:func:`sdmmc_host_init`, :cpp:func:`sdmmc_host_init_slot`.¸
+    :SOC_GPSPI_SUPPORTED: - To initialize the SDSPI host, call the host driver functions, e.g., :cpp:func:`sdspi_host_init`, :cpp:func:`sdspi_host_init_slot`.
+    - To initialize the card, call :cpp:func:`sdmmc_card_init` and pass to it the parameters ``host`` - the host driver information, and ``card`` - a pointer to the structure :cpp:class:`sdmmc_card_t` which will be filled with information about the card when the function completes.
+    - To read and write sectors of the card, use :cpp:func:`sdmmc_read_sectors` and :cpp:func:`sdmmc_write_sectors` respectively and pass to it the parameter ``card`` - a pointer to the card information structure.
+
+    - If the card is not used anymore, call the host driver function to disable the host peripheral and free the resources allocated by the driver (``sdmmc_host_deinit`` for SDMMC or ``sdspi_host_deinit`` for SDSPI).
+
+.. only:: not SOC_SDMMC_HOST_SUPPORTED
+
+    eMMC Support
+    ^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} does not have an SDMMC Host controller, and can only use SPI protocol for communication with cards. However, eMMC chips cannot be used over SPI. Therefore it is not possible to use eMMC chips with {IDF_TARGET_NAME}.
+
 .. only:: SOC_SDMMC_HOST_SUPPORTED
-
-    Protocol Layer API
-    ------------------
-
-    The protocol layer is given the :cpp:class:`sdmmc_host_t` structure. This structure describes the SD/MMC host driver, lists its capabilities, and provides pointers to functions for the implementation driver. The protocol layer stores card-specific information in the :cpp:class:`sdmmc_card_t` structure. When sending commands to the SD/MMC host driver, the protocol layer uses the :cpp:class:`sdmmc_command_t` structure to describe the command, arguments, expected return values, and data to transfer if there is any.
-
-
-    Using API with SD Memory Cards
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    1. To initialize the host, call the host driver functions, e.g., :cpp:func:`sdmmc_host_init`, :cpp:func:`sdmmc_host_init_slot`.
-    2. To initialize the card, call :cpp:func:`sdmmc_card_init` and pass to it the parameters ``host`` - the host driver information, and ``card`` - a pointer to the structure :cpp:class:`sdmmc_card_t` which will be filled with information about the card when the function completes.
-    3. To read and write sectors of the card, use :cpp:func:`sdmmc_read_sectors` and :cpp:func:`sdmmc_write_sectors` respectively and pass to it the parameter ``card`` - a pointer to the card information structure.
-    4. If the card is not used anymore, call the host driver function - e.g., :cpp:func:`sdmmc_host_deinit` - to disable the host peripheral and free the resources allocated by the driver.
-
 
     Using API with eMMC Chips
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -99,10 +107,10 @@ An example which combines the SDMMC driver with the FATFS library is provided in
 
         There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
 
-Combo (Memory + IO) Cards
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    Combo (Memory + IO) Cards
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The driver does not support SD combo cards. Combo cards are treated as IO cards.
+    The driver does not support SD combo cards. Combo cards are treated as IO cards.
 
 
 Thread Safety
