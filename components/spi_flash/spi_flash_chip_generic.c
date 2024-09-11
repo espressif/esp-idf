@@ -376,6 +376,7 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
 
     uint8_t status = 0;
     const int interval = CHIP_WAIT_IDLE_INTERVAL_US;
+    bool suspend_state = false;
     while (timeout_us > 0) {
         while (!chip->host->driver->host_status(chip->host) && timeout_us > 0) {
 
@@ -388,6 +389,15 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
 #endif
         }
 
+#if CONFIG_SPI_FLASH_SOFTWARE_RESUME
+        suspend_state = ((chip->host->driver->host_status(chip->host) & SPI_FLASH_HAL_STATUS_SUSPEND) != 0) ? true : false;
+
+        if (suspend_state) {
+            // Oh! find you are in suspend state
+            chip->host->driver->resume(chip->host);
+        }
+#endif
+
         uint32_t read;
         esp_err_t err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &read);
         if (err != ESP_OK) {
@@ -395,7 +405,7 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
         }
         status = read;
 
-        if ((status & SR_WIP) == 0) { // Verify write in progress is complete
+        if ((status & SR_WIP) == 0 && (suspend_state == false)) { // Verify write in progress is complete
             if (chip->busy == 1) {
                 chip->busy = 0;
                 if ((status & SR_WREN) != 0) { // The previous command is not accepted, leaving the WEL still set.

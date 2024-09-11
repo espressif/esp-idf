@@ -21,6 +21,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_private/esp_clk.h"
 #include "esp_spi_flash_counters.h"
+#include "esp_check.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
@@ -1269,7 +1270,7 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
        that share a key (as derived from flash address).
 
        On ESP32-S2 and later, the temporary buffer need to be
-       seperated into 16-bytes, 32-bytes, 64-bytes(if supported).
+       separated into 16-bytes, 32-bytes, 64-bytes(if supported).
 
        So, on ESP32-S2 and later, here has a totally different
        data prepare implementation.

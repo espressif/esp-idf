@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,7 +204,7 @@ esp_err_t esp_flash_erase_chip(esp_flash_t *chip);
  * @param start Address to start erasing flash. Must be sector aligned.
  * @param len Length of region to erase. Must also be sector aligned.
  *
- * Sector size is specifyed in chip->drv->sector_size field (typically 4096 bytes.) ESP_ERR_INVALID_ARG will be
+ * Sector size is specified in chip->drv->sector_size field (typically 4096 bytes.) ESP_ERR_INVALID_ARG will be
  * returned if the start & length are not a multiple of this size.
  *
  * Erase is performed using block (multi-sector) erases where possible (block size is specified in
