@@ -167,8 +167,9 @@
 // Target has the full LP IO subsystem
 // On ESP32-C61, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
-// GPIO0~7 on ESP32C61 can support chip deep sleep wakeup
-//  \#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)  //TODO:reopen
+
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
@@ -176,6 +177,8 @@
 #define SOC_GPIO_IN_RANGE_MAX           21
 #define SOC_GPIO_OUT_RANGE_MAX          21
 
+// GPIO0~6 on ESP32C61 can support chip deep sleep wakeup
+//  \#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)  //TODO: IDF-9245
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
 #define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (7)
 
@@ -185,7 +188,7 @@
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // "LP"_IOs and DIG_IOs can be hold during deep sleep and after waking up
-#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP         (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
@@ -194,14 +197,13 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM           (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-//TODO: [ESP32C61] IDF-9317
-//  \#define SOC_RTCIO_PIN_COUNT                 8
-//  \#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
-//                                              * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
-//                                              * when the pins are switched to RTC function.
-//                                              */
-//  \#define SOC_RTCIO_HOLD_SUPPORTED            1
-//  \#define SOC_RTCIO_WAKE_SUPPORTED            1
+ #define SOC_RTCIO_PIN_COUNT                 7
+ #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+                                                 * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
+                                                 * when the pins are switched to RTC function.
+                                                 */
+ #define SOC_RTCIO_HOLD_SUPPORTED            1
+ #define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */

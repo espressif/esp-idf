@@ -37,7 +37,8 @@ typedef struct {
 } rtc_io_status_t;
 
 /**
- * Enable/Disable LP_IO peripheral clock.
+ * @brief Enable/Disable LP_IO peripheral clock
+ *
  * @param gpio_num GPIO number
  * @param enable   true to enable the clock / false to disable the clock
  */

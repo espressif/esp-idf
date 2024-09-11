@@ -40,12 +40,12 @@
     * - GPIO3
       - ADC1_CH1
       - LP_GPIO3
-      - Strapping 管脚
+      -
 
     * - GPIO4
       - ADC1_CH2
       - LP_GPIO4
-      - Strapping 管脚
+      -
 
     * - GPIO5
       - ADC1_CH3
@@ -60,17 +60,17 @@
     * - GPIO7
       -
       -
-      - Strapping 管脚
+      -
 
     * - GPIO8
       -
       -
-      - Strapping 管脚
+      -
 
     * - GPIO9
       -
       -
-      - Strapping 管脚
+      -
 
     * - GPIO10
       -
@@ -134,7 +134,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO3、GPIO4、GPIO7、GPIO8 和 GPIO9 是 Strapping 管脚。更多信息请参考 `ESP32-C61 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - 其中一些管脚被用作 Strapping 管脚，可用于选择加载芯片的启动模式等。详细信息可以在 `ESP32-C61 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_ > ``Strapping 管脚`` 章节中找到。
     - SPI0/1：GPIO14 ~ GPIO17 和 GPIO19 ~ GPIO21 通常用于 SPI flash，不推荐用于其他用途。
     - USB-JTAG：GPIO12 和 GPIO13 默认用于 USB-JTAG。如果将它们配置为普通 GPIO，驱动程序将禁用 USB-JTAG 功能。
 
