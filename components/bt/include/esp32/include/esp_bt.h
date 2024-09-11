@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value.
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241015
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241024
 
 /**
  * @brief Bluetooth Controller mode
@@ -199,6 +199,18 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
 #endif
 
+#if defined(CONFIG_BTDM_BLE_CHAN_ASS_EN)
+#define BTDM_BLE_CHAN_ASS_EN (CONFIG_BTDM_BLE_CHAN_ASS_EN)
+#else
+#define BTDM_BLE_CHAN_ASS_EN (0)
+#endif
+
+#if defined(CONFIG_BTDM_BLE_PING_EN)
+#define BTDM_BLE_PING_EN (CONFIG_BTDM_BLE_PING_EN)
+#else
+#define BTDM_BLE_PING_EN (0)
+#endif
+
 /**
 * @brief  Default Bluetooth Controller configuration
 */
@@ -229,6 +241,8 @@ the adv packet will be discarded until the memory is restored. */
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
     .ble_llcp_disc_flag = BTDM_BLE_LLCP_DISC_FLAG,                         \
     .ble_aa_check = BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,    \
+    .ble_chan_ass_en = BTDM_BLE_CHAN_ASS_EN,                               \
+    .ble_ping_en = BTDM_BLE_PING_EN,                                       \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 }
 
@@ -309,6 +323,8 @@ typedef struct {
     uint8_t ble_llcp_disc_flag;             /*!< Flag indicating whether the Controller disconnects after Instant Passed (0x28) error occurs. Configurable in menuconfig.
                                                 - The Controller does not disconnect after Instant Passed (0x28) by default. */
     bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the `CONNECT_IND` PDU; false otherwise (default). Configurable in menuconfig */
+    uint8_t ble_chan_ass_en;                /*!< True if BLE channel assessment is enabled (default), false otherwise. Configurable in menuconfig */
+    uint8_t ble_ping_en;                    /*!< True if BLE ping procedure is enabled (default), false otherwise. Configurable in menuconfig */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
