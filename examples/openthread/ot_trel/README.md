@@ -34,7 +34,8 @@ Component config → ESP System Settings → Channel for console output → USB 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-idf.py -p PORT build flash monitor
+idf.py build
+idf.py -p PORT erase-flash flash monitor
 ```
 
 Now you'll get an OpenThread command line shell.

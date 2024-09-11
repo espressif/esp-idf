@@ -265,7 +265,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                                      ieee802154 mbedtls nvs_flash)
 
 if(CONFIG_OPENTHREAD_RADIO_TREL)
-idf_component_optional_requires(PRIVATE espressif__mdns)
+    idf_component_optional_requires(PRIVATE espressif__mdns)
 endif()
 
 if(CONFIG_OPENTHREAD_ENABLED OR CONFIG_OPENTHREAD_SPINEL_ONLY)
