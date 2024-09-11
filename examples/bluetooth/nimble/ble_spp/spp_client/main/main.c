@@ -26,6 +26,43 @@ uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static void ble_spp_client_scan(void);
 static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 
+static void ble_spp_client_write_subscribe(const struct peer *peer)
+{
+  uint8_t value[2];
+  int rc;
+  const struct peer_dsc *dsc;
+
+  /* Subscribe to notifications for the SPP characteristic.
+   * A central enables notifications by writing two bytes (1, 0) to the
+   * characteristic's client-characteristic-configuration-descriptor (CCCD).
+   */
+  dsc = peer_dsc_find_uuid(peer,
+                    BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
+                    BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID),
+                    BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
+  if (dsc == NULL) {
+     MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the Unread Alert "
+                       "Status characteristic\n");
+    goto err;
+  }
+
+  value[0] = 1;
+  value[1] = 0;
+  rc = ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
+                          value, sizeof value, NULL, NULL);
+
+  if (rc != 0) {
+     MODLOG_DFLT(ERROR, "Error: Failed to subscribe to characteristic; "
+                       "rc=%d\n", rc);
+    goto err;
+  }
+  return;
+  err:
+    /* Terminate the connection. */
+    ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+
+}
+
 static void
 ble_spp_client_set_handle(const struct peer *peer)
 {
@@ -34,7 +71,9 @@ ble_spp_client_set_handle(const struct peer *peer)
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
     attribute_handle[peer->conn_handle] = chr->chr.val_handle;
+
 }
+
 
 /**
  * Called when service discovery of the specified peer has completed.
@@ -58,6 +97,8 @@ ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     ble_spp_client_set_handle(peer);
+    ble_spp_client_write_subscribe(peer);
+
 #if CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1
     ble_spp_client_scan();
 #endif
