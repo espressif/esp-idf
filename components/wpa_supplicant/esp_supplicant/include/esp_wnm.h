@@ -53,15 +53,6 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
   */
 bool esp_wnm_is_btm_supported_connection(void);
 
-/**
-  * @brief  Check RRM capability of connected AP
-  *
-  * @return
-  *    - true: AP supports RRM
-  *    - false: AP does not support RRM or station not connected to AP
-  */
-bool esp_rrm_is_rrm_supported_connection(void);
-
 #ifdef __cplusplus
 }
 #endif
