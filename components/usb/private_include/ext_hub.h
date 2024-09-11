@@ -97,8 +97,6 @@ esp_err_t ext_hub_uninstall(void);
  * Entry:
  * - should be called within Hub Driver
  *
- * @param[in] config External Hub driver configuration
- *
  * @return
  *    - Unique pointer to identify the External Hub as a USB Host client
  */
@@ -157,7 +155,7 @@ esp_err_t ext_hub_dev_gone(uint8_t dev_addr);
  *
  * @return
  *    - ESP_OK: All devices freed
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed
+ *    - ESP_ERR_NOT_FINISHED: Operation not finished: devices waiting children to be freed.
  */
 esp_err_t ext_hub_all_free(void);
 

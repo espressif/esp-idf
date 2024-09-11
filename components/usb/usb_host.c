@@ -1033,16 +1033,10 @@ esp_err_t usb_host_device_free_all(void)
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
 #if ENABLE_USB_HUBS
-    ret = hub_notify_all_free();
-    if (ret != ESP_OK) {
-        ESP_LOGE(USB_HOST_TAG, "Marking all devices as free in HUB error: %s", esp_err_to_name(ret));
-    }
+    hub_notify_all_free();
 #endif // ENABLE_USB_HUBS
     ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
-    if (ret != ESP_OK) {
-        ESP_LOGE(USB_HOST_TAG, "Marking all devices as free in USBH error: %s", esp_err_to_name(ret));
-    }
     return ret;
 }
 
