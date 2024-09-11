@@ -46,7 +46,7 @@ typedef struct {
     rtc_cntl_sleep_retent_t retent;
 } sleep_cpu_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
+static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 
 
 #if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP

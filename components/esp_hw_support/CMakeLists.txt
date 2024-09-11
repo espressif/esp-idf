@@ -140,16 +140,6 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
         list(APPEND srcs "esp_clock_output.c")
     endif()
-
-    if(CONFIG_IDF_TARGET_ESP32C61)  # TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-9248
-        list(REMOVE_ITEM srcs
-                "sleep_cpu.c"
-                "sleep_modem.c"
-                "sleep_modes.c"
-                "sleep_wake_stub.c"
-                "sleep_gpio.c"
-            )
-    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

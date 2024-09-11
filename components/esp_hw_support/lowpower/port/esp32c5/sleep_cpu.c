@@ -65,7 +65,7 @@ typedef struct {
     } retent;
 } sleep_cpu_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
+static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 
 #define CUSTOM_CSR_MTVT               (0x307)
 #define CUSTOM_CSR_MINTTHRESH         (0x347)
@@ -103,7 +103,8 @@ static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_reg
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CACHE_L1_ICACHE_CTRL_REG, .end = CACHE_L1_BYPASS_CACHE_CONF_REG + 4 }
+        { .start = CACHE_L1_ICACHE_CTRL_REG, .end = CACHE_L1_BYPASS_CACHE_CONF_REG + 4 },
+        { .start = CACHE_L1_CACHE_AUTOLOAD_CTRL_REG, .end = CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_REG + 4 },
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }

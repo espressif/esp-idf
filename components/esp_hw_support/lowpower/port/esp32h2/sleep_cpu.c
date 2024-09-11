@@ -66,7 +66,7 @@ typedef struct {
     } retent;
 } sleep_cpu_retention_t;
 
-static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
+static DRAM_ATTR  sleep_cpu_retention_t s_cpu_retention;
 
 #define CUSTOM_CSR_PCER_MACHINE        0x7e0
 #define CUSTOM_CSR_PCMR_MACHINE        0x7e1

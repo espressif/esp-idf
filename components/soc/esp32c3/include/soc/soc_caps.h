@@ -440,6 +440,7 @@
 
 #define SOC_PM_CPU_RETENTION_BY_RTCCNTL      (1)
 #define SOC_PM_MODEM_RETENTION_BY_BACKUPDMA  (1)
+#define SOC_PM_MODEM_PD_BY_SW                (1)
 
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)

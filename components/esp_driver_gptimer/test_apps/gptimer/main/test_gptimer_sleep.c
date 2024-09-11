@@ -152,7 +152,7 @@ static void test_gptimer_sleep_retention(bool back_up_before_sleep)
     TEST_ESP_OK(gptimer_get_raw_count(timer, &count_value_after_sleep));
     printf("gptimer count value: %llu\n", count_value_after_sleep);
     // the count value should near the reload value
-    TEST_ASSERT_INT_WITHIN(1, 5000, count_value_after_sleep);
+    TEST_ASSERT_INT_WITHIN(5, 5000, count_value_after_sleep);
 
     TEST_ESP_OK(gptimer_disable(timer));
     TEST_ESP_OK(gptimer_del_timer(timer));

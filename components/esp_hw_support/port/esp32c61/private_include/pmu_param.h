@@ -20,6 +20,8 @@ extern "C" {
 
 #define HP_CALI_DBIAS_DEFAULT   26
 #define LP_CALI_DBIAS_DEFAULT   25
+#define HP_CALI_DBIAS_SLP_1V1   22
+#define LP_CALI_DBIAS_SLP_1V1   22
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
@@ -37,19 +39,19 @@ extern "C" {
 #define PMU_LP_DRVB_LIGHTSLEEP      0
 #define PMU_HP_XPD_LIGHTSLEEP       1
 
-#define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    0
-#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
-#define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 12
+#define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    1
+#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 0
+#define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 15
 
 // FOR LIGHTSLEEP: XTAL FORCE PU
 #define PMU_DBG_ATTEN_ACTIVE_DEFAULT    0
 
 // FOR DEEPSLEEP
-#define PMU_DBG_HP_DEEPSLEEP    0
+#define PMU_DBG_HP_DEEPSLEEP    13
 #define PMU_HP_XPD_DEEPSLEEP    0
 #define PMU_LP_DRVB_DEEPSLEEP   0
 
-#define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT     12
+#define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT     13
 #define PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT  23
 
 uint32_t get_act_hp_dbias(void);
@@ -365,8 +367,8 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags) {            \
     .hp_sys = {                                                     \
         .analog = {                                                 \
-            .pd_cur        = PMU_PD_CUR_SLEEP_ON,                   \
-            .bias_sleep    = PMU_BIASSLP_SLEEP_ON,                  \
+            .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,              \
+            .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,             \
             .xpd           = PMU_HP_XPD_DEEPSLEEP,                  \
             .dbg_atten     = PMU_DBG_HP_DEEPSLEEP                   \
         }                                                           \
@@ -472,7 +474,7 @@ typedef struct pmu_sleep_machine_constant {
         .analog_wait_time_us            = 154,  \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
-        .power_supply_wait_time_us      = 2,    \
+        .power_supply_wait_time_us      = 20,   \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 172,  \
         .regdma_s2a_work_time_us        = 480,  \

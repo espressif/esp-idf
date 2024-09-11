@@ -858,7 +858,7 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
         int diff = callback_time - expected_time;
-        printf("%d us\n", diff);
+        esp_rom_printf(DRAM_STR("%d us\n"), diff);
 #ifndef CONFIG_IDF_ENV_FPGA
         if (i != 0) {
             // skip the first measurement
