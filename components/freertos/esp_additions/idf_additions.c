@@ -85,15 +85,44 @@ err:
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
+    static void prvTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
+    {
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
+        StaticTask_t * pxTaskBuffer;
+        StackType_t * puxStackBuffer;
+
+        /* The task to be deleted must not be running.
+         * So we suspend the task before deleting it. */
+        vTaskSuspend( xTaskToDelete );
+
+        /* Wait for the task to be suspended */
+        while( eRunning == eTaskGetState( xTaskToDelete ) )
+        {
+            taskYIELD();
+        }
+
+        configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
+
+        xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
+        configASSERT( xResult == pdTRUE );
+        configASSERT( puxStackBuffer != NULL );
+        configASSERT( pxTaskBuffer != NULL );
+
+        /* We can delete the task and free the memory buffers. */
+        vTaskDelete( xTaskToDelete );
+
+        /* Free the memory buffers */
+        heap_caps_free( puxStackBuffer );
+        vPortFree( pxTaskBuffer );
+    }
+
     static void prvTaskDeleteWithCapsTask( void * pvParameters )
     {
         TaskHandle_t xTaskToDelete = ( TaskHandle_t ) pvParameters;
 
-        /* The task to be deleted must not be running */
-        configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
-
         /* Delete the WithCaps task */
-        vTaskDeleteWithCaps( xTaskToDelete );
+        prvTaskDeleteWithCaps( xTaskToDelete );
 
         /* Delete the temporary clean up task */
         vTaskDelete( NULL );
@@ -102,7 +131,7 @@ err:
     void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
     {
         /* THIS FUNCTION SHOULD NOT BE CALLED FROM AN INTERRUPT CONTEXT. */
-        /*TODO: Update it to use portASSERT_IF_IN_ISR() instead. (IDF-10540) */
+        /* TODO: Update it to use portASSERT_IF_IN_ISR() instead. (IDF-10540) */
         vPortAssertIfInISR();
 
         TaskHandle_t xCurrentTaskHandle = xTaskGetCurrentTaskHandle();
@@ -155,58 +184,8 @@ err:
             }
         }
 
-        #if ( configNUM_CORES > 1 )
-            else if( eRunning == eTaskGetState( xTaskToDelete ) )
-            {
-                /* The WithCaps task is running on another core.
-                 * We suspend the task first and then delete it. */
-                vTaskSuspend( xTaskToDelete );
-
-                /* Wait for the task to be suspended */
-                while( eRunning == eTaskGetState( xTaskToDelete ) )
-                {
-                    portYIELD_WITHIN_API();
-                }
-
-                BaseType_t xResult;
-                StaticTask_t * pxTaskBuffer;
-                StackType_t * puxStackBuffer;
-
-                xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
-                configASSERT( xResult == pdTRUE );
-                configASSERT( puxStackBuffer != NULL );
-                configASSERT( pxTaskBuffer != NULL );
-
-                /* Delete the task */
-                vTaskDelete( xTaskToDelete );
-
-                /* Free the memory buffers */
-                heap_caps_free( puxStackBuffer );
-                vPortFree( pxTaskBuffer );
-            }
-        #endif /* if ( configNUM_CORES > 1 ) */
-        else
-        {
-            /* The WithCaps task is not running and is being deleted
-             * from another task's context. */
-            configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
-
-            BaseType_t xResult;
-            StaticTask_t * pxTaskBuffer;
-            StackType_t * puxStackBuffer;
-
-            xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
-            configASSERT( xResult == pdTRUE );
-            configASSERT( puxStackBuffer != NULL );
-            configASSERT( pxTaskBuffer != NULL );
-
-            /* We can delete the task and free the memory buffers. */
-            vTaskDelete( xTaskToDelete );
-
-            /* Free the memory buffers */
-            heap_caps_free( puxStackBuffer );
-            vPortFree( pxTaskBuffer );
-        } /* if( ( xTaskToDelete == NULL ) || ( xTaskToDelete == xCurrentTaskHandle ) ) */
+        /* Delete the WithCaps task */
+        prvTaskDeleteWithCaps( xTaskToDelete );
     }
 
 /* ---------------------------------- Queue --------------------------------- */
@@ -254,7 +233,8 @@ err:
 
     void vQueueDeleteWithCaps( QueueHandle_t xQueue )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticQueue_t * pxQueueBuffer;
         uint8_t * pucQueueStorageBuffer;
 
@@ -316,7 +296,8 @@ err:
 
     void vSemaphoreDeleteWithCaps( SemaphoreHandle_t xSemaphore )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticSemaphore_t * pxSemaphoreBuffer;
 
         /* Retrieve the buffer used to create the semaphore before deleting it
@@ -378,7 +359,8 @@ err:
     void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
                                              BaseType_t xIsMessageBuffer )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticStreamBuffer_t * pxStaticStreamBuffer;
         uint8_t * pucStreamBufferStorageArea;
 
