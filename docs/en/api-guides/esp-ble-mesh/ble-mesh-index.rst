@@ -213,20 +213,27 @@ The following screenshot shows different board with different color on.
 Examples
 =========
 
-* :example_file:`OnOff Server <bluetooth/esp_ble_mesh/onoff_models/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_server>`.
+.. only:: esp32 or esp32c3 or esp32c6 or esp32h2 or esp32s3
 
-* :example_file:`OnOff Client <bluetooth/esp_ble_mesh/onoff_models/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>` - shows how a Generic OnOff Client model works within a node. The node has a Configuration Server model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/onoff_models/onoff_client>`.
+    - :example:`bluetooth/esp_ble_mesh/onoff_models/onoff_server` demonstrates how to use ESP-BLE-MESH with a Configuration Server model and a Generic OnOff Server model.
 
-* :example_file:`Provisioner <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>` - shows how a device can act as an ESP-BLE-MESH Provisioner to provision devices. The Provisioner has a Configuration Server model, a Configuration Client model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/provisioner>`.
+    - :example:`bluetooth/esp_ble_mesh/onoff_models/onoff_client` demonstrates how a Generic OnOff Client model operates within a node that also includes a Configuration Server model, and a Generic OnOff Client model.
 
-* Fast Provisioning - :example_file:`Client <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` and :example_file:`Server <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - this example is used for showing how fast provisioning can be used in order to create a mesh network. It takes no more than 60 seconds to provision 100 devices, see :example:`example client code <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client>` and :example:`example server code <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server>`.
+    - :example:`bluetooth/esp_ble_mesh/provisioner` demonstrates how a device act as an ESP-BLE-MESH Provisioner to provision other devices. The Provisioner includes a Configuration Client model and a Generic OnOff Client model.
 
-* :example_file:`BLE-Mesh and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - an example that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of {IDF_TARGET_NAME}. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/wifi_coexist>`.
+    - :example:`bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client` and :example:`bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server` demonstrate how to perform fast provisioning, allowing up to 100 devices to be provisioned in 60 seconds.
 
-* Remote Provisioning (v1.1) - :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - this example is used to demonstrate the new remote provisioning feature introduced in the Mesh Protocol v1.1, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
+    - :example:`bluetooth/esp_ble_mesh/sensor_models/sensor_client` and :example:`bluetooth/esp_ble_mesh/sensor_models/sensor_server` demonstrate how to create a Sensor Client model in a Provisioner and a Sensor Server model and a Sensor Setup Server model in an unprovisioned device.
 
-* Directed Forwarding (v1.1) - :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - this example is used to demonstrate the new directed forwarding feature introduced in the Mesh Protocol v1.1. Only nodes along the path will forward the directed messages, while other nodes will not actively participate in forwarding, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
+    - :example:`bluetooth/esp_ble_mesh/vendor_models/vendor_client` and :example:`bluetooth/esp_ble_mesh/vendor_models/vendor_server` demonstrate how to create a Vendor Client model in a Provisioner and a Vendor Server model in an unprovisioned device.
 
+    .. only:: not esp32h2
+
+        - :example:`bluetooth/esp_ble_mesh/wifi_coexist` demonstrates the coexistence feature between Wi-Fi and ESP-BLE-MESH, enabling simultaneous use of both technologies.
+
+    - :example:`bluetooth/esp_ble_mesh/remote_provisioning/rpr_client`, :example:`bluetooth/esp_ble_mesh/remote_provisioning/rpr_server` and :example:`bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev` demonstrate the new remote provisioning feature introduced in the Mesh Protocol v1.1.
+
+    - :example:`bluetooth/esp_ble_mesh/remote_provisioning/rpr_client` and :example:`bluetooth/esp_ble_mesh/remote_provisioning/rpr_server` the new directed forwarding feature introduced in Mesh Protocol v1.1, where only nodes along the path forward the directed messages, while other nodes do not actively participate.
 
 .. _esp-ble-mesh-demo-videos:
 
