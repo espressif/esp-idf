@@ -13,7 +13,7 @@ static const char *TAG = "sleep_clock";
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, 62, 0, 0, 0xfd73ffff, 0xfdffffff, 0xc001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(0),   DR_REG_PCR_BASE, DR_REG_PCR_BASE, 63, 0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);

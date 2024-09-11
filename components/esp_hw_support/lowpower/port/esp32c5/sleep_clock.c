@@ -19,7 +19,7 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(0), PCR_AHB_FREQ_CONF_REG,  0,               PCR_AHB_DIV_NUM,      1, 0),                                     .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
         [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(1), PCR_BUS_CLK_UPDATE_REG, 1,               PCR_BUS_CLOCK_UPDATE, 1, 0),                                     .owner = ENTRY(0) | ENTRY(1) },
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [2] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(2), DR_REG_PCR_BASE,        DR_REG_PCR_BASE, 74,                   0, 0, 0xffffffff, 0xffffffff, 0x7f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [2] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(2), DR_REG_PCR_BASE,        DR_REG_PCR_BASE, 75,                   0, 0, 0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
     };
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
