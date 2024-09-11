@@ -112,9 +112,9 @@ QSPI flash 芯片的高性能模式
 
     - 如果想在现有项目中通过 OTA 来更新 `HPM-DC` 配置选项，请检查用于构建引导加载程序的 sdkconfig 文件（升级 ESP-IDF 版本可能会使此文件与用于构建引导加载程序的文件不同）：
 
-        - 对于最新版本的 ESP-IDF（v5.2 及以上），如果选择了 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE`，则引导加载程序支持 `DC Aware`。
+        - 对于最新版本的 ESP-IDF（v4.4.7+、v5.0.7+、v5.1.4+、v5.2 及以上），如果选择了 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE`，则引导加载程序支持 `DC Aware`。
 
-        - 对于某些范围内的 ESP-IDF 版本（v4.4.4+、v5.0+ 和 v5.1+），如果选择了 ``CONFIG_ESPTOOLPY_FLASHFREQ_120M``，则引导加载程序支持 `DC Aware`。此时，可启用 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 进行确认（不会影响实际应用中的引导加载程序）。
+        - 对于某些范围内的 ESP-IDF 版本（v4.4.4-v4.4.6、v5.0-v5.0.6 和 v5.1-v5.1.3），如果选择了 ``CONFIG_ESPTOOLPY_FLASHFREQ_120M``，则引导加载程序支持 `DC Aware`。此时，可启用 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 进行确认（不会影响实际应用中的引导加载程序）。
 
         - 对于低于 v4.4.4 的 ESP-IDF 版本，引导加载程序不支持 `DC Aware`。
 

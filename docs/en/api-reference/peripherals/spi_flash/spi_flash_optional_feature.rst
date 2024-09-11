@@ -112,9 +112,9 @@ The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, and ESP32-P4 may be adde
 
     - If you are working on an existing project and want to update `HPM-DC` config option in the app via OTA, check the sdkconfig file used to build your bootloader (upgrading ESP-IDF version may make this file different from the one used by bootloader to build):
 
-        - For latest version (ESP-IDF v5.2 and above), if :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` is selected, the bootloader supports `DC Aware`.
+        - For latest version (v4.4.7+, v5.0.7+, v5.1.4+, v5.2 and above), if :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` is selected, the bootloader supports `DC Aware`.
 
-        - For other versions (v4.4.4+, v5.0+, and v5.1+), if ``CONFIG_ESPTOOLPY_FLASHFREQ_120M`` is selected, the bootloader supports `DC Aware`. In this case, enable :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` to confirm this (though it will not affect bootloader in devices in the field).
+        - For other versions (v4.4.4-v4.4.6, v5.0-v5.0.6, and v5.1-v5.1.3), if ``CONFIG_ESPTOOLPY_FLASHFREQ_120M`` is selected, the bootloader supports `DC Aware`. In this case, enable :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` to confirm this (though it will not affect bootloader in devices in the field).
 
         - For versions below v4.4.4, the bootloader doesn't support `DC Aware`.
 
