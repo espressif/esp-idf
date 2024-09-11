@@ -17,20 +17,16 @@
 #include "mdns.h"
 #include "esp_netif_ip_addr.h"
 #include "esp_openthread.h"
+#include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_radio.h"
 #include "esp_openthread_task_queue.h"
-#include "esp_openthread_trel.h"
 #include "lwip/pbuf.h"
 #include "lwip/tcpip.h"
 #include "lwip/udp.h"
 #include "openthread/trel.h"
 #include "openthread/platform/diag.h"
-
-#if CONFIG_OPENTHREAD_BORDER_ROUTER
-#include "esp_openthread_border_router.h"
-#endif
 
 static esp_netif_t *s_trel_netif = NULL;
 static otPlatTrelCounters s_trel_counters;
@@ -61,8 +57,7 @@ static bool s_is_service_registered = false;
 static void trel_browse_notifier(mdns_result_t *result)
 {
     while (result) {
-
-        if (result->addr->addr.type == IPADDR_TYPE_V6) {
+        if (result->addr && result->addr->addr.type == IPADDR_TYPE_V6) {
             otPlatTrelPeerInfo info;
             uint8_t trel_txt[1024] = {0};
             uint16_t trel_txt_len = 0;
@@ -76,21 +71,19 @@ static void trel_browse_notifier(mdns_result_t *result)
                 trel_txt_len += result->txt_value_len[index];
                 index++;
             }
-
+            if (!s_trel_netif) {
+                s_trel_netif = result->esp_netif;
+            }
             info.mTxtData = trel_txt;
             info.mTxtLength = trel_txt_len;
             info.mSockAddr.mPort = result->port;
-
             memcpy(info.mSockAddr.mAddress.mFields.m32, result->addr->addr.u_addr.ip6.addr, OT_IP6_ADDRESS_SIZE);
-
             info.mRemoved = (result->ttl == 0);
-            ESP_LOGI(OT_PLAT_LOG_TAG, "Found TREL peer: address: %s, port:%d", ip6addr_ntoa(((ip6_addr_t*)(&result->addr->addr.u_addr.ip6))), info.mSockAddr.mPort);
-
+            ESP_LOGI(OT_PLAT_LOG_TAG, "%s TREL peer: address: %s, port:%d", info.mRemoved ? "Remove" : "Found", ip6addr_ntoa(((ip6_addr_t*)(&result->addr->addr.u_addr.ip6))), info.mSockAddr.mPort);
             esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
             otPlatTrelHandleDiscoveredPeerInfo(esp_openthread_get_instance(), &info);
             esp_openthread_task_switching_lock_release();
         }
-
         result = result->next;
     }
 }
@@ -125,7 +118,6 @@ exit:
 static void handle_trel_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, uint16_t port)
 {
     ESP_LOGD(OT_PLAT_LOG_TAG, "Receive from %s:%d", ip6addr_ntoa(&(addr->u_addr.ip6)), port);
-
     if (esp_openthread_task_queue_post(trel_recv_task, p) != ESP_OK) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
     }
@@ -138,7 +130,6 @@ static esp_err_t ot_new_trel(void *ctx)
     task->trel_pcb = udp_new();
     ESP_RETURN_ON_FALSE(task->trel_pcb != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to create a new UDP pcb");
     udp_bind(task->trel_pcb, IP6_ADDR_ANY, task->port);
-    udp_bind_netif(task->trel_pcb, netif_get_by_index(esp_netif_get_netif_impl_index(s_trel_netif)));
     udp_recv(task->trel_pcb, handle_trel_udp_recv, NULL);
     return ESP_OK;
 }
@@ -146,11 +137,6 @@ static esp_err_t ot_new_trel(void *ctx)
 void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 {
     *aUdpPort = s_ot_trel.port;
-    if (s_trel_netif == NULL) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "netif for trel is not set");
-        assert(false);
-    }
-
     esp_openthread_task_switching_lock_release();
     esp_err_t err = esp_netif_tcpip_exec(ot_new_trel, &s_ot_trel);
     if (err != ESP_OK) {
@@ -179,12 +165,10 @@ static void trel_send_task(void *ctx)
         ExitNow();
     }
     memcpy(send_buf->payload, task->payload, task->length);
-
     err = udp_sendto_if(task->pcb, send_buf, &task->peer_addr, task->peer_port, netif_get_by_index(task->pcb->netif_idx));
     if(err != ERR_OK) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Fail to send trel msg to %s:%d %d (%d)", ip6addr_ntoa(&(task->peer_addr.u_addr.ip6)), task->peer_port, task->pcb->netif_idx, err);
     }
-
 exit:
     pbuf_free(send_buf);
     free(task);
@@ -195,6 +179,10 @@ void otPlatTrelSend(otInstance       *aInstance,
                     uint16_t          aUdpPayloadLen,
                     const otSockAddr *aDestSockAddr)
 {
+    if (!s_trel_netif) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "None Thread TREL interface");
+        return;
+    }
     ot_trel_send_task_t *task = (ot_trel_send_task_t *)malloc(sizeof(ot_trel_send_task_t));
     if (task == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
@@ -205,7 +193,6 @@ void otPlatTrelSend(otInstance       *aInstance,
     ESP_LOGD(OT_PLAT_LOG_TAG, "send trel msg to %s:%d", ip6addr_ntoa(&(task->peer_addr.u_addr.ip6)), task->peer_port);
     task->payload = aUdpPayload;
     task->length = aUdpPayloadLen;
-
     esp_openthread_task_switching_lock_release();
     tcpip_callback(trel_send_task, task);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
@@ -214,11 +201,11 @@ void otPlatTrelSend(otInstance       *aInstance,
 void otPlatTrelRegisterService(otInstance *aInstance, uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength)
 {
     esp_err_t ret = ESP_OK;
+
     esp_openthread_task_switching_lock_release();
     if (s_is_service_registered) {
         mdns_service_remove(TREL_MDNS_TYPE, TREL_MDNS_PROTO);
     }
-
     mdns_service_add(NULL, TREL_MDNS_TYPE, TREL_MDNS_PROTO, aPort, NULL, 0);
     s_is_service_registered = true;
     uint16_t index = 0;
@@ -276,53 +263,45 @@ const otPlatTrelCounters *otPlatTrelGetCounters(otInstance *aInstance)
     return &s_trel_counters;
 }
 
-void esp_openthread_set_trel_netif(esp_netif_t *trel_netif)
-{
-    s_trel_netif = trel_netif;
-}
-
-esp_netif_t *esp_openthread_get_trel_netif(void)
-{
-    return s_trel_netif;
-}
-
+// TODO: TZ-1169
 OT_TOOL_WEAK otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioSetTransmitPower`");
-    return OT_ERROR_NONE;
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioSetTransmitPower`");
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 
 OT_TOOL_WEAK otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetTransmitPower`");
-    return OT_ERROR_NONE;
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetTransmitPower`");
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 
 OT_TOOL_WEAK bool otPlatRadioGetPromiscuous(otInstance *aInstance)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetPromiscuous`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetPromiscuous`");
     return false;
 }
 
 OT_TOOL_WEAK otError otPlatRadioSetCcaEnergyDetectThreshold(otInstance *aInstance, int8_t aThreshold)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioSetCcaEnergyDetectThreshold`");
-    return OT_ERROR_NONE;
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioSetCcaEnergyDetectThreshold`");
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 
 OT_TOOL_WEAK otError otPlatRadioGetCcaEnergyDetectThreshold(otInstance *aInstance, int8_t *aThreshold)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetCcaEnergyDetectThreshold`");
-    return OT_ERROR_NONE;
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetCcaEnergyDetectThreshold`");
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 
 OT_TOOL_WEAK void otPlatRadioGetIeeeEui64(otInstance *aInstance, uint8_t *aIeeeEui64)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetIeeeEui64`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetIeeeEui64`");
 }
 
 OT_TOOL_WEAK otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 {
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatRadioGetTransmitBuffer`");
     return NULL;
 }
 
@@ -330,34 +309,33 @@ OT_TOOL_WEAK otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 
 OT_TOOL_WEAK void otPlatDiagSetOutputCallback(otInstance *aInstance, otPlatDiagOutputCallback aCallback, void *aContext)
 {
-    OT_UNUSED_VARIABLE(aInstance);
-    OT_UNUSED_VARIABLE(aCallback);
-    OT_UNUSED_VARIABLE(aContext);
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagSetOutputCallback`");
 }
 
 OT_TOOL_WEAK void otPlatDiagModeSet(bool mode)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagModeSet`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagModeSet`");
 }
 
 OT_TOOL_WEAK bool otPlatDiagModeGet(void)
 {
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagModeGet`");
     return false;
 }
 
 OT_TOOL_WEAK void otPlatDiagTxPowerSet(int8_t tx_power)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagTxPowerSet`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagTxPowerSet`");
 }
 
 OT_TOOL_WEAK void otPlatDiagChannelSet(uint8_t channel)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagChannelSet`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagChannelSet`");
 }
 
 OT_TOOL_WEAK void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
-    ESP_LOGW(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagAlarmCallback`");
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Running in TREL mode and not support `otPlatDiagAlarmCallback`");
 }
 
 #endif // CONFIG_OPENTHREAD_DIAG
