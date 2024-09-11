@@ -7,11 +7,15 @@ This note explains various steps which happen before ``app_main`` function of an
 
 The high level view of startup process is as follows:
 
-1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
+.. list::
 
-2. :ref:`second-stage-bootloader` loads partition table and main app image from flash. Main app incorporates both RAM segments and read-only segments mapped via flash cache.
+    1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
 
-3. :ref:`application-startup` executes. At this point the second CPU and RTOS scheduler are started.
+    2. :ref:`second-stage-bootloader` loads partition table and main app image from flash. Main app incorporates both RAM segments and read-only segments mapped via flash cache.
+
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` executes. At this point, the second CPU and RTOS scheduler are started, which then run the ``main_task``, leading to the execution of ``app_main``.
+
+    :not SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` executes. At this point, the RTOS scheduler is started, which then runs the ``main_task``, leading to the execution of ``app_main``.
 
 This process is explained in detail in the following sections.
 
