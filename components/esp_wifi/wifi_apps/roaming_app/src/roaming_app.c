@@ -78,6 +78,7 @@ static void roaming_app_get_ap_info(wifi_ap_record_t *ap_info)
     }
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
 }
+
 #if LEGACY_ROAM_ENABLED
 static void legacy_roam_clear_bssid_flag(void)
 {
@@ -173,6 +174,12 @@ static void roaming_app_disconnected_event_handler(void* arg, esp_event_base_t e
 #endif /*LEGACY_ROAM_ENABLED*/
         esp_wifi_connect();
     }
+}
+
+static void roaming_app_sta_stop_event_handler(void* arg, esp_event_base_t event_base,
+                                               int32_t event_id, void* event_data)
+{
+    g_roaming_app.allow_reconnect = false;
 }
 
 static void roaming_app_connected_event_handler(void* arg, esp_event_base_t event_base,
@@ -787,6 +794,7 @@ void init_roaming_app(void)
 #endif
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, roaming_app_connected_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, roaming_app_disconnected_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_STOP, roaming_app_sta_stop_event_handler, NULL));
 #if LOW_RSSI_ROAMING_ENABLED
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                &roaming_app_rssi_low_handler, NULL));
@@ -813,6 +821,7 @@ void deinit_roaming_app(void)
     /* Unregister Event handlers */
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, roaming_app_connected_event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, roaming_app_disconnected_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, roaming_app_sta_stop_event_handler));
 #if LOW_RSSI_ROAMING_ENABLED
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                  &roaming_app_rssi_low_handler));
