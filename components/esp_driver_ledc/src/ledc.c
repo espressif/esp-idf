@@ -19,6 +19,7 @@
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -561,6 +562,16 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         }
         p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_num] = true;
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
+#if SOC_LIGHT_SLEEP_SUPPORTED
+            /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
+            if (glb_clk == LEDC_SLOW_CLK_RC_FAST) {
+                /* Keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
+                esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, true);
+            } else if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_RC_FAST) {
+                /* No need to keep ESP_PD_DOMAIN_RC_FAST on during light sleep anymore */
+                esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, false);
+            }
+#endif
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
             LEDC_FUNC_CLOCK_ATOMIC() {
@@ -571,12 +582,6 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         portEXIT_CRITICAL(&ledc_spinlock);
 
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
-
-        /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-#if SOC_LIGHT_SLEEP_SUPPORTED
-        extern void esp_sleep_periph_use_8m(bool use_or_not);
-        esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
-#endif
     }
 
     /* The divisor is correct, we can write in the hardware. */

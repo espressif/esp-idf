@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/lock.h>
 #include <sys/param.h>
+#include <inttypes.h>
 
 #include "esp_attr.h"
 #include "esp_rom_caps.h"
@@ -279,16 +280,9 @@ static bool s_light_sleep_wakeup = false;
 static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
-static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
+static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
-static bool s_ultra_low_enabled = false;
 
-static bool s_periph_use_8m_flag = false;
-
-void esp_sleep_periph_use_8m(bool use_or_not)
-{
-    s_periph_use_8m_flag = use_or_not;
-}
 
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
@@ -686,7 +680,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 
 #if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61
     // TODO: IDF-7370
-    if (!(deep_sleep && s_adc_tsen_enabled)){
+    if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
         sar_periph_ctrl_power_disable();
     }
 #endif
@@ -777,20 +771,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     bool should_skip_sleep = false;
 
     int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
-
-#if SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256
-    //Keep the RTC8M_CLK on if RTC clock is rc_fast_d256.
-    bool rtc_using_8md256 = (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
-#else
-    bool rtc_using_8md256 = false;
-#endif
-    //Keep the RTC8M_CLK on if the ledc low-speed channel is clocked by RTC8M_CLK in lightsleep mode
-    bool periph_using_8m = !deep_sleep && s_periph_use_8m_flag;
-
-    //Override user-configured power modes.
-    if (rtc_using_8md256 || periph_using_8m) {
-        pd_flags &= ~RTC_SLEEP_PD_INT_8M;
-    }
 
     // Sleep UART prepare
     if (deep_sleep) {
@@ -903,16 +883,30 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         reject_triggers |= sleep_modem_reject_triggers();
     }
 
+    // Override user-configured FOSC power modes.
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_RTC_USE_RC_FAST_MODE]) {
+        pd_flags &= ~RTC_SLEEP_PD_INT_8M;
+    }
+
+    // Override user-configured XTAL power modes.
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_DIG_USE_XTAL_MODE] && !deep_sleep) {
+        pd_flags &= ~RTC_SLEEP_PD_XTAL;
+    }
+
     //Append some flags in addition to power domains
     uint32_t sleep_flags = pd_flags;
-    if (s_adc_tsen_enabled) {
+
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_DIG_USE_RC_FAST_MODE] && !deep_sleep) {
+        pd_flags &= ~RTC_SLEEP_PD_INT_8M;
+        sleep_flags |= RTC_SLEEP_DIG_USE_8M;
+    }
+
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]) {
         sleep_flags |= RTC_SLEEP_USE_ADC_TESEN_MONITOR;
     }
-    if (!s_ultra_low_enabled) {
+
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_ULTRA_LOW_MODE] == 0) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
-    }
-    if (periph_using_8m) {
-        sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
 #if CONFIG_ESP_SLEEP_DEBUG
@@ -2178,6 +2172,42 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     return ESP_OK;
 }
 
+esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
+{
+    if (mode >= ESP_SLEEP_MODE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&s_config.lock);
+    if (activate) {
+        s_sleep_sub_mode_ref_cnt[mode]++;
+    } else {
+        s_sleep_sub_mode_ref_cnt[mode]--;
+    }
+    assert(s_sleep_sub_mode_ref_cnt[mode] >= 0);
+    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    return ESP_OK;
+}
+
+int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
+    if (stream) {
+        for (uint32_t mode = 0; mode < ESP_SLEEP_MODE_MAX; mode++) {
+            fprintf(stream, LOG_COLOR_I "%s : %s (cnt = %" PRId32 ")\n" LOG_RESET_COLOR,
+                            (const char*[]){
+                                [ESP_SLEEP_RTC_USE_RC_FAST_MODE]        = "ESP_SLEEP_RTC_USE_RC_FAST_MODE",
+                                [ESP_SLEEP_DIG_USE_RC_FAST_MODE]        = "ESP_SLEEP_DIG_USE_RC_FAST_MODE",
+                                [ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]   = "ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE",
+                                [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
+                                [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
+                                [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
+                            }[mode],
+                            s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
+                            s_sleep_sub_mode_ref_cnt[mode]);
+        }
+    }
+    return s_sleep_sub_mode_ref_cnt;
+}
+
 /**
  * The modules in the CPU and modem power domains still depend on the top power domain.
  * To be safe, the CPU and Modem power domains must also be powered off and saved when
@@ -2382,12 +2412,17 @@ esp_deep_sleep_disable_rom_logging(void)
     rtc_suppress_rom_log();
 }
 
-void esp_sleep_enable_adc_tsens_monitor(bool enable)
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_periph_use_8m(bool use_or_not)
 {
-    s_adc_tsen_enabled = enable;
+    esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, use_or_not);
 }
 
-void rtc_sleep_enable_ultra_low(bool enable)
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_enable_adc_tsens_monitor(bool enable)
 {
-    s_ultra_low_enabled = enable;
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, enable);
+}
+
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void rtc_sleep_enable_ultra_low(bool enable)
+{
+    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, enable);
 }

@@ -127,7 +127,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         sar_periph_ctrl_adc_oneshot_power_acquire();
     } else {
 #if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
-        esp_sleep_enable_adc_tsens_monitor(true);
+        esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
 #endif
     }
 
@@ -230,7 +230,7 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
         sar_periph_ctrl_adc_oneshot_power_release();
     } else {
 #if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
-        esp_sleep_enable_adc_tsens_monitor(false);
+        esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, false);
 #endif
     }
 
