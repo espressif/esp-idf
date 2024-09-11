@@ -89,6 +89,34 @@ TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[f
     xTaskNotifyGive(task_handle);
 }
 
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+
+TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletion stress test", "[freertos]")
+{
+#define TEST_NUM_TASKS      5
+#define TEST_NUM_ITERATIONS 1000
+    TaskHandle_t task_handle[TEST_NUM_TASKS];
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    for (int j = 0; j < TEST_NUM_ITERATIONS; j++) {
+        for (int i = 0; i < TEST_NUM_TASKS; i++) {
+            // Create a task with caps
+            TEST_ASSERT_EQUAL(pdPASS, xTaskCreateWithCaps(task_with_caps_self_delete, "task", 4096, NULL, UNITY_FREERTOS_PRIORITY, &task_handle[i], MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+            TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+            // Get the task's memory
+            TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
+        }
+
+        for (int i = 0; i < TEST_NUM_TASKS; i++) {
+            // Notify the task to delete itself
+            xTaskNotifyGive(task_handle[i]);
+        }
+    }
+}
+
+#endif /* CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+
 #if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
 
 static void task_with_caps_running_on_other_core(void *arg)
