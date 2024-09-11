@@ -38,9 +38,12 @@
 #include "openthread/instance.h"
 #include "openthread/logging.h"
 #include "openthread/tasklet.h"
-#include "esp_openthread_trel.h"
 #include "protocol_examples_common.h"
 #include "mdns.h"
+
+#if !CONFIG_EXAMPLE_CONNECT_WIFI && !CONFIG_EXAMPLE_CONNECT_ETHERNET
+#error No netif for TREL!
+#endif
 
 #if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
 #include "ot_led_strip.h"
@@ -71,12 +74,7 @@ static void ot_task_worker(void *aContext)
         .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
     };
 
-#if !CONFIG_EXAMPLE_CONNECT_WIFI && !CONFIG_EXAMPLE_CONNECT_ETHERNET
-#error No netif for TREL!
-#endif
     ESP_ERROR_CHECK(example_connect());
-    assert(esp_openthread_get_trel_netif() == NULL);
-    esp_openthread_set_trel_netif(get_example_netif());
 
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&config));
