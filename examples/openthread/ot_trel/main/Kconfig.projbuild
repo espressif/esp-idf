@@ -1,4 +1,4 @@
-menu "OpenThread CLI Example"
+menu "OpenThread TREL Example"
 
     config OPENTHREAD_AUTO_START
         bool 'Enable the automatic start mode.'

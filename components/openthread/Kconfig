@@ -132,7 +132,7 @@ menu "OpenThread"
 
     config OPENTHREAD_RADIO_TREL
         bool "Enable Thread Radio Encapsulation Link (TREL)"
-        depends on SOC_WIFI_SUPPORTED
+        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
         default n
         help
             Select this option to enable Thread Radio Encapsulation Link.
