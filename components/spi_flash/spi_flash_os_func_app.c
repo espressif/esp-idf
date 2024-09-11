@@ -121,6 +121,20 @@ static IRAM_ATTR esp_err_t spi1_start(void *arg)
     //directly disable the cache and interrupts when lock is not used
     cache_disable(NULL);
 #endif
+
+#if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    // Disable scheduler
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+#else
+        // Disable scheduler on the current CPU
+        vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
+    }
+#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+
     on_spi_acquired((app_func_arg_t*)arg);
     return ret;
 }
@@ -139,6 +153,18 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 #else
     cache_enable(NULL);
 #endif
+
+#if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+#else
+        xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
+    }
+#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+
     on_spi_released((app_func_arg_t*)arg);
     return ret;
 }
