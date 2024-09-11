@@ -223,11 +223,11 @@ typedef union {
          */
         uint32_t dis_download_manual_encrypt:1;
         /** usb_drefh : RO; bitpos: [16:15]; default: 0;
-         *  Represents the single-end input threhold vrefh, 1.76 V to 2 V with step of 80 mV.
+         *  Represents the single-end input threshold vrefh, 1.76 V to 2 V with step of 80 mV.
          */
         uint32_t usb_drefh:2;
         /** usb_drefl : RO; bitpos: [18:17]; default: 0;
-         *  Represents the single-end input threhold vrefl, 1.76 V to 2 V with step of 80 mV.
+         *  Represents the single-end input threshold vrefl, 1.76 V to 2 V with step of 80 mV.
          */
         uint32_t usb_drefl:2;
         /** usb_exchg_pins : RO; bitpos: [19]; default: 0;
@@ -361,7 +361,7 @@ typedef union {
          */
         uint32_t uart_print_control:2;
         /** force_send_resume : RO; bitpos: [7]; default: 0;
-         *  Represents whether ROM code is forced to send a resume commmand during SPI boot.
+         *  Represents whether ROM code is forced to send a resume command during SPI boot.
          */
         uint32_t force_send_resume:1;
         /** secure_version : RO; bitpos: [23:8]; default: 0;
@@ -456,10 +456,10 @@ typedef union {
          *  Represents MAC address. High 16-bit.
          */
         uint32_t mac_1:16;
-        /** rd_reserve_1_48 : RW; bitpos: [31:16]; default: 0;
-         *  Reserved, it was created by set_missed_fields_in_regs func
+        /** c61_no_extention : R; bitpos: [31:16]; default: 0;
+         *  Reserved
          */
-        uint32_t rd_reserve_1_48:16;
+        uint32_t c61_no_extention:16;
     };
     uint32_t val;
 } efuse_rd_mac_sys1_reg_t;
@@ -469,14 +469,58 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_0 : RO; bitpos: [13:0]; default: 0;
-         *  Reserved.
+        /** wafer_version_minor : R; bitpos: [3:0]; default: 0;
+         *  Minor chip version
          */
-        uint32_t mac_reserved_0:14;
-        /** mac_reserved_1 : RO; bitpos: [31:14]; default: 0;
-         *  Reserved.
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [5:4]; default: 0;
+         *  Major chip version
          */
-        uint32_t mac_reserved_1:18;
+        uint32_t wafer_version_major:2;
+        /** disable_wafer_version_major : R; bitpos: [6]; default: 0;
+         *  Disables check of wafer version major
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** disable_blk_version_major : R; bitpos: [7]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** blk_version_minor : R; bitpos: [10:8]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [12:11]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
+        /** flash_cap : R; bitpos: [15:13]; default: 0;
+         *  Flash capacity
+         */
+        uint32_t flash_cap:3;
+        /** flash_vendor : R; bitpos: [18:16]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** psram_cap : R; bitpos: [21:19]; default: 0;
+         *  PSRAM capacity
+         */
+        uint32_t psram_cap:3;
+        /** psram_vendor : R; bitpos: [23:22]; default: 0;
+         *  PSRAM vendor
+         */
+        uint32_t psram_vendor:2;
+        /** temp : R; bitpos: [25:24]; default: 0;
+         *  Temperature
+         */
+        uint32_t temp:2;
+        /** pkg_version : R; bitpos: [28:26]; default: 0;
+         *  Package version
+         */
+        uint32_t pkg_version:3;
+        /** reserved_1_93 : R; bitpos: [31:29]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_93:3;
     };
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
@@ -531,10 +575,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_0 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_0:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data0_reg_t;
@@ -544,10 +588,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_1 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_1:32;
+        uint32_t optional_unique_id_1:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data1_reg_t;
@@ -557,10 +601,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_2 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_2:32;
+        uint32_t optional_unique_id_2:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data2_reg_t;
@@ -570,10 +614,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_3 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_3:32;
+        uint32_t optional_unique_id_3:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data3_reg_t;
@@ -1893,7 +1937,7 @@ typedef union {
 
 /** Group: EFUSE Configure Registers */
 /** Type of conf register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 typedef union {
     struct {
@@ -4111,7 +4155,7 @@ typedef union {
 } efuse_apb2otp_blk10_w11_reg_t;
 
 
-/** Group: EFUSE_APB2OTP Function Enable Singal */
+/** Group: EFUSE_APB2OTP Function Enable Signal */
 /** Type of apb2otp_en register
  *  eFuse apb2otp enable configuration register.
  */
