@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,15 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "esp_log.h"
+#include "esp_check.h"
 #include "http_utils.h"
 
 #ifndef mem_check
 #define mem_check(x) assert(x)
 #endif
+
+static const char *TAG = "http_utils";
 
 char *http_utils_join_string(const char *first_str, size_t len_first, const char *second_str, size_t len_second)
 {
@@ -23,7 +27,7 @@ char *http_utils_join_string(const char *first_str, size_t len_first, const char
     char *ret = NULL;
     if (first_str_len + second_str_len > 0) {
         ret = calloc(1, first_str_len + second_str_len + 1);
-        mem_check(ret);
+        ESP_RETURN_ON_FALSE(ret, NULL, TAG, "Memory exhausted");
         memcpy(ret, first_str, first_str_len);
         memcpy(ret + first_str_len, second_str, second_str_len);
     }
@@ -42,11 +46,11 @@ char *http_utils_assign_string(char **str, const char *new_str, int len)
     }
     if (old_str) {
         old_str = realloc(old_str, l + 1);
-        mem_check(old_str);
+        ESP_RETURN_ON_FALSE(old_str, NULL, TAG, "Memory exhausted");
         old_str[l] = 0;
     } else {
         old_str = calloc(1, l + 1);
-        mem_check(old_str);
+        ESP_RETURN_ON_FALSE(old_str, NULL, TAG, "Memory exhausted");
     }
     memcpy(old_str, new_str, l);
     *str = old_str;
@@ -65,11 +69,11 @@ char *http_utils_append_string(char **str, const char *new_str, int len)
         if (old_str) {
             old_len = strlen(old_str);
             old_str = realloc(old_str, old_len + l + 1);
-            mem_check(old_str);
+            ESP_RETURN_ON_FALSE(old_str, NULL, TAG, "Memory exhausted");
             old_str[old_len + l] = 0;
         } else {
             old_str = calloc(1, l + 1);
-            mem_check(old_str);
+            ESP_RETURN_ON_FALSE(old_str, NULL, TAG, "Memory exhausted");
         }
         memcpy(old_str + old_len, new_str, l);
         *str = old_str;
@@ -138,6 +142,38 @@ char *http_utils_get_string_after(const char *str, const char *begin)
         }
     }
     return NULL;
+}
+
+esp_err_t http_utils_get_substring_between(const char *str, const char *begin, const char *end, char **out)
+{
+    *out = NULL;
+    char *found = strcasestr(str, begin);
+    if (found) {
+        found += strlen(begin);
+        char *found_end = strcasestr(found, end);
+        if (found_end) {
+            *out = calloc(1, found_end - found + 1);
+            ESP_RETURN_ON_FALSE(*out, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+            memcpy(*out, found, found_end - found);
+        }
+    }
+    return ESP_OK;
+}
+
+esp_err_t http_utils_get_substring_after(const char *str, const char *begin, char **out)
+{
+    *out = NULL;
+    char *found = strcasestr(str, begin);
+    if (found) {
+        found += strlen(begin);
+        char *found_end = (char *)str + strlen(str);
+        if (found_end) {
+            *out = calloc(1, found_end - found + 1);
+            ESP_RETURN_ON_FALSE(*out, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+            memcpy(*out, found, found_end - found);
+        }
+    }
+    return ESP_OK;
 }
 
 int http_utils_str_starts_with(const char *str, const char *start)

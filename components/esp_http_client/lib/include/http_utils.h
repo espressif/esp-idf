@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
  * @brief      Assign new_str to *str pointer, and realloc *str if it not NULL
  *
  * @param      str      pointer to string pointer
- * @param      new_str  assign this tring to str
+ * @param      new_str  assign this string to str
  * @param      len      length of string, less than 0 if new_str is zero terminated
  *
  * @return
@@ -53,7 +53,7 @@ void http_utils_trim_whitespace(char **str);
  *
  * @return     The string between begin and end
  */
-char *http_utils_get_string_between(const char *str, const char *begin, const char *end);
+char *http_utils_get_string_between(const char *str, const char *begin, const char *end) __attribute__((deprecated("Use http_utils_get_substring_between instead.")));;
 
 /**
  * @brief      Returns a string that contains the part after the search string till the end of the source string.
@@ -64,7 +64,38 @@ char *http_utils_get_string_between(const char *str, const char *begin, const ch
  *
  * @return     The string between begin and the end of str
  */
-char *http_utils_get_string_after(const char *str, const char *begin);
+char *http_utils_get_string_after(const char *str, const char *begin) __attribute__((deprecated("Use http_utils_get_substring_after instead.")));;
+
+/**
+ * @brief      Extracts the substring between two specified delimiters.
+ *             Allocates memory for the extracted substring and stores it in `out`.
+ *             The caller must free the allocated memory when no longer needed.
+ *
+ * @param[in]  str    The source string to search.
+ * @param[in]  begin  The starting delimiter string.
+ * @param[in]  end    The ending delimiter string.
+ * @param[out] out    Pointer to store the allocated substring. Set to NULL if the substring is not found.
+ *
+ * @return
+ * - ESP_OK: Operation succeeded (even if no substring is found).
+ * - ESP_ERR_NO_MEM: Memory allocation failed.
+ */
+esp_err_t http_utils_get_substring_between(const char *str, const char *begin, const char *end, char **out);
+
+/**
+ * @brief      Extracts the substring starting after a specified delimiter until the end of the source string.
+ *             Allocates memory for the extracted substring and stores it in `out`.
+ *             The caller must free the allocated memory when no longer needed.
+ *
+ * @param[in]  str    The source string to search.
+ * @param[in]  begin  The delimiter string to search for.
+ * @param[out] out    Pointer to store the allocated substring. Set to NULL if the substring is not found.
+ *
+ * @return
+ * - ESP_OK: Operation succeeded (even if no substring is found).
+ * - ESP_ERR_NO_MEM: Memory allocation failed.
+ */
+esp_err_t http_utils_get_substring_after(const char *str, const char *begin, char **out);
 
 /**
  * @brief      Join 2 strings to one
