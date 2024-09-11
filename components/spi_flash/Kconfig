@@ -120,6 +120,29 @@ menu "Main Flash configuration"
 
                 For new users, DO NOT enable this config.
 
+        config SPI_FLASH_SOFTWARE_RESUME
+            bool "Resume flash program/erase form suspend state by software control"
+            default n
+            depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE && IDF_EXPERIMENTAL_FEATURES
+            help
+                Enable this config will disable auto-resume from hardware. Thus the software will resume the chip
+                after any higher priority task/interrupt which suspend the chip. The benefit is that the suspend-resume
+                will not disturb the higher priority task and interrupt.
+
+                This currently is only valid on single core chip.
+
+        config SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+            bool "Disable task scheduler when suspend is enabled when SPI1 operation is ongoing"
+            default n
+            # Only valid on single core because no protection is supported on multi core
+            depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE
+            help
+                Disable freertos task scheduler when CONFIG_SPI_FLASH_AUTO_SUSPEND is enabled.
+                Thus only interrupt can trigger a suspend. When SPI_FLASH_AUTO_SUSPEND is enabled,
+                default behavior is not disable the task scheduler, so both interrupt and high priority
+                task can suspend the erase/program operation. When this option is enabled, task
+                scheduler is disabled, only interrupt can suspend erase/program operation.
+
     endmenu
 endmenu
 
