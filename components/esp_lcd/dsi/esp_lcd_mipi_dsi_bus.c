@@ -9,6 +9,7 @@
 #include "esp_check.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "mipi_dsi_priv.h"
 
 static const char *TAG = "lcd.dsi.bus";
@@ -39,6 +40,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     // Enable the APB clock for accessing the DSI host and bridge registers
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, true);
+        mipi_dsi_ll_enable_host_clock(bus_id, true);
+        mipi_dsi_ll_enable_host_config_clock(bus_id, true);
         mipi_dsi_ll_reset_register(bus_id);
     }
 
@@ -47,6 +50,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     if (phy_clk_src == 0) {
         phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT;
     }
+    esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true);
     // enable the clock source for DSI PHY
     DSI_CLOCK_SRC_ATOMIC() {
         // set clock source for DSI PHY
@@ -140,6 +144,8 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     // disable the APB clock for accessing the DSI peripheral registers
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, false);
+        mipi_dsi_ll_enable_host_clock(bus_id, false);
+        mipi_dsi_ll_enable_host_config_clock(bus_id, false);
     }
     if (bus->pm_lock) {
         esp_pm_lock_release(bus->pm_lock);

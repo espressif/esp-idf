@@ -55,6 +55,7 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
         /* Enable LP UART bus clock */
         lp_uart_ll_enable_bus_clock(0, true);
         lp_uart_ll_set_source_clk(hal.dev, clk_src);
+        lp_uart_ll_sclk_enable(0);
     }
 
     /* Initialize LP UART HAL with default parameters */

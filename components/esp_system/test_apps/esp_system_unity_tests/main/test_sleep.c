@@ -20,6 +20,7 @@
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
+#include "soc/soc_caps.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
@@ -27,6 +28,7 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
@@ -176,6 +178,7 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
     HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,5 +65,11 @@ uint32_t *freq_value)
     ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
                         "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+{
+    (void)clk_src; (void)enable;
     return ESP_OK;
 }

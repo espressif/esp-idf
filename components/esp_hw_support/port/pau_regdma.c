@@ -25,6 +25,13 @@
 
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
+#if !SOC_RCC_IS_INDEPENDENT
+// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
+#define PAU_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PAU_RCC_ATOMIC()
+#endif
+
 typedef struct {
     pau_hal_context_t *hal;
 } pau_context_t;
@@ -39,7 +46,9 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
 
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
-        pau_hal_enable_bus_clock(true);
+        PAU_RCC_ATOMIC() {
+            pau_hal_enable_bus_clock(true);
+        }
         pau_hal_set_regdma_wait_timeout(&pau_hal, PAU_REGDMA_LINK_WAIT_RETRY_COUNT, PAU_REGDMA_LINK_WAIT_READ_INTERNAL);
         pau_hal_set_regdma_work_timeout(&pau_hal, PAU_REGDMA_LINK_LOOP, PAU_REGDMA_REG_ACCESS_TIME);
 #if SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE

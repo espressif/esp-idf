@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,11 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "soc/rtc.h"
+#include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "esp_clk_tree";
 
@@ -83,5 +85,31 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
                         "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+{
+    PERIPH_RCC_ATOMIC() {
+        switch (clk_src) {
+        case SOC_MOD_CLK_PLL_F20M:
+            clk_gate_ll_ref_20m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F25M:
+            clk_gate_ll_ref_25m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F80M:
+            clk_gate_ll_ref_80m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F160M:
+            clk_gate_ll_ref_160m_clk_en(enable);
+            break;
+        case SOC_MOD_CLK_PLL_F240M:
+            clk_gate_ll_ref_240m_clk_en(enable);
+            break;
+        default:
+            break;
+        }
+    }
     return ESP_OK;
 }

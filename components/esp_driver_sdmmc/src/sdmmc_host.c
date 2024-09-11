@@ -18,6 +18,7 @@
 #include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "sdmmc_private.h"
 #include "freertos/FreeRTOS.h"
@@ -164,6 +165,7 @@ esp_err_t sdmmc_host_reset(void)
  */
 static void sdmmc_host_set_clk_div(int div)
 {
+    esp_clk_tree_enable_src((soc_module_clk_t)SDMMC_CLK_SRC_DEFAULT, true);
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, div);
         sdmmc_ll_select_clk_source(s_host_ctx.hal.dev, SDMMC_CLK_SRC_DEFAULT);

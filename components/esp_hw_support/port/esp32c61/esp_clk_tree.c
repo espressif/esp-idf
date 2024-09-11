@@ -60,3 +60,9 @@ uint32_t *freq_value)
     *freq_value = clk_src_freq;
     return ESP_OK;
 }
+
+esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+{
+    (void)clk_src; (void)enable;
+    return ESP_OK;
+}

@@ -14,6 +14,7 @@
 #include "esp_intr_alloc.h"
 #include "soc/mcpwm_periph.h"
 #include "soc/io_mux_reg.h"
+#include "soc/soc_caps.h"
 #include "hal/mcpwm_hal.h"
 #include "hal/gpio_hal.h"
 #include "hal/mcpwm_ll.h"
@@ -22,6 +23,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gpio.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_clk_tree.h"
 
 static const char *TAG = "mcpwm(legacy)";
@@ -467,6 +469,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
     uint32_t timer_pre_scale = group_resolution / timer_resolution;
 
+    esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true);
     MCPWM_CLOCK_SRC_ATOMIC() {
         mcpwm_ll_group_set_clock_source(mcpwm_num, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(mcpwm_num, group_pre_scale);
@@ -864,6 +867,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     uint32_t group_resolution = mcpwm_group_get_resolution(mcpwm_num);
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
 
+    esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true);
     MCPWM_CLOCK_SRC_ATOMIC() {
         mcpwm_ll_group_set_clock_source(mcpwm_num, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(mcpwm_num, group_pre_scale);

@@ -19,14 +19,14 @@ extern "C" {
  *
  * @param enable true to enable the module, false to disable the module
  */
-static inline void sha_ll_enable_bus_clock(bool enable)
+static inline void _sha_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_sha_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _sha_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the SHA peripheral module

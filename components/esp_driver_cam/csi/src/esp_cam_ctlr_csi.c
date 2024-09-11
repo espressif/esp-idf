@@ -22,7 +22,9 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_cache.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
 #define CSI_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -63,7 +65,11 @@ static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
             controller->csi_id = i;
             PERIPH_RCC_ATOMIC() {
                 mipi_csi_ll_enable_host_bus_clock(i, 0);
+                mipi_csi_ll_enable_host_clock(i, 0);
+                mipi_csi_ll_enable_host_config_clock(i, 0);
                 mipi_csi_ll_enable_host_bus_clock(i, 1);
+                mipi_csi_ll_enable_host_clock(i, 1);
+                mipi_csi_ll_enable_host_config_clock(i, 1);
                 mipi_csi_ll_reset_host_clock(i);
             }
             break;
@@ -85,6 +91,8 @@ static esp_err_t s_csi_declaim_controller(csi_controller_t *controller)
     s_platform.controllers[controller->csi_id] = NULL;
     PERIPH_RCC_ATOMIC() {
         mipi_csi_ll_enable_host_bus_clock(controller->csi_id, 0);
+        mipi_csi_ll_enable_host_clock(controller->csi_id, 0);
+        mipi_csi_ll_enable_host_config_clock(controller->csi_id, 0);
     }
     _lock_release(&s_platform.mutex);
 
@@ -117,6 +125,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
 #endif
 
     mipi_csi_phy_clock_source_t clk_src = !config->clk_src ? MIPI_CSI_PHY_CLK_SRC_DEFAULT : config->clk_src;
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PERIPH_RCC_ATOMIC() {
         // phy clock source setting
         mipi_csi_ll_set_phy_clock_source(ctlr->csi_id, clk_src);

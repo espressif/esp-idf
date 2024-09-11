@@ -23,14 +23,14 @@ extern "C" {
  *
  * @param enable true to enable the module, false to disable the module
  */
-static inline void mpi_ll_enable_bus_clock(bool enable)
+static inline void _mpi_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_rsa_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_enable_bus_clock(__VA_ARGS__)
+#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mpi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the MPI peripheral module

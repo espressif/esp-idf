@@ -15,6 +15,7 @@
 #include "hal/parlio_types.h"
 #include "hal/hal_utils.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
 #include "soc/parl_io_struct.h"
 
 #define PARLIO_LL_RX_MAX_BYTES_PER_FRAME 0xFFFF
@@ -164,6 +165,7 @@ __attribute__((always_inline))
 static inline void _parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_parlio_rx_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl117.reg_parlio_rx_clk_en = en;
 }
 
@@ -488,6 +490,7 @@ __attribute__((always_inline))
 static inline void _parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_parlio_tx_clk_en = en;
     HP_SYS_CLKRST.peri_clk_ctrl118.reg_parlio_tx_clk_en = en;
 }
 

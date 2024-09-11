@@ -121,6 +121,26 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
+ * @brief  Enable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
+{
+    (void)hw;
+}
+
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
+{
+    (void)hw;
+}
+
+/**
  * @brief  Set the UART source clock.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -636,6 +656,19 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_t
     // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
     hw->sleep_conf.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
+
+/**
+ * @brief   Enable/disable the UART pad clock in sleep_state
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable enable or disable
+ */
+FORCE_INLINE_ATTR void _uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
+{
+    (void)hw; (void)enable;
+}
+
+#define uart_ll_enable_pad_sleep_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_enable_pad_sleep_clock(__VA_ARGS__)
 
 /**
  * @brief  Configure the UART work in normal mode.

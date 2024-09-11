@@ -22,8 +22,10 @@ extern "C" {
 
 #if SOC_RCC_IS_INDEPENDENT
 #define HP_UART_BUS_CLK_ATOMIC()
+#define HP_UART_PAD_CLK_ATOMIC()
 #else
 #define HP_UART_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
+#define HP_UART_PAD_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
 #endif
 
 #if (SOC_UART_LP_NUM >= 1)

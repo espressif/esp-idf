@@ -114,14 +114,15 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(uint32_t core_id)
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_SP_PC_REG : ASSIST_DEBUG_CORE_0_SP_PC_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
+FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_busmon_cpu_clk_en = enable;
+    REG_SET_FIELD(ASSIST_DEBUG_CLOCK_GATE_REG, ASSIST_DEBUG_CLK_EN, enable);
 }
 #define assist_debug_ll_enable_bus_clock(...) \
-    (void)__DECLARE_RCC_ATOMIC_ENV; assist_debug_ll_enable_bus_clock(__VA_ARGS__)
+    (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_enable_bus_clock(__VA_ARGS__)
 
-FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
+FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(void)
 {
     /* esp32p4 has no assist_debug reset register: disable & clear interrupts manually.  */
     for (int i = 0; i < CONFIG_SOC_CPU_CORES_NUM; i++) {
@@ -134,7 +135,7 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
     }
 }
 #define assist_debug_ll_reset_register(...) \
-    (void)__DECLARE_RCC_ATOMIC_ENV; assist_debug_ll_reset_register(__VA_ARGS__)
+    (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

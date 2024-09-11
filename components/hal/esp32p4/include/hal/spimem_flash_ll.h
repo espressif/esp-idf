@@ -753,6 +753,7 @@ static inline void _spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_peri
         break;
     }
 
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel = clk_val;
 }
@@ -778,6 +779,24 @@ static inline void _spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t fre
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define spimem_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_set_core_clock(__VA_ARGS__)
+
+/**
+ * @brief Disable FLASH MSPI clock
+ *
+ * @param mspi_id  mspi_id
+ */
+__attribute__((always_inline))
+static inline void _spimem_ctrlr_ll_unset_clock(uint8_t mspi_id)
+{
+    (void)mspi_id;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 0;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 0;
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spimem_ctrlr_ll_unset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_unset_clock(__VA_ARGS__)
 
 /**
  * @brief Reset whole memory spi

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,10 @@
 #include "hal/timer_ll.h"
 #include "hal/check.h"
 #include "soc/timer_periph.h"
+#include "soc/soc_caps.h"
 #include "esp_clk_tree.h"
 #include "soc/timer_group_reg.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TIMER_TAG = "timer_group";
@@ -326,6 +328,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     if (config->clk_src) {
         clk_src = config->clk_src;
     }
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     GPTIMER_CLOCK_SRC_ATOMIC() {
         // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
         // as the underlying enum entries come from the same `soc_module_clk_t`

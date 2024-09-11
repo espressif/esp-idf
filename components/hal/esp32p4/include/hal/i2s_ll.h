@@ -19,6 +19,7 @@
 #include "soc/i2s_struct.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
 #include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
@@ -122,12 +123,15 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
     switch (i2s_id) {
         case 0:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s0_mclk_en = enable;
             return;
         case 1:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s1_mclk_en = enable;
             return;
         case 2:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s2_mclk_en = enable;
             return;
     }
 }

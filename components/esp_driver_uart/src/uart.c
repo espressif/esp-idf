@@ -21,9 +21,11 @@
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
+#include "soc/soc_caps.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gpio.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_clk_tree.h"
@@ -71,6 +73,7 @@ static const char *UART_TAG = "uart";
 
 #if (SOC_UART_LP_NUM >= 1)
 #define UART_THRESHOLD_NUM(uart_num, field_name) ((uart_num < SOC_UART_HP_NUM) ? field_name : LP_##field_name)
+#define TO_LP_UART_NUM(uart_num)                 (uart_num - SOC_UART_HP_NUM)
 #else
 #define UART_THRESHOLD_NUM(uart_num, field_name) (field_name)
 #endif
@@ -209,6 +212,9 @@ static void uart_module_enable(uart_port_t uart_num)
                 HP_UART_BUS_CLK_ATOMIC() {
                     uart_ll_reset_register(uart_num);
                 }
+                HP_UART_SRC_CLK_ATOMIC() {
+                    uart_ll_sclk_enable(uart_context[uart_num].hal.dev);
+                }
             }
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
@@ -236,9 +242,10 @@ static void uart_module_enable(uart_port_t uart_num)
 #if (SOC_UART_LP_NUM >= 1)
         else {
             LP_UART_BUS_CLK_ATOMIC() {
-                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, true);
-                lp_uart_ll_reset_register(uart_num - SOC_UART_HP_NUM);
+                lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), true);
+                lp_uart_ll_reset_register(TO_LP_UART_NUM(uart_num));
             }
+            lp_uart_ll_sclk_enable(TO_LP_UART_NUM(uart_num));
         }
 #endif
         uart_context[uart_num].hw_enabled = true;
@@ -260,15 +267,18 @@ static void uart_module_disable(uart_port_t uart_num)
                 uart_context[uart_num].retention_link_inited = false;
             }
 #endif
-
+            HP_UART_SRC_CLK_ATOMIC() {
+                uart_ll_sclk_disable(uart_context[uart_num].hal.dev);
+            }
             HP_UART_BUS_CLK_ATOMIC() {
                 uart_ll_enable_bus_clock(uart_num, false);
             }
         }
 #if (SOC_UART_LP_NUM >= 1)
         else if (uart_num >= SOC_UART_HP_NUM) {
+            lp_uart_ll_sclk_disable(TO_LP_UART_NUM(uart_num));
             LP_UART_BUS_CLK_ATOMIC() {
-                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, false);
+                lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), false);
             }
         }
 #endif
@@ -898,6 +908,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
+        esp_clk_tree_enable_src((soc_module_clk_t)uart_sclk_sel, true);
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
@@ -1922,6 +1933,9 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
                         "wakeup_threshold out of bounds");
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_wakeup_thrd(&(uart_context[uart_num].hal), wakeup_threshold);
+    HP_UART_PAD_CLK_ATOMIC() {
+        uart_ll_enable_pad_sleep_clock(uart_context[uart_num].hal.dev, true);
+    }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }

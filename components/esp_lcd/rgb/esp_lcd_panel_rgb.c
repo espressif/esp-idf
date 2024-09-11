@@ -32,11 +32,13 @@
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_bit_defs.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_psram.h"
 #include "esp_lcd_common.h"
 #include "esp_memory_utils.h"
 #include "soc/lcd_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
 #include "hal/cache_hal.h"
@@ -902,6 +904,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     panel->src_clk_hz = src_clk_hz;
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_select_clk_src(panel->hal.dev, clk_src);
     }

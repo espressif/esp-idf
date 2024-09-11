@@ -119,3 +119,5 @@ PROVIDE ( EMAC_MAC           = 0x50098000 );
 PROVIDE ( EMAC_DMA           = 0x50099000 );
 
 PROVIDE ( CACHE              = 0x3FF10000);
+PROVIDE ( TRACE0             = 0x3FF04000);
+PROVIDE ( TRACE1             = 0x3FF05000);
