@@ -223,6 +223,8 @@ variables:
     - *common-before_scripts
     # On macOS, these tools need to be installed
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
+    # remove idf-env.json, since it may contains enabled "features"
+    - rm -f $IDF_TOOLS_PATH/idf-env.json
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_and_idf_python_venv
