@@ -96,11 +96,6 @@ api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/sdio_slave.rst
-api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
-api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
-api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
-api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
-api-reference/peripherals/spi_flash/index.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/lcd/i80_lcd.rst
 api-reference/peripherals/lcd/spi_lcd.rst

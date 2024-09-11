@@ -34,9 +34,6 @@ components/spi_flash/test_apps/flash_mmap:
 components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: not support yet # TODO: [ESP32C61] IDF-9255
   disable_test:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
