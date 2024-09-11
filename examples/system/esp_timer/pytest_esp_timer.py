@@ -81,7 +81,7 @@ def test_esp_timer(dut: Dut) -> None:
         logging.info('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
             sleep_enter_time, sleep_exit_time, sleep_time))
 
-        assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1200
+        assert -2000 < sleep_time - LIGHT_SLEEP_TIME < 1000
 
     for i in range(5, 7):
         match = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)

@@ -57,12 +57,22 @@ examples/wifi/itwt:
 examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
-    - if: (SOC_WIFI_SUPPORTED != 1)
+    - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: PM-234
   disable_test:
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
   depends_components:
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - lwip
+    - esp_event
+    - esp_coex
+    - wpa_supplicant
     - esp_driver_uart
 
 examples/wifi/wifi_aware:

@@ -62,5 +62,6 @@ def test_light_sleep(dut: Dut) -> None:
     logging.info('Went to sleep again')
 
     match = dut.expect(EXIT_SLEEP_REGEX)
-    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
+    # TODO: Need to support dynamically change retention overhead for chips which support pmu (PM-232)
+    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 2 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
     logging.info('Woke up from timer again')

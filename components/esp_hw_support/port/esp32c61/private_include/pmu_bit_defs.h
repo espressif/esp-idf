@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-9247
-
 #define PMU_EXT0_WAKEUP_EN          BIT(0)
 #define PMU_EXT1_WAKEUP_EN          BIT(1)
 #define PMU_GPIO_WAKEUP_EN          BIT(2)
