@@ -112,6 +112,7 @@ struct roaming_app {
 #if PERIODIC_SCAN_MONITORING
     bool periodic_scan_active;
 #endif
+    bool allow_reconnect;
 };
 
 void init_roaming_app(void);
@@ -126,6 +127,9 @@ void roaming_app_periodic_scan_internal_handler(void *data, void *ctx);
 #endif /*PERIODIC_SCAN_ROAM_MONITORING*/
 
 void roaming_app_trigger_roam_internal_handler(void *data, void *ctx);
+
+void roaming_app_disable_reconnect(void);
+void roaming_app_enable_reconnect(void);
 #ifdef __cplusplus
 }
 #endif

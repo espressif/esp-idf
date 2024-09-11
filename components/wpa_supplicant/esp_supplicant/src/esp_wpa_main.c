@@ -481,6 +481,7 @@ int esp_supplicant_init(void)
 #ifdef CONFIG_OWE_STA
     esp_wifi_register_owe_cb(wpa_cb);
 #endif /* CONFIG_OWE_STA */
+
     eloop_init();
     ret = esp_supplicant_common_init(wpa_cb);
 
@@ -492,10 +493,6 @@ int esp_supplicant_init(void)
 
 #if CONFIG_ESP_WIFI_WAPI_PSK
     ret =  esp_wifi_internal_wapi_init();
-#endif
-
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    init_roaming_app();
 #endif
 
     return ret;
