@@ -64,6 +64,9 @@ typedef enum {
     ADC_ULP_MODE_DISABLE = 0, ///< ADC ULP mode is disabled
     ADC_ULP_MODE_FSM     = 1, ///< ADC is controlled by ULP FSM
     ADC_ULP_MODE_RISCV   = 2, ///< ADC is controlled by ULP RISCV
+#if SOC_LP_ADC_SUPPORTED
+    ADC_ULP_MODE_LP_CORE = 3, ///< ADC is controlled by LP Core
+#endif // SOC_LP_ADC_SUPPORTED
 } adc_ulp_mode_t;
 
 /**

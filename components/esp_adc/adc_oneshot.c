@@ -100,16 +100,24 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     unit->unit_id = init_config->unit_id;
     unit->ulp_mode = init_config->ulp_mode;
 
-    adc_oneshot_clk_src_t clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
-    if (init_config->clk_src) {
-        clk_src = init_config->clk_src;
+    adc_oneshot_clk_src_t clk_src;
+#if SOC_LP_ADC_SUPPORTED
+    if (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) {
+        clk_src = LP_ADC_CLK_SRC_LP_DYN_FAST;
+    } else
+#endif /* CONFIG_SOC_LP_ADC_SUPPORTED */
+    {
+        clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
+        if (init_config->clk_src) {
+            clk_src = init_config->clk_src;
+        }
     }
     uint32_t clk_src_freq_hz = 0;
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz), err, TAG, "clock source not supported");
 
     adc_oneshot_hal_cfg_t config = {
         .unit = init_config->unit_id,
-        .work_mode = (init_config->ulp_mode == ADC_ULP_MODE_FSM) ? ADC_HAL_ULP_FSM_MODE : ADC_HAL_SINGLE_READ_MODE,
+        .work_mode = (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) ? ADC_HAL_LP_MODE : ADC_HAL_SINGLE_READ_MODE,
         .clk_src = clk_src,
         .clk_src_freq_hz = clk_src_freq_hz,
     };
