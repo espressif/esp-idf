@@ -273,4 +273,13 @@ menu "Hardware Settings"
     config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         bool
         default n
+
+    config ESP_CLK_RC32K_NOT_TO_USE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+        default n
+        help
+            Due to the poor low-temperature characteristics of
+            RC32K (it cannot operate below -40 degrees Celsius),
+            please avoid using it whenever possible
 endmenu
