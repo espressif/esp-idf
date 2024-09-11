@@ -900,8 +900,8 @@ static inline void i2c_ll_master_init(i2c_dev_t *hw)
     typeof(hw->ctr) ctrl_reg;
     ctrl_reg.val = 0;
     ctrl_reg.ms_mode = 1;
-    ctrl_reg.sda_force_out = 1;
-    ctrl_reg.scl_force_out = 1;
+    ctrl_reg.sda_force_out = 0;
+    ctrl_reg.scl_force_out = 0;
     hw->ctr.val = ctrl_reg.val;
 }
 
@@ -916,8 +916,8 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
 {
     typeof(hw->ctr) ctrl_reg;
     ctrl_reg.val = 0;
-    ctrl_reg.sda_force_out = 1;
-    ctrl_reg.scl_force_out = 1;
+    ctrl_reg.sda_force_out = 0;
+    ctrl_reg.scl_force_out = 0;
     hw->ctr.val = ctrl_reg.val;
     hw->fifo_conf.fifo_addr_cfg_en = 0;
 }
