@@ -186,6 +186,14 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 #define gpio_hal_od_enable(hal, gpio_num) gpio_ll_od_enable((hal)->dev, gpio_num)
 
 /**
+  * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  */
+#define gpio_hal_matrix_out_default(hal, gpio_num) gpio_ll_matrix_out_default((hal)->dev, gpio_num)
+
+/**
  * @brief  Select a function for the pin in the IOMUX
  *
  * @param  hal Context of the HAL layer

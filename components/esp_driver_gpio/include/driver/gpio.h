@@ -61,6 +61,8 @@ typedef struct {
  *
  * @param  pGPIOConfig Pointer to GPIO configure struct
  *
+ * @note This function always overwrite all the current IO configurations
+ *
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
@@ -157,10 +159,12 @@ int gpio_get_level(gpio_num_t gpio_num);
 /**
  * @brief    GPIO set direction
  *
- * Configure GPIO direction,such as output_only,input_only,output_and_input
+ * Configure GPIO mode,such as output_only,input_only,output_and_input
  *
  * @param  gpio_num  Configure GPIO pins number, it should be GPIO number. If you want to set direction of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  mode GPIO direction
+ *
+ * @note This function always overwrite all the current modes that have applied on the IO pin
  *
  * @return
  *     - ESP_OK Success
@@ -170,8 +174,20 @@ int gpio_get_level(gpio_num_t gpio_num);
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
 /**
- * @brief  Configure GPIO pull-up/pull-down resistors
+ * @brief Enable input for an IO
  *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_input_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief  Configure GPIO internal pull-up/pull-down resistors
+ *
+ * @note This function always overwrite the current pull-up/pull-down configurations
  * @note ESP32: Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
  *
  * @param  gpio_num GPIO number. If you want to set pull up or down mode for e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);

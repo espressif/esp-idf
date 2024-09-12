@@ -20,7 +20,6 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "hal/gpio_hal.h"
-#include "esp_rom_gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/io_mux.h"
 
@@ -197,36 +196,37 @@ static esp_err_t gpio_input_disable(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-static esp_err_t gpio_input_enable(gpio_num_t gpio_num)
+esp_err_t gpio_input_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_input_enable(gpio_context.gpio_hal, gpio_num);
     return ESP_OK;
 }
 
-static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
+esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
+    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // Ensure no other output signal is routed via GPIO matrix to this pin
     return ESP_OK;
 }
 
 static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
+    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // No peripheral output signal routed to the pin, just as a simple GPIO output
     gpio_hal_output_enable(gpio_context.gpio_hal, gpio_num);
-    esp_rom_gpio_connect_out_signal(gpio_num, SIG_GPIO_OUT_IDX, false, false);
     return ESP_OK;
 }
 
-static esp_err_t gpio_od_disable(gpio_num_t gpio_num)
+esp_err_t gpio_od_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_od_disable(gpio_context.gpio_hal, gpio_num);
     return ESP_OK;
 }
 
-static esp_err_t gpio_od_enable(gpio_num_t gpio_num)
+esp_err_t gpio_od_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_od_enable(gpio_context.gpio_hal, gpio_num);

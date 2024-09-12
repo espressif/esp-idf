@@ -83,7 +83,9 @@ typedef struct {
         uint32_t invert_level_input: 1;  /*!< Invert the input level signal */
         uint32_t virt_edge_io_level: 1;  /*!< Virtual edge IO level, 0: low, 1: high. Only valid when edge_gpio_num is set to -1 */
         uint32_t virt_level_io_level: 1; /*!< Virtual level IO level, 0: low, 1: high. Only valid when level_gpio_num is set to -1 */
-        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well.
+                                              Note that this flag is deprecated, will be removed in IDF v6.0.
+                                              Instead, you can configure the output mode by calling gpio_config() first, and then do PCNT channel configuration. Necessary configurations for the IO to be used as the PCNT input will be appended. */
     } flags;                             /*!< Channel config flags */
 } pcnt_chan_config_t;
 
@@ -151,7 +153,9 @@ typedef struct {
     int clear_signal_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled */
     struct {
         uint32_t invert_clear_signal: 1;   /*!< Invert the clear input signal and set input mode with pull up */
-        uint32_t io_loop_back: 1;         /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t io_loop_back: 1;         /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well.
+                                               Note that this flag is deprecated, will be removed in IDF v6.0.
+                                               Instead, you can configure the output mode by calling gpio_config() first, and then do PCNT channel configuration. Necessary configurations for the IO to be used as the PCNT input will be appended. */
     } flags;                              /*!< clear signal config flags */
 } pcnt_clear_signal_config_t;
 
