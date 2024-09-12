@@ -69,13 +69,15 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
  *       function reenables interrupts once the spinlock is acquired). For critical
  *       sections, use the interface provided by the operating system.
  * @param lock - target spinlock object
- * @param timeout - cycles to wait, passing SPINLOCK_WAIT_FOREVER blocs indefinitely
+ * @param timeout - cycles to wait, passing SPINLOCK_WAIT_FOREVER blocks indefinitely
  */
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
     uint32_t irq_status;
-    uint32_t core_owner_id, other_core_owner_id;
+    uint32_t core_owner_id;
+    // Unused if asserts are disabled
+    uint32_t __attribute__((unused)) other_core_owner_id;
     bool lock_set;
     esp_cpu_cycle_count_t start_count;
 
@@ -173,7 +175,8 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 {
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
     uint32_t irq_status;
-    uint32_t core_owner_id;
+    // Return value unused if asserts are disabled
+    uint32_t __attribute__((unused)) core_owner_id;
 
     assert(lock);
 #if __XTENSA__
