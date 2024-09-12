@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,8 @@ ble_multi_adv_set_addr(uint16_t instance)
     if (rc != 0) {
         return rc;
     }
+
+    print_addr(addr.val);
 
     memcpy(&ble_instance_cb[instance].addr, &addr, sizeof(addr));
     return 0;
