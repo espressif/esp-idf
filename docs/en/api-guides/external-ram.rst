@@ -167,13 +167,13 @@ By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the inte
 
         The benefits of XiP from PSRAM is:
 
-        - PSRAM access speed is faster than Flash access. So the performance is better.
+        - PSRAM access speed may be faster than Flash access, so the overall application performance may be better. For example, if the PSRAM is an Octal mode (8-line-PSRAM) and is configured to 80 MHz, then it is faster than a Quad flash (4-line-flash) which is configured to 80 MHz.
 
         - The cache will not be disabled during an SPI1 flash operation, thus optimizing the code execution performance during SPI1 flash operations. For ISRs, ISR callbacks and data which might be accessed during this period, you do not need to place them in internal RAM, thus internal RAM usage can be optimized. This feature is useful for high throughput peripheral involved applications to improve the performance during SPI1 flash operations.
 
         :example:`system/xip_from_psram` demonstrates the usage of XiP from PSRAM, optimizing internal RAM usage and avoiding cache disabling during flash operations from user call (e.g., flash erase/read/write operations).
 
-    .. only:: esp32p4
+    .. only:: not (esp32s2 or esp32s3)
 
         .. _external_ram_config_xip:
 
@@ -182,7 +182,15 @@ By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the inte
 
         The :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` option enables the executable in place (XiP) from PSRAM feature. With this option sections that are normally placed in flash, ``.text`` (for instructions) and ``.rodata`` (for read only data), will be loaded in PSRAM.
 
-        With this option enabled, the cache will not be disabled during an SPI1 flash operation, so code that requires executing during an SPI1 flash operation does not have to be placed in internal RAM. Because P4 flash and PSRAM are using two separate SPI buses, moving flash content to PSRAM will actually increase the load of the PSRAM MSPI bus, so the exact impact on performance will be dependent on your app usage of PSRAM. For example, as the PSRAM bus speed could be much faster than flash bus speed, if the instructions and data that are used to be in flash are not accessed very frequently, you might get better performance with this option enabled. We suggest doing performance profiling to determine if enabling this option.
+        With this option enabled, the cache will not be disabled during an SPI1 flash operation, so code that requires executing during an SPI1 flash operation does not have to be placed in internal RAM.
+
+        .. only:: SOC_MMU_PER_EXT_MEM_TARGET
+
+            Because {IDF_TARGET_NAME} flash and PSRAM are using two separate SPI buses, moving flash content to PSRAM will actually increase the load of the PSRAM MSPI bus, so the exact impact on performance will be dependent on your app usage of PSRAM.
+
+            For example, as the PSRAM bus speed could be faster than flash bus speed (e.g., if the PSRAM is a HEX (16-line-PSRAM on ESP32P4) and is configured to 200 Mhz, then it is much faster than a Quad flash (4-line-flash) which is configured to 80 MHz.).
+
+            If the instructions and data that are used to be in flash are not accessed very frequently, you should get better performance with this option enabled. We suggest doing performance profiling to determine how enabling this option will impact your system.
 
 Restrictions
 ============

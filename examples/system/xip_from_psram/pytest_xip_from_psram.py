@@ -7,6 +7,8 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.generic
 # in order to build the default sdkconfig(the CI won't build the sdkconfig.defaults if there is a sdkconfig.ci.xx)
 @pytest.mark.parametrize(

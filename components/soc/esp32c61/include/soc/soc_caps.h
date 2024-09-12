@@ -309,6 +309,9 @@
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 #define SOC_MEMSPI_IS_INDEPENDENT 1
 
+/*-------------------------- SPIRAM CAPS ----------------------------------------*/
+#define SOC_SPIRAM_XIP_SUPPORTED        1
+
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
