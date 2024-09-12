@@ -10,10 +10,11 @@ choice ESPTOOLPY_FLASHFREQ
             - Flash 120 MHz SDR mode is stable.
             - Flash 120 MHz DDR mode is an experimental feature, it works when
               the temperature is stable.
-                Risks:
-                    If your chip powers on at a certain temperature, then after the temperature
-                    increases or decreases by approximately 20 Celsius degrees (depending on the
-                    chip), the program will crash randomly.
+
+              Risks:
+              If your chip powers on at a certain temperature, then after the temperature
+              increases or decreases by approximately 20 Celsius degrees (depending on the
+              chip), the program will crash randomly.
     config ESPTOOLPY_FLASHFREQ_80M
         bool "80 MHz"
     config ESPTOOLPY_FLASHFREQ_40M
