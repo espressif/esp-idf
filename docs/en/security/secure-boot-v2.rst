@@ -610,6 +610,7 @@ Secure Boot Best Practices
     --------------
 
     * Keys are processed in a linear order, i.e., key #0, key #1, key #2.
+    * When a key is revoked, all remaining unrevoked keys can still be used to sign applications. For instance, if key #1 is revoked, keys such as key #0 and key #2 will remain valid for signing the application.
     * Applications should be signed with only one key at a time, to minimize the exposure of unused private keys.
     * The bootloader can be signed with multiple keys from the factory.
 
@@ -633,6 +634,11 @@ Secure Boot Best Practices
     7. The API `esp_ota_revoke_secure_boot_public_key()` can be used to revoke the key #N-1.
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.
+
+    .. note::
+
+    It may be necessary to revoke a key that isn't currently being used.
+    For example, if the active application is signed with key #0, but key #1 becomes compromised, you should revoke key #1 by using the above approach. The new OTA update should continue to be signed with key #0, and the API `esp_ota_revoke_secure_boot_public_key(SECURE_BOOT_PUBLIC_KEY_INDEX_[N])` can be used to revoke the key #N (N would be 1 in this case). After revoking, all remaining unrevoked keys can still be used to sign future applications.
 
 
     .. _secure-boot-v2-aggressive-key-revocation:
