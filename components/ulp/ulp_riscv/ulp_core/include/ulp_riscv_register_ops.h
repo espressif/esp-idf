@@ -5,12 +5,10 @@
  */
 
 #pragma once
-#define ULP_RISCV_REGISTER_OPS
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 //Registers Operation {{
 
