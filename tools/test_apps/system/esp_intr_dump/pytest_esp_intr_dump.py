@@ -48,7 +48,6 @@ def test_esp_intr_dump_shared(dut: Dut) -> None:
 
 # TODO: IDF-9512, Update the expected output of dual core RISC-V chips when the issue is resolved
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='test case fail')    # TODO: IDF-10957
 @pytest.mark.generic
 def test_esp_intr_dump_expected_output(dut: Dut) -> None:
     dut.expect_exact(PROMPT, timeout=30)
