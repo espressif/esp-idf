@@ -94,17 +94,15 @@ def test_heap_misc_options(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize(
-    'target',
-    [
-        'esp32',
-    ]
-)
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.parametrize(
     'config',
     [
-        'heap_trace',
-        'heap_trace_hashmap'
+        pytest.param('heap_trace_esp32', marks=[pytest.mark.esp32]),
+        pytest.param('heap_trace_hashmap_esp32', marks=[pytest.mark.esp32]),
+        pytest.param('heap_trace_esp32c3', marks=[pytest.mark.esp32c3]),
+        pytest.param('heap_trace_hashmap_esp32c3', marks=[pytest.mark.esp32c3])
     ]
 )
 def test_heap_trace_dump(dut: Dut) -> None:

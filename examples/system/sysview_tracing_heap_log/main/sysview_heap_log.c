@@ -53,7 +53,7 @@ static void alloc_task(void *p)
     snprintf(task_name, sizeof(task_name), "free%d", task_args->idx);
     xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, CONFIG_FREERTOS_NUMBER_OF_CORES-1);
 
-    // here GDB will stop at brekpoint and execute OpenOCD command to start tracing
+    // here GDB will stop at breakpoint and execute OpenOCD command to start tracing
     for(int i = 1; i < 10; i++) {
         uint32_t sz = 2*i*(task_args->idx + 1);
         void *p = malloc(sz/2);
@@ -100,6 +100,6 @@ void app_main(void)
         uint32_t val = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
         ESP_LOGI(TAG, "Got notify val %"PRIu32, val);
     }
-    // here GDB will stop at brekpoint and execute OpenOCD command to stop tracing
+    // here GDB will stop at breakpoint and execute OpenOCD command to stop tracing
     heap_trace_stop();
 }
