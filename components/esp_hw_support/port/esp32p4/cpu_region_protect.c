@@ -220,7 +220,11 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(9, SOC_RTC_IRAM_LOW, NONE);
     // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
     // as well as memory for ULP coprocessor
+#if CONFIG_ESP_SYSTEM_PMP_LP_CORE_RESERVE_MEM_EXECUTABLE
+    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RWX);
+#else
     PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RW);
+#endif
     PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
     PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else

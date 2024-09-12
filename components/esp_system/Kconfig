@@ -138,6 +138,16 @@ menu "ESP System Settings"
                 for the data part (above the splitting address). The memory protection is effective
                 on all access through the IRAM0 and DRAM0 buses.
 
+        config ESP_SYSTEM_PMP_LP_CORE_RESERVE_MEM_EXECUTABLE
+            bool "Make LP core reserved memory executable from HP core"
+            depends on IDF_TARGET_ARCH_RISCV && SOC_LP_CORE_SUPPORTED && ESP_SYSTEM_PMP_IDRAM_SPLIT
+            default "n"
+            help
+                If enabled, user can run code available in LP Core image.
+
+                Warning: on ESP32-P4 this will also mark the memory area used for BOOTLOADER_RESERVE_RTC_MEM
+                as executable. If you consider this a security risk then do not activate this option.
+
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"
             depends on SOC_MEMPROT_SUPPORTED
