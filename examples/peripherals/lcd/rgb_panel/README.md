@@ -3,18 +3,17 @@
 
 # RGB LCD Panel Example
 
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) supports RGB interfaced LCD panel, with one or two frame buffer(s) managed by the driver itself.
+[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/lcd/rgb_lcd.html) supports RGB interfaced LCD panel, with multiple buffer modes. This example shows the general process of installing an RGB panel driver, and displays a scatter chart on the screen based on the LVGL library.
 
-This example shows the general process of installing an RGB panel driver, and displays a scatter chart on the screen based on the LVGL library.
+This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL Display porting reference](https://docs.lvgl.io/master/porting/display.html).
 
-This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+This example uses 3 kinds of **buffering mode**:
 
-This example uses two kinds of **buffering mode** based on the number of frame buffers:
-
-| Number of Frame Buffers | LVGL buffering mode | Way to avoid tear effect                                                                                    |
-|-------------------------|---------------------|-------------------------------------------------------------------------------------------------------------|
-| 1                       | Two buffers         | Extra synchronization mechanism is needed, e.g. using semaphore.                                            |
-| 2                       | Full refresh        | There's no intersection between writing to an offline frame buffer and reading from an online frame buffer. |
+| Driver Buffers  | LVGL draw buffers   | Pros and Cons |
+|-----------------|---------------------|-----------------------------------------------------------------------------------|
+| 1 Frame Buffer  | Two partial buffers | fewest memory footprint, performance affected by memory copy                      |
+| 2 Frame Buffers | Direct refresh mode | no extra memory copy between draw buffer and frame buffer, large memory cost      |
+| 1 Frame Buffer + </br> 2 Bounce Buffers | Two partial buffers | Fast DMA read, high CPU usage, more internal memory cost  |
 
 ## How to use the example
 
@@ -114,7 +113,7 @@ I (926) example: Display LVGL Scatter Chart
   * Or adding an extra synchronization mechanism between writing (by Cache) and reading (by EDMA) the frame buffer.
 * Low PCLK frequency
   * Enable `CONFIG_EXAMPLE_USE_BOUNCE_BUFFER`, which will make the LCD controller fetch data from internal SRAM (instead of the PSRAM), but at the cost of increasing CPU usage.
-  * Enable `CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and `CONFIG_SPIRAM_RODATA` can also help if the you're not using the bounce buffer mode. These two configurations can save some **SPI0** bandwidth from being consumed by ICache.
+  * Enable `CONFIG_SPIRAM_XIP_FROM_PSRAM` can also help if the you're not using the bounce buffer mode. These two configurations can save some **SPI0** bandwidth from being consumed by ICache.
 * Why the RGB timing is correct but the LCD doesn't show anything?
   * Please read the datasheet of the IC used by your LCD module, and check if it needs a special initialization sequence. The initialization is usually done by sending some specific SPI commands and parameters to the IC. After the initialization, the LCD will be ready to receive RGB data. For simplicity, this example only works out of the box for those LCD modules which don't need extra initialization.
 
