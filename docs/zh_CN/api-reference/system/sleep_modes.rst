@@ -90,7 +90,7 @@
 
     功能：
 
-    1. RTC IO 输入/高温下 RTC 内存（试验功能）：将 RTC IO 用作输入管脚，或在高温下使用 RTC 内存。禁用上述功能，芯片可进入超低功耗模式。由 API :cpp:func:`rtc_sleep_enable_ultra_low` 控制。
+    1. RTC IO 输入/高温下 RTC 内存（试验功能）：将 RTC IO 用作输入管脚，或在高温下使用 RTC 内存。禁用上述功能，芯片可进入超低功耗模式。由 API :cpp:func:`esp_sleep_sub_mode_config` 配置 `ESP_SLEEP_ULTRA_LOW_MODE` 模式的使能与关闭。
 
     2. ADC_TSEN_MONITOR：在 monitor 模式下使用 ADC/温度传感器（由 ULP 控制），通过 :cpp:func:`ulp_adc_init` 或其更高级别的 API 启用。仅适用于支持 monitor 模式的 ESP32-S2 和 ESP32-S3 芯片。
 

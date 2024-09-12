@@ -90,7 +90,7 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
 
     Features:
 
-    1. RTC IO input/RTC memory at high temperature (experimental): Use RTC IO as input pins, or use RTC memory at high temperature. The chip can go into ultra low power mode when these features are disabled. Controlled by API :cpp:func:`rtc_sleep_enable_ultra_low`.
+    1. RTC IO input/RTC memory at high temperature (experimental): Use RTC IO as input pins, or use RTC memory at high temperature. The chip can go into ultra low power mode when these features are disabled. Controlled by API :cpp:func:`esp_sleep_sub_mode_config` with `ESP_SLEEP_ULTRA_LOW_MODE` argument.
 
     2. ADC_TSEN_MONITOR: Use ADC/Temperature Sensor in monitor mode (controlled by ULP). Enabled by API :cpp:func:`ulp_adc_init` or its higher level APIs. Only available for ESP32-S2 and ESP32-S3 chips with monitor mode.
 
