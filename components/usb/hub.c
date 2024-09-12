@@ -195,7 +195,7 @@ static esp_err_t new_dev_tree_node(usb_device_handle_t parent_dev_hdl, uint8_t p
     // TODO: IDF-10022 Provide a mechanism to request presence status of a device with uid in USBH device object list
     // Return if device uid is not in USBH device object list, repeat until uid will be founded
 
-    ESP_LOGD(HUB_DRIVER_TAG, "New device tree node (uid=%d)", node_uid);
+    ESP_LOGD(HUB_DRIVER_TAG, "Device tree node (uid=%d): new", node_uid);
 
     hub_event_data_t event_data = {
         .event = HUB_EVENT_CONNECTED,
@@ -254,7 +254,7 @@ static esp_err_t dev_tree_node_dev_gone(usb_device_handle_t parent_dev_hdl, uint
     }
 
     if (dev_tree_node == NULL) {
-        ESP_LOGE(HUB_DRIVER_TAG, "Device tree node with port=%d not found", parent_port_num);
+        ESP_LOGW(HUB_DRIVER_TAG, "Device tree node (parent_port=%d): not found", parent_port_num);
         return ESP_ERR_NOT_FOUND;
     }
 
@@ -290,11 +290,11 @@ static esp_err_t dev_tree_node_remove_by_parent(usb_device_handle_t parent_dev_h
     }
 
     if (dev_tree_node == NULL) {
-        ESP_LOGE(HUB_DRIVER_TAG, "Device tree node with port=%d not found", parent_port_num);
+        ESP_LOGW(HUB_DRIVER_TAG, "Device tree node (parent_port=%d): not found", parent_port_num);
         return ESP_ERR_NOT_FOUND;
     }
 
-    ESP_LOGD(HUB_DRIVER_TAG, "Device tree node freeing (uid=%d)", dev_tree_node->uid);
+    ESP_LOGD(HUB_DRIVER_TAG, "Device tree node (uid=%d): freeing", dev_tree_node->uid);
 
     TAILQ_REMOVE(&p_hub_driver_obj->single_thread.dev_nodes_tailq, dev_tree_node, tailq_entry);
     heap_caps_free(dev_tree_node);
@@ -443,8 +443,6 @@ static esp_err_t root_port_recycle(void)
     }
     p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_ACTION_ROOT_REQ;
     HUB_DRIVER_EXIT_CRITICAL();
-
-    ESP_ERROR_CHECK(dev_tree_node_remove_by_parent(NULL, 0));
 
     p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
 
@@ -619,6 +617,10 @@ esp_err_t hub_port_recycle(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
         ESP_LOGW(HUB_DRIVER_TAG, "Recycling External Port is not available (External Hub support disabled)");
         ret = ESP_ERR_NOT_SUPPORTED;
 #endif // ENABLE_USB_HUBS
+    }
+
+    if (ret == ESP_OK) {
+        ESP_ERROR_CHECK(dev_tree_node_remove_by_parent(parent_dev_hdl, parent_port_num));
     }
 
     return ret;
