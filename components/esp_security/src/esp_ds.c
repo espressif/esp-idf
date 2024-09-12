@@ -262,9 +262,7 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 static void ds_acquire_enable(void)
 {
     esp_crypto_ds_lock_acquire();
-#if CONFIG_IDF_TARGET_ESP32S3
-    esp_crypto_mpi_lock_acquire();
-#endif
+
     // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
     HMAC_RCC_ATOMIC() {
         hmac_ll_enable_bus_clock(true);
@@ -300,9 +298,6 @@ static void ds_disable_release(void)
         hmac_ll_enable_bus_clock(false);
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3
-    esp_crypto_mpi_lock_release();
-#endif
     esp_crypto_ds_lock_release();
 }
 

@@ -29,7 +29,7 @@ void set_leak_threshold(int threshold)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
-static const char* TAG = "esp_hw_support_test_app";
+static const char* TAG = "crypto_drivers_test_app";
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
 {
@@ -81,6 +81,6 @@ void tearDown(void)
 void app_main(void)
 {
     vTaskPrioritySet(NULL, TEST_TASK_PRIORITY);
-    ESP_LOGI(TAG, "Running esp-hw-support test app");
+    ESP_LOGI(TAG, "Running crypto drivers test app");
     unity_run_menu();
 }
