@@ -495,12 +495,12 @@ typedef union {
          */
         uint32_t km_disable_deploy_mode:4;
         /** usb_device_drefl : RO; bitpos: [13:12]; default: 0;
-         *  Represents the usb device single-end input low threhold, 0.8 V to 1.04 V with step
+         *  Represents the usb device single-end input low threshold, 0.8 V to 1.04 V with step
          *  of 80 mV.
          */
         uint32_t usb_device_drefl:2;
         /** usb_otg11_drefl : RO; bitpos: [15:14]; default: 0;
-         *  Represents the usb otg11 single-end input low threhold, 0.8 V to 1.04 V with step
+         *  Represents the usb otg11 single-end input low threshold, 0.8 V to 1.04 V with step
          *  of 80 mV.
          */
         uint32_t usb_otg11_drefl:2;
@@ -591,38 +591,26 @@ typedef union {
          *  BLK_VERSION_MAJOR of BLOCK2
          */
         uint32_t blk_version_major:2;
-        /** flash_cap : R; bitpos: [15:13]; default: 0;
-         *  Flash capacity
-         */
-        uint32_t flash_cap:3;
-        /** flash_temp : R; bitpos: [17:16]; default: 0;
-         *  Flash temperature
-         */
-        uint32_t flash_temp:2;
-        /** flash_vendor : R; bitpos: [20:18]; default: 0;
-         *  Flash vendor
-         */
-        uint32_t flash_vendor:3;
-        /** psram_cap : R; bitpos: [22:21]; default: 0;
+        /** psram_cap : R; bitpos: [15:13]; default: 0;
          *  PSRAM capacity
          */
-        uint32_t psram_cap:2;
-        /** psram_temp : R; bitpos: [24:23]; default: 0;
-         *  PSRAM temperature
+        uint32_t psram_cap:3;
+        /** temp : R; bitpos: [17:16]; default: 0;
+         *  Operating temperature of the ESP chip
          */
-        uint32_t psram_temp:2;
-        /** psram_vendor : R; bitpos: [26:25]; default: 0;
+        uint32_t temp:2;
+        /** psram_vendor : R; bitpos: [19:18]; default: 0;
          *  PSRAM vendor
          */
         uint32_t psram_vendor:2;
-        /** pkg_version : R; bitpos: [29:27]; default: 0;
+        /** pkg_version : R; bitpos: [22:20]; default: 0;
          *  Package version
          */
         uint32_t pkg_version:3;
-        /** reserved_1_94 : R; bitpos: [31:30]; default: 0;
+        /** reserved_1_87 : R; bitpos: [31:23]; default: 0;
          *  reserved
          */
-        uint32_t reserved_1_94:2;
+        uint32_t reserved_1_87:9;
     };
     uint32_t val;
 } efuse_rd_mac_sys_2_reg_t;
@@ -2068,7 +2056,7 @@ typedef union {
 } efuse_clk_reg_t;
 
 /** Type of conf register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 typedef union {
     struct {
@@ -4292,7 +4280,7 @@ typedef union {
 } efuse_apb2otp_blk10_w10_reg_t;
 
 
-/** Group: EFUSE_APB2OTP Function Enable Singal */
+/** Group: EFUSE_APB2OTP Function Enable Signal */
 /** Type of apb2otp_en register
  *  eFuse apb2otp enable configuration register.
  */
