@@ -1235,6 +1235,10 @@ config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
 
+config SOC_PM_SUPPORT_BT_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_EXT1_WAKEUP
     bool
     default y
