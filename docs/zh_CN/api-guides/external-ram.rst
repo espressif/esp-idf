@@ -42,7 +42,7 @@ ESP-IDF 完全支持将片外 RAM 集成到您的应用程序中。在启动并�
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_noinit`
     :esp32s2 or esp32s3: * :ref:`external_ram_config_instructions`
     :esp32s2 or esp32s3: * :ref:`external_ram_config_rodata`
 

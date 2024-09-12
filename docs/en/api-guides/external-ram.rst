@@ -45,7 +45,7 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_noinit`
     :esp32s2 or esp32s3: * :ref:`external_ram_config_instructions`
     :esp32s2 or esp32s3: * :ref:`external_ram_config_rodata`
 
