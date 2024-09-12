@@ -26,6 +26,17 @@ typedef enum {
 } mipi_dsi_ll_flow_controller_t;
 
 /**
+ * @brief Force enable the register clock for the DSI bridge
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_dsi_brg_ll_force_enable_reg_clock(dsi_brg_dev_t *dev, bool en)
+{
+    dev->clk_en.clk_en = en;
+}
+
+/**
  * @brief Enable the DSI bridge
  *
  * @param dev Pointer to the DSI bridge controller register base address

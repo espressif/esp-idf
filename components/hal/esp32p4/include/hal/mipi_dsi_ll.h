@@ -38,30 +38,6 @@ static inline void _mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 #define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
- * @brief Enable the clock for MIPI DSI host
- *
- * @param group_id Group ID
- * @param en true to enable, false to disable
- */
-static inline void mipi_dsi_ll_enable_host_clock(int group_id, bool en)
-{
-    (void)group_id;
-    MIPI_DSI_BRIDGE.clk_en.clk_en = en;
-}
-
-/**
- * @brief Enable the config clock for MIPI DSI host
- *
- * @param group_id Group ID
- * @param en true to enable, false to disable
- */
-static inline void mipi_dsi_ll_enable_host_config_clock(int group_id, bool en)
-{
-    (void)group_id;
-    MIPI_DSI_BRIDGE.host_ctrl.dsi_cfg_ref_clk_en = en;
-}
-
-/**
  * @brief Reset the MIPI DSI module
  *
  * @param group_id Group ID

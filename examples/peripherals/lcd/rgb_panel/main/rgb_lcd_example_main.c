@@ -60,10 +60,6 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_DATA15         40 // R4
 #define EXAMPLE_PIN_NUM_DISP_EN        -1
 
-// The pixel number in horizontal and vertical
-#define EXAMPLE_LCD_H_RES              800
-#define EXAMPLE_LCD_V_RES              480
-
 #if CONFIG_EXAMPLE_DOUBLE_FB
 #define EXAMPLE_LCD_NUM_FB             2
 #else
