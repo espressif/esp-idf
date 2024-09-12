@@ -147,16 +147,16 @@ variables:
   # install latest python packages
   # target test jobs
   if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-pytest
+    run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
   elif [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
     run_cmd bash install.sh --enable-ci --enable-docs
   elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-pytest
+    run_cmd bash install.sh --enable-ci
   else
     if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
       run_cmd bash install.sh --enable-ci
     else
-      run_cmd bash install.sh --enable-ci --enable-pytest
+      run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
     fi
   fi
 
@@ -223,6 +223,8 @@ variables:
     - *common-before_scripts
     # On macOS, these tools need to be installed
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
+    # remove idf-env.json, since it may contains enabled "features"
+    - rm -f $IDF_TOOLS_PATH/idf-env.json
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_and_idf_python_venv

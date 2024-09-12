@@ -33,11 +33,17 @@ On the host side, ESP-IDF employs the pytest framework (alongside certain pytest
 Installation
 ============
 
-All dependencies could be installed by running the ESP-IDF install script with the ``--enable-pytest`` argument:
+All basic dependencies could be installed by running the ESP-IDF install script with the ``--enable-pytest`` argument:
 
 .. code-block:: bash
 
     $ install.sh --enable-pytest
+
+Additional test script specific dependencies could be installed separately by running the ESP-IDF install script with the ``--enable-pytest-specific`` argument:
+
+.. code-block:: bash
+
+    $ install.sh --enable-test-specific
 
 Several mechanisms have been implemented to ensure the successful execution of the installation processes. If you encounter any issues during installation, please submit an issue report to our `GitHub issue tracker <https://github.com/espressif/esp-idf/issues>`__.
 

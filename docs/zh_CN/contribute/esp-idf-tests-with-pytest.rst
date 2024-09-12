@@ -33,11 +33,17 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 安装
 ============
 
-所有依赖项都可以通过执行 ESP-IDF 安装脚本 ``--enable-pytest`` 进行安装：
+基础依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-pytest`` 进行安装：
 
 .. code-block:: bash
 
     $ install.sh --enable-pytest
+
+额外的测试脚本依赖项可以通过执行 ESP-IDF 安装脚本 ``--enable-pytest-specific`` 进行安装：
+
+.. code-block:: bash
+
+    $ install.sh --enable-test-specific
 
 上面的脚本已预先实现了一些机制，以确保所有安装过程顺利进行。如果您在安装过程中遇到任何问题，请在 `GitHub Issue 版块 <https://github.com/espressif/esp-idf/issues>`__ 上提交问题说明。
 
