@@ -79,6 +79,12 @@ struct nan_de {
 };
 
 
+bool nan_de_is_nan_network_id(const u8 *addr)
+{
+	return ether_addr_equal(addr, nan_network_id);
+}
+
+
 struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
 			    const struct nan_callbacks *cb)
 {
