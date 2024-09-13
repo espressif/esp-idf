@@ -43,6 +43,7 @@ typedef enum {
 
 /**
  * @brief Set sub-sleep power mode in sleep, mode enabled status is maintained by reference count.
+ *        The caller should ensure that the enabling and disabling behavior is symmetric.
  *        This submode configuration will kept after deep sleep wakeup.
  *
  * @param  mode     sub-sleep mode type
@@ -53,6 +54,17 @@ typedef enum {
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
 esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate);
+
+/**
+ * @brief Force disable sub-sleep power mode in sleep, usually used during initialization.
+ *
+ * @param  mode     sub-sleep mode type
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode);
 
 /**
  * Dump the sub-sleep power mode enable status

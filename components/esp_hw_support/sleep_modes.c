@@ -2189,6 +2189,18 @@ esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
     return ESP_OK;
 }
 
+esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode)
+{
+    if (mode >= ESP_SLEEP_MODE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&s_config.lock);
+    s_sleep_sub_mode_ref_cnt[mode] = 0;
+    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    return ESP_OK;
+}
+
 int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
     if (stream) {
         for (uint32_t mode = 0; mode < ESP_SLEEP_MODE_MAX; mode++) {
@@ -2414,15 +2426,27 @@ esp_deep_sleep_disable_rom_logging(void)
 
 __attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_periph_use_8m(bool use_or_not)
 {
-    esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, use_or_not);
+    if (use_or_not) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, use_or_not);
+    } else {
+        esp_sleep_sub_mode_force_disable(ESP_SLEEP_DIG_USE_RC_FAST_MODE);
+    }
 }
 
 __attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_enable_adc_tsens_monitor(bool enable)
 {
-    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, enable);
+    if (enable) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, enable);
+    } else {
+        esp_sleep_sub_mode_force_disable(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE);
+    }
 }
 
 __attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void rtc_sleep_enable_ultra_low(bool enable)
 {
-    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, enable);
+    if (enable) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, enable);
+    } else {
+        esp_sleep_sub_mode_force_disable(ESP_SLEEP_ULTRA_LOW_MODE);
+    }
 }
