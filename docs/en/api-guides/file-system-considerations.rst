@@ -3,15 +3,15 @@ File System Considerations
 
 This chapter is intended to help you decide which file system is most suitable for your application. It points out specific features and properties of the file systems supported by the ESP-IDF, which are important in typical use-cases rather than describing all the specifics or comparing implementation details. Technical details for each file system are available in their corresponding documentation.
 
-Currently, there are 3 file systems supported by the ESP-IDF framework:
+Currently, the ESP-IDF framework supports three file systems. ESP-IDF provides convenient APIs to handle the mounting and dismounting of file systems in a unified way. File and directory access is implemented via C/POSIX standard file APIs, allowing all applications to use the same interface regardless of the specific underlying file system:
 
 - :ref:`FAT (FatFS implementation) <fatfs-fs-section>`
 - :ref:`SPIFFS <spiffs-fs-section>`
 - :ref:`LittleFS <littlefs-fs-section>`
 
-All of them are based on 3rd-party libraries connected to the IDF through various wrappers and modifications.
+All of them are based on 3rd-party libraries connected to the ESP-IDF through various wrappers and modifications.
 
-:doc:`NVS library (Non-Volatile Storage) <../api-reference/storage/nvs_flash>` is involved in the considerations too, since it can be seen as a type of file system providing specific behaviour not available in the other implementations, though NVS' primary goal is different. ESP-IDF provides comfort APIs to handle mounting and dismounting the file systems in unified way, file and directory access is implemented via C/POSIX standard file APIs. Thus, all the applications can use the same interface regardless of specific underlying system. The only exception is the NVS, whose details explained further in this document.
+ESP-IDF also provides the NVS Library API for simple data storage use cases, using keys to access associated values. While it is not a full-featured file system, it is a good choice for storing configuration data, calibration data, and similar information. For more details, see the :ref:`NVS Library <nvs-fs-section>` section.
 
 The most significant properties and features of above-mentioned file systems are summarised in the following table:
 
@@ -92,7 +92,7 @@ For file systems performance comparison using various configurations and paramet
 
 FatFS
 ----------------------
-The most supported file system, recommended for common applications - file/directory operations, data storage, logging, etc. Automatic resolution of specific FAT system type, widely compatible with PC or other platforms. Supports partition encryption, read-only mode, optional wear-levelling for SPI Flash (SD cards use own built-in WL), equipped with auxiliary host side tools (generators and parsers, Python scripts). Supports SDMMC access. The biggest weakness is its low resilience against sudden power-off events. To mitigate such a scenario impact, the IDF FatFS default setup deploys 2 FAT table copies. This option can be disabled by setting :cpp:member:`esp_vfs_fat_mount_config_t::use_one_fat` flag (the 2-FAT processing is fully handled by the FatFS library). See also related examples.
+The most supported file system, recommended for common applications - file/directory operations, data storage, logging, etc. It provides automatic resolution of specific FAT system type and is widely compatible with PC or other platforms. FatFS supports partition encryption, read-only mode, optional wear-levelling for SPI Flash (SD cards use own built-in WL), equipped with auxiliary host side tools (generators and parsers, Python scripts). It supports SDMMC access. The biggest weakness is its low resilience against sudden power-off events. To mitigate such a scenario impact, the ESP-IDF FatFS default setup deploys 2 FAT table copies. This option can be disabled by setting :cpp:member:`esp_vfs_fat_mount_config_t::use_one_fat` flag (the 2-FAT processing is fully handled by the FatFS library). See also related examples.
 
 **Related documents:**
 
@@ -145,30 +145,42 @@ LittleFS is available as external component in the ESP Registry, see `LittleFS c
 
 * :example:`storage/littlefs`: ESP-IDF LittleFS example
 
+.. _nvs-fs-section:
 
 NVS Library
 ---------------
 
-Non-volatile Storage (NVS) is useful for applications depending on handling numerous key-value pairs, for instance industrial configuration. Original goal of the NVS library is exactly to store the system configuration, thus there were no assupmtions about partitions larger than 128kB. However, over time the library has proven to be power-off resilient up to some extent and has been used many times as a regular file system. It is generally not recommended approach, still you are free to go this way as long as you know what to expect. As any other file system, even the NVS has certain overhead in terms of extra disk space and RAM use. NVS also supports multithreading safety, except for its initialisation and shutdown functions.
+Non-volatile Storage (NVS) is useful for applications depending on handling numerous key-value pairs, for instance application system configuration. For convenience, the key space is divided into namespaces, each namespace is a separate storage area. Besides the basic data types up to the size of 64-bit integers, the NVS also supports zero terminated strings and blobs - binary data of arbitrary length.
+Features include:
+
+* Flash wear leveling by design.
+* Sudden power-loss protection (data is stored in a way that ensures atomic updates).
+* Encryption support (AES-XTS).
+* Tooling is provided for both data preparation during manufacturing and offline analysis.
 
 Points to keep in mind when developing NVS related code:
 
-* NVS partition must have 4 pages at least, 1 page must stay free to keep the NVS page management working.
-* NVS doesn't implement any sort of wear levelling function, as it is designed to minimise erasing of underlying flash device (value updates done by appending, page rotation). Still, it is relatively easy to exhaust your flash chip lifetime once your application makes frequent updates to the NVS store, especially on small partitions.
-* Be careful about using NVS blobs: internal overhead for handling this data type is quite high - for instance, the first page must have minimum 4 free entries to process any blob update, and the blob cost is 2 entries in this case. Not meeting the conditions causes ESP_ERR_NVS_NOT_ENOUGH_SPACE error (0x00001105). Blob storage on other pages consumes 1 entry plus the data space, still it can cause fast rotation over the whole NVS space, resulting in out-of-memory type of errors.
-* Do not use blob size too close to the NVS page size (4kB). Such an entry actually consumes 2 pages, and the NVS partition space is typically exhausted much sooner than expected.
-* NVS is not suitable for logging or similar use cases.
-
-Further details available at :doc:`NVS documentation page (Non-Volatile Storage) <../api-reference/storage/nvs_flash>`.
+* The recommended use case is storing configuration data that does not change frequently.
+* NVS is not suitable for logging or other use cases with frequent, large data updates. NVS works best with small updates and low-frequency writes. Another limitation is the maximum number of flash page erase cycles, which is typically around 100,000 for NOR flash devices.
+* If the application needs to store groups of data with significantly different update rates, it is recommended to use separate NVS flash partitions for each group. This makes wear leveling easier to manage and reduces the risk of data corruption.
+* The default NVS partition (the one labeled "nvs") is used by other ESP-IDF components such as WiFi, Bluetooth, etc. It is recommended to use a separate partition for application data to avoid conflicts with other components.
+* The allocation unit for NVS storage in flash memory is one page—4,096 bytes. At least three pages are needed for each NVS partition to function properly. One page is always reserved and never used for data storage.
+* Before writing or updating existing data, there must be enough free space in the NVS partition to store both the old and new data. The NVS library doesn't support partial updates. This can be especially challenging with large BLOBs spanning flash page boundaries, resulting in longer write times and increased overhead space consumption.
+* The NVS library cannot ensure data consistency in out-of-spec power environments, such as systems powered by batteries or solar panels. Misinterpretation of flash data in such situations can lead to corruption of the NVS flash partition. Developers should include data recovery code, e.g., based on a read-only data partition with factory settings.
+* An initialized NVS library leaves a RAM footprint, which scales linearly with the overall size of the flash partitions and the number of cached keys.
 
 **Related documents:**
 
+- To learn more about the API and NVS library details, see the :doc:`NVS documentation page <../api-reference/storage/nvs_flash>`
 - For mass production, you can use the :doc:`NVS Partition Generator Utility <../api-reference/storage/nvs_partition_gen>`
+- For offline NVS partition analysis, you can use the :doc:`NVS Partition Parser Utility <../api-reference/storage/nvs_partition_parse>`
 
 **Examples:**
 
 - Write a single integer value: :example:`storage/nvs_rw_value`
 - Write a blob: :example:`storage/nvs_rw_blob`
+- Encryption keys generation: :example:`security/nvs_encryption_hmac`
+- Flash encryption workflow including NVS partition: :example:`security/flash_encryption`
 
 
 File handling design considerations
@@ -176,7 +188,7 @@ File handling design considerations
 
 Here are several recommendation for building reliable storage features into your application:
 
-* Use C Standard Library file APIs (ISO or POSIX) wherever possible. This high-level interface guarantees you will not need to change much, if it comes for instance to switching to a different file system. All the IDF supported file systems work as underlying layer for C STDLIB calls, so the specific file system details are nearly transparent to the application code. The only parts unique to each single system are formatting, mounting and diagnostic/repair functions
+* Use C Standard Library file APIs (ISO or POSIX) wherever possible. This high-level interface guarantees you will not need to change much, if it comes for instance to switching to a different file system. All the ESP-IDF supported file systems work as underlying layer for C STDLIB calls, so the specific file system details are nearly transparent to the application code. The only parts unique to each single system are formatting, mounting and diagnostic/repair functions
 * Keep the file system dependent code separated, use wrappers to allow minimum change updates
 * Design reasonable structure of your application file storage:
     * Distribute the load evenly, if possible. Use meaningful number of directories/subdirectories (for instance FAT12 can keep only 224 record in its root directory).
