@@ -14,6 +14,9 @@ choice RTC_CLK_SRC
         select ESP_SYSTEM_RTC_EXT_OSC
     config RTC_CLK_SRC_INT_RC32K
         bool "Internal 32kHz RC oscillator"
+        help
+            Internal RC32K clock is unstable at extreme temperatures and is not recommended for use.
+            This option will be removed in IDF v6.0.
 endchoice
 
 config RTC_CLK_CAL_CYCLES
