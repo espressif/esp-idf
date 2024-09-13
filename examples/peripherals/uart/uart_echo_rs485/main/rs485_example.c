@@ -25,21 +25,21 @@
 
 // Note: Some pins on target chip cannot be assigned for UART communication.
 // Please refer to documentation for selected board and target to configure pins using Kconfig.
-#define ECHO_TEST_TXD   (CONFIG_ECHO_UART_TXD)
-#define ECHO_TEST_RXD   (CONFIG_ECHO_UART_RXD)
+#define ECHO_TEST_TXD           (CONFIG_ECHO_UART_TXD)
+#define ECHO_TEST_RXD           (CONFIG_ECHO_UART_RXD)
 
 // RTS for RS485 Half-Duplex Mode manages DE/~RE
-#define ECHO_TEST_RTS   (CONFIG_ECHO_UART_RTS)
+#define ECHO_TEST_RTS           (CONFIG_ECHO_UART_RTS)
 
 // CTS is not used in RS485 Half-Duplex Mode
-#define ECHO_TEST_CTS   (UART_PIN_NO_CHANGE)
+#define ECHO_TEST_CTS           (UART_PIN_NO_CHANGE)
 
-#define BUF_SIZE        (127)
-#define BAUD_RATE       (CONFIG_ECHO_UART_BAUD_RATE)
+#define BUF_SIZE                (127)
+#define BAUD_RATE               (CONFIG_ECHO_UART_BAUD_RATE)
 
 // Read packet timeout
 #define PACKET_READ_TICS        (100 / portTICK_PERIOD_MS)
-#define ECHO_TASK_STACK_SIZE    (2048)
+#define ECHO_TASK_STACK_SIZE    (CONFIG_ECHO_TASK_STACK_SIZE)
 #define ECHO_TASK_PRIO          (10)
 #define ECHO_UART_PORT          (CONFIG_ECHO_UART_PORT_NUM)
 
@@ -95,7 +95,7 @@ static void echo_task(void *arg)
     // Allocate buffers for UART
     uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
 
-    ESP_LOGI(TAG, "UART start recieve loop.\r");
+    ESP_LOGI(TAG, "UART start receive loop.\r");
     echo_send(uart_num, "Start RS485 UART test.\r\n", 24);
 
     while (1) {
@@ -112,7 +112,7 @@ static void echo_task(void *arg)
             for (int i = 0; i < len; i++) {
                 printf("0x%.2X ", (uint8_t)data[i]);
                 echo_send(uart_num, (const char*)&data[i], 1);
-                // Add a Newline character if you get a return charater from paste (Paste tests multibyte receipt/buffer)
+                // Add a Newline character if you get a return character from paste (Paste tests multibyte receipt/buffer)
                 if (data[i] == '\r') {
                     echo_send(uart_num, "\n", 1);
                 }
