@@ -5,6 +5,7 @@
  */
 
 #include "soc/i2s_periph.h"
+#include "soc/i2s_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/lp_gpio_sig_map.h"
 
@@ -34,7 +35,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_in_sigs[3]  = I2S0_I_SD3_PAD_IN_IDX,
 
         .irq          = ETS_I2S0_INTR_SOURCE,
-        .module       = PERIPH_I2S0_MODULE,
+        .retention_module = SLEEP_RETENTION_MODULE_I2S0,
     },
     [1] = {
         .mck_out_sig  = I2S1_MCLK_PAD_OUT_IDX,
@@ -58,7 +59,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_in_sigs[3]  = -1,
 
         .irq          = ETS_I2S1_INTR_SOURCE,
-        .module       = PERIPH_I2S1_MODULE,
+        .retention_module = SLEEP_RETENTION_MODULE_I2S1,
     },
     [2] = {
         .mck_out_sig  = I2S2_MCLK_PAD_OUT_IDX,
@@ -82,7 +83,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_in_sigs[3]  = -1,
 
         .irq          = ETS_I2S2_INTR_SOURCE,
-        .module       = PERIPH_I2S2_MODULE,
+        .retention_module = SLEEP_RETENTION_MODULE_I2S2,
     },
 };
 
@@ -109,5 +110,58 @@ const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM] = {
         .data_in_sigs[3]  = -1,
 
         .irq          = ETS_LP_I2S_INTR_SOURCE,
+    },
+};
+
+/**
+ * I2S Registers to be saved during sleep retention
+ * - I2S_RX_CONF_REG
+ * - I2S_TX_CONF_REG
+ * - I2S_RX_CONF1_REG
+ * - I2S_TX_CONF1_REG
+ * - I2S_TX_PCM2PDM_CONF_REG
+ * - I2S_TX_PCM2PDM_CONF1_REG
+ * - I2S_RX_PDM2PCM_CONF_REG
+ * - I2S_RX_TDM_CTRL_REG
+ * - I2S_TX_TDM_CTRL_REG
+ * - I2S_RXEOF_NUM_REG
+ * - I2S_ETM_CONF_REG
+*/
+#define I2S_RETENTION_REGS_CNT 11
+#define I2S_RETENTION_REGS_BASE(i) I2S_RX_CONF_REG(i)
+static const uint32_t i2s_regs_map[4] = {0x12370f, 0x0, 0x0, 0x0};
+#define I2S_SLEEP_RETENTION_ENTRIES(i2s_port) {  \
+    [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(  \
+                REGDMA_I2S_LINK(0x00), \
+                I2S_RETENTION_REGS_BASE(i2s_port),  \
+                I2S_RETENTION_REGS_BASE(i2s_port), \
+                I2S_RETENTION_REGS_CNT, 0, 0, \
+                i2s_regs_map[0], i2s_regs_map[1], \
+                i2s_regs_map[2], i2s_regs_map[3]), \
+            .owner = ENTRY(0)}, \
+    [1] = { .config = REGDMA_LINK_WRITE_INIT(  \
+                REGDMA_I2S_LINK(0x01), I2S_RX_CONF_REG(i2s_port), I2S_RX_UPDATE, I2S_RX_UPDATE_M, 1, 0), \
+            .owner = ENTRY(0) | ENTRY(2)}, \
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(  \
+                REGDMA_I2S_LINK(0x02), I2S_TX_CONF_REG(i2s_port), I2S_TX_UPDATE, I2S_TX_UPDATE_M, 1, 0), \
+            .owner = ENTRY(0) | ENTRY(2)} \
+};
+
+static const regdma_entries_config_t i2s0_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(0);
+static const regdma_entries_config_t i2s1_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(1);
+static const regdma_entries_config_t i2s2_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(2);
+
+const i2s_reg_retention_info_t i2s_reg_retention_info[SOC_I2S_NUM] = {
+    [0] = {
+        .entry_array = i2s0_regs_retention,
+        .array_size = ARRAY_SIZE(i2s0_regs_retention)
+    },
+    [1] = {
+        .entry_array = i2s1_regs_retention,
+        .array_size = ARRAY_SIZE(i2s1_regs_retention)
+    },
+    [2] = {
+        .entry_array = i2s2_regs_retention,
+        .array_size = ARRAY_SIZE(i2s2_regs_retention)
     },
 };

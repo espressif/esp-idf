@@ -94,7 +94,7 @@ static void i2s_test_io_config(int mode)
     }
 }
 
-static void i2s_read_write_test(i2s_chan_handle_t tx_chan, i2s_chan_handle_t rx_chan)
+void i2s_read_write_test(i2s_chan_handle_t tx_chan, i2s_chan_handle_t rx_chan)
 {
 #define I2S_SEND_BUF_LEN    100
 #define I2S_RECV_BUF_LEN    10000
