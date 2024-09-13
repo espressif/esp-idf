@@ -94,8 +94,9 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
+    bool allow_pd = (config->flags.allow_pd == 1) || (config->flags.backup_before_sleep == 1);
 #if !SOC_TIMER_SUPPORT_SLEEP_RETENTION
-    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+    ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
     timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
@@ -106,11 +107,11 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
 
+    if (allow_pd) {
 #if GPTIMER_USE_RETENTION_LINK
-    if (config->flags.backup_before_sleep != 0) {
         gptimer_create_retention_module(group);
-    }
 #endif // GPTIMER_USE_RETENTION_LINK
+    }
 
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);

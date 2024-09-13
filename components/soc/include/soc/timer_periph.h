@@ -13,18 +13,12 @@
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 
+#if SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "soc/retention_periph_defs.h"
+#endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
+
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if SOC_LIGHT_SLEEP_SUPPORTED
-#if SOC_PHY_SUPPORTED
-#define TIMG_RETENTION_ENTRY    (ENTRY(0) | ENTRY(2))
-#else
-#define TIMG_RETENTION_ENTRY    (ENTRY(0))
-#endif
-#else
-#define TIMG_RETENTION_ENTRY    REGDMA_SW_TRIGGER_ENTRY
 #endif
 
 typedef struct {
@@ -36,8 +30,9 @@ typedef struct {
 
 extern const timer_group_signal_conn_t timer_group_periph_signals;
 
-#if SOC_TIMER_SUPPORT_SLEEP_RETENTION && SOC_PAU_SUPPORTED
+#if SOC_TIMER_SUPPORT_SLEEP_RETENTION
 typedef struct {
+    const periph_retention_module_t module;
     const regdma_entries_config_t *regdma_entry_array;
     uint32_t array_size;
 } tg_timer_reg_retention_info_t;

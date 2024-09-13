@@ -113,7 +113,7 @@ static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
 #endif
     esp_sleep_set_sleep_context(NULL);
 
-    // enable both channels, pm lock will be acquired, so no light sleep will event happen during the transaction
+    // enable both channels, pm lock will be acquired, so no light sleep will even happen during the transaction
     TEST_ESP_OK(rmt_enable(tx_channel));
     TEST_ESP_OK(rmt_enable(rx_channel));
 
