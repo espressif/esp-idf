@@ -159,6 +159,12 @@ void esp_mspi_pin_reserve(void)
     uint64_t reserve_pin_mask = 0;
     uint8_t mspi_io;
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+        if (!bootloader_flash_is_octal_mode_enabled()
+            && i >=  ESP_MSPI_IO_DQS && i <= ESP_MSPI_IO_D7) {
+            continue;
+        }
+#endif
         mspi_io = esp_mspi_get_io(i);
         if (mspi_io < 64) {     // 'reserve_pin_mask' have 64 bits length
             reserve_pin_mask |= BIT64(mspi_io);
