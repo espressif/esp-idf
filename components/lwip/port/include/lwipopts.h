@@ -308,12 +308,23 @@ extern "C" {
 #define LWIP_DHCP                       1
 
 /**
- * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
+ * LWIP_DHCP_CHECKS_OFFERED_ADDRESS:
+ * - Using Address Conflict Detection (ACD) module assures that the offered IP address
+ *    is properly probed and announced before binding in DHCP. This conforms to RFC5227,
+ *    but takes several seconds.
+ * - Using ARP check, we only send two ARP requests to check for replies. This process
+ *    lasts 1 - 2 seconds.
+ * - No conflict detection: We directly bind the offered address.
  */
 #ifdef CONFIG_LWIP_DHCP_DOES_ARP_CHECK
 #define DHCP_DOES_ARP_CHECK             1
+#define LWIP_DHCP_DOES_ACD_CHECK        1
+#elif CONFIG_LWIP_DHCP_DOES_ACD_CHECK
+#define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        1
 #else
 #define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        0
 #endif
 
 /**
@@ -381,7 +392,7 @@ extern "C" {
 /* Since for embedded devices it's not that hard to miss a discover packet, so lower
  * the discover and request retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,4,4,4)s.
  */
-#define DHCP_REQUEST_TIMEOUT_SEQUENCE(tries)   ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
+#define DHCP_REQUEST_BACKOFF_SEQUENCE(state, tries)   ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
 
 static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 {
@@ -393,12 +404,12 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
     return timeout;
 }
 
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T0_LEASE(dhcp)  \
-        timeout_from_offered((dhcp)->offered_t0_lease, 120)
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T1_RENEW(dhcp)  \
-        timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ )
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
-        timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ )
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T0_LEASE(tout, dhcp)  do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t0_lease, 120); } while(0)
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T1_RENEW(tout, dhcp)  do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ );  } while(0)
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T2_REBIND(tout, dhcp) do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ );  } while(0)
 
 #define LWIP_HOOK_DHCP_PARSE_OPTION(netif, dhcp, state, msg, msg_type, option, len, pbuf, offset)   \
         do {    LWIP_UNUSED_ARG(msg);                                           \
@@ -692,8 +703,12 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 /**
  * LWIP_NETIF_HOSTNAME==1: use DHCP_OPTION_HOSTNAME with netif's hostname
  * field.
+ * LWIP_DHCP_DISCOVER_ADD_HOSTNAME==1: include hostname opt in discover packets.
+ * If the hostname is not set in the DISCOVER packet, then some servers might issue
+ * an OFFER with hostname configured and consequently reject the REQUEST with any other hostname.
  */
 #define LWIP_NETIF_HOSTNAME             1
+#define LWIP_DHCP_DISCOVER_ADD_HOSTNAME 1
 
 /**
   * LWIP_NETIF_API==1: Support netif api (in netifapi.c)

@@ -24,6 +24,8 @@ components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/include/lwip/sockets.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 components/lwip/lwip/src/include/netif/ppp/
+components/lwip/lwip/src/include/lwip/apps/tftp_server.h
+components/lwip/lwip/src/include/lwip/apps/tftp_client.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h

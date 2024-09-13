@@ -318,13 +318,29 @@ menu "LWIP"
             Set TCPIP task receive mail box size. Generally bigger value means higher throughput
             but more memory. The value should be bigger than UDP/TCP mail box size.
 
-    config LWIP_DHCP_DOES_ARP_CHECK
-        bool "DHCP: Perform ARP check on any offered address"
-        default y
+    choice LWIP_DHCP_CHECKS_OFFERED_ADDRESS
+        prompt "Choose how DHCP validates offered IP"
+        default LWIP_DHCP_DOES_ARP_CHECK
         depends on LWIP_IPV4
         help
-            Enabling this option performs a check (via ARP request) if the offered IP address
-            is not already in use by another host on the network.
+            Choose the preferred way of DHCP client to check if the offered address
+            is available:
+            * Using Address Conflict Detection (ACD) module assures that the offered IP address
+            is properly probed and announced before binding in DHCP. This conforms to RFC5227,
+            but takes several seconds.
+            * Using ARP check, we only send two ARP requests to check for replies. This process
+            lasts 1 - 2 seconds.
+            * No conflict detection: We directly bind the offered address.
+
+        config LWIP_DHCP_DOES_ARP_CHECK
+            bool "DHCP provides simple ARP check"
+            depends on !LWIP_AUTOIP
+        config LWIP_DHCP_DOES_ACD_CHECK
+            bool "DHCP provides Address Conflict Detection (ACD)"
+        config LWIP_DHCP_DOES_NOT_CHECK_OFFERED_IP
+            bool "DHCP does not detect conflict on the offered IP"
+
+    endchoice
 
     config LWIP_DHCP_DISABLE_CLIENT_ID
         bool "DHCP: Disable Use of HW address as client identification"

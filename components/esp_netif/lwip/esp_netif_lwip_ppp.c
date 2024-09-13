@@ -175,9 +175,9 @@ static void on_ppp_notify_phase(ppp_pcb *pcb, u8_t phase, void *ctx)
  *
  * @return uint32_t Length of data successfully sent
  */
-static uint32_t pppos_low_level_output(ppp_pcb *pcb, uint8_t *data, uint32_t len, void *netif)
+static uint32_t pppos_low_level_output(ppp_pcb *pcb, const void *data, uint32_t len, void *netif)
 {
-    esp_err_t ret = esp_netif_transmit(netif, data, len);
+    esp_err_t ret = esp_netif_transmit(netif, (void*)data, len);
     if (ret == ESP_OK) {
         return len;
     }

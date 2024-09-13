@@ -1154,25 +1154,13 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
 #endif
-    } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
-#if CONFIG_LWIP_IPV4
-        if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
-            if (p_netif != NULL) {
-                struct dhcp *dhcp_data = NULL;
-                dhcp_data = netif_dhcp_data(p_netif);
-                if (dhcp_data == NULL) {
-                    dhcp_data = (struct dhcp *)malloc(sizeof(struct dhcp));
-                    if (dhcp_data == NULL) {
-                        return ESP_ERR_NO_MEM;
-                    }
-                    dhcp_set_struct(p_netif, dhcp_data);
-                }
-            }
-        }
-#else
-        LOG_NETIF_DISABLED_AND_DO("IPv4's DHCP Client", return ESP_ERR_NOT_SUPPORTED);
-#endif
     }
+#ifndef CONFIG_LWIP_IPV4
+    else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
+        LOG_NETIF_DISABLED_AND_DO("IPv4's DHCP Client", return ESP_ERR_NOT_SUPPORTED);
+    }
+#endif
+
     // For netifs with (active) DHCP client: we update the default netif after getting a valid IP
     if (!((esp_netif->flags & ESP_NETIF_DHCP_CLIENT) && esp_netif->dhcpc_status != ESP_NETIF_DHCP_STOPPED)) {
         esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
