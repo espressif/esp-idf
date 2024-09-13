@@ -1387,7 +1387,7 @@ config SOC_WIFI_HE_SUPPORT
     bool
     default y
 
-config SOC_WIFI_HE_SUPPORT_5G
+config SOC_WIFI_SUPPORT_5G
     bool
     default y
 

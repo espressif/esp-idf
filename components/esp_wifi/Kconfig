@@ -657,28 +657,28 @@ menu "Wi-Fi"
 
         config ESP_WIFI_ENABLE_DUMP_HESIGB
             bool "Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs.
 
         config ESP_WIFI_ENABLE_DUMP_MU_CFO
             bool "Enable Wi-Fi dump MU CFO"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump MU CFO.
 
         config ESP_WIFI_ENABLE_DUMP_CTRL_NDPA
             bool "Enable Wi-Fi dump NDPA frames"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump NDPA frames.
 
         config ESP_WIFI_ENABLE_DUMP_CTRL_BFRP
             bool "Enable Wi-Fi dump BFRP frames"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump BFRP frames.

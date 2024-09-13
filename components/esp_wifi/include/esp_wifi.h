@@ -677,7 +677,7 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
   * @brief     Set protocol type of specified interface
   *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
   *            if CONFIG_SOC_WIFI_HE_SUPPORT and band mode is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT_5G and band mode is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_SUPPORT_5G and band mode is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
   *
   * @attention 1. When WiFi band mode is 2.4G only, support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
   * @attention 2. When WiFi band mode is 5G only, support 802.11a or 802.11an or 802.11anac or 802.11anacax
@@ -1653,8 +1653,8 @@ esp_err_t esp_wifi_get_band(wifi_band_t* band);
   * @attention 1. When the WiFi band mode is set to 2.4G only, it operates exclusively on the 2.4GHz channels.
   * @attention 2. When the WiFi band mode is set to 5G only, it operates exclusively on the 5GHz channels.
   * @attention 3. When the WiFi band mode is set to 2.4G + 5G (WIFI_BAND_MODE_AUTO), it can operate on both the 2.4GHz and 5GHz channels.
-  * @attention 4. WiFi band mode can be set to 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO) if CONFIG_SOC_WIFI_HE_SUPPORT_5G is supported.
-  * @attention 5. If CONFIG_SOC_WIFI_HE_SUPPORT_5G is not supported, the API will return ESP_ERR_INVALID_ARG when the band mode is set to either 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO).
+  * @attention 4. WiFi band mode can be set to 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO) if CONFIG_SOC_WIFI_SUPPORT_5G is supported.
+  * @attention 5. If CONFIG_SOC_WIFI_SUPPORT_5G is not supported, the API will return ESP_ERR_INVALID_ARG when the band mode is set to either 5G only or 2.4G + 5G (WIFI_BAND_MODE_AUTO).
   * @attention 6. When a WiFi band mode change triggers a band change, if no channel is set for the current band, a default channel will be assigned: channel 1 for 2.4G band and channel 36 for 5G band.
   *
   * @param[in]    band_mode store the band mode of WiFi
@@ -1717,7 +1717,7 @@ esp_err_t esp_wifi_set_protocols(wifi_interface_t ifx, wifi_protocols_t *protoco
 /**
   * @brief     Get the current protocol of the specified interface and specified band
   *
-  * @attention 1. The 5G protocol can only be read when CONFIG_SOC_WIFI_HE_SUPPORT_5G is enabled.
+  * @attention 1. The 5G protocol can only be read when CONFIG_SOC_WIFI_SUPPORT_5G is enabled.
   * @attention 2. When the WiFi band mode is set to 2.4G only, it will not get 5G protocol
   * @attention 3. When the WiFi band mode is set to 5G only, it will not get 2.4G protocol
   *
@@ -1756,7 +1756,7 @@ esp_err_t esp_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t* bw);
 /**
   * @brief     Get the bandwidth of specified interface and specified band
   *
-  * @attention 1. The 5G bandwidth can only be read when CONFIG_SOC_WIFI_HE_SUPPORT_5G is enabled.
+  * @attention 1. The 5G bandwidth can only be read when CONFIG_SOC_WIFI_SUPPORT_5G is enabled.
   * @attention 2. When the WiFi band mode is set to 2.4G only, it will not get 5G bandwidth
   * @attention 3. When the WiFi band mode is set to 5G only, it will not get 2.4G bandwidth
   *
