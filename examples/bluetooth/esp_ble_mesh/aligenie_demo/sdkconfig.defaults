@@ -14,7 +14,6 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 # Serial flasher config
 #
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
-CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
 
 # Override some defaults of ESP BLE Mesh
 CONFIG_BLE_MESH=y
