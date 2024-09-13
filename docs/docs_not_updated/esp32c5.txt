@@ -6,15 +6,6 @@ contribute/style-guide.rst
 contribute/copyright-guide.rst
 contribute/install-pre-commit-hook.rst
 contribute/index.rst
-api-guides/tools/idf-tools.rst
-api-guides/tools/idf-clang-tidy.rst
-api-guides/tools/idf-component-manager.rst
-api-guides/tools/idf-py.rst
-api-guides/tools/qemu.rst
-api-guides/tools/idf-windows-installer.rst
-api-guides/tools/idf-monitor.rst
-api-guides/tools/idf-docker-image.rst
-api-guides/tools/index.rst
 api-guides/low-power-mode.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
@@ -26,7 +17,6 @@ api-guides/bluetooth.rst
 api-guides/wireshark-user-guide.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/inc/external-ram-esp32-notes.rst
-api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
 api-guides/esp-ble-mesh/ble-mesh-index.rst
 api-guides/esp-ble-mesh/ble-mesh-feature-list.rst
