@@ -112,7 +112,7 @@
       - Description
     * - ``ESP32_FLASH_VOLTAGE``
       - When using 1.8 V flash ESP32 based modules, set this variable to ``1.8``. Refer to :ref:`jtag-debugging-tip-code-flash-voltage`.
-    * - ``ESP32_ONLYCPU``
+    * - ``ESP_ONLYCPU``
       - For multi-core targets, can be set to ``1`` to only enable single core debugging.
 
 ---
