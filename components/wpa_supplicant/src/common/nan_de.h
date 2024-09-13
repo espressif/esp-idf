@@ -52,7 +52,7 @@ struct nan_callbacks {
 
 	void (*receive)(void *ctx, int id, int peer_instance_id,
 			const u8 *ssi, size_t ssi_len,
-			const u8 *peer_addr);
+			const u8 *peer_addr, const u8 *a3);
 };
 
 bool nan_de_is_nan_network_id(const u8 *addr);
@@ -67,8 +67,8 @@ void nan_de_listen_ended(struct nan_de *de, unsigned int freq);
 void nan_de_tx_status(struct nan_de *de, unsigned int freq, const u8 *dst);
 void nan_de_tx_wait_ended(struct nan_de *de);
 
-void nan_de_rx_sdf(struct nan_de *de, const u8 *peer_addr, unsigned int freq,
-		   const u8 *buf, size_t len);
+void nan_de_rx_sdf(struct nan_de *de, const u8 *peer_addr, const u8 *a3,
+		   unsigned int freq, const u8 *buf, size_t len);
 const u8 * nan_de_get_service_id(struct nan_de *de, int id);
 
 struct nan_publish_params {
@@ -145,6 +145,6 @@ void nan_de_cancel_subscribe(struct nan_de *de, int subscribe_id);
  * req_instance_id = peer publish_id or subscribe_id */
 int nan_de_transmit(struct nan_de *de, int handle,
 		    const struct wpabuf *ssi, const struct wpabuf *elems,
-		    const u8 *peer_addr, u8 req_instance_id);
+		    const u8 *peer_addr, const u8 *a3, u8 req_instance_id);
 
 #endif /* NAN_DE_H */
