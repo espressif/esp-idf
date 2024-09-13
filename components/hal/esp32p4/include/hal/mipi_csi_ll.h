@@ -122,30 +122,6 @@ static inline void _mipi_csi_ll_enable_host_bus_clock(int group_id, bool en)
 #define mipi_csi_ll_enable_host_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_csi_ll_enable_host_bus_clock(__VA_ARGS__)
 
 /**
- * @brief Enable the clock for MIPI CSI host
- *
- * @param group_id Group ID
- * @param en true to enable, false to disable
- */
-static inline void mipi_csi_ll_enable_host_clock(int group_id, bool en)
-{
-    (void)group_id;
-    MIPI_CSI_BRIDGE.host_ctrl.csi_enableclk = en;
-}
-
-/**
- * @brief Enable the config clock for MIPI CSI host
- *
- * @param group_id Group ID
- * @param en true to enable, false to disable
- */
-static inline void mipi_csi_ll_enable_host_config_clock(int group_id, bool en)
-{
-    (void)group_id;
-    MIPI_CSI_BRIDGE.host_ctrl.csi_cfg_clk_en = en;
-}
-
-/**
  * @brief Reset the MIPI CSI host CLK
  *
  * @param group_id Group ID

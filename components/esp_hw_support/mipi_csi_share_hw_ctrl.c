@@ -41,6 +41,7 @@ esp_err_t mipi_csi_brg_claim(mipi_csi_brg_user_t user, int *out_id)
             PERIPH_RCC_ATOMIC() {
                 mipi_csi_ll_enable_brg_module_clock(i, true);
                 mipi_csi_ll_reset_brg_module_clock(i);
+                mipi_csi_brg_ll_enable_clock(MIPI_CSI_BRG_LL_GET_HW(i), true);
             }
             s_ctx.user[i] = user;
         } else {
@@ -80,6 +81,7 @@ esp_err_t mipi_csi_brg_declaim(int id)
     } else if (s_ctx.ref_cnt[id] == 0) {
         PERIPH_RCC_ATOMIC() {
             mipi_csi_ll_enable_brg_module_clock(id, false);
+            mipi_csi_brg_ll_enable_clock(MIPI_CSI_BRG_LL_GET_HW(id), false);
         }
         s_ctx.user[id] = MIPI_CSI_BRG_USER_NO_USER;
     }
