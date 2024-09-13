@@ -32,9 +32,9 @@ examples/system/deep_sleep:
 
 examples/system/deep_sleep_wake_stub:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32p4", "esp32c61"]
+    - if: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB != 1
       temporary: true
-      reason: target(s) is not supported yet  # TODO: [esp32c61] IDF-9245
+      reason: target(s) is not supported yet
 
 examples/system/efuse:
   enable:
