@@ -29,6 +29,7 @@ TARGETS_RISCV_SINGLE_CORE = [
     pytest.mark.esp32c5,
     pytest.mark.esp32c6,
     pytest.mark.esp32h2,
+    pytest.mark.esp32c61,
 ]
 
 TARGETS_RISCV_DUAL_CORE = [
@@ -54,9 +55,8 @@ CONFIGS = [
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
     pytest.param('coredump_flash_custom_stack', marks=TARGETS_RISCV),
-    # TODO: Move esp32c61 to TARGETS_RISCV once Core Dump is supported (IDF-9268)
-    pytest.param('gdbstub', marks=TARGETS_ALL + [pytest.mark.esp32c61]),
-    pytest.param('panic', marks=TARGETS_ALL + [pytest.mark.esp32c61]),
+    pytest.param('gdbstub', marks=TARGETS_ALL),
+    pytest.param('panic', marks=TARGETS_ALL),
 ]
 
 CONFIGS_DUAL_CORE = [
@@ -85,7 +85,6 @@ CONFIGS_HW_STACK_GUARD = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_RISCV),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_RISCV),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_RISCV),
-    # TODO: Add stack guard support to the ESP32-C61: IDF-9269
     pytest.param('gdbstub', marks=TARGETS_RISCV),
     pytest.param('panic', marks=TARGETS_RISCV),
 ]
@@ -981,7 +980,7 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     assert end_addr > start_addr
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO: IDF-8662')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61'], reason='TODO: IDF-8662 and IDF-9269')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
@@ -990,7 +989,6 @@ def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str
     common_test(dut, config)
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='TODO: IDF-8662')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
@@ -1037,7 +1035,7 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     assert int(dut.gdb_data_eval_expr('g_cd_iram')) == 0x4243
     assert int(dut.gdb_data_eval_expr('g_cd_dram')) == 0x4344
 
-    if dut.target != 'esp32c2':
+    if dut.target not in ['esp32c61', 'esp32c2']:
         assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
         assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
 
