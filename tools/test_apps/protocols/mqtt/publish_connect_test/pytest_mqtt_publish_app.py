@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import contextlib
 import difflib
 import logging
@@ -9,9 +8,15 @@ import random
 import re
 import ssl
 import string
-from itertools import count, product
-from threading import Event, Lock
-from typing import Any, Dict, List, Tuple, no_type_check
+from itertools import count
+from itertools import product
+from threading import Event
+from threading import Lock
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import no_type_check
+from typing import Tuple
 
 import paho.mqtt.client as mqtt
 import pexpect
@@ -152,7 +157,7 @@ def get_scenarios() -> List[Dict[str, int]]:
 def get_timeout(test_case: Any) -> int:
     transport, qos, enqueue, scenario = test_case
     if transport in ['ws', 'wss'] or qos == 2:
-        return 90
+        return 120
     return 60
 
 
@@ -198,6 +203,11 @@ stress_scenarios = [{'len':20,  'repeat':50}]    # many medium sized
 transport_cases = ['tcp', 'ws', 'wss', 'ssl']
 qos_cases = [0, 1, 2]
 enqueue_cases = [0, 1]
+local_broker_supported_transports = ['tcp']
+local_broker_scenarios = [{'len':0,   'repeat':5},     # zero-sized messages
+                          {'len':5,   'repeat':20},    # short messages
+                          {'len':500, 'repeat':10},    # long messages
+                          {'len':20,  'repeat':20}]    # many medium sized
 
 
 def make_cases(scenarios: List[Dict[str, int]]) -> List[Tuple[str, int, int, Dict[str, int]]]:
@@ -212,6 +222,7 @@ stress_test_cases = make_cases(stress_scenarios)
 @pytest.mark.ethernet
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', test_cases)
+@pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)
@@ -223,8 +234,25 @@ def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
 @pytest.mark.ethernet
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', stress_test_cases)
+@pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_mqtt_publish_stress(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut)
     dut.expect(re.compile(rb'mqtt>'), timeout=30)
     dut.write('init')
+    run_publish_test_case(dut, test_case, publish_cfg)
+
+
+@pytest.mark.esp32
+@pytest.mark.ethernet
+@pytest.mark.parametrize('test_case', make_cases(local_broker_scenarios))
+@pytest.mark.parametrize('config', ['local_broker'], indirect=True)
+def test_mqtt_publish_lcoal(dut: Dut, test_case: Any) -> None:
+    if test_case[0] not in local_broker_supported_transports:
+        pytest.skip(f'Skipping transport: {test_case[0]}...')
+    dut_ip = dut.expect(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),').group(1)
+    publish_cfg = get_configurations(dut)
+    publish_cfg['broker_host_tcp'] = dut_ip
+    publish_cfg['broker_port_tcp'] = 1234
+    dut.expect(re.compile(rb'mqtt>'), timeout=30)
+    dut.confirm_write('init', expect_pattern='init', timeout=30)
     run_publish_test_case(dut, test_case, publish_cfg)
