@@ -29,20 +29,25 @@
     Info : only one transport option; autoselecting 'jtag'
     Info : esp_usb_jtag: VID set to 0x303a and PID to 0x1001
     Info : esp_usb_jtag: capabilities descriptor set to 0x2000
-    adapter speed: 40000 kHz
-    Info : esp_usb_jtag: serial (60:55:F9:F8:80:5C)
-    Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
-    Info : clock speed 24000 kHz
-    Info : JTAG tap: esp32p4.lp.cpu tap/device found: 0x00012c25 (mfg: 0x612 (Espressif Systems), part: 0x0012, ver: 0x0)
-    Info : JTAG tap: esp32p4.hp.cpu tap/device found: 0x00012c25 (mfg: 0x612 (Espressif Systems), part: 0x0012, ver: 0x0)
-    Info : [esp32p4.hp.cpu] datacount=1 progbufsize=2
-    Info : [esp32p4.hp.cpu] Examined RISC-V core; found 2 harts
-    Info : [esp32p4.hp.cpu]  XLEN=32, misa=0x40901125
-    Info : [esp32p4.hp.cpu] Examination succeed
-    Info : starting gdb server for esp32p4.hp.cpu on 3333
-    Info : Listening on port 3333 for gdb connections
     Info : Listening on port 6666 for tcl connections
     Info : Listening on port 4444 for telnet connections
+    Info : esp_usb_jtag: serial (60:55:F9:F9:04:AD)
+    Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
+    Info : clock speed 24000 kHz
+    Info : JTAG tap: esp32p4.tap0 tap/device found: 0x00012c25 (mfg: 0x612 (Espressif Systems), part: 0x0012, ver: 0x0)
+    Info : JTAG tap: esp32p4.tap1 tap/device found: 0x00012c25 (mfg: 0x612 (Espressif Systems), part: 0x0012, ver: 0x0)
+    Info : [esp32p4.hp.cpu0] datacount=1 progbufsize=2
+    Info : [esp32p4.hp.cpu0] Core 0 made part of halt group 1.
+    Info : [esp32p4.hp.cpu0] Examined RISC-V core; found 2 harts
+    Info : [esp32p4.hp.cpu0]  XLEN=32, misa=0x40901125
+    Info : [esp32p4.hp.cpu0] Examination succeed
+    Info : [esp32p4.hp.cpu1] datacount=1 progbufsize=2
+    Info : [esp32p4.hp.cpu1] Core 1 made part of halt group 1.
+    Info : [esp32p4.hp.cpu1] Examined RISC-V core; found 2 harts
+    Info : [esp32p4.hp.cpu1]  XLEN=32, misa=0x40901125
+    Info : [esp32p4.hp.cpu1] Examination succeed
+    Info : [esp32p4.hp.cpu0] starting gdb server on 3333
+    Info : Listening on port 3333 for gdb connections
 
 .. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32p4-builtin.cfg``
 

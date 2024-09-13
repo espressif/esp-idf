@@ -112,7 +112,7 @@
       - 描述
     * - ``ESP32_FLASH_VOLTAGE``
       - 如果 ESP32 模组集成的是 1.8 V 的 flash，将该变量设置为 ``1.8``，详情请参考 :ref:`jtag-debugging-tip-code-flash-voltage`
-    * - ``ESP32_ONLYCPU``
+    * - ``ESP_ONLYCPU``
       - 对于多核芯片，将该值设置为 ``1`` 可以仅启用单核调试功能
 
 ---
