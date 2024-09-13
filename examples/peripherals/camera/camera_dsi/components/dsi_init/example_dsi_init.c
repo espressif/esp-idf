@@ -10,10 +10,11 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_ili9881c.h"
+#include "esp_lcd_ek79007.h"
 #include "example_dsi_init.h"
 #include "example_dsi_init_config.h"
 
-void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_panel_io_handle_t *mipi_dbi_io, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
+void example_dsi_resource_alloc(esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_panel_io_handle_t *mipi_dbi_io, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
 {
     //---------------DSI resource allocation------------------//
     esp_lcd_dsi_bus_config_t bus_config = {
@@ -31,16 +32,9 @@ void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(*mipi_dsi_bus, &dbi_config, mipi_dbi_io));
 
-    esp_lcd_panel_dev_config_t lcd_dev_config = {
-        .bits_per_pixel = 16,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .reset_gpio_num = -1,
-    };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(*mipi_dbi_io, &lcd_dev_config, ili9881c_ctrl_panel));
-
     esp_lcd_dpi_panel_config_t dpi_config = {
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-        .dpi_clock_freq_mhz = 80,
+        .dpi_clock_freq_mhz = EXAMPLE_MIPI_DSI_DPI_CLK_MHZ,
         .virtual_channel = 0,
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
         .video_timing = {
@@ -54,17 +48,45 @@ void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp
             .vsync_front_porch = EXAMPLE_MIPI_DSI_IMAGE_VFP,
         },
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(*mipi_dsi_bus, &dpi_config, mipi_dpi_panel));
+
+#if CONFIG_EXAMPLE_LCD_PATTERN_ILI9881C
+    ili9881c_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = *mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+            .lane_num = 2,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+        .reset_gpio_num = -1,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .bits_per_pixel = 16,
+        .vendor_config = &vendor_config,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9881c(*mipi_dbi_io, &lcd_dev_config, mipi_dpi_panel));
+#elif CONFIG_EXAMPLE_LCD_PATTERN_EK79007
+    ek79007_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = *mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+        .reset_gpio_num = -1,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .bits_per_pixel = 16,
+        .vendor_config = &vendor_config,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ek79007(*mipi_dbi_io, &lcd_dev_config, mipi_dpi_panel));
+#endif
+
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_get_frame_buffer(*mipi_dpi_panel, 1, frame_buffer));
 }
 
-void example_dsi_ili9881c_panel_init(esp_lcd_panel_handle_t ili9881c_ctrl_panel)
+void example_dpi_panel_reset(esp_lcd_panel_handle_t mipi_dpi_panel)
 {
-    //---------------DSI Panel Init------------------//
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(ili9881c_ctrl_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_init(ili9881c_ctrl_panel));
-    // turn on display
-    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(ili9881c_ctrl_panel, true));
+    //---------------DPI Panel Reset------------------//
+    ESP_ERROR_CHECK(esp_lcd_panel_reset(mipi_dpi_panel));
 }
 
 void example_dpi_panel_init(esp_lcd_panel_handle_t mipi_dpi_panel)
@@ -73,10 +95,9 @@ void example_dpi_panel_init(esp_lcd_panel_handle_t mipi_dpi_panel)
     ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
 }
 
-void example_dsi_resource_destroy(esp_lcd_panel_handle_t ili9881c_ctrl_panel, esp_lcd_dsi_bus_handle_t mipi_dsi_bus, esp_lcd_panel_io_handle_t mipi_dbi_io, esp_lcd_panel_handle_t mipi_dpi_panel)
+void example_dsi_resource_destroy(esp_lcd_dsi_bus_handle_t mipi_dsi_bus, esp_lcd_panel_io_handle_t mipi_dbi_io, esp_lcd_panel_handle_t mipi_dpi_panel)
 {
     ESP_ERROR_CHECK(esp_lcd_panel_del(mipi_dpi_panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_del(ili9881c_ctrl_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_io_del(mipi_dbi_io));
     ESP_ERROR_CHECK(esp_lcd_del_dsi_bus(mipi_dsi_bus));
 }

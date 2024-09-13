@@ -17,9 +17,16 @@ The subsections below give only absolutely necessary information. For full steps
 
 This example requires:
 
-- OV5647 camera sensor
-- ILI9881C LCD screen
+- SC2336 or OV5647 camera sensor
+- EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
+
+**Note:** For EK79007 you will need to connect following pins:
+- 5V - 5V
+- GND - GND
+- RST_LCD - 3V3
+
+You can also connect camera sensors and LCD screens from other vendors to the ESP chip, you can find corresponding camera or LCD drivers from [ESP Component Registry](https://components.espressif.com), or design your own customized drivers.
 
 
                                    GND                                                                   GND
@@ -40,7 +47,7 @@ This example requires:
     │                     ├──────────────────────┤                                                │      DSI DATA 1N          │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
     │                     │ CSI DATA 1N          │                  ESP32-P4                      │                           │                      │
-    │       OV5647        ├──────────────────────┤                                                │      DSI CLK N            │      ILI9881C        │
+    │       Camera        ├──────────────────────┤                                                │      DSI CLK N            │      LCD Screen      │
     │                     │                      │                                                ├───────────────────────────┤                      │
     │                     │ CSI CLK N            │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │      DSI CLK P            │                      │

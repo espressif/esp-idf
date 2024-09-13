@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_lcd_ili9881c.h"
 #include "esp_ldo_regulator.h"
 #include "driver/ppa.h"
 #include "example_dsi_init.h"
@@ -319,7 +318,6 @@ void app_main(void)
     uint16_t *pixels = NULL;
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
     esp_lcd_panel_io_handle_t mipi_dbi_io = NULL;
-    esp_lcd_panel_handle_t ili9881c_ctrl_panel = NULL;
     esp_lcd_panel_handle_t mipi_dpi_panel = NULL;
 
     //---------------MIPI LDO Init------------------//
@@ -331,8 +329,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_ldo_acquire_channel(&ldo_mipi_phy_config, &ldo_mipi_phy));
 
     //---------------DSI Init------------------//
-    example_dsi_resource_alloc(&ili9881c_ctrl_panel, &mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, NULL);
-    example_dsi_ili9881c_panel_init(ili9881c_ctrl_panel);
+    example_dsi_resource_alloc(&mipi_dsi_bus, &mipi_dbi_io, &mipi_dpi_panel, NULL);
+    example_dpi_panel_reset(mipi_dpi_panel);
     example_dpi_panel_init(mipi_dpi_panel);
 
     //---------------Get Source image------------------//
@@ -400,5 +398,5 @@ void app_main(void)
     ESP_ERROR_CHECK(ppa_unregister_client(ppa_srm_handle));
     ESP_ERROR_CHECK(ppa_unregister_client(ppa_blend_handle));
     ESP_ERROR_CHECK(ppa_unregister_client(ppa_fill_handle));
-    example_dsi_resource_destroy(ili9881c_ctrl_panel, mipi_dsi_bus, mipi_dbi_io, mipi_dpi_panel);
+    example_dsi_resource_destroy(mipi_dsi_bus, mipi_dbi_io, mipi_dpi_panel);
 }
