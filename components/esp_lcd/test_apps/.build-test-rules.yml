@@ -52,7 +52,3 @@ components/esp_lcd/test_apps/spi_lcd:
     - esp_driver_spi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32c61"]
-      temporary: true
-      reason: test failed # TODO: ESP32C61 IDF-10953
