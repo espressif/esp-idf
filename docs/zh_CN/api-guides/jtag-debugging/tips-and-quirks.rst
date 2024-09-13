@@ -177,6 +177,8 @@ TCL 语言中为变量赋值的语法是:
       - 设置成 ``0`` 可以关闭对 flash 断点的支持。
     * - ``ESP_SEMIHOST_BASEDIR``
       - 设置 semihosting 在主机端的默认目录。
+    * - ``ESP_ONLYCPU``
+      - 对于多核芯片，将该值设置为 ``1`` 可以仅启用单核调试功能
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars
