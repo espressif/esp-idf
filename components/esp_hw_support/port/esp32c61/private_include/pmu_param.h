@@ -469,7 +469,7 @@ typedef struct pmu_sleep_machine_constant {
     },                                          \
     .hp = {                                     \
         .min_slp_time_us                = 450,  \
-        .clock_domain_sync_time_us      = 150,  \
+        .clock_domain_sync_time_us      = 35,   \
         .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = 154,  \
         .isolate_wait_time_us           = 1,    \
