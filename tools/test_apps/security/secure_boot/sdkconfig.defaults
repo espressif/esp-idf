@@ -3,7 +3,7 @@
 #
 # If you find yourself needing to edit this in the future, it's a sign the
 # bootloader is bloating out!
-CONFIG_PARTITION_TABLE_OFFSET=0xC000
+CONFIG_PARTITION_TABLE_OFFSET=0xD000
 
 # Maximize the number of possible build warnings
 CONFIG_COMPILER_OPTIMIZATION_PERF=y
