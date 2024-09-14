@@ -96,8 +96,8 @@ extern "C" {
 /*---------------------------------------------------------------
                       Color
 ---------------------------------------------------------------*/
-#define ISP_LL_COLOR_CONTRAST_MAX       0x80
-#define ISP_LL_COLOR_SATURATION_MAX     0x80
+#define ISP_LL_COLOR_CONTRAST_MAX       0xff
+#define ISP_LL_COLOR_SATURATION_MAX     0xff
 #define ISP_LL_COLOR_HUE_MAX            360
 #define ISP_LL_COLOR_BRIGNTNESS_MIN     -128
 #define ISP_LL_COLOR_BRIGNTNESS_MAX     127
