@@ -43,6 +43,8 @@ struct nan_de_service {
 	unsigned int freq;
 	unsigned int default_freq;
 	int *freq_list;
+	u8 a3[ETH_ALEN];
+	bool a3_set;
 
 	/* pauseState information for Publish function */
 	struct os_reltime pause_state_end;
@@ -801,7 +803,7 @@ static void nan_de_rx_publish(struct nan_de *de, struct nan_de_service *srv,
 		/* Passive subscriber replies with a Follow-up message without
 		 * Service Specific Info field if it received a matching
 		 * unsolicited Publish message. */
-		nan_de_transmit(de, srv->id, NULL, NULL, peer_addr, a3,
+		nan_de_transmit(de, srv->id, NULL, NULL, peer_addr,
 				instance_id);
 	}
 
@@ -979,9 +981,12 @@ static void nan_de_rx_follow_up(struct nan_de *de, struct nan_de_service *srv,
 	if (srv->type == NAN_DE_PUBLISH && !ssi)
 		nan_de_pause_state(srv, peer_addr, instance_id);
 
+	os_memcpy(srv->a3, a3, ETH_ALEN);
+	srv->a3_set = true;
+
 	if (de->cb.receive)
 		de->cb.receive(de->cb.ctx, srv->id, instance_id, ssi, ssi_len,
-			       peer_addr, a3);
+			       peer_addr);
 }
 
 
@@ -1414,9 +1419,10 @@ void nan_de_cancel_subscribe(struct nan_de *de, int subscribe_id)
 
 int nan_de_transmit(struct nan_de *de, int handle,
 		    const struct wpabuf *ssi, const struct wpabuf *elems,
-		    const u8 *peer_addr, const u8 *a3, u8 req_instance_id)
+		    const u8 *peer_addr, u8 req_instance_id)
 {
 	struct nan_de_service *srv;
+	const u8 *a3;
 
 	if (handle < 1 || handle > NAN_DE_MAX_SERVICE)
 		return -1;
@@ -1425,7 +1431,9 @@ int nan_de_transmit(struct nan_de *de, int handle,
 	if (!srv)
 		return -1;
 
-	if (!a3)
+	if (srv->a3_set)
+		a3 = srv->a3;
+	else
 		a3 = nan_network_id;
 	nan_de_tx_sdf(de, srv, 100, NAN_SRV_CTRL_FOLLOW_UP,
 		      peer_addr, a3, req_instance_id, ssi);
