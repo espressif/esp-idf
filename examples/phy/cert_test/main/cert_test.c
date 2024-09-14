@@ -38,7 +38,9 @@ void app_main(void)
     register_phy_cmd();
 
     /* rftest.a requirements */
+#ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_wifi_power_domain_on();
+#endif
 
     esp_phy_rftest_config(1);
     esp_phy_rftest_init();

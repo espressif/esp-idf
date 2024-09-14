@@ -73,6 +73,19 @@ if(CONFIG_ESP_PHY_ENABLED)
 
         idf_component_get_property(esp_phy_lib esp_phy COMPONENT_LIB)
 
+        if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
+            if(CONFIG_IDF_TARGET_ESP32)
+                target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+                librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+            elseif(CONFIG_IDF_TARGET_ESP32S2)
+                target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> librftest.a
+                librfate.a $<TARGET_FILE:${esp_phy_lib}>)
+            else()
+                target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+                librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+            endif()
+        endif()
+
         if(CONFIG_IDF_TARGET_ESP32)
             target_link_libraries(${COMPONENT_LIB} PUBLIC rtc)
             target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a librtc.a
@@ -85,12 +98,7 @@ if(CONFIG_ESP_PHY_ENABLED)
             target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
             $<TARGET_FILE:${esp_phy_lib}>)
         endif()
-
-    if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
-        librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
     endif()
-endif()
 
    if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
         idf_component_get_property(esp_common_dir esp_common COMPONENT_DIR)
