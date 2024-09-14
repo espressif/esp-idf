@@ -6,10 +6,12 @@
 
 #pragma once
 #include "soc/soc.h"
-#include "soc/retention_periph_defs.h"
 #include "soc/interrupts.h"
 #include "soc/soc_caps.h"
 #include "soc/regdma.h"
+#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#include "soc/retention_periph_defs.h"
+#endif
 
 #if SOC_I2S_SUPPORTED
 #include "soc/i2s_struct.h"
@@ -53,9 +55,6 @@ typedef struct {
     };
 
     const uint8_t irq;
-#if SOC_I2S_SUPPORT_SLEEP_RETENTION
-    const periph_retention_module_t retention_module;
-#endif
 } i2s_signal_conn_t;
 
 extern const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM];
@@ -68,6 +67,7 @@ extern const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM];
 
 #if SOC_I2S_SUPPORT_SLEEP_RETENTION
 typedef struct {
+    const periph_retention_module_t retention_module;
     const regdma_entries_config_t *entry_array;
     uint32_t array_size;
 } i2s_reg_retention_info_t;
