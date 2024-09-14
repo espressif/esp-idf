@@ -16,7 +16,7 @@
 #endif
 
 /* ----------------------------- Event Handling ----------------------------- */
-
+#if !SOC_TWAI_SUPPORT_FD
 /**
  * Helper functions that can decode what events have been triggered based on
  * the values of the interrupt, status, TEC and REC registers. The HAL context's
@@ -200,3 +200,4 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
     ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
 #endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 }
+#endif  // !SOC_TWAI_SUPPORT_FD

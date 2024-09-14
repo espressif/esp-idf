@@ -81,9 +81,9 @@ if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
 endif()
 
 # TWAI related source files
-if(CONFIG_SOC_TWAI_SUPPORTED)
+# TWAIFD is not supported by the legacy driver
+if(CONFIG_SOC_TWAI_SUPPORTED AND NOT CONFIG_SOC_TWAI_SUPPORT_FD)
     list(APPEND srcs "twai/twai.c")
-
     list(APPEND ldfragments "twai/linker.lf")
 endif()
 

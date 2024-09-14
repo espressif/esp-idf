@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,14 @@ extern "C" {
 
 #define TWAIFD_LL_GET_HW(num) (((num) == 0) ? (&TWAI0) : (&TWAI1))
 
+#define TWAI_LL_TSEG1_MIN               0
+#define TWAI_LL_TSEG2_MIN               1
+#define TWAI_LL_TSEG1_MAX               TWAIFD_PH1
+#define TWAI_LL_TSEG2_MAX               TWAIFD_PH2
+#define TWAI_LL_SJW_MAX                 TWAIFD_SJW
+
+#define TWAIFD_IDENTIFIER_BASE_S        18      // Start bit of std_id in IDENTIFIER_W of TX buffer or RX buffer
+
 #define TWAIFD_LL_ERR_BIT_ERR           0x0     // Bit Error
 #define TWAIFD_LL_ERR_CRC_ERR           0x1     // CRC Error
 #define TWAIFD_LL_ERR_FRM_ERR           0x2     // Form Error
@@ -44,7 +52,8 @@ extern "C" {
 #define TWAIFD_LL_HW_CMD_RST_RX_CNT     TWAIFD_RXFCRST  // Clear RX bus traffic counter
 #define TWAIFD_LL_HW_CMD_RST_TX_CNT     TWAIFD_TXFCRST  // Clear TX bus traffic counter
 
-#define TWAIFD_LL_INTR_TX_DONE          TWAIFD_TXI_INT_ST   // Transmit Interrupt
+#define TWAIFD_LL_INTR_TX_DONE          TWAIFD_TXBHCI_INT_ST// Transmit finish (ok or error)
+#define TWAIFD_LL_INTR_TX_SUCCESS       TWAIFD_TXI_INT_ST   // Transmit success without error
 #define TWAIFD_LL_INTR_RX_NOT_EMPTY     TWAIFD_RBNEI_INT_ST // RX buffer not empty interrupt
 #define TWAIFD_LL_INTR_RX_FULL          TWAIFD_RXFI_INT_ST  // RX buffer full interrupt
 #define TWAIFD_LL_INTR_ERR_WARN         TWAIFD_EWLI_INT_ST  // Error Interrupt
@@ -72,7 +81,7 @@ static inline void twaifd_ll_enable_bus_clock(uint8_t twai_id, bool enable)
 static inline void twaifd_ll_reset_register(uint8_t twai_id)
 {
     PCR.twai[twai_id].twai_conf.twai_rst_en = 1;
-    while (!PCR.twai[twai_id].twai_conf.twai_ready);
+    PCR.twai[twai_id].twai_conf.twai_rst_en = 0;
 }
 
 /**
@@ -95,6 +104,9 @@ static inline void twaifd_ll_set_clock_source(uint8_t twai_id, twai_clock_source
 static inline void twaifd_ll_enable_clock(uint8_t twai_id, bool enable)
 {
     PCR.twai[twai_id].twai_func_clk_conf.twai_func_clk_en = enable;
+    if (enable) {
+        while (!PCR.twai[twai_id].twai_conf.twai_ready);
+    }
 }
 
 /**
@@ -138,14 +150,15 @@ static inline void twaifd_ll_enable_hw(twaifd_dev_t *hw, bool enable)
  * @param hw Start address of the TWAI registers
  * @param modes Operating mode
  */
-static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, const twai_mode_t modes)
+static inline void twaifd_ll_set_mode(twaifd_dev_t *hw, bool listen_only, bool no_ack, bool loopback)
 {
     //mode should be changed under disabled
     HAL_ASSERT(hw->mode_settings.ena == 0);
 
     twaifd_mode_settings_reg_t opmode = {.val = hw->mode_settings.val};
-    opmode.stm = (modes == TWAI_MODE_NO_ACK);
-    opmode.bmm = (modes == TWAI_MODE_LISTEN_ONLY);
+    opmode.stm = no_ack;
+    opmode.bmm = listen_only;
+    opmode.ilbp = loopback;
 
     hw->mode_settings.val = opmode.val;
 }
@@ -170,17 +183,6 @@ static inline void twaifd_ll_set_tx_retrans_limit(twaifd_dev_t *hw, int8_t limit
 static inline void twaifd_ll_enable_fd_mode(twaifd_dev_t *hw, bool ena)
 {
     hw->mode_settings.fde = ena;
-}
-
-/**
- * @brief Enable or disable TX loopback
- *
- * @param hw Pointer to the TWAI-FD device hardware.
- * @param ena Set to true to enable loopback, false to disable.
- */
-static inline void twaifd_ll_enable_loopback(twaifd_dev_t *hw, bool ena)
-{
-    hw->mode_settings.ilbp = ena;
 }
 
 /**
@@ -213,19 +215,9 @@ static inline void twaifd_ll_enable_filter_mode(twaifd_dev_t* hw, bool enable)
  * @param hw Pointer to hardware structure.
  * @param en True to drop, false to Receive to next filter
  */
-static inline void twaifd_ll_filter_drop_remote_frame(twaifd_dev_t* hw, bool en)
+static inline void twaifd_ll_filter_block_rtr(twaifd_dev_t* hw, bool en)
 {
     hw->mode_settings.fdrf = en;
-}
-
-/**
- * @brief Get remote frame filtering behaviour.
- *
- * @param hw Pointer to hardware structure.
- */
-static inline bool twaifd_ll_filter_is_drop_remote_frame(twaifd_dev_t* hw)
-{
-    return hw->mode_settings.fdrf;
 }
 
 /**
@@ -272,6 +264,7 @@ static inline void twaifd_ll_enable_intr(twaifd_dev_t *hw, uint32_t intr_mask)
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return The current interrupt status as a 32-bit value, used with `TWAIFD_LL_INTR_`.
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_intr_status(twaifd_dev_t *hw)
 {
     return hw->int_stat.val;
@@ -283,6 +276,7 @@ static inline uint32_t twaifd_ll_get_intr_status(twaifd_dev_t *hw)
  * @param hw Pointer to the TWAI-FD device hardware.
  * @param intr_mask The interrupt mask specifying which interrupts to clear.
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_clr_intr_status(twaifd_dev_t *hw, uint32_t intr_mask)
 {
     // this register is write to clear
@@ -296,7 +290,7 @@ static inline void twaifd_ll_clr_intr_status(twaifd_dev_t *hw, uint32_t intr_mas
  * @param hw Start address of the TWAI registers
  * @param timing_param timing params
  */
-static inline void twaifd_ll_set_nominal_bit_rate(twaifd_dev_t *hw, const twai_timing_config_t *timing_param)
+static inline void twaifd_ll_set_nominal_bitrate(twaifd_dev_t *hw, const twai_timing_advanced_config_t *timing_param)
 {
     twaifd_btr_reg_t reg_w = {.val = 0};
     reg_w.brp = timing_param->brp;
@@ -314,7 +308,7 @@ static inline void twaifd_ll_set_nominal_bit_rate(twaifd_dev_t *hw, const twai_t
  * @param hw Start address of the TWAI registers
  * @param timing_param_fd FD timing params
  */
-static inline void twaifd_ll_set_fd_bit_rate(twaifd_dev_t *hw, const twai_timing_config_t *timing_param_fd)
+static inline void twaifd_ll_set_fd_bitrate(twaifd_dev_t *hw, const twai_timing_advanced_config_t *timing_param_fd)
 {
     twaifd_btr_fd_reg_t reg_w = {.val = 0};
     reg_w.brp_fd = timing_param_fd->brp;
@@ -331,7 +325,7 @@ static inline void twaifd_ll_set_fd_bit_rate(twaifd_dev_t *hw, const twai_timing
  *
  * @param hw Start address of the TWAI registers
  * @param ssp_src_code Secondary point mode config, see TWAIFD_LL_SSP_SRC_xxx.
- * @param offset_val Secondary point offset based on Sync_Seg, in clock source freq.
+ * @param offset_val Secondary point offset based on Sync_Seg, in time quanta.
  */
 static inline void twaifd_ll_config_secondary_sample_point(twaifd_dev_t *hw, uint8_t ssp_src_code, uint8_t offset_val)
 {
@@ -463,15 +457,18 @@ static inline uint32_t twaifd_ll_get_tec(twaifd_dev_t *hw)
  *
  * @param hw Pointer to the TWAI FD hardware instance
  * @param filter_id The unique ID of the filter to configure
+ * @param is_range Setting for range filter or mask filter
  * @param en True to receive, False to drop
  */
-static inline void twaifd_ll_filter_enable_basic_std(twaifd_dev_t* hw, uint8_t filter_id, bool en)
+static inline void twaifd_ll_filter_enable_basic_std(twaifd_dev_t* hw, uint8_t filter_id, bool is_range, bool en)
 {
-    HAL_ASSERT(filter_id < (SOC_TWAI_MASK_FILTER_NUM + SOC_TWAI_RANGE_FILTER_NUM));
+    HAL_ASSERT(filter_id < (is_range ? SOC_TWAI_RANGE_FILTER_NUM : SOC_TWAI_MASK_FILTER_NUM));
+    // The hw_filter_id of range_filter is indexed after mask_filter
+    uint8_t hw_filter_id = is_range ? filter_id + SOC_TWAI_MASK_FILTER_NUM : filter_id;
     if (en) {
-        hw->filter_control_filter_status.val |= TWAIFD_FANB << (filter_id * TWAIFD_FBNB_S);
+        hw->filter_control_filter_status.val |= TWAIFD_FANB << (hw_filter_id * TWAIFD_FBNB_S);
     } else {
-        hw->filter_control_filter_status.val &= ~(TWAIFD_FANB << (filter_id * TWAIFD_FBNB_S));
+        hw->filter_control_filter_status.val &= ~(TWAIFD_FANB << (hw_filter_id * TWAIFD_FBNB_S));
     }
 }
 
@@ -480,15 +477,18 @@ static inline void twaifd_ll_filter_enable_basic_std(twaifd_dev_t* hw, uint8_t f
  *
  * @param hw Pointer to the TWAI FD hardware instance
  * @param filter_id The unique ID of the filter to configure
+ * @param is_range Setting for range filter or mask filter
  * @param en True to receive, False to drop
  */
-static inline void twaifd_ll_filter_enable_basic_ext(twaifd_dev_t* hw, uint8_t filter_id, bool en)
+static inline void twaifd_ll_filter_enable_basic_ext(twaifd_dev_t* hw, uint8_t filter_id, bool is_range, bool en)
 {
-    HAL_ASSERT(filter_id < (SOC_TWAI_MASK_FILTER_NUM + SOC_TWAI_RANGE_FILTER_NUM));
+    HAL_ASSERT(filter_id < (is_range ? SOC_TWAI_RANGE_FILTER_NUM : SOC_TWAI_MASK_FILTER_NUM));
+    // The hw_filter_id of range_filter is indexed after mask_filter
+    uint8_t hw_filter_id = is_range ? filter_id + SOC_TWAI_MASK_FILTER_NUM : filter_id;
     if (en) {
-        hw->filter_control_filter_status.val |= TWAIFD_FANE << (filter_id * TWAIFD_FBNB_S);
+        hw->filter_control_filter_status.val |= TWAIFD_FANE << (hw_filter_id * TWAIFD_FBNB_S);
     } else {
-        hw->filter_control_filter_status.val &= ~(TWAIFD_FANE << (filter_id * TWAIFD_FBNB_S));
+        hw->filter_control_filter_status.val &= ~(TWAIFD_FANE << (hw_filter_id * TWAIFD_FBNB_S));
     }
 }
 
@@ -497,15 +497,18 @@ static inline void twaifd_ll_filter_enable_basic_ext(twaifd_dev_t* hw, uint8_t f
  *
  * @param hw Pointer to the TWAI FD hardware instance
  * @param filter_id The unique ID of the filter to configure
+ * @param is_range Setting for range filter or mask filter
  * @param en True to receive, False to drop
  */
-static inline void twaifd_ll_filter_enable_fd_std(twaifd_dev_t* hw, uint8_t filter_id, bool en)
+static inline void twaifd_ll_filter_enable_fd_std(twaifd_dev_t* hw, uint8_t filter_id, bool is_range, bool en)
 {
-    HAL_ASSERT(filter_id < (SOC_TWAI_MASK_FILTER_NUM + SOC_TWAI_RANGE_FILTER_NUM));
+    HAL_ASSERT(filter_id < (is_range ? SOC_TWAI_RANGE_FILTER_NUM : SOC_TWAI_MASK_FILTER_NUM));
+    // The hw_filter_id of range_filter is indexed after mask_filter
+    uint8_t hw_filter_id = is_range ? filter_id + SOC_TWAI_MASK_FILTER_NUM : filter_id;
     if (en) {
-        hw->filter_control_filter_status.val |= TWAIFD_FAFB << (filter_id * TWAIFD_FBNB_S);
+        hw->filter_control_filter_status.val |= TWAIFD_FAFB << (hw_filter_id * TWAIFD_FBNB_S);
     } else {
-        hw->filter_control_filter_status.val &= ~(TWAIFD_FAFB << (filter_id * TWAIFD_FBNB_S));
+        hw->filter_control_filter_status.val &= ~(TWAIFD_FAFB << (hw_filter_id * TWAIFD_FBNB_S));
     }
 }
 
@@ -514,15 +517,18 @@ static inline void twaifd_ll_filter_enable_fd_std(twaifd_dev_t* hw, uint8_t filt
  *
  * @param hw Pointer to the TWAI FD hardware instance
  * @param filter_id The unique ID of the filter to configure
+ * @param is_range Setting for range filter or mask filter
  * @param en True to receive, False to drop
  */
-static inline void twaifd_ll_filter_enable_fd_ext(twaifd_dev_t* hw, uint8_t filter_id, bool en)
+static inline void twaifd_ll_filter_enable_fd_ext(twaifd_dev_t* hw, uint8_t filter_id, bool is_range, bool en)
 {
-    HAL_ASSERT(filter_id < (SOC_TWAI_MASK_FILTER_NUM + SOC_TWAI_RANGE_FILTER_NUM));
+    HAL_ASSERT(filter_id < (is_range ? SOC_TWAI_RANGE_FILTER_NUM : SOC_TWAI_MASK_FILTER_NUM));
+    // The hw_filter_id of range_filter is indexed after mask_filter
+    uint8_t hw_filter_id = is_range ? filter_id + SOC_TWAI_MASK_FILTER_NUM : filter_id;
     if (en) {
-        hw->filter_control_filter_status.val |= TWAIFD_FAFE << (filter_id * TWAIFD_FBNB_S);
+        hw->filter_control_filter_status.val |= TWAIFD_FAFE << (hw_filter_id * TWAIFD_FBNB_S);
     } else {
-        hw->filter_control_filter_status.val &= ~(TWAIFD_FAFE << (filter_id * TWAIFD_FBNB_S));
+        hw->filter_control_filter_status.val &= ~(TWAIFD_FAFE << (hw_filter_id * TWAIFD_FBNB_S));
     }
 }
 
@@ -530,48 +536,30 @@ static inline void twaifd_ll_filter_enable_fd_ext(twaifd_dev_t* hw, uint8_t filt
  * @brief   Set Bit Acceptance Filter
  * @param hw Start address of the TWAI registers
  * @param filter_id Filter number id
+ * @param is_ext Filter for ext_id or std_id
  * @param code Acceptance Code
  * @param mask Acceptance Mask
  */
-static inline void twaifd_ll_filter_set_id_mask(twaifd_dev_t* hw, uint8_t filter_id, uint32_t code, uint32_t mask)
+static inline void twaifd_ll_filter_set_id_mask(twaifd_dev_t* hw, uint8_t filter_id, bool is_ext, uint32_t code, uint32_t mask)
 {
-    hw->mask_filters[filter_id].filter_mask.bit_mask_val = mask;
-    hw->mask_filters[filter_id].filter_val.bit_val = code;
+    hw->mask_filters[filter_id].filter_mask.bit_mask_val = is_ext ? mask : (mask << TWAIFD_IDENTIFIER_BASE_S);
+    hw->mask_filters[filter_id].filter_val.bit_val = is_ext ? code : (code << TWAIFD_IDENTIFIER_BASE_S);
 }
 
 /**
  * @brief   Set Range Acceptance Filter
  * @param hw Start address of the TWAI registers
  * @param filter_id Filter number id
+ * @param is_ext Filter for ext_id or std_id
  * @param high The id range high limit
  * @param low  The id range low limit
  */
-static inline void twaifd_ll_filter_set_range(twaifd_dev_t* hw, uint8_t filter_id, uint32_t high, uint32_t low)
+static inline void twaifd_ll_filter_set_range(twaifd_dev_t* hw, uint8_t filter_id, bool is_ext, uint32_t high, uint32_t low)
 {
-    hw->range_filters[filter_id].ran_low.bit_ran_low_val = low;
-    hw->range_filters[filter_id].ran_high.bit_ran_high_val = high;
+    hw->range_filters[filter_id].ran_low.bit_ran_low_val = is_ext ? low : (low << TWAIFD_IDENTIFIER_BASE_S);
+    hw->range_filters[filter_id].ran_high.bit_ran_high_val = is_ext ? high : (high << TWAIFD_IDENTIFIER_BASE_S);
 }
 
-/**
- * @brief Enable or disable bit or range frame filtering for a specific filter.
- *
- * @param hw Pointer to the TWAI-FD device hardware.
- * @param filter_id The ID of the filter to configure (0-2 for bit filter, 3 for range filter).
- * @param enable True to enable the filter, false to disable.
- */
-static inline void twaifd_ll_filter_enable(twaifd_dev_t* hw, uint8_t filter_id, bool enable)
-{
-    HAL_ASSERT(filter_id < (SOC_TWAI_MASK_FILTER_NUM + SOC_TWAI_RANGE_FILTER_NUM));
-    twaifd_filter_control_filter_status_reg_t reg_val = {.val = hw->filter_control_filter_status.val};
-
-    // enable or disable filter selection
-    if (enable) {
-        reg_val.val |= BIT(filter_id + TWAIFD_SFA_S);
-    } else {
-        reg_val.val &= ~BIT(filter_id + TWAIFD_SFA_S);
-    }
-    hw->filter_control_filter_status.val = reg_val.val;
-}
 /* ------------------------- TX Buffer Registers ------------------------- */
 
 /**
@@ -610,6 +598,7 @@ static inline uint32_t twaifd_ll_get_tx_buffer_status(twaifd_dev_t *hw, uint8_t 
  * @param buffer_idx
  * @param cmd The command want to set, see `TWAIFD_LL_TX_CMD_`
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_set_tx_cmd(twaifd_dev_t *hw, uint8_t buffer_idx, uint32_t cmd)
 {
     hw->tx_command_txtb_info.val = (cmd | BIT(buffer_idx + TWAIFD_TXB1_S));
@@ -640,6 +629,7 @@ static inline void twaifd_ll_set_tx_buffer_priority(twaifd_dev_t *hw, uint8_t bu
  *
  * @note Call twaifd_ll_format_frame_header() and twaifd_ll_format_frame_data() to format a frame
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_mount_tx_buffer(twaifd_dev_t *hw, twaifd_frame_buffer_t *tx_frame, uint8_t buffer_idx)
 {
     //Copy formatted frame into TX buffer
@@ -667,6 +657,7 @@ static inline uint32_t twaifd_ll_get_rx_buffer_size(twaifd_dev_t *hw)
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return Number of frames in the RX buffer.
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_rx_frame_count(twaifd_dev_t *hw)
 {
     return hw->rx_status_rx_settings.rxfrc;
@@ -691,6 +682,7 @@ static inline uint32_t twaifd_ll_is_rx_buffer_empty(twaifd_dev_t *hw)
  *
  * @note Call twaifd_ll_parse_frame_header() and twaifd_ll_parse_frame_data() to parse the formatted frame
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_get_rx_frame(twaifd_dev_t *hw, twaifd_frame_buffer_t *rx_frame)
 {
     // If rx_automatic_mode enabled, hw->rx_data.rx_data should 32bit access
@@ -713,6 +705,7 @@ static inline void twaifd_ll_get_rx_frame(twaifd_dev_t *hw, twaifd_frame_buffer_
  * @param[in] final_dlc data length code of frame.
  * @param[out] tx_frame Pointer to store formatted frame
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_format_frame_header(const twai_frame_header_t *header, uint8_t final_dlc, twaifd_frame_buffer_t *tx_frame)
 {
     HAL_ASSERT(final_dlc <= TWAIFD_FRAME_MAX_DLC);
@@ -745,6 +738,7 @@ static inline void twaifd_ll_format_frame_header(const twai_frame_header_t *head
  * @param[in] len data length of data buffer.
  * @param[out] tx_frame Pointer to store formatted frame
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_format_frame_data(const uint8_t *buffer, uint32_t len, twaifd_frame_buffer_t *tx_frame)
 {
     HAL_ASSERT(len <= TWAIFD_FRAME_MAX_LEN);
@@ -757,6 +751,7 @@ static inline void twaifd_ll_format_frame_data(const uint8_t *buffer, uint32_t l
  * @param[in] rx_frame Pointer to formatted frame
  * @param[out] p_frame_header Including DLC, ID, Format, etc.
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_parse_frame_header(const twaifd_frame_buffer_t *rx_frame, twai_frame_header_t *p_frame_header)
 {
     //Copy frame information
@@ -786,6 +781,7 @@ static inline void twaifd_ll_parse_frame_header(const twaifd_frame_buffer_t *rx_
  * @param[out] buffer Pointer to an 8 byte array to save data
  * @param[in] buffer_len_limit The buffer length limit, If less then frame data length, over length data will dropped
  */
+__attribute__((always_inline))
 static inline void twaifd_ll_parse_frame_data(const twaifd_frame_buffer_t *rx_frame, uint8_t *buffer, int len_limit)
 {
     memcpy(buffer, rx_frame->data, len_limit);

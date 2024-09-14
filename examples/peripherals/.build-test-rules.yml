@@ -481,7 +481,8 @@ examples/peripherals/touch_sensor/touch_sens_basic:
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
@@ -489,7 +490,8 @@ examples/peripherals/twai/twai_alert_and_recovery:
 
 examples/peripherals/twai/twai_network:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: 1 == 1
       temporary: true
@@ -497,7 +499,8 @@ examples/peripherals/twai/twai_network:
 
 examples/peripherals/twai/twai_self_test:
   disable:
-    - if: SOC_TWAI_SUPPORTED != 1
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD == 1
+      reason: This example not support FD
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true

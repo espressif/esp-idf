@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,20 @@
 
 /* ---------------------------- Init and Config ----------------------------- */
 
+#if SOC_TWAI_SUPPORT_FD
+bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
+{
+    hal_ctx->dev = TWAIFD_LL_GET_HW(config->controller_id);
+    hal_ctx->enable_listen_only = config->enable_listen_only;
+
+    twaifd_ll_reset(hal_ctx->dev);
+    //mode should be changed under disabled
+    twaifd_ll_enable_hw(hal_ctx->dev, false);
+    twaifd_ll_enable_rxfifo_auto_incrase(hal_ctx->dev, true);
+    twaifd_ll_enable_intr(hal_ctx->dev, config->intr_mask);
+    return true;
+}
+#else
 bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
 {
     //Initialize HAL context
@@ -99,3 +113,4 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx)
     //Any TX is immediately halted on entering reset mode
     TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED | TWAI_HAL_STATE_FLAG_RUNNING);
 }
+#endif  //SOC_TWAI_SUPPORT_FD
