@@ -37,11 +37,12 @@
     Info : esp_usb_jtag: serial (60:55:F9:F6:03:3C)
     Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
     Info : clock speed 24000 kHz
-    Info : JTAG tap: esp32c61.cpu tap/device found: 0x0000dc25 (mfg: 0x612 (Espressif Systems), part: 0x000d, ver: 0x0)
-    Info : datacount=2 progbufsize=16
-    Info : Examined RISC-V core; found 2 harts
-    Info :  hart 0: XLEN=32, misa=0x40903105
-    Info : starting gdb server for esp32c61 on 3333
+    Info : JTAG tap: esp32c61.tap0 tap/device found: 0x00014c25 (mfg: 0x612 (Espressif Systems), part: 0x0014, ver: 0x0)
+    Info : [esp32c61] datacount=1 progbufsize=2
+    Info : [esp32c61] Examined RISC-V core; found 1 harts
+    Info : [esp32c61]  XLEN=32, misa=0x40101105
+    Info : [esp32c61] Examination succeed
+    Info : [esp32c61] starting gdb server on 3333
     Info : Listening on port 3333 for gdb connections
 
 .. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32c61-builtin.cfg``
@@ -121,17 +122,17 @@
 
     * - ESP32-C61 Pin
       - JTAG Signal
-    * - MTDO / GPIO7
+    * - MTDO / GPIO6
       - TDO
-    * - MTDI / GPIO5
+    * - MTDI / GPIO4
       - TDI
-    * - MTCK / GPIO6
+    * - MTCK / GPIO5
       - TCK
-    * - MTMS / GPIO4
+    * - MTMS / GPIO3
       - TMS
 
-.. |jtag-sel-gpio| replace:: GPIO15
-.. |jtag-gpio-list| replace:: GPIO4-GPIO7
+.. |jtag-sel-gpio| replace:: GPIO7
+.. |jtag-gpio-list| replace:: GPIO3-GPIO6
 
 ---
 
