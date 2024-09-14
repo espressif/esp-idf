@@ -91,6 +91,11 @@
 #define SBC_DEC_INCLUDED            TRUE
 #define BTC_AV_SRC_INCLUDED         TRUE
 #define SBC_ENC_INCLUDED            TRUE
+#if UC_BT_AVRCP_CT_COVER_ART_ENABLED
+#define BTA_AV_CA_INCLUDED          TRUE
+#define BTC_AV_CA_INCLUDED          TRUE
+#define AVRC_CA_INCLUDED            TRUE
+#endif /* UC_BT_AVRCP_CT_COVER_ART_ENABLED */
 #endif /* UC_BT_A2DP_ENABLED */
 
 #if (UC_BT_SPP_ENABLED == TRUE)
@@ -170,6 +175,13 @@
 #define BTA_HD_INCLUDED             TRUE
 #define BTC_HD_INCLUDED             TRUE
 #endif /* UC_BT_HID_DEVICE_ENABLED */
+
+#if UC_BT_GOEPC_ENABLED
+#ifndef OBEX_INCLUDED
+#define OBEX_INCLUDED               TRUE
+#endif
+#define GOEPC_INCLUDED              TRUE
+#endif /* UC_BT_GOEPC_ENABLED */
 
 #endif /* UC_BT_CLASSIC_ENABLED */
 
@@ -376,6 +388,10 @@
 #define BTC_AV_INCLUDED FALSE
 #endif
 
+#ifndef BTC_AV_CA_INCLUDED
+#define BTC_AV_CA_INCLUDED FALSE
+#endif
+
 #ifndef BTC_AV_SINK_INCLUDED
 #define BTC_AV_SINK_INCLUDED FALSE
 #endif
@@ -447,6 +463,10 @@
 
 #ifndef BTA_AV_INCLUDED
 #define BTA_AV_INCLUDED FALSE
+#endif
+
+#ifndef BTA_AV_CA_INCLUDED
+#define BTA_AV_CA_INCLUDED FALSE
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED
@@ -1809,6 +1829,26 @@
 #define OBX_FCR_TX_POOL_ID                3
 #endif
 
+/* Maximum OBEX connection allowed */
+#ifndef OBEX_MAX_CONNECTION
+#define OBEX_MAX_CONNECTION               3
+#endif
+
+/* Maximum OBEX server allowed */
+#ifndef OBEX_MAX_SERVER
+#define OBEX_MAX_SERVER                   2
+#endif
+
+/******************************************************************************
+**
+** GOEP
+**
+******************************************************************************/
+
+/* Maximum GOEP client connection allowed */
+#ifndef GOEPC_MAX_CONNECTION
+#define GOEPC_MAX_CONNECTION              3
+#endif
 
 /******************************************************************************
 **
@@ -2142,6 +2182,20 @@
 #endif
 
 /*************************************************************************
+** Definitions for OBEX
+*/
+#ifndef OBEX_INCLUDED
+#define OBEX_INCLUDED            FALSE
+#endif
+
+/*************************************************************************
+** Definitions for OBEX
+*/
+#ifndef GOEPC_INCLUDED
+#define GOEPC_INCLUDED            FALSE
+#endif
+
+/*************************************************************************
  * A2DP Definitions
  */
 #ifndef A2D_INCLUDED
@@ -2177,6 +2231,10 @@
 ******************************************************************************/
 #ifndef AVRC_INCLUDED
 #define AVRC_INCLUDED               FALSE
+#endif
+
+#ifndef AVRC_CA_INCLUDED
+#define AVRC_CA_INCLUDED            FALSE
 #endif
 
 #ifndef AVRC_METADATA_INCLUDED

@@ -372,7 +372,7 @@ BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
                     if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                         /* Look through data element sequence until no more UUIDs */
                         for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                            /* Increment past this to see if the next attribut is UUID */
+                            /* Increment past this to see if the next attribute is UUID */
                             if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                     /* only support 16 bits UUID for now */
                                     && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)) {
@@ -522,7 +522,7 @@ tSDP_DISC_REC *SDP_FindServiceInDb (tSDP_DISCOVERY_DB *p_db, UINT16 service_uuid
                         if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                             /* Look through data element sequence until no more UUIDs */
                             for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                                /* Increment past this to see if the next attribut is UUID */
+                                /* Increment past this to see if the next attribute is UUID */
                                 if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                         && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)
                                         /* for a specific uuid, or any one */
@@ -768,6 +768,28 @@ BOOLEAN SDP_FindProtocolListElemInRec (tSDP_DISC_REC *p_rec, UINT16 layer_uuid, 
     return (FALSE);
 }
 
+/*******************************************************************************
+**
+** Function         SDP_FindProtocolListElem
+**
+** Description      This function looks at the protocol list for a specific protocol
+**                  list element.
+**
+** Returns          TRUE if found, FALSE if not
+**                  If found, the passed protocol list element is filled in.
+**
+*******************************************************************************/
+BOOLEAN SDP_FindProtocolListElem (tSDP_DISC_ATTR *p_protocol_list, UINT16 layer_uuid, tSDP_PROTOCOL_ELEM *p_elem)
+{
+#if SDP_CLIENT_ENABLED == TRUE
+    /* don't check the input protocol descriptor list id, this api may be use in additional protocol descriptor list */
+    if ((SDP_DISC_ATTR_TYPE(p_protocol_list->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE)) {
+        return sdp_fill_proto_elem(p_protocol_list, layer_uuid, p_elem);
+    }
+#endif
+    /* If here, no match found */
+    return (FALSE);
+}
 
 /*******************************************************************************
 **

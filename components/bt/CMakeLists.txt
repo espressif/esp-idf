@@ -156,6 +156,8 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/stack/avdt/include
             host/bluedroid/stack/a2dp/include
             host/bluedroid/stack/rfcomm/include
+            host/bluedroid/stack/obex/include
+            host/bluedroid/stack/goep/include
             host/bluedroid/stack/include
             host/bluedroid/common/include
             host/bluedroid/config/include)
@@ -183,6 +185,8 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/bta/av/bta_av_aact.c"
                    "host/bluedroid/bta/av/bta_av_act.c"
                    "host/bluedroid/bta/av/bta_av_api.c"
+                   "host/bluedroid/bta/av/bta_av_ca_act.c"
+                   "host/bluedroid/bta/av/bta_av_ca_sm.c"
                    "host/bluedroid/bta/av/bta_av_cfg.c"
                    "host/bluedroid/bta/av/bta_av_ci.c"
                    "host/bluedroid/bta/av/bta_av_main.c"
@@ -378,6 +382,8 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/gatt/gatt_sr.c"
                    "host/bluedroid/stack/gatt/gatt_sr_hash.c"
                    "host/bluedroid/stack/gatt/gatt_utils.c"
+                   "host/bluedroid/stack/goep/goepc_api.c"
+                   "host/bluedroid/stack/goep/goepc_main.c"
                    "host/bluedroid/stack/hcic/hciblecmds.c"
                    "host/bluedroid/stack/hcic/hcicmds.c"
                    "host/bluedroid/stack/l2cap/l2c_api.c"
@@ -389,6 +395,9 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/l2cap/l2c_ucd.c"
                    "host/bluedroid/stack/l2cap/l2c_utils.c"
                    "host/bluedroid/stack/l2cap/l2cap_client.c"
+                   "host/bluedroid/stack/obex/obex_api.c"
+                   "host/bluedroid/stack/obex/obex_main.c"
+                   "host/bluedroid/stack/obex/obex_tl_l2cap.c"
                    "host/bluedroid/stack/rfcomm/port_api.c"
                    "host/bluedroid/stack/rfcomm/port_rfc.c"
                    "host/bluedroid/stack/rfcomm/port_utils.c"

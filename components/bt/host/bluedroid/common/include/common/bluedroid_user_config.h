@@ -39,6 +39,19 @@
 #define UC_BT_A2DP_ENABLED                  FALSE
 #endif
 
+//AVRCP
+#ifdef CONFIG_BT_AVRCP_ENABLED
+#define UC_BT_AVRCP_ENABLED                 TRUE
+#ifdef CONFIG_BT_AVRCP_CT_COVER_ART_ENABLED
+#define UC_BT_AVRCP_CT_COVER_ART_ENABLED    CONFIG_BT_AVRCP_CT_COVER_ART_ENABLED
+#else
+#define UC_BT_AVRCP_CT_COVER_ART_ENABLED    FALSE
+#endif
+#else
+#define UC_BT_AVRCP_ENABLED                 FALSE
+#define UC_BT_AVRCP_CT_COVER_ART_ENABLED    FALSE
+#endif
+
 //SPP
 #ifdef CONFIG_BT_SPP_ENABLED
 #define UC_BT_SPP_ENABLED                   CONFIG_BT_SPP_ENABLED
@@ -109,6 +122,13 @@
 #define UC_BT_ENC_KEY_SIZE_CTRL_MODE   2
 #else
 #define UC_BT_ENC_KEY_SIZE_CTRL_MODE   0
+#endif
+
+//GOEPC (BT)
+#ifdef CONFIG_BT_GOEPC_ENABLED
+#define UC_BT_GOEPC_ENABLED           	    CONFIG_BT_GOEPC_ENABLED
+#else
+#define UC_BT_GOEPC_ENABLED           	    FALSE
 #endif
 
 //BLE

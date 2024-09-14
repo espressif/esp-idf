@@ -84,8 +84,29 @@ config BT_A2DP_ENABLE
     bool "A2DP"
     depends on BT_CLASSIC_ENABLED
     default n
+    select BT_AVRCP_ENABLED
     help
         Advanced Audio Distribution Profile
+
+config BT_AVRCP_ENABLED
+    bool
+    depends on BT_A2DP_ENABLE
+    default y
+    help
+        Audio/Video Remote Control Profile, AVRCP and A2DP are coupled in Bluedroid,
+        AVRCP still controlled by A2DP option, this is a dummy option currently
+
+menu "AVRCP Features"
+    depends on BT_AVRCP_ENABLED
+
+    config BT_AVRCP_CT_COVER_ART_ENABLED
+        bool "AVRCP CT Cover Art"
+        default y
+        select BT_GOEPC_ENABLED
+        help
+            This enable Cover Art feature of AVRCP CT role
+
+endmenu
 
 config BT_SPP_ENABLED
     bool "SPP"
@@ -143,12 +164,11 @@ endchoice
 
 config BT_HFP_WBS_ENABLE
     bool "Wide Band Speech"
-    depends on BT_HFP_AUDIO_DATA_PATH_HCI
+    depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
     default y
     help
         This enables Wide Band Speech. Should disable it when SCO data path is PCM.
         Otherwise there will be no data transmitted via GPIOs.
-
 
 menuconfig BT_HID_ENABLED
     bool "Classic BT HID"
@@ -169,6 +189,13 @@ config BT_HID_DEVICE_ENABLED
     depends on BT_HID_ENABLED
     help
         This enables the BT HID Device
+
+config BT_GOEPC_ENABLED
+    bool
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT GOEP Profile Client role
 
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
