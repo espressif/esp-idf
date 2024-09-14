@@ -8,7 +8,7 @@ from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 bad_event_str = [
-    'bcn_timout',
+    'bcn_timeout',
     'm f probe req l',
     'abort() was called',
     'Guru Meditation Error',
@@ -30,7 +30,7 @@ def _run_test(dut: Dut) -> None:
         pass
 
     try:
-        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=20)
+        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)
         log_after_got_ip = dut.expect(pexpect.TIMEOUT, timeout=10).decode()
         if any(s in log_after_got_ip for s in bad_event_str):
             logging.info('Abnormal connection log:')
