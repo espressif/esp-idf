@@ -393,15 +393,17 @@ Interrupt wdt timeout on CPU0 / CPU1
 
 这表示发生了中断看门狗超时，详细信息请查阅 :doc:`看门狗 <../api-reference/system/wdts>` 文档。
 
+.. _cache_error:
+
 |CACHE_ERR_MSG|
 ^^^^^^^^^^^^^^^
 
-在某些情况下，ESP-IDF 会暂时禁止通过高速缓存访问外部 SPI flash 和 SPI RAM，例如在使用 spi_flash API 读取/写入/擦除/映射 SPI flash 的时候。在这些情况下，任务会被挂起，并且未使用 ``ESP_INTR_FLAG_IRAM`` 注册的中断处理程序会被禁用。请确保任何使用此标志注册的中断处理程序所访问的代码和数据分别位于 IRAM 和 DRAM 中。更多详细信息请参阅 :ref:`SPI flash API 文档 <iram-safe-interrupt-handlers>`。
+某些情况下，ESP-IDF 会暂时禁止通过 cache 访问外部 SPI flash 和 SPI RAM，例如在使用 spi_flash API 读取/写入/擦除/映射 SPI flash 的时候。在这些情况下，任务会被挂起，并且未使用 ``ESP_INTR_FLAG_IRAM`` 注册的中断处理程序会被禁用。请确保任何使用此标志注册的中断处理程序所访问的代码和数据分别位于 IRAM 和 DRAM 中。更多详细信息请参阅 :ref:`SPI flash API 文档 <iram-safe-interrupt-handlers>` 和 :ref:`IRAM 安全中断处理程序 <iram_safe_interrupts_handlers>`。
 
 .. only:: SOC_MEMPROT_SUPPORTED
 
-    Memory protection fault
-    ^^^^^^^^^^^^^^^^^^^^^^^
+    内存保护错误
+    ^^^^^^^^^^^^
 
     ESP-IDF 中使用 {IDF_TARGET_NAME} 的权限控制功能来防止以下类型的内存访问：
 
