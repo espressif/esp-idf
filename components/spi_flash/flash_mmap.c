@@ -36,13 +36,13 @@
 #include "spi_flash_mmap.h"
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-extern int _instruction_reserved_start;
-extern int _instruction_reserved_end;
+extern char _instruction_reserved_start;
+extern char _instruction_reserved_end;
 #endif
 
 #if CONFIG_SPIRAM_RODATA
-extern int _rodata_reserved_start;
-extern int _rodata_reserved_end;
+extern char _rodata_reserved_start;
+extern char _rodata_reserved_end;
 #endif
 
 #if !CONFIG_SPI_FLASH_ROM_IMPL

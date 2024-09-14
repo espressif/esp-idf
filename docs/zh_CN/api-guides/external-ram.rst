@@ -167,13 +167,13 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
         在 PSRAM 中直接执行代码的好处包括：
 
-        - PSRAM 访问速度快于 flash，因此性能更好。
+        - PSRAM 访问速度可能快于 flash，因此性能更好。例如，如果使用的 PSRAM 是八线的，且被配置为 80 MHz，而 flash 是4线的，且被配置为 80 Mhz，那么 PSRAM 的访问速度是快于 flash 的。
 
         - 在进行 SPI1 flash 操作期间，cache 仍然保持启用状态，这样可以优化代码执行性能。由于无需把中断服务程序 (ISR)、ISR 回调和在此期间可能被访问的数据放置在片上 RAM 中，片上 RAM 可用于其他用途，从而提高了使用效率。这个特性适用于需要处理大量数据的高吞吐量外设应用，能显著提高 SPI1 flash 操作期间的性能。
 
         :example:`system/xip_from_psram` 演示了如何从 PSRAM 直接执行代码，从而优化内部 RAM 的使用，并避免用户调用 flash 操作（例如闪存擦除/读取/写入操作）时关闭 cache。
 
-    .. only:: esp32p4
+    .. only:: not (esp32s2 or esp32s3)
 
         .. _external_ram_config_xip:
 
@@ -182,7 +182,13 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
         启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后能在 PSRAM 中直接执行代码。通常放置在 flash 中的段，如 ``.text`` 部分的数据（用于指令）和 ``.rodata`` 部分的数据（用于只读数据），将被加载到 PSRAM 中。
 
-        启用此选项后，SPI1 flash 操作期间 cache 保持启用状态，因此需要执行的代码在此期间不必放置在内部 RAM 中。由于 ESP32-P4 flash 和 PSRAM 使用两个独立的 SPI 总线，将 flash 内容移动到 PSRAM 实际上增加了 PSRAM MSPI 总线的负载，因此访问速度相对较慢。应用程序在运行过程中对 PSRAM 的使用会直接影响整体性能。因此，建议先进行性能分析以确定启用此选项是否会显著影响应用程序性能。
+        启用此选项后，SPI1 flash 操作期间 cache 保持启用状态，因此需要执行的代码在此期间不必放置在内部 RAM 中。
+
+        .. only:: SOC_MMU_PER_EXT_MEM_TARGET
+
+            由于 {IDF_TARGET_NAME} flash 和 PSRAM 使用两个独立的 SPI 总线，将 flash 内容移动到 PSRAM 实际上增加了 PSRAM MSPI 总线的负载，
+
+            例如，PSRAM 的访问速度可能快于 flash (比如在 ESP32-P4 上，选择的 PSRAM 是十六线的并将其配置为 200 MHz， 此时 PSRAM 的访问速度是远快于一颗被配置为 80 MHz 的四线 flash 芯片)，如果这些之前在 flash 中被就地执行的指令和数据不是十分频繁地被访问，则使能这个选项会增加系统的性能。建议先进行性能分析以确定启用此选项是否会显著影响应用程序性能。
 
 片外 RAM 使用限制
 ===================
