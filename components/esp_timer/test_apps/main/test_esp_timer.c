@@ -388,7 +388,6 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10955, test fail
 static void IRAM_ATTR test_esp_timer_get_time_performance(void)
 {
     int64_t begin = esp_timer_get_time();
@@ -405,7 +404,6 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
 {
     test_esp_timer_get_time_performance();
 }
-#endif
 
 static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff(void)
 {

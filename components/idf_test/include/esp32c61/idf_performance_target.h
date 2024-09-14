@@ -6,4 +6,4 @@
 
 #pragma once
 
-#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1200
+#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1300
