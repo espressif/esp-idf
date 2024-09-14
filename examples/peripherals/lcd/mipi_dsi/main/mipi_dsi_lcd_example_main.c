@@ -5,6 +5,8 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/lock.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -73,14 +75,13 @@ static const char *TAG = "example";
 //////////////////// Please update the following configuration according to your Application ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define EXAMPLE_LVGL_DRAW_BUF_LINES    200 // number of display lines in each draw buffer
+#define EXAMPLE_LVGL_DRAW_BUF_LINES    (EXAMPLE_MIPI_DSI_LCD_V_RES / 10) // number of display lines in each draw buffer
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
-#define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
-#define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 
-static SemaphoreHandle_t lvgl_api_mux = NULL;
+// LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it
+static _lock_t lvgl_api_lock;
 
 extern void example_lvgl_demo_ui(lv_display_t *disp);
 
@@ -101,36 +102,15 @@ static void example_increase_lvgl_tick(void *arg)
     lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
 }
 
-static bool example_lvgl_lock(int timeout_ms)
-{
-    // Convert timeout in milliseconds to FreeRTOS ticks
-    // If `timeout_ms` is set to -1, the program will block until the condition is met
-    const TickType_t timeout_ticks = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    return xSemaphoreTakeRecursive(lvgl_api_mux, timeout_ticks) == pdTRUE;
-}
-
-static void example_lvgl_unlock(void)
-{
-    xSemaphoreGiveRecursive(lvgl_api_mux);
-}
-
 static void example_lvgl_port_task(void *arg)
 {
     ESP_LOGI(TAG, "Starting LVGL task");
-    uint32_t task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
+    uint32_t time_till_next_ms = 0;
     while (1) {
-        // Lock the mutex due to the LVGL APIs are not thread-safe
-        if (example_lvgl_lock(-1)) {
-            task_delay_ms = lv_timer_handler();
-            // Release the mutex
-            example_lvgl_unlock();
-        }
-        if (task_delay_ms > EXAMPLE_LVGL_TASK_MAX_DELAY_MS) {
-            task_delay_ms = EXAMPLE_LVGL_TASK_MAX_DELAY_MS;
-        } else if (task_delay_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS) {
-            task_delay_ms = EXAMPLE_LVGL_TASK_MIN_DELAY_MS;
-        }
-        vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+        _lock_acquire(&lvgl_api_lock);
+        time_till_next_ms = lv_timer_handler();
+        _lock_release(&lvgl_api_lock);
+        usleep(1000 * time_till_next_ms);
     }
 }
 
@@ -243,7 +223,7 @@ void app_main(void)
             .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
         },
 #if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
-        .flags.use_dma2d = true,
+        .flags.use_dma2d = true, // use DMA2D to copy draw buffer into frame buffer
 #endif
     };
 
@@ -289,6 +269,8 @@ void app_main(void)
     lv_display_t *display = lv_display_create(EXAMPLE_MIPI_DSI_LCD_H_RES, EXAMPLE_MIPI_DSI_LCD_V_RES);
     // associate the mipi panel handle to the display
     lv_display_set_user_data(display, mipi_dpi_panel);
+    // set color depth
+    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB888);
     // create draw buffer
     void *buf1 = NULL;
     void *buf2 = NULL;
@@ -303,8 +285,6 @@ void app_main(void)
     assert(buf2);
     // initialize LVGL draw buffers
     lv_display_set_buffers(display, buf1, buf2, draw_buffer_sz, LV_DISPLAY_RENDER_MODE_PARTIAL);
-    // set color depth
-    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB888);
     // set the callback which can copy the rendered image to an area of the display
     lv_display_set_flush_cb(display, example_lvgl_flush_cb);
 
@@ -326,18 +306,11 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
 
-    // LVGL APIs are meant to be called across the threads without protection, so we use a mutex here
-    lvgl_api_mux = xSemaphoreCreateRecursiveMutex();
-    assert(lvgl_api_mux);
-
     ESP_LOGI(TAG, "Create LVGL task");
     xTaskCreate(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, NULL);
 
     ESP_LOGI(TAG, "Display LVGL Meter Widget");
-    // Lock the mutex due to the LVGL APIs are not thread-safe
-    if (example_lvgl_lock(-1)) {
-        example_lvgl_demo_ui(display);
-        // Release the mutex
-        example_lvgl_unlock();
-    }
+    _lock_acquire(&lvgl_api_lock);
+    example_lvgl_demo_ui(display);
+    _lock_release(&lvgl_api_lock);
 }
