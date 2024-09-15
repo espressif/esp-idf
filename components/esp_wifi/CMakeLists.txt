@@ -14,13 +14,6 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
         set(ldfragments "linker.lf")
     endif()
 
-    if(IDF_TARGET_ESP32)
-        # dport workaround headers are in esp32 component
-        set(extra_priv_requires esp32)
-    else()
-        set(extra_priv_requires)
-    endif()
-
     set(srcs
         "src/lib_printf.c"
         "src/mesh_event.c"
@@ -57,8 +50,8 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "wifi_apps/include" "wifi_apps/nan_app/include" ${local_include_dirs}
 
                     REQUIRES esp_event esp_phy esp_netif
-                    PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
-                                  wpa_supplicant hal lwip esp_coex ${extra_priv_requires}
+                    PRIV_REQUIRES esptool_py esp_pm esp_timer nvs_flash
+                                  wpa_supplicant hal lwip esp_coex
                     PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
                                   wifi_apps/roaming_app/include
                     LDFRAGMENTS "${ldfragments}")

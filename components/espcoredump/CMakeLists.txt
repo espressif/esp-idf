@@ -34,8 +34,6 @@ idf_component_register(SRCS ${srcs}
                        LDFRAGMENTS linker.lf
                        PRIV_REQUIRES esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system
                                      esp_driver_gpio
-                                     # [refactor-todo] esp_flash_internal.h -> spi_common_internal.h requires cleanup
-                                     driver
                       )
 
 # make sure 'core_dump_init' object file is considered by the linker

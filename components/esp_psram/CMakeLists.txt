@@ -8,9 +8,7 @@ set(includes "include")
 
 set(priv_requires heap spi_flash esp_mm)
 if(${target} STREQUAL "esp32")
-    list(APPEND priv_requires bootloader_support)
-    # [refactor-todo]: requires "driver" for `spicommon_periph_claim`
-    list(APPEND priv_requires driver)
+    list(APPEND priv_requires bootloader_support esp_driver_spi esp_driver_gpio)
 endif()
 
 set(srcs)
