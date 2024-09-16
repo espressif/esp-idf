@@ -169,7 +169,7 @@ menu "Example Ethernet Configuration"
             default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 2 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 0 if IDF_TARGET_ESP32H2
-            default 52 if IDF_TARGET_ESP32P4
+            default 24 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI MISO.
 
@@ -187,7 +187,7 @@ menu "Example Ethernet Configuration"
             default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
             default 3 if IDF_TARGET_ESP32C6
             default 1 if IDF_TARGET_ESP32H2
-            default 53 if IDF_TARGET_ESP32P4
+            default 21 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI CS0, i.e. Chip Select associated with the first SPI Eth module).
 
