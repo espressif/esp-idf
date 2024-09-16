@@ -12,6 +12,11 @@
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
+/* Memory layout for ESP32C61 SoC
+ * Note that the external memory is not represented in this file since
+ * it is handled by the esp_psram component
+ */
+
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
  * Each type of memory map consists of one or more regions in the address space.
@@ -27,16 +32,14 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_RAM     = 0,
-    SOC_MEMORY_TYPE_SPIRAM  = 1,
-    SOC_MEMORY_TYPE_NUM,
+    SOC_MEMORY_TYPE_RAM,
 };
 
 /* COMMON_CAPS is the set of attributes common to all types of memory on this chip */
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
+#define ESP32C61_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 #else
-#define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
+#define ESP32C61_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
 #endif
 
 /**
@@ -45,10 +48,9 @@ enum {
  * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
-const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
+const soc_memory_type_desc_t soc_memory_types[] = {
     /*                           Mem Type Name   High Priority Matching                      Medium Priority Matching    Low Priority Matching */
-    [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C6_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",       { MALLOC_CAP_SPIRAM,                        ESP32C6_MEM_COMMON_CAPS,   0 }},
+    [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C61_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -67,9 +69,6 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DIRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW,  SOC_EXTRAM_DATA_SIZE,                         SOC_MEMORY_TYPE_SPIRAM,  0,                      false}, //SPI SRAM, if available
-#endif
     { SOC_DIRAM_DRAM_LOW,   (APP_USABLE_DIRAM_END - SOC_DIRAM_DRAM_LOW),  SOC_MEMORY_TYPE_RAM,     SOC_DIRAM_IRAM_LOW,     false}, //D/IRAM, can be used as trace memory
     { APP_USABLE_DIRAM_END, (SOC_DIRAM_DRAM_HIGH - APP_USABLE_DIRAM_END), SOC_MEMORY_TYPE_RAM,     APP_USABLE_DIRAM_END,    true}, //D/IRAM, can be used as trace memory (ROM reserved area)
 };
@@ -84,10 +83,6 @@ extern int _data_start, _heap_start, _iram_start, _iram_end;
  * These are removed from the soc_memory_regions array when heaps are created.
  *
  */
-
-#ifdef CONFIG_SPIRAM
-SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_region);
-#endif
 
 // Static data region. DRAM used by data+bss and possibly rodata
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
