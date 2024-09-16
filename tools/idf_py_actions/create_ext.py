@@ -40,7 +40,7 @@ def is_empty_and_create(path: str, action: str) -> None:
 
 def create_project(target_path: str, name: str) -> None:
     copytree(
-        os.path.join(os.environ['IDF_PATH'], 'examples', 'get-started', 'sample_project'),
+        os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_project'),
         target_path,
         copy_function=copy,
         dirs_exist_ok=True,
@@ -49,7 +49,6 @@ def create_project(target_path: str, name: str) -> None:
     os.rename(os.path.join(main_folder, 'main.c'), os.path.join(main_folder, '.'.join((name, 'c'))))
     replace_in_file(os.path.join(main_folder, 'CMakeLists.txt'), 'main', name)
     replace_in_file(os.path.join(target_path, 'CMakeLists.txt'), 'main', name)
-    os.remove(os.path.join(target_path, 'README.md'))
 
 
 def create_component(target_path: str, name: str) -> None:

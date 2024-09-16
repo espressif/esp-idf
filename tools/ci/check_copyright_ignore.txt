@@ -995,7 +995,6 @@ examples/ethernet/basic/main/ethernet_example_main.c
 examples/ethernet/enc28j60/components/eth_enc28j60/enc28j60.h
 examples/ethernet/enc28j60/main/enc28j60_example_main.c
 examples/get-started/blink/main/blink_example_main.c
-examples/get-started/sample_project/main/main.c
 examples/mesh/internal_communication/main/include/mesh_light.h
 examples/mesh/internal_communication/main/mesh_light.c
 examples/mesh/internal_communication/main/mesh_main.c
@@ -1146,8 +1145,6 @@ tools/ble/lib_gatt.py
 tools/catch/catch.hpp
 tools/ldgen/samples/template.ld
 tools/ldgen/test/data/linker_script.ld
-tools/templates/sample_component/include/main.h
-tools/templates/sample_component/main.c
 tools/test_apps/build_system/embed_test/main/test_main.c
 tools/test_apps/build_system/ldgen_test/main/src1.c
 tools/test_apps/build_system/ldgen_test/main/src2.c
