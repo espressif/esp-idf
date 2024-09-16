@@ -5,9 +5,10 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
+@pytest.mark.parametrize('target', [
+    'esp32',
+    'esp32s2',
+])
 @pytest.mark.parametrize('config', [
     'default',
     'ringbuf_flash',
