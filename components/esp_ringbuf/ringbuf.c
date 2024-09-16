@@ -504,6 +504,13 @@ static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
         return pdFALSE;     //Byte buffers do not allow multiple retrievals before return
     }
     if ((pxRingbuffer->xItemsWaiting > 0) && ((pxRingbuffer->pucRead != pxRingbuffer->pucWrite) || (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG))) {
+        // If the ring buffer is a no-split buffer, the read pointer must point to an item that has been written to.
+        if ((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0) {
+            ItemHeader_t *pxHeader = (ItemHeader_t *)pxRingbuffer->pucRead;
+            if ((pxHeader->uxItemFlags & rbITEM_WRITTEN_FLAG) == 0) {
+                return pdFALSE;
+            }
+        }
         return pdTRUE;      //Items/data available for retrieval
     } else {
         return pdFALSE;     //No items/data available for retrieval
@@ -986,9 +993,6 @@ BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, s
     *ppvItem = NULL;
     if (xItemSize > pxRingbuffer->xMaxItemSize) {
         return pdFALSE;     //Data will never ever fit in the queue.
-    }
-    if ((pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) && xItemSize == 0) {
-        return pdTRUE;      //Sending 0 bytes to byte buffer has no effect
     }
 
     return prvSendAcquireGeneric(pxRingbuffer, NULL, ppvItem, xItemSize, xTicksToWait);
