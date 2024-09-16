@@ -25,7 +25,7 @@ def parse_arguments() -> argparse.Namespace:
                                      epilog='On Windows, run `python activate.py` to execute this script in the current terminal window.')
     parser.add_argument('-s', '--shell',
                         metavar='SHELL',
-                        default=os.environ.get('ESP_IDF_SHELL', None),
+                        default=os.environ.get('ESP_IDF_SHELL', 'detect'),
                         help='Explicitly specify shell to start. For example bash, zsh, powershell.exe, cmd.exe')
     parser.add_argument('-l', '--list',
                         action='store_true',
@@ -38,6 +38,7 @@ def parse_arguments() -> argparse.Namespace:
                         help=('Disable ANSI color escape sequences.'))
     parser.add_argument('-d', '--debug',
                         action='store_true',
+                        default=bool(os.environ.get('ESP_IDF_EXPORT_DEBUG')),
                         help=('Enable debug information.'))
     parser.add_argument('-q', '--quiet',
                         action='store_true',
@@ -100,17 +101,21 @@ def get_idf_env() -> Dict[str,str]:
 def detect_shell(args: Any) -> str:
     import psutil
 
-    if args.shell is not None:
+    if args.shell != 'detect':
+        debug(f'Shell explicitly stated: "{args.shell}"')
         return str(args.shell)
 
     current_pid = os.getpid()
     detected_shell_name = ''
     while True:
         parent_pid = psutil.Process(current_pid).ppid()
-        parent_name = os.path.basename(psutil.Process(parent_pid).exe())
+        parent = psutil.Process(parent_pid)
+        parent_cmdline = parent.cmdline()
+        parent_exe = parent_cmdline[0].lstrip('-')
+        parent_name = os.path.basename(parent_exe)
+        debug(f'Parent: pid: {parent_pid}, cmdline: {parent_cmdline}, exe: {parent_exe}, name: {parent_name}')
         if not parent_name.lower().startswith('python'):
             detected_shell_name = parent_name
-            conf.DETECTED_SHELL_PATH = psutil.Process(parent_pid).exe()
             break
         current_pid = parent_pid
 
@@ -143,6 +148,7 @@ def main() -> None:
     # Fill config global holder
     conf.ARGS = args
 
+    debug(f'command line: {sys.argv}')
     if conf.ARGS.list:
         oprint(SUPPORTED_SHELLS)
         sys.exit()
