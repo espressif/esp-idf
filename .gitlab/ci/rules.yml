@@ -225,6 +225,10 @@
   rules:
     - <<: *if-tag-release
 
+.rules:dev-push:
+  rules:
+    - <<: *if-dev-push
+
 # Do not upload caches on dev branches by default
 .rules:upload-python-cache:
   rules:

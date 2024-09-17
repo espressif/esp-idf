@@ -58,3 +58,4 @@ tools/legacy_exports/export_legacy.fish
 tools/legacy_exports/export_legacy.sh
 tools/legacy_exports/export_legacy.ps1
 tools/legacy_exports/export_legacy.bat
+tools/ci/idf_build_apps_dump_soc_caps.py
