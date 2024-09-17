@@ -44,7 +44,10 @@ TEST_CASE("Create volume, open file, write and read back data", "[fatfs]")
 
     fr_result = f_fdisk(pdrv, part_list, work_area);
     REQUIRE(fr_result == FR_OK);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, 0};
+
+    // For host tests, include FM_SFD flag when formatting partitions smaller than 128KB.
+    // if n_root field of MKFS_PARM is set to 128 => 1 root directory sec and if set to 0(default 512) => 4 root directory sectors.
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 128, 0};
     fr_result = f_mkfs("", &opt, work_area, sizeof(work_area)); // Use default volume
 
     // Mount the volume
@@ -56,7 +59,7 @@ TEST_CASE("Create volume, open file, write and read back data", "[fatfs]")
     REQUIRE(fr_result == FR_OK);
 
     // Generate data
-    uint32_t data_size = 100000;
+    uint32_t data_size = 1000;
 
     char *data = (char*) malloc(data_size);
     char *read = (char*) malloc(data_size);
@@ -130,7 +133,7 @@ static void prepare_fatfs(const char* partition_label, const esp_partition_t** p
 
     fr_result = f_fdisk(_pdrv, part_list, work_area);
     REQUIRE(fr_result == FR_OK);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, 0};
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 128, 0};
     fr_result = f_mkfs(drv, &opt, work_area, sizeof(work_area)); // Use default volume
     REQUIRE(fr_result == FR_OK);
 }
@@ -222,7 +225,7 @@ TEST_CASE("Test mounting 2 volumes, writing data and formatting the 2nd one, rea
     const size_t workbuf_size = 4096;
     void *workbuf = ff_memalloc(workbuf_size);
     REQUIRE(workbuf != NULL);
-    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 0, CONFIG_WL_SECTOR_SIZE};
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 128, CONFIG_WL_SECTOR_SIZE};
     fr_result = f_mkfs(drv1, &opt, workbuf, workbuf_size);
     free(workbuf);
     workbuf = NULL;
