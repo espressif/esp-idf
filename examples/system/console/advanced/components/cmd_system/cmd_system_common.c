@@ -159,7 +159,7 @@ static void register_free(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
 
-/* 'heap' command prints minumum heap size */
+/* 'heap' command prints minimum heap size */
 static int heap_size(int argc, char **argv)
 {
     uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
