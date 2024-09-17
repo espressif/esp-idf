@@ -72,10 +72,6 @@ class UnixShell(Shell):
         # Basic POSIX shells does not support autocompletion
         return None
 
-    def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
-            self.export_file(fd)
-
     def export_file(self, fd: TextIO) -> None:
         fd.write(f'{self.deactivate_cmd}\n')
         for var, value in self.new_esp_idf_env.items():
@@ -87,7 +83,8 @@ class UnixShell(Shell):
                   'Go to the project directory and run:\n\n  idf.py build"\n'))
 
     def export(self) -> None:
-        self.init_file()
+        with open(self.script_file_path, 'w') as fd:
+            self.export_file(fd)
         print(f'. {self.script_file_path}')
 
     def click_ver(self) -> int:
@@ -187,6 +184,10 @@ class FishShell(UnixShell):
         env['_IDF.PY_COMPLETE'] = 'fish_source' if self.click_ver() >= 8 else 'source_fish'
         stdout: str = run_cmd([sys.executable, conf.IDF_PY], env=env)
         return stdout
+
+    def init_file(self) -> None:
+        with open(self.script_file_path, 'w') as fd:
+            self.export_file(fd)
 
     def spawn(self) -> None:
         self.init_file()
