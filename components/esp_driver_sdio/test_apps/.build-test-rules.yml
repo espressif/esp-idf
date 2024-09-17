@@ -1,7 +1,6 @@
 components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
   enable:
     - if: IDF_TARGET == "esp32"
-      temporary: false
       reason: always use ESP32 SDMMC as host
   depends_components:
     - sdmmc
@@ -9,6 +8,10 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
     - esp_driver_sdio
 
 components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
+  enable:
+  # There is no retention support for SDIO slave, just build and test if driver can forbid from auto light sleep.
+    - if: CONFIG_NAME == "sleep_retention" and SOC_PAU_SUPPORTED == 1
+    - if: CONFIG_NAME != "sleep_retention"
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
   depends_components:
