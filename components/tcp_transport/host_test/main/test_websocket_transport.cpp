@@ -21,7 +21,7 @@
 #include "esp_transport_tcp.h"
 #include "esp_transport_ws.h"
 
-#define WS_BUFFER_SIZE 1024
+#define WS_BUFFER_SIZE CONFIG_WS_BUFFER_SIZE
 
 extern "C" {
 #include "Mockmock_transport.h"
@@ -103,7 +103,8 @@ int mock_write_callback(esp_transport_handle_t transport, const char *request_se
 }
 
 // Callback function for mock_read
-int mock_read_callback(esp_transport_handle_t transport, char *buffer, int len, int timeout_ms, int num_call) {
+int mock_valid_read_callback(esp_transport_handle_t transport, char *buffer, int len, int timeout_ms, int num_call)
+{
     std::string websocket_response = make_response();
     std::memcpy(buffer, websocket_response.data(), websocket_response.size());
     return websocket_response.size();
@@ -111,7 +112,7 @@ int mock_read_callback(esp_transport_handle_t transport, char *buffer, int len, 
 
 }
 
-TEST_CASE("WebSocket Transport Connection", "[websocket_transport]") {
+void test_ws_connect(bool expect_valid_connection, CMOCK_mock_read_CALLBACK read_callback) {
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
@@ -134,10 +135,18 @@ TEST_CASE("WebSocket Transport Connection", "[websocket_transport]") {
         mock_write_Stub(mock_write_callback);
         mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
         // Set the callback function for mock_read
-        mock_read_Stub(mock_read_callback);
+        mock_read_Stub(read_callback);
         mock_poll_read_ExpectAnyArgsAndReturn(1);
         esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
         mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        if (!expect_valid_connection) {
+            // for invalid connections we only check that the connect() function fails
+            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) != 0);
+            // and we're done here
+            return;
+        }
+
         REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
 
         char buffer[WS_BUFFER_SIZE];
@@ -147,5 +156,37 @@ TEST_CASE("WebSocket Transport Connection", "[websocket_transport]") {
 
         std::string response(buffer, read_len);
         REQUIRE(response == "Test");
+
     }
+}
+
+// Happy flow
+TEST_CASE("WebSocket Transport Connection", "[websocket_transport]")
+{
+    test_ws_connect(true, mock_valid_read_callback);
+}
+
+// Some corner cases where we expect the ws connection to fail
+
+TEST_CASE("ws connect fails (0 len response)", "[websocket_transport]")
+{
+    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+                        return 0;
+                    });
+}
+
+TEST_CASE("ws connect fails (invalid response)", "[websocket_transport]")
+{
+    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+        int resp_len = len/2;
+        std::memset(buf, '?', resp_len);
+        return resp_len;
+    });
+}
+
+TEST_CASE("ws connect fails (big response)", "[websocket_transport]")
+{
+    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+        return WS_BUFFER_SIZE;
+    });
 }
