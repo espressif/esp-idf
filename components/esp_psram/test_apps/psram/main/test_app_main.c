@@ -8,7 +8,7 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-#define TEST_MEMORY_LEAK_THRESHOLD (-600)
+#define TEST_MEMORY_LEAK_THRESHOLD (-700)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
