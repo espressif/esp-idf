@@ -16,6 +16,10 @@ if(${target} STREQUAL "esp32c6")
     list(APPEND priv_requires hal)
 endif()
 
+if(CONFIG_RTC_CLK_SRC_INT_RC32K)
+    message(WARNING "Internal RC32K clock is unstable at extreme temperatures and is not recommended for use.")
+endif()
+
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_clk.c"
