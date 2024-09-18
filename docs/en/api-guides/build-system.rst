@@ -247,7 +247,7 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: Optional list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
 
-- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components to be compiled as part of the bootloader. Paths can be relative to the project directory, or absolute.
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components to be compiled as part of the bootloader.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -791,7 +791,7 @@ Similarly to regular applications, it is possible to include external components
 
     project(main)
 
-See :example:`custom_bootloader/bootloader_extra_dir` for an example of adding extra components the bootloader build.
+See :example:`custom_bootloader/bootloader_extra_dir` for an example of adding extra components to the bootloader build.
 
 .. _config_only_component:
 
