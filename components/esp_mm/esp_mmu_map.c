@@ -134,8 +134,8 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
      * - Now IBUS addresses (between `_instruction_reserved_start` and `_instruction_reserved_end`) are consecutive on all chips,
      *   we strongly rely on this to calculate the .text length
      */
-    extern int _instruction_reserved_start;
-    extern int _instruction_reserved_end;
+    extern char _instruction_reserved_start;
+    extern char _instruction_reserved_end;
     size_t irom_len_to_reserve = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_start)) == irom_len_to_reserve);
 
@@ -162,8 +162,8 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     /**
      * Similarly, we follow the way how 1st bootloader load flash .rodata:
      */
-    extern int _rodata_reserved_start;
-    extern int _rodata_reserved_end;
+    extern char _rodata_reserved_start;
+    extern char _rodata_reserved_end;
     size_t drom_len_to_reserve = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_start)) == drom_len_to_reserve);
 

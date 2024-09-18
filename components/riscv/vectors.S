@@ -21,7 +21,14 @@
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
+#ifdef __clang__
+    /* Clang does not support constant declared via `equ` as operand for csrrw
+    * TODO: LLVM-369
+    */
+    #define EXT_ILL_CSR 0x7F0
+#else
     .equ EXT_ILL_CSR, 0x7F0
+#endif
 
     /* EXT_ILL CSR reasons are stored as follows:
      * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
@@ -167,7 +174,6 @@ _panic_handler:
     la    ra, _return_from_exception
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrrw a0, EXT_ILL_CSR, zero
-
     /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
 #if SOC_CPU_HAS_PIE
     /* Check if the PIE bit is set. */
