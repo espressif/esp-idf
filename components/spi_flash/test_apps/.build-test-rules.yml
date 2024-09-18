@@ -43,11 +43,16 @@ components/spi_flash/test_apps/flash_mmap:
     - esp_mm
     - spi_flash
   enable:
-    - if: CONFIG_NAME in ["release", "rom_impl"] and IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32p4", "esp32s2", "esp32s3"]
+    - if: CONFIG_NAME == "release" and IDF_TARGET != "linux"
+    - if: CONFIG_NAME == "rom_impl" and ESP_ROM_HAS_SPI_FLASH == 1
     - if: CONFIG_NAME == "psram" and SOC_MMU_PER_EXT_MEM_TARGET == 1 # MMU per target needs test. On unified MMU chips, the entry ID is unique
-    - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3", "esp32p4"]
+    - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED == 1
     # S2 doesn't have ROM for flash
-    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3", "esp32p4"]
+    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and SOC_SPIRAM_XIP_SUPPORTED == 1 and IDF_TARGET != "esp32s2"
+  disable:
+    - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C61] IDF-12784
 
 components/spi_flash/test_apps/flash_suspend:
   disable:
