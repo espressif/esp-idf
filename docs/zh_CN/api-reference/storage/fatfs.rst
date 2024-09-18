@@ -123,7 +123,7 @@ FatFs 分区生成器
 
 该函数的参数如下：
 
-#. partition - 分区的名称，需要在分区表中定义（如 :example_file:`storage/fatfsgen/partitions_example.csv`）。
+#. partition - 分区的名称，需要在分区表中定义（如 :example_file:`storage/fatfs/fatfsgen/partitions_example.csv`）。
 
 #. base_dir - 目录名称，该目录会被编码为 FatFs 分区，也可以选择将其被烧录进设备。但注意必须在分区表中指定合适的分区大小。
 
@@ -139,7 +139,7 @@ FatFs 分区生成器
 
 没有指定 FLASH_IN_PROJECT 时也可以生成分区镜像，但是用户需要使用 ``esptool.py`` 或自定义的构建系统目标对其手动烧录。
 
-相关示例请查看 :example:`storage/fatfsgen`。
+相关示例请查看 :example:`storage/fatfs/fatfsgen`。
 
 .. _fatfs-partition-analyzer:
 

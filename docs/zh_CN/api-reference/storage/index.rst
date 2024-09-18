@@ -74,7 +74,7 @@
       - **描述**
     * - :example:`fatfsgen <storage/fatfs/fatfsgen>`
       - 演示了在主机上使用 Python 工具生成 FATFS 镜像的相关功能。
-    * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash_fatfs>`
+    * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
       - 演示了在外部 flash 上使用带有损耗均衡功能的 FATFS。
     * - :example:`wear_leveling <storage/wear_levelling>`
       - 演示了在内部 flash 上使用带有损耗均衡功能的 FATFS。

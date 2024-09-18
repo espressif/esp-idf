@@ -301,9 +301,9 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 
 使用标准 C 库函数，如 ``fread`` 和 ``fwrite``，相较于使用平台特定的不带缓冲系统调用，如 ``read`` 和 ``write``，可能会导致 I/O 性能下降。
 
-``fread`` 与 ``fwrite`` 函数是为可移植性而设计的，而非速度，其缓冲性质会引入一些额外的开销。关于如何使用这两个函数，请参考示例 :example:`storage/fatfsgen`。
+``fread`` 与 ``fwrite`` 函数是为可移植性而设计的，而非速度，其缓冲性质会引入一些额外的开销。关于如何使用这两个函数，请参考示例 :example:`storage/fatfs/getting_started`。
 
-与之相比，``read`` 与 ``write`` 函数是标准的 POSIX API，可直接通过 VFS 处理 FatFs，由 ESP-IDF 负责底层实现。关于如何使用这两个函数，请参考示例 :example:`storage/perf_benchmark`。
+与之相比，``read`` 与 ``write`` 函数是标准的 POSIX API，可直接通过 VFS 处理 FatFs，由 ESP-IDF 负责底层实现。关于如何使用这两个函数，请参考示例 :example:`storage/fatfs/fs_operations`。
 
 下面提供了一些提示，更多信息请见 :doc:`/api-reference/storage/fatfs`。
 
