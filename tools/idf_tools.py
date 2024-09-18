@@ -165,27 +165,50 @@ class Platforms:
     }
 
     @staticmethod
+    def detect_linux_arm_platform(supposed_platform):  # type: (Optional[str]) -> Optional[str]
+        """
+        We probe the python binary to check exactly what environment the script is running in.
+
+        ARM platform may run on armhf hardware but having armel installed packages.
+        To avoid possible armel/armhf libraries mixing need to define user's
+        packages architecture to use the same
+        See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
+
+        ARM platform may run on aarch64 hardware but having armhf installed packages
+        (it happens if a docker container is running on arm64 hardware, but using an armhf image).
+
+        """
+        if supposed_platform not in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF, PLATFORM_LINUX_ARM64):
+            return supposed_platform
+
+        # suppose that installed python was built with the right ABI
+        with open(sys.executable, 'rb') as f:
+            # see ELF header description in https://man7.org/linux/man-pages/man5/elf.5.html, offsets depend on ElfN size
+            if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
+                return supposed_platform  # ELF magic not found. Use the default platform name from PLATFORM_FROM_NAME
+            f.seek(18)  # seek to e_machine
+            e_machine = int.from_bytes(f.read(2), sys.byteorder)
+            if e_machine == 183:  # EM_AARCH64, https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
+                supposed_platform = PLATFORM_LINUX_ARM64
+            elif e_machine == 40:  # EM_ARM, https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst
+                f.seek(36)  # seek to e_flags
+                e_flags = int.from_bytes(f.read(4), sys.byteorder)
+                if e_flags & 0x400:
+                    supposed_platform = PLATFORM_LINUX_ARMHF
+                else:
+                    supposed_platform = PLATFORM_LINUX_ARM32
+
+        return supposed_platform
+
+    @staticmethod
     def get(platform_alias):  # type: (Optional[str]) -> Optional[str]
         if platform_alias is None:
             return None
 
         if platform_alias == 'any' and CURRENT_PLATFORM:
             platform_alias = CURRENT_PLATFORM
-
         platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
-
-        # ARM platform may run on armhf hardware but having armel installed packages.
-        # To avoid possible armel/armhf libraries mixing need to define user's
-        # packages architecture to use the same
-        # See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
-        if platform_name in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF) and 'arm' in platform.machine():
-            # suppose that installed python was built with a right ABI
-            with open(sys.executable, 'rb') as f:
-                if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
-                    return platform_name  # ELF magic not found. Use default platform name from PLATFORM_FROM_NAME
-                f.seek(36)  # seek to e_flags (https://man7.org/linux/man-pages/man5/elf.5.html)
-                e_flags = int.from_bytes(f.read(4), sys.byteorder)
-                platform_name = PLATFORM_LINUX_ARMHF if e_flags & 0x400 else PLATFORM_LINUX_ARM32
+        platform_name = Platforms.detect_linux_arm_platform(platform_name)
         return platform_name
 
     @staticmethod
@@ -2349,7 +2372,7 @@ class ChecksumFileParser():
         try:
             for bytes_str, hash_str in zip(self.checksum[0::2], self.checksum[1::2]):
                 bytes_filename = self.parseLine(r'^# (\S*):', bytes_str)
-                hash_filename = self.parseLine(r'^\S* \*(\S*)', hash_str)
+                hash_filename = self.parseLine(r'^\S* [\* ](\S*)', hash_str)
                 if hash_filename != bytes_filename:
                     fatal('filename in hash-line and in bytes-line are not the same')
                     raise SystemExit(1)
