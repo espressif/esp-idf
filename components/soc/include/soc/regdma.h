@@ -179,7 +179,7 @@ typedef struct regdma_link_stats {
              reserve: 16-REGDMA_LINK_ENTRY_NUM,
 #endif
              id: 16; /* REGDMA linked list node unique identifier */
-    volatile uint32_t   module; /* a bitmap used to identify the module to which the current node belongs */
+    volatile int    module; /* a number used to identify the module to which the current node belongs */
 } regdma_link_stats_t;
 
 typedef struct regdma_link_continuous {
