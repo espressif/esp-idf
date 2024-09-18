@@ -964,7 +964,6 @@ components/soc/include/soc/ledc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
 components/soc/include/soc/sdmmc_periph.h
 components/soc/include/soc/sens_periph.h
-components/soc/include/soc/uart_periph.h
 components/soc/include/soc/uhci_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
