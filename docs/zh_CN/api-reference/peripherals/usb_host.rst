@@ -365,7 +365,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 主机库示例
 ^^^^^^^^^^^^^^^^^^^^^
 
-:example:`peripherals/usb/host/usb_host_lib` 展示了 USB 主机库 API 的基本用法，用于创建伪 Class 驱动程序。
+:example:`peripherals/usb/host/usb_host_lib` 演示了如何使用 USB 主机库 API 来安装和注册客户端、等待设备连接、打印设备信息和处理断开连接，并重复这些步骤，直到退出应用程序。
 
 Class 驱动程序示例
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -376,27 +376,27 @@ CDC-ACM
 """""""
 
 * 通信设备 Class（抽象控制模型）的主机 Class 驱动程序通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__ 作为受管理的组件分发。
-* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_host` 使用 CDC-ACM 主机驱动程序组件，与 CDC-ACM 设备通信。
-* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_vcp` 展示了如何扩展 CDC-ACM 主机驱动程序，与虚拟串口设备交互。
+* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_host` 演示了使用 CDC-ACM 主机驱动程序组件，实现 {IDF_TARGET_NAME} 与 USB CDC-ACM 设备的通信。
+* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_vcp` 演示了如何扩展 CDC-ACM 的主机驱动程序，以支持 VCP 设备（即虚拟通信端口设备，如 CP210x、FTDI FT23x 或 CH34x），以及如何使用 CDC-ACM API 控制设备并发送数据。
 * 示例 `esp_modem <https://github.com/espressif/esp-protocols/tree/master/components/esp_modem/examples>`__ 中也使用了 CDC-ACM 驱动程序，该程序在这些示例中与蜂窝模块通信。
 
 MSC
 """
 
 * 大容量存储 Class（仅支持批量传输）的主机 Class 驱动程序已部署到 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_msc>`__。
-* 示例 :example:`peripherals/usb/host/msc` 展示了如何使用 MSC 主机驱动程序读写 USB flash 驱动。
+* 示例 :example:`peripherals/usb/host/msc` 演示了如何使用 USB 大容量存储类来访问、读取、写入和操作 USB 闪存驱动器，包括处理 USB 重新连接和反初始化 USB 主机堆栈。
 
 HID
 """
 
 * HID（人机接口设备）的主机 class 驱动作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb_host_hid>`__ 分发。
-* 示例 :example:`peripherals/usb/host/hid` 展示了从具有多个接口的 USB HID 设备接收报告的可能性。
+* 示例 :example:`peripherals/usb/host/hid` 演示了如何在 {IDF_TARGET_NAME} 上实现基本的 USB 主机 HID 类驱动，以便与 USB HID 设备（如键盘和鼠标）进行通信，并持续扫描设备的连接状态。一旦连接成功，即获取 HID 报告。
 
 UVC
 """
 
 * USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
-* 示例 :example:`peripherals/usb/host/uvc` 展示了如何使用 UVC 主机驱动程序接收来自 USB 摄像头的视频流，并可选择将该流通过 Wi-Fi 转发。
+* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 `libuvc` 库从 USB 摄像头捕获视频，并通过托管 TCP 服务器将视频流通过 Wi-Fi 传输，同时提供了使用 ``player.py`` 脚本在 PC 上查看捕获视频的选项。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 

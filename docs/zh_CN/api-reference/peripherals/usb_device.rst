@@ -270,23 +270,15 @@ USB 大容量存储设备 (MSC)
 应用示例
 --------------------
 
-下表列出了 :example:`peripherals/usb/device` 目录下的代码示例：
+如需查看相关示例，请前往目录 :example:`peripherals/usb/device`。
 
-.. list-table::
-   :widths: 35 65
-   :header-rows: 1
+- :example:`peripherals/usb/device/tusb_console` 演示了如何使用 TinyUSB 组件配置 {IDF_TARGET_NAME}，以通过串行设备连接获取和输出日志，适用于任何支持 USB-OTG 的乐鑫开发板。
+- :example:`peripherals/usb/device/tusb_serial_device` 演示了如何使用 TinyUSB 组件将 {IDF_TARGET_NAME} 配置为 USB 串行设备，还支持配置为双串行设备。
+- :example:`peripherals/usb/device/tusb_midi` 演示了如何使用 TinyUSB 组件将 {IDF_TARGET_NAME} 配置为 USB MIDI 设备，从而通过本地 USB 端口输出 MIDI 音符序列。
+- :example:`peripherals/usb/device/tusb_hid` 演示了如何使用 TinyUSB 组件实现 USB 键盘和鼠标，在连接到 USB 主机时发送 “按下和释放 key a/A” 事件，并使鼠标沿方形轨迹移动。
+- :example:`peripherals/usb/device/tusb_msc` 演示了如何使用 USB 功能创建一个可以被 USB 主机识别的大容量存储设备，允许访问其内部数据存储，支持 SPI Flash 和 SD MMC 卡存储介质。
+- :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` 演示了如何使用 TinyUSB 组件将 {IDF_TARGET_NAME} 同时配置为 USB 串行设备和 MSC 设备（存储介质为 SPI-Flash）运行。
 
-   * - 代码示例
-     - 描述
-   * - :example:`peripherals/usb/device/tusb_console`
-     - 设置 {IDF_TARGET_NAME} 芯片，通过串行设备连接获取日志输出
-   * - :example:`peripherals/usb/device/tusb_serial_device`
-     - 设置 {IDF_TARGET_NAME} 芯片，将其作为 USB 串行设备使用
-   * - :example:`peripherals/usb/device/tusb_midi`
-     - 设置 {IDF_TARGET_NAME} 芯片，将其作为 USB MIDI 设备使用
-   * - :example:`peripherals/usb/device/tusb_hid`
-     - 设置 {IDF_TARGET_NAME} 芯片，将其作为 USB 人机界面设备使用
-   * - :example:`peripherals/usb/device/tusb_msc`
-     - 设置 {IDF_TARGET_NAME} 芯片，将其作为 USB 大容量存储设备使用
-   * - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice`
-     - 设置 {IDF_TARGET_NAME} 芯片，将其作为复合 USB 设备使用 (MSC + CDC)
+.. only:: not esp32p4
+
+  - :example:`peripherals/usb/device/tusb_ncm` 演示了使用 TinyUSB 组件，借助网络控制模型 (NCM) 将 Wi-Fi 数据通过 USB 传输到 Linux 或 Windows 主机。NCM 是通信设备类 (CDC) USB 设备的一个子类，专用于 Ethernet-over-USB 应用。
