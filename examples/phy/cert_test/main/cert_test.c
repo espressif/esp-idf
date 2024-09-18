@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "nvs_flash.h"
 
 #include "esp_console.h"
@@ -38,7 +39,7 @@ void app_main(void)
     register_phy_cmd();
 
     /* rftest.a requirements */
-#ifndef CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_SOC_WIFI_SUPPORTED
     esp_wifi_power_domain_on();
 #endif
 
@@ -46,12 +47,17 @@ void app_main(void)
     esp_phy_rftest_init();
 #endif
 
+    int help_index = 1;
     printf("\n ==================================================\n");
     printf(" |            RF certification test               |\n");
     printf(" |                                                |\n");
     printf(" |  1. Print 'help' to gain overview of commands  |\n");
-    printf(" |  2. Wi-Fi certification test                   |\n");
-    printf(" |  3. Bluetooth certification test               |\n");
+#if CONFIG_SOC_WIFI_SUPPORTED
+    printf(" |  %d. Wi-Fi certification test                   |\n", ++help_index);
+#endif
+#if CONFIG_SOC_BT_SUPPORTED
+    printf(" |  %d. Bluetooth certification test               |\n", ++help_index);
+#endif
     printf(" |                                                |\n");
     printf(" =================================================\n\n");
 
