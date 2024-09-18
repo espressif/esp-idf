@@ -153,6 +153,7 @@ DEFAULT_FULL_BUILD_TEST_FILEPATTERNS = [
     'tools/ci/ignore_build_warnings.txt',
 ]
 DEFAULT_BUILD_LOG_FILENAME = 'build_log.txt'
+DEFAULT_SIZE_JSON_FILENAME = 'size.json'
 
 
 class CollectMode(str, Enum):

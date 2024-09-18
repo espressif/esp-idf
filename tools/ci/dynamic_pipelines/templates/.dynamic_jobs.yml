@@ -37,6 +37,7 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --junitxml "build_summary_${CI_JOB_NAME_SLUG}.xml"
+    - run_cmd python tools/ci/artifacts_handler.py upload --type size_reports
 
 .dynamic_target_test_template:
   extends:
