@@ -22,7 +22,9 @@
 #include "pvnr_mgmt.h"
 #include "prov_pvnr.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 /* BLE Mesh NVS Key and corresponding data struct.
  * Note: The length of nvs key must be <= 15.

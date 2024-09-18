@@ -32,7 +32,9 @@
 #include "net.h"
 #include "beacon.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 struct bt_mesh_dev bt_mesh_dev;
 

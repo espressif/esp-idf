@@ -10,11 +10,13 @@
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_config_model.h"
 #include "btc_ble_mesh_health_model.h"
-#include "btc_ble_mesh_prb_model.h"
 #include "btc_ble_mesh_generic_model.h"
 #include "btc_ble_mesh_time_scene_model.h"
 #include "btc_ble_mesh_sensor_model.h"
 #include "btc_ble_mesh_lighting_model.h"
+
+#if CONFIG_BLE_MESH_V11_SUPPORT
+#include "btc_ble_mesh_prb_model.h"
 #include "btc_ble_mesh_brc_model.h"
 #include "btc_ble_mesh_odp_model.h"
 #include "btc_ble_mesh_srpl_model.h"
@@ -24,6 +26,8 @@
 #include "btc_ble_mesh_rpr_model.h"
 #include "btc_ble_mesh_df_model.h"
 #include "btc_ble_mesh_mbt_model.h"
+#include "mesh_v1.1/utils.h"
+#endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 
 #include "adv.h"
 #include "mesh/kernel.h"
@@ -64,8 +68,6 @@
 #include "mesh/client_common.h"
 #include "mesh/state_binding.h"
 #include "local.h"
-
-#include "mesh_v1.1/utils.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"

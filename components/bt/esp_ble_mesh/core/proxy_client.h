@@ -11,7 +11,9 @@
 #include "mesh/adapter.h"
 #include "prov_common.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
