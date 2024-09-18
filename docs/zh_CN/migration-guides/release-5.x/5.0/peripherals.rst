@@ -146,7 +146,7 @@ GPIO
 
 -  更新后，通过从 :cpp:func:`gptimer_new_timer` 创建定时器示例可以初始化定时器。用户可以在 :cpp:type:`gptimer_config_t` 进行一些基本设置，如时钟源，分辨率和计数方向。请注意，无需在驱动安装阶段进行报警事件的特殊设置。
 -  更新后，报警事件在 :cpp:func:`gptimer_set_alarm_action` 中进行设置，参数在 :cpp:type:`gptimer_alarm_config_t` 中进行设置。
--  更新后，通过 :cpp:func:`gptimer_get_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_set_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
+-  更新后，通过 :cpp:func:`gptimer_set_raw_count` 设置计数数值，通过 :cpp:func:`gptimer_get_raw_count` 获取计数数值。驱动不会自动将原始数据同步到 UTC 时间戳。由于定时器的分辨率已知，用户可以自行转换数据。
 -  更新后，如果 :cpp:member:`gptimer_event_callbacks_t::on_alarm` 被设置为有效的回调函数，驱动程序也会安装中断服务。在回调函数中，用户无需配置底层寄存器，如用于“清除中断状态”，“重新使能事件”的寄存器等。因此， ``timer_group_get_intr_status_in_isr`` 与 ``timer_group_get_auto_reload_in_isr`` 这些函数不再使用。
 -  更新后，当报警事件发生时，为更新报警配置，用户可以在中断回调中调用 :cpp:func:`gptimer_set_alarm_action`，这样报警事件会被重新使能。
 -  更新后，如果用户将 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true，报警事件将会一直被驱动程序使能。
