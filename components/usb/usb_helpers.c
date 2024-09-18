@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@ const usb_standard_desc_t *usb_parse_next_descriptor(const usb_standard_desc_t *
         return NULL;    // Next descriptor is out of bounds
     }
     // Return the next descriptor, update offset
-    const usb_standard_desc_t *ret_desc = (const usb_standard_desc_t *)(((uint32_t)cur_desc) + cur_desc->bLength);
+    const usb_standard_desc_t *ret_desc = (const usb_standard_desc_t *)(((uintptr_t)cur_desc) + cur_desc->bLength);
     *offset += cur_desc->bLength;
     return ret_desc;
 }
