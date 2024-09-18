@@ -19,12 +19,10 @@
 #define SRAM_SEG_END       0x4083ea70  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
 
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 /*
  * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
  */
 #define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
-#endif
 
 MEMORY
 {

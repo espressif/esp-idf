@@ -45,9 +45,6 @@ tools/test_apps/system/gdb_loadable_elf:
     - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: build failed. IDF-11133
 
 tools/test_apps/system/longjmp_test:
   enable:
