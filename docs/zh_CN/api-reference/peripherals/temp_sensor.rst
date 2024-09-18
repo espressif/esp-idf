@@ -206,10 +206,12 @@
 应用示例
 -------------------
 
-.. list::
+    * :example:`peripherals/temperature_sensor/temp_sensor` 演示了如何使用内置温度传感器，并展示了 DAC 电平和偏移量不同时的测量范围和误差。
 
-    * 读取温度传感器测量值：:example:`peripherals/temperature_sensor/temp_sensor`。
-    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: * 监测温度传感器测量值：:example:`peripherals/temperature_sensor/temp_sensor_monitor`。
+.. only:: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+  * :example:`peripherals/temperature_sensor/temp_sensor_monitor` 演示了如何使用温度传感器连续自动监测温度值，当温度达到特定值或或两个连续的采样之间的变化大于/小于设置时，触发中断。
+
 
 API 参考
 ----------------------------------

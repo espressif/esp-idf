@@ -448,8 +448,10 @@ The JPEG driver usage of hardware resources and its dependency status are shown 
 Application Examples
 --------------------
 
-* JPEG decoder application example: :example:`peripherals/jpeg/jpeg_decode`.
-* JPEG encoder application example: :example:`peripherals/jpeg/jpeg_encode`.
+- :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to decode JPEG pictures of different sizes (1080p and 720p) into RGB format, showcasing the flexibility and speed of hardware decoding.
+
+- :example:`peripherals/jpeg/jpeg_encode` demonstrates how to use the JPEG hardware encoder to encode a 1080p picture, specifically converting `*.rgb` files to `*.jpg` files.
+
 
 API Reference
 -------------
