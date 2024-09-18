@@ -795,12 +795,13 @@ Please note that the ISR is disabled during flash operation by default. To keep 
     4. ``cs_ena_pretrans`` is not compatible with the Command and Address phases of full-duplex transactions.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-The code example for using the SPI master half duplex mode to read/write an AT93C46D EEPROM (8-bit mode) can be found in the :example:`peripherals/spi_master/hd_eeprom` directory of ESP-IDF examples.
+- :example:`peripherals/spi_master/hd_eeprom` demonstrates how to use the SPI master half duplex mode to read/write an AT93C46D EEPROM (8-bit mode) on {IDF_TARGET_NAME}.
 
-The code example for using the SPI master full duplex mode to drive a SPI_LCD (e.g. ST7789V or ILI9341) can be found in the :example:`peripherals/spi_master/lcd` directory of ESP-IDF examples.
+- :example:`peripherals/spi_master/lcd` demonstrates how to use the SPI master driver to display an animation on the LCD. With the help of the DMA, we can do render and flush in parallel. This example also illustrates using the SPI transaction hook function to drive the D/C signal level.
+
 
 API Reference - SPI Common
 --------------------------

@@ -249,10 +249,14 @@ SPI 从机的工作频率最高可达 {IDF_TARGET_MAX_FREQ} MHz。如果时钟�
 应用示例
 -------------------
 
-从机设备/主机通信的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/spi_slave` 目录下。
+如需查看从机/主机通信的代码示例，请前往 :example:`peripherals/spi_slave_hd` 目录。
+
+- :example: `peripherals/spi_slave/receiver` 演示了如何配置 SPI 从机以接收来自 SPI 主机的数据，并通过握手机制管理数据传输的准备状态。
+
+- :example: `peripherals/spi_slave/sender` 演示了如何配置 SPI 主机将数据发送到 SPI 从机，并通过握手来确保数据传输的时机恰当。
 
 
 API 参考
--------------
+------------
 
 .. include-build-file:: inc/spi_slave.inc

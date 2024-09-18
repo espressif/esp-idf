@@ -122,10 +122,16 @@ Receiving General Purpose Interrupts from the Master
 When the master sends ``CMD8``, ``CMD9`` or ``CMDA``, the slave corresponding is triggered. Currently the ``CMD8`` is permanently used to indicate the termination of ``Rd_DMA`` segments. To receive general-purpose interrupts, register callbacks for ``CMD9`` and ``CMDA`` when the slave is initialized, see :ref:`spi_slave_hd_callbacks`.
 
 
-Application Example
--------------------
+.. only:: not esp32
 
-The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave_hd` directory of ESP-IDF examples.
+  Application Examples
+  --------------------
+
+  The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave_hd` directory of ESP-IDF examples.
+
+  - :example: `peripherals/spi_slave_hd/append_mode` demonstrates how to use the SPI Slave HD driver and ESSL driver to communicate (ESSL driver is an encapsulated layer based on SPI Master driver to communicate with halfduplex mode SPI Slave).
+
+  - :example: `peripherals/spi_slave_hd/segment_mode` demonstrate two ways to use the SPI Slave Halfduplex Segment Mode: Using the SPI Slave Halfduplex driver with two tasks repeating transactions with the SPI Master, and using the ESP Serial Slave Link APIs for multiple exchanges with the slave.
 
 
 API Reference

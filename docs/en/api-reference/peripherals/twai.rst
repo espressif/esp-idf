@@ -593,11 +593,11 @@ The following example shows how to calculate the acceptance mask given multiple 
 Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
-**Network Example:** The TWAI Network example demonstrates communication between two {IDF_TARGET_NAME}s using the TWAI driver API. One TWAI node acts as a network master that initiates and ceases the transfer of data from another node acting as a network slave. The example can be found via :example:`peripherals/twai/twai_network`.
+**Network Example:** :example:`peripherals/twai/twai_network` demonstrates communication between two {IDF_TARGET_NAME}s using the TWAI driver API. One TWAI node acts as a network master that initiates and ceases the transfer of data from another node acting as a network slave.
 
-**Alert and Recovery Example:** This example demonstrates how to use the TWAI driver's alert and bus-off recovery API. The example purposely introduces errors on the bus to put the TWAI controller into the Bus-Off state. An alert is used to detect the Bus-Off state and trigger the bus recovery process. The example can be found via :example:`peripherals/twai/twai_alert_and_recovery`.
+**Alert and Recovery Example:** :example:`peripherals/twai/twai_alert_and_recovery` demonstrates how to use the TWAI driver's alert and bus recovery features on {IDF_TARGET_NAME}, by initializing the driver, creating tasks for message transmission and alert handling, triggering bit errors to enter the Bus-Off state, and initiating the Bus-Off recovery process.
 
-**Self-Test Example:** This example uses the No Acknowledge Mode and Self Reception Request to cause the TWAI controller to send and simultaneously receive a series of messages. This example can be used to verify if the connections between the TWAI controller and the external transceiver are working correctly. The example can be found via :example:`peripherals/twai/twai_self_test`.
+**Self-Test Example:** :example:`peripherals/twai/twai_self_test` demonstrates how a node can transmit TWAI messages to itself using the TWAI driver's "No Acknowledgement" mode and Self Reception Requests, testing the proper connection of a target to a working external transceiver.
 
 
 .. ---------------------------- API Reference ----------------------------------
