@@ -376,17 +376,18 @@ typedef enum {
     ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
     ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
     ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 9,              /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9dbm */
-    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
-    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
-    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P21 = 15,             /*!< Corresponding to  +21dbm */
+    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to -9dbm */
+    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to -6dbm */
+    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to -3dbm */
+    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to 0dbm */
+    ESP_PWR_LVL_P3  = 9,              /*!< Corresponding to +3dbm */
+    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to +6dbm */
+    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to +9dbm */
+    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to +12dbm */
+    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to +15dbm */
+    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to +18dbm */
+    ESP_PWR_LVL_P20 = 15,             /*!< Corresponding to +20dbm */
+    ESP_PWR_LVL_P21 = 15,             /*!< Corresponding to +20dbm, this enum variable has been deprecated */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
