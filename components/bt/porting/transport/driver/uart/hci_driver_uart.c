@@ -154,7 +154,7 @@ hci_driver_uart_deinit(void)
 
     ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_env.hci_uart_params->hci_uart_port));
 
-    if (!s_hci_driver_uart_env.tx_sem) {
+    if (s_hci_driver_uart_env.tx_sem) {
         vSemaphoreDelete(s_hci_driver_uart_env.tx_sem);
     }
 
