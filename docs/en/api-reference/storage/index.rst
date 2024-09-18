@@ -62,7 +62,7 @@ Examples
     * - **Code Example**
       - **Description**
     * - :example:`fatfs/getting_started <storage/fatfs/getting_started>`
-      - Demonstrates basic common file API(stdio.h) usage over internal flash using FATFS.
+      - Demonstrates basic common file API (stdio.h) usage over internal flash using FATFS.
     * - :example:`fatfs/fs_operations <storage/fatfs/fs_operations>`
       - Demonstrates POSIX API for filesystem manipulation, such as moving, removing and renaming files.
 
@@ -70,6 +70,8 @@ Examples
     :widths: 25 75
     :header-rows: 0
 
+    * - **Code Example**
+      - **Description**
     * - :example:`fatfsgen <storage/fatfs/fatfsgen>`
       - Demonstrates the capabilities of Python-based tooling for FATFS images available on host computers.
     * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
