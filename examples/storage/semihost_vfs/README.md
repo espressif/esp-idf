@@ -97,7 +97,7 @@ There are two outputs produced by example:
    ```
    W (274) example: Switch to semihosted stdout
    W (274) example: Switched back to UART stdout
-   I (274) example: Wrote 2798 bytes
+   I (274) example: Wrote 2776 bytes
    ====================== HOST DATA START =========================
    The following are the graphical (non-control) characters defined by
    ISO 8859-1 (1987).  Descriptions in words aren't all that helpful,
@@ -115,4 +115,3 @@ There are two outputs produced by example:
    ====================== HOST DATA END =========================
    I (694) example: Read 6121 bytes
    ```
-
