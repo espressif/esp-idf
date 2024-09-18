@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,9 @@
 #include "pvnr_mgmt.h"
 #include "mesh/common.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #if defined(CONFIG_BLE_MESH_UNPROVISIONED_BEACON_INTERVAL)
 #define UNPROV_BEACON_INTERVAL     K_SECONDS(CONFIG_BLE_MESH_UNPROVISIONED_BEACON_INTERVAL)
@@ -472,12 +474,13 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf, int8_t rssi)
             bt_mesh_provisioner_unprov_beacon_recv(buf, rssi);
         }
 
-        if (IS_ENABLED(CONFIG_BLE_MESH_RPR_SRV) &&
-            bt_mesh_is_provisioned()) {
+#if CONFIG_BLE_MESH_RPR_SRV
+        if (bt_mesh_is_provisioned()) {
             const bt_mesh_addr_t *addr = bt_mesh_get_unprov_dev_addr();
             bt_mesh_unprov_dev_fifo_enqueue(buf->data, addr->val, bt_mesh_get_adv_type());
             bt_mesh_rpr_srv_unprov_beacon_recv(buf, bt_mesh_get_adv_type(), addr, rssi);
         }
+#endif
         break;
     case BEACON_TYPE_SECURE:
         secure_beacon_recv(buf);

@@ -6,6 +6,12 @@ if BLE_MESH
         help
             It is a temporary solution and needs further modifications.
 
+    config BLE_MESH_V11_SUPPORT
+        bool "Support ESP BLE Mesh v1.1 features (Preview)"
+        default y
+        help
+            Support BLE Mesh v1.1 features
+
     config BLE_MESH_RANDOM_ADV_INTERVAL
         bool "Support using random adv interval for mesh packets"
         select BT_BLE_HIGH_DUTY_ADV_INTERVAL if BT_BLUEDROID_ENABLED
@@ -33,6 +39,7 @@ if BLE_MESH
 
     config BLE_MESH_ACTIVE_SCAN
         bool "Support Active Scan in BLE Mesh"
+        depends on BLE_MESH_V11_SUPPORT
         help
             Enable this option to allow using BLE Active Scan for BLE Mesh.
 
@@ -282,6 +289,7 @@ if BLE_MESH
     config BLE_MESH_PROV_EPA
         bool "BLE Mesh enhanced provisioning authentication"
         depends on BLE_MESH_PROV
+        depends on BLE_MESH_V11_SUPPORT
         default y
         help
             Enable this option to support BLE Mesh enhanced provisioning authentication
@@ -291,6 +299,7 @@ if BLE_MESH
     config BLE_MESH_CERT_BASED_PROV
         bool "Support Certificate-based provisioning"
         depends on BLE_MESH_PROV
+        depends on BLE_MESH_V11_SUPPORT
         default n
         help
             Enable this option to support BLE Mesh Certificate-Based Provisioning.
@@ -391,6 +400,7 @@ if BLE_MESH
     config BLE_MESH_PROXY_SOLIC_PDU_RX
         bool "Support receiving Proxy Solicitation PDU"
         depends on BLE_MESH_GATT_PROXY_SERVER
+        depends on BLE_MESH_V11_SUPPORT
         help
             Enable this option to support receiving Proxy Solicitation PDU.
 
@@ -418,6 +428,7 @@ if BLE_MESH
     config BLE_MESH_PROXY_SOLIC_PDU_TX
         bool "Support sending Proxy Solicitation PDU"
         depends on BLE_MESH_GATT_PROXY_CLIENT
+        depends on BLE_MESH_V11_SUPPORT
         help
             Enable this option to support sending Proxy Solicitation PDU.
 
@@ -704,6 +715,7 @@ if BLE_MESH
             to perform the IV index recovery procedure.
 
     config BLE_MESH_SAR_ENHANCEMENT
+        depends on BLE_MESH_V11_SUPPORT
         bool "Segmentation and reassembly enhancement"
         default n
         help
@@ -1103,253 +1115,257 @@ if BLE_MESH
             help
                 Enable support for Health Server model.
 
-        config BLE_MESH_BRC_CLI
-            bool "Bridge Configuration Client model"
-            help
-                Enable support for Bridge Configuration Client model.
+        if BLE_MESH_V11_SUPPORT
 
-        config BLE_MESH_BRC_SRV
-            bool "Bridge Configuration Server model"
-            default n
-            help
-                Enable support for Bridge Configuration Server model.
-
-        if BLE_MESH_BRC_SRV
-
-            config BLE_MESH_MAX_BRIDGING_TABLE_ENTRY_COUNT
-                int "Maximum number of Bridging Table entries"
-                range 16 65535
-                default 16
+            config BLE_MESH_BRC_CLI
+                bool "Bridge Configuration Client model"
                 help
-                    Maximum number of Bridging Table entries that the Bridge Configuration Server can support.
+                    Enable support for Bridge Configuration Client model.
 
-            config BLE_MESH_BRIDGE_CRPL
-                int "Maximum capacity of bridge replay protection list"
-                default 5
-                range 1 255
-                help
-                    This option specifies the maximum capacity of the bridge replay
-                    protection list. The bridge replay protection list is used to
-                    prevent a bridged subnet from replay attack, which will store the
-                    source address and sequence number of the received bridge messages.
-
-        endif #BLE_MESH_BRC_SRV
-
-        config BLE_MESH_PRB_CLI
-            bool "Mesh Private Beacon Client model"
-            help
-                Enable support for Mesh Private Beacon Client model.
-
-        config BLE_MESH_PRB_SRV
-            bool "Mesh Private Beacon Server model"
-            help
-                Enable support for Mesh Private Beacon Server model.
-
-        config BLE_MESH_ODP_CLI
-            bool "On-Demand Private Proxy Client model"
-            help
-                Enable support for On-Demand Private Proxy Client model.
-
-        config BLE_MESH_ODP_SRV
-            bool "On-Demand Private Proxy Server model"
-            depends on BLE_MESH_PROXY_SOLIC_PDU_RX
-            select BLE_MESH_SRPL_SRV
-            help
-                Enable support for On-Demand Private Proxy Server model.
-
-        config BLE_MESH_SRPL_CLI
-            bool "Solicitation PDU RPL Configuration Client model"
-            help
-                Enable support for Solicitation PDU RPL Configuration Client model.
-
-        config BLE_MESH_SRPL_SRV
-            bool "Solicitation PDU RPL Configuration Server model"
-            depends on BLE_MESH_PROXY_SOLIC_PDU_RX
-            help
-                Enable support for Solicitation PDU RPL Configuration Server model.
-                Note:
-                This option depends on the functionality of receiving Solicitation
-                PDU. If the device doesn't support receiving Solicitation PDU, then
-                there is no need to enable this server model.
-
-        config BLE_MESH_AGG_CLI
-            bool "Opcodes Aggregator Client model"
-            help
-                Enable support for Opcodes Aggregator Client model.
-
-        config BLE_MESH_AGG_SRV
-            bool "Opcodes Aggregator Server model"
-            help
-                Enable support for Opcodes Aggregator Server model.
-
-        config BLE_MESH_SAR_CLI
-            bool "SAR Configuration Client model"
-            help
-                Enable support for SAR Configuration Client model.
-
-        config BLE_MESH_SAR_SRV
-            bool "SAR Configuration Server model"
-            help
-                Enable support for SAR Configuration Server model.
-
-        config BLE_MESH_COMP_DATA_1
-            bool "Support Composition Data Page 1"
-            help
-                Composition Data Page 1 contains information about the relationships
-                among models.
-                Each model either can be a root model or can extend other models.
-
-        config BLE_MESH_COMP_DATA_128
-            bool "Support Composition Data Page 128"
-            help
-                Composition Data Page 128 is used to indicate the structure of
-                elements, features, and models of a node after the successful
-                execution of the Node Address Refresh procedure or the Node
-                Composition Refresh procedure, or after the execution of the
-                Node Removal procedure followed by the provisioning process.
-                Composition Data Page 128 shall be present if the node supports
-                the Remote Provisioning Server model; otherwise it is optional.
-
-        config BLE_MESH_MODELS_METADATA_0
-            bool "Support Models Metadata Page 0"
-            help
-                The Models Metadata state contains metadata of a node’s models.
-                The Models Metadata state is composed of a number of pages of
-                information.
-                Models Metadata Page 0 shall be present if the node supports
-                the Large Composition Data Server model.
-
-        config BLE_MESH_MODELS_METADATA_128
-            bool "Support Models Metadata Page 128"
-            depends on BLE_MESH_MODELS_METADATA_0
-            help
-                The Models Metadata state contains metadata of a node’s models.
-                The Models Metadata state is composed of a number of pages of
-                information.
-                Models Metadata Page 128 contains metadata for the node’s models
-                after the successful execution of the Node Address Refresh
-                procedure or the Node Composition Refresh procedure, or after
-                the execution of the Node Removal procedure followed by the
-                provisioning process.
-                Models Metadata Page 128 shall be present if the node supports
-                the Remote Provisioning Server model and the node supports the
-                Large Composition Data Server model.
-
-        config BLE_MESH_LCD_CLI
-            bool "Large Composition Data Client model"
-            help
-                Enable support for Large Composition Data Client model.
-
-        config BLE_MESH_LCD_SRV
-            bool "Large Composition Data Server model"
-            select BLE_MESH_MODELS_METADATA_0
-            help
-                Enable support for Large Composition Data Server model.
-
-        config BLE_MESH_RPR_CLI
-            bool "Remote Provisioning Client model"
-            depends on BLE_MESH_PROVISIONER
-            select BLE_MESH_PROV
-            help
-                Enable support for Remote Provisioning Client model
-
-        if BLE_MESH_RPR_CLI
-
-            config BLE_MESH_RPR_CLI_PROV_SAME_TIME
-                int "Maximum number of PB-Remote running at the same time by Provisioner"
-                range 1 5
-                default 2
-                help
-                    This option specifies how many devices can be provisioned at the same time
-                    using PB-REMOTE. For example, if the value is 2, it means a Provisioner can
-                    provision two unprovisioned devices with PB-REMOTE at the same time.
-
-        endif # BLE_MESH_RPR_CLI
-
-        config BLE_MESH_RPR_SRV
-            bool "Remote Provisioning Server model"
-            depends on BLE_MESH_NODE
-            select BLE_MESH_PB_ADV
-            help
-                Enable support for Remote Provisioning Server model
-
-        if BLE_MESH_RPR_SRV
-
-            config BLE_MESH_RPR_SRV_MAX_SCANNED_ITEMS
-                int "Maximum number of device information can be scanned"
-                range 4 255
-                default 10
-                help
-                    This option specifies how many device information can a Remote
-                    Provisioning Server store each time while scanning.
-
-            config BLE_MESH_RPR_SRV_ACTIVE_SCAN
-                bool "Support Active Scan for remote provisioning"
-                select BLE_MESH_ACTIVE_SCAN
-                help
-                    Enable this option to support Active Scan for remote provisioning.
-
-            config BLE_MESH_RPR_SRV_MAX_EXT_SCAN
-                int "Maximum number of extended scan procedures"
-                range 1 10
-                default 1
-                help
-                    This option specifies how many extended scan procedures can be
-                    started by the Remote Provisioning Server.
-
-        endif # BLE_MESH_RPR_SRV
-
-        config BLE_MESH_DF_CLI
-            bool "Directed Forwarding Configuration Client model"
-            help
-                Enable support for Directed Forwarding Configuration Client model.
-
-        config BLE_MESH_DF_SRV
-            bool "Directed Forwarding Configuration Server model"
-            help
-                Enable support for Directed Forwarding Configuration Server model.
-
-        if BLE_MESH_DF_SRV
-
-            config BLE_MESH_MAX_DISC_TABLE_ENTRY_COUNT
-                int "Maximum number of discovery table entries in a given subnet"
-                range 2 255
-                default 2
-                help
-                    Maximum number of Discovery Table entries supported by the node in a given subnet.
-
-            config BLE_MESH_MAX_FORWARD_TABLE_ENTRY_COUNT
-                int "Maximum number of forward table entries in a given subnet"
-                range 2 64
-                default 2
-                help
-                    Maximum number of Forward Table entries supported by the node in a given subnet.
-
-            config BLE_MESH_MAX_DEPS_NODES_PER_PATH
-                int "Maximum number of dependent nodes per path"
-                range 2 64
-                default 2
-                help
-                    Maximum size of dependent nodes list supported by each forward table entry.
-
-            config BLE_MESH_PATH_MONITOR_TEST
-                bool "Enable Path Monitoring test mode"
+            config BLE_MESH_BRC_SRV
+                bool "Bridge Configuration Server model"
                 default n
                 help
-                    The option only removes the Path Use timer; all other behavior of the
-                    device is not changed.
-                    If Path Monitoring test mode is going to be used, this option should
-                    be enabled.
+                    Enable support for Bridge Configuration Server model.
 
-            if BLE_MESH_GATT_PROXY_SERVER
-                config BLE_MESH_SUPPORT_DIRECTED_PROXY
-                    bool "Enable Directed Proxy functionality"
-                    default y
+            if BLE_MESH_BRC_SRV
+
+                config BLE_MESH_MAX_BRIDGING_TABLE_ENTRY_COUNT
+                    int "Maximum number of Bridging Table entries"
+                    range 16 65535
+                    default 16
                     help
-                        Support Directed Proxy functionality.
-            endif
+                        Maximum number of Bridging Table entries that the Bridge Configuration Server can support.
 
-        endif # BLE_MESH_DF_SRV
+                config BLE_MESH_BRIDGE_CRPL
+                    int "Maximum capacity of bridge replay protection list"
+                    default 5
+                    range 1 255
+                    help
+                        This option specifies the maximum capacity of the bridge replay
+                        protection list. The bridge replay protection list is used to
+                        prevent a bridged subnet from replay attack, which will store the
+                        source address and sequence number of the received bridge messages.
+
+            endif #BLE_MESH_BRC_SRV
+
+            config BLE_MESH_PRB_CLI
+                bool "Mesh Private Beacon Client model"
+                help
+                    Enable support for Mesh Private Beacon Client model.
+
+            config BLE_MESH_PRB_SRV
+                bool "Mesh Private Beacon Server model"
+                help
+                    Enable support for Mesh Private Beacon Server model.
+
+            config BLE_MESH_ODP_CLI
+                bool "On-Demand Private Proxy Client model"
+                help
+                    Enable support for On-Demand Private Proxy Client model.
+
+            config BLE_MESH_ODP_SRV
+                bool "On-Demand Private Proxy Server model"
+                depends on BLE_MESH_PROXY_SOLIC_PDU_RX
+                select BLE_MESH_SRPL_SRV
+                help
+                    Enable support for On-Demand Private Proxy Server model.
+
+            config BLE_MESH_SRPL_CLI
+                bool "Solicitation PDU RPL Configuration Client model"
+                help
+                    Enable support for Solicitation PDU RPL Configuration Client model.
+
+            config BLE_MESH_SRPL_SRV
+                bool "Solicitation PDU RPL Configuration Server model"
+                depends on BLE_MESH_PROXY_SOLIC_PDU_RX
+                help
+                    Enable support for Solicitation PDU RPL Configuration Server model.
+                    Note:
+                    This option depends on the functionality of receiving Solicitation
+                    PDU. If the device doesn't support receiving Solicitation PDU, then
+                    there is no need to enable this server model.
+
+            config BLE_MESH_AGG_CLI
+                bool "Opcodes Aggregator Client model"
+                help
+                    Enable support for Opcodes Aggregator Client model.
+
+            config BLE_MESH_AGG_SRV
+                bool "Opcodes Aggregator Server model"
+                help
+                    Enable support for Opcodes Aggregator Server model.
+
+            config BLE_MESH_SAR_CLI
+                bool "SAR Configuration Client model"
+                help
+                    Enable support for SAR Configuration Client model.
+
+            config BLE_MESH_SAR_SRV
+                bool "SAR Configuration Server model"
+                help
+                    Enable support for SAR Configuration Server model.
+
+            config BLE_MESH_COMP_DATA_1
+                bool "Support Composition Data Page 1"
+                help
+                    Composition Data Page 1 contains information about the relationships
+                    among models.
+                    Each model either can be a root model or can extend other models.
+
+            config BLE_MESH_COMP_DATA_128
+                bool "Support Composition Data Page 128"
+                help
+                    Composition Data Page 128 is used to indicate the structure of
+                    elements, features, and models of a node after the successful
+                    execution of the Node Address Refresh procedure or the Node
+                    Composition Refresh procedure, or after the execution of the
+                    Node Removal procedure followed by the provisioning process.
+                    Composition Data Page 128 shall be present if the node supports
+                    the Remote Provisioning Server model; otherwise it is optional.
+
+            config BLE_MESH_MODELS_METADATA_0
+                bool "Support Models Metadata Page 0"
+                help
+                    The Models Metadata state contains metadata of a node’s models.
+                    The Models Metadata state is composed of a number of pages of
+                    information.
+                    Models Metadata Page 0 shall be present if the node supports
+                    the Large Composition Data Server model.
+
+            config BLE_MESH_MODELS_METADATA_128
+                bool "Support Models Metadata Page 128"
+                depends on BLE_MESH_MODELS_METADATA_0
+                help
+                    The Models Metadata state contains metadata of a node’s models.
+                    The Models Metadata state is composed of a number of pages of
+                    information.
+                    Models Metadata Page 128 contains metadata for the node’s models
+                    after the successful execution of the Node Address Refresh
+                    procedure or the Node Composition Refresh procedure, or after
+                    the execution of the Node Removal procedure followed by the
+                    provisioning process.
+                    Models Metadata Page 128 shall be present if the node supports
+                    the Remote Provisioning Server model and the node supports the
+                    Large Composition Data Server model.
+
+            config BLE_MESH_LCD_CLI
+                bool "Large Composition Data Client model"
+                help
+                    Enable support for Large Composition Data Client model.
+
+            config BLE_MESH_LCD_SRV
+                bool "Large Composition Data Server model"
+                select BLE_MESH_MODELS_METADATA_0
+                help
+                    Enable support for Large Composition Data Server model.
+
+            config BLE_MESH_RPR_CLI
+                bool "Remote Provisioning Client model"
+                depends on BLE_MESH_PROVISIONER
+                select BLE_MESH_PROV
+                help
+                    Enable support for Remote Provisioning Client model
+
+            if BLE_MESH_RPR_CLI
+
+                config BLE_MESH_RPR_CLI_PROV_SAME_TIME
+                    int "Maximum number of PB-Remote running at the same time by Provisioner"
+                    range 1 5
+                    default 2
+                    help
+                        This option specifies how many devices can be provisioned at the same time
+                        using PB-REMOTE. For example, if the value is 2, it means a Provisioner can
+                        provision two unprovisioned devices with PB-REMOTE at the same time.
+
+            endif # BLE_MESH_RPR_CLI
+
+            config BLE_MESH_RPR_SRV
+                bool "Remote Provisioning Server model"
+                depends on BLE_MESH_NODE
+                select BLE_MESH_PB_ADV
+                help
+                    Enable support for Remote Provisioning Server model
+
+            if BLE_MESH_RPR_SRV
+
+                config BLE_MESH_RPR_SRV_MAX_SCANNED_ITEMS
+                    int "Maximum number of device information can be scanned"
+                    range 4 255
+                    default 10
+                    help
+                        This option specifies how many device information can a Remote
+                        Provisioning Server store each time while scanning.
+
+                config BLE_MESH_RPR_SRV_ACTIVE_SCAN
+                    bool "Support Active Scan for remote provisioning"
+                    select BLE_MESH_ACTIVE_SCAN
+                    help
+                        Enable this option to support Active Scan for remote provisioning.
+
+                config BLE_MESH_RPR_SRV_MAX_EXT_SCAN
+                    int "Maximum number of extended scan procedures"
+                    range 1 10
+                    default 1
+                    help
+                        This option specifies how many extended scan procedures can be
+                        started by the Remote Provisioning Server.
+
+            endif # BLE_MESH_RPR_SRV
+
+            config BLE_MESH_DF_CLI
+                bool "Directed Forwarding Configuration Client model"
+                help
+                    Enable support for Directed Forwarding Configuration Client model.
+
+            config BLE_MESH_DF_SRV
+                bool "Directed Forwarding Configuration Server model"
+                help
+                    Enable support for Directed Forwarding Configuration Server model.
+
+            if BLE_MESH_DF_SRV
+
+                config BLE_MESH_MAX_DISC_TABLE_ENTRY_COUNT
+                    int "Maximum number of discovery table entries in a given subnet"
+                    range 2 255
+                    default 2
+                    help
+                        Maximum number of Discovery Table entries supported by the node in a given subnet.
+
+                config BLE_MESH_MAX_FORWARD_TABLE_ENTRY_COUNT
+                    int "Maximum number of forward table entries in a given subnet"
+                    range 2 64
+                    default 2
+                    help
+                        Maximum number of Forward Table entries supported by the node in a given subnet.
+
+                config BLE_MESH_MAX_DEPS_NODES_PER_PATH
+                    int "Maximum number of dependent nodes per path"
+                    range 2 64
+                    default 2
+                    help
+                        Maximum size of dependent nodes list supported by each forward table entry.
+
+                config BLE_MESH_PATH_MONITOR_TEST
+                    bool "Enable Path Monitoring test mode"
+                    default n
+                    help
+                        The option only removes the Path Use timer; all other behavior of the
+                        device is not changed.
+                        If Path Monitoring test mode is going to be used, this option should
+                        be enabled.
+
+                if BLE_MESH_GATT_PROXY_SERVER
+                    config BLE_MESH_SUPPORT_DIRECTED_PROXY
+                        bool "Enable Directed Proxy functionality"
+                        default y
+                        help
+                            Support Directed Proxy functionality.
+                endif
+
+            endif # BLE_MESH_DF_SRV
+
+        endif # BLE_MESH_V11_SUPPORT
 
     endmenu #Support for BLE Mesh Foundation models
 
@@ -1466,6 +1482,7 @@ if BLE_MESH
 
         config BLE_MESH_MBT_CLI
             bool "BLOB Transfer Client model"
+            depends on BLE_MESH_V11_SUPPORT
             default n
             help
                 Enable support for BLOB Transfer Client model.
@@ -1484,6 +1501,7 @@ if BLE_MESH
 
         config BLE_MESH_MBT_SRV
             bool "BLOB Transfer Server model"
+            depends on BLE_MESH_V11_SUPPORT
             default n
             help
                 Enable support for BLOB Transfer Server model.

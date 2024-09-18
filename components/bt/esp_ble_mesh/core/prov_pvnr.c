@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,9 @@
 #include "prov_pvnr.h"
 #include "pvnr_mgmt.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #if CONFIG_BLE_MESH_PROVISIONER
 
@@ -1413,7 +1415,7 @@ static int prov_auth(struct bt_mesh_prov_link *link,
             return -EINVAL;
         }
 
-        /* Provisioner ouput number/string and wait for device's Provisioning Input Complete PDU */
+        /* Provisioner output number/string and wait for device's Provisioning Input Complete PDU */
         link->expect = PROV_INPUT_COMPLETE;
 
         /* NOTE: The Bluetooth SIG recommends that mesh implementations enforce a randomly
