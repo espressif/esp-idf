@@ -1,3 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/phy/cert_test:
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      reason: not supported
