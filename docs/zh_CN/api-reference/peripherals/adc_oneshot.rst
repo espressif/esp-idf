@@ -3,20 +3,17 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一", esp32c5="一"}
-
 简介
 ----
 
 模数转换器集成于芯片，支持测量特定模拟 IO 管脚的模拟信号。
 
-{IDF_TARGET_NAME} 有 {IDF_TARGET_ADC_NUM} 个 ADC 单元，可以在以下场景使用：
+{IDF_TARGET_NAME} 有 {SOC_ADC_PERIPH_NUM} 个 ADC 单元，可以在以下场景使用：
 
-- 生成 ADC 单次转换结果
+.. list::
 
-.. only:: SOC_ADC_DMA_SUPPORTED
-
-    - 生成连续 ADC 转换结果
+    - 生成 ADC 单次转换结果
+    :SOC_ADC_DMA_SUPPORTED: - 生成连续 ADC 转换结果
 
 本指南介绍了 ADC 单次转换模式。
 
@@ -164,31 +161,16 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 硬件限制
 ^^^^^^^^^^^^^^^^^^^^
 
-- 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 单次转换模式驱动从 RNG 生成随机数时，随机性会减弱。
+.. list::
 
-.. only:: SOC_ADC_DMA_SUPPORTED
+    - 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 单次转换模式驱动从 RNG 生成随机数时，随机性会减弱。
+    :SOC_ADC_DMA_SUPPORTED: - 一个 ADC 单元每次只能在一种操作模式下运行，可以是连续模式或单次模式。:cpp:func:`adc_oneshot_start` 提供了保护措施。
+    :esp32 or esp32s2 or esp32s3: - Wi-Fi 也使用 ADC2，:cpp:func:`adc_oneshot_read` 提供了 Wi-Fi 驱动与 ADC 单次转换模式驱动间的保护。
+    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 单次转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3`，强制使用 ADC2。
+    :esp32: - ESP32-DevKitC：GPIO0 已用于自动烧录功能，不能用于 ADC 单次转换模式。
+    :esp32: - ESP-WROVER-KIT：GPIO0、GPIO2、GPIO4 和 GPIO15 已有其他用途，不能用于 ADC 单次转换模式。
 
-    - 一个 ADC 单元每次只能在一种操作模式下运行，可以是连续模式或单次模式。:cpp:func:`adc_oneshot_start` 提供了保护措施。
-
-.. only:: esp32 or esp32s2 or esp32s3
-
-    - Wi-Fi 也使用 ADC2，:cpp:func:`adc_oneshot_read` 提供了 Wi-Fi 驱动与 ADC 单次转换模式驱动间的保护。
-
-.. only:: esp32c3
-
-    - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 单次转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3`，强制使用 ADC2。
-
-.. only:: esp32
-
-    - ESP32-DevKitC：GPIO0 已用于自动烧录功能，不能用于 ADC 单次转换模式。
-
-    - ESP-WROVER-KIT：GPIO0、GPIO2、GPIO4 和 GPIO15 已有其他用途，不能用于 ADC 单次转换模式。
-
-    .. _adc-oneshot-power-management:
-
-.. only:: not esp32
-
-    .. _adc-oneshot-power-management:
+.. _adc-oneshot-power-management:
 
 电源管理
 ^^^^^^^^
