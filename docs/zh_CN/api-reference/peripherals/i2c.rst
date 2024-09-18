@@ -649,10 +649,10 @@ Kconfig 选项
 应用示例
 --------
 
-.. list::
+- :example:`peripherals/i2c/i2c_eeprom` 演示了如何使用 I2C 主机模式从连接的 EEPROM 读取和写入数据。
 
-    - :example:`peripherals/i2c/i2c_eeprom` 通过读取和写入 I2C 连接的 EEPROM 展示了 I2C 驱动程序的使用方法。
-    - :example:`peripherals/i2c/i2c_tools` 基于 ESP32 控制台组件实现了一些 I2C 工具的基本功能。
+- :example:`peripherals/i2c/i2c_tools` 演示了如何使用 I2C 工具开发 I2C 相关的应用程序，提供了用于配置 I2C 总线、扫描设备、读取、设置和检查寄存器的命令行工具。
+
 
 API 参考
 --------

@@ -448,8 +448,10 @@ Kconfig 选项
 应用程序示例
 ------------
 
-* JPEG 编码器应用程序示例： :example:`peripherals/jpeg/jpeg_decode`。
-* JPEG 解码器应用程序示例： :example:`peripherals/jpeg/jpeg_encode`。
+- :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器将不同大小的 JPEG 图片（1080p 和 720p）解码为 RGB 格式，展示了硬件解码的速度和灵活性。
+
+- :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器编码一张 1080p 的图像，即将 `*.rgb` 文件转换为 `*.jpg` 文件。
+
 
 API 参考
 --------

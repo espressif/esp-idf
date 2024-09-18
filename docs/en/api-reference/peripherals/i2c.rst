@@ -649,10 +649,10 @@ Kconfig Options
 Application Examples
 --------------------
 
-.. list::
+- :example:`peripherals/i2c/i2c_eeprom` demonstrates how to use the I2C master mode to read and write data from a connected EEPROM.
 
-    - :example:`peripherals/i2c/i2c_eeprom` demonstrates the basic usage of I2C driver by reading and writing from an I2C connected EEPROM.
-    - :example:`peripherals/i2c/i2c_tools` implements some basic features of I2C tools based on the ESP32 console component.
+- :example:`peripherals/i2c/i2c_tools` demonstrates how to use the I2C Tools for developing I2C related applications, providing command-line tools for configuring the I2C bus, scanning for devices, reading and setting registers, and examining registers.
+
 
 API Reference
 -------------
