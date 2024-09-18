@@ -11,6 +11,9 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "soc/keymng_reg.h"
+#include "soc/pcr_reg.h"
+#include "soc/pcr_struct.h"
 
 static __attribute__((unused)) const char *TAG = "flash_encrypt";
 
@@ -55,6 +58,34 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     // DIS_PAD_JTAG, DIS_DOWNLOAD_MANUAL_ENCRYPT.
     esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_DIS_ICACHE);
 #endif
+
+    return ESP_OK;
+}
+
+// TODO: Update to use LL APIs once key manager support added in IDF-8621
+esp_err_t esp_flash_encryption_enable_key_mgr(void)
+{
+    // Set the force power down bit to 0 to enable key manager
+    PCR.km_pd_ctrl.km_mem_force_pd = 0;
+    // Reset the key manager
+    PCR.km_conf.km_clk_en = 1;
+    PCR.km_conf.km_rst_en = 1;
+    PCR.km_conf.km_rst_en = 0;
+
+    // Wait for key manager to be ready
+    while (!PCR.km_conf.km_ready) {
+    };
+
+    // Wait for key manager state machine to be idle
+    while (REG_READ(KEYMNG_STATE_REG) != 0) {
+    };
+
+    // Set the key manager to use efuse key
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
+
+    // Reset MSPI to re-load the flash encryption key
+    REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+    REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
 
     return ESP_OK;
 }
