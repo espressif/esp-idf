@@ -99,7 +99,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
     switch (event) {
     case ESP_GATTC_REG_EVT:
-        ESP_LOGI(GATTC_TAG, "GATTC application register, status %d, app_id %d", param->reg.status, param->reg.app_id);
+        ESP_LOGI(GATTC_TAG, "GATT client register, status %d, app_id %d, gattc_if %d", param->reg.status, param->reg.app_id, gattc_if);
         esp_err_t scan_ret = esp_ble_gap_set_scan_params(&ble_scan_params);
         if (scan_ret){
             ESP_LOGE(GATTC_TAG, "set scan params error, error code = %x", scan_ret);
@@ -121,7 +121,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG, "Open failed, status %d", p_data->open.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "Open successfully, mtu %u", p_data->open.mtu);
+        ESP_LOGI(GATTC_TAG, "Open successfully, MTU %u", p_data->open.mtu);
         break;
     case ESP_GATTC_DIS_SRVC_CMPL_EVT:
         if (param->dis_srvc_cmpl.status != ESP_GATT_OK){
@@ -132,10 +132,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_ble_gattc_search_service(gattc_if, param->dis_srvc_cmpl.conn_id, &remote_filter_service_uuid);
         break;
     case ESP_GATTC_CFG_MTU_EVT:
-        ESP_LOGI(GATTC_TAG, "MTU exchange, status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
+        ESP_LOGI(GATTC_TAG, "MTU exchange, status %d, MTU %d", param->cfg_mtu.status, param->cfg_mtu.mtu);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
-        ESP_LOGI(GATTC_TAG, "Search result, conn_id = %x, is primary service %d", p_data->search_res.conn_id, p_data->search_res.is_primary);
+        ESP_LOGI(GATTC_TAG, "Service search result, conn_id = %x, is primary service %d", p_data->search_res.conn_id, p_data->search_res.is_primary);
         ESP_LOGI(GATTC_TAG, "start handle %d, end handle %d, current handle value %d", p_data->search_res.start_handle, p_data->search_res.end_handle, p_data->search_res.srvc_id.inst_id);
         if (p_data->search_res.srvc_id.uuid.len == ESP_UUID_LEN_16 && p_data->search_res.srvc_id.uuid.uuid.uuid16 == REMOTE_SERVICE_UUID) {
             ESP_LOGI(GATTC_TAG, "Service found");
@@ -366,7 +366,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                     ESP_LOGI(GATTC_TAG, "Device found %s", remote_device_name);
                     if (connect == false) {
                         connect = true;
-                        ESP_LOGI(GATTC_TAG, "Connect to "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda));
+                        ESP_LOGI(GATTC_TAG, "Connect to the remote device");
                         esp_ble_gap_stop_scanning();
                         esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, scan_result->scan_rst.ble_addr_type, true);
                     }

@@ -48,6 +48,7 @@
 #define EXT_SCAN_DURATION     0
 #define EXT_SCAN_PERIOD       0
 
+static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_MULTI_ADV_80MS";
 static SemaphoreHandle_t test_sem = NULL;
 
 static esp_ble_ext_scan_params_t ext_scan_params = {
@@ -75,31 +76,31 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_SET_EXT_SCAN_PARAMS_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_SET_EXT_SCAN_PARAMS_COMPLETE_EVT, status %d", param->set_ext_scan_params.status);
+        ESP_LOGI(LOG_TAG, "Extended scanning params set, status %d", param->set_ext_scan_params.status);
         break;
     case ESP_GAP_BLE_EXT_SCAN_START_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_START_COMPLETE_EVT, status %d", param->ext_scan_start.status);
+        ESP_LOGI(LOG_TAG, "Extended scanning start, status %d", param->ext_scan_start.status);
         break;
     case ESP_GAP_BLE_EXT_SCAN_STOP_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_STOP_COMPLETE_EVT, status %d", param->period_adv_stop.status);
+        ESP_LOGI(LOG_TAG, "Extended scanning stop, status %d", param->period_adv_stop.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT:
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, status %d", param->period_adv_create_sync.status);
+        ESP_LOGI(LOG_TAG, "Periodic advertising create sync, status %d", param->period_adv_create_sync.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT:
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT, status %d", param->period_adv_sync_cancel.status);
+        ESP_LOGI(LOG_TAG, "Periodic advertising sync cancel, status %d", param->period_adv_sync_cancel.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT:
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT, status %d", param->period_adv_sync_term.status);
+        ESP_LOGI(LOG_TAG, "Periodic advertising sync terminate, status %d", param->period_adv_sync_term.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT:
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT, sync handle %d", param->periodic_adv_sync_lost.sync_handle);
+        ESP_LOGI(LOG_TAG, "Periodic advertising sync lost, sync handle %d", param->periodic_adv_sync_lost.sync_handle);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT:
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT, status %d", param->periodic_adv_sync_estab.status);
-        ESP_LOG_BUFFER_HEX("sync addr", param->periodic_adv_sync_estab.adv_addr, 6);
+        ESP_LOGI(LOG_TAG, "Periodic advertising sync establish, status %d", param->periodic_adv_sync_estab.status);
+        ESP_LOGI(LOG_TAG, "address "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(param->periodic_adv_sync_estab.adv_addr));
         ESP_LOGI(LOG_TAG, "sync handle %d sid %d perioic adv interval %d adv phy %d", param->periodic_adv_sync_estab.sync_handle,
                                                                                       param->periodic_adv_sync_estab.sid,
                                                                                       param->periodic_adv_sync_estab.period_adv_interval,
@@ -112,11 +113,11 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                                             param->ext_adv_report.params.adv_data_len,
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
-	    if ((adv_name != NULL) && (memcmp(adv_name, "ESP_MULTI_ADV_80MS", adv_name_len) == 0) && !periodic_sync) {
+	    if ((adv_name != NULL) && (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
             periodic_sync = true;
 	        char adv_temp_name[30] = {'0'};
 	        memcpy(adv_temp_name, adv_name, adv_name_len);
-	        ESP_LOGI(LOG_TAG, "Start create sync with the peer device %s", adv_temp_name);
+	        ESP_LOGI(LOG_TAG, "Create sync with the peer device %s", adv_temp_name);
             periodic_adv_sync_params.sid = param->ext_adv_report.params.sid;
 	        periodic_adv_sync_params.addr_type = param->ext_adv_report.params.addr_type;
 	        memcpy(periodic_adv_sync_params.addr, param->ext_adv_report.params.addr, sizeof(esp_bd_addr_t));
@@ -125,7 +126,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_REPORT_EVT:
-        ESP_LOGI(LOG_TAG, "periodic adv report, sync handle %d data status %d data len %d rssi %d", param->period_adv_report.params.sync_handle,
+        ESP_LOGI(LOG_TAG, "Periodic adv report, sync handle %d, data status %d, data len %d, rssi %d", param->period_adv_report.params.sync_handle,
                                                                                                     param->period_adv_report.params.data_status,
                                                                                                     param->period_adv_report.params.data_length,
                                                                                                     param->period_adv_report.params.rssi);
@@ -147,6 +148,10 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
+    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    #endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 

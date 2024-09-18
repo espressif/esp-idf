@@ -48,25 +48,25 @@
 #define INVALID_HANDLE   0
 #define SECOND_TO_USECOND          1000000
 
-static const char remote_device_name[] = "THROUGHPUT_DEMO";
+static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "THROUGHPUT_DEMO";
 static bool connect    = false;
 static bool get_server = false;
 static esp_gattc_char_elem_t *char_elem_result   = NULL;
 static esp_gattc_descr_elem_t *descr_elem_result = NULL;
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 static bool start = false;
 static uint64_t notify_len = 0;
 static uint64_t start_time = 0;
 static uint64_t current_time = 0;
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
 #define GATTC_WRITE_LEN 495
 
 static bool can_send_write = false;
 static SemaphoreHandle_t gattc_semaphore;
 uint8_t write_data[GATTC_WRITE_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0e, 0x0f};
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
 static bool is_connect = false;
 
@@ -144,18 +144,17 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
     switch (event) {
     case ESP_GATTC_REG_EVT:
-        ESP_LOGI(GATTC_TAG, "REG_EVT");
+        ESP_LOGI(GATTC_TAG, "GATT client register, status %d, app_id %d, gattc_if %d", param->reg.status, param->reg.app_id, gattc_if);
         esp_err_t scan_ret = esp_ble_gap_set_scan_params(&ble_scan_params);
         if (scan_ret){
             ESP_LOGE(GATTC_TAG, "set scan params error, error code = %x", scan_ret);
         }
         break;
     case ESP_GATTC_CONNECT_EVT: {
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT conn_id %d, if %d", p_data->connect.conn_id, gattc_if);
+        ESP_LOGI(GATTC_TAG, "Connected, conn_id %d, remote "ESP_BD_ADDR_STR"", p_data->connect.conn_id,
+                 ESP_BD_ADDR_HEX(p_data->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
-        ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req (gattc_if, p_data->connect.conn_id);
         if (mtu_ret){
             ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -164,24 +163,21 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_OPEN_EVT:
         if (param->open.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "open failed, status %d", p_data->open.status);
+            ESP_LOGE(GATTC_TAG, "Open failed, status %d", p_data->open.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "open success");
+        ESP_LOGI(GATTC_TAG, "Open successfully, MTU %u", param->open.mtu);
         break;
     case ESP_GATTC_CFG_MTU_EVT:
-        if (param->cfg_mtu.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG,"config mtu failed, error status = %x", param->cfg_mtu.status);
-        }
         is_connect = true;
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_CFG_MTU_EVT, Status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
+        ESP_LOGI(GATTC_TAG, "MTU exchange, status %d, MTU %d", param->cfg_mtu.status, param->cfg_mtu.mtu);
         esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_SEARCH_RES_EVT");
+        ESP_LOGI(GATTC_TAG, "Service search result");
         esp_gatt_srvc_id_t *srvc_id =(esp_gatt_srvc_id_t *)&p_data->search_res.srvc_id;
         if (srvc_id->id.uuid.len == ESP_UUID_LEN_16 && srvc_id->id.uuid.uuid.uuid16 == REMOTE_SERVICE_UUID) {
-            ESP_LOGI(GATTC_TAG, "service found");
+            ESP_LOGI(GATTC_TAG, "Service found");
             get_server = true;
             gl_profile_tab[PROFILE_A_APP_ID].service_start_handle = p_data->search_res.start_handle;
             gl_profile_tab[PROFILE_A_APP_ID].service_end_handle = p_data->search_res.end_handle;
@@ -191,10 +187,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_SEARCH_CMPL_EVT:
         if (p_data->search_cmpl.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "search service failed, error status = %x", p_data->search_cmpl.status);
+            ESP_LOGE(GATTC_TAG, "Service search failed, status %x", p_data->search_cmpl.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_SEARCH_CMPL_EVT");
+        ESP_LOGI(GATTC_TAG, "Service search complete");
         if (get_server){
             uint16_t count = 0;
             esp_gatt_status_t status = esp_ble_gattc_get_attr_count( gattc_if,
@@ -244,10 +240,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
          break;
     case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_REG_FOR_NOTIFY_EVT");
         if (p_data->reg_for_notify.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "REG FOR NOTIFY failed: error status = %d", p_data->reg_for_notify.status);
+            ESP_LOGE(GATTC_TAG, "Notification register failed, status %d", p_data->reg_for_notify.status);
         }else{
+            ESP_LOGI(GATTC_TAG, "Notification register successfully");
             uint16_t count = 0;
             uint16_t notify_en = 1;
             esp_gatt_status_t ret_status = esp_ble_gattc_get_attr_count( gattc_if,
@@ -302,13 +298,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     }
     case ESP_GATTC_NOTIFY_EVT: {
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         if (p_data->notify.is_notify &&
             (p_data->notify.value[p_data->notify.value_len - 1] ==
              check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
             notify_len += p_data->notify.value_len;
         } else {
-            ESP_LOGE(GATTC_TAG, "ESP_GATTC_NOTIFY_EVT, receive indicate value:");
+            ESP_LOGE(GATTC_TAG, "Indication received, value:");
         }
         if (start == false) {
             start_time = esp_timer_get_time();
@@ -316,53 +312,53 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             break;
         }
 
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
         break;
     }
     case ESP_GATTC_WRITE_DESCR_EVT:
         if (p_data->write.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "write descr failed, error status = %x", p_data->write.status);
+            ESP_LOGE(GATTC_TAG, "Descriptor write failed, status %x", p_data->write.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "write descr success ");
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+        ESP_LOGI(GATTC_TAG, "Descriptor write successfully");
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         can_send_write = true;
         xSemaphoreGive(gattc_semaphore);
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         break;
     case ESP_GATTC_SRVC_CHG_EVT: {
         esp_bd_addr_t bda;
         memcpy(bda, p_data->srvc_chg.remote_bda, sizeof(esp_bd_addr_t));
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_SRVC_CHG_EVT, bd_addr:");
-        ESP_LOG_BUFFER_HEX(GATTC_TAG, bda, sizeof(esp_bd_addr_t));
+        ESP_LOGI(GATTC_TAG, "Service change from "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(bda));
         break;
     }
     case ESP_GATTC_WRITE_CHAR_EVT:
         if (p_data->write.status != ESP_GATT_OK) {
-            ESP_LOGE(GATTC_TAG, "write char failed, error status = %x", p_data->write.status);
+            ESP_LOGE(GATTC_TAG, "Characteristic write failed, status %x", p_data->write.status);
             break;
         }
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         is_connect = false;
         get_server = false;
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         start = false;
         start_time = 0;
         current_time = 0;
         notify_len = 0;
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
-        ESP_LOGI(GATTC_TAG, "ESP_GATTC_DISCONNECT_EVT, reason = %d", p_data->disconnect.reason);
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
+        ESP_LOGI(GATTC_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
+                 ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
         break;
      case ESP_GATTC_CONGEST_EVT:
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->congest.congested) {
             can_send_write = false;
         } else {
             can_send_write = true;
             xSemaphoreGive(gattc_semaphore);
         }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         break;
     default:
         break;
@@ -383,32 +379,29 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         //scan start complete event to indicate scan start successfully or failed
         if (param->scan_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTC_TAG, "scan start failed, error status = %x", param->scan_start_cmpl.status);
+            ESP_LOGE(GATTC_TAG, "Scanning start failed, status %x", param->scan_start_cmpl.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "scan start success");
+        ESP_LOGI(GATTC_TAG, "Scanning start successfully");
 
         break;
     case ESP_GAP_BLE_SCAN_RESULT_EVT: {
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
-            ESP_LOGI(GATTC_TAG, "searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
             adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
                                                 scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
                                                 ESP_BLE_AD_TYPE_NAME_CMPL,
                                                 &adv_name_len);
-            ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
+            ESP_LOGI(GATTC_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
             ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
-            ESP_LOGI(GATTC_TAG, " ");
             if (adv_name != NULL) {
                 if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
-                    ESP_LOGI(GATTC_TAG, "searched device %s", remote_device_name);
+                    ESP_LOGI(GATTC_TAG, "Device found %s", remote_device_name);
                     if (connect == false) {
                         connect = true;
-                        ESP_LOGI(GATTC_TAG, "connect to the remote device.");
-#if(CONFIG_GATTC_WRITE_THROUGHPUT && CONFIG_GATTS_NOTIFY_THROUGHPUT)
+                        ESP_LOGI(GATTC_TAG, "Connect to the remote device");
+#if(CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT && CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
                         esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 34, 34, 0, 600);
 #else
                         esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 32, 32, 0, 600);
@@ -430,21 +423,21 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
         if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(GATTC_TAG, "scan stop failed, error status = %x", param->scan_stop_cmpl.status);
+            ESP_LOGE(GATTC_TAG, "Scanning stop failed, status %x", param->scan_stop_cmpl.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "stop scan successfully");
+        ESP_LOGI(GATTC_TAG, "Scanning stop successfully");
         break;
 
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(GATTC_TAG, "adv stop failed, error status = %x", param->adv_stop_cmpl.status);
+            ESP_LOGE(GATTC_TAG, "Advertising stop failed, status %x", param->adv_stop_cmpl.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "stop adv successfully");
+        ESP_LOGI(GATTC_TAG, "Advertising stop successfully");
         break;
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-         ESP_LOGI(GATTC_TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
+         ESP_LOGI(GATTC_TAG, "Connection params update, status %d, conn_int %d, latency %d, timeout %d",
                   param->update_conn_params.status,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
@@ -484,7 +477,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     } while (0);
 }
 
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
 static void throughput_client_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -520,9 +513,9 @@ static void throughput_client_task(void *param)
 
     }
 }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 static void throughput_cal_task(void *param)
 {
     while (1)
@@ -542,7 +535,7 @@ static void throughput_cal_task(void *param)
     }
 
 }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
 void app_main(void)
 {
@@ -553,6 +546,10 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
+    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    #endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -604,21 +601,21 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
 
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 9, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
 
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
     gattc_semaphore = xSemaphoreCreateBinary();
     if (!gattc_semaphore) {
         ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
         return;
     }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 }
