@@ -418,10 +418,12 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
         }
         strlcpy((char*) g_ap_config.ap.password, pass, MAX_PASSPHRASE_LEN);
     }
+#if !CONFIG_SOC_WIFI_SUPPORT_5G
     if (!(channel >=1 && channel <= 14)) {
         ESP_LOGE(TAG_AP, "Channel cannot be %d!", channel);
         return false;
     }
+#endif
     if (bw != 20 && bw != 40) {
         ESP_LOGE(TAG_AP, "Cannot set %d MHz bandwidth!", bw);
         return false;
@@ -430,16 +432,41 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass, uint8_t channel,
     if (ESP_OK != wifi_add_mode(WIFI_MODE_AP)) {
         return false;
     }
+    wifi_bandwidths_t bws = {0};
+    wifi_protocols_t proto = {0};
+    if (channel <= 14) {
+        if (bw == 40) {
+            proto.ghz_2g = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N;
+            proto.ghz_5g = 0;
+            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            bws.ghz_2g = WIFI_BW_HT40;
+            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+        } else {
+            bws.ghz_2g = WIFI_BW_HT20;
+            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+        }
+    } else {
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+        if (bw == 40) {
+            proto.ghz_2g = 0;
+            proto.ghz_5g = WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11A;
+            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            bws.ghz_5g=WIFI_BW_HT40;
+            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+        } else {
+            proto.ghz_2g = 0;
+            proto.ghz_5g = WIFI_PROTOCOL_11AC | WIFI_PROTOCOL_11A | WIFI_PROTOCOL_11AX;
+            esp_wifi_set_protocols(ESP_IF_WIFI_AP, &proto);
+            bws.ghz_5g = WIFI_BW_HT20;
+            esp_wifi_set_bandwidths(ESP_IF_WIFI_AP, &bws);
+        }
+#endif
+    }
     if (strlen(pass) == 0) {
         g_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
     g_ap_config.ap.channel = channel;
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &g_ap_config));
-    if (bw == 40) {
-        esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT40);
-    } else {
-        esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20);
-    }
     ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s, Primary Channel - %d, Bandwidth - %dMHz",
                         ap_args.ssid->sval[0], ap_args.password->sval[0], channel, bw);
 
