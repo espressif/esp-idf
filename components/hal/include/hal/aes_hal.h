@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,18 @@ uint8_t aes_hal_setkey(const uint8_t *key, size_t key_bytes, int mode);
  * @param output_block output block, size of AES_BLOCK_BYTES
  */
 void aes_hal_transform_block(const void *input_block, void *output_block);
+
+#ifdef SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+/**
+ * @brief Enable the pseudo-round function during AES operations
+ *
+ * @param enable true to enable, false to disable
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+void aes_hal_enable_pseudo_rounds(bool enable, uint8_t base, uint8_t increment, uint8_t key_rng_cnt);
+#endif /* SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION */
 
 #if SOC_AES_SUPPORT_DMA
 /**
@@ -102,6 +114,7 @@ void aes_hal_transform_dma_finish(void);
  */
 #define aes_hal_interrupt_clear() aes_ll_interrupt_clear()
 
+
 #if SOC_AES_SUPPORT_GCM
 /**
  * @brief Calculates the Hash sub-key H0 needed to start AES-GCM
@@ -114,7 +127,7 @@ void aes_hal_gcm_calc_hash(uint8_t *gcm_hash);
  * @brief Initializes the AES hardware for AES-GCM
  *
  * @param aad_num_blocks the number of Additional Authenticated Data (AAD) blocks
- * @param num_valid_bit the number of effective bits of incomplete blocks in plaintext/cipertext
+ * @param num_valid_bit the number of effective bits of incomplete blocks in plaintext/ciphertext
  */
 void aes_hal_gcm_init(size_t aad_num_blocks, size_t num_valid_bit);
 
