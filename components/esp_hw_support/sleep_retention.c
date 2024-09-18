@@ -21,7 +21,7 @@
 #include "sdkconfig.h"
 #include "esp_pmu.h"
 
-#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE && CONFIG_IDF_TARGET_ESP32C5 // TODO: PM-202
+#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
 #include "soc/pmu_reg.h" // for PMU_DATE_REG, it can provide full 32 bit read and write access
 #endif
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
@@ -506,7 +506,7 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
             return ESP_ERR_NOT_SUPPORTED;
         }
 #endif
-#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE && CONFIG_IDF_TARGET_ESP32C5 // TODO: PM-202
+#if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
         /* There is a bug in REGDMA wait mode, when two wait nodes need to wait for the
          * same value (_val & _mask), the second wait node will immediately return to
          * wait done, The reason is that the wait mode comparison output logic immediate
