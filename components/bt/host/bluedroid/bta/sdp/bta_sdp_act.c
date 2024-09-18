@@ -395,29 +395,29 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     tSDP_DISC_ATTR *p_attr;
     tSDP_PROTOCOL_ELEM pe;
 
-    record->hdr.type = SDP_TYPE_RAW;
-    record->hdr.service_name_length = 0;
-    record->hdr.service_name = NULL;
-    record->hdr.rfcomm_channel_number = -1;
-    record->hdr.l2cap_psm = -1;
-    record->hdr.profile_version = -1;
+    record->raw.hdr.type = SDP_TYPE_RAW;
+    record->raw.hdr.service_name_length = 0;
+    record->raw.hdr.service_name = NULL;
+    record->raw.hdr.rfcomm_channel_number = -1;
+    record->raw.hdr.l2cap_psm = -1;
+    record->raw.hdr.profile_version = -1;
 
     /* Try to extract a service name */
     if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME)) != NULL) {
-        record->pse.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
-        record->pse.hdr.service_name = (char *)p_attr->attr_value.v.array;
+        record->raw.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
+        record->raw.hdr.service_name = (char *)p_attr->attr_value.v.array;
     }
 
     if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM)) != NULL) {
-        record->hdr.l2cap_psm = p_attr->attr_value.v.u16;
+        record->raw.hdr.l2cap_psm = p_attr->attr_value.v.u16;
     }
 
     /* Try to extract an RFCOMM channel */
     if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
-        record->pse.hdr.rfcomm_channel_number = pe.params[0];
+        record->raw.hdr.rfcomm_channel_number = pe.params[0];
     }
-    record->raw.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_size;
-    record->raw.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
+    record->raw.hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_used;
+    record->raw.hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
 }
 
 
@@ -569,6 +569,10 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     }
     SDP_InitDiscoveryDb (p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1,
                          bta_sdp_search_uuid, 0, NULL);
+
+    /* tell SDP to keep the raw data */
+    p_bta_sdp_cfg->p_sdp_db->raw_size = p_bta_sdp_cfg->sdp_raw_size;
+    p_bta_sdp_cfg->p_sdp_db->raw_data = p_bta_sdp_cfg->p_sdp_raw_data;
 
     if (!SDP_ServiceSearchAttributeRequest2(p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
                                             bta_sdp_search_cback, (void *)bta_sdp_search_uuid)) {

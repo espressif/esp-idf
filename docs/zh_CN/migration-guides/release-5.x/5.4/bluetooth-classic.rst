@@ -11,6 +11,4 @@ Bluedroid
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`
 
-        - 结构体 ``esp_bluetooth_sdp_hdr_overlay_t`` 被重命名为 ``esp_bluetooth_sdp_hdr_t``
-        - 结构体 ``esp_bluetooth_sdp_hdr_overlay_t`` 中的字段 ``uuid``, ``user1_ptr_len`` 和 ``user1_ptr`` 被移动到结构体 ``esp_bluetooth_sdp_raw_record_t`` 中
-        - 结构体 ``esp_bluetooth_sdp_hdr_overlay_t`` 中的字段 ``user2_ptr_len`` 和 ``user2_ptr`` 被删除
+        - 结构体 ``esp_bluetooth_sdp_hdr_overlay_t`` 中的字段 ``user2_ptr_len`` 和 ``user2_ptr`` 被弃用，因为 SDP 的 API 或者事件中不会用到该字段。

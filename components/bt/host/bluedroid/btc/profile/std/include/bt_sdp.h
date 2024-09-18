@@ -38,73 +38,79 @@ typedef enum {
     SDP_TYPE_DIP_SERVER, // Device Identification Profile
 } bluetooth_sdp_types;
 
-typedef struct _bluetooth_sdp_hdr {
+/**
+ * Some signals need additional pointers, hence we introduce a
+ * generic way to handle these pointers.
+ */
+typedef struct _bluetooth_sdp_hdr_overlay {
     bluetooth_sdp_types type;
+    esp_bt_uuid_t       uuid;
     uint32_t            service_name_length;
     char               *service_name;
     int32_t             rfcomm_channel_number;
     int32_t             l2cap_psm;
     int32_t             profile_version;
-} bluetooth_sdp_hdr;
+    int                 user1_ptr_len;
+    uint8_t            *user1_ptr;
+    int                 user2_ptr_len; // not used
+    uint8_t            *user2_ptr;     // not used
+} bluetooth_sdp_hdr_overlay;
 
 typedef struct _bluetooth_sdp_raw_record {
-    bluetooth_sdp_hdr hdr;
-    esp_bt_uuid_t     uuid;
-    int               user1_ptr_len;
-    uint8_t          *user1_ptr;
+    bluetooth_sdp_hdr_overlay hdr;
 } bluetooth_sdp_raw_record;
 
 typedef struct _bluetooth_sdp_mas_record {
-    bluetooth_sdp_hdr hdr;
-    uint32_t          mas_instance_id;
-    uint32_t          supported_features;
-    uint32_t          supported_message_types;
+    bluetooth_sdp_hdr_overlay hdr;
+    uint32_t                  mas_instance_id;
+    uint32_t                  supported_features;
+    uint32_t                  supported_message_types;
 } bluetooth_sdp_mas_record;
 
 typedef struct _bluetooth_sdp_mns_record {
-    bluetooth_sdp_hdr hdr;
-    uint32_t          supported_features;
+    bluetooth_sdp_hdr_overlay hdr;
+    uint32_t                  supported_features;
 } bluetooth_sdp_mns_record;
 
 typedef struct _bluetooth_sdp_pse_record {
-    bluetooth_sdp_hdr hdr;
-    uint32_t          supported_features;
-    uint32_t          supported_repositories;
+    bluetooth_sdp_hdr_overlay hdr;
+    uint32_t                  supported_features;
+    uint32_t                  supported_repositories;
 } bluetooth_sdp_pse_record;
 
 typedef struct _bluetooth_sdp_pce_record {
-    bluetooth_sdp_hdr hdr;
+    bluetooth_sdp_hdr_overlay hdr;
 } bluetooth_sdp_pce_record;
 
 typedef struct _bluetooth_sdp_ops_record {
-    bluetooth_sdp_hdr hdr;
-    int               supported_formats_list_len;
-    uint8_t           supported_formats_list[SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH];
+    bluetooth_sdp_hdr_overlay hdr;
+    int                       supported_formats_list_len;
+    uint8_t                   supported_formats_list[SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH];
 } bluetooth_sdp_ops_record;
 
 typedef struct _bluetooth_sdp_sap_record {
-    bluetooth_sdp_hdr hdr;
+    bluetooth_sdp_hdr_overlay hdr;
 } bluetooth_sdp_sap_record;
 
 typedef struct _bluetooth_sdp_dip_record {
-    bluetooth_sdp_hdr hdr;
-    uint16_t          vendor;
-    uint16_t          vendor_id_source;
-    uint16_t          product;
-    uint16_t          version;
-    bool              primary_record;
+    bluetooth_sdp_hdr_overlay hdr;
+    uint16_t                  vendor;
+    uint16_t                  vendor_id_source;
+    uint16_t                  product;
+    uint16_t                  version;
+    bool                      primary_record;
 } bluetooth_sdp_dip_record;
 
 typedef union {
-    bluetooth_sdp_hdr        hdr;
-    bluetooth_sdp_raw_record raw;
-    bluetooth_sdp_mas_record mas;
-    bluetooth_sdp_mns_record mns;
-    bluetooth_sdp_pse_record pse;
-    bluetooth_sdp_pce_record pce;
-    bluetooth_sdp_ops_record ops;
-    bluetooth_sdp_sap_record sap;
-    bluetooth_sdp_dip_record dip;
+    bluetooth_sdp_hdr_overlay hdr;
+    bluetooth_sdp_raw_record  raw;
+    bluetooth_sdp_mas_record  mas;
+    bluetooth_sdp_mns_record  mns;
+    bluetooth_sdp_pse_record  pse;
+    bluetooth_sdp_pce_record  pce;
+    bluetooth_sdp_ops_record  ops;
+    bluetooth_sdp_sap_record  sap;
+    bluetooth_sdp_dip_record  dip;
 } bluetooth_sdp_record;
 
 #endif /* __BT_SDP_H__ */

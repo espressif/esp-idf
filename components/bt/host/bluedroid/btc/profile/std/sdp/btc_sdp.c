@@ -91,11 +91,6 @@ static int get_sdp_record_size(bluetooth_sdp_record* in_record)
         records_size = sizeof(bluetooth_sdp_record);
         break;
 
-    case SDP_TYPE_RAW:
-        if (record->raw.user1_ptr != NULL) {
-            records_size += record->raw.user1_ptr_len;
-        }
-        /* fall through */
     default:
         records_size += sizeof(bluetooth_sdp_record);
         records_size += record->hdr.service_name_length;
@@ -254,12 +249,6 @@ static void copy_sdp_record_common(bluetooth_sdp_record* in_record, bluetooth_sd
         *(free_ptr) = '\0'; // Set '\0' termination of string
         free_ptr++;
     }
-
-    if (in_record->hdr.type == SDP_TYPE_RAW && in_record->raw.user1_ptr != NULL) {
-        out_record->raw.user1_ptr = (UINT8 *)free_ptr;                            // Update pointer
-        memcpy(free_ptr, in_record->raw.user1_ptr, in_record->raw.user1_ptr_len); // Copy content
-        free_ptr += in_record->raw.user1_ptr_len;
-    }
 }
 
 static void copy_sdp_record(bluetooth_sdp_record* in_record, bluetooth_sdp_record* out_record)
@@ -402,6 +391,7 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
     UINT8               temp[LEN_UUID_128];
     UINT8*              p_temp = temp;
     UINT32              sdp_handle = 0;
+    const esp_bt_uuid_t *p_uuid = &rec->hdr.uuid;
 
     BTC_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s", __func__,
             rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm, rec->hdr.service_name);
@@ -411,15 +401,15 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
         return sdp_handle;
     }
 
-    if (rec->uuid.len == ESP_UUID_LEN_16) {
+    if (p_uuid->len == ESP_UUID_LEN_16) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-        UINT16_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid16);
-    } else if (rec->uuid.len == ESP_UUID_LEN_32) {
+        UINT16_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid16);
+    } else if (p_uuid->len == ESP_UUID_LEN_32) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
-        UINT32_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid32);
-    } else if (rec->uuid.len == ESP_UUID_LEN_128) {
+        UINT32_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid32);
+    } else if (p_uuid->len == ESP_UUID_LEN_128) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-        ARRAY_TO_BE_STREAM (p_temp, rec->uuid.uuid.uuid128, LEN_UUID_128);
+        ARRAY_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid128, LEN_UUID_128);
     } else {
         SDP_DeleteRecord(sdp_handle);
         sdp_handle = 0;
@@ -466,12 +456,12 @@ static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        if (rec->uuid.len == ESP_UUID_LEN_16) {
-            bta_sys_add_uuid(rec->uuid.uuid.uuid16);
-        } else if (rec->uuid.len == ESP_UUID_LEN_32) {
-            bta_sys_add_uuid_32(rec->uuid.uuid.uuid32);
-        } else if (rec->uuid.len == ESP_UUID_LEN_128) {
-            bta_sys_add_uuid_128((UINT8 *)&rec->uuid.uuid.uuid128);
+        if (p_uuid->len == ESP_UUID_LEN_16) {
+            bta_sys_add_uuid(p_uuid->uuid.uuid16);
+        } else if (p_uuid->len == ESP_UUID_LEN_32) {
+            bta_sys_add_uuid_32(p_uuid->uuid.uuid32);
+        } else if (p_uuid->len == ESP_UUID_LEN_128) {
+            bta_sys_add_uuid_128((UINT8 *)&p_uuid->uuid.uuid128);
         }
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
@@ -943,7 +933,7 @@ static int btc_handle_create_record_event(int id)
         switch (record->hdr.type) {
         case SDP_TYPE_RAW:
             sdp_handle = add_raw_sdp(&record->raw);
-            memcpy(&service_uuid, &record->raw.uuid, sizeof(esp_bt_uuid_t));
+            memcpy(&service_uuid, &record->hdr.uuid, sizeof(esp_bt_uuid_t));
             break;
         case SDP_TYPE_MAP_MAS:
             sdp_handle = add_maps_sdp(&record->mas);
@@ -1041,6 +1031,83 @@ static bool btc_sdp_remove_record_event(int id, int *p_sdp_handle)
     return result;
 }
 
+static void btc_sdp_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    switch (msg->act) {
+    case BTA_SDP_SEARCH_COMP_EVT: {
+        tBTA_SDP_SEARCH_COMP *src_search_comp = (tBTA_SDP_SEARCH_COMP *)p_src;
+        tBTA_SDP_SEARCH_COMP *dest_search_comp = (tBTA_SDP_SEARCH_COMP *)p_dest;
+        int record_count = src_search_comp->record_count;
+
+        for (int i = 0; i < record_count; i++) {
+            bluetooth_sdp_record *src_record = &src_search_comp->records[i];
+            bluetooth_sdp_record *dest_record = &dest_search_comp->records[i];
+            // deep copy service name
+            uint32_t src_service_name_length = src_record->hdr.service_name_length;
+            char *src_service_name = src_record->hdr.service_name;
+            dest_record->hdr.service_name_length = 0;
+            dest_record->hdr.service_name        = NULL;
+            if (src_service_name && src_service_name_length) {
+                char *service_name = (char *)osi_malloc(src_service_name_length + 1);
+                if (service_name) {
+                    memcpy(service_name, src_service_name, src_service_name_length);
+                    service_name[src_service_name_length] = '\0';
+
+                    dest_record->hdr.service_name_length = src_service_name_length;
+                    dest_record->hdr.service_name        = service_name;
+                } else {
+                    BTC_TRACE_ERROR("%s malloc service name failed, orig service name:%s", __func__, src_service_name);
+                }
+            }
+
+            // deep copy user1_ptr fow RAW type
+            int src_user1_ptr_len = src_record->hdr.user1_ptr_len;
+            uint8_t *src_user1_ptr = src_record->hdr.user1_ptr;
+            dest_record->hdr.user1_ptr_len = 0;
+            dest_record->hdr.user1_ptr     = NULL;
+            if (src_record->hdr.type == SDP_TYPE_RAW && src_user1_ptr && src_user1_ptr_len) {
+                uint8_t *user1_ptr = (uint8_t *)osi_malloc(src_user1_ptr_len);
+                if (user1_ptr) {
+                    memcpy(user1_ptr, src_user1_ptr, src_user1_ptr_len);
+
+                    dest_record->hdr.user1_ptr_len = src_user1_ptr_len;
+                    dest_record->hdr.user1_ptr     = user1_ptr;
+                } else {
+                    BTC_TRACE_ERROR("%s malloc user1_ptr failed", __func__);
+                }
+            }
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void btc_sdp_cb_arg_deep_free(btc_msg_t *msg)
+{
+    switch (msg->act) {
+    case BTA_SDP_SEARCH_COMP_EVT: {
+        tBTA_SDP_SEARCH_COMP *search_comp = (tBTA_SDP_SEARCH_COMP *)msg->arg;
+        for (size_t i = 0; i < search_comp->record_count; i++) {
+            bluetooth_sdp_record *record = &search_comp->records[i];
+            if (record->hdr.service_name) {
+                osi_free(record->hdr.service_name);
+            }
+
+            if (record->hdr.user1_ptr) {
+                osi_free(record->hdr.user1_ptr);
+            }
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_data)
 {
     btc_msg_t msg;
@@ -1072,7 +1139,7 @@ static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_da
     msg.pid = BTC_PID_SDP;
     msg.act = event;
 
-    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), NULL, NULL);
+    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), btc_sdp_cb_arg_deep_copy, btc_sdp_cb_arg_deep_free);
 
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
@@ -1244,11 +1311,10 @@ static void btc_sdp_search(btc_sdp_args_t *arg)
 
 void btc_sdp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
-    bluetooth_sdp_record **dst_record = &((btc_sdp_args_t *)p_dest)->create_record.record;
-    bluetooth_sdp_record *src_record = ((btc_sdp_args_t *)p_src)->create_record.record;
-
     switch (msg->act) {
-    case BTC_SDP_ACT_CREATE_RECORD:
+    case BTC_SDP_ACT_CREATE_RECORD: {
+        bluetooth_sdp_record **dst_record = &((btc_sdp_args_t *)p_dest)->create_record.record;
+        bluetooth_sdp_record *src_record = ((btc_sdp_args_t *)p_src)->create_record.record;
         bluetooth_sdp_record *record = (bluetooth_sdp_record *)osi_calloc(get_sdp_record_size(src_record));
         if (record) {
             copy_sdp_record(src_record, record);
@@ -1259,6 +1325,7 @@ void btc_sdp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
         *dst_record = record;
         break;
+    }
     default:
         break;
     }
@@ -1266,15 +1333,15 @@ void btc_sdp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
 void btc_sdp_arg_deep_free(btc_msg_t *msg)
 {
-    btc_sdp_args_t *arg = (btc_sdp_args_t *)msg->arg;
-    bluetooth_sdp_record *record = arg->create_record.record;
-
     switch (msg->act) {
-    case BTC_SDP_ACT_CREATE_RECORD:
+    case BTC_SDP_ACT_CREATE_RECORD: {
+        btc_sdp_args_t *arg = (btc_sdp_args_t *)msg->arg;
+        bluetooth_sdp_record *record = arg->create_record.record;
         if (record) {
             osi_free(record);
         }
         break;
+    }
     default:
         break;
     }
@@ -1331,23 +1398,11 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         sdp_local_param.search_allowed = true;
 
         param.search.status = p_data->sdp_search_comp.status;
-        if (param.search.status == ESP_SDP_SUCCESS) {
-            memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
-            memcpy(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid, sizeof(tSDP_UUID));
-            param.search.record_count = p_data->sdp_search_comp.record_count;
-            param.search.records = osi_malloc(sizeof(esp_bluetooth_sdp_record_t)*p_data->sdp_search_comp.record_count);
-            if (param.search.records != NULL) {
-                memcpy(param.search.records, p_data->sdp_search_comp.records,
-                        sizeof(esp_bluetooth_sdp_record_t)*p_data->sdp_search_comp.record_count);
-            } else {
-                BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, event);
-                param.search.status = ESP_SDP_NO_RESOURCE;
-            }
-        }
+        memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
+        memcpy(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid, sizeof(tSDP_UUID));
+        param.search.record_count = p_data->sdp_search_comp.record_count;
+        param.search.records = (esp_bluetooth_sdp_record_t *)p_data->sdp_search_comp.records;
         btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);
-        if (param.search.records != NULL) {
-            osi_free(param.search.records);
-        }
         break;
     case BTA_SDP_CREATE_RECORD_USER_EVT:
         param.create_record.status = p_data->sdp_create_record.status;
@@ -1372,6 +1427,8 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         BTC_TRACE_DEBUG("%s: Unhandled event (%d)!", __func__, msg->act);
         break;
     }
+
+    btc_sdp_cb_arg_deep_free(msg);
 }
 
 #endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE

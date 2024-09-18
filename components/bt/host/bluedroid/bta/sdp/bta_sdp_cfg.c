@@ -30,16 +30,24 @@
 #define BTA_SDP_DB_SIZE  1500
 #endif
 
+#ifndef BTA_SDP_RAW_DATA_SIZE
+#define BTA_SDP_RAW_DATA_SIZE 1024
+#endif
+
 #if BTA_DYNAMIC_MEMORY == FALSE
+static UINT8 bta_sdp_raw_data[BTA_SDP_RAW_DATA_SIZE];
 static UINT8 __attribute__ ((aligned(4))) bta_sdp_db_data[BTA_SDP_DB_SIZE];
 #endif
 
 /* SDP configuration structure */
 tBTA_SDP_CFG bta_sdp_cfg = {
+    BTA_SDP_RAW_DATA_SIZE,
     BTA_SDP_DB_SIZE,
 #if BTA_DYNAMIC_MEMORY == FALSE
+    bta_sdp_raw_data,
     (tSDP_DISCOVERY_DB *)bta_sdp_db_data /* The data buffer to keep SDP database */
 #else
+    NULL,
     NULL
 #endif
 };
