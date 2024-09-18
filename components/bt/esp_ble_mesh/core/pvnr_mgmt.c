@@ -22,7 +22,9 @@
 #include "prov_pvnr.h"
 #include "pvnr_mgmt.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #if CONFIG_BLE_MESH_PROVISIONER
 

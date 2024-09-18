@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,13 +30,167 @@
 #include "mesh/common.h"
 #include "heartbeat.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #define DEFAULT_TTL         7
 
 static struct bt_mesh_cfg_srv *conf;
 
 static struct label labels[CONFIG_BLE_MESH_LABEL_COUNT];
+
+#if !CONFIG_BLE_MESH_V11_SUPPORT
+const void *comp_0;
+
+static uint8_t bt_mesh_comp_page_check(uint8_t page, bool largest)
+{
+    /* If the page doesn't exist, TWO situations currently:
+     * 1. For Composition Data Get:
+     *    With the Page field set to the largest page number of
+     *    the Composition Data that the node supports and that is
+     *    less than the Page field value of the received Config
+     *    Composition Data Get message;
+     * 2. For Large Composition Data Get:
+     *    The Page field shall be set to the largest page number
+     *    of the Composition Data that the node supports.
+     */
+    ARG_UNUSED(largest);
+
+    if (page != 0) {
+        BT_WARN("Composition Data Page %d not exists", page);
+    }
+
+    return 0;
+}
+
+static inline uint16_t get_comp_elem_size(struct bt_mesh_elem *elem)
+{
+    return (4 + elem->model_count * 2 + elem->vnd_model_count * 4);
+}
+
+static uint16_t get_comp_data_size(const struct bt_mesh_comp *comp)
+{
+    uint16_t size = 10; /* CID + PID + VID + CRPL + Features */
+
+    for (int i = 0; i < comp->elem_count; i++) {
+        size += get_comp_elem_size(&(comp->elem[i]));
+    }
+
+    return size;
+}
+
+static void get_comp_data(struct net_buf_simple *buf,
+                          const struct bt_mesh_comp *comp,
+                          bool full_element)
+{
+    struct bt_mesh_model *model = NULL;
+    struct bt_mesh_elem *elem = NULL;
+    uint16_t feat = 0;
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_RELAY)) {
+        feat |= BLE_MESH_FEAT_RELAY;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+        feat |= BLE_MESH_FEAT_PROXY;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        feat |= BLE_MESH_FEAT_FRIEND;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
+        feat |= BLE_MESH_FEAT_LOW_POWER;
+    }
+
+    net_buf_simple_add_le16(buf, comp->cid);
+    net_buf_simple_add_le16(buf, comp->pid);
+    net_buf_simple_add_le16(buf, comp->vid);
+    net_buf_simple_add_le16(buf, CONFIG_BLE_MESH_CRPL);
+    net_buf_simple_add_le16(buf, feat);
+
+    for (size_t i = 0; i < comp->elem_count; i++) {
+        elem = &(comp->elem[i]);
+
+        /* If "full_element" is true, which means the complete list
+         * of models within the element needs to fit in the data,
+         * otherwise the element shall not be reported.
+         */
+        if (full_element &&
+            net_buf_simple_tailroom(buf) < get_comp_elem_size(elem)) {
+            return;
+        }
+
+        net_buf_simple_add_le16(buf, elem->loc);
+        net_buf_simple_add_u8(buf, elem->model_count);
+        net_buf_simple_add_u8(buf, elem->vnd_model_count);
+
+        for (size_t j = 0; j < elem->model_count; j++) {
+            model = &(elem->models[j]);
+            net_buf_simple_add_le16(buf, model->id);
+        }
+
+        for (size_t j = 0; j < elem->vnd_model_count; j++) {
+            model = &(elem->vnd_models[j]);
+            net_buf_simple_add_le16(buf, model->vnd.company);
+            net_buf_simple_add_le16(buf, model->vnd.id);
+        }
+    }
+}
+
+static int fetch_comp_data(struct net_buf_simple *buf,
+                           const struct bt_mesh_comp *comp,
+                           uint8_t page, uint16_t offset,
+                           bool full_element)
+{
+    uint16_t size = get_comp_data_size(comp);
+
+    if (offset >= size) {
+        BT_WARN("Too large offset %d for comp data %d, size %d",
+                page, offset, size);
+        return 0;
+    }
+
+    if (net_buf_simple_tailroom(buf) < 10 ||
+        size - offset > net_buf_simple_tailroom(buf)) {
+        BT_ERR("Too small buffer for comp data %d, %d, expected %d",
+                page, buf->size, size - offset);
+        return -EINVAL;
+    }
+
+    if (offset) {
+        struct net_buf_simple *pdu = bt_mesh_alloc_buf(size);
+        if (pdu == NULL) {
+            BT_ERR("%s, Out of memory", __func__);
+            return -ENOMEM;
+        }
+
+        get_comp_data(pdu, comp, false);
+
+        /* Get part of Composition Data Page 0/128 */
+        net_buf_simple_add_mem(buf, pdu->data + offset, pdu->len - offset);
+
+        bt_mesh_free_buf(pdu);
+    } else {
+        get_comp_data(buf, comp, full_element);
+    }
+
+    return 0;
+}
+
+static int bt_mesh_get_comp_data(struct net_buf_simple *buf,
+                                 uint8_t page, uint16_t offset,
+                                 bool full_element)
+{
+    if (page == 0) {
+        return fetch_comp_data(buf, comp_0, page, offset, full_element);
+    }
+
+    BT_ERR("Invalid Composition Data Page %d", page);
+    return -EINVAL;
+}
+#endif /* !CONFIG_BLE_MESH_V11_SUPPORT */
 
 static void comp_data_get(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
@@ -2758,7 +2912,7 @@ static void node_reset(struct bt_mesh_model *model,
 
     bt_mesh_model_msg_init(&msg, OP_NODE_RESET_STATUS);
 
-    /* Send the response first since we wont have any keys left to
+    /* Send the response first since we won't have any keys left to
      * send it later.
      */
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
