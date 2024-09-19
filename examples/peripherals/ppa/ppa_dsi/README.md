@@ -19,8 +19,13 @@ The subsections below give only absolutely necessary information. For full steps
 
 This example requires:
 
-- ILI9881C LCD screen
+- EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
+
+**Note:** For EK79007 you will need to connect following pins:
+- 5V - 5V
+- GND - GND
+- RST_LCD - 3V3
 
 
                                                                   GND
@@ -41,7 +46,7 @@ This example requires:
           │                                                │      DSI DATA 1N          │                      │
           │                                                ├───────────────────────────┤                      │
           │                  ESP32-P4                      │                           │                      │
-          │                                                │      DSI CLK N            │      ILI9881C        │
+          │                                                │      DSI CLK N            │      LCD Screen      │
           │                                                ├───────────────────────────┤                      │
           │                                                │                           │                      │
           │                                                │      DSI CLK P            │                      │
