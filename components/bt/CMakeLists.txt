@@ -855,16 +855,17 @@ if(CONFIG_BT_ENABLED)
         target_link_directories(${COMPONENT_LIB} INTERFACE
                 "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
-    elseif(CONFIG_IDF_TARGET_ESP32C6)
-        add_prebuilt_library(libble_app
-                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c6/libble_app.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
-    elseif(CONFIG_IDF_TARGET_ESP32C61)
-        add_prebuilt_library(libble_app
-                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c61/libble_app.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
     elseif(CONFIG_BT_CONTROLLER_ENABLED)
-        add_prebuilt_library(libble_app "controller/lib_${target_name}/${target_name}-bt-lib/libble_app.a")
+        if(CONFIG_IDF_TARGET_ESP32C6)
+            add_prebuilt_library(libble_app
+                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c6/libble_app.a")
+        elseif(CONFIG_IDF_TARGET_ESP32C61)
+            add_prebuilt_library(libble_app
+                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c61/libble_app.a")
+        else()
+            add_prebuilt_library(libble_app
+                 "controller/lib_${target_name}/${target_name}-bt-lib/libble_app.a")
+        endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
     endif()
 
