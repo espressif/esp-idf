@@ -27,14 +27,16 @@ SPI Interfaced LCD
 
 #. Create an SPI bus. Please refer to :doc:`SPI Master API doc </api-reference/peripherals/spi_master>` for more details.
 
+    Currently the driver supports SPI, Quad SPI and Octal SPI (simulate Intel 8080 timing) modes.
+
     .. code-block:: c
 
         spi_bus_config_t buscfg = {
             .sclk_io_num = EXAMPLE_PIN_NUM_SCLK,
             .mosi_io_num = EXAMPLE_PIN_NUM_MOSI,
             .miso_io_num = EXAMPLE_PIN_NUM_MISO,
-            .quadwp_io_num = -1, // Quad SPI LCD driver is not yet supported
-            .quadhd_io_num = -1, // Quad SPI LCD driver is not yet supported
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
             .max_transfer_sz = EXAMPLE_LCD_H_RES * 80 * sizeof(uint16_t), // transfer 80 lines of pixels (assume pixel is RGB565) at most in one SPI transaction
         };
         ESP_ERROR_CHECK(spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO)); // Enable the DMA feature
