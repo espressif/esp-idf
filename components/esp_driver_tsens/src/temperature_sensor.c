@@ -108,7 +108,7 @@ static esp_err_t s_temperature_sensor_sleep_retention_init(void *arg)
 void temperature_sensor_create_retention_module(temperature_sensor_handle_t tsens)
 {
     sleep_retention_module_t module_id = temperature_sensor_regs_retention.module_id;
-    if ((sleep_retention_get_inited_modules() & BIT(module_id)) && !(sleep_retention_get_created_modules() & BIT(module_id))) {
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
         if (sleep_retention_module_allocate(module_id) != ESP_OK) {
             // even though the sleep retention module_id create failed, temperature sensor driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed, power domain won't be turned off during sleep");
@@ -196,10 +196,10 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
 
 #if TEMPERATURE_SENSOR_USE_RETENTION_LINK
     sleep_retention_module_t module_id = temperature_sensor_regs_retention.module_id;
-    if (sleep_retention_get_created_modules() & BIT(module_id)) {
+    if (sleep_retention_is_module_created(module_id)) {
         sleep_retention_module_free(temperature_sensor_regs_retention.module_id);
     }
-    if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+    if (sleep_retention_is_module_inited(module_id)) {
         sleep_retention_module_deinit(temperature_sensor_regs_retention.module_id);
     }
 #endif // TEMPERATURE_SENSOR_USE_RETENTION_LINK
