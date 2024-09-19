@@ -1387,6 +1387,10 @@ config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
     bool
     default y
