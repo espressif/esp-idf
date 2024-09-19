@@ -625,6 +625,7 @@ static void btc_dm_pm_mode_chg_evt(tBTA_DM_MODE_CHG *p_mode_chg)
     msg->act = BTC_GAP_BT_MODE_CHG_EVT;
     memcpy(param.mode_chg.bda, p_mode_chg->bd_addr, ESP_BD_ADDR_LEN);
     param.mode_chg.mode = p_mode_chg->mode;
+    param.mode_chg.interval= p_mode_chg->interval;
     memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
     ret = btc_inter_profile_call(msg);
