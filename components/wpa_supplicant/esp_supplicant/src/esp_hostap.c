@@ -19,6 +19,7 @@
 #include "esp_wifi_types.h"
 #include "esp_wpa3_i.h"
 #include "esp_wps.h"
+#include "esp_wps_i.h"
 
 #define WIFI_PASSWORD_LEN_MAX 65
 
@@ -238,6 +239,9 @@ bool hostap_deinit(void *data)
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
     esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_RESP);
 
+#ifdef CONFIG_WPS_REGISTRAR
+    wifi_ap_wps_disable_internal();
+#endif
 #ifdef CONFIG_SAE
     wpa3_hostap_auth_deinit();
     /* Wait till lock is released by wpa3 task */

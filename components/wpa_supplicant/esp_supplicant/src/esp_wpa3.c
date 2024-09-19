@@ -358,16 +358,19 @@ int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
         if (g_wpa3_hostap_evt_queue == NULL) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
             os_free(evt);
+            wpa_printf(MSG_DEBUG, "hostap evt queue NULL");
             return ESP_FAIL;
         }
     } else {
         os_free(evt);
+        wpa_printf(MSG_DEBUG, "g_wpa3_hostap_auth_api_lock not found");
         return ESP_FAIL;
     }
     if (evt->id == SIG_WPA3_RX_CONFIRM || evt->id == SIG_TASK_DEL) {
         /* prioritising confirm for completing handshake for committed sta */
         if (os_queue_send_to_front(g_wpa3_hostap_evt_queue, &evt, 0) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
+            wpa_printf(MSG_DEBUG, "failed to add msg to queue front");
             os_free(evt);
             return ESP_FAIL;
         }
@@ -375,6 +378,7 @@ int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
         if (os_queue_send(g_wpa3_hostap_evt_queue, &evt, 0) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
             os_free(evt);
+            wpa_printf(MSG_DEBUG, "failed to send msg to queue");
             return ESP_FAIL;
         }
     }
