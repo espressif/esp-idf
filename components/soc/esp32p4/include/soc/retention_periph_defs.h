@@ -7,7 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "esp_bit_defs.h"
+#include "soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,45 +34,8 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_UART3        = 12,
     SLEEP_RETENTION_MODULE_UART4        = 13,
 
-    SLEEP_RETENTION_MODULE_MAX          = 31
+    SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
-
-typedef enum periph_retention_module_bitmap {
-    /* clock module, which includes system and modem */
-    SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
-    /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
-     * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
-    SLEEP_RETENTION_MODULE_BM_SYS_PERIPH   = BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH),
-    /* Timer Group by target*/
-    SLEEP_RETENTION_MODULE_BM_TG0_WDT      = BIT(SLEEP_RETENTION_MODULE_TG0_WDT),
-    SLEEP_RETENTION_MODULE_BM_TG1_WDT      = BIT(SLEEP_RETENTION_MODULE_TG1_WDT),
-    SLEEP_RETENTION_MODULE_BM_TG0_TIMER0   = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER0),
-    SLEEP_RETENTION_MODULE_BM_TG0_TIMER1   = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER1),
-    SLEEP_RETENTION_MODULE_BM_TG1_TIMER0   = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER0),
-    SLEEP_RETENTION_MODULE_BM_TG1_TIMER1   = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER1),
-    /* MISC Peripherals */
-    SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
-    SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
-    SLEEP_RETENTION_MODULE_BM_UART2        = BIT(SLEEP_RETENTION_MODULE_UART2),
-    SLEEP_RETENTION_MODULE_BM_UART3        = BIT(SLEEP_RETENTION_MODULE_UART3),
-    SLEEP_RETENTION_MODULE_BM_UART4        = BIT(SLEEP_RETENTION_MODULE_UART4),
-
-    SLEEP_RETENTION_MODULE_BM_ALL = (uint32_t)-1
-} periph_retention_module_bitmap_t;
-
-#define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_SYS_PERIPH   \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_WDT    \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_WDT    \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER0 \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER1 \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER0 \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER1 \
-                                    | SLEEP_RETENTION_MODULE_BM_UART0      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART1      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART2      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART3      \
-                                    | SLEEP_RETENTION_MODULE_BM_UART4      \
-                                   )
 
 #ifdef __cplusplus
 }

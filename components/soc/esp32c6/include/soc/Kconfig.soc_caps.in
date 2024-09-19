@@ -1379,6 +1379,10 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
