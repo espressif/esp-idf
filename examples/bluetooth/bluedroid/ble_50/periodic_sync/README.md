@@ -5,7 +5,7 @@
 
 This example supports the periodic extended scan to scan the extended advertisement.
 
-To test this demo, we can run the [periodic_adv_demo](../peroidic_adv), which can start extended advertisement with supported param.
+To test this demo, we can run the [periodic_adv_demo](../periodic_adv), which can start extended advertisement with supported param.
 
 Please, check this [tutorial](tutorial/Periodic_Sync_Example_Walkthrough.md) for more information about this example.
 
