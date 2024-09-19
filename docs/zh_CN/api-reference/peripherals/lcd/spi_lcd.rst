@@ -5,14 +5,16 @@ SPI 接口的 LCD
 
 #. 创建 SPI 总线。详情请参阅 :doc:`SPI 主机 API 文档 </api-reference/peripherals/spi_master>`。
 
+    目前驱动支持 SPI， Quad SPI 和 Octal SPI（模拟 Intel 8080 时序）模式。
+
     .. code-block:: c
 
         spi_bus_config_t buscfg = {
             .sclk_io_num = EXAMPLE_PIN_NUM_SCLK,
             .mosi_io_num = EXAMPLE_PIN_NUM_MOSI,
             .miso_io_num = EXAMPLE_PIN_NUM_MISO,
-            .quadwp_io_num = -1, // 目前不支持 Quad SPI LCD 驱动
-            .quadhd_io_num = -1, // 目前不支持 Quad SPI LCD 驱动
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
             .max_transfer_sz = EXAMPLE_LCD_H_RES * 80 * sizeof(uint16_t), // 单次最多可传输 80 行像素（假设像素格式为 RGB565）
         };
         ESP_ERROR_CHECK(spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO)); // 启用 DMA
