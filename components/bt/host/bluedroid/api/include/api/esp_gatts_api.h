@@ -242,6 +242,7 @@ typedef union {
      */
     struct gatts_rsp_evt_param {
         esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
         uint16_t handle;                /*!< Attribute handle which send response */
     } rsp;                              /*!< Gatt server callback param of ESP_GATTS_RESPONSE_EVT */
 
