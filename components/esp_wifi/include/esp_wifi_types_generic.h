@@ -49,10 +49,16 @@ typedef enum {
 /** @brief Structure describing WiFi country-based regional restrictions. */
 typedef struct {
     char                  cc[3];   /**< country code string */
-    uint8_t               schan;   /**< start channel */
-    uint8_t               nchan;   /**< total channel number */
+    uint8_t               schan;   /**< start channel of the allowed 2.4GHz WiFi channels */
+    uint8_t               nchan;   /**< total channel number of the allowed 2.4GHz WiFi channels */
     int8_t                max_tx_power;   /**< This field is used for getting WiFi maximum transmitting power, call esp_wifi_set_max_tx_power to set the maximum transmitting power. */
     wifi_country_policy_t policy;  /**< country policy */
+#if SOC_WIFI_SUPPORT_5G
+    uint32_t              wifi_5g_channel_mask;  /**< A bitmask representing the allowed 5GHz WiFi channels.
+                                                      Each bit in the mask corresponds to a specific channel as wifi_5g_channel_bit_t shown.
+                                                      Bitmask set to 0 indicates 5GHz channels are allowed according to local regulatory rules.
+                                                      Please note that configured bitmask takes effect only when policy is manual. */
+#endif
 } wifi_country_t;
 
 /* Strength of authmodes */
@@ -178,8 +184,8 @@ typedef struct {
 } wifi_scan_time_t;
 
 typedef struct {
-    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels */
-    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels */
+    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels, that bits can be set as wifi_2g_channel_bit_t shown. */
+    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels, that bits can be set as wifi_5g_channel_bit_t shown. */
 } wifi_scan_channel_bitmap_t;
 
 /** @brief Parameters for an SSID scan. */
@@ -191,7 +197,9 @@ typedef struct {
     wifi_scan_type_t scan_type;                        /**< scan type, active or passive */
     wifi_scan_time_t scan_time;                        /**< scan time per channel */
     uint8_t home_chan_dwell_time;                      /**< time spent at home channel between scanning consecutive channels. */
-    wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned. For 2.4ghz channels set ghz_2_channels from BIT(1) to BIT(14) from LSB to MSB order to indicate channels to be scanned. Currently scanning in 5ghz channels is not supported. Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap. */
+    wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned.
+                                                            Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap.
+                                                            Also, note that only allowed channels configured by wifi_country_t can be scaned. */
 } wifi_scan_config_t;
 
 /** @brief Parameters default scan configurations. */
@@ -304,6 +312,72 @@ typedef enum {
     WIFI_BAND_MODE_5G_ONLY = 2,         /* WiFi band mode is 5G only */
     WIFI_BAND_MODE_AUTO = 3,            /* WiFi band mode is 2.4G + 5G */
 } wifi_band_mode_t;
+
+#ifndef BIT
+#define BIT(nr)  (1 << (nr))
+#endif
+
+#define CHANNEL_TO_BIT_NUMBER(channel) ((channel >= 1 && channel <= 14) ? (channel) : \
+    ((channel >= 36 && channel <= 64 && (channel - 36) % 4 == 0) ? ((channel - 36) / 4 + 1) : \
+    ((channel >= 100 && channel <= 144 && (channel - 100) % 4 == 0) ? ((channel - 100) / 4 + 9) : \
+    ((channel >= 149 && channel <= 177 && (channel - 149) % 4 == 0) ? ((channel - 149) / 4 + 21) : 0))))
+
+#define BIT_NUMBER_TO_CHANNEL(bit_number, band) ((band == WIFI_BAND_2G) ? (bit_number) : \
+    ((bit_number >= 1 && bit_number <= 8) ? ((bit_number - 1) * 4 + 36) : \
+    ((bit_number >= 9 && bit_number <= 20) ? ((bit_number - 9) * 4 + 100) : \
+    ((bit_number >= 21 && bit_number <= 28) ? ((bit_number - 21) * 4 + 149) : 0))))
+
+#define CHANNEL_TO_BIT(channel) (BIT(CHANNEL_TO_BIT_NUMBER(channel)))
+
+/** Argument structure for 2.4G channels */
+typedef enum {
+    WIFI_CHANNEL_1 = BIT(1),   /**< wifi channel 1 */
+    WIFI_CHANNEL_2 = BIT(2),   /**< wifi channel 2 */
+    WIFI_CHANNEL_3 = BIT(3),   /**< wifi channel 3 */
+    WIFI_CHANNEL_4 = BIT(4),   /**< wifi channel 4 */
+    WIFI_CHANNEL_5 = BIT(5),   /**< wifi channel 5 */
+    WIFI_CHANNEL_6 = BIT(6),   /**< wifi channel 6 */
+    WIFI_CHANNEL_7 = BIT(7),   /**< wifi channel 7 */
+    WIFI_CHANNEL_8 = BIT(8),   /**< wifi channel 8 */
+    WIFI_CHANNEL_9 = BIT(9),   /**< wifi channel 9 */
+    WIFI_CHANNEL_10 = BIT(10), /**< wifi channel 10 */
+    WIFI_CHANNEL_11 = BIT(11), /**< wifi channel 11 */
+    WIFI_CHANNEL_12 = BIT(12), /**< wifi channel 12 */
+    WIFI_CHANNEL_13 = BIT(13), /**< wifi channel 13 */
+    WIFI_CHANNEL_14 = BIT(14), /**< wifi channel 14 */
+} wifi_2g_channel_bit_t;
+
+/** Argument structure for 5G channels */
+typedef enum {
+    WIFI_CHANNEL_36 = BIT(1),   /**< wifi channel 36 */
+    WIFI_CHANNEL_40 = BIT(2),   /**< wifi channel 40 */
+    WIFI_CHANNEL_44 = BIT(3),   /**< wifi channel 44 */
+    WIFI_CHANNEL_48 = BIT(4),   /**< wifi channel 48 */
+    WIFI_CHANNEL_52 = BIT(5),   /**< wifi channel 52 */
+    WIFI_CHANNEL_56 = BIT(6),   /**< wifi channel 56 */
+    WIFI_CHANNEL_60 = BIT(7),   /**< wifi channel 60 */
+    WIFI_CHANNEL_64 = BIT(8),   /**< wifi channel 64 */
+    WIFI_CHANNEL_100 = BIT(9),  /**< wifi channel 100 */
+    WIFI_CHANNEL_104 = BIT(10), /**< wifi channel 104 */
+    WIFI_CHANNEL_108 = BIT(11), /**< wifi channel 108 */
+    WIFI_CHANNEL_112 = BIT(12), /**< wifi channel 112 */
+    WIFI_CHANNEL_116 = BIT(13), /**< wifi channel 116 */
+    WIFI_CHANNEL_120 = BIT(14), /**< wifi channel 120 */
+    WIFI_CHANNEL_124 = BIT(15), /**< wifi channel 124 */
+    WIFI_CHANNEL_128 = BIT(16), /**< wifi channel 128 */
+    WIFI_CHANNEL_132 = BIT(17), /**< wifi channel 132 */
+    WIFI_CHANNEL_136 = BIT(18), /**< wifi channel 136 */
+    WIFI_CHANNEL_140 = BIT(19), /**< wifi channel 140 */
+    WIFI_CHANNEL_144 = BIT(20), /**< wifi channel 144 */
+    WIFI_CHANNEL_149 = BIT(21), /**< wifi channel 149 */
+    WIFI_CHANNEL_153 = BIT(22), /**< wifi channel 153 */
+    WIFI_CHANNEL_157 = BIT(23), /**< wifi channel 157 */
+    WIFI_CHANNEL_161 = BIT(24), /**< wifi channel 161 */
+    WIFI_CHANNEL_165 = BIT(25), /**< wifi channel 165 */
+    WIFI_CHANNEL_169 = BIT(26), /**< wifi channel 169 */
+    WIFI_CHANNEL_173 = BIT(27), /**< wifi channel 173 */
+    WIFI_CHANNEL_177 = BIT(28), /**< wifi channel 177 */
+} wifi_5g_channel_bit_t;
 
 #define WIFI_PROTOCOL_11B         0x1
 #define WIFI_PROTOCOL_11G         0x2
