@@ -62,3 +62,9 @@ def test_pthread_qemu(dut: Dut) -> None:
     for case in dut.test_menu:
         if 'qemu-ignore' not in case.groups and case.type == 'normal':
             dut._run_normal_case(case, timeout=75)
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+def test_pthread_linux(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120)
