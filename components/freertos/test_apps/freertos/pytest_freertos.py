@@ -5,20 +5,15 @@ from pytest_embedded import Dut
 
 
 CONFIGS = [
-    pytest.param('default', marks=[
-        pytest.mark.supported_targets,
-        pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='test failed')
-    ]),
-    pytest.param('freertos_options', marks=[
-        pytest.mark.supported_targets,
-        pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='test failed')]),
+    pytest.param('default', marks=[pytest.mark.supported_targets,]),
+    pytest.param('freertos_options', marks=[pytest.mark.supported_targets]),
     pytest.param('psram', marks=[pytest.mark.esp32]),
     pytest.param('single_core', marks=[pytest.mark.esp32, pytest.mark.esp32p4]),
     # TODO: [ESP32C5] IDF-10335
     # TODO: [ESP32C61] IDF-11146
     pytest.param('smp', marks=[
         pytest.mark.supported_targets,
-        pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'],
+        pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61'],
                                  reason='test failed/TBD IDF-8113')
     ]),
 ]
