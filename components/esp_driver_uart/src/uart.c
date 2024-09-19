@@ -223,7 +223,7 @@ static void uart_module_enable(uart_port_t uart_num)
                             .arg = &uart_context[uart_num],
                         },
                     },
-                    .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
+                    .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
                 };
                 if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
                     uart_context[uart_num].retention_link_inited = true;

@@ -72,7 +72,7 @@ static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
 {
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_int_wdt_retention_init, .arg = &group_id } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT, &init_param);
     if (err == ESP_OK) {

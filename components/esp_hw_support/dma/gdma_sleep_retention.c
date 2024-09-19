@@ -36,7 +36,7 @@ static esp_err_t sleep_gdma_channel_retention_init(void *arg)
     int group_id = parg->group_id;
     int pair_id = parg->pair_id;
 
-    sleep_retention_module_bitmap_t module = GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id);
+    sleep_retention_module_t module = GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id);
     esp_err_t err = sleep_retention_entries_create(gdma_chx_regs_retention[group_id][pair_id].link_list, gdma_chx_regs_retention[group_id][pair_id].link_num, REGDMA_LINK_PRI_GDMA, module);
     if (err == ESP_OK) {
         ESP_LOGD(TAG, "GDMA pair (%d, %d) retention initialization", group_id, pair_id);
@@ -51,9 +51,9 @@ esp_err_t gdma_sleep_retention_init(int group_id, int pair_id)
     gdma_channel_retention_arg_t arg = { .group_id = group_id, .pair_id = pair_id };
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_gdma_channel_retention_init, .arg = &arg } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
-    sleep_retention_module_bitmap_t module = GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id);
+    sleep_retention_module_t module = GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id);
     esp_err_t err = sleep_retention_module_init(module, &init_param);
     if (err == ESP_OK) {
         err = sleep_retention_module_allocate(module);
