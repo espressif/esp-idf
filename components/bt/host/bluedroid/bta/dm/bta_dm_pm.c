@@ -75,7 +75,7 @@ void bta_dm_init_pm(void)
 {
     memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
 
-    /* if there are no power manger entries, so not register */
+    /* if there are no power manager entries, so not register */
     if (p_bta_dm_pm_cfg[0].app_id != 0) {
         bta_sys_pm_register((tBTA_SYS_CONN_CBACK *)bta_dm_pm_cback);
 
@@ -694,9 +694,9 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index)
 #endif
     {
 #if (BTM_SSR_INCLUDED == TRUE)
-        /* Dont initiate Sniff if controller has alreay accepted
+        /* Dont initiate Sniff if controller has already accepted
          * remote sniff params. This avoid sniff loop issue with
-         * some agrresive headsets who use sniff latencies more than
+         * some aggressive headsets who use sniff latencies more than
          * DUT supported range of Sniff intervals.*/
         if ((mode == BTM_PM_MD_SNIFF) && (p_peer_dev->info & BTA_DM_DI_ACP_SNIFF)) {
             APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
@@ -917,7 +917,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
         } else {
 #if (BTM_SSR_INCLUDED == TRUE)
             if (p_dev->prev_low) {
-                /* need to send the SSR paramaters to controller again */
+                /* need to send the SSR parameters to controller again */
                 bta_dm_pm_ssr(p_dev->peer_bdaddr);
             }
             p_dev->prev_low = BTM_PM_STS_ACTIVE;
@@ -980,6 +980,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
             ) {
             tBTA_DM_SEC conn;
             conn.mode_chg.mode = p_data->pm_status.status;
+            conn.mode_chg.interval = p_data->pm_status.value;
             bdcpy(conn.mode_chg.bd_addr, p_data->pm_status.bd_addr);
             bta_dm_cb.p_sec_cback(BTA_DM_PM_MODE_CHG_EVT, (tBTA_DM_SEC *)&conn);
         }
