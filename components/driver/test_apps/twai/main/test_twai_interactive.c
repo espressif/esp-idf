@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include "soc/soc_caps.h"
 #include "esp_log.h"
 
+#define TEST_TWAI_TX_PIN     4
+#define TEST_TWAI_RX_PIN     5
+
 #if CONFIG_TWAI_ISR_IN_IRAM
 static void IRAM_ATTR test_delay_post_cache_disable(void *args)
 {
@@ -27,7 +30,7 @@ TEST_CASE("twai_listen_only", "[twai]")
 {
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(4, 5, TWAI_MODE_LISTEN_ONLY);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TEST_TWAI_TX_PIN, TEST_TWAI_RX_PIN, TWAI_MODE_LISTEN_ONLY);
 #if CONFIG_TWAI_ISR_IN_IRAM
     g_config.intr_flags |= ESP_INTR_FLAG_IRAM;
 #endif
@@ -60,8 +63,8 @@ TEST_CASE("twai_remote_request", "[twai]")
     twai_handle_t bus_handle;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(4, 5, TWAI_MODE_NORMAL);
-#if CONFIG_IDF_TARGET_ESP32C6
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TEST_TWAI_TX_PIN, TEST_TWAI_RX_PIN, TWAI_MODE_NORMAL);
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4
     g_config.controller_id = 1;
 #endif
     TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &bus_handle));
