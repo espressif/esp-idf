@@ -19,15 +19,19 @@ fi
 # Attempt to identify the ESP-IDF directory
 idf_path="."
 
+shell_type="detect"
+
 # shellcheck disable=SC2128,SC2169,SC2039,SC3054,SC3028 # ignore array expansion warning
 if test -n "${BASH_SOURCE-}"
 then
     # shellcheck disable=SC3028,SC3054 # unreachable with 'dash'
     idf_path=$(dirname "${BASH_SOURCE[0]}")
+    shell_type="bash"
 elif test -n "${ZSH_VERSION-}"
 then
     # shellcheck disable=SC2296  # ignore parameter starts with '{' because it's zsh
     idf_path=$(dirname "${(%):-%x}")
+    shell_type="zsh"
 elif test -n "${IDF_PATH-}"
 then
     idf_path=$IDF_PATH
@@ -46,7 +50,7 @@ fi
 . "${idf_path}/tools/detect_python.sh"
 
 # Evaluate the ESP-IDF environment set up by the activate.py script.
-idf_exports=$("$ESP_PYTHON" "${idf_path}/tools/activate.py" --export)
+idf_exports=$("$ESP_PYTHON" "${idf_path}/tools/activate.py" --export --shell $shell_type)
 eval "${idf_exports}"
 unset idf_path
 return 0

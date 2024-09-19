@@ -17,7 +17,7 @@ CONSOLE_STDERR = Console(stderr=True, width=255)
 CONSOLE_STDOUT = Console(width=255)
 
 
-def status_message(msg: str, rv_on_ok: bool=False, die_on_err: bool=True) -> Callable:
+def status_message(msg: str, msg_result: str='', rv_on_ok: bool=False, die_on_err: bool=True) -> Callable:
     def inner(func: Callable) -> Callable:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             eprint(f'[dark_orange]*[/dark_orange] {msg} ... ', end='')
@@ -34,6 +34,8 @@ def status_message(msg: str, rv_on_ok: bool=False, die_on_err: bool=True) -> Cal
 
             if rv_on_ok:
                 eprint(f'[green]{rv}[/green]')
+            elif msg_result:
+                eprint(f'[green]{msg_result}[/green]')
             else:
                 eprint('[green]OK[/green]')
 

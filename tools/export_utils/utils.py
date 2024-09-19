@@ -22,7 +22,6 @@ class Config:
         self.IDF_TOOLS_PY = os.path.join(self.IDF_PATH, 'tools', 'idf_tools.py')
         self.IDF_PY = os.path.join(self.IDF_PATH, 'tools', 'idf.py')
         self.ARGS: Optional[argparse.Namespace] = None
-        self.DETECTED_SHELL_PATH: str = ''
 
 
 # Global variable instance

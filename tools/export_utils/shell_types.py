@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import sys
+import textwrap
 from pathlib import Path
 from subprocess import run
 from tempfile import gettempdir
@@ -72,10 +73,6 @@ class UnixShell(Shell):
         # Basic POSIX shells does not support autocompletion
         return None
 
-    def init_file(self) -> None:
-        with open(self.script_file_path, 'w') as fd:
-            self.export_file(fd)
-
     def export_file(self, fd: TextIO) -> None:
         fd.write(f'{self.deactivate_cmd}\n')
         for var, value in self.new_esp_idf_env.items():
@@ -87,7 +84,8 @@ class UnixShell(Shell):
                   'Go to the project directory and run:\n\n  idf.py build"\n'))
 
     def export(self) -> None:
-        self.init_file()
+        with open(self.script_file_path, 'w') as fd:
+            self.export_file(fd)
         print(f'. {self.script_file_path}')
 
     def click_ver(self) -> int:
@@ -95,26 +93,23 @@ class UnixShell(Shell):
 
 
 class BashShell(UnixShell):
-    def get_bash_major_minor(self) -> float:
-        env = self.expanded_env()
-        bash_interpreter = conf.DETECTED_SHELL_PATH if conf.DETECTED_SHELL_PATH else 'bash'
-        stdout = run_cmd([bash_interpreter, '-c', 'echo ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}'], env=env)
-        bash_maj_min = float(stdout)
-        return bash_maj_min
-
-    @status_message('Shell completion', die_on_err=False)
+    @status_message('Shell completion', msg_result='Autocompletion code generated')
     def autocompletion(self) -> str:
-        bash_maj_min = self.get_bash_major_minor()
-        # Click supports bash version >= 4.4
-        # https://click.palletsprojects.com/en/8.1.x/changes/#version-8-0-0
-        if bash_maj_min < 4.4:
-            raise RuntimeError('Autocompletion not supported')
+        bash_source = 'bash_source' if self.click_ver() >= 8 else 'source_bash'
+        autocom = textwrap.dedent(f"""
+            WARNING_MSG="WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
+            if test ${{BASH_VERSINFO[0]}} -lt 4
+            then
+                echo "$WARNING_MSG"
+            else
+                if ! eval "$(env LANG=en _IDF.PY_COMPLETE={bash_source} idf.py)"
+                then
+                    echo "$WARNING_MSG"
+                fi
+            fi
+            """)
 
-        env = self.expanded_env()
-        env['LANG'] = 'en'
-        env['_IDF.PY_COMPLETE'] = 'bash_source' if self.click_ver() >= 8 else 'source_bash'
-        stdout: str = run_cmd([sys.executable, conf.IDF_PY], env=env)
-        return stdout
+        return autocom
 
     def init_file(self) -> None:
         with open(self.script_file_path, 'w') as fd:
@@ -133,13 +128,19 @@ class BashShell(UnixShell):
 
 
 class ZshShell(UnixShell):
-    @status_message('Shell completion', die_on_err=False)
+    @status_message('Shell completion', msg_result='Autocompletion code generated')
     def autocompletion(self) -> str:
-        env = self.expanded_env()
-        env['LANG'] = 'en'
-        env['_IDF.PY_COMPLETE'] = 'zsh_source' if self.click_ver() >= 8 else 'source_zsh'
-        stdout = run_cmd([sys.executable, conf.IDF_PY], env=env)
-        return f'autoload -Uz compinit && compinit -u\n{stdout}'
+        zsh_source = 'zsh_source' if self.click_ver() >= 8 else 'source_zsh'
+        autocom = textwrap.dedent(f"""
+            WARNING_MSG="WARNING: Failed to load shell autocompletion for zsh version: $ZSH_VERSION!"
+            autoload -Uz compinit && compinit -u
+            if ! eval "$(env _IDF.PY_COMPLETE={zsh_source} idf.py)"
+            then
+                echo "$WARNING_MSG"
+            fi
+            """)
+
+        return autocom
 
     def init_file(self) -> None:
         # If ZDOTDIR is unset, HOME is used instead.
@@ -187,6 +188,10 @@ class FishShell(UnixShell):
         env['_IDF.PY_COMPLETE'] = 'fish_source' if self.click_ver() >= 8 else 'source_fish'
         stdout: str = run_cmd([sys.executable, conf.IDF_PY], env=env)
         return stdout
+
+    def init_file(self) -> None:
+        with open(self.script_file_path, 'w') as fd:
+            self.export_file(fd)
 
     def spawn(self) -> None:
         self.init_file()
