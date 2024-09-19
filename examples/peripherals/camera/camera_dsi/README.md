@@ -6,7 +6,7 @@
 
 ## Overview
 
-This example demonstrates how to use the esp_driver_cam component to capture camera sensor signals and display it via DSI interface.
+This example demonstrates how to use the esp_driver_cam component to capture camera sensor signals and display it via DSI interface. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface.
 
 ## Usage
 
@@ -15,11 +15,18 @@ The subsections below give only absolutely necessary information. For full steps
 
 ### Hardware Required
 
-This example requires:
-
-- OV5647 camera sensor
-- ILI9881C LCD screen
+- OV5647 or SC2336 camera sensor, or other camera sensors
+- EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
+
+**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected.
+
+**Note:** For EK79007 you will need to connect following pins:
+- 5V - 5V
+- GND - GND
+- RST_LCD - 3V3
+
+You can also connect camera sensors and LCD screens from other vendors to the ESP chip, you can find corresponding camera or LCD drivers from [ESP Component Registry](https://components.espressif.com), or design your own customized drivers.
 
 
                                    GND                                                                   GND
@@ -40,7 +47,7 @@ This example requires:
     │                     ├──────────────────────┤                                                │      DSI DATA 1N          │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
     │                     │ CSI DATA 1N          │                  ESP32-P4                      │                           │                      │
-    │       OV5647        ├──────────────────────┤                                                │      DSI CLK N            │      ILI9881C        │
+    │       Camera        ├──────────────────────┤                                                │      DSI CLK N            │      LCD Screen      │
     │                     │                      │                                                ├───────────────────────────┤                      │
     │                     │ CSI CLK N            │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │      DSI CLK P            │                      │
@@ -97,6 +104,7 @@ idf.py menuconfig
 
 ```
 Set CONFIG_CAMERA_OV5647 to y
+Set CONFIG_CAMERA_SC2336 to y
 ```
 
 

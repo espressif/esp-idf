@@ -14,20 +14,25 @@ menu "Example Configuration"
 
     choice EXAMPLE_MIPI_CSI_DISP_HRES
         bool "Set MIPI CSI horizontal resolution"
-        default EXAMPLE_MIPI_CSI_HRES_800
+        default EXAMPLE_MIPI_CSI_HRES_1024
 
         config EXAMPLE_MIPI_CSI_HRES_800
             bool "800"
+        config EXAMPLE_MIPI_CSI_HRES_1024
+            bool "1024"
     endchoice
 
     config EXAMPLE_MIPI_CSI_DISP_HRES
         int
         default 800 if EXAMPLE_MIPI_CSI_HRES_800
+        default 1024 if EXAMPLE_MIPI_CSI_HRES_1024
 
     choice EXAMPLE_MIPI_CSI_DISP_VRES
         bool "Set MIPI CSI vertical resolution"
-        default EXAMPLE_MIPI_CSI_VRES_640
+        default EXAMPLE_MIPI_CSI_VRES_600
 
+        config EXAMPLE_MIPI_CSI_VRES_600
+            bool "600"
         config EXAMPLE_MIPI_CSI_VRES_640
             bool "640"
         config EXAMPLE_MIPI_CSI_VRES_1280
@@ -36,6 +41,7 @@ menu "Example Configuration"
 
     config EXAMPLE_MIPI_CSI_DISP_VRES
         int
+        default 600 if EXAMPLE_MIPI_CSI_VRES_600
         default 640 if EXAMPLE_MIPI_CSI_VRES_640
         default 1280 if EXAMPLE_MIPI_CSI_VRES_1280
 endmenu
