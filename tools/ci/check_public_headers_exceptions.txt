@@ -70,6 +70,11 @@ components/cmock/CMock/src/cmock_internals.h
 
 components/openthread/openthread/
 
+# The following TLSF headers contain object definitions but have to be
+# made public to be used in esp_rom to help patching the TLSF in ROM.
+components/heap/tlsf/tlsf_block_functions.h
+components/heap/tlsf/tlsf_control_functions.h
+
 ### Here are the files that do not compile for some reason
 #
 components/app_trace/include/esp_sysview_trace.h

@@ -7,16 +7,24 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(srcs
-    "heap_caps_base.c"
-    "heap_caps.c"
-    "heap_caps_init.c"
-    "multi_heap.c")
+set(srcs "heap_caps_base.c"
+         "heap_caps.c"
+         "heap_caps_init.c"
+         "multi_heap.c")
 
-set(includes "include")
+# the root dir of TLSF submodule contains headers with static inline
+# functions used in the esp_rom component for TLSF patches. Therefore,
+# the tlsf/ dir must be included in the list of public includes.
+set(includes "include"
+             "tlsf")
+
+# The TLSF "public" includes should only be used
+# inside the heap component and are therefore added
+# to the list of the private includes from the heap
+# component perspective
+set(priv_includes "tlsf/include")
 
 if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-    set(priv_includes "tlsf")
     list(APPEND srcs "tlsf/tlsf.c")
 endif()
 

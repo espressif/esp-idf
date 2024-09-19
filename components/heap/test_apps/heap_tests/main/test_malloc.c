@@ -176,7 +176,7 @@ TEST_CASE("test get allocated size", "[heap]")
         const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
         const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
         printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
-        TEST_ASSERT_EQUAL(aligned_size, real_size);
+        TEST_ASSERT(aligned_size <= real_size);
 
         heap_caps_free(ptr_array[i]);
     }

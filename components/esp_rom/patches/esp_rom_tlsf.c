@@ -20,91 +20,12 @@
 #include "esp_rom_caps.h"
 #include "esp_rom_tlsf.h"
 
-/*!
- * @brief Opaque types for TLSF implementation
- */
+#include "tlsf_block_functions.h"
+#include "tlsf_control_functions.h"
+
+/* Definition of types used in TLSF */
 typedef void* tlsf_t;
 typedef void* pool_t;
-typedef ptrdiff_t tlsfptr_t;
-
-/* ----------------------------------------------------------------
- * Bring certain inline functions, macro and structures from the
- * tlsf ROM implementation to be able to compile the patch.
- * ---------------------------------------------------------------- */
-
-#if !defined (tlsf_assert)
-#define tlsf_assert assert
-#endif
-
-#define tlsf_cast(t, exp)	((t) (exp))
-
-#define block_header_free_bit  (1 << 0)
-#define block_header_prev_free_bit  (1 << 1)
-#define block_header_overhead  (sizeof(size_t))
-#define block_start_offset (offsetof(block_header_t, size) + sizeof(size_t))
-
-typedef struct block_header_t
-{
-    /* Points to the previous physical block. */
-    struct block_header_t* prev_phys_block;
-
-    /* The size of this block, excluding the block header. */
-    size_t size;
-
-    /* Next and previous free blocks. */
-    struct block_header_t* next_free;
-    struct block_header_t* prev_free;
-} block_header_t;
-
-static inline __attribute__((__always_inline__)) size_t block_size(const block_header_t* block)
-{
-    return block->size & ~(block_header_free_bit | block_header_prev_free_bit);
-}
-
-static inline __attribute__((__always_inline__)) int block_is_free(const block_header_t* block)
-{
-    return tlsf_cast(int, block->size & block_header_free_bit);
-}
-
-static inline __attribute__((__always_inline__)) int block_is_prev_free(const block_header_t* block)
-{
-    return tlsf_cast(int, block->size & block_header_prev_free_bit);
-}
-
-static inline __attribute__((always_inline)) block_header_t* block_from_ptr(const void* ptr)
-{
-	return tlsf_cast(block_header_t*,
-		tlsf_cast(unsigned char*, ptr) - block_start_offset);
-}
-
-static inline __attribute__((always_inline)) block_header_t* offset_to_block(const void* ptr, size_t size)
-{
-	return tlsf_cast(block_header_t*, tlsf_cast(tlsfptr_t, ptr) + size);
-}
-
-static inline __attribute__((always_inline)) int block_is_last(const block_header_t* block)
-{
-	return block_size(block) == 0;
-}
-
-static inline __attribute__((always_inline)) void* block_to_ptr(const block_header_t* block)
-{
-	return tlsf_cast(void*,
-		tlsf_cast(unsigned char*, block) + block_start_offset);
-}
-
-static inline __attribute__((always_inline)) block_header_t* block_next(const block_header_t* block)
-{
-	block_header_t* next = offset_to_block(block_to_ptr(block),
-		block_size(block) - block_header_overhead);
-	tlsf_assert(!block_is_last(block));
-	return next;
-}
-
-/* ----------------------------------------------------------------
- * End of the environment necessary to compile and link the patch
- * defined below
- * ---------------------------------------------------------------- */
 
 static poison_check_pfunc_t s_poison_check_region = NULL;
 
@@ -237,6 +158,7 @@ struct heap_tlsf_stub_table_t {
 extern struct heap_tlsf_stub_table_t* heap_tlsf_table_ptr;
 
 /* We will copy the ROM table and modify the functions we patch */
+
 struct heap_tlsf_stub_table_t heap_tlsf_patch_table_ptr;
 
 /*!

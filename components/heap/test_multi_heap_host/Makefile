@@ -13,7 +13,7 @@ SOURCE_FILES = $(abspath \
 	main.cpp \
 	)
 
-INCLUDE_FLAGS = -I../include -I../../../tools/catch -I../tlsf
+INCLUDE_FLAGS = -I../include -I../../../tools/catch -I../tlsf -I../tlsf/include
 
 GCOV ?= gcov
 
