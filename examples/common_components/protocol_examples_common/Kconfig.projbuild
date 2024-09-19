@@ -183,6 +183,15 @@ menu "Example Connection Configuration"
                 help
                     Select the Ethernet PHY device to use in the example.
 
+                config EXAMPLE_ETH_PHY_GENERIC
+                    bool "Generic 802.3 PHY"
+                    help
+                        Any Ethernet PHY chip compliant with IEEE 802.3 can be used. However, while
+                        basic functionality should always work, some specific features might be limited,
+                        even if the PHY meets IEEE 802.3 standard. A typical example is loopback
+                        functionality, where certain PHYs may require setting a specific speed mode to
+                        operate correctly.
+
                 config EXAMPLE_ETH_PHY_IP101
                     bool "IP101"
                     help
