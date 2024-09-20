@@ -132,6 +132,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
 #define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -228,7 +229,8 @@ TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep 
                           do_ulp_wakeup_with_lp_timer_deepsleep,
                           check_reset_reason_and_sleep_duration);
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+#endif //#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 
 TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
 {
@@ -382,5 +384,4 @@ TEST_CASE("LP core ISR tests", "[ulp]")
     printf("ULP LP IO ISR triggered %"PRIu32" times\n", ulp_io_isr_counter);
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
 #endif //SOC_RTCIO_PIN_COUNT > 0
-
 }

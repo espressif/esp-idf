@@ -1,6 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/ulp/test_apps/lp_core:
+components/ulp/test_apps/lp_core/lp_core_basic_tests:
+  disable:
+    - if: SOC_LP_CORE_SUPPORTED != 1
+    - if: CONFIG_NAME == "xtal" and SOC_CLK_LP_FAST_SUPPORT_XTAL != 1
+
+components/ulp/test_apps/lp_core/lp_core_hp_uart:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
 
