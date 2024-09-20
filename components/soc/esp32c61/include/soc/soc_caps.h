@@ -48,7 +48,7 @@
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
-//  \#define SOC_LP_AON_SUPPORTED            1
+#define SOC_LP_AON_SUPPORTED            1
 //  \#define SOC_LP_PERIPHERALS_SUPPORTED    1
  #define SOC_CLK_TREE_SUPPORTED          1
 //  \#define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32C61] IDF-9269
@@ -61,6 +61,7 @@
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
 //  \#define SOC_PAU_SUPPORTED               0
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_SPIRAM_SUPPORTED            1
@@ -179,7 +180,7 @@
 #define SOC_GPIO_OUT_RANGE_MAX          21
 
 // GPIO0~6 on ESP32C61 can support chip deep sleep wakeup
-//  \#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)  //TODO: IDF-9245
+#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
 #define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (7)
 
@@ -414,8 +415,8 @@
 // #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 // #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
@@ -430,8 +431,6 @@
 #define SOC_PM_SUPPORT_PMU_MODEM_STATE  (0)
 /* macro redefine for pass esp_wifi headers md5sum check */
 #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
-
-// #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (0)

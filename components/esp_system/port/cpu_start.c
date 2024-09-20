@@ -751,7 +751,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
-#if SOC_DEEP_SLEEP_SUPPORTED //TODO: IDF-9245
+#if SOC_DEEP_SLEEP_SUPPORTED
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
     if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_deep_sleep_wakeup_io_reset();
