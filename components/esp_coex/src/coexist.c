@@ -13,10 +13,8 @@
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
-#include "hal/gpio_types.h"
-#include "soc/gpio_periph.h"
-#include "soc/gpio_struct.h"
 #include "esp_attr.h"
+#include "esp_private/gpio.h"
 #endif
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
@@ -168,12 +166,6 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         return ESP_ERR_INVALID_ARG;
     }
     esp_coex_external_set_wire_type(wire_type);
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
-    modem_clock_module_enable(PERIPH_COEX_MODULE);
-#endif
-#if SOC_EXTERNAL_COEX_ADVANCE
-    esp_coex_external_params(g_external_coex_params, 0, 0);
-#endif
 
     if(EXTERNAL_COEX_LEADER_ROLE == g_external_coex_params.work_mode) {
         switch (wire_type)
@@ -267,7 +259,16 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         return ESP_ERR_INVALID_ARG;
 #endif /* SOC_EXTERNAL_COEX_ADVANCE */
     }
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_COEX_MODULE);
+#endif
+#if SOC_EXTERNAL_COEX_ADVANCE
+    esp_coex_external_params(g_external_coex_params, 0, 0);
+#endif
     esp_err_t ret = esp_coex_external_set(EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_MID, EXTERN_COEX_PTI_HIGH);
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_COEX_MODULE);
+#endif
     if (ESP_OK != ret) {
         return ESP_FAIL;
     }
