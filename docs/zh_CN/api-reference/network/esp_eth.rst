@@ -534,10 +534,22 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 应用示例
 --------------------
 
-  * 以太网基本示例：:example:`ethernet/basic`
-  * 以太网 iperf 示例：:example:`ethernet/iperf`
-  * 以太网到 Wi-Fi AP“路由器”：:example:`network/eth2ap`
-  * Wi-Fi station 到以太网 “网桥”：:example:`network/sta2eth`
+  * :example:`ethernet/basic` 演示了如何使用以太网驱动程序，包括驱动程序的安装、将其连接到 ``esp_netif``、发送 DHCP 请求以及获取可 ping 的 IP 地址。
+
+  * :example:`ethernet/iperf` 演示了如何使用以太网功能，使用 iPerf 测量吞吐量/带宽。
+
+  * :example:`ethernet/enc28j60` 演示了如何使用 ENC28J60 以太网控制器，通过将新的以太网 MAC 驱动程序集成到 ``esp_eth`` 组件中，并将其连接到 TCP/IP 栈。
+
+  * :example:`network/vlan_support` 演示了如何在以太网上创建虚拟网络接口，包括 VLAN 和非 VLAN 接口。
+
+  * :example:`network/sta2eth` 演示了如何使用 Wi-Fi station 和有线接口（如以太网或 USB）创建 1 对 1 的桥接。
+
+  * :example:`network/simple_sniffer` 演示了如何在嗅探模式下使用 Wi-Fi 和以太网来捕获数据包，并将其保存为 PCAP 格式。
+
+  * :example:`network/eth2ap` 演示了如何实现一个桥接器，在以太网端口和 Wi-Fi AP 接口之间转发数据包。该示例使用 {IDF_TARGET_NAME} 创建以太网和 Wi-Fi 之间的 1 对多连接，而无需初始化 TCP/IP 栈。
+
+  * :example:`network/bridge` 演示了如何使用 LwIP IEEE 802.1D 桥接器根据 MAC 地址在多个网络段之间转发以太网帧。
+
   * 大多数协议示例也适用于以太网：:example:`protocols`
 
 .. ------------------------------ Advanced Topics -------------------------------
