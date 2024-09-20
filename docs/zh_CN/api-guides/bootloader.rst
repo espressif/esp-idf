@@ -181,8 +181,8 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 用户可以扩展或修改当前的引导加载程序，具体有两种方法：使用钩子实现或重写覆盖当前程序。这两种方法在 ESP-IDF 示例的 :example:`custom_bootloader` 文件夹中都有呈现。
 
-* `bootloader_hooks` 介绍了如何将钩子与引导加载程序初始化连接。
-* `bootloader_override` 介绍了如何覆盖引导加载程序的实现。
+* :example:`custom_bootloader/bootloader_hooks` 介绍了如何将钩子与引导加载程序初始化连接。
+* :example:`custom_bootloader/bootloader_override` 介绍了如何覆盖引导加载程序的实现。
 
 在引导加载程序的代码中，用户不能使用其他组件提供的驱动和函数，如果确实需要，请将该功能的实现部分放在项目的 `bootloader_components` 目录中（注意，这会增加引导加载程序的大小）。
 
