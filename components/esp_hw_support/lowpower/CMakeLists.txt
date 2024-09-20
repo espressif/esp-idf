@@ -24,6 +24,10 @@ if((CONFIG_SOC_PM_SUPPORT_MODEM_PD OR CONFIG_SOC_PM_SUPPORT_TOP_PD) AND CONFIG_S
     list(APPEND srcs "port/${target}/sleep_clock.c")
 endif()
 
+if(CONFIG_SOC_PM_SUPPORT_PMU_MODEM_STATE)
+    list(APPEND srcs "port/${target}/sleep_modem_state.c")
+endif()
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")

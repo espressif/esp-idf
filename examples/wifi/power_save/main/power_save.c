@@ -36,6 +36,15 @@
 #define DEFAULT_PS_MODE WIFI_PS_NONE
 #endif /*CONFIG_POWER_SAVE_MODEM*/
 
+#if SOC_WIFI_HE_SUPPORT_5G
+#if CONFIG_EXAMPLE_WIFI_BAND_MODE_2G
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_2G_ONLY
+#elif CONFIG_EXAMPLE_WIFI_BAND_MODE_5G
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_5G_ONLY
+#else
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_AUTO
+#endif
+#endif
 
 static const char *TAG = "power_save";
 
@@ -80,6 +89,9 @@ static void wifi_power_save(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+#if SOC_WIFI_HE_SUPPORT_5G
+    ESP_ERROR_CHECK(esp_wifi_set_band_mode(DEFAULT_WIFI_BAND_MODE));
+#endif
     ESP_ERROR_CHECK(esp_wifi_set_inactive_time(WIFI_IF_STA, DEFAULT_BEACON_TIMEOUT));
 
     ESP_LOGI(TAG, "esp_wifi_set_ps().");

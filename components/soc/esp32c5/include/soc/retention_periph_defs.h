@@ -43,6 +43,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_BLE_MAC      = 28,
     SLEEP_RETENTION_MODULE_BT_BB        = 29,
     SLEEP_RETENTION_MODULE_802154_MAC   = 30,
+    SLEEP_RETENTION_MODULE_MODEM_PHY    = 31,
     SLEEP_RETENTION_MODULE_MAX          = 31
 } periph_retention_module_t;
 
@@ -57,6 +58,7 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_BLE_MAC      = BIT(SLEEP_RETENTION_MODULE_BLE_MAC),
     SLEEP_RETENTION_MODULE_BM_BT_BB        = BIT(SLEEP_RETENTION_MODULE_BT_BB),
     SLEEP_RETENTION_MODULE_BM_802154_MAC   = BIT(SLEEP_RETENTION_MODULE_802154_MAC),
+    SLEEP_RETENTION_MODULE_BM_MODEM_PHY    = BIT(SLEEP_RETENTION_MODULE_MODEM_PHY),
 
     /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
      * TEE, APM, IOMUX, SPIMEM, SysTimer, etc.. */

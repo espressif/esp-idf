@@ -1239,6 +1239,14 @@ config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
 
+config SOC_PM_SUPPORT_WIFI_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_BEACON_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
@@ -1283,7 +1291,15 @@ config SOC_PM_SUPPORT_HP_AON_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_MAC_BB_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_RTC_PERIPH_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
     default y
 
@@ -1314,6 +1330,10 @@ config SOC_PM_PAU_LINK_NUM
 config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
+
+config SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
+    int
+    default 4
 
 config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
