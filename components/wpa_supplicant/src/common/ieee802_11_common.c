@@ -357,16 +357,54 @@ int ieee802_11_ext_capab(const u8 *ie, unsigned int capab)
 
 u8 get_operating_class(u8 chan, int sec_channel)
 {
-	u8 op_class;
+	u8 op_class = 0;
 
-	if (chan < 1 || chan > 14)
-		return 0;
-	if (sec_channel == 1)
-		op_class = 83;
-	else if (sec_channel == -1)
-		op_class = 84;
-	else
-		op_class = 81;
+	if (chan >= 1 && chan < 14) {
+		if (sec_channel == 1)
+			op_class = 83;
+		else if (sec_channel == -1)
+			op_class = 84;
+		else
+			op_class = 81;
+	}
+
+	if (chan == 14)
+		op_class = 82;
+
+#if SOC_WIFI_SUPPORT_5G
+	if (chan >= 36 && chan <= 48) {
+		if (sec_channel == 1)
+			op_class = 116;
+		else if (sec_channel == -1)
+			op_class = 117;
+		else
+			op_class = 115;
+	}
+	if (chan >= 52 && chan <= 64) {
+		if (sec_channel == 1)
+			op_class = 119;
+		else if (sec_channel == -1)
+			op_class = 120;
+		else
+			op_class = 118;
+	}
+	if (chan >= 149 && chan <= 177) {
+		if (sec_channel == 1)
+			op_class = 126;
+		else if (sec_channel == -1)
+			op_class = 127;
+		else
+			op_class = 125;
+	}
+	if (chan >= 100 && chan <= 144) {
+		if (sec_channel == 1)
+			op_class = 122;
+		else if (sec_channel == -1)
+			op_class = 123;
+		else
+			op_class = 121;
+	}
+#endif
 
 	return op_class;
 }
