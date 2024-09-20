@@ -84,7 +84,11 @@ struct wps_parse_attr {
 	u16 oob_dev_password_len;
 
 	/* attributes that can occur multiple times */
+#ifdef ESP_SUPPLICANT
+#define MAX_CRED_COUNT MAX_WPS_AP_CRED
+#else
 #define MAX_CRED_COUNT 10
+#endif
 #define MAX_REQ_DEV_TYPE_COUNT 10
 
 	unsigned int num_cred;
