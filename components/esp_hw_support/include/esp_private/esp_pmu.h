@@ -49,6 +49,7 @@ typedef enum {
 #define RTC_SLEEP_DIG_USE_8M            BIT(16)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
+#define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 #define RTC_EXT0_TRIG_EN            PMU_EXT0_WAKEUP_EN      //!< EXT0 wakeup

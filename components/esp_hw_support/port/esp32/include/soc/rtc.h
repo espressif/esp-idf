@@ -245,7 +245,7 @@ void rtc_clk_apll_enable(bool enable);
  *
  * @return
  *      - 0 Failed
- *      - else Sucess
+ *      - else Success
  */
 uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2);
 
@@ -517,7 +517,7 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_DIG_USE_8M            BIT(16)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
-
+#define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
 /**
  * Default initializer for rtc_sleep_config_t
  *
