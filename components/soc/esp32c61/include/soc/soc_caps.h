@@ -39,7 +39,7 @@
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_SYSTIMER_SUPPORTED          1
 //  \#define SOC_SUPPORT_COEXISTENCE         1
-//  \#define SOC_SHA_SUPPORTED               1    //TODO: [ESP32C61] IDF-9234
+#define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1
@@ -274,19 +274,19 @@
    for SHA this means that the biggest safe amount of bytes is
    31 blocks of 128 bytes = 3968
 */
-// #define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
-// #define SOC_SHA_SUPPORT_DMA             (1)
+#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
+#define SOC_SHA_SUPPORT_DMA             (1)
 
 // /* The SHA engine is able to resume hashing from a user */
-// #define SOC_SHA_SUPPORT_RESUME          (1)
+#define SOC_SHA_SUPPORT_RESUME          (1)
 
 // /* Has a centralized DMA, which is shared with all peripherals */
-// #define SOC_SHA_GDMA             (1)
+#define SOC_SHA_GDMA             (1)
 
 // /* Supported HW algorithms */
-// #define SOC_SHA_SUPPORT_SHA1            (1)
-// #define SOC_SHA_SUPPORT_SHA224          (1)
-// #define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA1            (1)
+#define SOC_SHA_SUPPORT_SHA224          (1)
+#define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)

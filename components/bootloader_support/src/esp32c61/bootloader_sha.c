@@ -13,8 +13,6 @@
 
 static SHA_CTX ctx;
 
-//TODO: [ESP32C61] IDF-9234
-
 bootloader_sha256_handle_t bootloader_sha256_start()
 {
     // Enable SHA hardware
