@@ -39,7 +39,7 @@ Encrypted Partitions
 
 With flash encryption enabled, the following types of data are encrypted by default:
 
-- :ref:`second-stage-bootloader` (Firmware Bootloader)
+- :ref:`second-stage-bootloader`
 - Partition Table
 - :ref:`nvs_encr_key_partition`
 - Otadata
@@ -175,39 +175,39 @@ Read and write access to eFuse bits is controlled by appropriate fields in the r
 Flash Encryption Process
 ------------------------
 
-Assuming that the eFuse values are in their default states and the firmware bootloader is compiled to support flash encryption, the flash encryption process executes as shown below:
+Assuming that the eFuse values are in their default states and the second stage bootloader is compiled to support flash encryption, the flash encryption process executes as shown below:
 
 .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
-  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
+  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The first stage (ROM) bootloader loads the second stage bootloader.
 
-  2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b0000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Flash Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
+  2. Second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b0000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Flash Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Firmware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool), then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Second stage bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool), then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Second stage bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
-  4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
+  4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
-  5. Firmware bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) to mark the flash contents as encrypted. Odd number of bits is set.
+  5. Second stage bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) to mark the flash contents as encrypted. Odd number of bits is set.
 
-  6. For :ref:`flash-enc-development-mode`, the firmware bootloader sets only the eFuse bits ``DISABLE_DL_DECRYPT`` and ``DISABLE_DL_CACHE`` to allow the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected.
+  6. For :ref:`flash-enc-development-mode`, the second stage bootloader sets only the eFuse bits ``DISABLE_DL_DECRYPT`` and ``DISABLE_DL_CACHE`` to allow the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected.
 
-  7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets the eFuse bits ``DISABLE_DL_ENCRYPT``, ``DISABLE_DL_DECRYPT``, and ``DISABLE_DL_CACHE`` to 1 to prevent the UART bootloader from decrypting the flash contents. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
+  7. For :ref:`flash-enc-release-mode`, the second stage bootloader sets the eFuse bits ``DISABLE_DL_ENCRYPT``, ``DISABLE_DL_DECRYPT``, and ``DISABLE_DL_CACHE`` to 1 to prevent the UART bootloader from decrypting the flash contents. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
 
-  8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
+  8. The device is then rebooted to start executing the encrypted image. The second stage bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
+  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The first stage (ROM) bootloader loads the second stage bootloader.
 
-  2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Auto Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
+  2. Second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Auto Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Firmware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Second stage bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, second stage bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
-  4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
+  4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
-  5. Firmware bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
+  5. Second stage bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
 
-  6. For :ref:`flash-enc-development-mode`, the firmware bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the firmware bootloader by default sets the following eFuse bits:
+  6. For :ref:`flash-enc-development-mode`, the second stage bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the second stage bootloader by default sets the following eFuse bits:
 
     .. list::
 
@@ -217,45 +217,45 @@ Assuming that the eFuse values are in their default states and the firmware boot
       - ``HARD_DIS_JTAG``
       - ``DIS_LEGACY_SPI_BOOT``
 
-  7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
+  7. For :ref:`flash-enc-release-mode`, the second stage bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
 
-  8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
+  8. The device is then rebooted to start executing the encrypted image. The second stage bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
+  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The first stage (ROM) bootloader loads the second stage bootloader.
 
-  2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+  2. Second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 bit key and then writes it into `BLOCK_KEYN` eFuse. The software also updates the ``KEY_PURPOSE_N`` for the block where the key is stored. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEYN` eFuse are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption is completely conducted by hardware, and the key cannot be accessed via software. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
+  3. Second stage bootloader uses RNG (random) module to generate an 256 bit key and then writes it into `BLOCK_KEYN` eFuse. The software also updates the ``KEY_PURPOSE_N`` for the block where the key is stored. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEYN` eFuse are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption is completely conducted by hardware, and the key cannot be accessed via software. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
 
-  4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
+  4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
-  5. Firmware bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
+  5. Second stage bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
 
-  6. For :ref:`flash-enc-development-mode`, the firmware bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the firmware bootloader by default sets the eFuse bits ``DIS_DOWNLOAD_ICACHE``, ``DIS_PAD_JTAG``, ``DIS_USB_JTAG`` and ``DIS_LEGACY_SPI_BOOT``.
+  6. For :ref:`flash-enc-development-mode`, the second stage bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the second stage bootloader by default sets the eFuse bits ``DIS_DOWNLOAD_ICACHE``, ``DIS_PAD_JTAG``, ``DIS_USB_JTAG`` and ``DIS_LEGACY_SPI_BOOT``.
 
-  7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
+  7. For :ref:`flash-enc-release-mode`, the second stage bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
 
-  8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
+  8. The device is then rebooted to start executing the encrypted image. The second stage bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
+  1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The first stage (ROM) bootloaders loads the second stage bootloader.
 
-  2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
+  2. The second stage bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for ``BLOCK_KEY0`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
+  3. The second stage bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for ``BLOCK_KEY0`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
 
-  4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
+  4. Flash encryption block encrypts the flash contents - the second stage bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
-  5. Firmware bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
+  5. The second stage bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
 
-  6. For :ref:`flash-enc-development-mode`, the firmware bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the firmware bootloader by default sets the eFuse bits ``DIS_DOWNLOAD_ICACHE``, ``DIS_PAD_JTAG``, and ``DIS_DIRECT_BOOT``.
+  6. For :ref:`flash-enc-development-mode`, the second stage bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the second stage bootloader by default sets the eFuse bits ``DIS_DOWNLOAD_ICACHE``, ``DIS_PAD_JTAG``, and ``DIS_DIRECT_BOOT``.
 
-  7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
+  7. For :ref:`flash-enc-release-mode`, the second stage bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
 
-  8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
+  8. The device is then rebooted to start executing the encrypted image. The second stage bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
 During the development stage, there is a frequent need to program different plaintext flash images and test the flash encryption process. This requires that Firmware Download mode is able to load new plaintext images as many times as it might be needed. However, during manufacturing or production stages, Firmware Download mode should not be allowed to access flash contents for security reasons.
 
@@ -316,7 +316,7 @@ Enabling flash encryption will increase the size of bootloader, which might requ
 
       This command does not include any user files which should be written to the partitions on the flash memory. Please write them manually before running this command otherwise the files should be encrypted separately before writing.
 
-  This command will write to flash memory unencrypted images: the firmware bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the firmware bootloader encrypts: the firmware bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
+  This command will write to flash memory unencrypted images: the second stage bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the second stage bootloader encrypts: the second stage bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
 
 A sample output of the first {IDF_TARGET_NAME} boot after enabling flash encryption is given below:
 
@@ -486,7 +486,7 @@ Enabling flash encryption will increase the size of bootloader, which might requ
 
       This command does not include any user files which should be written to the partitions on the flash memory. Please write them manually before running this command otherwise the files should be encrypted separately before writing.
 
-  This command will write to flash memory unencrypted images: the firmware bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the firmware bootloader encrypts: the firmware bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
+  This command will write to flash memory unencrypted images: the second stage bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the second stage bootloader encrypts: the second stage bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
 
 If using Development Mode, then the easiest way to update and re-flash binaries is :ref:`encrypt-partitions`.
 
@@ -549,7 +549,7 @@ Enabling flash encryption will increase the size of bootloader, which might requ
 
       This command does not include any user files which should be written to the partitions on the flash memory. Please write them manually before running this command otherwise the files should be encrypted separately before writing.
 
-  This command will write to flash memory unencrypted images: the firmware bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the firmware bootloader encrypts: the firmware bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
+  This command will write to flash memory unencrypted images: the second stage bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the second stage bootloader encrypts: the second stage bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
 
 Once the flash encryption is enabled in Release mode, the bootloader will write-protect the ``{IDF_TARGET_CRYPT_CNT}`` eFuse.
 
@@ -576,14 +576,14 @@ When using Flash Encryption in production:
 Enable Flash Encryption Externally
 ----------------------------------
 
-In the process mentioned above, flash encryption related eFuses which ultimately enable flash encryption are programmed through the firmware bootloader. Alternatively, all the eFuses can be programmed with the help of ``espefuse`` tool. Please refer :ref:`enable-flash-encryption-externally` for more details.
+In the process mentioned above, flash encryption related eFuses which ultimately enable flash encryption are programmed through the second stage bootloader. Alternatively, all the eFuses can be programmed with the help of ``espefuse`` tool. Please refer :ref:`enable-flash-encryption-externally` for more details.
 
 Possible Failures
 -----------------
 
 Once flash encryption is enabled, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value will have an odd number of bits set. It means that all the partitions marked with the encryption flag are expected to contain encrypted ciphertext. Below are the three typical failure cases if the {IDF_TARGET_NAME} is erroneously loaded with plaintext data:
 
-1. If the bootloader partition is re-flashed with a **plaintext firmware bootloader image**, the ROM bootloader will fail to load the firmware bootloader resulting in the following failure:
+1. If the bootloader partition is re-flashed with a **plaintext second stage bootloader image**, the first stage (ROM) bootloader will fail to load the second stage bootloader resulting in the following failure:
 
 .. only:: esp32
 
@@ -635,7 +635,7 @@ Once flash encryption is enabled, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value wil
 
     This error also appears if the flash contents are erased or corrupted.
 
-2. If the firmware bootloader is encrypted, but the partition table is re-flashed with a **plaintext partition table image**, the bootloader will fail to read the partition table resulting in the following failure:
+2. If the second stage bootloader is encrypted, but the partition table is re-flashed with a **plaintext partition table image**, the bootloader will fail to read the partition table resulting in the following failure:
 
   .. code-block:: bash
 
@@ -727,7 +727,7 @@ Whenever the ``{IDF_TARGET_CRYPT_CNT}`` eFuse is set to a value with an odd numb
 - Executable application code in flash (IROM).
 - All read-only data stored in flash (DROM).
 - Any data accessed via :cpp:func:`spi_flash_mmap`.
-- The firmware bootloader image when it is read by the ROM bootloader.
+- The second stage bootloader image when it is read by the first stage (ROM) bootloader.
 
 .. important::
 
@@ -776,7 +776,7 @@ OTA updates to encrypted partitions will automatically write encrypted data if t
 
 Before building the application image for OTA updating of an already encrypted device, enable the option :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` in project configuration menu.
 
-For general information about ESP-IDF OTA updates, please refer to :doc:`OTA <../api-reference/system/ota>`
+For general information about ESP-IDF OTA updates, please refer to :doc:`OTA <../api-reference/system/ota>`.
 
 
 .. _updating-encrypted-flash-serial:
@@ -976,7 +976,7 @@ However, before the first boot you can choose to keep any of these features enab
 
   The eFuse ``FLASH_CRYPT_CONFIG`` determines the number of bits in the flash encryption key which are "tweaked" with the block offset. For details, see :ref:`flash-encryption-algorithm`.
 
-  On the first boot of the firmware bootloader, this value is set to the maximum ``0xF``.
+  On the first boot of the second stage bootloader, this value is set to the maximum ``0xF``.
 
   It is possible to burn this eFuse manually and write protect it before the first boot in order to select different tweak values. However, this is not recommended.
 

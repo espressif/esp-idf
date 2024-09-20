@@ -3,16 +3,16 @@
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
+ESP-IDF 二级引导加载程序 (second stage bootloader) 主要执行以下任务：
 
 1. 内部模块的最小化初始配置；
 2. 如果配置了 :doc:`/security/flash-encryption` 和/或 :doc:`Secure Boot </security/secure-boot-v2>`，则对其进行初始化。
 3. 根据分区表和 ota_data（如果存在）选择需要引导的应用程序 (app) 分区；
 4. 将此应用程序镜像加载到 RAM（IRAM 和 DRAM）中，最后把控制权转交给此应用程序。
 
-引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处。
+ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处。
 
-关于启动过程以及 ESP-IDF 引导加载程序的更多信息，请参考 :doc:`startup`。
+如需了解包括 ESP-IDF 二级引导加载程序在内的完整启动过程，请参考 :doc:`startup`。
 
 .. _bootloader-compatibility:
 
@@ -21,11 +21,11 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 建议使用最新发布的 :doc:`ESP-IDF 版本 </versions>`。OTA（空中升级）更新可以在现场烧录新的应用程序，但不能烧录一个新的引导加载程序。因此，引导加载程序支持引导从 ESP-IDF 新版本中构建的应用程序。
 
-但不支持引导从 ESP-IDF 旧版本中构建的程序。如果现有产品可能需要将应用程序降级到旧版本，那么在手动更新 ESP-IDF 时，请继续使用旧版本 ESP-IDF 引导加载程序的二进制文件。
+但不支持引导从 ESP-IDF 旧版本中构建的程序。如果现有产品可能需要将应用程序降级到旧版本，那么在手动更新 ESP-IDF 时，请继续使用旧版本引导加载程序的二进制文件。
 
 .. note::
 
-    如果在生产中测试现有产品的 OTA 更新，请确保测试中使用的 ESP-IDF 引导加载程序二进制文件与生产中部署的相同。
+    如果在生产中测试现有产品的 OTA 更新，请确保测试中使用的引导加载程序二进制文件与生产中部署的相同。
 
 .. only:: esp32
 
@@ -50,11 +50,11 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 每个 ESP-IDF 应用程序或引导加载程序的二进制文件中都包含一个文件头，其中内置了 :ref:`CONFIG_ESPTOOLPY_FLASHMODE`、:ref:`CONFIG_ESPTOOLPY_FLASHFREQ`、和 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`。这些是用于在启动时配置 SPI flash。
 
-ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-bootloader` 文件头中的配置信息，并使用这些信息来加载剩余的 :ref:`second-stage-bootloader`。然而，此时系统的时钟速度低于其被配置的速度，并且在这个阶段，只支持部分 flash 模式。因此，当 :ref:`second-stage-bootloader` 运行时，它会从当前应用程序的二进制文件头中读取数据（而不是从引导加载程序的文件头中读取数据），并使用这些数据重新配置 flash。这样的配置流程可让 OTA 更新去更改当前使用的 SPI flash 的配置。
+:ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-bootloader` 文件头中的配置信息，并使用这些信息来加载剩余的 :ref:`second-stage-bootloader`。然而，此时系统的时钟速度低于其被配置的速度，并且在这个阶段，只支持部分 flash 模式。因此，当 :ref:`second-stage-bootloader` 运行时，它会从当前应用程序的二进制文件头中读取数据（而不是从 :ref:`second-stage-bootloader` 的文件头中读取数据），并使用这些数据重新配置 flash。这样的配置流程可让 OTA 更新去更改当前使用的 SPI flash 的配置。
 
 .. only:: esp32
 
-    ESP-IDF V4.0 版本之前的引导加载程序使用其自身的文件头来配置 SPI flash，这意味着无法在 OTA 更新时更改 SPI flash 配置。为了与旧引导加载程序兼容，应用程序在其启动期间使用应用程序文件头中的配置信息重新初始化 flash 配置。
+    ESP-IDF V4.0 版本之前的引导加载程序使用其自身的文件头来配置 SPI flash，这意味着无法在 OTA 更新时更改 SPI flash 配置。为了与旧版本的引导加载程序兼容，应用程序在其启动期间使用应用程序文件头中的配置信息重新初始化 flash 配置。
 
 日志级别
 ---------
@@ -125,7 +125,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 回滚
 --------
 
-回滚和反回滚功能也必须在引导程序中配置。
+回滚和反回滚功能也必须在引导加载程序中配置。
 
 请参考 :doc:`OTA API 参考文档 </api-reference/system/ota>` 中的 :ref:`app_rollback` 和 :ref:`anti-rollback` 章节。
 
@@ -157,7 +157,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 可以使用如下方法解决此问题：
 
-- 将 :ref:`bootloader 编译器优化 <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` 重新设置回默认值“Size”。
+- 将 :ref:`引导加载程序编译器优化 <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` 重新设置回默认值“Size”。
 - 降低 :ref:`引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。将日志级别设置为 Warning, Error 或 None 都会显著减少最终二进制文件的大小（但也可能会让调试变得更加困难）。
 - 将 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 设置为高于 0x8000 的值，以便稍后将分区表放置在 flash 中，这样可以增加引导加载程序的可用空间。如果 :doc:`分区表 </api-guides/partition-tables>` 的 CSV 文件包含明确的分区偏移量，则需要修改这些偏移量，从而保证没有分区的偏移量低于 ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``。（这包括随 ESP-IDF 提供的默认分区 CSV 文件）
 
@@ -186,4 +186,4 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 在引导加载程序的代码中，用户不能使用其他组件提供的驱动和函数，如果确实需要，请将该功能的实现部分放在项目的 `bootloader_components` 目录中（注意，这会增加引导加载程序的大小）。
 
-如果引导加载程序过大，则可能与内存中的分区表重叠，分区表默认烧录在偏移量 0x8000 处。增加 :ref:`分区表偏移量 <CONFIG_PARTITION_TABLE_OFFSET>` ，将分区表放在 flash 中靠后的区域，这样可以增加引导程序的可用空间。
+如果引导加载程序过大，则可能与内存中的分区表重叠，分区表默认烧录在偏移量 0x8000 处。增加 :ref:`分区表偏移量 <CONFIG_PARTITION_TABLE_OFFSET>` ，将分区表放在 flash 中靠后的区域，这样可以增加引导加载程序的可用空间。

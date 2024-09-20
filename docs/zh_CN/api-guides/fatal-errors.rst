@@ -288,14 +288,14 @@ RTC 看门狗超时
 ----------------
 {IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
-RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，ROM 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
+RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，一级 (ROM) 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
 
 ::
 
     rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
 
-RTC 看门狗涵盖了从一级引导程序（ROM 引导程序）到应用程序启动的执行时间，最初在 ROM 引导程序中设置，而后在引导程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
+RTC 看门狗涵盖了从一级 (ROM) 引导加载程序到应用程序启动的执行时间，最初在一级 (ROM) 引导加载程序中设置，而后在引导加载程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
 
 .. _Guru-Meditation-Errors:
 

@@ -30,7 +30,7 @@ Background
 
 - To understand the secure boot process, please familiarize yourself with the standard :doc:`../api-guides/startup`.
 
-- Both stages of the boot process, including initial software bootloader load and subsequent partition & app loading, are verified by the secure boot process, in a chain of trust relationship.
+- Both stages of the boot process, including initial second stage bootloader load and subsequent partition & app loading, are verified by the secure boot process, in a chain of trust relationship.
 
 
 Secure Boot Process Overview
@@ -42,18 +42,18 @@ This is a high-level overview of the secure boot process. Step-by-step instructi
 
 2. Secure boot defaults to signing images and partition table data during the build process. The ``Secure boot private signing key`` config item is a file path to an ECDSA public/private key pair in a PEM format file.
 
-3. The software bootloader image is built by ESP-IDF with secure boot support enabled, and the public key for signature verification is integrated into the bootloader image. This software bootloader image is flashed at offset 0x1000.
+3. The second stage bootloader image is built by ESP-IDF with secure boot support enabled, and the public key for signature verification is integrated into the bootloader image. This second stage bootloader image is flashed at offset 0x1000.
 
-4. On the first boot, the software bootloader follows the following process to enable a secure boot:
+4. On the first boot, the second stage bootloader follows the following process to enable a secure boot:
 
    - Hardware secure boot support generates a device-secure bootloader key and a secure digest. The secure bootloader key is generated with the help of the hardware RNG, and then stored in eFuse with read and write protection enabled. The digest is derived from the key, an initialization vector (IV), and the bootloader image contents.
    - The secure digest is flashed at offset 0x0 in the flash.
    - Depending on Secure Boot Configuration, eFuses are burned to disable JTAG and the ROM BASIC interpreter. It is **strongly recommended** that these options are turned on.
-   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 eFuse. The software bootloader then becomes protected. After this point, the chip will only boot a bootloader image if the digest matches.
+   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 eFuse. The second stage bootloader then becomes protected. After this point, the chip will only boot a bootloader image if the digest matches.
 
-5. On subsequent boots, the ROM bootloader sees that the secure boot eFuse is burned, reads the saved digest at 0x0, and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see :ref:`secure-boot-hardware-support`.
+5. On subsequent boots, the first stage (ROM) bootloader sees that the secure boot eFuse is burned, reads the saved digest at 0x0, and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see :ref:`secure-boot-hardware-support`.
 
-6. When running in secure boot mode, the software bootloader uses the secure boot signing key, the public key of which is embedded in the bootloader itself and therefore validated as part of the bootloader, to verify the signature appended to all subsequent partition tables and app images before they are booted.
+6. When running in secure boot mode, the second stage bootloader uses the secure boot signing key, the public key of which is embedded in the bootloader itself and therefore validated as part of the bootloader, to verify the signature appended to all subsequent partition tables and app images before they are booted.
 
 
 Keys
@@ -73,7 +73,7 @@ The following keys are used by the secure boot process:
 
 - ``secure boot signing key`` is a standard ECDSA public/private key pair in PEM format, see :ref:`secure-boot-image-signing-algorithm`.
 
-  - The public key from this key pair is compiled into the software bootloader. It is only used for signature verification purposes and not signature creation. This public key is used to verify the second stage of booting, including the partition table and app image, before booting continues. The public key can be freely distributed; it does not need to be kept secret.
+  - The public key from this key pair is compiled into the second stage bootloader. It is only used for signature verification purposes and not signature creation. This public key is used to verify the second stage of booting, including the partition table and app image, before booting continues. The public key can be freely distributed; it does not need to be kept secret.
 
   - The private key from this key pair **must be securely kept private**, as anyone who has this key can authenticate to any bootloader that is configured with a secure boot and the matching public key.
 
@@ -117,7 +117,7 @@ How to Enable Secure Boot
 
   ``idf.py flash`` does not flash the bootloader if secure boot is enabled.
 
-8. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
+8. Reset the {IDF_TARGET_NAME} and it will boot the second stage bootloader you flashed. The second stage bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 .. note::
 
@@ -127,13 +127,13 @@ How to Enable Secure Boot
 
   If {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
-9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed using the secure bootloader key, and then the software bootloader will verify the signed partition table and app image using the public key portion of the secure boot signing key.
+9. On subsequent boots, the secure boot hardware will verify the second stage bootloader has not changed using the secure bootloader key, and then the second stage bootloader will verify the signed partition table and app image using the public key portion of the secure boot signing key.
 
 
 .. _secure-boot-reflashable:
 
-Reflashable Software Bootloader
--------------------------------
+Reflashable Second Stage Bootloader
+-----------------------------------
 
 Configuration ``Secure Boot: One-Time Flash`` is the recommended configuration for production devices. In this mode, each device gets a unique key that is never stored outside the device.
 
@@ -229,7 +229,7 @@ The following sections contain low-level reference descriptions of various secur
 Secure Boot Hardware Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The first stage of secure boot verification, i.e., checking the software bootloader, is done via hardware. The {IDF_TARGET_NAME}'s secure boot support hardware can perform three basic operations:
+The first stage of secure boot verification, i.e., checking the second stage bootloader, is done via hardware. The {IDF_TARGET_NAME}'s secure boot support hardware can perform three basic operations:
 
 1. Generate a random sequence of bytes from a hardware random number generator.
 
