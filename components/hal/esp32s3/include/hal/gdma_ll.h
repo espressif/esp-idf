@@ -70,7 +70,7 @@ extern "C" {
 /**
  * @brief Enable the bus clock for the DMA module
  */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     SYSTEM.perip_clk_en1.dma_clk_en = enable;
@@ -78,12 +78,12 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_enable_bus_clock(__VA_ARGS__)
+#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the DMA module
  */
-static inline void gdma_ll_reset_register(int group_id)
+static inline void _gdma_ll_reset_register(int group_id)
 {
     (void)group_id;
     SYSTEM.perip_rst_en1.dma_rst = 1;
@@ -92,7 +92,7 @@ static inline void gdma_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
+#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Force enable register clock

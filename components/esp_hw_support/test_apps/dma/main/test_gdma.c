@@ -22,6 +22,7 @@
 #include "hal/cache_hal.h"
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
+#include "gdma_test_utils.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
@@ -202,7 +203,7 @@ static bool test_gdma_m2m_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_e
     return task_woken == pdTRUE;
 }
 
-static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan, bool dma_link_in_ext_mem)
+static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan, bool dma_link_in_ext_mem, bool trig_retention_backup)
 {
     size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     gdma_rx_event_callbacks_t rx_cbs = {
@@ -280,6 +281,10 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
 
+    if (trig_retention_backup) {
+        test_gdma_trigger_retention_backup(tx_chan, rx_chan);
+    }
+
     TEST_ESP_OK(gdma_start(rx_chan, gdma_link_get_head_addr(rx_link_list)));
     TEST_ESP_OK(gdma_start(tx_chan, gdma_link_get_head_addr(tx_link_list)));
 
@@ -313,7 +318,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     vSemaphoreDelete(done_sem);
 }
 
-TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
+static void test_gdma_m2m_mode(bool trig_retention_backup)
 {
     gdma_channel_handle_t tx_chan = NULL;
     gdma_channel_handle_t rx_chan = NULL;
@@ -332,7 +337,7 @@ TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
     };
     TEST_ESP_OK(gdma_new_ahb_channel(&rx_chan_alloc_config, &rx_chan));
 
-    test_gdma_m2m_mode(tx_chan, rx_chan, false);
+    test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
@@ -351,11 +356,20 @@ TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_new_axi_channel(&rx_chan_alloc_config, &rx_chan));
 
     // the AXI GDMA allows to put the DMA link list in the external memory
-    test_gdma_m2m_mode(tx_chan, rx_chan, true);
+    test_gdma_m2m_transaction(tx_chan, rx_chan, true, trig_retention_backup);
 
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif // SOC_AXI_GDMA_SUPPORTED
+}
+
+TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
+{
+    test_gdma_m2m_mode(false);
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // test again with retention
+    test_gdma_m2m_mode(true);
+#endif
 }
 
 typedef struct {
