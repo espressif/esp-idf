@@ -6,6 +6,7 @@
 
 #include "esp_coexist.h"
 #include "private/esp_coexist_internal.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_log.h"
@@ -16,6 +17,10 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "esp_attr.h"
+#endif
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
 #endif
 
 #if SOC_EXTERNAL_COEX_ADVANCE
@@ -163,6 +168,9 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         return ESP_ERR_INVALID_ARG;
     }
     esp_coex_external_set_wire_type(wire_type);
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_COEX_MODULE);
+#endif
 #if SOC_EXTERNAL_COEX_ADVANCE
     esp_coex_external_params(g_external_coex_params, 0, 0);
 #endif
