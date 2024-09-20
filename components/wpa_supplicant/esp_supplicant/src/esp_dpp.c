@@ -15,6 +15,7 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "esp_wps_i.h"
 #include "rsn_supp/wpa.h"
 #include "rsn_supp/pmksa_cache.h"
@@ -575,6 +576,7 @@ static void esp_dpp_task(void *pvParameters)
                     break;
                 }
                 channel = p->chan_list[counter++ % p->num_chan];
+                wpa_printf(MSG_DEBUG, "Listening on channel=%d", channel);
                 ret = esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                                  BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
                 if (ret != ESP_OK) {
@@ -687,47 +689,81 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
 static char *esp_dpp_parse_chan_list(const char *chan_list)
 {
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
-    char *uri_channels = os_zalloc(14 * 6 + 1);
-    const char *pos = chan_list;
-    const char *pos2;
-    char *pos3 = uri_channels;
+    size_t max_uri_len = ESP_DPP_MAX_CHAN_COUNT * 8 + strlen(" chan=") + 1;
+
+    char *uri_channels = os_zalloc(max_uri_len);
+    if (!uri_channels) {
+        wpa_printf(MSG_WARNING, "DPP: URI allocation failed");
+        return NULL;
+    }
+
+    char *uri_ptr = uri_channels;
     params->num_chan = 0;
 
-    os_memcpy(pos3, " chan=", strlen(" chan="));
-    pos3 += strlen(" chan=");
+    /* Append " chan=" at the beginning of the URI */
+    strcpy(uri_ptr, " chan=");
+    uri_ptr += strlen(" chan=");
 
-    while (pos && *pos) {
-        int channel;
-        int len = strlen(chan_list);
+    while (*chan_list && params->num_chan < ESP_DPP_MAX_CHAN_COUNT) {
+        int channel = 0;
 
-        pos2 = pos;
-        while (*pos2 >= '0' && *pos2 <= '9') {
-            pos2++;
+        /* Parse the channel number */
+        while (*chan_list >= '0' && *chan_list <= '9') {
+            channel = channel * 10 + (*chan_list - '0');
+            chan_list++;
         }
-        if (*pos2 == ',' || *pos2 == ' ' || *pos2 == '\0') {
-            channel = atoi(pos);
-            if (channel < 1 || channel > 14) {
-                os_free(uri_channels);
-                return NULL;
+
+        /* Validate the channel number */
+        if (CHANNEL_TO_BIT_NUMBER(channel) == 0) {
+            wpa_printf(MSG_WARNING, "DPP: Skipping invalid channel %d", channel);
+            /* Skip to the next valid entry */
+            while (*chan_list == ',' || *chan_list == ' ') {
+                chan_list++;
             }
-            params->chan_list[params->num_chan++] = channel;
-            os_memcpy(pos3, "81/", strlen("81/"));
-            pos3 += strlen("81/");
-            os_memcpy(pos3, pos, (pos2 - pos));
-            pos3 += (pos2 - pos);
-            *pos3++ = ',';
-
-            pos = pos2 + 1;
-        }
-        while (*pos == ',' || *pos == ' ' || *pos == '\0') {
-            pos++;
+            continue;  // Skip the bad channel and move to the next one
         }
 
-        if (((int)(pos - chan_list) >= len)) {
-            break;
+        /* Get the operating class for the channel */
+        u8 oper_class = get_operating_class(channel, 0);
+        if (oper_class == 0) {
+            wpa_printf(MSG_WARNING, "DPP: Skipping channel %d due to missing operating class", channel);
+            /* Skip to the next valid entry */
+            while (*chan_list == ',' || *chan_list == ' ') {
+                chan_list++;
+            }
+            continue;  /* Skip to the next channel if no operating class found */
+        }
+
+        /* Add the valid channel to the list */
+        params->chan_list[params->num_chan++] = channel;
+
+        /* Check if there's space left in uri_channels buffer */
+        size_t remaining_space = max_uri_len - (uri_ptr - uri_channels);
+        if (remaining_space <= 8) {  // Oper class + "/" + channel + "," + null terminator
+            wpa_printf(MSG_ERROR, "DPP: Not enough space in URI buffer");
+            os_free(uri_channels);
+            return NULL;
+        }
+
+        /* Append the operating class and channel to the URI */
+        uri_ptr += sprintf(uri_ptr, "%d/%d,", oper_class, channel);
+
+        /* Skip any delimiters (comma or space) */
+        while (*chan_list == ',' || *chan_list == ' ') {
+            chan_list++;
         }
     }
-    *(pos3 - 1) = ' ';
+
+    if (!params->num_chan) {
+        wpa_printf(MSG_ERROR, "DPP: No valid channel in the list");
+        os_free(uri_channels);
+        return NULL;
+    }
+
+    /* Replace the last comma with a space if there was content added */
+    if (uri_ptr > uri_channels && *(uri_ptr - 1) == ',') {
+        *(uri_ptr - 1) = ' ';
+    }
 
     return uri_channels;
 }
@@ -742,10 +778,16 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
     }
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
     char *uri_chan_list = esp_dpp_parse_chan_list(chan_list);
+
+    if (params->num_chan > ESP_DPP_MAX_CHAN_COUNT) {
+        os_free(uri_chan_list);
+        return ESP_ERR_DPP_INVALID_LIST;
+    }
+
     char *command = os_zalloc(1200);
     int ret;
 
-    if (!uri_chan_list || !command || params->num_chan >= 14 || params->num_chan == 0) {
+    if (!uri_chan_list || !command || params->num_chan > ESP_DPP_MAX_CHAN_COUNT || params->num_chan == 0) {
         wpa_printf(MSG_ERROR, "Invalid Channel list - %s", chan_list);
         if (command) {
             os_free(command);
