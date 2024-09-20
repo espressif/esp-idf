@@ -1235,6 +1235,14 @@ config SOC_COEX_HW_PTI
     bool
     default y
 
+config SOC_EXTERNAL_COEX_ADVANCE
+    bool
+    default y
+
+config SOC_EXTERNAL_COEX_LEADER_TX_LINE
+    bool
+    default n
+
 config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
