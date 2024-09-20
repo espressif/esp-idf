@@ -146,20 +146,21 @@
  * should be defined statically!
  */
 
-#define SOC_IROM_LOW    0x42000000
-#define SOC_IROM_HIGH   0x44000000
-#define SOC_EXTRAM_DATA_LOW 0x42000000
-#define SOC_EXTRAM_DATA_HIGH 0x44000000
-#define SOC_DROM_LOW    SOC_IROM_LOW
-#define SOC_DROM_HIGH   SOC_IROM_HIGH
-#define SOC_IROM_MASK_LOW  0x40000000
-#define SOC_IROM_MASK_HIGH 0x40040000
-#define SOC_DROM_MASK_LOW  0x40000000
-#define SOC_DROM_MASK_HIGH 0x40040000
-#define SOC_IRAM_LOW    0x40800000
-#define SOC_IRAM_HIGH   0x40850000
-#define SOC_DRAM_LOW    0x40800000
-#define SOC_DRAM_HIGH   0x40850000
+#define SOC_IROM_LOW            0x42000000
+#define SOC_IROM_HIGH           0x44000000
+#define SOC_EXTRAM_DATA_LOW     0x42000000
+#define SOC_EXTRAM_DATA_HIGH    0x44000000
+#define SOC_EXTRAM_DATA_SIZE    (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW)
+#define SOC_DROM_LOW            SOC_IROM_LOW
+#define SOC_DROM_HIGH           SOC_IROM_HIGH
+#define SOC_IROM_MASK_LOW       0x40000000
+#define SOC_IROM_MASK_HIGH      0x40040000
+#define SOC_DROM_MASK_LOW       0x40000000
+#define SOC_DROM_MASK_HIGH      0x40040000
+#define SOC_IRAM_LOW            0x40800000
+#define SOC_IRAM_HIGH           0x40850000
+#define SOC_DRAM_LOW            0x40800000
+#define SOC_DRAM_HIGH           0x40850000
 
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40800000
@@ -196,7 +197,7 @@
 #define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x4084c9f0
+#define SOC_ROM_STACK_START         0x4084ea70
 #define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
