@@ -82,20 +82,20 @@ ESP-NETIF 组件使用了系统事件，典型的网络启动代码如下所示�
 
 初始化网络接口可能有些复杂，ESP-NETIF 提供了一些创建常见接口（例如 Wi-Fi 和以太网）的快捷方式。
 
-以下示例展示了默认接口的初始化过程：
 
+请参考以下示例来了解如何初始化默认接口：
 
-.. only:: SOC_WIFI_SUPPORTED
+.. list::
 
-    - Wi-Fi 站点：:example_file:`wifi/getting_started/station/main/station_example_main.c`
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/getting_started/station` 演示了如何使用 station 功能将 {IDF_TARGET_NAME} 连接到 AP。
 
-- 以太网：:example_file:`ethernet/basic/main/ethernet_example_main.c`
+    :CONFIG_ESP_WIFI_SOFTAP_SUPPORT: - :example:`wifi/getting_started/softAP` 演示了如何使用 SoftAP 功能将 {IDF_TARGET_NAME} 配置为 AP。
 
-- L2 TAP: :example_file:`protocols/l2tap/main/l2tap_main.c`
+    - :example:`ethernet/basic` 演示了如何使用以太网驱动程序，将其添加到 `esp_netif`，并获取一个可 ping 的 IP 地址。
 
-.. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+    - :example:`protocols/l2tap` 演示了如何使用 ESP-NETIF L2 TAP 接口访问数据链路层，以接收和传输帧，实现非 IP 协议，并使用特定的 EthTypes 回显以太网帧。
 
-    - Wi-Fi 接入点：:example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+    - :example:`protocols/static_ip` 演示了如何将 Wi-Fi 配置为 station，包括设置静态 IP、子网掩码、网关和 DNS 服务器。
 
 .. only:: SOC_WIFI_SUPPORTED
 

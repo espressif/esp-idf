@@ -82,20 +82,19 @@ Common Network Interfaces
 
 As the initialization of network interfaces could be quite complex, ESP-NETIF provides some convenient methods of creating the most common ones, such as Wi-Fi and Ethernet.
 
-Please refer to the following example to understand the initialization process of the default interface:
+Please refer to the following examples to understand the initialization process of the default interface:
 
+.. list::
 
-.. only:: SOC_WIFI_SUPPORTED
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/getting_started/station` demonstrates how to use the station functionality to connect {IDF_TARGET_NAME} to an AP.
 
-    - Wi-Fi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
+    :CONFIG_ESP_WIFI_SOFTAP_SUPPORT: - :example:`wifi/getting_started/softAP` demonstrates how to use the SoftAP functionality to configure {IDF_TARGET_NAME} as an AP.
 
-- Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
+    - :example:`ethernet/basic` demonstrates how to use the Ethernet driver, attach it to `esp_netif`, and obtain an IP address that can be pinged.
 
-- L2 TAP: :example_file:`protocols/l2tap/main/l2tap_main.c`
+    - :example:`protocols/l2tap` demonstrates how to use the ESP-NETIF L2 TAP interface to access the Data Link Layer for receiving and transmitting frames, implement non-IP protocols, and echo Ethernet frames with specific EthTypes.
 
-.. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
-
-    - Wi-Fi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+    - :example:`protocols/static_ip` demonstrates how to configure Wi-Fi as a station, including setting up a static IP, netmask, gateway and DNS server.
 
 .. only:: SOC_WIFI_SUPPORTED
 

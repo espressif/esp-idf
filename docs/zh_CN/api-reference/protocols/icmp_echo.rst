@@ -112,7 +112,7 @@ IoT 设备通常需要检查远程服务器是否可用。如果服务器离线�
 应用示例
 ----------
 
-ICMP echo 示例： :example:`protocols/icmp_echo`
+- :example:`protocols/icmp_echo` 演示了如何实现一个简单的 ping 命令行工具，使用 ICMP 回显请求数据包测试远程主机在 IP 网络上的可达性。
 
 API 参考
 --------------
