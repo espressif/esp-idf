@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -469,7 +469,7 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                 if(gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_16 &&
                    gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_32 &&
                    gatts_attr_db[i+1].att_desc.uuid_length != ESP_UUID_LEN_128) {
-                    BTC_TRACE_ERROR("%s, The Charateristic uuid length = %d is invalid", __func__,\
+                    BTC_TRACE_ERROR("%s, The Characteristic uuid length = %d is invalid", __func__,\
                         gatts_attr_db[i+1].att_desc.uuid_length);
                     return ESP_GATT_INVALID_ATTR_LEN;
                 }
@@ -481,7 +481,7 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                         uuid == ESP_GATT_UUID_CHAR_SRVR_CONFIG || uuid == ESP_GATT_UUID_CHAR_PRESENT_FORMAT ||
                         uuid == ESP_GATT_UUID_CHAR_AGG_FORMAT || uuid == ESP_GATT_UUID_CHAR_VALID_RANGE ||
                         uuid == ESP_GATT_UUID_EXT_RPT_REF_DESCR || uuid == ESP_GATT_UUID_RPT_REF_DESCR) {
-                        BTC_TRACE_ERROR("%s, The charateristic value uuid = %d is invalid", __func__, uuid);
+                        BTC_TRACE_ERROR("%s, The characteristic value uuid = %d is invalid", __func__, uuid);
                         return ESP_GATT_INVALID_PDU;
                     }
                 }
@@ -694,6 +694,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
         }
 
         param.rsp.status = 0;
+        param.rsp.conn_id = BTC_GATT_GET_CONN_ID(arg->send_rsp.conn_id);
         btc_gatts_cb_to_app(ESP_GATTS_RESPONSE_EVT, BTC_GATT_GET_GATT_IF(arg->send_rsp.conn_id), &param);
         break;
     }
