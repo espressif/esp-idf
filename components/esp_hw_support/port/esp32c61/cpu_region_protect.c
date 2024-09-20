@@ -35,34 +35,41 @@ static void esp_cpu_configure_invalid_regions(void)
     __attribute__((unused)) const unsigned PMA_RX      = PMA_L | PMA_EN | PMA_R | PMA_X;
     __attribute__((unused)) const unsigned PMA_RWX     = PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X;
 
+    // ROM uses some PMA entries, so we need to clear them before using them in ESP-IDF
+
     // 0. Gap at bottom of address space
-    PMA_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
 
     // 1. Gap between debug region & IROM
-    PMA_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(2, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
 
     // 3. Gap between ROM & RAM
-    PMA_ENTRY_SET_TOR(3, SOC_DROM_MASK_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(4, SOC_IRAM_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_DROM_MASK_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(4, SOC_IRAM_LOW, PMA_TOR | PMA_NONE);
 
     // 4. Gap between DRAM and I_Cache
-    PMA_ENTRY_SET_TOR(5, SOC_IRAM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(6, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(5, SOC_IRAM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(6, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
 
     // 5. ROM has configured the MSPI region with RX permission, we should add W attribute for psram and lock the configuration
     // This function sets invalid regions but this is a valid memory region configuration that could have
     // been configured using PMP as well, but due to insufficient PMP entries we are configuring this using PMA.
     // This entry is also required to be set using PMA because the region needs to be configured as cacheable.
-    PMA_ENTRY_SET_NAPOT(7, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RWX);
+    PMA_RESET_AND_ENTRY_SET_NAPOT(7, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RWX);
 
     // 6. Gap between D_Cache & peripheral addresses
-    PMA_ENTRY_SET_TOR(8, SOC_DROM_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(9, SOC_PERIPHERAL_LOW, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(8, SOC_DROM_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(9, SOC_PERIPHERAL_LOW, PMA_TOR | PMA_NONE);
 
     // 7. End of address space
-    PMA_ENTRY_SET_TOR(10, SOC_PERIPHERAL_HIGH, PMA_NONE);
-    PMA_ENTRY_SET_TOR(11, UINT32_MAX, PMA_TOR | PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(10, SOC_PERIPHERAL_HIGH, PMA_NONE);
+    PMA_RESET_AND_ENTRY_SET_TOR(11, UINT32_MAX, PMA_TOR | PMA_NONE);
+
+    PMA_ENTRY_CFG_RESET(12);
+    PMA_ENTRY_CFG_RESET(13);
+    PMA_ENTRY_CFG_RESET(14);
+    PMA_ENTRY_CFG_RESET(15);
 }
 
 void esp_cpu_configure_region_protection(void)
