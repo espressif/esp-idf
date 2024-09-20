@@ -6,7 +6,7 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use the FATFS partition
-generation tool [fatfsgen.py](../../../components/fatfs/fatfsgen.py) to automatically create a FATFS
+generation tool [fatfsgen.py](../../../../components/fatfs/fatfsgen.py) to automatically create a FATFS
 filesystem image from the contents of a host folder during build, with an option of
 automatically flashing the created image on invocation of `idf.py -p PORT flash`.
 Beware that the minimal required size of the flash is 4 MB.
