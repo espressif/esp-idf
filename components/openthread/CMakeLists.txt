@@ -84,6 +84,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/api/nat64_api.cpp"
             "openthread/src/core/api/netdata_api.cpp"
             "openthread/src/core/api/netdiag_api.cpp"
+            "openthread/src/core/api/network_time_api.cpp"
             "openthread/src/core/api/random_crypto_api.cpp"
             "openthread/src/core/api/tcp_api.cpp"
             "openthread/src/core/api/udp_api.cpp"
@@ -123,6 +124,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/network_diagnostic.cpp"
             "openthread/src/core/thread/panid_query_server.cpp"
             "openthread/src/core/thread/thread_netif.cpp"
+            "openthread/src/core/thread/time_sync_service.cpp"
             "openthread/src/core/thread/tmf.cpp"
             "openthread/src/core/thread/topology.cpp"
             "openthread/src/core/utils/child_supervision.cpp")

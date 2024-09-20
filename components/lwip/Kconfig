@@ -837,6 +837,27 @@ menu "LWIP"
         default 0x1 if LWIP_TCPIP_TASK_AFFINITY_CPU1
 
 
+    config LWIP_IPV6_ND6_NUM_PREFIXES
+        int "Max number of entries in IPv6 on-link prefixes cache"
+        depends on LWIP_IPV6
+        default 5
+        help
+            Maximum number of entries in IPv6 on-link prefixes cache
+
+    config LWIP_IPV6_ND6_NUM_ROUTERS
+        int "Max number of entries in IPv6 default routers cache"
+        depends on LWIP_IPV6
+        default 3
+        help
+            Maximum number of entries in IPv6 default routers cache
+
+    config LWIP_IPV6_ND6_NUM_DESTINATIONS
+        int "Max number of entries in IPv6 destinations cache"
+        depends on LWIP_IPV6
+        default 10
+        help
+            Maximum number of entries in IPv6 destinations cache
+
     menuconfig LWIP_PPP_SUPPORT
         bool "Enable PPP support"
         default n

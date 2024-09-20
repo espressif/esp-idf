@@ -1250,6 +1250,20 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  */
 #define LWIP_ND6_NUM_NEIGHBORS          CONFIG_LWIP_IPV6_ND6_NUM_NEIGHBORS
 
+/**
+ * LWIP_ND6_NUM_PREFIXES: Maximum number of entries in IPv6 on-link prefixes cache
+ */
+#define LWIP_ND6_NUM_PREFIXES          CONFIG_LWIP_IPV6_ND6_NUM_PREFIXES
+
+/**
+ * LWIP_ND6_NUM_ROUTERS: Maximum number of entries in IPv6 default routers cache
+ */
+#define LWIP_ND6_NUM_ROUTERS          CONFIG_LWIP_IPV6_ND6_NUM_ROUTERS
+
+/**
+ * LWIP_ND6_NUM_DESTINATIONS: Maximum number of entries in IPv6 destinations cache
+ */
+#define LWIP_ND6_NUM_DESTINATIONS          CONFIG_LWIP_IPV6_ND6_NUM_DESTINATIONS
 /*
    ---------------------------------------
    ---------- Hook options ---------------
