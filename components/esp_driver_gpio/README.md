@@ -1,6 +1,6 @@
 # GPIO API usage in Peripheral Drivers
 
-When a peripheral driver initializes IOs, the general rule is to append necessary configurations onto the IO, instead of using any GPIO APIs that overwrite the current IO setting, such as `gpio_config`, `gpio_set_direction`, `gpio_set_pull_mode`.
+When a peripheral driver initializes IOs, the general rule is to append necessary configurations onto the IO, instead of using any GPIO APIs that overwrite the current IO setting, such as `gpio_config`, `gpio_reset_pin`, `gpio_set_direction`, `gpio_set_pull_mode`.
 
 Use `gpio_pullup_en` and `gpio_pulldown_en` to enable the internal pull-up/pull-down resistors if necessary.
 

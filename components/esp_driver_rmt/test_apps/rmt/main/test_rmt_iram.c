@@ -135,13 +135,18 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
                                                                MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(remote_codes);
 
+    gpio_config_t sig_simulator_io_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << TEST_RMT_GPIO_NUM_A,
+    };
+    TEST_ESP_OK(gpio_config(&sig_simulator_io_conf));
+
     rmt_rx_channel_config_t rx_channel_cfg = {
         .clk_src = clk_src,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
     };
     printf("install rx channel\r\n");
     rmt_channel_handle_t rx_channel = NULL;

@@ -56,7 +56,6 @@ static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
         .resolution_hz = 1000000,
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
-        .flags.io_loop_back = true,
         .flags.allow_pd = allow_pd,
     };
     printf("install rx channel\r\n");
@@ -77,7 +76,6 @@ static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .trans_queue_depth = 4,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
-        .flags.io_loop_back = true,
         .flags.allow_pd = allow_pd,
     };
     printf("install tx channel\r\n");
@@ -111,7 +109,7 @@ static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
 #if SOC_RMT_SUPPORT_SLEEP_RETENTION
     // check if the power domain also is powered down
-    TEST_ASSERT_EQUAL(back_up_before_sleep ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+    TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
     esp_sleep_set_sleep_context(NULL);
 
