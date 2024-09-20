@@ -1355,11 +1355,15 @@ menu "LWIP"
         choice LWIP_HOOK_IP6_INPUT
             prompt "IPv6 packet input"
             depends on LWIP_IPV6
-            default LWIP_HOOK_IP6_INPUT_NONE
+            default LWIP_HOOK_IP6_INPUT_DEFAULT
             help
                 Enables custom IPv6 packet input.
-                Setting this to "default" provides weak implementation
-                stub that could be overwritten in application code.
+                Setting this to "default" provides weak IDF implementation,
+                which drops all incoming IPv6 traffic if the interface has no link local address.
+                (this default implementation is "weak" and could be still overwritten
+                in the application if some additional IPv6 input packet filtering is needed)
+                Setting this to "none" removes this default filter and conforms to the lwIP
+                implementation (which accepts multicasts even if the interface has no link local address)
                 Setting this to "custom" provides hook's declaration
                 only and expects the application to implement it.
 
