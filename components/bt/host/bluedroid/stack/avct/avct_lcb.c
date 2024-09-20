@@ -430,10 +430,10 @@ BOOLEAN avct_lcb_last_ccb(tAVCT_LCB *p_lcb, tAVCT_CCB *p_ccb_last)
     tAVCT_CCB   *p_ccb = &avct_cb.ccb[0];
     int         i;
 
-    AVCT_TRACE_WARNING("avct_lcb_last_ccb");
+    AVCT_TRACE_DEBUG("avct_lcb_last_ccb");
     for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
-        AVCT_TRACE_WARNING("%x: aloc:%d, lcb:%p/%p, ccb:%p/%p",
-                           i, p_ccb->allocated, p_ccb->p_lcb, p_lcb, p_ccb, p_ccb_last);
+        AVCT_TRACE_DEBUG("%x: aloc:%d, lcb:%p/%p, ccb:%p/%p",
+                         i, p_ccb->allocated, p_ccb->p_lcb, p_lcb, p_ccb, p_ccb_last);
         if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) && (p_ccb != p_ccb_last)) {
             return FALSE;
         }
