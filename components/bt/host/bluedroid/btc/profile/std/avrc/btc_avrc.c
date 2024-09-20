@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,7 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
 **  Static variables
 ******************************************************************************/
 
-/* flag indicating wheter TG/CT is initialized */
+/* flag indicating whether TG/CT is initialized */
 static uint32_t s_rc_ct_init;
 static uint32_t s_rc_tg_init;
 
@@ -751,7 +751,7 @@ static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 c
 
         btc_rc_cb.rc_ntf[event_id - 1].registered = TRUE;
         btc_rc_cb.rc_ntf[event_id - 1].label = label;
-        BTC_TRACE_EVENT("%s: New registerd notification: event_id:0x%x, label:0x%x",
+        BTC_TRACE_EVENT("%s: New register notification: event_id:0x%x, label:0x%x",
                         __FUNCTION__, event_id, label);
 
         // set up callback
@@ -947,7 +947,7 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
                 memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
                 param.conn_stat.connected = true;
                 memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
-                btc_avrc_tg_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+                btc_avrc_tg_cb_to_app(ESP_AVRC_TG_CONNECTION_STATE_EVT, &param);
             }
         } while (0);
         btc_rc_cb.rc_features = p_data->rc_feat.peer_features;
@@ -1041,7 +1041,7 @@ static void btc_avrc_ct_deinit(void)
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
     if (g_a2dp_on_deinit) {
-        BTC_TRACE_WARNING("A2DP already deinit, AVRC CT shuold deinit in advance of A2DP !!!");
+        BTC_TRACE_WARNING("A2DP already deinit, AVRC CT should deinit in advance of A2DP !!!");
     }
 
     if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
@@ -1255,7 +1255,7 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
         BTA_AvRemoteCmd(btc_rc_cb.rc_handle, tl,
                         (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
         status =  BT_STATUS_SUCCESS;
-        BTC_TRACE_API("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
+        BTC_TRACE_API("%s: successfully sent passthrough command to BTA", __FUNCTION__);
     } else {
         status = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
@@ -1298,7 +1298,7 @@ static void btc_avrc_tg_init(void)
         }
 
         if (g_a2dp_on_init) {
-            BTC_TRACE_WARNING("AVRC Taget is expected to be initialized in advance of A2DP !!!");
+            BTC_TRACE_WARNING("AVRC Target is expected to be initialized in advance of A2DP !!!");
         }
     }
 
@@ -1320,7 +1320,7 @@ static void btc_avrc_tg_deinit(void)
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
     if (g_a2dp_on_deinit) {
-        BTC_TRACE_WARNING("A2DP already deinit, AVRC TG shuold deinit in advance of A2DP !!!");
+        BTC_TRACE_WARNING("A2DP already deinit, AVRC TG should deinit in advance of A2DP !!!");
     }
 
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
