@@ -68,9 +68,6 @@ static size_t example_fatfs_partition_test(const esp_partition_t* partition, con
              (long unsigned int)partition->size
             );
 
-    ESP_LOGI(TAG, "Erasing partition");
-    ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, partition->size));
-
     ESP_LOGI(TAG, "Formatting FAT filesystem");
     err = esp_vfs_fat_spiflash_format_rw_wl(base_path, partition->label);
     if (err != ESP_OK) {
