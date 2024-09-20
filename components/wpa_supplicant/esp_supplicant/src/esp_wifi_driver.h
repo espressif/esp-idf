@@ -57,6 +57,7 @@ typedef enum {
 } wifi_appie_ram_t;
 
 enum {
+    /* this enum is in C2 ROM, do not change before WPA3_AUTH_OWE */
     NONE_AUTH           = 0x01,
     WPA_AUTH_UNSPEC     = 0x02,
     WPA_AUTH_PSK        = 0x03,
@@ -72,6 +73,7 @@ enum {
     WPA2_AUTH_ENT_SHA384_SUITE_B = 0x0d,
     WPA2_AUTH_FT_PSK    = 0x0e,
     WPA3_AUTH_OWE       = 0x0f,
+    /* this enum is in C2 ROM, do not change before WPA3_AUTH_OWE */
     WPA2_AUTH_INVALID
 };
 
