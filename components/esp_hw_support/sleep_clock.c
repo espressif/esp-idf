@@ -37,7 +37,12 @@ static esp_err_t sleep_clock_system_retention_init(void *arg)
     #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 #endif
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0),   DR_REG_PCR_BASE,            DR_REG_PCR_BASE,            N_REGS_PCR(),           0, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(1),   PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_REG, 1,                      0, 0), .owner = ENTRY(0) | ENTRY(2) },
+#if CONFIG_IDF_TARGET_ESP32H2
+        [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(2),   PCR_BUS_CLK_UPDATE_REG,     PCR_BUS_CLOCK_UPDATE,       PCR_BUS_CLOCK_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [3] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(3),   PCR_BUS_CLK_UPDATE_REG,     0x0,                        PCR_BUS_CLOCK_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
+#endif
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
