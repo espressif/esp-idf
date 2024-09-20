@@ -289,10 +289,10 @@ Wi-Fi 配网
 
 如果需要在成功建立 Wi-Fi 连接后的某个时间再停止配网服务，应用程序可以采取定制行为。例如，如果应用程序需要设备连接到某个云服务并获取另一组凭证，继而通过自定义 protocomm 端点交换凭证，那么成功完成此操作后，可以在 protocomm 处理程序中调用 :cpp:func:`wifi_prov_mgr_stop_provisioning()` 来停止配网服务。设定适当的延迟时间可以确保 protocomm 处理程序的响应到达客户端应用程序后，才释放传输资源。
 
-应用程序示例
----------------------
+应用示例
+------------------
 
-关于完整实现示例，请参阅 :example:`provisioning/wifi_prov_mgr`。
+- :example:`provisioning/wifi_prov_mgr` 演示了如何使用 ``wifi_provisioning`` 组件将 {IDF_TARGET_NAME} 配置为带有凭证的 Wi-Fi station，使用低功耗蓝牙作为默认传输方式。
 
 配网工具
 --------------------

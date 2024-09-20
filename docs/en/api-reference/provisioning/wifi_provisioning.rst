@@ -292,7 +292,7 @@ The customized behavior is useful for applications which want the provisioning s
 Application Examples
 --------------------
 
-For complete example implementation see :example:`provisioning/wifi_prov_mgr`.
+- :example:`provisioning/wifi_prov_mgr` demonstrates how to use the `wifi_provisioning` manager component to configure {IDF_TARGET_NAME} as a Wi-Fi station with specified credentials, using Bluetooth LE as the default transport for provisioning.
 
 Provisioning Tools
 --------------------
