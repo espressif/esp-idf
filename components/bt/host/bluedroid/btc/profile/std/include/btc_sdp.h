@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,9 +32,9 @@ typedef union {
     } search;
 
     //BTC_SDP_ACT_CREATE_RECORD
-    struct creat_record_arg {
+    struct create_record_arg {
         bluetooth_sdp_record *record;
-    } creat_record;
+    } create_record;
 
     //BTC_SDP_ACT_REMOVE_RECORD
     struct remove_record_arg {

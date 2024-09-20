@@ -363,8 +363,8 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
 
     /* Try to extract a service name */
     if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME)) != NULL) {
-        record->pse.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
-        record->pse.hdr.service_name = (char *)p_attr->attr_value.v.array;
+        record->hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
+        record->hdr.service_name = (char *)p_attr->attr_value.v.array;
     }
 
     if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM)) != NULL) {
@@ -373,9 +373,9 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
 
     /* Try to extract an RFCOMM channel */
     if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
-        record->pse.hdr.rfcomm_channel_number = pe.params[0];
+        record->hdr.rfcomm_channel_number = pe.params[0];
     }
-    record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_size;
+    record->hdr.user1_ptr_len = p_bta_sdp_cfg->p_sdp_db->raw_used;
     record->hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
 }
 
@@ -526,6 +526,10 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
     SDP_InitDiscoveryDb (p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1,
                          bta_sdp_search_uuid, 0, NULL);
 
+    /* tell SDP to keep the raw data */
+    p_bta_sdp_cfg->p_sdp_db->raw_size = p_bta_sdp_cfg->sdp_raw_size;
+    p_bta_sdp_cfg->p_sdp_db->raw_data = p_bta_sdp_cfg->p_sdp_raw_data;
+
     if (!SDP_ServiceSearchAttributeRequest2(p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
                                             bta_sdp_search_cback, (void *)bta_sdp_search_uuid)) {
         bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
@@ -558,7 +562,7 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
     tBTA_SDP_CREATE_RECORD_USER bta_sdp = {0};
     bta_sdp.status = BTA_SDP_SUCCESS;
-    bta_sdp.handle = (int)p_data->record.user_data;
+    bta_sdp.handle = -1;
     if (bta_sdp_cb.p_dm_cback) {
         bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, (tBTA_SDP *)&bta_sdp, p_data->record.user_data);
     }
@@ -576,10 +580,30 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
+    tBTA_SDP_REMOVE_RECORD_USER bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
+    bta_sdp.handle = -1;
+    if (bta_sdp_cb.p_dm_cback) {
+        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, (tBTA_SDP *)&bta_sdp, p_data->record.user_data);
+    }
+}
+
+/*******************************************************************************
+**
+** Function     bta_sdp_disable
+**
+** Description  Removes an SDP record
+**
+** Returns      void
+**
+*******************************************************************************/
+void bta_sdp_disable(tBTA_SDP_MSG *p_data)
+{
+    APPL_TRACE_DEBUG("%s()\n", __func__);
     tBTA_SDP bta_sdp;
     bta_sdp.status = BTA_SDP_SUCCESS;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_DISABLE_EVT, &bta_sdp, NULL);
     }
 }
 
