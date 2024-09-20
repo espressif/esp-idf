@@ -6,6 +6,8 @@
 
 #include "esp_wifi_driver.h"
 #include "esp_wps.h"
+#include "wps/wps.h"
+#include "wps/wps_attr_parse.h"
 
 /* WPS message flag */
 enum wps_msg_flag {
@@ -57,15 +59,6 @@ struct discard_ap_list_t{
 	u8 bssid[6];
 };
 
-#ifndef MAX_PASSPHRASE_LEN
-#define MAX_PASSPHRASE_LEN 64
-#endif
-
-#ifndef MAX_CRED_COUNT
-#define MAX_CRED_COUNT 10
-#endif
-
-#define WPS_OUTBUF_SIZE 500
 struct wps_sm {
     u8 state;
     struct wps_config *wps_cfg;
@@ -75,10 +68,7 @@ struct wps_sm {
     u8 identity_len;
     u8 ownaddr[ETH_ALEN];
     u8 bssid[ETH_ALEN];
-    u8 ssid[MAX_CRED_COUNT][SSID_MAX_LEN];
-    u8 ssid_len[MAX_CRED_COUNT];
-    char key[MAX_CRED_COUNT][MAX_PASSPHRASE_LEN];
-    u8 key_len[MAX_CRED_COUNT];
+    struct wps_credential creds[MAX_CRED_COUNT];
     u8 ap_cred_cnt;
     struct wps_device_data *dev;
     u8 uuid[16];
