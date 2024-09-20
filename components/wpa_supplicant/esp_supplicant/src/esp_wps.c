@@ -418,11 +418,11 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
             wpabuf_free(buf);
             if (scan->ssid[1] > SSID_MAX_LEN) {
                 return false;
-	    }
+            }
             esp_wifi_enable_sta_privacy_internal();
-            os_memset(sm->ssid[0], 0, SSID_MAX_LEN);
-            os_memcpy(sm->ssid[0], (char *)&scan->ssid[2], (int)scan->ssid[1]);
-            sm->ssid_len[0] = scan->ssid[1];
+            os_memset(sm->creds[0].ssid, 0, SSID_MAX_LEN);
+            os_memcpy(sm->creds[0].ssid, (char *)&scan->ssid[2], (int)scan->ssid[1]);
+            sm->creds[0].ssid_len = scan->ssid[1];
             if (scan->bssid && memcmp(sm->bssid, scan->bssid, ETH_ALEN) != 0) {
                 wpa_printf(MSG_INFO, "sm BSSid: "MACSTR " scan BSSID " MACSTR,
                            MAC2STR(sm->bssid), MAC2STR(scan->bssid));
@@ -436,7 +436,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
                     wps_build_ic_appie_wps_ar();
                 }
             }
-            wpa_printf(MSG_DEBUG, "wps discover [%s]", (char *)sm->ssid);
+            wpa_printf(MSG_DEBUG, "wps discover [%s]", (char *)sm->creds[0].ssid);
             sm->channel = scan->chan;
 
             return true;
@@ -764,8 +764,7 @@ static int wps_sm_init(struct wps_sm *sm)
     sm->scan_cnt = 0;
     sm->discover_ssid_cnt = 0;
     os_bzero(sm->bssid, ETH_ALEN);
-    os_bzero(sm->ssid, sizeof(sm->ssid));
-    os_bzero(sm->ssid_len, sizeof(sm->ssid_len));
+    os_bzero(sm->creds, sizeof(sm->creds));
     sm->ap_cred_cnt = 0;
 
     return 0;
@@ -816,9 +815,16 @@ int wps_finish(void)
             }
 
             esp_wifi_get_config(WIFI_IF_STA, config);
-            os_memcpy(config->sta.ssid, sm->ssid[0], sm->ssid_len[0]);
-            os_memcpy(config->sta.password, sm->key[0], sm->key_len[0]);
+            os_memcpy(config->sta.ssid, sm->creds[0].ssid, sm->creds[0].ssid_len);
+            os_memcpy(config->sta.password, sm->creds[0].key, sm->creds[0].key_len);
             os_memcpy(config->sta.bssid, sm->bssid, ETH_ALEN);
+#ifndef CONFIG_WPS_STRICT
+            /* Some APs support AES in WPA IE, enable connection with them */
+            if (sm->creds[0].auth_type == WPS_AUTH_WPAPSK &&
+                    (sm->creds[0].encr_type & WPS_ENCR_AES)) {
+                config->sta.threshold.authmode = WIFI_AUTH_WPA_PSK;
+            }
+#endif
             config->sta.bssid_set = 0;
             config->sta.sae_pwe_h2e = 0;
             esp_wifi_set_config(WIFI_IF_STA, config);
@@ -834,8 +840,7 @@ int wps_finish(void)
         if (sm->ignore_sel_reg) {
             sm->discover_ssid_cnt = 0;
             esp_wifi_disconnect();
-            os_bzero(sm->ssid, sizeof(sm->ssid));
-            os_bzero(sm->ssid_len, sizeof(sm->ssid_len));
+            os_bzero(sm->creds, sizeof(sm->creds));
             wps_add_discard_ap(sm->bssid);
         } else {
             ret = wps_stop_process(WPS_FAIL_REASON_NORMAL);
@@ -1285,8 +1290,7 @@ wifi_station_wps_msg_timeout_internal(void)
     if (sm->ignore_sel_reg) {
         esp_wifi_disconnect();
         wps_add_discard_ap(sm->bssid);
-        os_bzero(sm->ssid, sizeof(sm->ssid));
-        os_bzero(sm->ssid_len, sizeof(sm->ssid_len));
+        os_bzero(sm->creds, sizeof(sm->creds));
         os_bzero(sm->bssid, ETH_ALEN);
         sm->discover_ssid_cnt = 0;
         wifi_wps_scan(NULL, NULL);
@@ -1316,8 +1320,8 @@ void wifi_station_wps_success_internal(void)
     if (sm->ap_cred_cnt > 1) {
         evt.ap_cred_cnt = sm->ap_cred_cnt;
         for (i = 0; i < MAX_WPS_AP_CRED; i++) {
-            os_memcpy(evt.ap_cred[i].ssid, sm->ssid[i], sm->ssid_len[i]);
-            os_memcpy(evt.ap_cred[i].passphrase, sm->key[i], sm->key_len[i]);
+            os_memcpy(evt.ap_cred[i].ssid, sm->creds[i].ssid, sm->creds[i].ssid_len);
+            os_memcpy(evt.ap_cred[i].passphrase, sm->creds[i].key, sm->creds[i].key_len);
         }
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS, &evt,
                                 sizeof(evt), OS_BLOCK);
@@ -1355,17 +1359,13 @@ void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx)
 
 static int save_credentials_cb(void *ctx, const struct wps_credential *cred)
 {
-    if (!gWpsSm || !cred || gWpsSm->ap_cred_cnt > 2) {
+    struct wps_credential *creds;
+    if (!gWpsSm || !cred || gWpsSm->ap_cred_cnt > MAX_CRED_COUNT) {
         return ESP_FAIL;
     }
 
-    os_memset(gWpsSm->ssid[gWpsSm->ap_cred_cnt], 0x00, sizeof(gWpsSm->ssid[gWpsSm->ap_cred_cnt]));
-    os_memset(gWpsSm->key[gWpsSm->ap_cred_cnt], 0x00, sizeof(gWpsSm->key[gWpsSm->ap_cred_cnt]));
-
-    os_memcpy(gWpsSm->ssid[gWpsSm->ap_cred_cnt], cred->ssid, cred->ssid_len);
-    gWpsSm->ssid_len[gWpsSm->ap_cred_cnt] = cred->ssid_len;
-    os_memcpy(gWpsSm->key[gWpsSm->ap_cred_cnt], cred->key, cred->key_len);
-    gWpsSm->key_len[gWpsSm->ap_cred_cnt] = cred->key_len;
+    creds = &gWpsSm->creds[gWpsSm->ap_cred_cnt];
+    memcpy(creds, cred, sizeof(*creds));
 
     gWpsSm->ap_cred_cnt++;
 
@@ -1618,11 +1618,11 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
         esp_wifi_disconnect();
 
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
-        os_memcpy(wifi_config.sta.ssid, (char *)sm->ssid[0], sm->ssid_len[0]);
+        os_memcpy(wifi_config.sta.ssid, (char *)sm->creds[0].ssid, sm->creds[0].ssid_len);
         wifi_config.sta.bssid_set = 1;
         wifi_config.sta.channel = sm->channel;
         wpa_printf(MSG_INFO, "WPS: connecting to %s, bssid=" MACSTR,
-                   (char *)sm->ssid[0], MAC2STR(wifi_config.sta.bssid));
+                   (char *)sm->creds[0].ssid, MAC2STR(wifi_config.sta.bssid));
         esp_wifi_set_config(0, &wifi_config);
 
         wpa_printf(MSG_DEBUG, "WPS: neg start");
