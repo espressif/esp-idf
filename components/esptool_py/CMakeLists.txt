@@ -66,10 +66,19 @@ consist of two ota app without factory or test partitions.")
 endif()  # NOT BOOTLOADER_BUILD
 
 if(BOOTLOADER_BUILD)
-  # Generate bootloader post-build check of the bootloader size against the offset
-  partition_table_add_check_bootloader_size_target(bootloader_check_size
-      DEPENDS gen_project_binary
-      BOOTLOADER_BINARY_PATH "${build_dir}/${PROJECT_BIN}"
-      RESULT bootloader_check_size_command)
-  add_dependencies(app bootloader_check_size)  # note: in the subproject, so the target is 'app'...
+    # Generate bootloader post-build check of the bootloader size against the offset
+    partition_table_add_check_bootloader_size_target(bootloader_check_size
+        DEPENDS gen_project_binary
+        BOOTLOADER_BINARY_PATH "${build_dir}/${PROJECT_BIN}"
+        RESULT bootloader_check_size_command)
+    add_dependencies(app bootloader_check_size)  # note: in the subproject, so the target is 'app'...
+
+    if(CONFIG_SECURE_BOOT_V2_ENABLED AND CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # Check the size of the bootloader + signature block.
+        partition_table_add_check_bootloader_size_target(bootloader_check_size_signed
+            DEPENDS gen_signed_bootloader
+            BOOTLOADER_BINARY_PATH "${build_dir}/${PROJECT_BIN}"
+            RESULT bootloader_check_size_signed_command)
+        add_dependencies(app bootloader_check_size_signed)  # note: in the subproject, so the target is 'app'...
+    endif()
 endif()
