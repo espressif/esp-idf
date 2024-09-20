@@ -185,7 +185,10 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     else:
         # offset of this eFuse is taken from components/efuse/{target}/esp_efuse_table.csv
         print(' - Flash emul_efuse with pre-loaded efuses (SPI_BOOT_CRYPT_CNT 1 -> 0)')
-        SPI_BOOT_CRYPT_CNT = 82
+        if dut.app.target == 'esp32c61':
+            SPI_BOOT_CRYPT_CNT = 55
+        else:
+            SPI_BOOT_CRYPT_CNT = 82
         # Resets eFuse, which enables Flash encryption feature
         dut.serial.erase_field_on_emul_efuse([SPI_BOOT_CRYPT_CNT])
 
@@ -594,7 +597,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
-    if dut.app.target == 'esp32c2':
+    if dut.app.sdkconfig.get('SECURE_SIGNED_APPS_ECDSA_V2_SCHEME'):
         signed_scheme = 'ECDSA'
     else:
         signed_scheme = 'RSA-PSS'
@@ -687,7 +690,7 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
-    if dut.app.target == 'esp32c2':
+    if dut.app.sdkconfig.get('SECURE_SIGNED_APPS_ECDSA_V2_SCHEME'):
         signed_scheme = 'ECDSA'
     else:
         signed_scheme = 'RSA-PSS'
@@ -981,7 +984,10 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
-    signed_scheme = 'ECDSA' if dut.app.target == 'esp32c2' else 'RSA-PSS'
+    if dut.app.sdkconfig.get('SECURE_SIGNED_APPS_ECDSA_V2_SCHEME'):
+        signed_scheme = 'ECDSA'
+    else:
+        signed_scheme = 'RSA-PSS'
     dut.expect('secure_boot_v2: Verifying with %s...' % signed_scheme)
     dut.expect('secure_boot_v2: Signature verified successfully!')
 
