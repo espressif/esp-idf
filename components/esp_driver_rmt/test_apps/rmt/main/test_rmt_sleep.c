@@ -20,7 +20,6 @@
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
-#if SOC_RMT_SUPPORT_SLEEP_RETENTION  // TODO: IDF-10917
 typedef struct {
     TaskHandle_t task_to_notify;
     size_t received_symbol_num;
@@ -43,9 +42,9 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
 /**
  * @brief Test the RMT driver can still work after light sleep
  *
- * @param back_up_before_sleep Whether to back up RMT registers before sleep
+ * @param allow_pd Whether to allow power down the peripheral in light sleep
  */
-static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
+static void test_rmt_tx_rx_sleep_retention(bool allow_pd)
 {
     uint32_t const test_rx_buffer_symbols = 128;
     rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
@@ -58,7 +57,7 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.io_loop_back = true,
-        .flags.backup_before_sleep = back_up_before_sleep,
+        .flags.allow_pd = allow_pd,
     };
     printf("install rx channel\r\n");
     rmt_channel_handle_t rx_channel = NULL;
@@ -79,7 +78,7 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
         .trans_queue_depth = 4,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.io_loop_back = true,
-        .flags.backup_before_sleep = back_up_before_sleep,
+        .flags.allow_pd = allow_pd,
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
@@ -111,13 +110,12 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
 #if SOC_RMT_SUPPORT_SLEEP_RETENTION
-    if (back_up_before_sleep) {
-        printf("sleep_ctx.sleep_flags=%lx\r\n", sleep_ctx.sleep_flags);
-        TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
-    }
+    // check if the power domain also is powered down
+    TEST_ASSERT_EQUAL(back_up_before_sleep ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
     esp_sleep_set_sleep_context(NULL);
 
+    // enable both channels, pm lock will be acquired, so no light sleep will event happen during the transaction
     TEST_ESP_OK(rmt_enable(tx_channel));
     TEST_ESP_OK(rmt_enable(rx_channel));
 
@@ -147,6 +145,7 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
 TEST_CASE("rmt tx+rx after light sleep", "[rmt]")
 {
     test_rmt_tx_rx_sleep_retention(false);
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
     test_rmt_tx_rx_sleep_retention(true);
-}
 #endif
+}

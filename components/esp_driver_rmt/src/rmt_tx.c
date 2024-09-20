@@ -266,7 +266,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 #endif
 
 #if !SOC_RMT_SUPPORT_SLEEP_RETENTION
-    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     // malloc channel memory
@@ -302,7 +302,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     int group_id = group->group_id;
 
 #if RMT_USE_RETENTION_LINK
-    if (config->flags.backup_before_sleep != 0) {
+    if (config->flags.allow_pd != 0) {
         rmt_create_retention_module(group);
     }
 #endif // RMT_USE_RETENTION_LINK

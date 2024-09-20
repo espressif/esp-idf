@@ -197,7 +197,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif // SOC_RMT_SUPPORT_DMA
 
 #if !SOC_RMT_SUPPORT_SLEEP_RETENTION
-    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     // malloc channel memory
@@ -240,7 +240,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     int group_id = group->group_id;
 
 #if RMT_USE_RETENTION_LINK
-    if (config->flags.backup_before_sleep != 0) {
+    if (config->flags.allow_pd != 0) {
         rmt_create_retention_module(group);
     }
 #endif // RMT_USE_RETENTION_LINK
@@ -400,7 +400,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     // check buffer alignment
     uint32_t align_check_mask = mem_alignment - 1;
-    ESP_RETURN_ON_FALSE_ISR((((uintptr_t)buffer & align_check_mask) == 0) && ((buffer_size & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
+    ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
                             TAG, "buffer address or size are not %zu bytes aligned", mem_alignment);
 
     rmt_group_t *group = channel->group;
