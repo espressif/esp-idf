@@ -45,7 +45,7 @@ Examples in ESP-IDF use :doc:`/api-reference/protocols/esp_tls` which provides a
 
 Refer to the examples :example:`protocols/https_server/simple` (Simple HTTPS server) and :example:`protocols/https_request` (Make HTTPS requests) for more information.
 
-If the Mbed TLS API is to be used directly, refer to the example :example:`protocols/https_mbedtls`.
+If you plan to use the Mbed TLS API directly, refer to the example :example:`protocols/https_mbedtls`. This example demonstrates how to establish an HTTPS connection using Mbed TLS by setting up a secure socket with a certificate bundle for verification.
 
 
 Alternatives

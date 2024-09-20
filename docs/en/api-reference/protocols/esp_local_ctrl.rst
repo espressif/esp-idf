@@ -103,7 +103,7 @@ You may set security for transport in ESP local control using following options:
 Creating a Property
 -------------------
 
-Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique ```name``` (string), a ``type`` (e.g., enum), ``flags``` (bit fields) and ``size```.
+Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique ``name`` (string), a ``type`` (e.g., enum), ``flags`` (bit fields) and ``size``.
 
 The ``size`` is to be kept 0, if we want our property value to be of variable length (e.g., if it is a string or bytestream). For data types with fixed-length property value, like int, float, etc., setting the ``size`` field to the right value helps **esp_local_ctrl** to perform internal checks on arguments received with write requests.
 
@@ -178,7 +178,7 @@ Here is an example of ``set_prop_values()`` handler. Notice how we restrict from
         }
 
 
-For complete example see :example:`protocols/esp_local_ctrl`.
+For complete example see :example:`protocols/esp_local_ctrl`. The example demonstrates how to set up a secure ``esp_local_ctrl`` service over HTTPS transport for controlling devices on a local network.
 
 Client Side Implementation
 --------------------------

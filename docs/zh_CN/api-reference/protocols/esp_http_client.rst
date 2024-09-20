@@ -16,7 +16,7 @@ ESP HTTP 客户端
 应用示例
 --------
 
-使用 ESP HTTP 客户端发起 HTTP/S 请求的简单示例，可参考 :example:`protocols/esp_http_client`。
+:example:`protocols/esp_http_client` 演示了如何使用 ESP HTTP 客户端发起 HTTP/S 请求。
 
 
 HTTP 基本请求

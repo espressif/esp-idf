@@ -178,7 +178,7 @@ ESP 本地控制
         }
 
 
-完整示例请参见 :example:`protocols/esp_local_ctrl`。
+完整示例请参见 :example:`protocols/esp_local_ctrl`。该示例演示了如何通过 HTTPS 传输设置一个安全的 ``esp_local_ctrl`` 服务，以便在本地网络中控制设备。
 
 客户端实现
 --------------

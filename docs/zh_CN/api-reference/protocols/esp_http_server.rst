@@ -106,7 +106,12 @@ HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能�
 简单 HTTP 服务器示例
 ^^^^^^^^^^^^^^^^^^^^
 
-请查看位于 :example:`protocols/http_server/simple` 的 HTTP 服务器示例，该示例演示了如何处理任意内容长度的数据，读取请求头和 URL 查询参数，设置响应头。
+:example:`protocols/http_server/simple` 演示了如何处理任意内容长度的数据，读取请求头和 URL 查询参数，并设置响应头。
+
+高级测试示例
+^^^^^^^^^^^^
+
+:example:`protocols/http_server/advanced_tests` 演示了如何使用 HTTP 服务器进行高级测试。
 
 
 HTTP 长连接
@@ -146,13 +151,15 @@ HTTP 服务器具有长连接的功能，允许重复使用同一个连接（会
     }
 
 
-详情请参考位于 :example:`protocols/http_server/persistent_sockets` 的示例代码。
+详情请参考位于 :example:`protocols/http_server/persistent_sockets` 的示例代码。该示例演示了如何设置和使用带有持久套接字的 HTTP 服务器，允许每个客户端拥有独立的会话或上下文。
 
 
-Websocket 服务器
+WebSocket 服务器
 ----------------
 
-HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :ref:`CONFIG_HTTPD_WS_SUPPORT` 选项启用 websocket 功能。有关如何使用 websocket 功能，请参阅 :example:`protocols/http_server/ws_echo_server` 目录下的示例代码。
+HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :ref:`CONFIG_HTTPD_WS_SUPPORT` 选项启用 websocket 功能。
+
+:example:`protocols/http_server/ws_echo_server` 演示了如何使用 HTTP 服务器创建一个 WebSocket 回显服务器，该服务器在本地网络上启动，与 WebSocket 客户端进行交互，回显接收到的 WebSocket 帧。
 
 
 事件处理
@@ -173,6 +180,26 @@ ESP HTTP 服务器有各种事件，当特定事件发生时，:doc:`事件循�
     - HTTP_SERVER_EVENT_SENT_DATA       :   ``esp_http_server_event_data``
     - HTTP_SERVER_EVENT_DISCONNECTED    :   ``int``
     - HTTP_SERVER_EVENT_STOP            :   ``NULL``
+
+文件服务
+------------
+
+:example:`protocols/http_server/file_serving` 演示了如何创建一个简单的 HTTP 文件服务器，支持文件上传和下载功能。
+
+强制网络门户
+-----------------
+
+:example:`protocols/http_server/captive_portal` 演示了创建强制网络门户的两种方法，用户在浏览前会被引导到一个认证页面。这两种方法分别使用 DNS 查询和 HTTP 请求重定向，或通过 DHCP offer 中的字段来实现。
+
+异步处理程序
+---------------------
+
+:example:`protocols/http_server/async_handlers` 演示了如何在 HTTP 服务器中处理多个长时间运行的并发请求，使用不同的 URI 来处理异步请求、快速请求以及主页请求。
+
+RESTful API
+-----------
+
+:example:`protocols/http_server/restful_server` 演示了如何实现 RESTful API 服务器和 HTTP 服务器，并结合前端浏览器 UI，设计了多个 API 来获取资源，使用 mDNS 解析域名，并通过半主机技术将网页部署到主机 PC、SPI flash 或 SD 卡上。
 
 API 参考
 --------

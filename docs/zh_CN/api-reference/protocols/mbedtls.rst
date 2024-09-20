@@ -45,7 +45,7 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
 
 参考示例 :example:`protocols/https_server/simple` （简单的 HTTPS 服务器）和 :example:`protocols/https_request` （发出 HTTPS 请求）了解更多信息。
 
-如需直接使用 Mbed TLS API，请参考示例 :example:`protocols/https_mbedtls`。
+如需直接使用 Mbed TLS API，请参考示例 :example:`protocols/https_mbedtls`。该示例演示了如何通过 Mbed TLS 设置安全套接字，并使用证书包进行验证，从而建立 HTTPS 连接。
 
 
 其他选项
