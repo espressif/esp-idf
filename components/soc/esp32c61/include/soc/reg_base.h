@@ -35,7 +35,7 @@
 #define DR_REG_PAU_BASE                         0x60093000
 #define DR_REG_HP_SYSTEM_BASE                   0x60095000
 #define DR_REG_PCR_BASE                         0x60096000
-#define DR_REG_TEE_REG_BASE                     0x60098000
+#define DR_REG_TEE_BASE                         0x60098000
 #define DR_REG_HP_APM_BASE                      0x60099000
 #define DR_REG_MISC_BASE                        0x6009F000
 #define DR_REG_MODEM0_BASE                      0x600A0000
@@ -61,4 +61,3 @@
 #define DR_REG_INTPRI_BASE                      0x600C5000
 #define DR_REG_CACHE_BASE                       0x600C8000
 #define DR_REG_CLINT_M_BASE                     0x20000000
-#define DR_REG_TEE_BASE                         DR_REG_TEE_REG_BASE

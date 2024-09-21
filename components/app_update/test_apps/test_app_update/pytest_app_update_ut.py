@@ -24,7 +24,7 @@ def test_app_update(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
-# TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-10983
+# TODO: [ESP32C61] IDF-9245, IDF-10983
 @pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C61 has not supported deep sleep')
 @pytest.mark.generic
 @pytest.mark.parametrize(

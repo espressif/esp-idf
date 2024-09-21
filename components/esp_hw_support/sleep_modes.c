@@ -157,8 +157,8 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
 #elif CONFIG_IDF_TARGET_ESP32C61
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (1148) //TODO: PM-231
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (107)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
@@ -189,7 +189,11 @@
 #endif
 
 #if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+#if CONFIG_IDF_TARGET_ESP32C61
+#define SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US  (1232)
+#elif CONFIG_IDF_TARGET_ESP32C5
 #define SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US  (1220)
+#endif
 #endif
 
 // Minimal amount of time we can sleep for
@@ -705,7 +709,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-#if !CONFIG_IDF_TARGET_ESP32C61
+#if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9304
     sar_periph_ctrl_power_enable();
 #endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
@@ -2359,7 +2363,7 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 #if SOC_PM_SUPPORT_RC32K_PD
-#if !SOC_CLK_RC32K_NOT_TO_USE
+#if !CONFIG_ESP_CLK_RC32K_NOT_TO_USE
     if (s_config.domain[ESP_PD_DOMAIN_RC32K].pd_option != ESP_PD_OPTION_ON) {
         pd_flags |= PMU_SLEEP_PD_RC32K;
     }

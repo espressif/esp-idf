@@ -131,6 +131,10 @@ config SOC_REG_I2C_SUPPORTED
     bool
     default y
 
+config SOC_PAU_SUPPORTED
+    bool
+    default y
+
 config SOC_LIGHT_SLEEP_SUPPORTED
     bool
     default y
@@ -671,6 +675,14 @@ config SOC_TIMER_GROUP_SUPPORT_RC_FAST
     bool
     default y
 
+config SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_MWDT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     bool
     default n
@@ -771,6 +783,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
@@ -827,6 +843,10 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_TOP_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_HP_AON_PD
     bool
     default y
@@ -849,15 +869,31 @@ config SOC_PM_CPU_RETENTION_BY_SW
 
 config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
-    default n
+    default y
 
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
+    bool
+    default y
+
+config SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
     bool
     default y
 
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
+
+config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
@@ -876,10 +912,6 @@ config SOC_CLK_OSC_SLOW_SUPPORTED
     default y
 
 config SOC_CLK_LP_FAST_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_CLK_RC32K_NOT_TO_USE
     bool
     default y
 

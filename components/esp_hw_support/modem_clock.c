@@ -423,7 +423,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) (
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC_FAST)  ? ESP_PD_DOMAIN_RC_FAST  :
               (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ? ESP_PD_DOMAIN_XTAL    :
-#if !SOC_CLK_RC32K_NOT_TO_USE
+#if !CONFIG_ESP_CLK_RC32K_NOT_TO_USE
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC32K)     ? ESP_PD_DOMAIN_RC32K   :
 #endif
               (last_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K)   ? ESP_PD_DOMAIN_XTAL32K :
@@ -431,7 +431,7 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     esp_sleep_pd_domain_t pu_domain = (esp_sleep_pd_domain_t) (
               (src == MODEM_CLOCK_LPCLK_SRC_RC_FAST)  ? ESP_PD_DOMAIN_RC_FAST  :
               (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ? ESP_PD_DOMAIN_XTAL    :
-#if !SOC_CLK_RC32K_NOT_TO_USE
+#if !CONFIG_ESP_CLK_RC32K_NOT_TO_USE
               (src == MODEM_CLOCK_LPCLK_SRC_RC32K)     ? ESP_PD_DOMAIN_RC32K   :
 #endif
               (src == MODEM_CLOCK_LPCLK_SRC_XTAL32K)   ? ESP_PD_DOMAIN_XTAL32K :
@@ -486,7 +486,7 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) (
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC_FAST)  ? ESP_PD_DOMAIN_RC_FAST  :
               (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ? ESP_PD_DOMAIN_XTAL    :
-#if !SOC_CLK_RC32K_NOT_TO_USE
+#if !CONFIG_ESP_CLK_RC32K_NOT_TO_USE
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC32K)     ? ESP_PD_DOMAIN_RC32K   :
 #endif
               (last_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K)   ? ESP_PD_DOMAIN_XTAL32K :
