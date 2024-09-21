@@ -72,6 +72,7 @@ void wifi_station_wps_msg_timeout(void *data, void *user_ctx);
 void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx);
 void wifi_station_wps_success(void *data, void *user_ctx);
 void wifi_station_wps_timeout(void *data, void *user_ctx);
+int wps_delete_timer(void);
 
 struct wps_sm *gWpsSm = NULL;
 static wps_factory_information_t *s_factory_info = NULL;
@@ -623,14 +624,14 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         if (expd->opcode != WSC_Start) {
             wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d "
                        "in WAIT_START state", expd->opcode);
-            return ESP_FAIL;
+            return ESP_ERR_INVALID_STATE;
         }
         wpa_printf(MSG_DEBUG, "EAP-WSC: Received start");
         sm->state = WPA_MESG;
     } else if (expd->opcode == WSC_Start) {
         wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d",
                    expd->opcode);
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_STATE;
     }
 
     flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
@@ -834,7 +835,8 @@ int wps_finish(void)
     if (sm->wps->state == WPS_FINISHED) {
         wpa_printf(MSG_DEBUG, "wps finished------>");
         wps_set_status(WPS_STATUS_SUCCESS);
-        wps_stop_connection_timers(sm);
+        /* WPS finished, dequeue all timers */
+        wps_delete_timer();
 
         if (sm->ap_cred_cnt == 1) {
             wifi_config_t *config = os_zalloc(sizeof(wifi_config_t));
@@ -844,6 +846,7 @@ int wps_finish(void)
             }
 
             esp_wifi_get_config(WIFI_IF_STA, config);
+            esp_wifi_disconnect();
             os_memcpy(config->sta.ssid, sm->creds[0].ssid, sm->creds[0].ssid_len);
             os_memcpy(config->sta.password, sm->creds[0].key, sm->creds[0].key_len);
             os_memcpy(config->sta.bssid, sm->bssid, ETH_ALEN);
@@ -857,6 +860,7 @@ int wps_finish(void)
             config->sta.bssid_set = 0;
             config->sta.sae_pwe_h2e = 0;
             esp_wifi_set_config(WIFI_IF_STA, config);
+            esp_wifi_connect();
 
             os_free(config);
         }
@@ -1092,6 +1096,8 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
+            } else if (ret == ESP_ERR_INVALID_STATE) {
+                ret = ESP_OK;
             } else {
                 ret = ESP_FAIL;
             }
@@ -1654,6 +1660,7 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
         esp_wifi_set_config(0, &wifi_config);
 
         wpa_printf(MSG_DEBUG, "WPS: neg start");
+        wifi_config.sta.failure_retry_cnt = 2;
         esp_wifi_connect();
         sm->state = WAIT_START;
         eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
