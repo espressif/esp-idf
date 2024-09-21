@@ -33,6 +33,8 @@ extern "C" {
 #define LCD_CLOCK_SRC_ATOMIC()
 #endif
 
+#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
+
 #if SOC_LCDCAM_SUPPORTED
 
 typedef enum {
