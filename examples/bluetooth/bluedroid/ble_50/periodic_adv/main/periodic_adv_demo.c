@@ -56,9 +56,6 @@
 
 static SemaphoreHandle_t test_sem = NULL;
 
-
-uint8_t addr_2m[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x02};
-
 esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_NONCONN_NONSCANNABLE_UNDIRECTED,
     .interval_min = 0x30,
@@ -81,18 +78,16 @@ static esp_ble_gap_periodic_adv_params_t periodic_adv_params = {
 };
 
 static uint8_t periodic_adv_raw_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x03, 0x03, 0xab, 0xcd,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'P', 'E', 'R', 'I', 'O', 'D', 'I',
-        'C', '_', 'A', 'D', 'V'
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xab, 0xcd,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'P', 'E', 'R', 'I', 'O', 'D', 'I', 'C', '_', 'A', 'D', 'V'
 };
 
 static uint8_t raw_ext_adv_data_2m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x13, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
-        'D', 'V', '_', '8', '0', 'M', 'S'
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'E', 'X', 'T', 'E', 'N', 'D', 'E', 'D', '_', 'A', 'D', 'V'
 };
 
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
@@ -195,12 +190,16 @@ void app_main(void)
         return;
     }
 
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    // create static random address
+    esp_bd_addr_t rand_addr;
+    esp_ble_gap_addr_create_static(rand_addr);
 
     test_sem = xSemaphoreCreateBinary();
-    // 2M phy extend adv, Connectable advertising
+
+    // 2M phy extend adv, Non-Connectable and Non-Scannable Undirected advertising
+    ESP_LOG_BUFFER_HEX(LOG_TAG, rand_addr, ESP_BD_ADDR_LEN);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(EXT_ADV_HANDLE, &ext_adv_params_2M), test_sem);
-    FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(EXT_ADV_HANDLE, addr_2m), test_sem);
+    FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(EXT_ADV_HANDLE, rand_addr), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, sizeof(raw_ext_adv_data_2m), &raw_ext_adv_data_2m[0]), test_sem);
 
     // start all adv

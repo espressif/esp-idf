@@ -48,7 +48,7 @@
 #define EXT_SCAN_DURATION     0
 #define EXT_SCAN_PERIOD       0
 
-static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_MULTI_ADV_80MS";
+static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_EXTENDED_ADV";
 static SemaphoreHandle_t test_sem = NULL;
 
 static esp_ble_ext_scan_params_t ext_scan_params = {
@@ -114,6 +114,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
 	    if ((adv_name != NULL) && (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
+            // Note: If there are multiple devices with the same device name, the device may sync to an unintended one.
+            // It is recommended to change the default device name to ensure it is unique.
             periodic_sync = true;
 	        char adv_temp_name[30] = {'0'};
 	        memcpy(adv_temp_name, adv_name, adv_name_len);
