@@ -1366,7 +1366,7 @@ void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx)
 static int save_credentials_cb(void *ctx, const struct wps_credential *cred)
 {
     struct wps_credential *creds;
-    if (!gWpsSm || !cred || gWpsSm->ap_cred_cnt > MAX_CRED_COUNT) {
+    if (!gWpsSm || !cred || gWpsSm->ap_cred_cnt >= MAX_CRED_COUNT) {
         return ESP_FAIL;
     }
 
