@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -487,6 +487,9 @@ static void test_pended_running_task(void *arg)
         TEST_ASSERT_EQUAL(true, has_run[i]);
     }
 
+    // Short delay to let the tasks be suspended
+    vTaskDelay(10);
+
     // Clean up the interrupt and tasks
     deregister_intr_cb();
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
@@ -506,6 +509,8 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_running_task, "susp", 2048, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &susp_tsk_hdl, i));
         // Wait for to be notified to test completion
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Short delay to let the task be suspended
+        vTaskDelay(10);
         vTaskDelete(susp_tsk_hdl);
     }
     // Add a short delay to allow the idle task to free any remaining task memory
