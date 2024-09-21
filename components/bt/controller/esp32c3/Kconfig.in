@@ -200,8 +200,8 @@ choice BT_CTRL_DFT_TX_POWER_LEVEL
         bool "+15dBm"
     config BT_CTRL_DFT_TX_POWER_LEVEL_P18
         bool "+18dBm"
-    config BT_CTRL_DFT_TX_POWER_LEVEL_P21
-        bool "+21dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P20
+        bool "+20dBm"
 endchoice
 
 config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
@@ -221,7 +221,7 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
     default 12 if BT_CTRL_DFT_TX_POWER_LEVEL_P12
     default 13 if BT_CTRL_DFT_TX_POWER_LEVEL_P15
     default 14 if BT_CTRL_DFT_TX_POWER_LEVEL_P18
-    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P21
+    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P20
     default 0
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
