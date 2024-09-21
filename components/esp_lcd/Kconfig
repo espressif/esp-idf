@@ -19,6 +19,7 @@ menu "LCD and Touch Panel"
         if SOC_LCD_RGB_SUPPORTED
             config LCD_RGB_ISR_IRAM_SAFE
                 bool "RGB LCD ISR IRAM-Safe"
+                select GDMA_ISR_IRAM_SAFE # bounce buffer mode relies on GDMA EOF interrupt
                 default n
                 help
                     Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
@@ -29,7 +30,6 @@ menu "LCD and Touch Panel"
             config LCD_RGB_RESTART_IN_VSYNC
                 bool "Restart transmission in VSYNC"
                 default n
-                select GDMA_CTRL_FUNC_IN_IRAM # need to restart GDMA in the LCD ISR
                 help
                     Reset the GDMA channel every VBlank to stop permanent desyncs from happening.
                     Only need to enable it when in your application, the DMA can't deliver data
