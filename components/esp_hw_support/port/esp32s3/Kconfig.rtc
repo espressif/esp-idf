@@ -37,3 +37,13 @@ config RTC_CLK_CAL_CYCLES
         - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
             In case more value will help improve the definition of the launch of the crystal.
             If the crystal could not start, it will be switched to internal RC.
+
+config RTC_XTAL_CAL_RETRY
+    int "Number of attempts to repeat 32k XTAL calibration"
+    default 3
+    depends on RTC_CLK_SRC_EXT_CRYS
+    help
+        Number of attempts to repeat 32k XTAL calibration
+        before giving up and switching to the internal RC.
+        Increase this option if the 32k crystal oscillator
+        does not start and switches to internal RC.
