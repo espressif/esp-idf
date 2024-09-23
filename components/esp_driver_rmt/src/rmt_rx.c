@@ -283,7 +283,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
     }
 
-    rx_channel->filter_clock_resolution_hz = group->resolution_hz;
+    rx_channel->filter_clock_resolution_hz = rx_channel->base.resolution_hz;
     // On esp32 and esp32s2, the counting clock used by the RX filter always comes from APB clock
     // no matter what the clock source is used by the RMT channel as the "core" clock
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
