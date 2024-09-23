@@ -148,7 +148,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - INT_MTX
             - TEE/APM
             - IO_MUX / GPIO
-            - SPI0/1
+            - MSPI (SPI0/1)
             - SYSTIMER
             :SOC_TIMER_SUPPORT_SLEEP_RETENTION: - GPTimer
             :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
@@ -160,6 +160,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
+            :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
         The following peripherals are not yet supported:
 
@@ -168,7 +169,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - SPI2
             - PCNT
             - USB-Serial-JTAG
             - MCPWM

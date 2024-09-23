@@ -32,7 +32,6 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spics0_iomux_pin = MSPI_IOMUX_PIN_NUM_CS0,
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = -1,
-        .module = PERIPH_SPI_MODULE,
         .hw = (spi_dev_t *) &SPIMEM1,
         .func = MSPI_FUNC_NUM,
 
@@ -65,7 +64,6 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spics0_iomux_pin = FSPI_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
-        .module = PERIPH_FSPI_MODULE,
         .hw = &GPSPI2,
         .func = FSPI_FUNC_NUM,
     }, {
@@ -91,7 +89,6 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spics0_iomux_pin = -1,
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
-        .module = PERIPH_HSPI_MODULE,
         .hw = &GPSPI3,
         .func = -1,
     }

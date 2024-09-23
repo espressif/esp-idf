@@ -14,7 +14,7 @@ extern "C" {
 /** SPI_CMD_REG register
  *  Command control register
  */
-#define SPI_CMD_REG (DR_REG_SPI_BASE + 0x0)
+#define SPI_CMD_REG(i) (REG_SPI_BASE(i) + 0x0)
 /** SPI_CONF_BITLEN : R/W; bitpos: [17:0]; default: 0;
  *  Configures the SPI_CLK cycles of SPI CONF state.
  *  Measurement unit: SPI_CLK clock cycle.\\
@@ -50,7 +50,7 @@ extern "C" {
 /** SPI_ADDR_REG register
  *  Address value register
  */
-#define SPI_ADDR_REG (DR_REG_SPI_BASE + 0x4)
+#define SPI_ADDR_REG(i) (REG_SPI_BASE(i) + 0x4)
 /** SPI_USR_ADDR_VALUE : R/W; bitpos: [31:0]; default: 0;
  *  Configures the address to slave.
  *  Can be configured in CONF state.
@@ -63,7 +63,7 @@ extern "C" {
 /** SPI_CTRL_REG register
  *  SPI control register
  */
-#define SPI_CTRL_REG (DR_REG_SPI_BASE + 0x8)
+#define SPI_CTRL_REG(i) (REG_SPI_BASE(i) + 0x8)
 /** SPI_DUMMY_OUT : R/W; bitpos: [3]; default: 0;
  *  Configures whether or not to output the FSPI bus signals in DUMMY state. \\
  *  0: Not output \\
@@ -232,7 +232,7 @@ extern "C" {
 /** SPI_CLOCK_REG register
  *  SPI clock control register
  */
-#define SPI_CLOCK_REG (DR_REG_SPI_BASE + 0xc)
+#define SPI_CLOCK_REG(i) (REG_SPI_BASE(i) + 0xc)
 /** SPI_CLKCNT_L : R/W; bitpos: [5:0]; default: 3;
  *  In master transfer, this field must be equal to SPI_CLKCNT_N. In slave mode, it
  *  must be 0. Can be configured in CONF state.
@@ -284,7 +284,7 @@ extern "C" {
 /** SPI_USER_REG register
  *  SPI USER control register
  */
-#define SPI_USER_REG (DR_REG_SPI_BASE + 0x10)
+#define SPI_USER_REG(i) (REG_SPI_BASE(i) + 0x10)
 /** SPI_DOUTDIN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable full-duplex communication. \\
  *  0: Disable \\
@@ -501,7 +501,7 @@ extern "C" {
 /** SPI_USER1_REG register
  *  SPI USER control register 1
  */
-#define SPI_USER1_REG (DR_REG_SPI_BASE + 0x14)
+#define SPI_USER1_REG(i) (REG_SPI_BASE(i) + 0x14)
 /** SPI_USR_DUMMY_CYCLELEN : R/W; bitpos: [7:0]; default: 7;
  *  Configures the length of DUMMY state.
  *  Measurement unit: SPI_CLK clock cycles.\\
@@ -552,7 +552,7 @@ extern "C" {
 /** SPI_USER2_REG register
  *  SPI USER control register 2
  */
-#define SPI_USER2_REG (DR_REG_SPI_BASE + 0x18)
+#define SPI_USER2_REG(i) (REG_SPI_BASE(i) + 0x18)
 /** SPI_USR_COMMAND_VALUE : R/W; bitpos: [15:0]; default: 0;
  *  Configures the command value.
  *  Can be configured in CONF state.
@@ -583,7 +583,7 @@ extern "C" {
 /** SPI_MS_DLEN_REG register
  *  SPI data bit length control register
  */
-#define SPI_MS_DLEN_REG (DR_REG_SPI_BASE + 0x1c)
+#define SPI_MS_DLEN_REG(i) (REG_SPI_BASE(i) + 0x1c)
 /** SPI_MS_DATA_BITLEN : R/W; bitpos: [17:0]; default: 0;
  *  Configures the data bit length of SPI transfer in DMA-controlled master transfer or
  *  in CPU-controlled master transfer. Or configures the bit length of SPI RX transfer
@@ -598,7 +598,7 @@ extern "C" {
 /** SPI_MISC_REG register
  *  SPI misc register
  */
-#define SPI_MISC_REG (DR_REG_SPI_BASE + 0x20)
+#define SPI_MISC_REG(i) (REG_SPI_BASE(i) + 0x20)
 /** SPI_CS0_DIS : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to disable SPI_CS$n pin.\\
  *  0: SPI_CS$n signal is from/to SPI_CS$n pin.\\
@@ -763,7 +763,7 @@ extern "C" {
 /** SPI_DIN_MODE_REG register
  *  SPI input delay mode configuration
  */
-#define SPI_DIN_MODE_REG (DR_REG_SPI_BASE + 0x24)
+#define SPI_DIN_MODE_REG(i) (REG_SPI_BASE(i) + 0x24)
 /** SPI_DIN0_MODE : R/W; bitpos: [1:0]; default: 0;
  *  Configures the input mode for FSPID signal.\\
  *  0: Input without delay\\
@@ -872,7 +872,7 @@ extern "C" {
 /** SPI_DIN_NUM_REG register
  *  SPI input delay number configuration
  */
-#define SPI_DIN_NUM_REG (DR_REG_SPI_BASE + 0x28)
+#define SPI_DIN_NUM_REG(i) (REG_SPI_BASE(i) + 0x28)
 /** SPI_DIN0_NUM : R/W; bitpos: [1:0]; default: 0;
  *  Configures the delays to input signal FSPID based on the setting of SPI_DIN0_MODE.\\
  *  0: Delayed by 1 clock cycle\\
@@ -959,7 +959,7 @@ extern "C" {
 /** SPI_DOUT_MODE_REG register
  *  SPI output delay mode configuration
  */
-#define SPI_DOUT_MODE_REG (DR_REG_SPI_BASE + 0x2c)
+#define SPI_DOUT_MODE_REG(i) (REG_SPI_BASE(i) + 0x2c)
 /** SPI_DOUT0_MODE : R/W; bitpos: [0]; default: 0;
  *  Configures the output mode for FSPID signal.\\
  *  0: Output without delay\\
@@ -1049,7 +1049,7 @@ extern "C" {
 /** SPI_DMA_CONF_REG register
  *  SPI DMA control register
  */
-#define SPI_DMA_CONF_REG (DR_REG_SPI_BASE + 0x30)
+#define SPI_DMA_CONF_REG(i) (REG_SPI_BASE(i) + 0x30)
 /** SPI_DMA_OUTFIFO_EMPTY : RO; bitpos: [0]; default: 1;
  *  Represents whether or not the DMA TX FIFO is ready for sending data.\\
  *  0: Ready\\
@@ -1177,7 +1177,7 @@ extern "C" {
 /** SPI_DMA_INT_ENA_REG register
  *  SPI interrupt enable register
  */
-#define SPI_DMA_INT_ENA_REG (DR_REG_SPI_BASE + 0x34)
+#define SPI_DMA_INT_ENA_REG(i) (REG_SPI_BASE(i) + 0x34)
 /** SPI_DMA_INFIFO_FULL_ERR_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Write 1 to enable SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
  */
@@ -1329,7 +1329,7 @@ extern "C" {
 /** SPI_DMA_INT_CLR_REG register
  *  SPI interrupt clear register
  */
-#define SPI_DMA_INT_CLR_REG (DR_REG_SPI_BASE + 0x38)
+#define SPI_DMA_INT_CLR_REG(i) (REG_SPI_BASE(i) + 0x38)
 /** SPI_DMA_INFIFO_FULL_ERR_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
  */
@@ -1481,7 +1481,7 @@ extern "C" {
 /** SPI_DMA_INT_RAW_REG register
  *  SPI interrupt raw register
  */
-#define SPI_DMA_INT_RAW_REG (DR_REG_SPI_BASE + 0x3c)
+#define SPI_DMA_INT_RAW_REG(i) (REG_SPI_BASE(i) + 0x3c)
 /** SPI_DMA_INFIFO_FULL_ERR_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt status of SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
  */
@@ -1637,7 +1637,7 @@ extern "C" {
 /** SPI_DMA_INT_ST_REG register
  *  SPI interrupt status register
  */
-#define SPI_DMA_INT_ST_REG (DR_REG_SPI_BASE + 0x40)
+#define SPI_DMA_INT_ST_REG(i) (REG_SPI_BASE(i) + 0x40)
 /** SPI_DMA_INFIFO_FULL_ERR_INT_ST : RO; bitpos: [0]; default: 0;
  *  The interrupt status of SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
  */
@@ -1789,7 +1789,7 @@ extern "C" {
 /** SPI_DMA_INT_SET_REG register
  *  SPI interrupt software set register
  */
-#define SPI_DMA_INT_SET_REG (DR_REG_SPI_BASE + 0x44)
+#define SPI_DMA_INT_SET_REG(i) (REG_SPI_BASE(i) + 0x44)
 /** SPI_DMA_INFIFO_FULL_ERR_INT_SET : WT; bitpos: [0]; default: 0;
  *  Write 1 to set SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
  */
@@ -1941,7 +1941,7 @@ extern "C" {
 /** SPI_W0_REG register
  *  SPI CPU-controlled buffer0
  */
-#define SPI_W0_REG (DR_REG_SPI_BASE + 0x98)
+#define SPI_W0_REG(i) (REG_SPI_BASE(i) + 0x98)
 /** SPI_BUF0 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -1953,7 +1953,7 @@ extern "C" {
 /** SPI_W1_REG register
  *  SPI CPU-controlled buffer1
  */
-#define SPI_W1_REG (DR_REG_SPI_BASE + 0x9c)
+#define SPI_W1_REG(i) (REG_SPI_BASE(i) + 0x9c)
 /** SPI_BUF1 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -1965,7 +1965,7 @@ extern "C" {
 /** SPI_W2_REG register
  *  SPI CPU-controlled buffer2
  */
-#define SPI_W2_REG (DR_REG_SPI_BASE + 0xa0)
+#define SPI_W2_REG(i) (REG_SPI_BASE(i) + 0xa0)
 /** SPI_BUF2 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -1977,7 +1977,7 @@ extern "C" {
 /** SPI_W3_REG register
  *  SPI CPU-controlled buffer3
  */
-#define SPI_W3_REG (DR_REG_SPI_BASE + 0xa4)
+#define SPI_W3_REG(i) (REG_SPI_BASE(i) + 0xa4)
 /** SPI_BUF3 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -1989,7 +1989,7 @@ extern "C" {
 /** SPI_W4_REG register
  *  SPI CPU-controlled buffer4
  */
-#define SPI_W4_REG (DR_REG_SPI_BASE + 0xa8)
+#define SPI_W4_REG(i) (REG_SPI_BASE(i) + 0xa8)
 /** SPI_BUF4 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2001,7 +2001,7 @@ extern "C" {
 /** SPI_W5_REG register
  *  SPI CPU-controlled buffer5
  */
-#define SPI_W5_REG (DR_REG_SPI_BASE + 0xac)
+#define SPI_W5_REG(i) (REG_SPI_BASE(i) + 0xac)
 /** SPI_BUF5 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2013,7 +2013,7 @@ extern "C" {
 /** SPI_W6_REG register
  *  SPI CPU-controlled buffer6
  */
-#define SPI_W6_REG (DR_REG_SPI_BASE + 0xb0)
+#define SPI_W6_REG(i) (REG_SPI_BASE(i) + 0xb0)
 /** SPI_BUF6 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2025,7 +2025,7 @@ extern "C" {
 /** SPI_W7_REG register
  *  SPI CPU-controlled buffer7
  */
-#define SPI_W7_REG (DR_REG_SPI_BASE + 0xb4)
+#define SPI_W7_REG(i) (REG_SPI_BASE(i) + 0xb4)
 /** SPI_BUF7 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2037,7 +2037,7 @@ extern "C" {
 /** SPI_W8_REG register
  *  SPI CPU-controlled buffer8
  */
-#define SPI_W8_REG (DR_REG_SPI_BASE + 0xb8)
+#define SPI_W8_REG(i) (REG_SPI_BASE(i) + 0xb8)
 /** SPI_BUF8 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2049,7 +2049,7 @@ extern "C" {
 /** SPI_W9_REG register
  *  SPI CPU-controlled buffer9
  */
-#define SPI_W9_REG (DR_REG_SPI_BASE + 0xbc)
+#define SPI_W9_REG(i) (REG_SPI_BASE(i) + 0xbc)
 /** SPI_BUF9 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2061,7 +2061,7 @@ extern "C" {
 /** SPI_W10_REG register
  *  SPI CPU-controlled buffer10
  */
-#define SPI_W10_REG (DR_REG_SPI_BASE + 0xc0)
+#define SPI_W10_REG(i) (REG_SPI_BASE(i) + 0xc0)
 /** SPI_BUF10 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2073,7 +2073,7 @@ extern "C" {
 /** SPI_W11_REG register
  *  SPI CPU-controlled buffer11
  */
-#define SPI_W11_REG (DR_REG_SPI_BASE + 0xc4)
+#define SPI_W11_REG(i) (REG_SPI_BASE(i) + 0xc4)
 /** SPI_BUF11 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2085,7 +2085,7 @@ extern "C" {
 /** SPI_W12_REG register
  *  SPI CPU-controlled buffer12
  */
-#define SPI_W12_REG (DR_REG_SPI_BASE + 0xc8)
+#define SPI_W12_REG(i) (REG_SPI_BASE(i) + 0xc8)
 /** SPI_BUF12 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2097,7 +2097,7 @@ extern "C" {
 /** SPI_W13_REG register
  *  SPI CPU-controlled buffer13
  */
-#define SPI_W13_REG (DR_REG_SPI_BASE + 0xcc)
+#define SPI_W13_REG(i) (REG_SPI_BASE(i) + 0xcc)
 /** SPI_BUF13 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2109,7 +2109,7 @@ extern "C" {
 /** SPI_W14_REG register
  *  SPI CPU-controlled buffer14
  */
-#define SPI_W14_REG (DR_REG_SPI_BASE + 0xd0)
+#define SPI_W14_REG(i) (REG_SPI_BASE(i) + 0xd0)
 /** SPI_BUF14 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2121,7 +2121,7 @@ extern "C" {
 /** SPI_W15_REG register
  *  SPI CPU-controlled buffer15
  */
-#define SPI_W15_REG (DR_REG_SPI_BASE + 0xd4)
+#define SPI_W15_REG(i) (REG_SPI_BASE(i) + 0xd4)
 /** SPI_BUF15 : R/W/SS; bitpos: [31:0]; default: 0;
  *  32-bit data buffer $n.
  */
@@ -2133,7 +2133,7 @@ extern "C" {
 /** SPI_SLAVE_REG register
  *  SPI slave control register
  */
-#define SPI_SLAVE_REG (DR_REG_SPI_BASE + 0xe0)
+#define SPI_SLAVE_REG(i) (REG_SPI_BASE(i) + 0xe0)
 /** SPI_CLK_MODE : R/W; bitpos: [1:0]; default: 0;
  *  Configures SPI clock mode.\\
  *  0: SPI clock is off when CS becomes inactive.\\
@@ -2267,7 +2267,7 @@ extern "C" {
 /** SPI_SLAVE1_REG register
  *  SPI slave control register 1
  */
-#define SPI_SLAVE1_REG (DR_REG_SPI_BASE + 0xe4)
+#define SPI_SLAVE1_REG(i) (REG_SPI_BASE(i) + 0xe4)
 /** SPI_SLV_DATA_BITLEN : R/W/SS; bitpos: [17:0]; default: 0;
  *  Configures the transferred data bit length in SPI slave full-/half-duplex modes.
  */
@@ -2293,7 +2293,7 @@ extern "C" {
 /** SPI_CLK_GATE_REG register
  *  SPI module clock and register clock control
  */
-#define SPI_CLK_GATE_REG (DR_REG_SPI_BASE + 0xe8)
+#define SPI_CLK_GATE_REG(i) (REG_SPI_BASE(i) + 0xe8)
 /** SPI_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable clock gate.\\
  *  0: Disable\\
@@ -2322,7 +2322,7 @@ extern "C" {
 /** SPI_DATE_REG register
  *  Version control
  */
-#define SPI_DATE_REG (DR_REG_SPI_BASE + 0xf0)
+#define SPI_DATE_REG(i) (REG_SPI_BASE(i) + 0xf0)
 /** SPI_DATE : R/W; bitpos: [27:0]; default: 36716931;
  *  Version control register.
  */

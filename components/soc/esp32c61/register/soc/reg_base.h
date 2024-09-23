@@ -24,7 +24,7 @@
 #define DR_REG_PVT_MONITOR_BASE                 0x60019000
 #define DR_REG_PSRAM_MEM_MONITOR_BASE           0x6001A000
 #define DR_REG_AHB_DMA_BASE                     0x60080000
-#define DR_REG_GPSPI_BASE                       0x60081000
+#define DR_REG_SPI2_BASE                        0x60081000
 #define DR_REG_SHA_BASE                         0x60089000
 #define DR_REG_ECC_MULT_BASE                    0x6008B000
 #define DR_REG_ECDSA_BASE                       0x6008E000

@@ -40,7 +40,7 @@
  *
  */
 #define DR_REG_AHB_DMA_BASE                       0x60080000
-#define DR_REG_GPSPI2_BASE                        0x60081000
+#define DR_REG_SPI2_BASE                          0x60081000
 #define DR_REG_BITSCRAMBLER_BASE                  0x60082000
 #define DR_REG_KEYMNG_BASE                        0x60087000
 #define DR_REG_AES_BASE                           0x60088000

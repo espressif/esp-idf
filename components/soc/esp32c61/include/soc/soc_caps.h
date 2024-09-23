@@ -307,6 +307,7 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
 
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_SLEEP_RETENTION     1
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
 #define SOC_SPI_SUPPORT_CLK_PLL             1
 #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
