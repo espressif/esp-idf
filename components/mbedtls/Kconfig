@@ -85,8 +85,13 @@ menu "mbedTLS"
         range 512 16384
         depends on MBEDTLS_ASYMMETRIC_CONTENT_LEN
         help
-            This defines maximum incoming fragment length, overriding default
-            maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).
+            This defines the maximum incoming fragment length, overriding the default
+            maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN). The default value is
+            set to 16 KB as recommended by mbedTLS for secure handling of incoming messages.
+
+            Note: Setting this value lower than 16 KB may cause memory leaks or 
+            unexpected behavior when receiving larger fragments, as there is no 
+            mechanism to notify clients of buffer size restrictions. 
 
     config MBEDTLS_SSL_OUT_CONTENT_LEN
         int "TLS maximum outgoing fragment length"
@@ -104,15 +109,16 @@ menu "mbedTLS"
         # Dynamic buffer feature is not supported with DTLS
         depends on !IDF_TARGET_LINUX && !MBEDTLS_SSL_PROTO_DTLS && !MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
         help
-            Using dynamic TX/RX buffer. After enabling this option, mbedTLS will
-            allocate TX buffer when need to send data and then free it if all data
-            is sent, allocate RX buffer when need to receive data and then free it
-            when all data is used or read by upper layer.
-
-            By default, when SSL is initialized, mbedTLS also allocate TX and
-            RX buffer with the default value of "MBEDTLS_SSL_OUT_CONTENT_LEN" or
-            "MBEDTLS_SSL_IN_CONTENT_LEN", so to save more heap, users can set
-            the options to be an appropriate value.
+            Enable the dynamic TX/RX buffer for mbedTLS. When enabled, mbedTLS will 
+            allocate the TX buffer only when data needs to be sent and free it once 
+            the data is transmitted. Similarly, it will allocate the RX buffer when 
+            receiving data and free it once the data has been fully processed.
+            
+            Caution: For incoming data, the RX buffer size should respect the 
+            minimum size of 16KB, as required by mbedTLS to prevent memory leaks and 
+            ensure proper handling of incoming messages. Reducing the RX buffer 
+            size may cause heap corruption or incomplete message processing if 
+            larger fragments are received.
 
     config MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
         bool "Free private key and DHM data after its usage"
