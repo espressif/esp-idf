@@ -403,6 +403,65 @@ static int sae_status_success(struct hostapd_data *hapd, u16 status_code)
 }
 
 
+static int sae_is_group_enabled(struct hostapd_data *hapd, int group)
+{
+    int *groups = NULL;
+    int default_groups[] = { 19, 0 };
+    int i;
+
+    if (!groups) {
+        groups = default_groups;
+    }
+
+    for (i = 0; groups[i] > 0; i++) {
+        if (groups[i] == group)
+            return 1;
+    }
+
+    return 0;
+}
+
+
+static int check_sae_rejected_groups(struct hostapd_data *hapd,
+				     struct sae_data *sae)
+{
+    const struct wpabuf *groups;
+    size_t i, count, len;
+    const u8 *pos;
+
+    if (!sae->tmp)
+        return 0;
+    groups = sae->tmp->peer_rejected_groups;
+    if (!groups)
+        return 0;
+
+    pos = wpabuf_head(groups);
+    len = wpabuf_len(groups);
+    if (len & 1) {
+        wpa_printf(MSG_DEBUG,
+                  "SAE: Invalid length of the Rejected Groups element payload: %zu",
+                  len);
+        return 1;
+    }
+
+    count = len / 2;
+    for (i = 0; i < count; i++) {
+        int enabled;
+        u16 group;
+
+        group = WPA_GET_LE16(pos);
+        pos += 2;
+        enabled = sae_is_group_enabled(hapd, group);
+        wpa_printf(MSG_DEBUG, "SAE: Rejected group %u is %s",
+                  group, enabled ? "enabled" : "disabled");
+        if (enabled)
+            return 1;
+    }
+
+    return 0;
+}
+
+
 int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
                     u8 *buf, size_t len, u8 *bssid,
                     u16 auth_transaction, u16 status)
@@ -494,6 +553,11 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
                        MAC2STR(sta->addr));
             resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
             goto remove_sta;
+        }
+
+        if (check_sae_rejected_groups(hapd, sta->sae)) {
+            resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+            goto reply;
         }
 
         if (resp != WLAN_STATUS_SUCCESS) {

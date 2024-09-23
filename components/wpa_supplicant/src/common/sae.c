@@ -2049,8 +2049,11 @@ static int sae_parse_rejected_groups(struct sae_data *sae,
 
 	wpa_hexdump(MSG_DEBUG, "SAE: Possible elements at the end of the frame",
 		    *pos, end - *pos);
-	if (!sae_is_rejected_groups_elem(*pos, end))
+	if (!sae_is_rejected_groups_elem(*pos, end)) {
+		wpabuf_free(sae->tmp->peer_rejected_groups);
+		sae->tmp->peer_rejected_groups = NULL;
 		return WLAN_STATUS_SUCCESS;
+	}
 
 	epos = *pos;
 	epos++; /* skip IE type */
@@ -2060,6 +2063,12 @@ static int sae_parse_rejected_groups(struct sae_data *sae,
 	epos++; /* skip ext ID */
 	len--;
 
+	if (len & 1) {
+		wpa_printf(MSG_DEBUG,
+			   "SAE: Invalid length of the Rejected Groups element payload: %u",
+			   len);
+		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+	}
 	wpabuf_free(sae->tmp->peer_rejected_groups);
 	sae->tmp->peer_rejected_groups = wpabuf_alloc(len);
 	if (!sae->tmp->peer_rejected_groups)
@@ -2139,6 +2148,9 @@ u16 sae_parse_commit(struct sae_data *sae, const u8 *data, size_t len,
 		res = sae_parse_rejected_groups(sae, &pos, end);
 		if (res != WLAN_STATUS_SUCCESS)
 			return res;
+	} else {
+		wpabuf_free(sae->tmp->peer_rejected_groups);
+		sae->tmp->peer_rejected_groups = NULL;
 	}
 
 	/* Optional Anti-Clogging Token Container element */
