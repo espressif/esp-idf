@@ -106,4 +106,12 @@ menu "ESP-TLS"
         help
             Enable detailed debug prints for wolfSSL SSL library.
 
+    config ESP_TLS_OCSP_CHECKALL
+        bool "Enabled full OCSP checks for ESP-TLS"
+        depends on ESP_TLS_USING_WOLFSSL
+        default y
+        help
+            Enable a fuller set of OCSP checks: checking revocation status of intermediate certificates,
+            optional fallbacks to CRLs, etc.
+
 endmenu
