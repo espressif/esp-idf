@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -22,4 +22,5 @@ def test_rgb_lcd_lvgl(dut: Dut) -> None:
     dut.expect_exact('example: Turn on LCD backlight')
     dut.expect_exact('example: Initialize LVGL library')
     dut.expect_exact('example: Install LVGL tick timer')
-    dut.expect_exact('example: Display LVGL Scatter Chart')
+    dut.expect_exact('example: Create LVGL task')
+    dut.expect_exact('example: Display LVGL UI')

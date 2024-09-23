@@ -51,8 +51,8 @@ Run `idf.py menuconfig` and go to `Example Configuration`:
 
 * Choose the LCD model in `Select MIPI LCD model` according to your board.
 * Choose whether to `Use DMA2D to copy draw buffer to frame buffer` asynchronously. If you choose `No`, the draw buffer will be copied to the frame buffer synchronously by CPU.
-* Choose if you want to `Monitor FPS by GPIO`. If you choose `Yes`, then you can attach an oscilloscope or logic analyzer to the GPIO pin to monitor the FPS of the display.
-  Please note, the actual FPS should be **double** the square wave frequency.
+* Choose if you want to `Monitor Refresh Rate by GPIO`. If you choose `Yes`, then you can attach an oscilloscope or logic analyzer to the GPIO pin to monitor the Refresh Rate of the display.
+  Please note, the actual Refresh Rate should be **double** the square wave frequency.
 
 ### Build and Flash
 

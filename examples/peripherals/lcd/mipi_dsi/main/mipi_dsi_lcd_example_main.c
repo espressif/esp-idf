@@ -29,7 +29,7 @@ static const char *TAG = "example";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if CONFIG_EXAMPLE_LCD_USE_ILI9881C
-// FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
+// Refresh Rate = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ  80
 #define EXAMPLE_MIPI_DSI_LCD_H_RES    800
 #define EXAMPLE_MIPI_DSI_LCD_V_RES    1280
@@ -40,7 +40,7 @@ static const char *TAG = "example";
 #define EXAMPLE_MIPI_DSI_LCD_VBP      16
 #define EXAMPLE_MIPI_DSI_LCD_VFP      16
 #elif CONFIG_EXAMPLE_LCD_USE_EK79007
-// FPS = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
+// Refresh Rate = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ  48
 #define EXAMPLE_MIPI_DSI_LCD_H_RES    1024
 #define EXAMPLE_MIPI_DSI_LCD_V_RES    600
@@ -67,8 +67,8 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_BK_LIGHT                -1
 #define EXAMPLE_PIN_NUM_LCD_RST                 -1
 
-#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-#define EXAMPLE_PIN_NUM_FPS_MONITOR             20  // Monitor the FPS by toggling the GPIO
+#if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
+#define EXAMPLE_PIN_NUM_REFRESH_MONITOR         20  // Monitor the Refresh Rate by toggling the GPIO
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,6 +110,11 @@ static void example_lvgl_port_task(void *arg)
         _lock_acquire(&lvgl_api_lock);
         time_till_next_ms = lv_timer_handler();
         _lock_release(&lvgl_api_lock);
+
+        // in case of task watch dog timeout, set the minimal delay to 10ms
+        if (time_till_next_ms < 10) {
+            time_till_next_ms = 10;
+        }
         usleep(1000 * time_till_next_ms);
     }
 }
@@ -121,12 +126,12 @@ static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lc
     return false;
 }
 
-#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-static bool example_monitor_fps(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+#if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
+static bool example_monitor_refresh_rate(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
 {
     static int io_level = 0;
-    // please note, the real FPS should be 2*frequency of this GPIO toggling
-    gpio_set_level(EXAMPLE_PIN_NUM_FPS_MONITOR, io_level);
+    // please note, the real refresh rate should be 2*frequency of this GPIO toggling
+    gpio_set_level(EXAMPLE_PIN_NUM_REFRESH_MONITOR, io_level);
     io_level = !io_level;
     return false;
 }
@@ -164,12 +169,12 @@ static void example_bsp_set_lcd_backlight(uint32_t level)
 #endif
 }
 
-#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-static void example_bsp_init_fps_monitor_io(void)
+#if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
+static void example_bsp_init_refresh_monitor_io(void)
 {
     gpio_config_t monitor_io_conf = {
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_FPS_MONITOR,
+        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_REFRESH_MONITOR,
     };
     ESP_ERROR_CHECK(gpio_config(&monitor_io_conf));
 }
@@ -177,8 +182,8 @@ static void example_bsp_init_fps_monitor_io(void)
 
 void app_main(void)
 {
-#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-    example_bsp_init_fps_monitor_io();
+#if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
+    example_bsp_init_refresh_monitor_io();
 #endif
 
     example_bsp_enable_dsi_phy_power();
@@ -291,8 +296,8 @@ void app_main(void)
     ESP_LOGI(TAG, "Register DPI panel event callback for LVGL flush ready notification");
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_color_trans_done = example_notify_lvgl_flush_ready,
-#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
-        .on_refresh_done = example_monitor_fps,
+#if CONFIG_EXAMPLE_MONITOR_REFRESH_BY_GPIO
+        .on_refresh_done = example_monitor_refresh_rate,
 #endif
     };
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, display));
