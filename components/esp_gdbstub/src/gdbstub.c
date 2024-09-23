@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,11 +62,11 @@ void esp_gdbstub_panic_handler(void *in_frame)
         esp_gdbstub_send_end();
     } else if (s_scratch.state == GDBSTUB_NOT_STARTED) {
         s_scratch.state = GDBSTUB_STARTED;
-        /* Save the paniced frame and get the list of tasks */
+        /* Save the panicked frame and get the list of tasks */
         memcpy(&s_scratch.paniced_frame, frame, sizeof(*frame));
         init_task_info();
         find_paniced_task_index();
-        /* Current task is the paniced task */
+        /* Current task is the panicked task */
         if (s_scratch.paniced_task_index == GDBSTUB_CUR_TASK_INDEX_UNKNOWN) {
             set_active_task(0);
         } else {
@@ -144,7 +144,7 @@ static inline void disable_all_wdts(void)
     }
 
     #if SOC_TIMER_GROUPS >= 2
-    /* Interupt WDT is the Main Watchdog Timer of Timer Group 1 */
+    /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (true == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
         wdt_hal_disable(&wdt1_context);
@@ -173,7 +173,7 @@ static inline void enable_all_wdts(void)
         wdt_hal_write_protect_enable(&wdt0_context);
     }
     #if SOC_TIMER_GROUPS >= 2
-    /* Interupt WDT is the Main Watchdog Timer of Timer Group 1 */
+    /* Interrupt WDT is the Main Watchdog Timer of Timer Group 1 */
     if (false == wdt1_context_enabled) {
         wdt_hal_write_protect_disable(&wdt1_context);
         wdt_hal_enable(&wdt1_context);
@@ -208,7 +208,7 @@ static bool process_gdb_kill = false;
 static bool gdb_debug_int = false;
 
 /**
- * @breef Handle UART interrupt
+ * @brief Handle UART interrupt
  *
  * Handle UART interrupt for gdbstub. The function disable WDT.
  * If Ctrl+C combination detected (0x03), then application will start to process incoming GDB messages.
@@ -695,7 +695,7 @@ static void handle_P_command(const unsigned char *cmd, int len)
 static void handle_qSupported_command(const unsigned char *cmd, int len)
 {
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
+    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+");
     esp_gdbstub_send_end();
 }
 
