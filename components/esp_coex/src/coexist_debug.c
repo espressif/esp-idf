@@ -13,37 +13,20 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-#include "esp32s2/rom/gpio.h"
-#include "esp32s2/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-#include "esp32c3/rom/gpio.h"
-#include "esp32c3/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C2)
-#include "esp32c2/rom/gpio.h"
-#include "esp32c2/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C6)
-#include "esp32c6/rom/gpio.h"
-#include "esp32c6/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C5)
-#include "esp32c5/rom/gpio.h"
-#include "esp32c5/rom/ets_sys.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32C61)
-#include "esp32c61/rom/gpio.h"
-#include "esp32c61/rom/ets_sys.h"
-#endif
+#include "rom/gpio.h"
+#include "rom/ets_sys.h"
 #include "driver/gpio.h"
 #include "soc/gpio_sig_map.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc.h"
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#endif
 
 #if CONFIG_ESP_COEX_GPIO_DEBUG
 static char* TAG = "coexist debug";
 
-__attribute__((weak)) void wifi_set_gpio_debug_cb(void (* cb)(int, int))
+__attribute__((weak)) void wifi_set_gpio_debug_cb(void (* cb)(int, coex_gpio_debug_sig_t))
 {
     ESP_LOGW(TAG, "Not support: %s", __FUNCTION__);
 }
@@ -53,7 +36,7 @@ __attribute__((weak)) int wifi_gpio_debug_max_event_get(void)
     return 0;
 }
 
-__attribute__((weak)) void coex_set_gpio_debug_cb(void (*cb)(int, int))
+__attribute__((weak)) void coex_set_gpio_debug_cb(void (*cb)(int, coex_gpio_debug_sig_t))
 {
     ESP_LOGW(TAG, "Not support: %s", __FUNCTION__);
 }
@@ -207,6 +190,18 @@ esp_err_t esp_coexist_debug_matrix_init(int evt, int sig, bool rev)
     return ESP_OK;
 }
 
+esp_err_t esp_coexist_gpio_debug_matrix_config(int event)
+{
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_COEX_MODULE);
+#endif
+    esp_err_t ret = coex_gpio_debug_matrix_config(event);
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_COEX_MODULE);
+#endif
+    return ret;
+}
+
 esp_err_t esp_coexist_debug_init(void)
 {
     if (check_funcs_in_rom()) {
@@ -270,8 +265,14 @@ esp_err_t esp_coexist_debug_init(void)
         gpio_set_level(s_io_nums[i], false);
     }
 
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_COEX_MODULE);
+#endif
     /* Init coexist hardware signal */
     ESP_ERROR_CHECK(coex_gpio_debug_matrix_init());
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_COEX_MODULE);
+#endif
 
     return ESP_OK;
 }
