@@ -66,7 +66,34 @@ typedef enum {
 } usb_hub_port_feature_t;
 
 /**
- * @brief Size of a USB Hub Port Status and Hub Change results
+ * @brief USB Hub characteristics
+ *
+ * See USB 2.0 spec Table 11-13, offset 3
+ */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_ALL           (0)     /**< All ports power control at once */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_INDV          (1)     /**< Individual port power control */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_NO            (2)     /**< No power switching */
+
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_ALL          (0)     /**< All ports Over-Current reporting */
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_INDV         (1)     /**< Individual port Over-current reporting */
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_NO           (2)     /**< No Over-current Protection support */
+
+#define USB_W_HUB_CHARS_TTTT_8_BITS                 (0)     /**< TT requires at most 8 FS bit times of inter transaction gap on a full-/low-speed downstream bus */
+#define USB_W_HUB_CHARS_TTTT_16_BITS                (1)     /**< TT requires at most 16 FS bit times */
+#define USB_W_HUB_CHARS_TTTT_24_BITS                (2)     /**< TT requires at most 24 FS bit times */
+#define USB_W_HUB_CHARS_TTTT_32_BITS                (3)     /**< TT requires at most 32 FS bit times */
+
+/**
+ * @brief USB Hub bDeviceProtocol
+ */
+#define USB_B_DEV_PROTOCOL_HUB_FS                   (0)     /**< Full speed hub */
+#define USB_B_DEV_PROTOCOL_HUB_HS_NO_TT             (0)     /**< Hi-speed hub without TT */
+#define USB_B_DEV_PROTOCOL_HUB_HS_SINGLE_TT         (1)     /**< Hi-speed hub with single TT */
+#define USB_B_DEV_PROTOCOL_HUB_HS_MULTI_TT          (2)     /**< Hi-speed hub with multiple TT */
+#define USB_B_DEV_PROTOCOL_HUB_SS                   (3)     /**< Super speed hub */
+
+/**
+ * @brief USB Hub Port Status and Hub Change results size
  */
 #define USB_PORT_STATUS_SIZE            4
 
@@ -148,7 +175,17 @@ typedef struct {
     uint8_t  bDescLength;                   /**< Number of bytes in this descriptor, including this byte */
     uint8_t  bDescriptorType;               /**< Descriptor Type, value: 29H for Hub descriptor */
     uint8_t  bNbrPorts;                     /**< Number of downstream facing ports that this Hub supports */
-    uint16_t wHubCharacteristics;           /**< Logical Power Switching Mode, Compound Device, Over-current Protection Mode, TT Think Time, Port Indicators Supported */
+    union {
+        struct {
+            uint16_t power_switching:       2;
+            uint16_t compound:              1;
+            uint16_t ovr_current_protect:   2;
+            uint16_t tt_think_time:         2;
+            uint16_t indicator_support:     1;
+            uint16_t reserved:              8;
+        };
+        uint16_t val;                       /**< Hub Characteristics value */
+    } wHubCharacteristics;                  /**< Hub Characteristics */
     uint8_t  bPwrOn2PwrGood;                /**< Time (in 2 ms intervals) from the time the power-on sequence begins on a port until power is good on that port */
     uint8_t  bHubContrCurrent;              /**< Maximum current requirements of the Hub Controller electronics in mA. */
 } __attribute__((packed)) usb_hub_descriptor_t;

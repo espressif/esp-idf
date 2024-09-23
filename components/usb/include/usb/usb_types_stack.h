@@ -71,9 +71,18 @@ typedef struct usb_device_handle_s *usb_device_handle_t;
 typedef bool (*usb_host_enum_filter_cb_t)(const usb_device_desc_t *dev_desc, uint8_t *bConfigurationValue);
 
 /**
+ * @brief Parent device information
+*/
+typedef struct {
+    usb_device_handle_t dev_hdl;                    /**< Device's parent handle */
+    uint8_t port_num;                               /**< Device's parent port number */
+} usb_parent_dev_info_t;
+
+/**
  * @brief Basic information of an enumerated device
  */
 typedef struct {
+    usb_parent_dev_info_t parent;                   /**< Device's parent information */
     usb_speed_t speed;                              /**< Device's speed */
     uint8_t dev_addr;                               /**< Device's address */
     uint8_t bMaxPacketSize0;                        /**< The maximum packet size of the device's default endpoint */

@@ -14,6 +14,7 @@ set(priv_requires esp_driver_gpio esp_mm)  # usb_phy driver relies on gpio drive
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "hcd_dwc.c"
+                     "enum.c"
                      "hub.c"
                      "usb_helpers.c"
                      "usb_host.c"
@@ -26,6 +27,10 @@ if(CONFIG_SOC_USB_OTG_SUPPORTED)
     endif()
     list(APPEND include "include")
     list(APPEND priv_includes "private_include")
+endif()
+
+if(CONFIG_USB_HOST_HUBS_SUPPORTED)
+    list(APPEND srcs "ext_hub.c")
 endif()
 
 idf_component_register(SRCS ${srcs}

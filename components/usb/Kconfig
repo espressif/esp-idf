@@ -46,72 +46,84 @@ menu "USB-OTG"
             bool "Periodic OUT"
     endchoice
 
-    menu "Root Hub configuration"
+    menu "Hub Driver Configuration"
 
-        config USB_HOST_DEBOUNCE_DELAY_MS
-            int "Debounce delay in ms"
-            default 250
+        menu "Root Port configuration"
+
+            config USB_HOST_DEBOUNCE_DELAY_MS
+                int "Debounce delay in ms"
+                default 250
+                help
+                    On connection of a USB device, the USB 2.0 specification requires
+                    a "debounce interval with a minimum duration of 100ms" to allow the connection to stabilize
+                    (see USB 2.0 chapter 7.1.7.3 for more details).
+                    During the debounce interval, no new connection/disconnection events are registered.
+
+                    The default value is set to 250 ms to be safe.
+
+            config USB_HOST_RESET_HOLD_MS
+                int "Reset hold in ms"
+                default 30
+                help
+                    The reset signaling can be generated on any Hub or Host Controller port by request from
+                    the USB System Software. The USB 2.0 specification requires that "the reset signaling must
+                    be driven for a minimum of 10ms" (see USB 2.0 chapter 7.1.7.5 for more details).
+                    After the reset, the hub port will transition to the Enabled state (refer to Section 11.5).
+
+                    The default value is set to 30 ms to be safe.
+
+            config USB_HOST_RESET_RECOVERY_MS
+                int "Reset recovery delay in ms"
+                default 30
+                help
+                    After a port stops driving the reset signal, the USB 2.0 specification requires that
+                    the "USB System Software guarantees a minimum of 10 ms for reset recovery" before the
+                    attached device is expected to respond to data transfers (see USB 2.0 chapter 7.1.7.3 for
+                    more details).
+                    The device may ignore any data transfers during the recovery interval.
+
+                    The default value is set to 30 ms to be safe.
+
+
+            config USB_HOST_SET_ADDR_RECOVERY_MS
+                int "SetAddress() recovery time in ms"
+                default 10
+                help
+                    "After successful completion of the Status stage, the device is allowed a SetAddress()
+                    recovery interval of 2 ms. At the end of this interval, the device must be able to accept
+                    Setup packets addressed to the new address. Also, at the end of the recovery interval, the
+                    device must not respond to tokens sent to the old address (unless, of course, the old and new
+                    address is the same)." See USB 2.0 chapter 9.2.6.3 for more details.
+
+                    The default value is set to 10 ms to be safe.
+
+        endmenu #Root Hub configuration
+
+        config USB_HOST_HUBS_SUPPORTED
+            bool "Support Hubs"
+            default n
             help
-                On connection of a USB device, the USB 2.0 specification requires a "debounce interval with a minimum
-                duration of 100ms" to allow the connection to stabilize (see USB 2.0 chapter 7.1.7.3 for more details).
-                During the debounce interval, no new connection/disconnection events are registered.
+                Enables support of external Hubs.
 
-                The default value is set to 250 ms to be safe.
-
-        config USB_HOST_RESET_HOLD_MS
-            int "Reset hold in ms"
-            default 30
+        config USB_HOST_HUB_MULTI_LEVEL
+            depends on USB_HOST_HUBS_SUPPORTED
+            bool "Support multiple Hubs"
+            default y
             help
-                The reset signaling can be generated on any Hub or Host Controller port by request from the USB System
-                Software. The USB 2.0 specification requires that "the reset signaling must be driven for a minimum of
-                10ms" (see USB 2.0 chapter 7.1.7.5 for more details).  After the reset, the hub port will transition to
-                the Enabled state (refer to Section 11.5).
+                Enables support for connecting multiple Hubs simultaneously.
 
-                The default value is set to 30 ms to be safe.
-
-        config USB_HOST_RESET_RECOVERY_MS
-            int "Reset recovery delay in ms"
-            default 30
-            help
-                After a port stops driving the reset signal, the USB 2.0 specification requires that the "USB System
-                Software guarantees a minimum of 10 ms for reset recovery" before the attached device is expected to
-                respond to data transfers (see USB 2.0 chapter 7.1.7.3 for more details). The device may ignore any
-                data transfers during the recovery interval.
-
-                The default value is set to 30 ms to be safe.
-
-
-        config USB_HOST_SET_ADDR_RECOVERY_MS
-            int "SetAddress() recovery time in ms"
-            default 10
-            help
-                "After successful completion of the Status stage, the device is allowed a SetAddress() recovery
-                interval of 2 ms. At the end of this interval, the device must be able to accept Setup packets
-                addressed to the new address. Also, at the end of the recovery interval, the device must not respond to
-                tokens sent to the old address (unless, of course, the old and new address is the same)." See USB 2.0
-                chapter 9.2.6.3 for more details.
-
-                The default value is set to 10 ms to be safe.
-
-    endmenu #Root Hub configuration
+    endmenu #Hub Driver Configuration
 
     config USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
         bool "Enable enumeration filter callback"
         default n
         help
-            The enumeration filter callback is called before enumeration of each newly attached device. This callback
-            allows users to control whether a device should be enumerated, and what configuration number to use when
-            enumerating a device.
+            The enumeration filter callback is called before enumeration of each newly attached device.
+            This callback allows users to control whether a device should be enumerated, and what configuration
+            number to use when enumerating a device.
 
             If enabled, the enumeration filter callback can be set via 'usb_host_config_t' when calling
             'usb_host_install()'.
-
-    config USB_HOST_EXT_HUB_SUPPORT
-        depends on IDF_EXPERIMENTAL_FEATURES
-        bool "Support USB HUB (Experimental)"
-        default n
-        help
-            Feature is under development.
 
     # Hidden or compatibility options
     config USB_OTG_SUPPORTED
