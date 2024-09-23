@@ -210,7 +210,7 @@ menu "Wireless Coexistence"
             default 12 if IDF_TARGET_ESP32S3
             default 3 if IDF_TARGET_ESP32C2
             default 22 if IDF_TARGET_ESP32C6
-            default 16 if IDF_TARGET_ESP32C5
+            default 10 if IDF_TARGET_ESP32C5
             default 13 if IDF_TARGET_ESP32C61
             default 11
 
@@ -224,7 +224,7 @@ menu "Wireless Coexistence"
             default 13 if IDF_TARGET_ESP32S3
             default 2 if IDF_TARGET_ESP32C2
             default 21 if IDF_TARGET_ESP32C6
-            default 0 if IDF_TARGET_ESP32C5
+            default 9 if IDF_TARGET_ESP32C5
             default 12 if IDF_TARGET_ESP32C61
             default 12
 
