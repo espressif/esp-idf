@@ -10,7 +10,6 @@ api-guides/low-power-mode.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/blufi.rst
-api-guides/lwip.rst
 api-guides/coexist.rst
 api-guides/wifi.rst
 api-guides/bluetooth.rst
@@ -60,8 +59,6 @@ api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/ecdsa.rst
 api-reference/network/esp_openthread.rst
-api-reference/network/esp_eth.rst
-api-reference/network/esp_netif_driver.rst
 api-reference/network/esp_dpp.rst
 api-reference/network/esp_now.rst
 api-reference/network/esp-wifi-mesh.rst
@@ -69,7 +66,6 @@ api-reference/network/esp_smartconfig.rst
 api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
-api-reference/network/esp_netif.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/mm_sync.rst
 api-reference/system/chip_revision.rst
@@ -104,14 +100,8 @@ api-reference/bluetooth/index.rst
 api-reference/bluetooth/esp_gap_ble.rst
 api-reference/bluetooth/classic_bt.rst
 api-reference/index.rst
-api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
-api-reference/protocols/mqtt.rst
 api-reference/protocols/esp_crt_bundle.rst
-api-reference/protocols/modbus.rst
-api-reference/protocols/mdns.rst
-api-reference/protocols/index.rst
-api-reference/protocols/asio.rst
 about.rst
 resources.rst
 get-started/establish-serial-connection.rst
