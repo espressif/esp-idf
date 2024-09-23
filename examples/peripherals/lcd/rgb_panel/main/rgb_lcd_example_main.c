@@ -24,7 +24,7 @@ static const char *TAG = "example";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// FPS = 18000000/(1+40+20+800)/(1+8+4+480) = 42Hz
+// Refresh Rate = 18000000/(1+40+20+800)/(1+10+5+480) = 42Hz
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (18 * 1000 * 1000)
 #define EXAMPLE_LCD_H_RES              800
 #define EXAMPLE_LCD_V_RES              480
@@ -32,33 +32,35 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_HBP                40
 #define EXAMPLE_LCD_HFP                20
 #define EXAMPLE_LCD_VSYNC              1
-#define EXAMPLE_LCD_VBP                8
-#define EXAMPLE_LCD_VFP                4
+#define EXAMPLE_LCD_VBP                10
+#define EXAMPLE_LCD_VFP                5
 
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL  1
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
-#define EXAMPLE_PIN_NUM_BK_LIGHT       4
-#define EXAMPLE_PIN_NUM_HSYNC          46
-#define EXAMPLE_PIN_NUM_VSYNC          3
-#define EXAMPLE_PIN_NUM_DE             0
-#define EXAMPLE_PIN_NUM_PCLK           9
-#define EXAMPLE_PIN_NUM_DATA0          14 // B0
-#define EXAMPLE_PIN_NUM_DATA1          13 // B1
-#define EXAMPLE_PIN_NUM_DATA2          12 // B2
-#define EXAMPLE_PIN_NUM_DATA3          11 // B3
-#define EXAMPLE_PIN_NUM_DATA4          10 // B4
-#define EXAMPLE_PIN_NUM_DATA5          39 // G0
-#define EXAMPLE_PIN_NUM_DATA6          38 // G1
-#define EXAMPLE_PIN_NUM_DATA7          45 // G2
-#define EXAMPLE_PIN_NUM_DATA8          48 // G3
-#define EXAMPLE_PIN_NUM_DATA9          47 // G4
-#define EXAMPLE_PIN_NUM_DATA10         21 // G5
-#define EXAMPLE_PIN_NUM_DATA11         1  // R0
-#define EXAMPLE_PIN_NUM_DATA12         2  // R1
-#define EXAMPLE_PIN_NUM_DATA13         42 // R2
-#define EXAMPLE_PIN_NUM_DATA14         41 // R3
-#define EXAMPLE_PIN_NUM_DATA15         40 // R4
+#define EXAMPLE_PIN_NUM_BK_LIGHT       -1
 #define EXAMPLE_PIN_NUM_DISP_EN        -1
+
+#define EXAMPLE_PIN_NUM_HSYNC          CONFIG_EXAMPLE_LCD_HSYNC_GPIO
+#define EXAMPLE_PIN_NUM_VSYNC          CONFIG_EXAMPLE_LCD_VSYNC_GPIO
+#define EXAMPLE_PIN_NUM_DE             CONFIG_EXAMPLE_LCD_DE_GPIO
+#define EXAMPLE_PIN_NUM_PCLK           CONFIG_EXAMPLE_LCD_PCLK_GPIO
+
+#define EXAMPLE_PIN_NUM_DATA0          CONFIG_EXAMPLE_LCD_DATA0_GPIO
+#define EXAMPLE_PIN_NUM_DATA1          CONFIG_EXAMPLE_LCD_DATA1_GPIO
+#define EXAMPLE_PIN_NUM_DATA2          CONFIG_EXAMPLE_LCD_DATA2_GPIO
+#define EXAMPLE_PIN_NUM_DATA3          CONFIG_EXAMPLE_LCD_DATA3_GPIO
+#define EXAMPLE_PIN_NUM_DATA4          CONFIG_EXAMPLE_LCD_DATA4_GPIO
+#define EXAMPLE_PIN_NUM_DATA5          CONFIG_EXAMPLE_LCD_DATA5_GPIO
+#define EXAMPLE_PIN_NUM_DATA6          CONFIG_EXAMPLE_LCD_DATA6_GPIO
+#define EXAMPLE_PIN_NUM_DATA7          CONFIG_EXAMPLE_LCD_DATA7_GPIO
+#define EXAMPLE_PIN_NUM_DATA8          CONFIG_EXAMPLE_LCD_DATA8_GPIO
+#define EXAMPLE_PIN_NUM_DATA9          CONFIG_EXAMPLE_LCD_DATA9_GPIO
+#define EXAMPLE_PIN_NUM_DATA10         CONFIG_EXAMPLE_LCD_DATA10_GPIO
+#define EXAMPLE_PIN_NUM_DATA11         CONFIG_EXAMPLE_LCD_DATA11_GPIO
+#define EXAMPLE_PIN_NUM_DATA12         CONFIG_EXAMPLE_LCD_DATA12_GPIO
+#define EXAMPLE_PIN_NUM_DATA13         CONFIG_EXAMPLE_LCD_DATA13_GPIO
+#define EXAMPLE_PIN_NUM_DATA14         CONFIG_EXAMPLE_LCD_DATA14_GPIO
+#define EXAMPLE_PIN_NUM_DATA15         CONFIG_EXAMPLE_LCD_DATA15_GPIO
 
 #if CONFIG_EXAMPLE_DOUBLE_FB
 #define EXAMPLE_LCD_NUM_FB             2
@@ -66,13 +68,19 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_NUM_FB             1
 #endif // CONFIG_EXAMPLE_DOUBLE_FB
 
+#if CONFIG_EXAMPLE_LCD_DATA_LINES_16
+#define EXAMPLE_DATA_BUS_WIDTH         16
+#define EXAMPLE_PIXEL_SIZE             2
+#define EXAMPLE_LV_COLOR_FORMAT        LV_COLOR_FORMAT_RGB565
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your Application ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define EXAMPLE_LVGL_DRAW_BUF_LINES    50 // number of display lines in each draw buffer
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
-#define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
+#define EXAMPLE_LVGL_TASK_STACK_SIZE   (5 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 
 // LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it
@@ -127,6 +135,12 @@ static void example_lvgl_port_task(void *arg)
         _lock_acquire(&lvgl_api_lock);
         time_till_next_ms = lv_timer_handler();
         _lock_release(&lvgl_api_lock);
+
+        // in case of task watch dog timeout, set the minimal delay to 10ms
+        if (time_till_next_ms < 10) {
+            time_till_next_ms = 10;
+        }
+
         usleep(1000 * time_till_next_ms);
     }
 }
@@ -166,7 +180,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Install RGB LCD panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
-        .data_width = 16, // RGB565 in parallel mode, thus 16bit in width
+        .data_width = EXAMPLE_DATA_BUS_WIDTH,
         .dma_burst_size = 64,
         .num_fbs = EXAMPLE_LCD_NUM_FB,
 #if CONFIG_EXAMPLE_USE_BOUNCE_BUFFER
@@ -228,7 +242,7 @@ void app_main(void)
     // associate the rgb panel handle to the display
     lv_display_set_user_data(display, panel_handle);
     // set color depth
-    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+    lv_display_set_color_format(display, EXAMPLE_LV_COLOR_FORMAT);
     // create draw buffers
     void *buf1 = NULL;
     void *buf2 = NULL;
@@ -236,11 +250,11 @@ void app_main(void)
     ESP_LOGI(TAG, "Use frame buffers as LVGL draw buffers");
     ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 2, &buf1, &buf2));
     // set LVGL draw buffers and direct mode
-    lv_display_set_buffers(display, buf1, buf2, EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES * sizeof(lv_color16_t), LV_DISPLAY_RENDER_MODE_DIRECT);
+    lv_display_set_buffers(display, buf1, buf2, EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES * EXAMPLE_PIXEL_SIZE, LV_DISPLAY_RENDER_MODE_DIRECT);
 #else
     ESP_LOGI(TAG, "Allocate LVGL draw buffers");
     // it's recommended to allocate the draw buffer from internal memory, for better performance
-    size_t draw_buffer_sz = EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(lv_color16_t);
+    size_t draw_buffer_sz = EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * EXAMPLE_PIXEL_SIZE;
     buf1 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(buf1);
     // set LVGL draw buffers and partial mode
@@ -269,7 +283,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Create LVGL task");
     xTaskCreate(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, NULL);
 
-    ESP_LOGI(TAG, "Display LVGL Scatter Chart");
+    ESP_LOGI(TAG, "Display LVGL UI");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     _lock_acquire(&lvgl_api_lock);
     example_lvgl_demo_ui(display);

@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #if CONFIG_EXAMPLE_LCD_PATTERN_ILI9881C
-// FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
+// Refresh Rate = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ              80
 #define EXAMPLE_MIPI_DSI_IMAGE_HSYNC              40
 #define EXAMPLE_MIPI_DSI_IMAGE_HBP                140
@@ -22,7 +22,7 @@ extern "C" {
 #define EXAMPLE_MIPI_DSI_IMAGE_VBP                16
 #define EXAMPLE_MIPI_DSI_IMAGE_VFP                16
 #elif CONFIG_EXAMPLE_LCD_PATTERN_EK79007
-// FPS = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
+// Refresh Rate = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
 #define EXAMPLE_MIPI_DSI_DPI_CLK_MHZ              48
 #define EXAMPLE_MIPI_DSI_IMAGE_HSYNC              10
 #define EXAMPLE_MIPI_DSI_IMAGE_HBP                120

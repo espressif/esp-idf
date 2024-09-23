@@ -27,7 +27,7 @@ This example uses 3 kinds of **buffering mode**:
 
 The connection between ESP Board and the LCD is as follows:
 
-```
+```text
        ESP Board                           RGB  Panel
 +-----------------------+              +-------------------+
 |                   GND +--------------+GND                |
@@ -51,12 +51,6 @@ The connection between ESP Board and the LCD is as follows:
                                        +-------------------+
 ```
 
-The GPIO number used by this example can be changed in [lvgl_example_main.c](main/rgb_lcd_example_main.c).
-
-Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/rgb_lcd_example_main.c).
-
-If the RGB LCD panel only supports DE mode, you can even bypass the `HSYNC` and `VSYNC` signals, by assigning `EXAMPLE_PIN_NUM_HSYNC` and `EXAMPLE_PIN_NUM_VSYNC` with `-1`.
-
 ### Configure
 
 Run `idf.py menuconfig` and go to `Example Configuration`:
@@ -64,6 +58,8 @@ Run `idf.py menuconfig` and go to `Example Configuration`:
 1. Choose whether to `Use double Frame Buffer`
 2. Choose whether to `Avoid tearing effect` (available only when step `1` was chosen to false)
 3. Choose whether to `Use bounce buffer` (available only when step `1` was chosen to false)
+4. Choose the number of LCD data lines in `RGB LCD Data Lines`
+5. Set the GPIOs used by RGB LCD peripheral in `GPIO assignment`, e.g. the synchronization signals (HSYNC, VSYNC, DE) and the data lines
 
 ### Build and Flash
 
@@ -79,29 +75,28 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ```bash
 ...
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (856) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
-I (856) example: Create semaphores
-I (866) example: Turn off LCD backlight
-I (866) gpio: GPIO[4]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (876) example: Install RGB LCD panel driver
-I (906) example: Register event callbacks
-I (906) example: Initialize RGB LCD panel
-I (906) example: Turn on LCD backlight
-I (906) example: Initialize LVGL library
-I (916) example: Allocate separate LVGL draw buffers from PSRAM
-I (916) example: Register display driver to LVGL
-I (926) example: Install LVGL tick timer
-I (926) example: Create LVGL task
-I (926) example: Starting LVGL task
-I (926) example: Display LVGL Scatter Chart
+I (872) main_task: Started on CPU0
+I (882) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
+I (882) main_task: Calling app_main()
+I (892) example: Turn off LCD backlight
+I (892) example: Install RGB LCD panel driver
+I (922) example: Initialize RGB LCD panel
+I (922) example: Turn on LCD backlight
+I (922) example: Initialize LVGL library
+I (932) example: Allocate LVGL draw buffers
+I (932) example: Register event callbacks
+I (932) example: Install LVGL tick timer
+I (942) example: Create LVGL task
+I (942) example: Starting LVGL task
+I (992) example: Display LVGL UI
+I (1102) main_task: Returned from app_main()
 ...
 ```
 
 ## Troubleshooting
 
 * Why the LCD doesn't light up?
-  * Check the backlight's turn-on level, and update it in `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL`
+  * Please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/rgb_lcd_example_main.c).
 * No memory for frame buffer
   * The frame buffer of RGB panel is located in ESP side (unlike other controller based LCDs, where the frame buffer is located in external chip). As the frame buffer usually consumes much RAM (depends on the LCD resolution and color depth), we recommend to put the frame buffer into PSRAM (like what we do in this example). However, putting frame buffer in PSRAM will limit the maximum PCLK due to the bandwidth of **SPI0**.
 * LCD screen drift
