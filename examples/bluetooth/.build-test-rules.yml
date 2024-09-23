@@ -200,10 +200,6 @@ examples/bluetooth/nimble/blecent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32c61"]
-      temporary: true
-      reason: Not supported yet
   depends_components:
     - bt
     - esp_phy
@@ -252,7 +248,6 @@ examples/bluetooth/nimble/power_save:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32c61"]
   depends_components:
     - bt
     - esp_phy

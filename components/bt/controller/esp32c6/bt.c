@@ -43,12 +43,9 @@
 #include "esp_private/periph_ctrl.h"
 #include "bt_osi_mem.h"
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-#include "esp_private/sleep_retention.h"
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
-
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_retention.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #include "freertos/FreeRTOS.h"
@@ -643,11 +640,15 @@ esp_err_t controller_sleep_init(void)
         goto error;
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-#if CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
+#if CONFIG_BT_LE_SLEEP_ENABLE && SOC_PM_RETENTION_HAS_CLOCK_BUG && !CONFIG_MAC_BB_PD
 #error "CONFIG_MAC_BB_PD required for BLE light sleep to run properly"
-#endif // CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
+#endif // CONFIG_BT_LE_SLEEP_ENABLE && SOC_PM_RETENTION_HAS_CLOCK_BUG && !CONFIG_MAC_BB_PD
     /* Create a new regdma link for BLE related register restoration */
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
     rc = sleep_modem_ble_mac_modem_state_init(1);
+#else
+    rc = sleep_modem_ble_mac_modem_state_init(0);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
     assert(rc == 0);
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
