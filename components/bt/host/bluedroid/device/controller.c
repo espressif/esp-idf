@@ -269,7 +269,7 @@ static void start_up(void)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE && BLE_42_FEATURE_SUPPORT == FALSE)
-        if (HCI_LE_ENHANCED_PRIVACY_SUPPORTED(controller_param.features_ble.as_array)) {
+        if (HCI_LE_EXT_ADV_SUPPORTED(controller_param.features_ble.as_array)) {
             response = AWAIT_COMMAND(controller_param.packet_factory->make_read_max_adv_data_len());
             controller_param.packet_parser->parse_ble_read_adv_max_len_response(
                 response,
