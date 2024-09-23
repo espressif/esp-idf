@@ -85,9 +85,6 @@ typedef enum {
 #define LP_I2C_SDA_IOMUX_PAD 6
 #define LP_I2C_SCL_IOMUX_PAD 7
 
-// I2C sleep retention module
-#define I2C_SLEEP_RETENTION_MODULE(i2c_num) (SLEEP_RETENTION_MODULE_I2C0)
-
 /**
  * @brief  Calculate I2C bus frequency
  *         Note that the clock accuracy is affected by the external pull-up resistor,

@@ -33,7 +33,7 @@
 #include "soc/rtc_io_channel.h"
 #include "driver/lp_io.h"
 #endif
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if I2C_USE_RETENTION_LINK
 #include "esp_private/sleep_retention.h"
 #endif
 
@@ -47,14 +47,30 @@ typedef struct i2c_platform_t {
 
 static i2c_platform_t s_i2c_platform = {}; // singleton platform
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
 static esp_err_t s_i2c_sleep_retention_init(void *arg)
 {
     i2c_bus_t *bus = (i2c_bus_t *)arg;
     i2c_port_num_t port_num = bus->port_num;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_I2C, I2C_SLEEP_RETENTION_MODULE(port_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_I2C, i2c_regs_retention[port_num].module_id);
     ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
     return ret;
+}
+
+void i2c_create_retention_module(i2c_bus_handle_t handle)
+{
+    i2c_port_num_t port_num = handle->port_num;
+    _lock_acquire(&s_i2c_platform.mutex);
+    if (handle->retention_link_created == false) {
+        if (sleep_retention_module_allocate(i2c_regs_retention[port_num].module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, I2C driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            handle->retention_link_created = true;
+        }
+    }
+    _lock_release(&s_i2c_platform.mutex);
+
 }
 #endif
 
@@ -77,14 +93,14 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
             bus->bus_mode = mode;
             bus->is_lp_i2c = (bus->port_num < SOC_HP_I2C_NUM) ? false : true;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
             if (bus->is_lp_i2c == false) {
                 sleep_retention_module_init_param_t init_param = {
                     .cbs = { .create = { .handle = s_i2c_sleep_retention_init, .arg = (void *)bus } }
                 };
-                ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(port_num), &init_param);
-                if (ret == ESP_OK) {
-                    sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(port_num));
+                esp_err_t err = sleep_retention_module_init(i2c_regs_retention[port_num].module_id, &init_param);
+                if (err != ESP_OK) {
+                    ESP_LOGW(TAG, "init sleep retention failed on bus %d, power domain may be turned off during sleep", port_num);
                 }
             } else {
                 ESP_LOGW(TAG, "Detected PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled while LP_I2C is used. Sleep retention is not supported on LP I2C. Please use it properly");
@@ -175,12 +191,12 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
             if (i2c_bus->is_lp_i2c == false) {
-                esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
-                if (err == ESP_OK) {
-                    err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(port_num));
+                if (i2c_bus->retention_link_created) {
+                    sleep_retention_module_free(i2c_regs_retention[port_num].module_id);
                 }
+                sleep_retention_module_deinit(i2c_regs_retention[port_num].module_id);
             }
 #endif
             if (i2c_bus->intr_handle) {

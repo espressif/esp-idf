@@ -111,6 +111,7 @@ I2C 主机总线需要 :cpp:type:`i2c_master_bus_config_t` 指定的配置：
 - :cpp:member:`i2c_master_bus_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则驱动程序将使用低或中优先级的中断（优先级可设为 1、2 或 3 中的一个），若未设置，则将使用 :cpp:member:`i2c_master_bus_config_t::intr_priority` 指示的优先级。请使用数字形式（1、2、3），不要用位掩码形式（(1<<1)、(1<<2)、(1<<3)）。
 - :cpp:member:`i2c_master_bus_config_t::trans_queue_depth` 设置内部传输队列的深度，但仅在异步传输中有效。
 - :cpp:member:`i2c_master_bus_config_t::enable_internal_pullup` 启用内部上拉电阻。注意：该设置无法在高速频率下拉高总线，此时建议使用合适的外部上拉电阻。
+- :cpp:member:`i2c_master_bus_config_t::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 I2C 寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
 
 
 如果在 :cpp:type:`i2c_master_bus_config_t` 中指定了配置，则可调用 :cpp:func:`i2c_new_master_bus` 来分配和初始化 I2C 主机总线。如果函数运行正确，则将返回一个 I2C 总线句柄。若没有可用的 I2C 端口，此函数将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。

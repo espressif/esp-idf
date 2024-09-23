@@ -235,6 +235,12 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     ret = esp_intr_alloc_intrstatus(i2c_periph_signal[i2c_port_num].irq, isr_flags, (uint32_t)i2c_ll_get_interrupt_status_reg(hal->dev), I2C_LL_SLAVE_EVENT_INTR, s_slave_isr_handle_default, i2c_slave, &i2c_slave->base->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install i2c slave interrupt failed");
 
+#if I2C_USE_RETENTION_LINK
+    if (slave_config->flags.allow_pd != 0) {
+        i2c_create_retention_module(i2c_slave->base);
+    }
+#endif // I2C_USE_RETENTION_LINK
+
     portENTER_CRITICAL(&i2c_slave->base->spinlock);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_SLAVE_EVENT_INTR);
     i2c_hal_slave_init(hal);

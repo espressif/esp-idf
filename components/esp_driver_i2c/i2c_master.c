@@ -932,6 +932,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_RETURN_ON_FALSE((bus_config->i2c_port < SOC_I2C_NUM || bus_config->i2c_port == -1), ESP_ERR_INVALID_ARG, TAG, "invalid i2c port number");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(bus_config->sda_io_num) && GPIO_IS_VALID_GPIO(bus_config->scl_io_num), ESP_ERR_INVALID_ARG, TAG, "invalid SDA/SCL pin number");
 
+#if !SOC_I2C_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(bus_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#endif // SOC_I2C_SUPPORT_SLEEP_RETENTION
+
     i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
     ESP_RETURN_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, TAG, "no memory for i2c master bus");
@@ -979,6 +983,12 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     if (bus_config->intr_priority) {
         ESP_RETURN_ON_FALSE(1 << (bus_config->intr_priority) & I2C_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", bus_config->intr_priority);
     }
+
+#if I2C_USE_RETENTION_LINK
+    if (bus_config->flags.allow_pd != 0) {
+        i2c_create_retention_module(i2c_master->base);
+    }
+#endif // I2C_USE_RETENTION_LINK
 
     xSemaphoreTake(i2c_master->bus_lock_mux, portMAX_DELAY);
     SLIST_INIT(&i2c_master->device_list);

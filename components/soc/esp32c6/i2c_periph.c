@@ -50,7 +50,7 @@ static const regdma_entries_config_t i2c0_regs_retention[] = {
     [1] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x01), I2C_CTR_REG(0), I2C_FSM_RST, I2C_FSM_RST_M, 1, 0), \
            .owner = ENTRY(0) | ENTRY(2) }, \
     [2] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x02), I2C_CTR_REG(0), 0x0, I2C_FSM_RST_M, 1, 0), \
-    .owner = ENTRY(0) | ENTRY(2) }, \
+           .owner = ENTRY(0) | ENTRY(2) }, \
     [3] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x03), I2C_CTR_REG(0), I2C_CONF_UPGATE, I2C_CONF_UPGATE_M, 1, 0), \
            .owner = ENTRY(0) | ENTRY(2) }, \
     [4] = {.config = REGDMA_LINK_WAIT_INIT(REGDMA_I2C_LINK(0x04), I2C_CTR_REG(0), 0x0, I2C_CONF_UPGATE_M, 1, 0), \
@@ -58,5 +58,5 @@ static const regdma_entries_config_t i2c0_regs_retention[] = {
 };
 
 const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM] = {
-    {i2c0_regs_retention, ARRAY_SIZE(i2c0_regs_retention)},
+    {i2c0_regs_retention, ARRAY_SIZE(i2c0_regs_retention), SLEEP_RETENTION_MODULE_I2C0},
 };
