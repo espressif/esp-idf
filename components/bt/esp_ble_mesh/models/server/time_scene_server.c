@@ -244,7 +244,8 @@ static void time_get(struct bt_mesh_model *model,
         change.time_status.subsecond = srv->state->time.subsecond;
         change.time_status.uncertainty = srv->state->time.uncertainty;
         change.time_status.time_authority = srv->state->time.time_authority;
-        change.time_status.tai_utc_delta_curr = srv->state->time.subsecond;
+        change.time_status.tai_utc_delta_curr = srv->state->time.tai_utc_delta_curr;
+        change.time_status.time_zone_offset_curr = srv->state->time.time_zone_offset_curr;
         bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
                                                 model, ctx, (const uint8_t *)&change, sizeof(change));
 
@@ -386,7 +387,8 @@ static void time_set(struct bt_mesh_model *model,
         change.time_set.subsecond = srv->state->time.subsecond;
         change.time_set.uncertainty = srv->state->time.uncertainty;
         change.time_set.time_authority = srv->state->time.time_authority;
-        change.time_set.tai_utc_delta_curr = srv->state->time.subsecond;
+        change.time_set.tai_utc_delta_curr = srv->state->time.tai_utc_delta_curr;
+        change.time_set.time_zone_offset_curr = srv->state->time.time_zone_offset_curr;
         break;
     case BLE_MESH_MODEL_OP_TIME_ZONE_SET:
         change.time_zone_set.time_zone_offset_new = srv->state->time.time_zone_offset_new;
