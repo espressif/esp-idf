@@ -34,7 +34,7 @@ typedef struct {
     uint8_t setting_1;             /*!< Setting 1: length 6 bits */
     uint8_t setting_2;             /*!< Setting 2: length 5 bits */
     size_t custom_secure_version;  /*!< Custom secure version: length 16 bits */
-    uint16_t reserv;               /*!< Reserv */
+    uint16_t reserve;               /*!< Reserve */
 } device_desc_t;
 
 
