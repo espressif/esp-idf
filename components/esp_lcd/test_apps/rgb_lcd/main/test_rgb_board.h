@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ extern "C" {
 #define TEST_LCD_DATA15_GPIO   40 // R4
 #define TEST_LCD_DISP_EN_GPIO  -1
 
-#define TEST_LCD_PIXEL_CLOCK_HZ (10 * 1000 * 1000)
+#define TEST_LCD_PIXEL_CLOCK_HZ (18 * 1000 * 1000)
 
 #ifdef __cplusplus
 }
