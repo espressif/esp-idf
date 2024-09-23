@@ -11,7 +11,6 @@ set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/espto
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} -m esp_idf_monitor)
-set(ESPMKUF2 ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
 set(ESPTOOLPY_CHIP "${chip_model}")
 
 if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
@@ -202,30 +201,6 @@ add_custom_target(erase_flash
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPTOOLPY}"
     -D "SERIAL_TOOL_ARGS=erase_flash"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    USES_TERMINAL
-    VERBATIM
-    )
-
-set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
-
-add_custom_target(uf2
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPMKUF2}"
-    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    USES_TERMINAL
-    VERBATIM
-    )
-
-add_custom_target(uf2-app
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPMKUF2}"
-    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     USES_TERMINAL
