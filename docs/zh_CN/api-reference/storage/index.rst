@@ -62,9 +62,9 @@
     * - **代码示例**
       - **描述**
     * - :example:`fatfs/getting_started <storage/fatfs/getting_started>`
-      - 演示了使用 FATFS 库在内部 flash 上应用标准文件 API (stdio.h)。
+      - 演示了如何使用 FATFS 库在内部 flash 上应用标准文件 API (stdio.h)。
     * - :example:`fatfs/fs_operations <storage/fatfs/fs_operations>`
-      - 演示了使用 POSIX API 进行文件系统操作，如移动、删除和重命名文件等。
+      - 演示了如何使用 POSIX API 进行文件系统操作，如移动、删除和重命名文件等。
 
 .. list-table:: FATFS API 示例
     :widths: 25 75
@@ -75,13 +75,13 @@
     * - :example:`fatfsgen <storage/fatfs/fatfsgen>`
       - 演示了在主机上使用 Python 工具生成 FATFS 镜像的相关功能。
     * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
-      - 演示了在外部 flash 上使用带有损耗均衡功能的 FATFS。
+      - 演示了在外部 flash 上使用带有磨损均衡功能的 FATFS。
     * - :example:`wear_leveling <storage/wear_levelling>`
-      - 演示了在内部 flash 上使用带有损耗均衡功能的 FATFS。
+      - 演示了在内部 flash 上使用带有磨损均衡功能的 FATFS。
 
 .. list-table:: SPIFFS API 示例
     :widths: 25 75
-    :header-rows： 0
+    :header-rows: 0
 
     * - **代码示例**
       - **描述**
