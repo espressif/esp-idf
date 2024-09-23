@@ -53,7 +53,7 @@ typedef struct {
     uint8_t               nchan;   /**< total channel number of the allowed 2.4GHz WiFi channels */
     int8_t                max_tx_power;   /**< This field is used for getting WiFi maximum transmitting power, call esp_wifi_set_max_tx_power to set the maximum transmitting power. */
     wifi_country_policy_t policy;  /**< country policy */
-#if SOC_WIFI_SUPPORT_5G
+#if CONFIG_SOC_WIFI_SUPPORT_5G
     uint32_t              wifi_5g_channel_mask;  /**< A bitmask representing the allowed 5GHz WiFi channels.
                                                       Each bit in the mask corresponds to a specific channel as wifi_5g_channel_bit_t shown.
                                                       Bitmask set to 0 indicates 5GHz channels are allowed according to local regulatory rules.

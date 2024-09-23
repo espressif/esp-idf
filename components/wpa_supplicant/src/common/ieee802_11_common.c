@@ -371,7 +371,7 @@ u8 get_operating_class(u8 chan, int sec_channel)
 	if (chan == 14)
 		op_class = 82;
 
-#if SOC_WIFI_SUPPORT_5G
+#if CONFIG_SOC_WIFI_SUPPORT_5G
 	if (chan >= 36 && chan <= 48) {
 		if (sec_channel == 1)
 			op_class = 116;
