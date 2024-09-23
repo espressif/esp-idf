@@ -48,6 +48,12 @@ static void esp_mbedtls_parse_record_header(mbedtls_ssl_context *ssl)
     ssl->MBEDTLS_PRIVATE(in_msglen) = (ssl->MBEDTLS_PRIVATE(in_len)[0] << 8) | ssl->MBEDTLS_PRIVATE(in_len)[1];
 }
 
+static int rx_buffer_len(mbedtls_ssl_context *ssl)
+{
+    (void)ssl;
+    return MBEDTLS_SSL_IN_BUFFER_LEN;
+}
+
 static int tx_buffer_len(mbedtls_ssl_context *ssl, int len)
 {
     (void)ssl;
@@ -358,7 +364,7 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     in_left = ssl->MBEDTLS_PRIVATE(in_left);
     in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
-    buffer_len = tx_buffer_len(ssl, in_msglen);
+    buffer_len = rx_buffer_len(ssl);
 
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
                 (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
