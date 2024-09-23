@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,10 +64,9 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     TEST_ASSERT(m1==m2);
 }
 
-#if CONFIG_SPIRAM_USE_MALLOC
 
-#if (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
-TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap]")
+#if CONFIG_SPIRAM_USE_MALLOC && (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
+TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap][psram]")
 {
     char** dmaMem=malloc(sizeof(char*)*512);
     assert(dmaMem);
@@ -85,8 +84,44 @@ TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed m
 }
 #endif
 
-#endif
+#if CONFIG_SPIRAM
+TEST_CASE("Check if default cap allocates in external memory in priority", "[heap][psram]")
+{
+    const size_t alloc_size = 256;
+    const uint32_t internal_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL;
+    const uint32_t external_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM;
 
+    // get the free internal memory size
+    size_t free_internal_memory = heap_caps_get_free_size(internal_cap);
+    size_t free_external_memory = heap_caps_get_free_size(external_cap);
+
+    // allocate a small amount of memory using MALLOC_CAP_DEFAULT
+    void * ptr = heap_caps_malloc(alloc_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    // check that external memory is used by making sure the free internal memory size is unchanged
+    // and the free external memory size has decreased by at least the size of the allocation
+    TEST_ASSERT(free_internal_memory == heap_caps_get_free_size(internal_cap));
+    TEST_ASSERT(free_external_memory >= heap_caps_get_free_size(external_cap) + alloc_size);
+
+    heap_caps_free(ptr);
+    free_internal_memory = heap_caps_get_free_size(internal_cap);
+    free_external_memory = heap_caps_get_free_size(external_cap);
+
+    // only test malloc if CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL is equal to 0 since otherwise, allocations
+    // with size under the limit will be done internally.
+#if (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL == 0)
+    // test again using malloc
+    ptr = malloc(alloc_size);
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    TEST_ASSERT(free_internal_memory == heap_caps_get_free_size(internal_cap));
+    TEST_ASSERT(free_external_memory >= heap_caps_get_free_size(external_cap) + alloc_size);
+
+    heap_caps_free(ptr);
+#endif
+}
+#endif
 
 /* As you see, we are desperately trying to outsmart the compiler, so that it
  * doesn't warn about oversized allocations in the next two unit tests.

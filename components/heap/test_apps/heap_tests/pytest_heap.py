@@ -66,7 +66,7 @@ def test_heap_in_flash(dut: Dut) -> None:
     ]
 )
 def test_heap(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(group='psram')
 
 
 @pytest.mark.generic
