@@ -795,6 +795,10 @@ config SOC_RMT_SUPPORT_XTAL
     bool
     default y
 
+config SOC_RMT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_MCPWM_GROUPS
     int
     default 1

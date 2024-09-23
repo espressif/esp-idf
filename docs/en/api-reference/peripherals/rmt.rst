@@ -90,10 +90,8 @@ To install an RMT TX channel, there is a configuration structure that needs to b
 - :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of the internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
 - :cpp:member:`rmt_tx_channel_config_t::invert_out` is used to decide whether to invert the RMT signal before sending it to the GPIO pad.
 - :cpp:member:`rmt_tx_channel_config_t::with_dma` enables the DMA backend for the channel. Using the DMA allows a significant amount of the channel's workload to be offloaded from the CPU. However, the DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter a :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
-- :cpp:member:`rmt_tx_channel_config_t::io_loop_back` enables both input and output capabilities on the channel's assigned GPIO. Thus, by binding a TX and RX channel to the same GPIO, loopback can be achieved.
-- :cpp:member:`rmt_tx_channel_config_t::io_od_mode` configures the channel's assigned GPIO as open-drain. When combined with :cpp:member:`rmt_tx_channel_config_t::io_loop_back`, a bi-directional bus (e.g., 1-wire) can be achieved.
 - :cpp:member:`rmt_tx_channel_config_t::intr_priority` Set the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1,2 or 3), otherwise use the priority indicated by :cpp:member:`rmt_tx_channel_config_t::intr_priority`. Please use the number form (1,2,3) , not the bitmask form ((1<<1),(1<<2),(1<<3)). Please pay attention that once the interrupt priority is set, it cannot be changed until :cpp:func:`rmt_del_channel` is called.
-- :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` enables the backup of the RMT registers before entering sleep mode. This option implies a tradeoff between power consumption and memory consumption. If the power consumption is not a concern, you can disable this option to save memory. But if you want to save power, you should enable this option to save the RMT registers before entering sleep mode, and restore them after waking up. This feature depends on specific hardware module, if you enable this flag on an unsupported chip, you will get an error message like ``register back up is not supported``.
+- :cpp:member:`rmt_tx_channel_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the RMT register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 Once the :cpp:type:`rmt_tx_channel_config_t` structure is populated with mandatory parameters, users can call :cpp:func:`rmt_new_tx_channel` to allocate and initialize a TX channel. This function returns an RMT channel handle if it runs correctly. Specifically, when there are no more free channels in the RMT resource pool, this function returns :c:macro:`ESP_ERR_NOT_FOUND` error. If some feature (e.g., DMA backend) is not supported by the hardware, it returns :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
@@ -126,9 +124,8 @@ To install an RMT RX channel, there is a configuration structure that needs to b
 
 - :cpp:member:`rmt_rx_channel_config_t::invert_in` is used to invert the input signals before it is passed to the RMT receiver. The inversion is done by the GPIO matrix instead of by the RMT peripheral.
 - :cpp:member:`rmt_rx_channel_config_t::with_dma` enables the DMA backend for the channel. Using the DMA allows a significant amount of the channel's workload to be offloaded from the CPU. However, the DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter a :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
-- :cpp:member:`rmt_rx_channel_config_t::io_loop_back` enables both input and output capabilities on the channel's assigned GPIO. Thus, by binding a TX and RX channel to the same GPIO, loopback can be achieved.
 - :cpp:member:`rmt_rx_channel_config_t::intr_priority` Set the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1,2 or 3), otherwise use the priority indicated by :cpp:member:`rmt_rx_channel_config_t::intr_priority`. Please use the number form (1,2,3) , not the bitmask form ((1<<1),(1<<2),(1<<3)). Please pay attention that once the interrupt priority is set, it cannot be changed until :cpp:func:`rmt_del_channel` is called.
-- :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep` enables the backup of the RMT registers before entering sleep mode. This option implies an balance between power consumption and memory usage. If the power consumption is not a concern, you can disable this option to save memory. But if you want to save power, you should enable this option to save the RMT registers before entering sleep mode, and restore them after waking up. This feature depends on specific hardware module, if you enable this flag on an unsupported chip, you will get an error message like ``register back up is not supported``.
+- :cpp:member:`rmt_rx_channel_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the RMT register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandatory parameters, users can call :cpp:func:`rmt_new_rx_channel` to allocate and initialize an RX channel. This function returns an RMT channel handle if it runs correctly. Specifically, when there are no more free channels in the RMT resource pool, this function returns :c:macro:`ESP_ERR_NOT_FOUND` error. If some feature (e.g., DMA backend) is not supported by the hardware, it returns :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
@@ -311,6 +308,10 @@ Calling :cpp:func:`rmt_del_sync_manager` can recycle the sync manager and enable
             .trans_queue_depth = 1,           // set the number of transactions that can pend in the background
         };
         ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &tx_channels[i]));
+    }
+    // enable the channels
+    for (int i = 0; i < 2; i++) {
+        ESP_ERROR_CHECK(rmt_enable(tx_channels[i]));
     }
     // install sync manager
     rmt_sync_manager_handle_t synchro = NULL;
@@ -553,11 +554,11 @@ Power Management
 
 When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the time base inside the RMT can't work as expected.
 
-The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`rmt_enable`, and release it in :cpp:func:`rmt_disable`. That means, any RMT transactions in between these two functions are guaranteed to work correctly, regardless of the power management strategy. The clock source won't be disabled or adjusted its frequency during this time.
+The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`rmt_enable`, and release it in :cpp:func:`rmt_disable`. That means, any RMT transactions in between these two functions are guaranteed to work correctly and stable.
 
 .. only:: SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-    Besides the potential changes to the clock source, when the power management is enabled, the system can also power down a domain where RMT register located. To ensure the RMT driver can continue work after sleep, we can either backup the RMT registers to the RAM, or just refuse to power down. You can choose what to do in :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` and :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep`. It's a balance between power saving and memory consumption. Set it based on your application requirements.
+    Besides the potential changes to the clock source, when the power management is enabled, the system can also power down the RMT hardware before sleep. Set :cpp:member:`rmt_tx_channel_config_t::allow_pd` and :cpp:member:`rmt_rx_channel_config_t::allow_pd` to ``true`` to enable the power down feature. RMT registers will be backed up before sleep and restored after wake up. Please note, enabling this option will increase the memory consumption.
 
 .. _rmt-iram-safe:
 

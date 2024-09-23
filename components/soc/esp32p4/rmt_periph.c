@@ -62,6 +62,8 @@ const rmt_signal_conn_t rmt_periph_signals = {
 #define RMT_RETENTION_REGS_BASE (DR_REG_RMT_BASE + 0x20)
 static const uint32_t rmt_regs_map[4] = {0xff400fff, 0x3ff, 0x0, 0x0};
 static const regdma_entries_config_t rmt_regdma_entries[] = {
+    // backup stage: save configuration registers
+    // restore stage: restore the configuration registers
     [0] = {
         .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_RMT_LINK(0x00),
         RMT_RETENTION_REGS_BASE, RMT_RETENTION_REGS_BASE,

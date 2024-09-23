@@ -51,7 +51,6 @@ void ref_clock_init(void)
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = REF_CLOCK_GPIO,
         .level_gpio_num = -1,
-        .flags.io_loop_back = true,
     };
     TEST_ESP_OK(pcnt_new_channel(s_pcnt_unit, &chan_config, &s_pcnt_chan));
     // increase count on both edges
@@ -72,7 +71,6 @@ void ref_clock_init(void)
         .mem_block_symbols = 64,
         .resolution_hz = 10000, // channel resolution doesn't really matter, because we only utilize the carrier
         .trans_queue_depth = 1,
-        .flags.io_loop_back = true,
     };
     TEST_ESP_OK(rmt_new_tx_channel(&tx_chan_config, &s_rmt_chan));
     // set carrier configuration

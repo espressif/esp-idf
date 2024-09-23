@@ -152,7 +152,11 @@ static void rmt_rx_unregister_from_group(rmt_channel_t *channel, rmt_group_t *gr
 static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 {
     if (rx_channel->base.gpio_num >= 0) {
-        gpio_reset_pin(rx_channel->base.gpio_num);
+        int group_id = rx_channel->base.group->group_id;
+        int channel_id = rx_channel->base.channel_id;
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
+                                       rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
+                                       false);
     }
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
@@ -197,7 +201,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif // SOC_RMT_SUPPORT_DMA
 
 #if !SOC_RMT_SUPPORT_SLEEP_RETENTION
-    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     // malloc channel memory
@@ -240,7 +244,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     int group_id = group->group_id;
 
 #if RMT_USE_RETENTION_LINK
-    if (config->flags.backup_before_sleep != 0) {
+    if (config->flags.allow_pd != 0) {
         rmt_create_retention_module(group);
     }
 #endif // RMT_USE_RETENTION_LINK
@@ -303,20 +307,18 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif
 
     // GPIO Matrix/MUX configuration
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        // also enable the input path is `io_loop_back` is on, this is useful for debug
-        .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0),
-        .pull_down_en = false,
-        .pull_up_en = true,
-        .pin_bit_mask = BIT64(config->gpio_num),
-    };
-    // gpio_config also connects the IO_MUX to the GPIO matrix
-    ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config GPIO failed");
-    rx_channel->base.gpio_num = config->gpio_num;
+    gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
+    gpio_input_enable(config->gpio_num);
+    gpio_pullup_en(config->gpio_num);
     esp_rom_gpio_connect_in_signal(config->gpio_num,
                                    rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);
+    rx_channel->base.gpio_num = config->gpio_num;
+
+    // deprecated, to be removed in in esp-idf v6.0
+    if (config->flags.io_loop_back) {
+        gpio_ll_output_enable(&GPIO, config->gpio_num);
+    }
 
     // initialize other members of rx channel
     portMUX_INITIALIZE(&rx_channel->base.spinlock);
@@ -400,7 +402,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     // check buffer alignment
     uint32_t align_check_mask = mem_alignment - 1;
-    ESP_RETURN_ON_FALSE_ISR((((uintptr_t)buffer & align_check_mask) == 0) && ((buffer_size & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
+    ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
                             TAG, "buffer address or size are not %zu bytes aligned", mem_alignment);
 
     rmt_group_t *group = channel->group;

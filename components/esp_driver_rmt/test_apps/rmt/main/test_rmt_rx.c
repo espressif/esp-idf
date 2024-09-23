@@ -55,7 +55,6 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         .mem_block_symbols = mem_block_symbols,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
     };
     printf("install rx channel\r\n");
     rmt_channel_handle_t rx_channel = NULL;
@@ -75,7 +74,6 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .trans_queue_depth = 4,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
-        .flags.io_loop_back = true, // TX channel and RX channel will bounded to the same GPIO
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
@@ -240,13 +238,18 @@ static void test_rmt_partial_receive(size_t mem_block_symbols, bool with_dma, rm
                                                                    MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(receive_user_buf);
 
+    gpio_config_t sig_simulator_io_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << TEST_RMT_GPIO_NUM_A,
+    };
+    TEST_ESP_OK(gpio_config(&sig_simulator_io_conf));
+
     rmt_rx_channel_config_t rx_channel_cfg = {
         .clk_src = clk_src,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
     };
     printf("install rx channel\r\n");
     rmt_channel_handle_t rx_channel = NULL;
@@ -332,7 +335,6 @@ static void test_rmt_receive_filter(rmt_clock_source_t clk_src)
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
     };
     printf("install rx channel\r\n");
     rmt_channel_handle_t rx_channel = NULL;
@@ -355,7 +357,6 @@ static void test_rmt_receive_filter(rmt_clock_source_t clk_src)
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .trans_queue_depth = 4,
         .gpio_num = TEST_RMT_GPIO_NUM_A,
-        .flags.io_loop_back = true, // TX channel and RX channel will bounded to the same GPIO
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;

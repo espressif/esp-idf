@@ -42,9 +42,8 @@ typedef struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t backup_before_sleep: 1; /*!< If set, the driver will backup/restore the RMT registers before/after entering/exist sleep mode.
-                                              By this approach, the system can power off RMT's power domain.
-                                              This can save power, but at the expense of more RAM being consumed */
+        uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                       This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< RX channel config flags */
 } rmt_rx_channel_config_t;
 
