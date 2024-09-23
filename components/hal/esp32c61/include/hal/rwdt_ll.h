@@ -12,8 +12,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C61] IDF-9243, inherit from c6
-
 #include "hal/lpwdt_ll.h"
 
 typedef lp_wdt_dev_t rwdt_dev_t;
