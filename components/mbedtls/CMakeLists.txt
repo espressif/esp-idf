@@ -358,7 +358,11 @@ function(mbedcrypto_optional_deps component_name)
     endif()
 endfunction()
 
-# Link esp-cryptoauthlib to mbedcrypto
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
+    mbedcrypto_optional_deps(esp_timer idf::esp_timer)
+endif()
+
+# Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
     mbedcrypto_optional_deps(espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()
