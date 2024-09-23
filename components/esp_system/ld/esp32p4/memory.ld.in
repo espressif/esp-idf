@@ -26,10 +26,7 @@
 #define SRAM_HIGH_SIZE     0x80000 - CONFIG_CACHE_L2_CACHE_SIZE
 #define SRAM_HIGH_END      SRAM_HIGH_START + SRAM_HIGH_SIZE
 
-
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
-#endif
 
 #define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
 #define LP_RAM_END        0x50110000
