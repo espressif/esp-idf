@@ -49,6 +49,7 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_MWDT1:
         return ESP_RST_WDT;
 
+    case RESET_REASON_RTC_BROWN_OUT:
     case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
 
@@ -61,6 +62,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CPU0_JTAG:
         return ESP_RST_JTAG;
+
+    case RESET_REASON_CPU_LOCKUP:
+        return ESP_RST_CPU_LOCKUP;
 
     default:
         return ESP_RST_UNKNOWN;
