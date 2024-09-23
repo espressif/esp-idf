@@ -192,7 +192,7 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
-Well known VFS devices
+Well Known VFS Devices
 ----------------------
 
 IDF defines several VFS devices that can be used by applications. These devices are, among others:
