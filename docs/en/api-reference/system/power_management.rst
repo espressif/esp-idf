@@ -154,6 +154,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
+            :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
         The following peripherals are not yet supported:
 
@@ -163,7 +164,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - SPI2
             - I2S
             - PCNT
             - USB-Serial-JTAG

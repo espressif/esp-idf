@@ -340,8 +340,7 @@ static esp_err_t spi_master_deinit_driver(void* arg)
     int host_id = host->id;
     SPI_CHECK(is_valid_host(host_id), "invalid host_id", ESP_ERR_INVALID_ARG);
 
-    int x;
-    for (x = 0; x < DEV_NUM_MAX; x++) {
+    for (int x = 0; x < DEV_NUM_MAX; x++) {
         SPI_CHECK(host->device[x] == NULL, "not all CSses freed", ESP_ERR_INVALID_STATE);
     }
 
