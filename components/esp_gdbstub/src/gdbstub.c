@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -695,7 +695,7 @@ static void handle_P_command(const unsigned char *cmd, int len)
 static void handle_qSupported_command(const unsigned char *cmd, int len)
 {
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
+    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+");
     esp_gdbstub_send_end();
 }
 
