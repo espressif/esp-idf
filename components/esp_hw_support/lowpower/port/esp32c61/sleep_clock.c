@@ -13,11 +13,23 @@ static const char *TAG = "sleep_clock";
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(0),   DR_REG_PCR_BASE, DR_REG_PCR_BASE, 63, 0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(0), PCR_AHB_FREQ_CONF_REG,  0, PCR_AHB_DIV_NUM,      1, 0),                                      .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(1), PCR_BUS_CLK_UPDATE_REG, 1, PCR_BUS_CLOCK_UPDATE, 1, 0),                                      .owner = ENTRY(0) | ENTRY(1) },
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        [2] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(2), DR_REG_PCR_BASE,        DR_REG_PCR_BASE, 63,     0, 0, 0xfd73ffff, 0xfdffffff, 0xe001, 0x0), .owner = ENTRY(0) | ENTRY(1) }
+#endif
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
+
+    const static sleep_retention_entries_config_t modem_ahb_config[] = {
+        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(3), PCR_AHB_FREQ_CONF_REG,  3, PCR_AHB_DIV_NUM,      1, 0), .owner = ENTRY(1) }, /* Set AHB bus frequency to 40 MHz under PMU MODEM state */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(4), PCR_BUS_CLK_UPDATE_REG, 1, PCR_BUS_CLOCK_UPDATE, 1, 0), .owner = ENTRY(1) },
+    };
+    err = sleep_retention_entries_create(modem_ahb_config, ARRAY_SIZE(modem_ahb_config), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention, 4 level priority");
+
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
 }
@@ -25,7 +37,7 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
-    #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
+    #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
 
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
@@ -35,6 +47,8 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (SYSCON) retention, 1 level priority");
     ESP_LOGI(TAG, "Modem Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
+
+    #undef N_REGS_SYSCON
 }
 #endif
 
@@ -83,6 +97,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
+        .depends   = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_MODEM, &init_param);

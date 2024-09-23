@@ -811,6 +811,14 @@ config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
 
+config SOC_PM_SUPPORT_WIFI_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_BEACON_WAKEUP
+    bool
+    default y
+
 config SOC_PM_SUPPORT_EXT1_WAKEUP
     bool
     default y
@@ -861,7 +869,7 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
 
 config SOC_PM_SUPPORT_PMU_MODEM_STATE
     bool
-    default n
+    default y
 
 config SOC_PM_CPU_RETENTION_BY_SW
     bool

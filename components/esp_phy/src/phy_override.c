@@ -74,7 +74,7 @@ void phy_set_pwdet_power(bool en)
 #endif
 }
 
-void phy_set_tsens_power(bool en)
+void IRAM_ATTR  phy_set_tsens_power(bool en)
 {
 #if CONFIG_SOC_TEMP_SENSOR_SUPPORTED    // TODO: [ESP32C5] IDF-8727 remove me when fix IDF-8727
     if (s_wifi_tsens_xpd_flag == en) {

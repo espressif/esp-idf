@@ -58,13 +58,8 @@ examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
-      reason: PM-234
-  disable_test:
-    - if: IDF_TARGET == "esp32c61"
-      temporary: true
-      reason: lack of runners
+      reason: requires hardware support
   depends_components:
     - esp_wifi
     - esp_phy
