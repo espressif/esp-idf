@@ -29,7 +29,7 @@ void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal,
 uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain);
 #endif
 
-void modem_clock_hal_enable_modem_adc_common_fe_clock(modem_clock_hal_context_t *hal, bool enable);
+void modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_context_t *hal, bool enable);
 void modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable);
 
 #if SOC_BT_SUPPORTED

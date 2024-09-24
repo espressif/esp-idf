@@ -108,7 +108,7 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 
 static void IRAM_ATTR modem_clock_modem_adc_common_fe_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_clock_hal_enable_modem_adc_common_fe_clock(ctx->hal, enable);
+    modem_clock_hal_enable_modem_common_fe_clock(ctx->hal, enable);
 }
 
 static void IRAM_ATTR modem_clock_modem_private_fe_configure(modem_clock_context_t *ctx, bool enable)
