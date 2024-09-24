@@ -29,7 +29,6 @@ typedef enum periph_retention_module {
     /* GDMA by channel */
     SLEEP_RETENTION_MODULE_GDMA_CH0     = 8,
     SLEEP_RETENTION_MODULE_GDMA_CH1     = 9,
-    SLEEP_RETENTION_MODULE_GDMA_CH2     = 10,
     /* MISC Peripherals */
     SLEEP_RETENTION_MODULE_I2C0         = 12,
     SLEEP_RETENTION_MODULE_UART0        = 14,
@@ -59,7 +58,6 @@ typedef enum periph_retention_module_bitmap {
     /* GDMA by channel */
     SLEEP_RETENTION_MODULE_BM_GDMA_CH0     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH0),
     SLEEP_RETENTION_MODULE_BM_GDMA_CH1     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH1),
-    SLEEP_RETENTION_MODULE_BM_GDMA_CH2     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH2),
     /* MISC Peripherals */
     SLEEP_RETENTION_MODULE_BM_I2C0         = BIT(SLEEP_RETENTION_MODULE_I2C0),
     SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
@@ -80,7 +78,6 @@ typedef enum periph_retention_module_bitmap {
                                   | SLEEP_RETENTION_MODULE_BM_TG1_TIMER   \
                                   | SLEEP_RETENTION_MODULE_BM_GDMA_CH0    \
                                   | SLEEP_RETENTION_MODULE_BM_GDMA_CH1    \
-                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH2    \
                                   | SLEEP_RETENTION_MODULE_BM_I2C0        \
                                   | SLEEP_RETENTION_MODULE_BM_UART0       \
                                   | SLEEP_RETENTION_MODULE_BM_UART1       \

@@ -209,7 +209,7 @@
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
 #define SOC_AXI_GDMA_SUPPORT_PSRAM          1
 #define SOC_GDMA_SUPPORT_ETM                1
-// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 #define SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- 2D-DMA CAPS -------------------------------------*/
@@ -691,6 +691,7 @@
 #define SOC_PM_CPU_RETENTION_BY_SW      (1)
 
 #define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
 #define SOC_PAU_IN_TOP_DOMAIN           (1)
 #define SOC_CPU_IN_TOP_DOMAIN           (1)
 

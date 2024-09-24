@@ -255,13 +255,18 @@ esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
     return dma_chan->del(dma_chan);
 }
 
-esp_err_t gdma_get_channel_id(gdma_channel_handle_t dma_chan, int *channel_id)
+esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_id, int *channel_id)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
-    *channel_id = pair->pair_id;
+    if (group_id != NULL) {
+        *group_id = pair->group->group_id;
+    }
+    if (channel_id != NULL) {
+        *channel_id = pair->pair_id;
+    }
 err:
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,7 +111,7 @@ static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 /**
  * @brief Reset the DMA module
  */
-static inline void gdma_ll_reset_register(int group_id)
+static inline void _gdma_ll_reset_register(int group_id)
 {
     if (group_id == 0) {
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ahb_pdma = 1;
@@ -124,7 +124,7 @@ static inline void gdma_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
+#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

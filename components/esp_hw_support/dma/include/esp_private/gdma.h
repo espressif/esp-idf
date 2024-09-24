@@ -249,19 +249,22 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority);
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan);
 
 /**
- * @brief Get the channel ID
+ * @brief Get the group ID and the channel ID
  *
  * @note This API breaks the encapsulation of GDMA Channel Object.
- *       With the returned channel ID, you can even bypass all other GDMA driver API and access Low Level API directly.
+ *       With the returned group/channel ID, you can even bypass all other GDMA driver API and access Low Level API directly.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[out] group_id Returned group ID
  * @param[out] channel_id Returned channel ID
  * @return
- *      - ESP_OK: Get GDMA channel ID successfully
- *      - ESP_ERR_INVALID_ARG: Get GDMA channel ID failed because of invalid argument
+ *      - ESP_OK: Get GDMA channel/group ID successfully
+ *      - ESP_ERR_INVALID_ARG: Get GDMA channel/group ID failed because of invalid argument
  *      - ESP_FAIL: Get GDMA channel ID failed because of other error
  */
-esp_err_t gdma_get_channel_id(gdma_channel_handle_t dma_chan, int *channel_id);
+esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_id, int *channel_id);
+
+#define gdma_get_channel_id(dma_chan, channel_id) gdma_get_group_channel_id(dma_chan, NULL, channel_id)
 
 /**
  * @brief Set GDMA event callbacks for TX channel

@@ -14,13 +14,10 @@
 #include "soc/ahb_dma_struct.h"
 #include "soc/ahb_dma_reg.h"
 #include "soc/soc_etm_source.h"
-#include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id) (SLEEP_RETENTION_MODULE_GDMA_CH0 << (SOC_GDMA_PAIRS_PER_GROUP_MAX * group_id) << pair_id)
 
 #define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
 

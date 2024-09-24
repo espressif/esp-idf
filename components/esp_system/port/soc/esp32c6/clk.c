@@ -264,7 +264,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         parlio_ll_tx_enable_clock(&PARL_IO, false);
         parlio_ll_enable_bus_clock(0, false);
         gdma_ll_force_enable_reg_clock(&GDMA, false);
-        gdma_ll_enable_bus_clock(0, false);
+        _gdma_ll_enable_bus_clock(0, false);
 #if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         spi_ll_enable_bus_clock(SPI1_HOST, false);
 #endif

@@ -186,7 +186,7 @@
 #define SOC_GDMA_NUM_GROUPS_MAX         1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
 #define SOC_GDMA_SUPPORT_ETM            1
-// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1  // TODO: IDF-9225
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
