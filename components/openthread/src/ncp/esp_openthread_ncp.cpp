@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_ieee802154.h"
 #include "esp_openthread_ncp.h"
 #include "ncp_base.hpp"
-
-#if OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
 
 #if CONFIG_OPENTHREAD_RCP_UART
 #include "utils/uart.h"
@@ -107,5 +106,3 @@ otError NcpBase::VendorSetPropertyHandler(spinel_prop_key_t aPropKey)
 
 } // namespace Ncp
 } // namespace ot
-
-#endif // #if OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
