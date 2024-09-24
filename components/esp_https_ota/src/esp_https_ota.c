@@ -376,8 +376,8 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         err = ESP_FAIL;
         goto http_cleanup;
     }
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%" PRIx32,
-        https_ota_handle->update_partition->subtype, https_ota_handle->update_partition->address);
+    ESP_LOGI(TAG, "Writing to <%s> partition at offset 0x%" PRIx32,
+        https_ota_handle->update_partition->label, https_ota_handle->update_partition->address);
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
     if (ota_config->buffer_caps != 0) {
