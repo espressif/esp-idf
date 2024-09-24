@@ -28,6 +28,7 @@ MAX_RETRIES = 3
 @pytest.mark.esp32s3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_router
 def test_examples_udp_server_ipv4(dut: Dut) -> None:
     # Parse IP address of STA
@@ -59,6 +60,7 @@ def test_examples_udp_server_ipv4(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_router
 def test_examples_udp_server_ipv6(dut: Dut) -> None:
     # Parse IP address of STA

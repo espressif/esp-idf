@@ -29,6 +29,7 @@ MESSAGE = 'Data to ESP'
 @pytest.mark.esp32s3
 @pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_router
 def test_examples_tcp_server_ipv4(dut: Dut) -> None:
     # Parse IP address of STA
@@ -84,6 +85,7 @@ def test_examples_tcp_server_ipv4_esp32c2_26mhz(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_router
 def test_examples_tcp_server_ipv6(dut: Dut) -> None:
     # Parse IP address of STA
@@ -115,6 +117,7 @@ def test_examples_tcp_server_ipv6(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.wifi_router
 def test_examples_tcp_server_ipv6_only(dut: Dut) -> None:
     # Parse IP address of STA
