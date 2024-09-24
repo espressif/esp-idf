@@ -97,7 +97,7 @@ class PublicHeaderChecker:
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
         self.static_assert = re.compile(r'(_Static_assert|static_assert)')
         self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
-        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/include/(soc|modem)/[a-zA-Z0-9_]+.h')
+        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/(include|register)/(soc|modem)/[a-zA-Z0-9_]+.h')
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
         self.check_threads: List[Thread] = []
         self.stdc = '--std=c99'

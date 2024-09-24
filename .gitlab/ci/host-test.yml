@@ -402,3 +402,21 @@ test_nvs_gen_check:
   script:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
     - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+
+make_sure_soc_caps_compatible_in_idf_build_apps:
+    extends:
+      - .host_test_template
+      - .rules:dev-push
+    artifacts:
+      paths:
+        - new.json
+        - base.json
+      when: always
+    when: manual
+    script:
+      - python tools/ci/idf_build_apps_dump_soc_caps.py new.json
+      - git fetch --depth=1 origin $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout -f $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
+      - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
+      - diff new.json base.json
