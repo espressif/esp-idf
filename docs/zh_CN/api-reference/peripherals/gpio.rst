@@ -32,7 +32,7 @@ GPIO 汇总
 获取 IO 管脚实时配置状态
 --------------------------------------------
 
-GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。例如，以下命令可用于输出 GPIO4，GPIO8 与 GPIO26 的配置状态：
+GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。例如，以下命令可用于输出 GPIO4，GPIO18 与 GPIO26 的配置状态：
 
 ::
 
