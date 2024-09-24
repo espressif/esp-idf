@@ -15,8 +15,6 @@
 #include "hal/rtc_io_ll.h"
 #include "soc/soc_caps.h"
 
-static const char __attribute__((__unused__)) *IOMUX_TAG = "IO_MUX";
-
 #define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
 static portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -55,7 +53,10 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
-    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, IOMUX_TAG, "RTCIO number error");
+    if (gpio_num > MAX_RTC_GPIO_NUM) {
+        assert(false && "RTCIO number error");
+        return;
+    }
     portENTER_CRITICAL(&s_io_mux_spinlock);
     if (enable) {
         if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {
