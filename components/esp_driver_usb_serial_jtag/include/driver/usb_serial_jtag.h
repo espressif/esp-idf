@@ -105,6 +105,13 @@ esp_err_t usb_serial_jtag_driver_uninstall(void);
  */
 bool usb_serial_jtag_is_connected(void);
 
+/**
+ * @brief Get information whether the USB serial JTAG driver is installed or not
+ *
+ * @return True if driver is installed and False if driver not installed
+ */
+bool usb_serial_jtag_is_driver_installed(void);
+
 #ifdef __cplusplus
 }
 #endif

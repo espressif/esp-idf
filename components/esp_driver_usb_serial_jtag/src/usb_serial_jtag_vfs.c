@@ -23,9 +23,14 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/usb_serial_jtag_ll.h"
+#include "driver/usb_serial_jtag_select.h"
 #include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_private/startup_internal.h"
+#include "esp_heap_caps.h"
+
+// local file descriptor value for the USJ
+#define USJ_LOCAL_FD 0
 
 // Token signifying that no character is available
 #define NONE -1
@@ -44,6 +49,12 @@
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
+#endif
+
+#if CONFIG_VFS_SELECT_IN_RAM
+#define USJ_VFS_MALLOC_FLAGS (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define USJ_VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
 // write bytes function type
@@ -108,10 +119,30 @@ static usb_serial_jtag_vfs_context_t s_ctx = {
     .fsync_func = usb_serial_jtag_wait_tx_done_no_driver
 };
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+typedef struct {
+    esp_vfs_select_sem_t select_sem;
+    fd_set *readfds;
+    fd_set *writefds;
+    fd_set *errorfds;
+    fd_set readfds_orig;
+    fd_set writefds_orig;
+    fd_set errorfds_orig;
+} usb_serial_jtag_select_args_t;
+
+static usb_serial_jtag_select_args_t **s_registered_selects = NULL;
+static int s_registered_select_num = 0;
+static portMUX_TYPE s_registered_select_lock = portMUX_INITIALIZER_UNLOCKED;
+
+static esp_err_t usb_serial_jtag_end_select(void *end_select_args);
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
 static int usb_serial_jtag_open(const char * path, int flags, int mode)
 {
     s_ctx.non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
-    return 0;
+    return USJ_LOCAL_FD;
 }
 
 static void usb_serial_jtag_tx_char_no_driver(int fd, int c)
@@ -300,6 +331,164 @@ static int usb_serial_jtag_fsync(int fd)
     }
 }
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+static void select_notif_callback_isr(usj_select_notif_t usj_select_notif, BaseType_t *task_woken)
+{
+    portENTER_CRITICAL_ISR(&s_registered_select_lock);
+    for (int i = 0; i < s_registered_select_num; ++i) {
+        usb_serial_jtag_select_args_t *args = s_registered_selects[i];
+        if (args) {
+            switch (usj_select_notif) {
+            case USJ_SELECT_READ_NOTIF:
+                if (FD_ISSET(USJ_LOCAL_FD, &args->readfds_orig)) {
+                    FD_SET(USJ_LOCAL_FD, args->readfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case USJ_SELECT_WRITE_NOTIF:
+                if (FD_ISSET(USJ_LOCAL_FD, &args->writefds_orig)) {
+                    FD_SET(USJ_LOCAL_FD, args->writefds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case USJ_SELECT_ERROR_NOTIF:
+                if (FD_ISSET(USJ_LOCAL_FD, &args->errorfds_orig)) {
+                    FD_SET(USJ_LOCAL_FD, args->errorfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            }
+        }
+    }
+    portEXIT_CRITICAL_ISR(&s_registered_select_lock);
+}
+
+static esp_err_t register_select(usb_serial_jtag_select_args_t *args)
+{
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
+
+    if (args) {
+        portENTER_CRITICAL(&s_registered_select_lock);
+        const int new_size = s_registered_select_num + 1;
+        usb_serial_jtag_select_args_t **new_selects;
+        if ((new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS)) == NULL) {
+            ret = ESP_ERR_NO_MEM;
+        } else {
+            /* on first select registration register the callback  */
+            if (s_registered_select_num == 0) {
+                usb_serial_jtag_set_select_notif_callback(select_notif_callback_isr);
+            }
+
+            s_registered_selects = new_selects;
+            s_registered_selects[s_registered_select_num] = args;
+            s_registered_select_num = new_size;
+            ret = ESP_OK;
+        }
+        portEXIT_CRITICAL(&s_registered_select_lock);
+    }
+
+    return ret;
+}
+
+static esp_err_t unregister_select(usb_serial_jtag_select_args_t *args)
+{
+    esp_err_t ret = ESP_OK;
+    if (args) {
+        ret = ESP_ERR_INVALID_STATE;
+        portENTER_CRITICAL(&s_registered_select_lock);
+        for (int i = 0; i < s_registered_select_num; ++i) {
+            if (s_registered_selects[i] == args) {
+                const int new_size = s_registered_select_num - 1;
+                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
+                // last item.
+                s_registered_selects[i] = s_registered_selects[new_size];
+                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(usb_serial_jtag_select_args_t *), USJ_VFS_MALLOC_FLAGS);
+                // Shrinking a buffer with realloc is guaranteed to succeed.
+                s_registered_select_num = new_size;
+
+                /* when the last select is unregistered, also unregister the callback  */
+                if (s_registered_select_num == 0) {
+                    usb_serial_jtag_set_select_notif_callback(NULL);
+                }
+
+                ret = ESP_OK;
+                break;
+            }
+        }
+        portEXIT_CRITICAL(&s_registered_select_lock);
+    }
+    return ret;
+}
+
+static esp_err_t usb_serial_jtag_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+                                              esp_vfs_select_sem_t select_sem, void **end_select_args)
+{
+    (void)nfds; /* Since there is only 1 usb serial jtag port, this parameter is useless */
+    *end_select_args = NULL;
+    if (!usb_serial_jtag_is_driver_installed()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    usb_serial_jtag_select_args_t *args = heap_caps_malloc(sizeof(usb_serial_jtag_select_args_t), USJ_VFS_MALLOC_FLAGS);
+
+    if (args == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    args->select_sem = select_sem;
+    args->readfds = readfds;
+    args->writefds = writefds;
+    args->errorfds = exceptfds;
+    args->readfds_orig = *readfds; // store the original values because they will be set to zero
+    args->writefds_orig = *writefds;
+    args->errorfds_orig = *exceptfds;
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+
+    esp_err_t ret = register_select(args);
+    if (ret != ESP_OK) {
+        free(args);
+        return ret;
+    }
+
+    bool trigger_select = false;
+
+    // check if the select should return instantly if the bus is read ready
+    if (FD_ISSET(USJ_LOCAL_FD, &args->readfds_orig) && usb_serial_jtag_read_ready()) {
+        // signal immediately when data is buffered
+        FD_SET(USJ_LOCAL_FD, readfds);
+        trigger_select = true;
+    }
+
+    // check if the select should return instantly if the bus is write ready
+    if (FD_ISSET(USJ_LOCAL_FD, &args->writefds_orig) && usb_serial_jtag_write_ready()) {
+        // signal immediately when data can be written
+        FD_SET(USJ_LOCAL_FD, writefds);
+        trigger_select = true;
+    }
+
+    if (trigger_select) {
+        esp_vfs_select_triggered(args->select_sem);
+    }
+
+    *end_select_args = args;
+    return ESP_OK;
+}
+
+static esp_err_t usb_serial_jtag_end_select(void *end_select_args)
+{
+    usb_serial_jtag_select_args_t *args = end_select_args;
+    esp_err_t ret = unregister_select(args);
+    if (args) {
+        free(args);
+    }
+
+    return ret;
+}
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct termios *p)
 {
@@ -391,6 +580,10 @@ static const esp_vfs_t usj_vfs = {
     .read = &usb_serial_jtag_read,
     .fcntl = &usb_serial_jtag_fcntl,
     .fsync = &usb_serial_jtag_fsync,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .start_select = &usb_serial_jtag_start_select,
+    .end_select = &usb_serial_jtag_end_select,
+#endif // CONFIG_VFS_SUPPORT_SELECT
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     .tcsetattr = &usb_serial_jtag_tcsetattr,
     .tcgetattr = &usb_serial_jtag_tcgetattr,
