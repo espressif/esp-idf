@@ -534,8 +534,6 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
                 return ESP_ERR_NO_MEM;
             }
             sleep_retention_entries_update(retent[i].owner, link, priority);
-        } else {
-            break;
         }
     }
     _lock_release_recursive(&s_retention.lock);
