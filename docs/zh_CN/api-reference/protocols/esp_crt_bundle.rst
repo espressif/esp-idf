@@ -84,11 +84,11 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 应用示例
 ---------
 
-使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例：:example:`protocols/https_x509_bundle`，该示例使用了证书包并添加了两个自定义证书用于验证。
+:example:`protocols/https_x509_bundle` 演示了如何使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例，该示例使用了证书包并添加了两个自定义证书用于验证。
 
-使用 ESP-TLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_request`。
+:example:`protocols/https_request` 演示了如何使用 ESP-TLS 和默认证书包的 HTTPS 示例。
 
-使用 mbedTLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_mbedtls`。
+:example:`protocols/https_mbedtls` 演示了如何使用 Mbed TLS 和默认证书包的 HTTPS 示例。
 
 API 参考
 ----------

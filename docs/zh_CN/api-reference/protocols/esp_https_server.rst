@@ -63,6 +63,13 @@ ESP HTTPS 服务器在特定事件发生时，可以通过 :doc:`../system/esp_e
     - HTTPS_SERVER_EVENT_DISCONNECTED   :   ``NULL``
     - HTTPS_SERVER_EVENT_STOP           :   ``NULL``
 
+应用示例
+--------------------
+
+- :example:`protocols/https_server/simple` 演示了如何创建一个 HTTPS 服务器，当访问时返回一个简单的 HTML 页面。
+
+- :example:`protocols/https_server/wss_server` 演示了如何创建一个支持多客户端的 SSL 服务器，具备简单的 WebSocket 请求处理器、PING-PONG 机制，并能够向所有客户端发送异步消息。
+
 API 参考
 ---------
 
