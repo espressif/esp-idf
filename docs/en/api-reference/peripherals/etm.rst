@@ -32,6 +32,7 @@ The following sections of this document cover the typical steps to configure and
 - :ref:`etm-event` - describes how to allocate a new ETM event handle or fetch an existing handle from various peripherals.
 - :ref:`etm-task` - describes how to allocate a new ETM task handle or fetch an existing handle from various peripherals.
 - :ref:`etm-channel-control` - describes common ETM channel control functions.
+- :ref:`etm-power-management` - describes the options and strategies provided by the driver in order to save power.
 - :ref:`etm-thread-safety` - lists which APIs are guaranteed to be thread-safe by the driver.
 - :ref:`etm-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
 
@@ -130,6 +131,17 @@ To check if the ETM channels are set with proper events and tasks, you can call 
     ===========ETM Dump End============
 
 The digital ID printed in the dump information is defined in the ``soc/soc_etm_source.h`` file.
+
+.. _etm-power-management:
+
+Power Management
+^^^^^^^^^^^^^^^^
+
+When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source, and power off the ETM peripheral before going to sleep. As a result, the existing connection between events and tasks will be lost, and the ETM channels can't work correctly after wake up. So by default, the driver will acquire a power management lock internally to forbid the system from powering off the ETM peripheral.
+
+.. only:: SOC_ETM_SUPPORT_SLEEP_RETENTION
+
+    If you want to save more power, you can set :cpp:member:`esp_etm_channel_config_t::etm_chan_flags::allow_pd` to ``true``. Then ETM registers will be backed up before sleep and restored after wake up. Please note, enabling this option will increase the memory consumption for saving the register context.
 
 .. _etm-thread-safety:
 
