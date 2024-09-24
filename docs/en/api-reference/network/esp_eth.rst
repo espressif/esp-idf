@@ -534,11 +534,23 @@ One thing that should be kept in mind is that the pause frame ability is adverti
 Application Examples
 --------------------
 
-  * Ethernet basic example: :example:`ethernet/basic`
-  * Ethernet iperf example: :example:`ethernet/iperf`
-  * Ethernet to Wi-Fi AP "router": :example:`network/eth2ap`
-  * Wi-Fi station to Ethernet "bridge": :example:`network/sta2eth`
-  * Most protocol examples should also work for Ethernet: :example:`protocols`
+  * :example:`ethernet/basic` demonstrates how to use the Ethernet driver, covering driver installation, attaching it to `esp_netif`, sending DHCP requests, and obtaining a pingable IP address.
+
+  * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
+
+  * :example:`ethernet/enc28j60` demonstrates how to use the ENC28J60 Ethernet controller by integrating a new Ethernet MAC driver into the `esp_eth` component and attaching it to the TCP/IP stack.
+
+  * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
+
+  * :example:`network/sta2eth` demonstrates how to create a 1-to-1 bridge using a Wi-Fi station and a wired interface such as Ethernet or USB.
+
+  * :example:`network/simple_sniffer` demonstrates how to use Wi-Fi and Ethernet in sniffer mode to capture packets and save them in PCAP format.
+
+  * :example:`network/eth2ap` demonstrates how to implement a bridge that forwards packets between an Ethernet port and a Wi-Fi AP interface. It uses {IDF_TARGET_NAME} to create a 1-to-many connection between Ethernet and Wi-Fi without initializing the TCP/IP stack.
+
+  * :example:`network/bridge` demonstrates how to use the LwIP IEEE 802.1D bridge to forward Ethernet frames between multiple network segments based on MAC addresses.
+
+  * Most protocol examples should also work for Ethernet: :example:`protocols`.
 
 .. ------------------------------ Advanced Topics -------------------------------
 
