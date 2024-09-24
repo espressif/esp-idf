@@ -983,6 +983,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 #endif
 
+#if SOC_DCDC_SUPPORTED
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
+#endif
+
             // Enter Deep Sleep
 #if!ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB || SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY || !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #if SOC_PMU_SUPPORTED
@@ -1016,25 +1024,18 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
 
-#if SOC_DCDC_SUPPORTED
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-            if (!deep_sleep) {
-                // Keep DCDC always on during light sleep, no need to adjust LDO voltage.
-            } else
-#endif
-            {
-                uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
-                if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
-                    esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
-                }
-                pmu_sleep_shutdown_dcdc();
-            }
-#endif
-
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
             if (pd_flags & PMU_SLEEP_PD_TOP) {
                 esp_sleep_mmu_retention(true);
             }
+#endif
+
+#if SOC_DCDC_SUPPORTED && !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
 #endif
 
 #if SOC_PMU_SUPPORTED
