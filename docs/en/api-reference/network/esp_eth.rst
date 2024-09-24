@@ -538,8 +538,6 @@ Application Examples
 
   * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
 
-  * :example:`ethernet/enc28j60` demonstrates how to use the ENC28J60 Ethernet controller by integrating a new Ethernet MAC driver into the `esp_eth` component and attaching it to the TCP/IP stack.
-
   * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
 
   * :example:`network/sta2eth` demonstrates how to create a 1-to-1 bridge using a Wi-Fi station and a wired interface such as Ethernet or USB.

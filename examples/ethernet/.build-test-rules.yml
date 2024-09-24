@@ -15,15 +15,6 @@ examples/ethernet/basic:
     - esp_driver_gpio
     - esp_driver_spi
 
-examples/ethernet/enc28j60:
-  depends_components:
-    - esp_eth
-    - esp_netif
-    - lwip
-    - esp_event
-    - esp_driver_gpio
-    - esp_driver_spi
-
 examples/ethernet/iperf:
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
