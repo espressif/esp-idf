@@ -103,4 +103,13 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         help
             Enable this option to place SPI slave hal layer functions into IRAM.
 
+    config HAL_ECDSA_GEN_SIG_CM
+        bool "Enable countermeasure for ECDSA signature generation"
+        default n
+        # ToDo - IDF-11051
+        help
+            Enable this option to apply the countermeasure for ECDSA signature operation
+            This countermeasure masks the real ECDSA sign operation
+            under dummy sign operations to add randomness in the generated power signature.
+
 endmenu
