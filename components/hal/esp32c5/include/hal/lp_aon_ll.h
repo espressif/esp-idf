@@ -93,24 +93,6 @@ static inline void lp_aon_ll_inform_wakeup_type(bool dslp)
 }
 
 /**
- * @brief Get the flag that marks whether LP CPU is awakened by ETM
- *
- * @return Return true if lpcore is woken up by soc_etm
- */
-static inline bool lp_aon_ll_get_lpcore_etm_wakeup_flag(void)
-{
-    return REG_GET_BIT(LP_AON_LPCORE_REG, LP_AON_LPCORE_ETM_WAKEUP_FLAG);
-}
-
-/**
- * @brief Clear the flag that marks whether LP CPU is awakened by soc_etm
- */
-static inline void lp_aon_ll_clear_lpcore_etm_wakeup_flag(void)
-{
-    REG_SET_BIT(LP_AON_LPCORE_REG, LP_AON_LPCORE_ETM_WAKEUP_FLAG_CLR);
-}
-
-/**
  * @brief Set the maximum number of linked lists supported by REGDMA
  * @param count: the maximum number of regdma link
  */

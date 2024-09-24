@@ -115,10 +115,6 @@ static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uin
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, chn_task_id, task);
 }
 
-#define etm_ll_is_lpcore_wakeup_triggered()       lp_aon_ll_get_lpcore_etm_wakeup_flag()
-
-#define etm_ll_clear_lpcore_wakeup_status()       lp_aon_ll_clear_lpcore_etm_wakeup_flag()
-
 #ifdef __cplusplus
 }
 #endif
