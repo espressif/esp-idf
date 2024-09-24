@@ -156,6 +156,13 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
         list(APPEND src_dirs
             "src/ncp")
+        if(CONFIG_OPENTHREAD_RCP_UART)
+            list(APPEND exclude_srcs
+                "src/ncp/esp_openthread_ncp_spi.cpp")
+        elseif(CONFIG_OPENTHREAD_RCP_SPI)
+            list(APPEND exclude_srcs
+                "src/ncp/esp_openthread_ncp_hdlc.cpp")
+        endif()
     endif()
 
     if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)
