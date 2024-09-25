@@ -562,7 +562,7 @@ static esp_gatt_srvc_id_t remote_service_id = {
 };
 ```
 
-Once defined, we can get the characteristics from that service using the `esp_ble_gattc_get_characteristic()` function, which is called in the `ESP_GATTC_SEARCH_CMPL_EVT` event after the search for services is completed and the client has found the service that it was looking for.
+Once defined, we can get the characteristics from that service using the `esp_ble_gattc_get_char_by_uuid()` function, which is called in the `ESP_GATTC_SEARCH_CMPL_EVT` event after the search for services is completed and the client has found the service that it was looking for.
 
 ```c
 case ESP_GATTC_SEARCH_CMPL_EVT:
