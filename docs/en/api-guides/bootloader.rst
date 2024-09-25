@@ -181,8 +181,8 @@ Custom Bootloader
 
 The current bootloader implementation allows a project to extend it or modify it. There are two ways of doing it: by implementing hooks or by overriding it. Both ways are presented in :example:`custom_bootloader` folder in ESP-IDF examples:
 
-* `bootloader_hooks` which presents how to connect some hooks to the bootloader initialization
-* `bootloader_override` which presents how to override the bootloader implementation
+* :example:`custom_bootloader/bootloader_hooks` presents how to connect some hooks to the bootloader initialization
+* :example:`custom_bootloader/bootloader_override` presents how to override the bootloader implementation
 
 In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's `bootloader_components` directory (note that this will increase its size).
 
