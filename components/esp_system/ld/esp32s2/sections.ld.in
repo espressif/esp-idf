@@ -250,7 +250,8 @@ SECTIONS
     _noinit_end = ABSOLUTE(.);
   } > dram0_0_seg
 
-   /* external memory bss, from any global variable with EXT_RAM_BSS_ATTR attribute*/
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+  /* External Memory BSS. (Variables with EXT_RAM_BSS_ATTR attribute). */
   .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_bss_start = ABSOLUTE(.);
@@ -260,6 +261,23 @@ SECTIONS
     . = ALIGN(4);
     _ext_ram_bss_end = ABSOLUTE(.);
   } > extern_ram_seg
+#endif //CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+  /**
+   * This section holds data that won't be initialised when startup.
+   * This section locates in External RAM region.
+   */
+  .ext_ram_noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+    *(.ext_ram_noinit*)
+
+    . = ALIGN(4);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+  } > extern_ram_seg
+#endif //CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
