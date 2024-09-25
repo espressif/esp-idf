@@ -60,6 +60,8 @@ For example, if the custom bootloader shall not be compiled for ESP32-C3 targets
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# "Trim" the build. Include the minimal set of components, main, and anything it depends on.
+idf_build_set_property(MINIMAL_BUILD ON)
 
 if(${IDF_TARGET} STREQUAL "esp32c3")
     set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")
