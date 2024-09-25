@@ -1868,42 +1868,50 @@ typedef struct {
 #define HCI_PING_SUPPORTED(x) ((x)[HCI_EXT_FEATURE_PING_OFF] & HCI_EXT_FEATURE_PING_MASK)
 
 /*
-**   LE features encoding - page 0 (the only page for now)
+**   LE features encoding - page 0
 */
-/* LE Encryption */
+/* LE Encryption: bit 0 */
 #define HCI_LE_FEATURE_LE_ENCRYPTION_MASK       0x01
 #define HCI_LE_FEATURE_LE_ENCRYPTION_OFF        0
 #define HCI_LE_ENCRYPTION_SUPPORTED(x) ((x)[HCI_LE_FEATURE_LE_ENCRYPTION_OFF] & HCI_LE_FEATURE_LE_ENCRYPTION_MASK)
 
-/* Connection Parameters Request Procedure */
+/* Connection Parameters Request Procedure: bit 1 */
 #define HCI_LE_FEATURE_CONN_PARAM_REQ_MASK       0x02
 #define HCI_LE_FEATURE_CONN_PARAM_REQ_OFF        0
 #define HCI_LE_CONN_PARAM_REQ_SUPPORTED(x) ((x)[HCI_LE_FEATURE_CONN_PARAM_REQ_OFF] & HCI_LE_FEATURE_CONN_PARAM_REQ_MASK)
 
-/* Extended Reject Indication */
+/* Extended Reject Indication: bit 2 */
 #define HCI_LE_FEATURE_EXT_REJ_IND_MASK       0x04
 #define HCI_LE_FEATURE_EXT_REJ_IND_OFF        0
 #define HCI_LE_EXT_REJ_IND_SUPPORTED(x) ((x)[HCI_LE_FEATURE_EXT_REJ_IND_OFF] & HCI_LE_FEATURE_EXT_REJ_IND_MASK)
 
-/* Slave-initiated Features Exchange */
+/* Slave-initiated Features Exchange: bit 3 */
 #define HCI_LE_FEATURE_SLAVE_INIT_FEAT_EXC_MASK       0x08
 #define HCI_LE_FEATURE_SLAVE_INIT_FEAT_EXC_OFF        0
 #define HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(x) ((x)[HCI_LE_FEATURE_SLAVE_INIT_FEAT_EXC_OFF] & HCI_LE_FEATURE_SLAVE_INIT_FEAT_EXC_MASK)
+
+/* LE Data Packet Length Extension: bit 5 */
+#define HCI_LE_FEATURE_DATA_LEN_EXT_MASK       0x20
+#define HCI_LE_FEATURE_DATA_LEN_EXT_OFF        0
+#define HCI_LE_DATA_LEN_EXT_SUPPORTED(x) ((x)[HCI_LE_FEATURE_DATA_LEN_EXT_OFF] & HCI_LE_FEATURE_DATA_LEN_EXT_MASK)
 
 /* Enhanced privacy Feature: bit 6 */
 #define HCI_LE_FEATURE_ENHANCED_PRIVACY_MASK       0x40
 #define HCI_LE_FEATURE_ENHANCED_PRIVACY_OFF        0
 #define HCI_LE_ENHANCED_PRIVACY_SUPPORTED(x) ((x)[HCI_LE_FEATURE_ENHANCED_PRIVACY_OFF] & HCI_LE_FEATURE_ENHANCED_PRIVACY_MASK)
 
-/* Extended scanner filter policy : 7 */
+/* Extended scanner filter policy: bit 7 */
 #define HCI_LE_FEATURE_EXT_SCAN_FILTER_POLICY_MASK       0x80
 #define HCI_LE_FEATURE_EXT_SCAN_FILTER_POLICY_OFF        0
 #define HCI_LE_EXT_SCAN_FILTER_POLICY_SUPPORTED(x) ((x)[HCI_LE_FEATURE_EXT_SCAN_FILTER_POLICY_OFF] & HCI_LE_FEATURE_EXT_SCAN_FILTER_POLICY_MASK)
 
-/* Slave-initiated Features Exchange */
-#define HCI_LE_FEATURE_DATA_LEN_EXT_MASK       0x20
-#define HCI_LE_FEATURE_DATA_LEN_EXT_OFF        0
-#define HCI_LE_DATA_LEN_EXT_SUPPORTED(x) ((x)[HCI_LE_FEATURE_DATA_LEN_EXT_OFF] & HCI_LE_FEATURE_DATA_LEN_EXT_MASK)
+/*
+**   LE features encoding - page 1
+*/
+/* LE Extended Advertising: bit 12 */
+#define HCI_LE_FEATURE_EXT_ADV_MASK       0x10
+#define HCI_LE_FEATURE_EXT_ADV_OFF        1
+#define HCI_LE_EXT_ADV_SUPPORTED(x) ((x)[HCI_LE_FEATURE_EXT_ADV_OFF] & HCI_LE_FEATURE_EXT_ADV_MASK)
 
 /*
 **   Local Supported Commands encoding
