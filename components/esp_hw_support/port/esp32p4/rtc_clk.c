@@ -205,15 +205,18 @@ static void rtc_clk_cpu_freq_to_8m(void)
  */
 static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *div)
 {
-    // CPLL -> CPU_CLK -> MEM_CLK -> SYS_CLK -> APB_CLK
-    // Constraint: MEM_CLK <= 200MHz, APB_CLK <= 100MHz
-    // This implies that when clock source is CPLL,
-    //                   If cpu_divider < 2, mem_divider must be larger or equal to 2
-    //                   If cpu_divider < 2, mem_divider = 2, sys_divider < 2, apb_divider must be larger or equal to 2
-    // Current available configurations:
-    // 360  -   360   -    180    -    180   -    90
-    // 360  -   180   -    180    -    180   -    90
-    // 360  -   90    -    90     -    90    -    90
+    /**
+     * Constraint: MEM_CLK <= 200MHz, APB_CLK <= 100MHz
+     * This implies that when clock source is CPLL,
+     *                   If cpu_divider < 2, mem_divider must be larger or equal to 2
+     *                   If cpu_divider < 2, mem_divider = 2, sys_divider < 2, apb_divider must be larger or equal to 2
+     *
+     * Current available configurations:
+     * CPLL    ->     CPU_CLK   ->     MEM_CLK   ->     SYS_CLK   ->     APB_CLK
+     * 360    div1      360    div2      180    div1      180    div2      90
+     * 360    div2      180    div1      180    div1      180    div2      90
+     * 360    div4      90     div1      90     div1      90     div1      90
+     */
     uint32_t mem_divider = 1;
     uint32_t sys_divider = 1; // We are not going to change this
     uint32_t apb_divider = 1;
@@ -237,16 +240,38 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
         // To avoid such case, we will strictly do abort here.
         abort();
     }
-    // Update bit does not control CPU clock sel mux. Therefore, there may be a middle state during the switch (CPU rises)
-    // Since this is upscaling, we need to configure the frequency division coefficient before switching the clock source.
-    // Otherwise, an intermediate state will occur, in the intermediate state, the frequency of APB/MEM does not meet the
-    // timing requirements. If there are periperals/CPU access that depend on these two clocks at this moment, some exception
-    // might occur.
-    clk_ll_cpu_set_divider(div->integer, div->numerator, div->denominator);
-    clk_ll_mem_set_divider(mem_divider);
-    clk_ll_sys_set_divider(sys_divider);
-    clk_ll_apb_set_divider(apb_divider);
-    clk_ll_bus_update();
+
+    // If it's upscaling, the divider of MEM/SYS/APB needs to be increased, to avoid illegal intermediate states,
+    // the clock divider should be updated in the order from the APB_CLK to CPU_CLK.
+    // And if it's downscaling, the divider of MEM/SYS/APB needs to be decreased, the clock divider should be updated
+    // in the order from the CPU_CLK to APB_CLK.
+    // Otherwise, an intermediate state will occur, in the intermediate state, the frequency of APB/MEM does not meet
+    // the timing requirements. If there are periperals/CPU access that depend on these two clocks at this moment, some
+    // exception might occur.
+    if (cpu_freq_mhz >= esp_rom_get_cpu_ticks_per_us()) {
+        // Frequency Upscaling
+        clk_ll_apb_set_divider(apb_divider);
+        clk_ll_bus_update();
+        clk_ll_sys_set_divider(sys_divider);
+        clk_ll_bus_update();
+        clk_ll_mem_set_divider(mem_divider);
+        clk_ll_bus_update();
+        clk_ll_cpu_set_divider(div->integer, div->numerator, div->denominator);
+        clk_ll_bus_update();
+    } else {
+        // Frequency Downscaling
+        clk_ll_cpu_set_divider(div->integer, div->numerator, div->denominator);
+        clk_ll_bus_update();
+        clk_ll_mem_set_divider(mem_divider);
+        clk_ll_bus_update();
+        clk_ll_sys_set_divider(sys_divider);
+        clk_ll_bus_update();
+        clk_ll_apb_set_divider(apb_divider);
+        clk_ll_bus_update();
+    }
+
+    // Update bit does not control CPU clock sel mux, the clock source needs to be switched at
+    // last to avoid intermediate states.
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 }
