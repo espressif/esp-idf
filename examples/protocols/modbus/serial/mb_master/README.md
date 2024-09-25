@@ -97,7 +97,7 @@ Configure the slave address for each slave in the Modbus segment (the CONFIG_MB_
 ```
   ------------------------------------------------------------------------------------------------------------------------------
   |  UART Interface       | #define            | Default pins for      | Default pins for ESP32-S2 | External RS485 Driver Pin |
-  |                       |                    | ESP32 (C6, P4)        | (S3, C3, C2, C5, H2)      |                           |
+  |                       |                    | ESP32 (C6, P4)        | (S3, C3, C2, C5, H2, C61) |                           |
   | ----------------------|--------------------|-----------------------|---------------------------|---------------------------|
   | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                     | DI                        |
   | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                     | RO                        |
