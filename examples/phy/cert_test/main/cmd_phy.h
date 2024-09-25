@@ -98,6 +98,12 @@ typedef struct {
 } phy_ble_rx_s;
 #endif
 
+typedef struct {
+    struct arg_int *gpio_number;
+    struct arg_int *gpio_level;
+    struct arg_end *end;
+} phy_gpio_output_set_t;
+
 void register_phy_cmd(void);
 
 #ifdef __cplusplus
