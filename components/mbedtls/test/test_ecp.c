@@ -27,6 +27,12 @@ which are undefined if the following flag is not defined */
 
 #include "unity.h"
 
+#ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
+#define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(var)
+#else
+#define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
+#endif
+
 /* Note: negative value here so that assert message prints a grep-able
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
@@ -43,9 +49,9 @@ TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
     mbedtls_entropy_init(&entropy);
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(&ctx.ctx.mbed_ecdh.grp, MBEDTLS_ECP_DP_CURVE25519) );
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), MBEDTLS_ECP_DP_CURVE25519) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(&ctx.ctx.mbed_ecdh.grp, &ctx.ctx.mbed_ecdh.d, &ctx.ctx.mbed_ecdh.Q,
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q),
                                                     mbedtls_ctr_drbg_random, &ctr_drbg ) );
 
     mbedtls_ecdh_free(&ctx);
