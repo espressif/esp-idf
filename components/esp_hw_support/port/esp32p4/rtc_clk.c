@@ -14,7 +14,6 @@
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_attr.h"
-#include "esp_cpu.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
@@ -183,13 +182,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div, bool to_default)
     clk_ll_mem_set_divider(mem_divider);
     clk_ll_sys_set_divider(sys_divider);
     clk_ll_apb_set_divider(apb_divider);
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    esp_cpu_stall(1 - esp_cpu_get_core_id());
-#endif
     clk_ll_bus_update();
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    esp_cpu_unstall(1 - esp_cpu_get_core_id());
-#endif
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
 }
 
@@ -201,13 +194,7 @@ static void rtc_clk_cpu_freq_to_8m(void)
     clk_ll_sys_set_divider(1);
     clk_ll_apb_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    esp_cpu_stall(1 - esp_cpu_get_core_id());
-#endif
     clk_ll_bus_update();
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    esp_cpu_unstall(1 - esp_cpu_get_core_id());
-#endif
     esp_rom_set_cpu_ticks_per_us(20);
 }
 
@@ -253,22 +240,14 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
     // Update bit does not control CPU clock sel mux. Therefore, there may be a middle state during the switch (CPU rises)
     // Since this is upscaling, we need to configure the frequency division coefficient before switching the clock source.
     // Otherwise, an intermediate state will occur, in the intermediate state, the frequency of APB/MEM does not meet the
-    // timing requirements. If there are periperals access that depend on these two clocks at this moment, some exception
+    // timing requirements. If there are periperals/CPU access that depend on these two clocks at this moment, some exception
     // might occur.
     clk_ll_cpu_set_divider(div->integer, div->numerator, div->denominator);
     clk_ll_mem_set_divider(mem_divider);
     clk_ll_sys_set_divider(sys_divider);
     clk_ll_apb_set_divider(apb_divider);
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    // During frequency switching, non-frequency switching cores may have ongoing memory accesses, which may cause access
-    // failures, stalling non-frequency switching cores here can avoid such failures.
-    esp_cpu_stall(1 - esp_cpu_get_core_id());
-#endif
     clk_ll_bus_update();
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
-#if (!defined(BOOTLOADER_BUILD) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2))
-    esp_cpu_unstall(1 - esp_cpu_get_core_id());
-#endif
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 }
 
