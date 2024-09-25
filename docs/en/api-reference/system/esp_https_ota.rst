@@ -150,6 +150,8 @@ Application Examples
 
 - :example:`system/ota/advanced_https_ota` demonstrates how to use the Advanced HTTPS OTA update functionality on {IDF_TARGET_NAME} using the `esp_https_ota` component's APIs. For the applicable SoCs, please refer to :example_file:`system/ota/advanced_https_ota/README.md`.
 
+- :example:`system/ota/partitions_ota` demonstrates how to perform OTA updates for various partitions (app, bootloader, partition table, storage) using the `esp_https_ota` component's APIs.
+
 - :example:`system/ota/simple_ota_example` demonstrates how to use the `esp_https_ota` component's APIs to support firmware upgrades through specific networking interfaces such as Ethernet or Wi-Fi Station on {IDF_TARGET_NAME}. For the applicable SoCs, please refer to :example_file:`system/ota/simple_ota_example/README.md`.
 
 API Reference
