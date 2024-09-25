@@ -714,6 +714,15 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle)
     return err;
 }
 
+int esp_https_ota_get_status_code(esp_https_ota_handle_t https_ota_handle)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *) https_ota_handle;
+    if (handle == NULL || handle->http_client == NULL) {
+        return -1;
+    }
+    return esp_http_client_get_status_code(handle->http_client);
+}
+
 int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle)
 {
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
