@@ -60,14 +60,6 @@ static const uint32_t i2s_regs_map[4] = {0x12330f, 0x0, 0x0, 0x0};
                 i2s_regs_map[0], i2s_regs_map[1], \
                 i2s_regs_map[2], i2s_regs_map[3]), \
             .owner = ENTRY(0) | ENTRY(2)}, \
-    /* Set the RX_UPDATE after the retention to make sure the RX configurations are synchronized */  \
-    [1] = { .config = REGDMA_LINK_WRITE_INIT(  \
-                REGDMA_I2S_LINK(0x01), I2S_RX_CONF_REG(i2s_port), I2S_RX_UPDATE, I2S_RX_UPDATE_M, 1, 0), \
-            .owner = ENTRY(0) | ENTRY(2)}, \
-    /* Set the TX_UPDATE after the retention to make sure the TX configurations are synchronized */  \
-    [2] = { .config = REGDMA_LINK_WRITE_INIT(  \
-                REGDMA_I2S_LINK(0x02), I2S_TX_CONF_REG(i2s_port), I2S_TX_UPDATE, I2S_TX_UPDATE_M, 1, 0), \
-            .owner = ENTRY(0) | ENTRY(2)} \
 };
 
 static const regdma_entries_config_t i2s0_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(0);
