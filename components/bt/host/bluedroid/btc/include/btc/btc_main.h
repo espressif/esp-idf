@@ -40,6 +40,7 @@ typedef enum {
     BTC_BLE_STATUS_GATTC_APP,   // GATTC application exist
     BTC_BLE_STATUS_GATTS_SRVC,  // GATTS service exist
     BTC_BLE_STATUS_PRIVACY,     // Privacy enabled
+    BTC_BLE_STATUS_ADDR_RESOLVE,// Address resolution status
 } tBTC_BLE_STATUS;
 
 future_t **btc_main_get_future_p(btc_main_future_type_t type);

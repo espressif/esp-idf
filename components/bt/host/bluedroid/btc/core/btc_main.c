@@ -141,6 +141,12 @@ uint32_t btc_get_ble_status(void)
         status |= BIT(BTC_BLE_STATUS_CONN);
     }
 
+    // Address resolve status
+    extern uint8_t btm_get_ble_addr_resolve_status(void);
+    if (btm_get_ble_addr_resolve_status()) {
+        status |= BIT(BTC_BLE_STATUS_ADDR_RESOLVE);
+    }
+
     #if (SMP_INCLUDED == TRUE)
     // Number of recorded devices
     extern uint8_t btm_ble_sec_dev_active_count(void);

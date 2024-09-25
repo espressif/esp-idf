@@ -134,10 +134,15 @@ uint8_t btm_acl_active_count(void)
 
     return count;
 }
+#if (BLE_INCLUDED == TRUE)
+// address resolution status
+uint8_t btm_get_ble_addr_resolve_status(void)
+{
+    return (uint8_t) btm_cb.addr_res_en;
+}
 
 void btm_ble_addr_resolve_enable(bool enable)
 {
-#if (BLE_INCLUDED == TRUE)
     btm_cb.addr_res_en = enable;
-#endif
 }
+#endif /*BLE_INCLUDED*/
