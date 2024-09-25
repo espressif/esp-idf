@@ -550,7 +550,6 @@ components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h
 components/wpa_supplicant/include/utils/wpabuf.h
 components/wpa_supplicant/port/include/byteswap.h
-components/wpa_supplicant/port/include/endian.h
 components/wpa_supplicant/port/include/os.h
 components/wpa_supplicant/port/os_xtensa.c
 components/wpa_supplicant/src/ap/ap_config.c
