@@ -723,7 +723,7 @@ static inline void i2c_ll_master_get_filter(i2c_dev_t *hw, uint8_t *filter_conf)
 }
 
 /**
- * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
+ * @brief reset I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
  *
  * @param  hw Beginning address of the peripheral registers
  *
@@ -743,18 +743,29 @@ static inline void i2c_ll_master_fsm_rst(i2c_dev_t *hw)
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  slave_pulses When I2C master is IDLE, the number of pulses will be sent out.
+ * @param  enable True to start the state machine, otherwise, false
  *
  * @return None
  */
-static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses)
+static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses, bool enable)
 {
     hw->scl_sp_conf.scl_rst_slv_num = slave_pulses;
-    hw->scl_sp_conf.scl_rst_slv_en = 1;
+    hw->scl_sp_conf.scl_rst_slv_en = enable;
     hw->ctr.conf_upgate = 1;
-    // hardward will clear scl_rst_slv_en after sending SCL pulses,
-    // and we should set conf_upgate bit to synchronize register value.
-    while (hw->scl_sp_conf.scl_rst_slv_en);
-    hw->ctr.conf_upgate = 1;
+    // hardware will clear scl_rst_slv_en after sending SCL pulses,
+    // and we should set conf_upgate bit to synchronize register value after this function.
+}
+
+/**
+ * @brief Get the clear bus state
+ *
+ * @param hw Beginning address of the peripheral registers
+ *
+ * @return true: the clear bus not finish, otherwise, false.
+ */
+static inline bool i2c_ll_master_is_bus_clear_done(i2c_dev_t *hw)
+{
+    return hw->scl_sp_conf.scl_rst_slv_en;
 }
 
 /**
@@ -874,8 +885,8 @@ static inline void i2c_ll_master_init(i2c_dev_t *hw)
     typeof(hw->ctr) ctrl_reg;
     ctrl_reg.val = 0;
     ctrl_reg.ms_mode = 1;
-    ctrl_reg.sda_force_out = 1;
-    ctrl_reg.scl_force_out = 1;
+    ctrl_reg.sda_force_out = 0;
+    ctrl_reg.scl_force_out = 0;
     hw->ctr.val = ctrl_reg.val;
 }
 
@@ -890,8 +901,8 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
 {
     typeof(hw->ctr) ctrl_reg;
     ctrl_reg.val = 0;
-    ctrl_reg.sda_force_out = 1;
-    ctrl_reg.scl_force_out = 1;
+    ctrl_reg.sda_force_out = 0;
+    ctrl_reg.scl_force_out = 0;
     hw->ctr.val = ctrl_reg.val;
     hw->fifo_conf.fifo_addr_cfg_en = 0;
 }
@@ -947,7 +958,8 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_hz, uint32_t timeout_us)
 {
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
-    return 31 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
+    // round up to an integer
+    return 32 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
