@@ -538,8 +538,6 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
   * :example:`ethernet/iperf` 演示了如何使用以太网功能，使用 iPerf 测量吞吐量/带宽。
 
-  * :example:`ethernet/enc28j60` 演示了如何使用 ENC28J60 以太网控制器，通过将新的以太网 MAC 驱动程序集成到 ``esp_eth`` 组件中，并将其连接到 TCP/IP 栈。
-
   * :example:`network/vlan_support` 演示了如何在以太网上创建虚拟网络接口，包括 VLAN 和非 VLAN 接口。
 
   * :example:`network/sta2eth` 演示了如何使用 Wi-Fi station 和有线接口（如以太网或 USB）创建 1 对 1 的桥接。
