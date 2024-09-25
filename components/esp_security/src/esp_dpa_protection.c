@@ -16,10 +16,12 @@ static inline void esp_crypto_dpa_set_level(esp_crypto_dpa_sec_level_t level)
     REG_SET_FIELD(HP_SYSTEM_SEC_DPA_CONF_REG, HP_SYSTEM_SEC_DPA_LEVEL, level);
 }
 
+#if CONFIG_ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
 void esp_crypto_dpa_protection_startup(void)
 {
     esp_crypto_dpa_set_level(CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL);
 }
+#endif
 
 void esp_crypto_dpa_protection_enable(esp_crypto_dpa_sec_level_t level)
 {
