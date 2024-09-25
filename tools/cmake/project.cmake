@@ -495,6 +495,24 @@ function(__project_init components_var test_components_var)
         endif()
     endforeach()
 
+    # If a minimal build is requested, set COMPONENTS to "main" only if the COMPONENTS
+    # variable is not already defined. The COMPONENTS variable takes precedence over
+    # the MINIMAL_BUILD property.
+    idf_build_get_property(minimal_build MINIMAL_BUILD)
+    if(minimal_build)
+        if(DEFINED COMPONENTS)
+            message(WARNING "The MINIMAL_BUILD property is disregarded because the COMPONENTS variable is defined.")
+            set(minimal_build OFF)
+        else()
+            set(COMPONENTS main)
+            set(minimal_build ON)
+        endif()
+    else()
+        set(minimal_build OFF)
+    endif()
+
+    message(STATUS "Minimal build - ${minimal_build}")
+
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
