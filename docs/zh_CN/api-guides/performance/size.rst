@@ -18,10 +18,6 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 使用 :ref:`idf.py` 的子命令 ``size``， ``size-components`` 和 ``size-files`` 可以输出项目使用内存概况：
 
-.. note::
-
-    添加 ``-DOUTPUT_FORMAT=csv`` 或 ``-DOUTPUT_FORMAT=json``，即可用 CSV 或 JSON 格式输出文件。
-
 数据大小概况 ``idf.py size``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
