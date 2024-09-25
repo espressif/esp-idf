@@ -384,6 +384,10 @@ static BOOLEAN btm_ble_match_random_bda(tBTM_SEC_DEV_REC *p_dev_rec)
 void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_cback, void *p)
 {
 #if (SMP_INCLUDED == TRUE)
+    if (btm_cb.addr_res_en == FALSE) {
+        return;
+    }
+
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     list_node_t         *p_node    = NULL;
     tBTM_SEC_DEV_REC *p_dev_rec    = NULL;
@@ -458,6 +462,10 @@ tBTM_SEC_DEV_REC *btm_find_dev_by_identity_addr(BD_ADDR bd_addr, UINT8 addr_type
 BOOLEAN btm_identity_addr_to_random_pseudo(BD_ADDR bd_addr, UINT8 *p_addr_type, BOOLEAN refresh)
 {
 #if BLE_PRIVACY_SPT == TRUE
+    if (btm_cb.addr_res_en == FALSE) {
+        return TRUE;
+    }
+
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev_by_identity_addr(bd_addr, *p_addr_type);
 
     BTM_TRACE_EVENT ("%s", __func__);
@@ -491,6 +499,10 @@ BOOLEAN btm_identity_addr_to_random_pseudo(BD_ADDR bd_addr, UINT8 *p_addr_type, 
 BOOLEAN btm_random_pseudo_to_identity_addr(BD_ADDR random_pseudo, UINT8 *p_static_addr_type)
 {
 #if BLE_PRIVACY_SPT == TRUE
+    if (btm_cb.addr_res_en == FALSE) {
+        return TRUE;
+    }
+
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev (random_pseudo);
 
     if (p_dev_rec != NULL) {
