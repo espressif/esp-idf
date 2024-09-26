@@ -192,17 +192,19 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
+
 Minified VFS
 ------------
 
-To minimize RAM usage, most provided filesystems use alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_minified`.
+To minimize RAM usage, an alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_minified` is provided.
 This version accepts :cpp:class:`esp_vfs_minified_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags,
 unlike :cpp:func:`esp_vfs_register` it can handle statically allocated struct, as long as the ``ESP_VFS_FLAG_STATIC`` is provided.
 
 The :cpp:class:`esp_vfs_minified_t` is split into separate structs based on features (directory operations, select support, termios support, ...).
 The main struct contains the basic functions (``read``, ``write``, ...), alongside pointers to the feature-specific structs, these pointers can be ``NULL`` indicating lack of support for all the functions provided by that struct, this decreases the required memory.
 
-This API is also available for users to use.
+Internally the vfs component uses this version of API, with additional steps to convert the :cpp:class:`esp_vfs_t` to :cpp:class:`esp_vfs_minified_t` upon registration.
+
 
 Well Known VFS Devices
 ----------------------
@@ -219,6 +221,7 @@ Application Examples
 - :example:`system/eventfd` demonstrates how to use ``eventfd()`` to collect events from tasks and ISRs in a ``select()`` based main loop, using two tasks and a timer ISR (interrupt service routine) callback.
 
 - :example:`system/select` demonstrates how to use synchronous I/O multiplexing with the ``select()`` function, using UART and socket file descriptors, and configuring both to act as loopbacks to receive messages sent from other tasks.
+
 
 API Reference
 -------------

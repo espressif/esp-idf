@@ -272,13 +272,17 @@ typedef struct {
  *                   matched by any other registered VFS.
  * @param vfs  Pointer to esp_vfs_minified_t, a structure which maps syscalls to
  *             the filesystem driver functions. VFS component does not assume ownership of this struct, but see flags for more info
- * @param flags Set of binary flags controlling how the registered FS should be treated
- *             - ESP_FLAG_VFS_STATIC - if this flag is specified VFS assumes the provided esp_vfs_minified_t is statically allocated,
- *                                     if it is not enabled a copy of the provided struct will be created, which will be managed by the VFS component
- * @param ctx  If vfs->flags has ESP_VFS_FLAG_CONTEXT_PTR set, a pointer
- *             which should be passed to VFS functions. Otherwise, NULL.
  *
- * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many VFSes are
+ * @param flags Set of binary flags controlling how the registered FS should be treated
+ *             - ESP_VFS_FLAG_STATIC - if this flag is specified VFS assumes the provided esp_vfs_minified_t and all its subcomponents are statically allocated,
+ *                                     if it is not enabled a deep copy of the provided struct will be created, which will be managed by the VFS component
+ *             - ESP_VFS_FLAG_CONTEXT_PTR - If set, the VFS will use the context-aware versions of the filesystem operation functions (suffixed with `_p`) in `esp_vfs_fs_ops_t` and its subcomponents.
+ *                                          The `ctx` parameter will be passed as the context argument when these functions are invoked.
+ *
+ * @param ctx  Context pointer for fs operation functions, see the ESP_VFS_FLAG_CONTEXT_PTR.
+ *             Should be `NULL` if not used.
+ *
+ * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many FSes are
  *          registered.
  */
 esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minified_t* vfs, int flags, void* ctx);
@@ -287,7 +291,7 @@ esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minifie
  * Analog of esp_vfs_register_with_id which accepts esp_vfs_minified_t instead.
  *
  */
-esp_err_t esp_vfs_register_minified_with_id(const esp_vfs_minified_t* vfs, int flags, void* ctx, int* id);
+esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_minified_t* vfs, int flags, void* ctx, esp_vfs_id_t* id);
 
 /**
  * Alias for esp_vfs_unregister for naming consistency

@@ -486,6 +486,21 @@ ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset);
  */
 void esp_vfs_dump_fds(FILE *fp);
 
+/**
+ * @brief Dump all registered FSs to the provided FILE*
+ *
+ * Dump the FSs in the format:
+ @verbatim
+        <index>:<VFS Path Prefix> -> <VFS entry ptr>
+
+    where:
+        index           : internal index in the table of registered FSs (the same as returned when registering fd with id)
+        VFS Path Prefix : file prefix used in the esp_vfs_register call or "NULL"
+        VFS entry ptr   : pointer to the esp_vfs_minified_t struct used internally when resolving the calls
+ @endverbatim
+ *
+ * @param fp File descriptor where data will be dumped
+ */
 void esp_vfs_dump_registered_paths(FILE *fp);
 
 #ifdef __cplusplus
