@@ -1052,10 +1052,22 @@ int esp_vfs_ioctl(int fd, int cmd, ...)
         __errno_r(r) = EBADF;
         return -1;
     }
-    int ret;
+
     va_list args;
     va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
+    if (vfs->vfs->ioctl == NULL) {
+        __errno_r(r) = ENOSYS;
+        va_end(args);
+        return -1;
+    }
+
+    int ret;
+    if (vfs->flags & ESP_VFS_FLAG_CONTEXT_PTR) {
+        ret = (*vfs->vfs->ioctl_p)(vfs->ctx, local_fd, cmd, args);
+    } else {
+        ret = (*vfs->vfs->ioctl)(local_fd, cmd, args);
+    }
+
     va_end(args);
     return ret;
 }
