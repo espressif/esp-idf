@@ -23,7 +23,7 @@ static const char *TAG = "i2s_multi_dev_test";
 
 #define TEST_I2S_FRAME_SIZE             (128)       // Frame numbers in every writing / reading
 #define TEST_I2S_ARRAY_LENGTH           (1024)      // The loop data length for verification
-#define TEST_I2S_MAX_DATA               (256)       // The maximum data value in the data buffer
+#define TEST_I2S_MAX_DATA               (128)       // The maximum data value in the data buffer
 #define TEST_I2S_MAX_FAIL_CNT           (3)         // Max broken packet count
 #define TEST_I2S_FRAME_TIMEOUT_SEC      (10.0f)     // Timeout seconds of waiting for a correct frame
 
