@@ -71,10 +71,6 @@
 #include "soc/hp_sys_clkrst_reg.h"
 #endif
 
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
-#include "hal/key_mgr_ll.h"
-#endif
-
 #include "esp_private/rtc_clk.h"
 
 #if SOC_INT_CLIC_SUPPORTED
@@ -318,22 +314,6 @@ static void start_other_core(void)
         REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
     }
 #endif
-
-    // The following operation makes the Key Manager to use eFuse key for ECDSA and XTS-AES operation by default
-    // This is to keep the default behavior same as the other chips
-    // If the Key Manager configuration is already locked then following operation does not have any effect
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
-    // Enable key manager clock
-    // Using ll APIs which do not require critical section
-    _key_mgr_ll_enable_bus_clock(true);
-    _key_mgr_ll_enable_peripheral_clock(true);
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-#endif
-#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-#endif
-#endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
