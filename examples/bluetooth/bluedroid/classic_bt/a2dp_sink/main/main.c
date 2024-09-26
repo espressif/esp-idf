@@ -119,7 +119,8 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
     /* when GAP mode changed, this event comes */
     case ESP_BT_GAP_MODE_CHG_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d", param->mode_chg.mode);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d, interval: %.2f ms",
+                 param->mode_chg.mode, param->mode_chg.interval * 0.625);
         break;
     /* when ACL connection completed, this event comes */
     case ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT:
