@@ -1,0 +1,46 @@
+name: "Espressif IoT Development Framework (ESP-IDF) on push"
+on:
+  push:
+    branches: master
+
+    inputs:
+      path:
+        description: "Relative path under $GITHUB_WORKSPACE to place the repository"
+        default: "examples/get-started/hello_world"
+        required: false
+      esp_idf_version:
+        description: "Version of ESP-IDF docker image to use"
+        default: "latest"
+        required: false
+      target:
+        description: "ESP32 variant to build for"
+        default: "esp32c3"
+        required: false
+      command:
+        description: "Command to run inside the docker container (default: builds the project)"
+        default: "idf.py build"
+        required: false
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: esp-idf build
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.3
+        target: esp32c3
+        path: 'examples/get-started/hello_world'
+    - name: Download built firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: hello_world.bin
+        path: |
+          examples/get-started/hello_world/build/hello_world.bin
