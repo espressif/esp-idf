@@ -11,9 +11,11 @@ This is a pretty simple example, aiming to introduce
 2. How to configure advertisement and scan response data
 3. How to start advertising as a non-connectable beacon
 
-It uses ESP32's Bluetooth controller and NimBLE host stack.
 
-To test this demo, any BLE scanner application can be used.
+To test this demo, install *nRF Connect for Mobile* on your phone. 
+
+Please refer to [BLE Device Discovery](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-device-discovery.html#:~:text=%E4%BE%8B%E7%A8%8B%E5%AE%9E%E8%B7%B5)
+for detailed example introduction and code explanation.
 
 ## Try It Yourself
 
