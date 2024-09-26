@@ -142,9 +142,9 @@ uint32_t btc_get_ble_status(void)
     }
 
     // Address resolve status
-    extern uint8_t btm_get_ble_addr_resolve_status(void);
-    if (btm_get_ble_addr_resolve_status()) {
-        status |= BIT(BTC_BLE_STATUS_ADDR_RESOLVE);
+    extern uint8_t btm_get_ble_addr_resolve_disable_status(void);
+    if (btm_get_ble_addr_resolve_disable_status()) {
+        status |= BIT(BTC_BLE_STATUS_ADDR_RESOLVE_DISABLE);
     }
 
     #if (SMP_INCLUDED == TRUE)
