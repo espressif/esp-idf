@@ -74,7 +74,7 @@ mbedtls_sha512_clone = 0x40002a50;
 mbedtls_sha512_starts = 0x40002a54;
 mbedtls_sha512_update = 0x40002a58;
 mbedtls_sha512_finish = 0x40002a5c;
-mbedtls_internal_sha512_process = 0x40002a60;
+/*mbedtls_internal_sha512_process = 0x40002a60;*/
 mbedtls_sha512 = 0x40002a64;
 mbedtls_aes_xts_init = 0x40002b68;
 mbedtls_aes_xts_free = 0x40002b6c;
@@ -95,7 +95,7 @@ mbedtls_md5_clone = 0x40002be0;
 mbedtls_md5_starts = 0x40002be4;
 mbedtls_md5_update = 0x40002be8;
 mbedtls_md5_finish = 0x40002bec;
-mbedtls_internal_md5_process = 0x40002bf0;
+/*mbedtls_internal_md5_process = 0x40002bf0;*/
 mbedtls_md5 = 0x40002bf4;
 mbedtls_sha1 = 0x40002c08;
 /* Data (.data, .bss, .rodata) */

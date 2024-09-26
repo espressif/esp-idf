@@ -1142,17 +1142,21 @@ menu "mbedTLS"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C
         select MBEDTLS_CCM_C
+        select MBEDTLS_CMAC_C
         select MBEDTLS_ROM_MD5
         select MBEDTLS_HARDWARE_SHA
+        select MBEDTLS_ECP_RESTARTABLE
+        select MBEDTLS_THREADING_C
         help
             Enable this flag to use mbedtls crypto algorithm from ROM instead of ESP-IDF.
 
             This configuration option saves flash footprint in the application binary.
-            Note that the version of mbedtls crypto algorithm library in ROM is v2.16.12.
-            We have done the security analysis of the mbedtls revision in ROM (v2.16.12)
+            Note that the version of mbedtls crypto algorithm library in ROM(ECO1~ECO3) is v2.16.12,
+            and the version of mbedtls crypto algorithm library in ROM(ECO4) is v3.6.0.
+            We have done the security analysis of the mbedtls revision in ROM (ECO1~ECO4)
             and ensured that affected symbols have been patched (removed). If in the future
             mbedtls revisions there are security issues that also affects the version in
-            ROM (v2.16.12) then we shall patch the relevant symbols. This would increase
+            ROM (ECO1~ECO4) then we shall patch the relevant symbols. This would increase
             the flash footprint and hence care must be taken to keep some reserved space
             for the application binary in flash layout.
 
