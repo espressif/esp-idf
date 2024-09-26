@@ -978,9 +978,9 @@ Power Management
 
 When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the PLL and APB frequency before going into Light-sleep, thus potentially changing the period of an MCPWM timers' counting step and leading to inaccurate time-keeping.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates an MCPWM timer instance that has selected :cpp:enumerator:`MCPWM_TIMER_CLK_SRC_PLL160M` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
+However, the driver can prevent the system from going into Light-sleep by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP`. Whenever the driver creates an MCPWM timer instance that has selected PLL as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
 
-Likewise, whenever the driver creates an MCPWM capture timer instance that has selected :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
+Likewise, whenever the driver creates an MCPWM capture timer instance, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
 
 
 .. _mcpwm-iram-safe:
