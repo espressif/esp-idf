@@ -263,6 +263,10 @@ config SOC_LP_ADC_SUPPORTED
     bool
     default y
 
+config SOC_LP_VAD_SUPPORTED
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -1763,6 +1767,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
+config SOC_LP_I2S_SUPPORT_VAD
+    bool
+    default y
+
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -1960,5 +1968,9 @@ config SOC_LP_CORE_SUPPORT_ETM
     default y
 
 config SOC_LP_CORE_SUPPORT_LP_ADC
+    bool
+    default y
+
+config SOC_LP_CORE_SUPPORT_LP_VAD
     bool
     default y

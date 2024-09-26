@@ -126,6 +126,7 @@ function(ulp_apply_default_sources ulp_app_name)
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_spi.c"
         "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_ubsan.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_adc_shared.c"
+        "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_vad_shared.c"
         "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
         set(target_folder ${IDF_TARGET})

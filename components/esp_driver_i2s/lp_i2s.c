@@ -25,6 +25,7 @@
 #include "driver/lp_i2s.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/i2s_platform.h"
+#include "esp_private/lp_i2s_private.h"
 #include "i2s_private.h"
 #include "soc/i2s_periph.h"
 
@@ -328,4 +329,16 @@ static void IRAM_ATTR s_i2s_default_isr(void *arg)
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
+}
+
+/*---------------------------------------------------------------
+                      HELPERS
+---------------------------------------------------------------*/
+lp_i2s_soc_handle_t lp_i2s_get_soc_handle(lp_i2s_chan_handle_t chan)
+{
+    if (!chan) {
+        return NULL;
+    }
+
+    return chan->ctlr->hal.dev;
 }

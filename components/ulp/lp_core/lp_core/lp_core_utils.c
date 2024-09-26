@@ -14,6 +14,10 @@
 #include "hal/pmu_ll.h"
 #include "hal/uart_ll.h"
 #include "hal/rtc_io_ll.h"
+#if SOC_LP_I2S_SUPPORT_VAD
+//For VAD
+#include "hal/lp_i2s_ll.h"
+#endif
 
 #if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_ll.h"
@@ -55,6 +59,13 @@ void ulp_lp_core_update_wakeup_cause(void)
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_IO;
         rtcio_ll_clear_interrupt_status();
     }
+
+#if SOC_LP_VAD_SUPPORTED
+    if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_VAD)) {
+        lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_VAD;
+        lp_i2s_ll_rx_clear_interrupt_status(&LP_I2S, LP_I2S_LL_EVENT_VAD_DONE_INT);
+    }
+#endif
 
 #if SOC_ETM_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
