@@ -129,7 +129,9 @@ examples/peripherals/i2s/i2s_recorder:
 
 examples/peripherals/isp/multi_pipelines:
   disable:
-    - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1 or SOC_ISP_SUPPORTED != 1
+    - if: SOC_MIPI_CSI_SUPPORTED != 1
+    - if: SOC_MIPI_DSI_SUPPORTED != 1
+    - if: SOC_ISP_SUPPORTED != 1
   depends_components:
     - esp_driver_isp
     - esp_driver_cam
