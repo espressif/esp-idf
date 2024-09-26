@@ -12,4 +12,4 @@
    idf-clang-tidy
    idf-tools
    idf-size
-   :esp32 or esp32c3: qemu
+   :TARGET_SUPPORT_QEMU: qemu

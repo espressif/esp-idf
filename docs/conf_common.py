@@ -218,7 +218,7 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/peripherals/touch_pad.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst',
-                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
+                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS + QEMU_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
@@ -379,6 +379,9 @@ html_static_path = ['../_static']
 
 idf_build_system = {'doxygen_component_info': True, 'component_info_ignore_file': Path(os.environ['IDF_PATH']) / 'docs' / 'component_info_ignore_file.txt'}
 
+# Please update following list to enable Qemu doc guide (and cross references) for a new target
+QEMU_TARGETS = ['esp32', 'esp32c3', 'esp32s3']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
@@ -386,6 +389,10 @@ def conf_setup(app, config):
     config.add_warnings_content = 'This document is not updated for {} yet, so some of the content may not be correct.'.format(config.idf_target.upper())
 
     add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+
+    if config.idf_target in QEMU_TARGETS:
+        app.tags.add('TARGET_SUPPORT_QEMU')
+
     try:
         with open(add_warnings_file) as warning_file:
             config.add_warnings_pages = warning_file.read().splitlines()
