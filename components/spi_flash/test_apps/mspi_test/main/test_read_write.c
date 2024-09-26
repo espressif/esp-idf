@@ -342,12 +342,12 @@ TEST_CASE("esp_flash_write can write from external RAM buffer", "[spi_flash]")
 
     /* Write to flash from buf_ext */
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
-    TEST_ESP_OK(esp_flash_write(NULL, buf_ext, part->address, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), part->erase_size));
+    TEST_ESP_OK(esp_flash_write(NULL, buf_ext, part->address, part->erase_size));
 
     /* Read back to buf_int and compare */
-    TEST_ESP_OK(esp_flash_read(NULL, buf_int, part->address, SPI_FLASH_SEC_SIZE));
-    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_int, part->address, part->erase_size));
+    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, part->erase_size));
 
     free(buf_ext);
     free(buf_int);
@@ -367,7 +367,7 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
     }
 
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), part->erase_size));
     TEST_ESP_OK(esp_flash_write(NULL, data_8, part->address, MIN_BLOCK_SIZE));
     TEST_ESP_OK(esp_flash_read(NULL, buf_ext_8, part->address, MIN_BLOCK_SIZE));
     TEST_ESP_OK(esp_flash_read(NULL, buf_int_8, part->address, MIN_BLOCK_SIZE));

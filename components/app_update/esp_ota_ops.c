@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,7 +80,7 @@ static const esp_partition_t *read_otadata(esp_ota_select_entry_t *two_otadata)
         return NULL;
     } else {
         memcpy(&two_otadata[0], result, sizeof(esp_ota_select_entry_t));
-        memcpy(&two_otadata[1], result + SPI_FLASH_SEC_SIZE, sizeof(esp_ota_select_entry_t));
+        memcpy(&two_otadata[1], result + otadata_partition->erase_size, sizeof(esp_ota_select_entry_t));
         esp_partition_munmap(ota_data_map);
     }
     return otadata_partition;
@@ -149,7 +149,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
             ret = esp_partition_erase_range(partition, 0, partition->size);
         } else {
-            const int aligned_erase_size = (image_size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1);
+            const int aligned_erase_size = (image_size + partition->erase_size - 1) & ~(partition->erase_size - 1);
             ret = esp_partition_erase_range(partition, 0, aligned_erase_size);
         }
         if (ret != ESP_OK) {
@@ -192,14 +192,14 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
         if (it->handle == handle) {
             if (it->need_erase) {
                 // must erase the partition before writing to it
-                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE; // first affected sector
-                uint32_t last_sector = (it->wrote_size + size - 1) / SPI_FLASH_SEC_SIZE; // last affected sector
+                uint32_t first_sector = it->wrote_size / it->part->erase_size; // first affected sector
+                uint32_t last_sector = (it->wrote_size + size - 1) / it->part->erase_size; // last affected sector
 
                 ret = ESP_OK;
-                if ((it->wrote_size % SPI_FLASH_SEC_SIZE) == 0) {
-                    ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * SPI_FLASH_SEC_SIZE);
+                if ((it->wrote_size % it->part->erase_size) == 0) {
+                    ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * it->part->erase_size);
                 } else if (first_sector != last_sector) {
-                    ret = esp_partition_erase_range(it->part, (first_sector + 1) * SPI_FLASH_SEC_SIZE, (last_sector - first_sector) * SPI_FLASH_SEC_SIZE);
+                    ret = esp_partition_erase_range(it->part, (first_sector + 1) * it->part->erase_size, (last_sector - first_sector) * it->part->erase_size);
                 }
                 if (ret != ESP_OK) {
                     return ret;
@@ -369,11 +369,11 @@ static esp_err_t rewrite_ota_seq(esp_ota_select_entry_t *two_otadata, uint32_t s
 
     two_otadata[sec_id].ota_seq = seq;
     two_otadata[sec_id].crc = bootloader_common_ota_select_crc(&two_otadata[sec_id]);
-    esp_err_t ret = esp_partition_erase_range(ota_data_partition, sec_id * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+    esp_err_t ret = esp_partition_erase_range(ota_data_partition, sec_id * ota_data_partition->erase_size, ota_data_partition->erase_size);
     if (ret != ESP_OK) {
         return ret;
     } else {
-        return esp_partition_write(ota_data_partition, SPI_FLASH_SEC_SIZE * sec_id, &two_otadata[sec_id], sizeof(esp_ota_select_entry_t));
+        return esp_partition_write(ota_data_partition, ota_data_partition->erase_size * sec_id, &two_otadata[sec_id], sizeof(esp_ota_select_entry_t));
     }
 }
 
@@ -906,7 +906,7 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
     }
 
     int sec_id = inactive_otadata;
-    err = esp_partition_erase_range(ota_data_partition, sec_id * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+    err = esp_partition_erase_range(ota_data_partition, sec_id * ota_data_partition->erase_size, ota_data_partition->erase_size);
     if (err != ESP_OK) {
         return err;
     }

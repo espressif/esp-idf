@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include <sys/param.h>
 
 #include "unity.h"
-#include "spi_flash_mmap.h"
 #include "esp_log.h"
 #include "esp_rom_spiflash.h"
 #include "esp_private/cache_utils.h"
@@ -63,14 +62,14 @@ TEST_CASE("Test flash write large RAM buffer", "[spi_flash][esp_flash]")
 static void test_write_large_buffer(const uint8_t *source, size_t length)
 {
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ASSERT(part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(part->size > length + 2 + part->erase_size);
 
     printf("Writing %d bytes from source %p\n", length, source);
 
     uint8_t *buf = malloc(length);
     TEST_ASSERT_NOT_NULL(buf);
 
-    TEST_ESP_OK( esp_flash_erase_region(NULL, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE-1)) );
+    TEST_ESP_OK( esp_flash_erase_region(NULL, part->address, (length + part->erase_size) & ~(part->erase_size-1)) );
 
     // note writing to unaligned address
     TEST_ESP_OK( esp_flash_write(NULL, source, part->address + 1, length) );

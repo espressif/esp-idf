@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,10 +44,11 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
 {
     nvs_handle_t handle;
 
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
     esp_partition_t esp_part;
     esp_part.encrypted = false; // we're not testing generic flash encryption here, only the legacy NVS encryption
     esp_part.address = 0;
-    esp_part.size = size * SPI_FLASH_SEC_SIZE;
+    esp_part.size = size * sec_size;
     strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
     unique_ptr<nvs::Partition> part;
 
@@ -136,10 +137,11 @@ static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
 {
     nvs_handle_t handle;
 
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
     esp_partition_t esp_part;
     esp_part.encrypted = false; // we're not testing generic flash encryption here, only the legacy NVS encryption
     esp_part.address = 0;
-    esp_part.size = size * SPI_FLASH_SEC_SIZE;
+    esp_part.size = size * sec_size;
     strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
     unique_ptr<nvs::Partition> part;
 

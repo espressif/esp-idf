@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "spi_flash_emulation.h"
 #include "nvs_test_api.h"
 #include "test_fixtures.hpp"
+#include "esp_partition.h"
 
 /*
 TEST_CASE("Partition manager initializes multiple partitions", "[partition_mgr]")
@@ -19,8 +20,9 @@ TEST_CASE("Partition manager initializes multiple partitions", "[partition_mgr]"
     const uint32_t NVS_FLASH_SECTOR = 6;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
     SpiFlashEmulator emu(10);
-    PartitionEmulation part_0(&emu, NVS_FLASH_SECTOR * SPI_FLASH_SEC_SIZE, NVS_FLASH_SECTOR_COUNT_MIN * SPI_FLASH_SEC_SIZE, "test1");
-    PartitionEmulation part_1(&emu, NVS_FLASH_SECTOR * SPI_FLASH_SEC_SIZE, NVS_FLASH_SECTOR_COUNT_MIN * SPI_FLASH_SEC_SIZE, "test2");
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    PartitionEmulation part_0(&emu, NVS_FLASH_SECTOR * sec_size, NVS_FLASH_SECTOR_COUNT_MIN * sec_size, "test1");
+    PartitionEmulation part_1(&emu, NVS_FLASH_SECTOR * sec_size, NVS_FLASH_SECTOR_COUNT_MIN * sec_size, "test2");
 
     REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&part_0, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);

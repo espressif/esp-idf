@@ -9,7 +9,8 @@ idf_component_register(SRCS "test_nvs.cpp"
                             "../../../private_include"
                             "../../../../mbedtls/mbedtls/include"
                        WHOLE_ARCHIVE
-                       REQUIRES nvs_flash)
+                       REQUIRES nvs_flash
+                       PRIV_REQUIRES spi_flash)
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++20)

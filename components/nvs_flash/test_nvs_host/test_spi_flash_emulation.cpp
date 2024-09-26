@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "catch.hpp"
-#include "spi_flash_mmap.h"
 #include "esp_partition.h"
 #include "spi_flash_emulation.h"
+#include "spi_flash_mmap.h"
 #include <functional>
 
 template <typename Tit>
@@ -26,7 +26,8 @@ TEST_CASE("flash starts with all bytes == 0xff", "[spi_flash_emu]")
 {
     FlashEmuFixture f(4);
 
-    uint8_t sector[SPI_FLASH_SEC_SIZE];
+    uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    uint8_t sector[sec_size];
 
     for (int i = 0; i < 4; ++i) {
         CHECK(esp_partition_read(&f.esp_part, 0, sector, sizeof(sector)) == ESP_OK);
@@ -71,7 +72,8 @@ TEST_CASE("after erase the sector is set to 0xff", "[spi_flash_emu]")
     CHECK(range_empty_n(f.emu.words() + 1, 4096 / 4 - 2));
     CHECK(f.emu.words()[4096 / 4 - 1] == val2);
 
-    CHECK(esp_partition_erase_range(&f.esp_part, 0, SPI_FLASH_SEC_SIZE) == ESP_OK);
+    uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    CHECK(esp_partition_erase_range(&f.esp_part, 0, sec_size) == ESP_OK);
 
     CHECK(f.emu.words()[0] == 0xffffffff);
     CHECK(range_empty_n(f.emu.words() + 1, 4096 / 4 - 2));
@@ -158,7 +160,8 @@ TEST_CASE("read/write/erase operation times are calculated correctly", "[spi_fla
     CHECK(f.emu.getTotalTime() == (205+417)/2);
     f.emu.clearStats();
 
-    esp_partition_erase_range(&f.esp_part, 0, SPI_FLASH_SEC_SIZE);
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    esp_partition_erase_range(&f.esp_part, 0, sec_size);
     CHECK(f.emu.getEraseOps() == 1);
     CHECK(f.emu.getTotalTime() == 37142);
 }

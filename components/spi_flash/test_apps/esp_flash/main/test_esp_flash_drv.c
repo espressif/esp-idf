@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,7 +15,6 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
 #include "memspi_host_driver.h"
-#include "spi_flash_mmap.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 #include "test_utils.h"
@@ -24,12 +23,12 @@
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
+#include "esp_spi_flash_counters.h"
 #include "esp_partition.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "test_esp_flash_def.h"
-#include "spi_flash_mmap.h"
 #include "esp_private/spi_flash_os.h"
 #include "ccomp_timer.h"
 
@@ -656,7 +655,7 @@ void test_permutations_chip(const flashtest_config_t* config)
     // Get test partition, and locate temporary partitions according to the default one
     const esp_partition_t* test_part = get_test_data_partition();
     const int length = sizeof(large_const_buffer);
-    TEST_ASSERT(test_part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(test_part->size > length + 2 + test_part->erase_size);
 
     esp_partition_t part[2] = {};
     part[0] = *test_part;
@@ -738,7 +737,7 @@ static void write_large_buffer(const esp_partition_t *part, const uint8_t *sourc
     esp_flash_t* chip = part->flash_chip;
 
     printf("Writing chip %p %p, %u bytes from source %p\n", chip, (void*)part->address, length, source);
-    ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE - 1)) );
+    ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + part->erase_size) & ~(part->erase_size - 1)) );
 
     // note writing to unaligned address
     ESP_ERROR_CHECK( esp_flash_write(chip, source, part->address + 1, length) );
@@ -771,7 +770,7 @@ static void read_and_check(const esp_partition_t *part, const uint8_t *source, s
 
 static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *source, size_t length)
 {
-    TEST_ASSERT(part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(part->size > length + 2 + part->erase_size);
 
     write_large_buffer(part, source, length);
     read_and_check(part, source, length);
@@ -804,7 +803,7 @@ static uint32_t time_measure_end(time_meas_ctx_t* ctx)
 
 static uint32_t measure_erase(const esp_partition_t* part)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE * TEST_SECTORS;
+    const int total_len = part->erase_size * TEST_SECTORS;
     time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
 
     time_measure_start(&time_ctx);
@@ -816,7 +815,7 @@ static uint32_t measure_erase(const esp_partition_t* part)
 // should called after measure_erase
 static uint32_t measure_write(const char* name, const esp_partition_t* part, const uint8_t* data_to_write, int seg_len)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
 
     time_measure_start(&time_ctx);
@@ -839,7 +838,7 @@ static uint32_t measure_write(const char* name, const esp_partition_t* part, con
 
 static uint32_t measure_read(const char* name, const esp_partition_t* part, uint8_t* data_read, int seg_len)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
 
     time_measure_start(&time_ctx);
@@ -896,7 +895,7 @@ static const char* get_chip_vendor(uint32_t id)
 static void test_flash_read_write_performance(const esp_partition_t *part)
 {
     esp_flash_t* chip = part->flash_chip;
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 

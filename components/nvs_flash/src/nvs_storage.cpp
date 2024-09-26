@@ -21,6 +21,7 @@
 #endif // !ESP_PLATFORM
 
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
 #define TAG "nvs_storage"
 
 #if defined(SEGGER_H) && defined(GLOBAL_H)

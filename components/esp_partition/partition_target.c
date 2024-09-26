@@ -233,3 +233,8 @@ bool esp_partition_main_flash_region_safe(size_t addr, size_t size)
     }
     return true;
 }
+
+uint32_t esp_partition_get_main_flash_sector_size(void)
+{
+    return SPI_FLASH_SEC_SIZE;
+}

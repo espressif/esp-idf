@@ -24,6 +24,7 @@ SOURCE_FILES = \
 	test_nvs.cpp \
 	test_nvs_partition.cpp \
 	test_partition_manager.cpp \
+	test_partition_linux.cpp \
 	main.cpp
 
 SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c esp_err_check_mock.c

@@ -12,7 +12,6 @@
 #include <type_traits>
 #include <cstring>
 #include <algorithm>
-#include "spi_flash_mmap.h"
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
@@ -34,7 +33,7 @@ public:
     static const uint32_t ESB_WRITTEN = 0x1;
     static const uint32_t ESB_ERASED = 0x2;
 
-    static const uint32_t SEC_SIZE = SPI_FLASH_SEC_SIZE;
+    static const uint32_t SEC_SIZE;
 
     static const size_t ENTRY_SIZE  = 32;
     static const size_t ENTRY_COUNT = 126;

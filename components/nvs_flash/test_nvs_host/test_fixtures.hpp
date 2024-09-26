@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_partition.hpp"
 #include "nvs_encrypted_partition.hpp"
 #include "spi_flash_emulation.h"
+#include "spi_flash_mmap.h"
 #include "nvs.h"
 
 class PartitionEmulation : public nvs::Partition {
@@ -65,16 +66,17 @@ public:
 
     esp_err_t erase_range(size_t dst_offset, size_t size) override
     {
-        if (size % SPI_FLASH_SEC_SIZE != 0) {
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        if (size % sec_size != 0) {
             return ESP_ERR_INVALID_SIZE;
         }
 
-        if (dst_offset % SPI_FLASH_SEC_SIZE != 0) {
+        if (dst_offset % sec_size != 0) {
             return ESP_ERR_INVALID_ARG;
         }
 
-        size_t start_sector = dst_offset / SPI_FLASH_SEC_SIZE;
-        size_t num_sectors = size / SPI_FLASH_SEC_SIZE;
+        size_t start_sector = dst_offset / sec_size;
+        size_t num_sectors = size / sec_size;
         for (size_t sector = start_sector; sector < (start_sector + num_sectors); sector++) {
             if (!flash_emu->erase(sector)) {
                 return ESP_ERR_FLASH_OP_FAIL;
@@ -116,7 +118,7 @@ struct PartitionEmulationFixture {
             uint32_t sector_size = 1,
             const char *partition_name = NVS_DEFAULT_PART_NAME)
         : emu(start_sector + sector_size),
-          part(&emu, start_sector * SPI_FLASH_SEC_SIZE, sector_size * SPI_FLASH_SEC_SIZE, partition_name) {
+          part(&emu, start_sector * esp_partition_get_main_flash_sector_size(), sector_size * esp_partition_get_main_flash_sector_size(), partition_name) {
     }
 
     ~PartitionEmulationFixture() { }
@@ -133,8 +135,9 @@ struct EncryptedPartitionFixture {
             const char *partition_name = NVS_DEFAULT_PART_NAME)
         : esp_partition(), emu(start_sector + sector_size),
           part(&esp_partition) {
-        esp_partition.address = start_sector * SPI_FLASH_SEC_SIZE;
-        esp_partition.size = sector_size * SPI_FLASH_SEC_SIZE;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        esp_partition.address = start_sector * sec_size;
+        esp_partition.size = sector_size * sec_size;
         strncpy(esp_partition.label, partition_name, PART_NAME_MAX_SIZE);
         assert(part.init(cfg) == ESP_OK);
     }

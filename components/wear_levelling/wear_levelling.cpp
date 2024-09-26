@@ -81,8 +81,8 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
 
     cfg.wl_partition_start_addr   = WL_DEFAULT_START_ADDR;
     cfg.wl_partition_size         = partition->size;
-    cfg.wl_page_size              = SPI_FLASH_SEC_SIZE;
-    cfg.flash_sector_size         = SPI_FLASH_SEC_SIZE;     //default size is 4096
+    cfg.wl_page_size              = partition->erase_size;
+    cfg.flash_sector_size         = partition->erase_size;     //default size is 4096
     cfg.wl_update_rate            = WL_DEFAULT_UPDATERATE;
     cfg.wl_pos_update_record_size = WL_DEFAULT_WRITE_SIZE;  //16 bytes per pos update will be stored
     cfg.version                   = WL_CURRENT_VERSION;
