@@ -27,6 +27,7 @@ TARGETS_TESTED = [
 CONFIGS = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_TESTED),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_TESTED),
+    pytest.param('coredump_flash_elf_soft_sha', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_TESTED),
     pytest.param('gdbstub', marks=TARGETS_TESTED),
