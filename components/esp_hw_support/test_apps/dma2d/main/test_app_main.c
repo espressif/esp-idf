@@ -7,6 +7,7 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 #include "unity_test_utils.h"
 
 // Some resources are lazy allocated in the driver, the threshold is left for that case

@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include "sdkconfig.h"
 #include "driver/ppa.h"
 #include "freertos/FreeRTOS.h"

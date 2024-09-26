@@ -27,17 +27,17 @@
 // Token signifying that no character is available
 #define NONE -1
 
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_LF
 #endif
 
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
@@ -226,6 +226,8 @@ static int uart_rx_char_via_driver(int fd)
 static ssize_t uart_write(int fd, const void * data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
+    tx_func_t tx_func = s_ctx[fd]->tx_func;
+    esp_line_endings_t tx_mode = s_ctx[fd]->tx_mode;
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
@@ -234,13 +236,13 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
-        if (c == '\n' && s_ctx[fd]->tx_mode != ESP_LINE_ENDINGS_LF) {
-            s_ctx[fd]->tx_func(fd, '\r');
-            if (s_ctx[fd]->tx_mode == ESP_LINE_ENDINGS_CR) {
+        if (c == '\n' && tx_mode != ESP_LINE_ENDINGS_LF) {
+            tx_func(fd, '\r');
+            if (tx_mode == ESP_LINE_ENDINGS_CR) {
                 continue;
             }
         }
-        s_ctx[fd]->tx_func(fd, c);
+        tx_func(fd, c);
     }
     _lock_release_recursive(&s_ctx[fd]->write_lock);
     return size;

@@ -81,12 +81,16 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
 #endif  /* CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT */
 }
 
+#if CONFIG_LIBC_NEWLIB
 void __attribute__((noreturn)) __assert(const char *file, int line, const char *failedexpr)
+#else
+void __attribute__((noreturn)) __assert(const char *file, const char *failedexpr, int line)
+#endif
 {
     __assert_func(file, line, NULL, failedexpr);
 }
 
 /* No-op function, used to force linker to include these changes */
-void newlib_include_assert_impl(void)
+void esp_libc_include_assert_impl(void)
 {
 }

@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <assert.h>
 #include "test_mbedtls_utils.h"
 
 static inline char to_hex_digit(unsigned val)

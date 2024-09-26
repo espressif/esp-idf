@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <sys/lock.h>
 #include "esp_phy_init.h"
 
 #ifdef __cplusplus

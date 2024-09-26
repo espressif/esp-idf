@@ -1,0 +1,162 @@
+# If the Picolibc functions in ROM aren't used (eg because the external SPI RAM workaround is active), these functions will
+# be linked into the application directly instead. Normally, they would end up in flash, which is undesirable because esp-idf
+# and/or applications may assume that because these functions normally are in ROM, they are accessible even when flash is
+# inaccessible. To work around this, this ld fragment places these functions in RAM instead. If the ROM functions are used,
+# these defines do nothing, so they can still be included in that situation.
+
+[mapping:libc]
+archive:
+    libc.a
+entries:
+  if SPIRAM_CACHE_WORKAROUND = y:
+    # The following libs are either used in a lot of places or in critical code. (such as panic or abort)
+    # Thus, they shall always be placed in IRAM.
+    libc_stdlib_itoa (noflash)
+    libc_string_memcmp (noflash)
+    libc_machine_xtensa_memcpy (noflash)
+    libc_machine_xtensa_memset (noflash)
+    libc_string_strcat (noflash)
+    libc_machine_xtensa_strcmp (noflash)
+    libc_machine_xtensa_strlen (noflash)
+
+    if SPIRAM_CACHE_LIBJMP_IN_IRAM = y:
+        libc_machine_xtensa_longjmp (noflash)
+        libc_machine_xtensa_setjmp (noflash)
+
+    if SPIRAM_CACHE_LIBMATH_IN_IRAM = y:
+        libc_stdlib_abs (noflash)
+        libc_stdlib_div (noflash)
+        libc_stdlib_labs (noflash)
+        libc_stdlib_ldiv (noflash)
+        libm_common_quorem (noflash)
+        libm_common_s_fpclassify (noflash)
+        libm_common_sf_nan (noflash)
+
+    if SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM = y:
+        libc_stdlib_utoa (noflash)
+        libc_stdlib_atoi (noflash)
+        libc_stdlib_atol (noflash)
+        libc_tinystdio_strtol (noflash)
+        libc_tinystdio_strtoul (noflash)
+
+    if SPIRAM_CACHE_LIBIO_IN_IRAM = y:
+        libc_stdlib_wcrtomb (noflash)
+        libc_stdlib_fvwrite (noflash)
+        libc_stdlib_wbuf (noflash)
+        libc_stdlib_wsetup (noflash)
+        libc_tinystdio_fputwc (noflash)
+        libc_stdlib_wctomb_r (noflash)
+        libc_tinystdio_ungetc (noflash)
+        libc_tinystdio_makebuf (noflash)
+        libc_tinystdio_fflush (noflash)
+        libc_stdlib_refill (noflash)
+        libc_stdlib_sccl (noflash)
+
+    if SPIRAM_CACHE_LIBTIME_IN_IRAM = y:
+        libc_time_asctime (noflash)
+        libc_time_asctime_r (noflash)
+        libc_time_ctime (noflash)
+        libc_time_ctime_r (noflash)
+        libc_time_lcltime (noflash)
+        libc_time_lcltime_r (noflash)
+        libc_time_gmtime (noflash)
+        libc_time_gmtime_r (noflash)
+        libc_time_strftime (noflash)
+        libc_time_mktime (noflash)
+        libc_time_tzset_r (noflash)
+        libc_time_tzset (noflash)
+        libc_time_time (noflash)
+        libc_time_gettzinfo (noflash)
+        libc_time_systimes (noflash)
+        libc_time_month_lengths (noflash)
+        libc_time_timelocal (noflash)
+        libc_time_tzvars (noflash)
+        libc_time_tzlock (noflash)
+        libc_time_tzcalc_limits (noflash)
+        libc_time_strptime (noflash)
+
+    if SPIRAM_CACHE_LIBCHAR_IN_IRAM = y:
+        libc_ctype_ctype_ (noflash)
+        libc_ctype_toupper (noflash)
+        libc_ctype_tolower (noflash)
+        libc_ctype_toascii (noflash)
+        libc_string_strupr (noflash)
+        libc_string_bzero (noflash)
+        libc_ctype_isalnum (noflash)
+        libc_ctype_isalpha (noflash)
+        libc_ctype_isascii (noflash)
+        libc_ctype_isblank (noflash)
+        libc_ctype_iscntrl (noflash)
+        libc_ctype_isdigit (noflash)
+        libc_ctype_isgraph (noflash)
+        libc_ctype_islower (noflash)
+        libc_ctype_isprint (noflash)
+        libc_ctype_ispunct (noflash)
+        libc_ctype_isspace (noflash)
+        libc_ctype_isupper (noflash)
+
+    if SPIRAM_CACHE_LIBMEM_IN_IRAM = y:
+        libc_string_memccpy (noflash)
+        libc_string_memchr (noflash)
+        libc_string_memmove (noflash)
+        libc_string_memrchr (noflash)
+
+    if SPIRAM_CACHE_LIBSTR_IN_IRAM = y:
+        libc_string_strcasecmp (noflash)
+        libc_string_strcasestr (noflash)
+        libc_string_strchr (noflash)
+        libc_string_strcoll (noflash)
+        libc_string_strcpy (noflash)
+        libc_string_strcspn (noflash)
+        libc_string_strdup (noflash)
+        libc_string_strdup_r (noflash)
+        libc_string_strlcat (noflash)
+        libc_string_strlcpy (noflash)
+        libc_string_strlwr (noflash)
+        libc_string_strncasecmp (noflash)
+        libc_string_strncat (noflash)
+        libc_string_strncmp (noflash)
+        libc_string_strncpy (noflash)
+        libc_string_strndup (noflash)
+        libc_string_strndup_r (noflash)
+        libc_string_strnlen (noflash)
+        libc_string_strrchr (noflash)
+        libc_string_strsep (noflash)
+        libc_string_strspn (noflash)
+        libc_string_strstr (noflash)
+        libc_string_strtok_r (noflash)
+        libc_string_strupr (noflash)
+
+    if SPIRAM_CACHE_LIBRAND_IN_IRAM = y:
+        libc_stdlib_srand (noflash)
+        libc_stdlib_rand (noflash)
+        libc_stdlib_rand_r (noflash)
+
+    if SPIRAM_CACHE_LIBENV_IN_IRAM = y:
+        libc_stdlib_environ (noflash)
+        libc_stdlib_envlock (noflash)
+        libc_stdlib_getenv_r (noflash)
+
+    if SPIRAM_CACHE_LIBFILE_IN_IRAM = y:
+        libc_tinystdio_lock (noflash)
+        libc_tinystdio_isatty (noflash)
+        libc_tinystdio_fclose (noflash)
+        libc_tinystdio_open (noflash)
+        libc_tinystdio_close (noflash)
+        libc_tinystdio_creat (noflash)
+        libc_tinystdio_read (noflash)
+        libc_tinystdio_rshift (noflash)
+        libc_tinystdio_sbrk (noflash)
+        libc_tinystdio_stdio (noflash)
+        libc_tinystdio_syssbrk (noflash)
+        libc_tinystdio_sysclose (noflash)
+        libc_tinystdio_sysopen (noflash)
+        libc_tinystdio_sysread (noflash)
+        libc_tinystdio_syswrite (noflash)
+        libc_tinystdio_impure (noflash)
+        libc_tinystdio_fwalk (noflash)
+        libc_tinystdio_findfp (noflash)
+
+    if SPIRAM_CACHE_LIBMISC_IN_IRAM = y:
+        libc_stdlib_raise (noflash)
+        libc_stdlib_system (noflash)

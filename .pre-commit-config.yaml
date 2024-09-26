@@ -14,6 +14,7 @@ repos:
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
         # 4 - protobuf auto-generated files
+        # 5 - COPYING files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
@@ -23,7 +24,8 @@ repos:
             .*.pb-c.h|
             .*.pb-c.c|
             .*.yuv|
-            .*.rgb
+            .*.rgb|
+            .*COPYING.*
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes

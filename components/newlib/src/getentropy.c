@@ -29,7 +29,7 @@ int getentropy(void *buffer, size_t length)
     return 0;
 }
 
-void newlib_include_getentropy_impl(void)
+void esp_libc_include_getentropy_impl(void)
 {
     // Linker hook, exists for no other purpose
 }

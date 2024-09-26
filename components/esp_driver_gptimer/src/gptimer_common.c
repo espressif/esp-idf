@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/lock.h>
 #include "esp_check.h"
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"

@@ -250,7 +250,11 @@ void test_c_api_common(const char* base_path)
     fseek(f, 0, SEEK_SET);
     status = fwrite(str, 1, sizeof(str), f); // Writing should do nothing
     TEST_ASSERT_EQUAL(0, status);
+#if CONFIG_LIBC_NEWLIB
     TEST_ASSERT_EQUAL(EBADF, errno);
+#else
+    TEST_ASSERT_EQUAL(EROFS, errno);
+#endif
 
     fread(buf, 1, sizeof(buf) - 1, f);
     ESP_LOGD(TAG, "Read from file: %s", buf);

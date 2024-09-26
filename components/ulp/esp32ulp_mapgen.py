@@ -2,11 +2,8 @@
 # esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
 # for the linker and a header file.
 #
-# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import print_function
-
 import argparse
 import os
 import textwrap
@@ -21,18 +18,20 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
         /* ULP variable definitions for the linker.
          * This file is generated automatically by {UTIL} utility.
          */
-        """
+        """  # noqa: E222
     ))
     f_h.write(textwrap.dedent(
         f"""
         /* ULP variable definitions for the compiler.
          * This file is generated automatically by {UTIL} utility.
          */
+        #include <stdint.h>
+
         #pragma once
         #ifdef __cplusplus
         extern "C" {{
         #endif
-        """
+        """  # noqa: E222
     ))
 
     for line in f_sym:

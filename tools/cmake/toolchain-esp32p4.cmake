@@ -14,7 +14,6 @@ set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Fl
 remove_duplicated_flags("-march=rv32imafc_zicsr_zifencei_xesppie -mabi=ilp32f ${CMAKE_ASM_FLAGS}" UNIQ_CMAKE_ASM_FLAGS)
 set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "Asm Compiler Base Flags" FORCE)
 
-remove_duplicated_flags("-nostartfiles -march=rv32imafc_zicsr_zifencei_xesppie -mabi=ilp32f --specs=nosys.specs \
-                        ${CMAKE_EXE_LINKER_FLAGS}"
+remove_duplicated_flags("-nostartfiles -march=rv32imafc_zicsr_zifencei_xesppie -mabi=ilp32f ${CMAKE_EXE_LINKER_FLAGS}"
                         UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS)
 set(CMAKE_EXE_LINKER_FLAGS "${UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS}" CACHE STRING "Linker Base Flags" FORCE)

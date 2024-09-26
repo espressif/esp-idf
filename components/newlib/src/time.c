@@ -295,7 +295,9 @@ WEAK_UNLESS_TIMEFUNC_IMPL int clock_getres(clockid_t clock_id, struct timespec *
 #endif
 }
 
-void esp_newlib_time_init(void)
+/* TODO IDF-11226 */
+void esp_newlib_time_init(void) __attribute__((alias("esp_libc_time_init")));
+void esp_libc_time_init(void)
 {
-    esp_time_impl_init();
+    esp_set_time_from_rtc();
 }

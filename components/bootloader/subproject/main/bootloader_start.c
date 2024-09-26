@@ -134,8 +134,10 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     return boot_index;
 }
 
+#if CONFIG_LIBC_NEWLIB
 // Return global reent struct if any newlib functions are linked to bootloader
 struct _reent *__getreent(void)
 {
     return _GLOBAL_REENT;
 }
+#endif

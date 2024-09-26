@@ -138,8 +138,3 @@ void esp_sync_timekeeping_timers(void)
     esp_time_impl_set_boot_time(esp_time_impl_get_boot_time() + ((int64_t)s_microseconds_offset - s_microseconds_offset_cur));
 #endif
 }
-
-void esp_time_impl_init(void)
-{
-    esp_set_time_from_rtc();
-}

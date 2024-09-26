@@ -14,6 +14,8 @@
 #include "freertos/portable.h"
 #include "esp_rom_caps.h"
 
+#include "sdkconfig.h"
+
 /* Notes on our newlib lock implementation:
  *
  * - Use FreeRTOS mutex semaphores as locks.
@@ -24,11 +26,15 @@
  *   protected by lock_init_spinlock.
  * - Race conditions around lazy initialisation (via lock_acquire) are
  *   protected against.
- * - Anyone calling lock_close is reponsible for ensuring noone else
+ * - Anyone calling lock_close is responsible for ensuring no one else
  *   is holding the lock at this time.
  * - Race conditions between lock_close & lock_init (for the same lock)
  *   are the responsibility of the caller.
  */
+
+#if CONFIG_LIBC_PICOLIBC
+struct __lock __lock___libc_recursive_mutex;
+#endif
 
 static portMUX_TYPE lock_init_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -359,23 +365,13 @@ extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___tz_mu
 extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___dd_hash_mutex;
 extern StaticSemaphore_t __attribute__((alias("s_common_mutex"))) __lock___arc4random_mutex;
 
-void esp_newlib_locks_init(void)
+#if CONFIG_LIBC_NEWLIB
+static void esp_libc_newlib_locks_init(void)
 {
-    /* Initialize the two mutexes used for the locks above.
-     * Asserts below check our assumption that SemaphoreHandle_t will always
-     * point to the corresponding StaticSemaphore_t structure.
-     */
-    SemaphoreHandle_t handle;
-    handle = xSemaphoreCreateMutexStatic(&s_common_mutex);
-    assert(handle == (SemaphoreHandle_t) &s_common_mutex);
-    handle = xSemaphoreCreateRecursiveMutexStatic(&s_common_recursive_mutex);
-    assert(handle == (SemaphoreHandle_t) &s_common_recursive_mutex);
-    (void) handle;
-
     /* Chip ROMs are built with older versions of newlib, and rely on different lock variables.
      * Initialize these locks to the same values.
      */
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     /* Newlib 2.2.0 is used in ROM, the following lock symbols are defined: */
     extern _lock_t __sfp_lock;
     __sfp_lock = (_lock_t) &s_common_recursive_mutex;
@@ -385,7 +381,7 @@ void esp_newlib_locks_init(void)
     __env_lock_object = (_lock_t) &s_common_recursive_mutex;
     extern _lock_t __tz_lock_object;
     __tz_lock_object = (_lock_t) &s_common_mutex;
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+#elif CONFIG_IDF_TARGET_ESP32S2
     /* Newlib 3.0.0 is used in ROM, the following lock symbols are defined: */
     extern _lock_t __sinit_recursive_mutex;
     __sinit_recursive_mutex = (_lock_t) &s_common_recursive_mutex;
@@ -403,5 +399,30 @@ void esp_newlib_locks_init(void)
     esp_rom_newlib_init_common_mutexes(magic_mutex, magic_mutex);
 #else // other target
 #error Unsupported target
+#endif
+}
+#endif // CONFIG_LIBC_NEWLIB
+
+/* TODO IDF-11226 */
+void esp_newlib_locks_init(void) __attribute__((alias("esp_libc_locks_init")));
+void esp_libc_locks_init(void)
+{
+    /* Initialize the two mutexes used for the locks above.
+     * Asserts below check our assumption that SemaphoreHandle_t will always
+     * point to the corresponding StaticSemaphore_t structure.
+     */
+    SemaphoreHandle_t handle;
+    handle = xSemaphoreCreateMutexStatic(&s_common_mutex);
+    assert(handle == (SemaphoreHandle_t) &s_common_mutex);
+    handle = xSemaphoreCreateRecursiveMutexStatic(&s_common_recursive_mutex);
+    assert(handle == (SemaphoreHandle_t) &s_common_recursive_mutex);
+#if CONFIG_LIBC_PICOLIBC
+    handle = xSemaphoreCreateRecursiveMutexStatic((StaticQueue_t *) &__lock___libc_recursive_mutex);
+    assert(handle == (SemaphoreHandle_t) &__lock___libc_recursive_mutex);
+#endif
+    (void) handle;
+
+#if CONFIG_LIBC_NEWLIB
+    esp_libc_newlib_locks_init();
 #endif
 }
