@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,9 +28,9 @@ typedef struct {
                                               if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
-        uint32_t backup_before_sleep: 1; /*!< If set, the driver will backup/restore the GPTimer registers before/after entering/exist sleep mode.
-                                              By this approach, the system can power off GPTimer's power domain.
-                                              This can save power, but at the expense of more RAM being consumed */
+        uint32_t allow_pd: 1;            /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                              This can save power, but at the expense of more RAM being consumed to save register context. */
+        uint32_t backup_before_sleep: 1; /*!< @deprecated, same meaning as allow_pd */
     } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
 

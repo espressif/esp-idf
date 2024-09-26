@@ -87,7 +87,7 @@ gptimer_group_t *gptimer_acquire_group_handle(int group_id)
             }
         }
 #if GPTIMER_USE_RETENTION_LINK
-        sleep_retention_module_t module = TIMER_LL_SLEEP_RETENTION_MODULE_ID(group_id);
+        sleep_retention_module_t module = tg_timer_reg_retention_info[group_id].module;
         sleep_retention_module_init_param_t init_param = {
             .cbs = {
                 .create = {

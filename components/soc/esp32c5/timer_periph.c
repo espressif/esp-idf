@@ -1,4 +1,3 @@
-
 /*
  * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
@@ -56,26 +55,21 @@ const regdma_entries_config_t tg0_timer_regdma_entries[] = {
         TIMG_T0LO_REG(0), TIMG_T0LOADLO_REG(0), 2, 0, 0),
         .owner = ENTRY(0) | ENTRY(2)
     },
-    [3] = {
-        .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG0_TIMER_LINK(0x03),
-        TIMG_T0HI_REG(0), TIMG_T0LOADHI_REG(0), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
-    },
     // restore stage: trigger a soft reload, so the timer can continue from where it was backed up
-    [4] = {
-        .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG0_TIMER_LINK(0x04),
+    [3] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG0_TIMER_LINK(0x03),
         TIMG_T0LOAD_REG(0), 0x1, TIMG_T0_LOAD_M, 1, 0),
         .owner = ENTRY(0) | ENTRY(2)
     },
     // backup stage: save other configuration and status registers
     // restore stage: restore the configuration and status registers
-    [5] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TG0_TIMER_LINK(0x05),
+    [4] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TG0_TIMER_LINK(0x04),
         TIMG_T0CONFIG_REG(0), TIMG_T0CONFIG_REG(0),
         TG_TIMER_RETENTION_REGS_CNT, 0, 0,
         tg_timer_regs_map[0], tg_timer_regs_map[1],
         tg_timer_regs_map[2], tg_timer_regs_map[3]),
-        .owner = TIMG_RETENTION_ENTRY
+        .owner = ENTRY(0) | ENTRY(2)
     },
 };
 
@@ -99,35 +93,32 @@ const regdma_entries_config_t tg1_timer_regdma_entries[] = {
         TIMG_T0LO_REG(1), TIMG_T0LOADLO_REG(1), 2, 0, 0),
         .owner = ENTRY(0) | ENTRY(2)
     },
-    [3] = {
-        .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TG1_TIMER_LINK(0x03),
-        TIMG_T0HI_REG(1), TIMG_T0LOADHI_REG(1), 2, 0, 0),
-        .owner = ENTRY(0) | ENTRY(2)
-    },
     // restore stage: trigger a soft reload, so the timer can continue from where it was backed up
-    [4] = {
-        .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_TIMER_LINK(0x04),
+    [3] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_TIMER_LINK(0x03),
         TIMG_T0LOAD_REG(1), 0x1, TIMG_T0_LOAD_M, 1, 0),
         .owner = ENTRY(0) | ENTRY(2)
     },
     // backup stage: save other configuration and status registers
     // restore stage: restore the configuration and status registers
-    [5] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TG1_TIMER_LINK(0x05),
+    [4] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TG1_TIMER_LINK(0x04),
         TIMG_T0CONFIG_REG(1), TIMG_T0CONFIG_REG(1),
         TG_TIMER_RETENTION_REGS_CNT, 0, 0,
         tg_timer_regs_map[0], tg_timer_regs_map[1],
         tg_timer_regs_map[2], tg_timer_regs_map[3]),
-        .owner = TIMG_RETENTION_ENTRY
+        .owner = ENTRY(0) | ENTRY(2)
     },
 };
 
 const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS] = {
     [0] = {
+        .module = SLEEP_RETENTION_MODULE_TG0_TIMER,
         .regdma_entry_array = tg0_timer_regdma_entries,
         .array_size = ARRAY_SIZE(tg0_timer_regdma_entries)
     },
     [1] = {
+        .module = SLEEP_RETENTION_MODULE_TG1_TIMER,
         .regdma_entry_array = tg1_timer_regdma_entries,
         .array_size = ARRAY_SIZE(tg1_timer_regdma_entries)
     },

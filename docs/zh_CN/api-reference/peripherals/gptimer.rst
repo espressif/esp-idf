@@ -48,7 +48,7 @@
 - :cpp:member:`gptimer_config_t::direction` 设置定时器的计数方向，:cpp:type:`gptimer_count_direction_t` 中列出多个支持的方向，仅可选择其中一个方向。
 - :cpp:member:`gptimer_config_t::resolution_hz` 设置内部计数器的分辨率。计数器每滴答一次相当于 **1 / resolution_hz** 秒。
 - :cpp:member:`gptimer_config::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-- :cpp:member:`gptimer_config::backup_before_sleep` 用于使能在进入睡眠模式前备份 GPTimer 寄存器。这个选项需要用户在功耗和内存使用之间取得平衡。如果功耗不是一个问题，可以禁用这个选项来节省内存。但如果想要节省功耗，应该使能这个选项，在进入睡眠模式前备份 GPTimer 寄存器，并在唤醒后恢复它们。这个功能依赖于特定的硬件模块，如果你在不支持的芯片上启用它，你会得到一个错误信息，如 ``register back up is not supported``。
+- :cpp:member:`gptimer_config::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 GPTimer 寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
 - 可选地， :cpp:member:`gptimer_config_t::intr_shared` 设置是否将定时器中断源标记为共享源。了解共享中断的优缺点，请参考 :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`。
 
 完成上述结构配置之后，可以将结构传递给 :cpp:func:`gptimer_new_timer`，用以实例化定时器实例并返回定时器句柄。
@@ -289,7 +289,7 @@
 
 .. only:: SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
-    除了时钟源的潜在变化外，当启用电源管理时，系统还可以关闭 GPTimer 寄存器所在的电源域。为确保 GPTimer 驱动程序在睡眠后继续工作，用户要么选择将 GPTimer 相关的寄存器备份到 RAM 中，要么拒绝关闭电源域。你可以根据应用需求在 :cpp:member:`gptimer_config_t::backup_before_sleep` 中设置是否需要启用寄存器备份，在功耗和内存使用之间做权衡。
+    除了时钟源的潜在变化外，当启用电源管理时，系统还可以在睡眠前关闭 GPTimer 电源。将 :cpp:member:`gptimer_config_t::allow_pd` 设置为 ``true`` 以启用电源关闭功能。GPTimer 寄存器将在睡眠前备份，并在唤醒后恢复。请注意，启用此选项会增加内存消耗。
 
 .. _gptimer-iram-safe:
 
