@@ -845,7 +845,7 @@ static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev,
             // Clear unused memory
             uint8_t unused_dim = I2C_STATIC_OPERATION_ARRAY_MAX - ops_dim;
             if (unused_dim != 0) {
-                memset(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx] + sizeof(i2c_operation_t) * ops_dim, 0, sizeof(i2c_operation_t) * unused_dim);
+                memset(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx][ops_dim], 0, sizeof(i2c_operation_t) * unused_dim);
             }
             // Record current operation and feed to transaction queue.
             ops_current = &i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx][0];
