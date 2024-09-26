@@ -9,10 +9,13 @@
 #include <cstdio>
 #include <cstring>
 #include "nvs_internal.h"
+#include "esp_partition.h"
 
 namespace nvs {
 
 Page::Page() : mPartition(nullptr) { }
+
+const uint32_t nvs::Page::SEC_SIZE = esp_partition_get_main_flash_sector_size();
 
 uint32_t Page::Header::calculateCrc32()
 {
@@ -49,7 +52,7 @@ esp_err_t Page::load(Partition *partition, uint32_t sectorNumber)
             return ESP_ERR_NO_MEM;
         }
 
-        for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += 4 * BLOCK_SIZE) {
+        for (uint32_t i = 0; i < SEC_SIZE; i += 4 * BLOCK_SIZE) {
             rc = mPartition->read_raw(mBaseAddress + i, block, 4 * BLOCK_SIZE);
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
@@ -1020,7 +1023,7 @@ esp_err_t Page::setVersion(uint8_t ver)
 
 esp_err_t Page::erase()
 {
-    auto rc = mPartition->erase_range(mBaseAddress, SPI_FLASH_SEC_SIZE);
+    auto rc = mPartition->erase_range(mBaseAddress, SEC_SIZE);
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;

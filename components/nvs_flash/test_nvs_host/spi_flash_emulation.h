@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <cassert>
 #include <algorithm>
 #include <random>
-#include "spi_flash_mmap.h"
+#include "esp_partition.h"
 #include "catch.hpp"
 
 class SpiFlashEmulator;
@@ -22,7 +22,8 @@ class SpiFlashEmulator
 public:
     SpiFlashEmulator(size_t sectorCount) : mUpperSectorBound(sectorCount)
     {
-        mData.resize(sectorCount * SPI_FLASH_SEC_SIZE / 4, 0xffffffff);
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        mData.resize(sectorCount * sec_size / 4, 0xffffffff);
         mEraseCnt.resize(sectorCount);
         spi_flash_emulator_set(this);
     }
@@ -30,9 +31,10 @@ public:
     SpiFlashEmulator(const char *filename)
     {
         load(filename);
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
         // At least one page should be free, hence we create mData of size of 2 sectors.
-        mData.resize(mData.size() + SPI_FLASH_SEC_SIZE / 4, 0xffffffff);
-        mUpperSectorBound = mData.size() * 4 / SPI_FLASH_SEC_SIZE;
+        mData.resize(mData.size() + sec_size / 4, 0xffffffff);
+        mUpperSectorBound = mData.size() * 4 / sec_size;
         spi_flash_emulator_set(this);
     }
 
@@ -59,7 +61,8 @@ public:
 
     bool write(size_t dstAddr, const uint32_t* src, size_t size)
     {
-        uint32_t sectorNumber = dstAddr/SPI_FLASH_SEC_SIZE;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        uint32_t sectorNumber = dstAddr/sec_size;
         if (sectorNumber < mLowerSectorBound || sectorNumber >= mUpperSectorBound) {
             WARN("invalid flash operation detected: erase sector=" << sectorNumber);
             return false;
@@ -95,7 +98,8 @@ public:
 
     bool erase(size_t sectorNumber)
     {
-        size_t offset = sectorNumber * SPI_FLASH_SEC_SIZE / 4;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        size_t offset = sectorNumber * sec_size / 4;
         if (offset > mData.size()) {
             return false;
         }
@@ -109,7 +113,7 @@ public:
             return false;
         }
 
-        std::fill_n(begin(mData) + offset, SPI_FLASH_SEC_SIZE / 4, 0xffffffff);
+        std::fill_n(begin(mData) + offset, sec_size / 4, 0xffffffff);
 
         ++mEraseOps;
         mEraseCnt[sectorNumber]++;
@@ -142,22 +146,26 @@ public:
 
     void load(const char* filename)
     {
+        const uint32_t sector_size = esp_partition_get_main_flash_sector_size();
+        size_t sec_size = sector_size;
         FILE* f = fopen(filename, "rb");
         fseek(f, 0, SEEK_END);
         off_t size = ftell(f);
-        assert(size % SPI_FLASH_SEC_SIZE == 0);
+        assert(size % sec_size == 0);
         mData.resize(size / sizeof(uint32_t));
         fseek(f, 0, SEEK_SET);
-        auto s = fread(mData.data(), SPI_FLASH_SEC_SIZE, size / SPI_FLASH_SEC_SIZE, f);
-        assert(s == static_cast<size_t>(size / SPI_FLASH_SEC_SIZE));
+        auto s = fread(mData.data(), sec_size, size / sec_size, f);
+        assert(s == static_cast<size_t>(size / sec_size));
         fclose(f);
     }
 
     void save(const char* filename)
     {
+        const uint32_t sector_size = esp_partition_get_main_flash_sector_size();
+        size_t sec_size = sector_size;
         FILE* f = fopen(filename, "wb");
-        auto n_sectors = mData.size() * sizeof(uint32_t) / SPI_FLASH_SEC_SIZE;
-        auto s = fwrite(mData.data(), SPI_FLASH_SEC_SIZE, n_sectors, f);
+        auto n_sectors = mData.size() * sizeof(uint32_t) / sec_size;
+        auto s = fwrite(mData.data(), sec_size, n_sectors, f);
         assert(s == n_sectors);
         fclose(f);
     }

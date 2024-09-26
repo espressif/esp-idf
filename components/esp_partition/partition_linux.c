@@ -547,6 +547,11 @@ esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_act(void)
     return &s_esp_partition_file_mmap_ctrl_act;
 }
 
+uint32_t esp_partition_get_main_flash_sector_size(void)
+{
+    return ESP_PARTITION_EMULATED_SECTOR_SIZE;
+}
+
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
 // timing data for ESP8266, 160MHz CPU frequency, 80MHz flash frequency
 // all values in microseconds

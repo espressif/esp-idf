@@ -25,7 +25,6 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "include"
-                    "../spi_flash/include"
                     PRIV_INCLUDE_DIRS "private_include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux

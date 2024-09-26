@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_partition.h"
 #include "spi_flash_emulation.h"
+#include "spi_flash_mmap.h"
 
 static SpiFlashEmulator* s_emulator = nullptr;
 
@@ -20,16 +21,17 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
         return ESP_ERR_FLASH_OP_TIMEOUT;
     }
 
-    if (size % SPI_FLASH_SEC_SIZE != 0) {
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+    if (size % sec_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 
-    if (offset % SPI_FLASH_SEC_SIZE != 0) {
+    if (offset % sec_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    size_t start_sector = offset / SPI_FLASH_SEC_SIZE;
-    size_t num_sectors = size / SPI_FLASH_SEC_SIZE;
+    size_t start_sector = offset / sec_size;
+    size_t num_sectors = size / sec_size;
     for (size_t sector = start_sector; sector < (start_sector + num_sectors); sector++) {
         if (!s_emulator->erase(sector)) {
             return ESP_ERR_FLASH_OP_FAIL;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,7 +177,7 @@ static void erase_ota_data(void)
 {
     const esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
     TEST_ASSERT_NOT_EQUAL(NULL, data_partition);
-    TEST_ESP_OK(esp_partition_erase_range(data_partition, 0, 2 * SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_partition_erase_range(data_partition, 0, 2 * data_partition->erase_size));
 }
 
 /* @brief Reboots ESP using mode deep sleep. This mode guaranty that RTC_DATA_ATTR variables is not reset.
@@ -251,7 +251,7 @@ static void get_ota_data(const esp_partition_t *otadata_partition, esp_ota_selec
         TEST_ASSERT_NOT_EQUAL(NULL, ota_select_map);
 
         memcpy(ota_data_0, ota_select_map, sizeof(esp_ota_select_entry_t));
-        memcpy(ota_data_1, (uint8_t *)ota_select_map + SPI_FLASH_SEC_SIZE, sizeof(esp_ota_select_entry_t));
+        memcpy(ota_data_1, (uint8_t *)ota_select_map + otadata_partition->erase_size, sizeof(esp_ota_select_entry_t));
         bootloader_munmap(ota_select_map);
     }
 }
@@ -264,7 +264,7 @@ static void get_ota_data(const esp_partition_t *otadata_partition, esp_ota_selec
  */
 static void write_ota_data(const esp_partition_t *otadata_partition, esp_ota_select_entry_t *ota_data, int sec_id)
 {
-    esp_partition_write(otadata_partition, SPI_FLASH_SEC_SIZE * sec_id, &ota_data[sec_id], sizeof(esp_ota_select_entry_t));
+    esp_partition_write(otadata_partition, otadata_partition->erase_size * sec_id, &ota_data[sec_id], sizeof(esp_ota_select_entry_t));
 }
 
 /* @brief Makes a corrupt of ota_data.

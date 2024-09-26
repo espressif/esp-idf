@@ -17,7 +17,6 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -664,20 +663,20 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
 
     assert(key_part && "partition table must have a KEY partition");
-    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == key_part->erase_size);
 
     ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
 
-    for (int i = 0; i < key_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, SPI_FLASH_SEC_SIZE) );
+    for (int i = 0; i < key_part->size; i+= key_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, key_part->erase_size) );
     }
 
     const int content_size = nvs_data_sch0_end - nvs_data_sch0_start - 1;
-    TEST_ASSERT_TRUE((content_size % SPI_FLASH_SEC_SIZE) == 0);
+    TEST_ASSERT_TRUE((content_size % key_part->erase_size) == 0);
 
     const int size_to_write = MIN(content_size, nvs_part->size);
-    for (int i = 0; i < size_to_write; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch0_start + i, SPI_FLASH_SEC_SIZE) );
+    for (int i = 0; i < size_to_write; i+= nvs_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch0_start + i, nvs_part->erase_size) );
     }
 
     err = nvs_flash_read_security_cfg(key_part, &xts_cfg);
@@ -686,11 +685,11 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     extern const char nvs_data_sch1_end[]    asm("_binary_partition_encrypted_hmac_bin_end");
 
     const int content_size = nvs_data_sch1_end - nvs_data_sch1_start - 1;
-    TEST_ASSERT_TRUE((content_size % SPI_FLASH_SEC_SIZE) == 0);
+    TEST_ASSERT_TRUE((content_size % nvs_part->erase_size) == 0);
 
     const int size_to_write = MIN(content_size, nvs_part->size);
-    for (int i = 0; i < size_to_write; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch1_start + i, SPI_FLASH_SEC_SIZE) );
+    for (int i = 0; i < size_to_write; i+= nvs_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch1_start + i, nvs_part->erase_size) );
     }
 
     nvs_sec_scheme_t *scheme_cfg = nvs_flash_get_default_security_scheme();
