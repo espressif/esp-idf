@@ -127,9 +127,6 @@ void bta_av_del_rc(tBTA_AV_RCB *p_rcb)
         }
         /* else ACP && connected. do not clear the handle yet */
         AVRC_Close(rc_handle);
-        if (rc_handle == bta_av_cb.rc_acp_handle) {
-            bta_av_cb.rc_acp_handle = BTA_AV_RC_HANDLE_NONE;
-        }
         APPL_TRACE_EVENT("end del_rc handle: %d status=0x%x, rc_acp_handle:%d, lidx:%d",
                          p_rcb->handle, p_rcb->status, bta_av_cb.rc_acp_handle, p_rcb->lidx);
     }
@@ -302,7 +299,7 @@ UINT8 bta_av_rc_create(tBTA_AV_CB *p_cb, UINT8 role, UINT8 shdl, UINT8 lidx)
         bda = p_scb->peer_addr;
         status = BTA_AV_RC_ROLE_INT;
     } else {
-        if ((p_rcb = bta_av_get_rcb_by_shdl(shdl)) != NULL ) {
+        if (shdl != 0 && ((p_rcb = bta_av_get_rcb_by_shdl(shdl)) != NULL)) {
             APPL_TRACE_ERROR("bta_av_rc_create ACP handle exist for shdl:%d", shdl);
             return p_rcb->handle;
         }
@@ -1143,7 +1140,7 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
                                   p_data->conn_chg.peer_addr[5]);
                 if (p_lcb_rc->conn_msk && bdcmp(p_lcb_rc->addr, p_data->conn_chg.peer_addr) == 0) {
                     /* AVRCP is already connected.
-                     * need to update the association betwen SCB and RCB */
+                     * need to update the association between SCB and RCB */
                     p_lcb_rc->conn_msk = 0; /* indicate RC ONLY is not connected */
                     p_lcb_rc->lidx = 0;
                     p_scb->rc_handle = p_cb->rc_acp_handle;
@@ -1636,6 +1633,8 @@ void bta_av_rc_disc_done(tBTA_AV_DATA *p_data)
         }
     } else {
         p_cb->rcb[rc_handle].peer_features = peer_features;
+        p_cb->rcb[rc_handle].peer_ct_features = peer_ct_features;
+        p_cb->rcb[rc_handle].peer_tg_features = peer_tg_features;
         rc_feat.rc_handle =  rc_handle;
         rc_feat.peer_features = peer_features;
         rc_feat.peer_ct_features = peer_ct_features;
@@ -1711,7 +1710,8 @@ void bta_av_rc_closed(tBTA_AV_DATA *p_data)
                 bta_av_del_rc(p_rcb);
 
                 /* if the AVRCP is no longer listening, create the listening channel */
-                if (bta_av_cb.rc_acp_handle == BTA_AV_RC_HANDLE_NONE && bta_av_cb.features & BTA_AV_FEAT_RCTG) {
+                if (bta_av_cb.rc_acp_handle == p_msg->handle && bta_av_cb.features & BTA_AV_FEAT_RCTG) {
+                    bta_av_cb.rc_acp_handle = BTA_AV_RC_HANDLE_NONE;
                     bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
                 }
             }
