@@ -6,7 +6,7 @@
 ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 1. 内部模块的最小化初始配置；
-2. 如果配置了 :doc:`/security/flash-encryption` 和/或 :doc:`Secure </security/secure-boot-v2>`，则对其进行初始化。
+2. 如果配置了 :doc:`/security/flash-encryption` 和/或 :doc:`Secure Boot </security/secure-boot-v2>`，则对其进行初始化。
 3. 根据分区表和 ota_data（如果存在）选择需要引导的应用程序 (app) 分区；
 4. 将此应用程序镜像加载到 RAM（IRAM 和 DRAM）中，最后把控制权转交给此应用程序。
 
