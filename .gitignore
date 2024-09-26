@@ -102,6 +102,7 @@ pytest_embedded_log/
 list_job*.txt
 size_info*.txt
 XUNIT_RESULT*.xml
+.manifest_sha
 
 # clang config (for LSP)
 .clangd

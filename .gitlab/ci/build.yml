@@ -300,6 +300,8 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
+    - job: baseline_manifest_sha
+      optional: true
   artifacts:
     paths:
       - build_child_pipeline.yml
