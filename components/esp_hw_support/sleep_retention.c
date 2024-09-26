@@ -29,6 +29,8 @@
 #endif
 
 static __attribute__((unused)) const char *TAG = "sleep";
+static int acquire_cnt; //for the force acquire lock
+
 
 struct sleep_retention_module_object {
     sleep_retention_module_callbacks_t cbs;         /* A callback list that can extend more sleep retention event callbacks */
@@ -317,6 +319,23 @@ static void sleep_retention_entries_stats(void)
         }
     }
     _lock_release_recursive(&s_retention.lock);
+}
+
+void sleep_retention_dump_modules(FILE *out)
+{
+    uint32_t inited_modules = sleep_retention_get_inited_modules();
+    uint32_t created_modules = sleep_retention_get_created_modules();
+    for (int i = SLEEP_RETENTION_MODULE_MIN; i <= SLEEP_RETENTION_MODULE_MAX; i++) {
+        bool inited = (inited_modules & BIT(i)) != 0;
+        bool created = (created_modules & BIT(i)) != 0;
+        bool is_top = (TOP_DOMAIN_PERIPHERALS_BM & BIT(i)) != 0;
+
+        const char* status = !inited? "-":
+                        created? "CREATED":
+                                "INITED";
+        const char* domain = is_top? "TOP": "-";
+        fprintf(out, "%2d: %4s %8s\n", i, domain, status);
+    }
 }
 
 void sleep_retention_dump_entries(FILE *out)
@@ -818,6 +837,42 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
+}
+
+static esp_err_t empty_create(void *args)
+{
+    return ESP_OK;
+}
+
+esp_err_t sleep_retention_power_lock_acquire(void)
+{
+    _lock_acquire_recursive(&s_retention.lock);
+    if (acquire_cnt == 0) {
+        sleep_retention_module_init_param_t init_param = {
+            .cbs = { .create = {.handle = empty_create},},
+        };
+        esp_err_t ret = sleep_retention_module_init(SLEEP_RETENTION_MODULE_NULL, &init_param);
+        if (ret != ESP_OK) {
+            _lock_release_recursive(&s_retention.lock);
+            return ret;
+        }
+    }
+    acquire_cnt++;
+    _lock_release_recursive(&s_retention.lock);
+    return ESP_OK;
+}
+
+esp_err_t sleep_retention_power_lock_release(void)
+{
+    esp_err_t ret = ESP_OK;
+    _lock_acquire_recursive(&s_retention.lock);
+    acquire_cnt--;
+    assert(acquire_cnt >= 0);
+    if (acquire_cnt == 0) {
+        ret = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_NULL);
+    }
+    _lock_release_recursive(&s_retention.lock);
+    return ret;
 }
 
 void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
