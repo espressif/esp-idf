@@ -543,15 +543,20 @@ void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_le
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, NULL, 0, 0);
         return;
     }
-    if (report_len > ESP_WIFI_MAX_NEIGHBOR_REP_LEN) {
-        wpa_printf(MSG_ERROR, "RRM: Neighbor report too large (>%d bytes), hence not reporting", ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
-        return;
-    }
     wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report (token = %d)", report[0]);
-    wifi_event_neighbor_report_t neighbor_report_event = {0};
-    os_memcpy(neighbor_report_event.report, report, report_len);
-    neighbor_report_event.report_len = report_len;
+    
+    wifi_event_neighbor_report_t *neighbor_report_event = os_zalloc(sizeof(wifi_event_neighbor_report_t) + report_len);
+    if (neighbor_report_event == NULL) {
+        wpa_printf(MSG_DEBUG, "memory alloc failed");
+    }
+
+    if (report_len < ESP_WIFI_MAX_NEIGHBOR_REP_LEN) {
+        os_memcpy(neighbor_report_event->report, report, report_len);
+    }
+    os_memcpy(neighbor_report_event->n_report, report, report_len);
+    neighbor_report_event->report_len = report_len;
     esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, &neighbor_report_event, sizeof(wifi_event_neighbor_report_t), 0);
+    os_free(neighbor_report_event);
 }
 
 int esp_rrm_send_neighbor_report_request(void)
