@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@ static inline void i2s_ll_dma_enable_auto_write_back(i2s_dev_t *hw, bool en)
 }
 
 /**
- * @brief I2S DMA generate EOF event on data in FIFO poped out
+ * @brief I2S DMA generate EOF event on data in FIFO popped out
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param en True to enable, False to disable
