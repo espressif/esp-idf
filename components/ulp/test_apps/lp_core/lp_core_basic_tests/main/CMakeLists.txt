@@ -20,6 +20,10 @@ if(CONFIG_SOC_LP_ADC_SUPPORTED)
     list(APPEND app_sources "test_lp_core_adc.c")
 endif()
 
+if(CONFIG_SOC_LP_VAD_SUPPORTED)
+    list(APPEND app_sources "test_lp_core_vad.c")
+endif()
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
@@ -46,10 +50,15 @@ if(CONFIG_SOC_LP_ADC_SUPPORTED)
     set(lp_core_sources_adc "lp_core/test_main_adc.c")
 endif()
 
+if(CONFIG_SOC_LP_VAD_SUPPORTED)
+    set(lp_core_sources_vad "lp_core/test_main_vad.c")
+endif()
+
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
-                       WHOLE_ARCHIVE)
+                       WHOLE_ARCHIVE
+                       EMBED_FILES "test_vad_8k.pcm")
 
 set(lp_core_exp_dep_srcs ${app_sources})
 
@@ -78,4 +87,8 @@ endif()
 
 if(CONFIG_SOC_LP_ADC_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_adc "${lp_core_sources_adc}" "${lp_core_exp_dep_srcs}")
+endif()
+
+if(CONFIG_SOC_LP_VAD_SUPPORTED)
+    ulp_embed_binary(lp_core_test_app_vad "${lp_core_sources_vad}" "${lp_core_exp_dep_srcs}")
 endif()
