@@ -37,6 +37,8 @@ static const uint16_t primary_service_uuid       = ESP_GATT_UUID_PRI_SERVICE;
 static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
 static const uint16_t character_user_description = ESP_GATT_UUID_CHAR_DESCRIPTION;
 static const uint8_t  character_prop_read_write  = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint8_t  character_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | \
+                                                         ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 
 typedef struct {
     uint8_t type;
@@ -64,6 +66,7 @@ typedef struct _protocomm_ble {
     uint16_t gatt_mtu;
     uint8_t *service_uuid;
     unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -450,7 +453,12 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
             (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_declaration_uuid;
             (*gatt_db_generated)[i].att_desc.max_length   = sizeof(uint8_t);
             (*gatt_db_generated)[i].att_desc.length       = sizeof(uint8_t);
-            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) &character_prop_read_write;
+
+	    if (protoble_internal->ble_notify) {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write_notify;
+	    } else {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write;
+	    }
         } else if (i % 3 == 2) {
             /* Characteristic Value */
             (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE ;
@@ -562,6 +570,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
     protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
 
     // Config adv data
     adv_config.service_uuid_len = ESP_UUID_LEN_128;
