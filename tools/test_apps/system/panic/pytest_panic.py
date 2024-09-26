@@ -50,6 +50,7 @@ TARGETS_DUAL_CORE = TARGETS_XTENSA_DUAL_CORE + TARGETS_RISCV_DUAL_CORE
 CONFIGS = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL),
+    pytest.param('coredump_flash_elf_soft_sha', marks=TARGETS_ALL),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
     pytest.param('coredump_flash_custom_stack', marks=TARGETS_RISCV),
