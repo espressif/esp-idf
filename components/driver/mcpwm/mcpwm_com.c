@@ -88,6 +88,9 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         // hal layer deinitialize
         mcpwm_hal_deinit(&group->hal);
         periph_module_disable(mcpwm_periph_signals.groups[group_id].module);
+        if (group->pm_lock) {
+            esp_pm_lock_delete(group->pm_lock);
+        }
         free(group);
     }
     _lock_release(&s_platform.mutex);
