@@ -15,6 +15,7 @@
 #include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/lp_system_struct.h"
+#include "soc/soc_etm_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,6 +156,24 @@ static inline void lp_core_ll_request_sleep(void)
 static inline void lp_core_ll_clear_etm_wakeup_status(void)
 {
     LP_SYS.sys_ctrl.lp_core_etm_wakeup_flag_clr = 1;
+}
+
+/**
+ * @brief Get the flag that marks whether LP CPU is awakened by ETM
+ *
+ * @return Return true if lpcore is woken up by soc etm flag
+ */
+static inline bool lp_core_ll_get_etm_wakeup_flag(void)
+{
+    return SOC_ETM.task_st5.ulp_task_wakeup_cpu_st;
+}
+
+/**
+ * @brief Clear the flag that marks whether LP CPU is awakened by ETM
+ */
+static inline void lp_core_ll_clear_etm_wakeup_flag(void)
+{
+    SOC_ETM.task_st5_clr.ulp_task_wakeup_cpu_st_clr = 1;
 }
 
 #ifdef __cplusplus
