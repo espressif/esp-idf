@@ -25,7 +25,6 @@
 #include <string.h>
 #include "driver/gpio.h"
 #include "driver/spi_slave.h"
-#include "esp_private/cache_utils.h"
 #include "esp_private/spi_slave_internal.h"
 #include "ncp/ncp_config.h"
 #include "openthread/error.h"
