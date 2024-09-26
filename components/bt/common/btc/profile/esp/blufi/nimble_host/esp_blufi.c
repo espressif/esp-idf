@@ -442,8 +442,10 @@ uint8_t esp_blufi_init(void)
 void esp_blufi_deinit(void)
 {
     blufi_env.enabled = false;
-    btc_msg_t msg;
     esp_blufi_cb_param_t param;
+    btc_msg_t msg;
+    memset (&msg, 0x0, sizeof (msg));
+    msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_BLUFI;
     msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
     param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
