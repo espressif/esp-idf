@@ -159,6 +159,7 @@
 /components/xtensa/                   @esp-idf-codeowners/system
 
 /docs/                                      @esp-idf-codeowners/docs
+/docs/docs_not_updated/                     @esp-idf-codeowners/all-maintainers
 /docs/**/api-guides/tools/                  @esp-idf-codeowners/tools
 /docs/en/api-guides/core_dump.rst           @esp-idf-codeowners/debugging
 /docs/en/api-guides/jtag-debugging/         @esp-idf-codeowners/debugging
