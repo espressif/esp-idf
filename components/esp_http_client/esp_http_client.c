@@ -1493,7 +1493,12 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
 static int http_client_prepare_first_line(esp_http_client_handle_t client, int write_len)
 {
     if (write_len >= 0) {
-        http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
+        const bool length_required = (client->connection_info.method != HTTP_METHOD_GET &&
+                                      client->connection_info.method != HTTP_METHOD_HEAD &&
+                                      client->connection_info.method != HTTP_METHOD_DELETE);
+        if (write_len != 0 || length_required) {
+            http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
+        }
     } else {
         esp_http_client_set_header(client, "Transfer-Encoding", "chunked");
     }
