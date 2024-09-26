@@ -11,9 +11,8 @@ This example is extended from NimBLE GATT Server Example, and further introduces
 2. How to ask for connection encryption from peripheral side on characteristic access
 3. How to bond with peer device using a random generated 6-digit passkey
 
-It uses ESP32's Bluetooth controller and NimBLE host stack.
 
-To test this demo, any BLE scanner application can be used.
+To test this demo, install *nRF Connect for Mobile* on your phone. 
 
 ## Try It Yourself
 
