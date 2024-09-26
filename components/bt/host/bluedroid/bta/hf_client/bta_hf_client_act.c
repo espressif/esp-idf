@@ -511,7 +511,9 @@ void bta_hf_client_rfc_data(tBTA_HF_CLIENT_DATA *p_data)
             break;
         }
 
+        bta_sys_busy(BTA_ID_HS, 1, bta_hf_client_cb.scb.peer_addr);
         bta_hf_client_at_parse(buf, len);
+        bta_sys_idle(BTA_ID_HS, 1, bta_hf_client_cb.scb.peer_addr);
 
         /* no more data to read, we're done */
         if (len < BTA_HF_CLIENT_RFC_READ_MAX) {
