@@ -18,6 +18,8 @@ typedef enum {
 void esp_coex_ieee802154_txrx_pti_set(ieee802154_coex_event_t event);
 void esp_coex_ieee802154_ack_pti_set(ieee802154_coex_event_t event);
 void esp_coex_ieee802154_coex_break_notify(void);
+void esp_coex_ieee802154_extcoex_tx_stage(void);
+void esp_coex_ieee802154_extcoex_rx_stage(void);
 #endif
 
 #endif
