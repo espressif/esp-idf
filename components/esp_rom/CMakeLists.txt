@@ -239,6 +239,10 @@ else() # Regular app build
         rom_linker_script("newlib")
         rom_linker_script("version")
 
+        if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
+            rom_linker_script("eco4")
+        endif()
+
         if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
             rom_linker_script("mbedtls")
             # For ESP32C2(ECO4), mbedTLS in ROM has been updated to v3.6.0-LTS
