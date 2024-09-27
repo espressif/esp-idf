@@ -716,11 +716,9 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
     }
     case ESP_HIDD_SET_PROTOCOL_EVT: {
         if (param->set_protocol.protocol_mode != ESP_HIDD_UNSUPPORTED_MODE) {
-            if (s_hidd_param.dev->protocol_mode == param->set_protocol.protocol_mode) {
-                break;
-            }
             osi_mutex_lock(&s_hidd_param.mutex, OSI_MUTEX_MAX_TIMEOUT);
-            s_hidd_param.dev->protocol_mode = param->set_protocol.protocol_mode;
+            s_hidd_param.dev->protocol_mode =
+                param->set_protocol.protocol_mode ? ESP_HID_PROTOCOL_MODE_BOOT : ESP_HID_PROTOCOL_MODE_REPORT;
             osi_mutex_unlock(&s_hidd_param.mutex);
             cb_param.protocol_mode.dev = s_hidd_param.dev->dev;
             cb_param.protocol_mode.protocol_mode = s_hidd_param.dev->protocol_mode;

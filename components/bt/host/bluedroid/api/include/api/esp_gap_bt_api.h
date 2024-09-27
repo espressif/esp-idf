@@ -206,6 +206,28 @@ typedef enum {
     ESP_BT_COD_MAJOR_DEV_UNCATEGORIZED       = 31,   /*!< Uncategorized: device not specified */
 } esp_bt_cod_major_dev_t;
 
+/// Minor device class field of Class of Device for Peripheral Major Class
+typedef enum {
+    ESP_BT_COD_MINOR_PERIPHERAL_KEYBOARD            = 0x10, /*!< Keyboard */
+    ESP_BT_COD_MINOR_PERIPHERAL_POINTING            = 0x20, /*!< Pointing */
+    ESP_BT_COD_MINOR_PERIPHERAL_COMBO               = 0x30, /*!< Combo
+                                                            ESP_BT_COD_MINOR_PERIPHERAL_KEYBOARD, ESP_BT_COD_MINOR_PERIPHERAL_POINTING
+                                                            and ESP_BT_COD_MINOR_PERIPHERAL_COMBO can be OR'd with one of the
+                                                            following values to identify a multifunctional device. e.g.
+                                                                ESP_BT_COD_MINOR_PERIPHERAL_KEYBOARD | ESP_BT_COD_MINOR_PERIPHERAL_GAMEPAD
+                                                                ESP_BT_COD_MINOR_PERIPHERAL_POINTING | ESP_BT_COD_MINOR_PERIPHERAL_SENSING_DEVICE
+                                                             */
+    ESP_BT_COD_MINOR_PERIPHERAL_JOYSTICK            = 0x01, /*!< Joystick */
+    ESP_BT_COD_MINOR_PERIPHERAL_GAMEPAD             = 0x02, /*!< Gamepad */
+    ESP_BT_COD_MINOR_PERIPHERAL_REMOTE_CONTROL      = 0x03, /*!< Remote Control */
+    ESP_BT_COD_MINOR_PERIPHERAL_SENSING_DEVICE      = 0x04, /*!< Sensing Device */
+    ESP_BT_COD_MINOR_PERIPHERAL_DIGITIZING_TABLET   = 0x05, /*!< Digitizing Tablet */
+    ESP_BT_COD_MINOR_PERIPHERAL_CARD_READER         = 0x06, /*!< Card Reader */
+    ESP_BT_COD_MINOR_PERIPHERAL_DIGITAL_PAN         = 0x07, /*!< Digital Pan */
+    ESP_BT_COD_MINOR_PERIPHERAL_HAND_SCANNER        = 0x08, /*!< Hand Scanner */
+    ESP_BT_COD_MINOR_PERIPHERAL_HAND_GESTURAL_INPUT = 0x09, /*!< Hand Gestural Input */
+} esp_bt_cod_minor_peripheral_t;
+
 /// Bits of major device class field
 #define ESP_BT_COD_MAJOR_DEV_BIT_MASK         (0x1f00) /*!< Major device bit mask */
 #define ESP_BT_COD_MAJOR_DEV_BIT_OFFSET       (8)      /*!< Major device bit offset */
