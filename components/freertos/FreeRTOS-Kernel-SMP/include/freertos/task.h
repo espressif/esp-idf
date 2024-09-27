@@ -486,7 +486,7 @@ typedef enum
  *      xHandle = xTaskCreateStatic(
  *                    vTaskCode,       // Function that implements the task.
  *                    "NAME",          // Text name for the task.
- *                    STACK_SIZE,      // Stack size in words, not bytes.
+ *                    STACK_SIZE,      // Stack size in b
  *                    ( void * ) 1,    // Parameter passed into the task.
  *                    tskIDLE_PRIORITY,// Priority at which the task is created.
  *                    xStack,          // Array to use as the task's stack.
