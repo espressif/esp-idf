@@ -30,7 +30,8 @@ def _real_test_func(dut: Dut) -> None:
 @pytest.mark.esp32s2
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
-# @pytest.mark.esp32c5  # IDF-10915
+@pytest.mark.esp32c5
+# @pytest.mark.esp32c61 #IDF-11309
 @pytest.mark.esp32c6
 @pytest.mark.esp32p4
 @pytest.mark.generic
