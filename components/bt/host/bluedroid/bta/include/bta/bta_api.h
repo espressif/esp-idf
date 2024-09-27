@@ -2172,6 +2172,17 @@ extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
         UINT32 *p_handle );
+
+/*******************************************************************************
+**
+** Function         BTA_DmRemoveLocalDiRecord
+**
+** Description      This function removes a DI record from the local SDP database.
+**
+** Returns          BTA_SUCCESS if record is removed successfully, otherwise error code.
+**
+*******************************************************************************/
+extern tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle);
 #endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **
