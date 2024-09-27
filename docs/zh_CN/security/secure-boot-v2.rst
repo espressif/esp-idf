@@ -29,7 +29,7 @@
 
     .. only:: esp32
 
-        芯片版本低于 v3.0 的 ESP32 安全启动请参阅 :doc:`secure-boot-v1`。如果你的芯片版本支持安全启动 v2，推荐使用此模式，相比安全启动 v1 更安全且灵活。
+        芯片版本低于 v3.0 的 ESP32 安全启动请参阅 :doc:`secure-boot-v1`。如果当前芯片版本支持安全启动 v2，推荐使用此模式，相比安全启动 v1 更安全且灵活。
 
     安全启动 v2 使用基于 {IDF_TARGET_SBV2_SCHEME} 的应用程序和引导加载程序 (bootloader) :ref:`second-stage-bootloader` 验证。若需要使用 {IDF_TARGET_SBV2_SCHEME} 方案对应用程序签名，且无需对 bootloader 签名，同样可以参考本文档。
 
@@ -83,10 +83,10 @@
 
     - 芯片在量产时最多能生成并存储三个公钥。
 
-    - {IDF_TARGET_NAME} 支持永久注销个别公钥，对此可以选择保守或激进的配置。
+    - {IDF_TARGET_NAME} 支持永久撤销个别公钥，对此可以选择保守或激进的配置。
 
-      - 保守配置：在此情况下，只有在 bootloader 和应用程序成功迁移到新密钥后才会注销旧密钥。
-      - 激进配置：在此情况下，只要使用此密钥验证失败，就会立即注销该密钥。
+      - 保守配置：在此情况下，只有在 bootloader 和应用程序成功迁移到新密钥后才会撤销旧密钥。
+      - 激进配置：在此情况下，只要使用此密钥验证失败，就会立即撤销该密钥。
 
 - 应用程序和软件 bootloader 采用相同的镜像格式和签名验证方法。
 
@@ -361,11 +361,11 @@ bootloader 大小
 
     - BLOCK_KEYX - 该块包含其在 KEY_PURPOSE_X 中烧录的功能的对应数据，并存储公钥的 SHA-256 哈希摘要。公钥模数、指数、预先计算的 R 和 M' 值的 SHA-256 哈希摘要都将写入 eFuse 密钥块。这个摘要大小为 776 字节，偏移量从 36 到 812，如 :ref:`signature-block-format` 所示。注意，必须设置写保护位，但切勿设置读保护位。
 
-    - KEY_REVOKEX - 与 3 个密钥块中的每一个相对应的注销标记。例如，设置 KEY_REVOKE2 将注销密钥功能为 SECURE_BOOT_DIGEST2 的密钥块。
+    - KEY_REVOKEX - 与 3 个密钥块中的每一个相对应的撤销标记。例如，设置 KEY_REVOKE2 将撤销密钥功能为 SECURE_BOOT_DIGEST2 的密钥块。
 
-    - SECURE_BOOT_AGGRESSIVE_REVOKE - 启用激进的密钥注销。只要与此密钥的验证失败，密钥就会立即注销。
+    - SECURE_BOOT_AGGRESSIVE_REVOKE - 启用激进的密钥撤销。只要与此密钥的验证失败，密钥就会立即撤销。
 
-    为确保后续不会有攻击者添加受信任的密钥，应使用 KEY_REVOKEX 注销所有未使用的密钥摘要槽。若未启用 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS`，应用程序启动时，将在 :cpp:func:`esp_secure_boot_init_checks` 中检查和修复注销操作。
+    为确保后续不会有攻击者添加受信任的密钥，应使用 KEY_REVOKEX 撤销所有未使用的密钥摘要槽。若未启用 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS`，应用程序启动时，将在 :cpp:func:`esp_secure_boot_init_checks` 中检查和修复撤销操作。
 
 密钥必须为可读密钥，以便软件访问。如果密钥设置了读保护，软件只能读取到全为零的数据，导致签名验证失败，启动中止。
 
@@ -407,15 +407,15 @@ bootloader 大小
 
 7. 运行 ``idf.py bootloader`` 构建启用了安全启动的 bootloader ，构建输出中会包含一个烧录命令的提示，使用 ``esptool.py write_flash`` 烧录。
 
-8. 当你准备好烧录 bootloader 时，请运行指定命令并等待烧录完成。注意，此处的指定命令需要手动输入，构建系统不会执行此过程。
+8. 烧录 bootloader 前，请运行指定命令并等待烧录完成。注意，此处的指定命令需要手动输入，构建系统不会执行此过程。
 
 9. 运行 ``idf.py flash`` 构建并烧录分区表以及刚刚构建的应用程序镜像，该镜像使用步骤 6 中生成的签名密钥进行签名。
 
 .. note::
 
-  如果启用了安全启动，``idf.py flash`` 不会烧录 bootloader 。
+  如果启用了安全启动，``idf.py flash`` 不会烧录 bootloader。
 
-10.  重置 {IDF_TARGET_NAME}，它将启动你烧录的软件 bootloader 。该软件 bootloader 会在芯片上启用安全启动，然后验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
+10.  重置 {IDF_TARGET_NAME} 将启动烧录的软件 bootloader。该软件 bootloader 会在芯片上启用安全启动，然后验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
 
 .. note::
 
@@ -435,16 +435,16 @@ bootloader 大小
 
 - 注意，启用安全启动或 flash 加密会禁用 ROM 中的 USB-OTG USB 栈，阻止通过该端口进行串行仿真或设备固件更新 (DFU)。
 
+- 一旦启用安全启动，就无法再对 eFuse 密钥进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。有关读保护密钥的更多信息，请参阅下方详细说明。
+
 烧录读保护密钥
 ~~~~~~~~~~~~~~~
 
-一旦启用安全启动，就无法再对 eFuses 进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。
-
-如果第二阶段 bootloader 启用了 :doc:`/security/flash-encryption`，它会确保在第一次启动时生成的 flash 加密密钥被读保护。
-
-如需在设备启用安全启动后对密钥进行读保护，如：
+**读保护密钥**：
+以下密钥受到读保护后，相应的硬件将直接访问这些密钥（软件无法读取）：
 
 .. list::
+
   :SOC_FLASH_ENC_SUPPORTED:* flash 加密密钥
 
   :SOC_HMAC_SUPPORTED:* HMAC 密钥
@@ -453,19 +453,28 @@ bootloader 大小
 
   :SOC_KEY_MANAGER_SUPPORTED:* 密钥管理器密钥
 
-请在启用安全启动的同时启用配置项 :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`，以防止禁用 eFuses 读保护功能。
+**不受读保护的密钥**：
+因软件访问需要（软件可读取），以下密钥不受读保护：
 
-建议在启用安全启动之前，完成全部密钥的烧录。
+.. list::
 
-如需启用配置项 :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`，请在所有读保护 eFuses 密钥烧录后，使用 ``esp_efuse.h`` 的 ``esp_efuse_write_field_bit()`` API 烧录 eFuses {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}。
+  :SOC_SECURE_BOOT_SUPPORTED:* 安全启动公共密钥摘要
+  * 用户数据
 
+启用安全启动后，默认禁用 eFuses 读保护功能。如后续需在应用程序中对某个 eFuse（例如上述读保护密钥列表中的密钥）进行读保护，请在启用安全启动的同时启用配置项 :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`。
+
+建议在启用安全启动之前，完成全部密钥的烧录。如需启用配置项 :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`，请在所有读保护 eFuse 密钥烧录后，使用 :cpp:func:`esp_efuse_write_field_bit` 烧录 eFuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}。
+
+.. note::
+
+   如果在启用安全启动时，第二阶段引导加载程序启用了 :doc:`/security/flash-encryption`，则首次启动时生成的 flash 加密密钥已经受到读保护。
 
 .. _secure-boot-v2-generate-key:
 
 生成安全启动签名密钥
 ----------------------------------
 
-构建系统会提示你，使用 ``idf.py secure-generate-signing-key`` 命令生成新签名密钥。
+根据构建系统提示，使用 ``idf.py secure-generate-signing-key`` 命令生成新签名密钥。
 
 .. only:: esp32 or SOC_SECURE_BOOT_V2_RSA
 
@@ -522,7 +531,7 @@ bootloader 大小
 
   idf.py secure-sign-data BINARY_FILE --keyfile PRIVATE_SIGNING_KEY
 
-上述命令将镜像签名附加到现有的二进制文件中，你可以使用 `--output` 参数将签名后的二进制文件写入单独的文件：
+上述命令将镜像签名附加到现有的二进制文件中，可以使用 `--output` 参数将签名后的二进制文件写入单独的文件：
 
 .. code-block::
 
@@ -532,7 +541,7 @@ bootloader 大小
 使用预计算的签名进行签名
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-如果你拥有为镜像生成的有效预计算签名及相应公钥，你可以使用这些签名生成一个签名扇区，并将其附加到镜像中。注意，预计算的签名应计算在镜像中的所有字节，包括安全填充字节。
+如果存在为镜像生成的有效预计算签名及相应公钥，可以使用这些签名生成一个签名扇区，并将其附加到镜像中。注意，预计算的签名应计算在镜像中的所有字节，包括安全填充字节。
 
 在此情况下，应禁用选项 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` 来构建固件镜像。该镜像将进行安全填充，并使用以下命令，生成带签名的二进制文件：
 
@@ -546,7 +555,7 @@ bootloader 大小
 使用外部硬件安全模块 (HSM) 进行签名
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-为了提高安全性，你可能会使用外部硬件安全模块 (HSM) 存储私钥，该私钥无法直接访问，但具备一个接口，可以生成二进制文件及其相应公钥的签名。
+为了提高安全性，可能需要使用外部硬件安全模块 (HSM) 存储私钥，该私钥无法直接访问，但具备一个接口，可以生成二进制文件及其相应公钥的签名。
 
 在此情况下，请禁用选项 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` 并构建固件。随后，可以将已进行安全填充的镜像提供给外部硬件安全模块来生成签名。请参阅 `使用外部 HSM 签名 <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espsecure/index.html#remote-signing-using-an-external-hsm>`_ 生成已签名镜像。
 
@@ -583,15 +592,15 @@ bootloader 大小
     * 烧录 eFuse 可以由软件 bootloader 在首次从 menuconfig 启用 ``Secure Boot v2`` 后进行，也可以使用 ``espefuse.py``，后者与 ROM 中的串行 bootloader 通信。
     * KEY_DIGEST 应从密钥摘要 #0 开始，按顺序编号。如果使用了密钥摘要 #1，则必须使用密钥摘要 #0。如果使用了密钥摘要 #2，则必须使用密钥摘要 #0 和 #1。
     * 软件 bootloader 不支持 OTA 升级，它将至少由一个私钥签名，也可能使用全部三个私钥，并在工厂内烧录。
-    * 应用程序应仅由单个私钥签名，其他私钥应妥善保管。但如果需要注销某些私钥，也可以使用多个签名私钥，请参阅下文的 :ref:`secure-boot-v2-key-revocation`。
+    * 应用程序应仅由单个私钥签名，其他私钥应妥善保管。但如果需要撤销某些私钥，也可以使用多个签名私钥，请参阅下文的 :ref:`secure-boot-v2-key-revocation`。
 
 
     多个密钥管理
     -------------
 
     * 在烧录 bootloader 之前，应使用设备整个生命周期所需的所有私钥对 bootloader 签名。
-    * 构建系统每次只能使用一个私钥签名，如果需要，你必须手动运行命令以附加更多签名。
-    * 你可以使用 ``idf.py secure-sign-data`` 的附加功能，此命令也将在启用安全启动 v2 的 bootloader 编译的末尾显示。
+    * 构建系统每次只能使用一个私钥签名，如果需要，必须手动运行命令以附加更多签名。
+    * 可以使用 ``idf.py secure-sign-data`` 的附加功能，此命令也将在启用安全启动 v2 的 bootloader 编译的末尾显示。
 
     .. code-block::
 
@@ -606,10 +615,11 @@ bootloader 大小
 
     .. _secure-boot-v2-key-revocation:
 
-    注销密钥管理
+    撤销密钥管理
     --------------
 
     * 密钥按线性顺序处理，即密钥 #0、密钥 #1、密钥 #2。
+    * 撤销一个密钥后，其余未被撤销的密钥仍可用于应用程序签名。例如，如密钥 #1 被撤销，仍然可以使用密钥 #0 和密钥 #2 给应用程序签名。
     * 应用程序每次应只使用一个密钥签名，尽量避免暴露未使用的私钥。
     * bootloader 可以使用来自工厂的多个函数签名。
 
@@ -629,10 +639,14 @@ bootloader 大小
     3. 验证新应用程序的签名块。对比公钥与 eFuse 中烧录的摘要，并使用已验证的公钥验证应用程序。
     4. 将活动分区设置为新的 OTA 应用程序分区。
     5. 设备重置并加载使用密钥 #N-1 验证的 bootloader ，随后启动使用密钥 #N 验证的新应用程序。
-    6. 新应用程序使用密钥 #N 验证 bootloader ，这是最后的检查，然后运行代码注销密钥 #N-1，即设置 KEY_REVOKE eFuse 位。
-    7. 可以使用 API `esp_ota_revoke_secure_boot_public_key()` 注销密钥 #N-1。
+    6. 新应用程序使用密钥 #N 验证 bootloader ，这是最后的检查，然后运行代码撤销密钥 #N-1，即设置 KEY_REVOKE eFuse 位。
+    7. 可以使用 API :cpp:func:`esp_ota_revoke_secure_boot_public_key` 撤销密钥 #N-1。
 
     * 类似的方法也可以用于物理重新烧录，以使用新的密钥，还可以同时更改 bootloader 的内容。
+
+    .. note::
+
+        当前未使用的密钥可以被撤销。例如，如果活动应用程序由密钥 #0 签名，但密钥 #1 已被泄露，请通过上述方法撤销密钥 #1。新的 OTA 更新应继续使用密钥 #0 签名，并且可以使用 API `esp_ota_revoke_secure_boot_public_key (SECURE_BOOT_PUBLIC_KEY_INDEX_[N])` 来撤销密钥 #N（在此例中，N 为 1）。撤销该密钥后，其余密钥以后仍可用于给应用程序签名。
 
 
     .. _secure-boot-v2-aggressive-key-revocation:
@@ -640,13 +654,13 @@ bootloader 大小
     激进方法
     ~~~~~~~~~~~~~~
 
-    ROM 代码具备一项额外功能，即在签名验证失败时可以注销公钥摘要。
+    ROM 代码具备一项额外功能，即在签名验证失败时可以撤销公钥摘要。
 
     请烧录 ``SECURE_BOOT_AGGRESSIVE_REVOKE`` eFuse 或启用 :ref:`CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE` 以启用此功能。
 
-    注销密钥仅适用于成功启用了安全启动的情况。此外，在签名块无效或镜像摘要无效的情况下不会注销密钥，仅在签名验证失败时，即在 :ref:`verify_image` 的第 3 步中验证失败时，才会执行注销操作。
+    撤销密钥仅适用于成功启用了安全启动的情况。此外，在签名块无效或镜像摘要无效的情况下不会撤销密钥，仅在签名验证失败时，即在 :ref:`verify_image` 的第 3 步中验证失败时，才会执行撤销操作。
 
-    一旦注销了密钥，它将无法再用于验证镜像签名。该功能提供了强大的物理攻击防护，但如果由于签名验证失败而注销了所有密钥，可能会导致设备再也无法使用。
+    一旦撤销了密钥，它将无法再用于验证镜像签名。该功能提供了强大的物理攻击防护，但如果由于签名验证失败而撤销了所有密钥，可能会导致设备再也无法使用。
 
 
 .. _secure-boot-v2-technical-details:
