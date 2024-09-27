@@ -642,7 +642,13 @@ void esp_vfs_dump_registered_paths(FILE *fp)
     fprintf(fp, "<index>:<VFS Path Prefix> -> <VFS entry ptr>\n");
     fprintf(fp, "------------------------------------------------------\n");
     for (size_t i = 0; i < VFS_MAX_COUNT; ++i) {
-        fprintf(fp, "%d:%s -> %p\n", i, s_vfs[i] ? s_vfs[i]->path_prefix : "NULL", s_vfs[i]);
+        fprintf(
+            fp,
+            "%d:%s -> %p\n",
+            i,
+            s_vfs[i] ? s_vfs[i]->path_prefix : "NULL",
+            s_vfs[i] ? s_vfs[i]->vfs : NULL
+        );
     }
 }
 
