@@ -496,7 +496,7 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
  *  - ESP_OK
  *  - ESP_FAIL
  */
-esp_err_t esp_http_client_delete_headers(esp_http_client_handle_t client);
+esp_err_t esp_http_client_delete_all_headers(esp_http_client_handle_t client);
 
 /**
  * @brief      This function will be open the connection, write all header strings and return
