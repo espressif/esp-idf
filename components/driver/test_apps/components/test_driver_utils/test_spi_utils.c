@@ -111,7 +111,7 @@ void slave_pull_up(const spi_bus_config_t* cfg, int spics_io_num)
 }
 
 /**********************************************************************************
- * functions for slave task
+ * functions for master task
  *********************************************************************************/
 
 static int test_len[] = {1, 3, 5, 7, 9, 11, 33, 64};
@@ -232,7 +232,6 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
-#if (TEST_SPI_PERIPH_NUM >= 2)
 //Note this cs_dev_id is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_dev_id of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_dev_id)
@@ -249,4 +248,32 @@ void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, 
     spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
     spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
 }
-#endif  //(TEST_SPI_PERIPH_NUM >= 2)
+
+void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len)
+{
+    uint8_t *u8_tx = tx, *u8_rx = rx;
+    esp_rom_gpio_connect_out_signal(cs_pin, SIG_GPIO_OUT_IDX, 0, 0);
+    esp_rom_gpio_connect_out_signal(bus.sclk_io_num, SIG_GPIO_OUT_IDX, 0, 0);
+    esp_rom_gpio_connect_out_signal(bus.mosi_io_num, SIG_GPIO_OUT_IDX, 0, 0);
+    esp_rom_gpio_connect_in_signal(bus.miso_io_num, SIG_GPIO_OUT_IDX, 0);
+
+    gpio_set_level(cs_pin, 0);
+    vTaskDelay(1);  // cs_ena_pre_trans
+    for (uint32_t index = 0; index < len; index ++) {
+        uint8_t rx_data = 0;
+        for (uint8_t bit = 0x80; bit > 0; bit >>= 1) {
+            // mode 0, output data first
+            gpio_set_level(bus.mosi_io_num, (u8_tx) ? (u8_tx[index] & bit) : 0);
+            vTaskDelay(1);
+            gpio_set_level(bus.sclk_io_num, 1);
+            rx_data <<= 1;
+            rx_data |= gpio_get_level(bus.miso_io_num);
+            vTaskDelay(1);
+            gpio_set_level(bus.sclk_io_num, 0);
+        }
+        if (u8_rx) {
+            u8_rx[index] = rx_data;
+        }
+    }
+    gpio_set_level(cs_pin, 1);
+}

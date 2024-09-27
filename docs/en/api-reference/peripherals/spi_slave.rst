@@ -55,6 +55,17 @@ The SPI slave driver allows using the SPI peripherals as full-duplex Devices. Th
 
 The SPI slave driver supports registering the SPI ISR to a certain CPU core. If multiple tasks try to access the same SPI Device simultaneously, it is recommended that your application be refactored so that each SPI peripheral is only accessed by a single task at a time. Please also use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safety.
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    ^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports to retain the SPI register context before entering **light sleep** and restore them after waking up. This means you don't have to re-init the SPI driver after the light sleep.
+
+    This feature can be enabled by setting the flag :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD`. It will allow the system to power down the SPI in light sleep, meanwhile save the register context. It can help to save more power consumption with some extra cost of the memory.
+
+    Notice that when GPSPI is working as a slave, it is **not** support to enter sleep when any transaction (including TX and RX) is not finished.
+
 SPI Transactions
 ----------------
 
