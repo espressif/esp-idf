@@ -573,6 +573,33 @@ menu "FreeRTOS"
 
     endmenu # Port
 
+    menu "Extra"
+
+        config FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+            depends on SPIRAM
+            depends on FREERTOS_SUPPORT_STATIC_ALLOCATION
+            bool "Allow external memory as an argument to xTaskCreateStatic (READ HELP)"
+            default n if IDF_TARGET_ESP32
+            default y
+            help
+                Accessing memory in PSRAM has certain restrictions, so task stacks allocated by xTaskCreate
+                are by default allocated from internal RAM.
+
+                This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
+                This should only be used for tasks where the stack is never accessed while the cache is disabled.
+
+                Extra notes for ESP32:
+
+                Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround,
+                normally tasks cannot be safely run with their stack residing in external memory; for this reason
+                xTaskCreate (and related task creation functions) always allocate stack in internal memory and
+                xTaskCreateStatic will check if the memory passed to it is in internal memory.
+                If you have a task that needs a large amount of stack and does not call on ROM code in any way
+                (no direct calls, but also no Bluetooth/WiFi), you can try enable this to
+                cause xTaskCreateStatic to allow tasks stack in external memory.
+
+    endmenu  # Extra
+
     # Hidden or compatibility options
 
     config FREERTOS_PORT

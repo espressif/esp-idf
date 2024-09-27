@@ -7,7 +7,7 @@ from pytest_embedded import Dut
 CONFIGS = [
     pytest.param('default', marks=[pytest.mark.supported_targets,]),
     pytest.param('freertos_options', marks=[pytest.mark.supported_targets]),
-    pytest.param('psram', marks=[pytest.mark.esp32]),
+    pytest.param('psram', marks=[pytest.mark.esp32, pytest.mark.esp32s3, pytest.mark.esp32p4, pytest.mark.esp32c5]),
     pytest.param('single_core', marks=[pytest.mark.esp32, pytest.mark.esp32p4]),
     # TODO: [ESP32C5] IDF-10335
     # TODO: [ESP32C61] IDF-11146

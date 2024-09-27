@@ -89,7 +89,7 @@ TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[f
     xTaskNotifyGive(task_handle);
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletion stress test", "[freertos]")
 {
@@ -115,7 +115,7 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
     }
 }
 
-#endif /* CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+#endif /* CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
 
 #if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
 

@@ -99,7 +99,7 @@ bool xPortcheckValidStackMem(const void * ptr)
 #if CONFIG_IDF_TARGET_LINUX
     return true;
 #else /* CONFIG_IDF_TARGET_LINUX */
-#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
     return esp_ptr_byte_accessible(ptr);
 #else
     return esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr);
