@@ -13,6 +13,12 @@
 
     在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
 
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      可以在 :doc:`../api-guides/tools/qemu` 中虚拟测试 {IDF_TARGET_NAME} 目标芯片的安全功能。安全工作流程建立后，便可在真实硬件上继续操作。
+
 目标
 ----
 

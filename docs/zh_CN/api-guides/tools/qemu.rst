@@ -1,6 +1,8 @@
 QEMU 模拟器
 ===========
 
+{IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
+
 :link_to_translation:`en:[English]`
 
 乐鑫维护了一个 QEMU 模拟器的 `分支 <https://github.com/espressif/qemu>`_，支持 {IDF_TARGET_NAME}。这个分支实现了对 {IDF_TARGET_NAME} 的 CPU、内存和多个外设的模拟。更多有关 {IDF_TARGET_NAME} 的 QEMU 的信息，请参阅 `QEMU README 文档 <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_。
@@ -119,13 +121,37 @@ QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与�
 
 使用 :doc:`idf.py<idf-py>` eFuse 相关命令来编程 eFuse。当这些命令与 ``qemu`` 命令一起运行时，eFuse 会在 QEMU 中编程，并且 ``qemu_efuse.bin`` 文件会更新。例如，
 
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key flash_encryption my_flash_encryption_key.bin
+
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+
+    有关 ``BLOCK`` 和 ``KEYPURPOSE`` 的详细信息，请参阅 :doc:`../../security/flash-encryption` 指南。
+
+如需导出 eFuse 概要，使用以下命令：
+
 .. code-block:: console
 
-    idf.py qemu efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu efuse-summary
 
 默认情况下，eFuse 的值从编译文件夹里的 ``qemu_efuse.bin`` 文件中读取和写入。也可以使用 ``--efuse-file`` 选项指定不同的文件。例如，
 
 .. code-block:: console
 
-    idf.py qemu --efuse-file my_efuse.bin efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu --efuse-file my_efuse.bin efuse-burn {IDF_TARGET_CRYPT_CNT} 1
     idf.py qemu --efuse-file my_efuse.bin monitor
+
+模拟安全启动
+~~~~~~~~~~~~~
+
+QEMU 支持模拟安全启动 v2 机制。请保持 :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` 处于启用状态，将签名的引导加载程序镜像嵌入到 QEMU 的镜像文件中。
+
