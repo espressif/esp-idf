@@ -1086,18 +1086,23 @@ end:
 void BTM_BleSetPreferExtenedConnParams (BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_or_alloc_dev (bd_addr);
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if (p_dev_rec) {
         if (params) {
             memcpy(&p_dev_rec->ext_conn_params, params, sizeof(tBTM_EXT_CONN_PARAMS));
         } else {
-            BTM_TRACE_ERROR("Invalid Extand connection parameters");
+            BTM_TRACE_ERROR("Invalid Extended connection parameters");
+            status = BTM_ILLEGAL_VALUE;
         }
     } else {
-            BTM_TRACE_ERROR("Unknown Device, setting rejected");
+        BTM_TRACE_ERROR("Unknown Device, setting rejected");
+        status = BTM_UNKNOWN_ADDR;
     }
 
-    return;
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PREFER_EXT_CONN_PARAMS_SET_COMPLETE_EVT, &cb_params);
 }
 
 void btm_ble_extended_init(void)
