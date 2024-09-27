@@ -1750,7 +1750,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
         handle = power_type;
     }
 
-    lvl = (esp_power_level_t)ble_txpwr_get(power_type, handle);
+    lvl = (esp_power_level_t)ble_txpwr_get(enh_pwr_type, handle);
 
     return lvl;
 }
