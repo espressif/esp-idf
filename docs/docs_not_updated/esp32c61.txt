@@ -37,10 +37,6 @@ libraries-and-frameworks/index.rst
 libraries-and-frameworks/cloud-frameworks.rst
 versions.rst
 api-reference/template.rst
-api-reference/provisioning/protocomm.rst
-api-reference/provisioning/provisioning.rst
-api-reference/provisioning/index.rst
-api-reference/provisioning/wifi_provisioning.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
