@@ -22,23 +22,7 @@ extern "C" {
 #define SLAVE_WS_IO 22
 #define DATA_IN_IO 19
 #define DATA_OUT_IO 18
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define MASTER_MCK_IO 0
-#define MASTER_BCK_IO 4
-#define MASTER_WS_IO 5
-#define SLAVE_BCK_IO 14
-#define SLAVE_WS_IO 15
-#define DATA_IN_IO 19
-#define DATA_OUT_IO 18
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define MASTER_MCK_IO 0
-#define MASTER_BCK_IO 4
-#define MASTER_WS_IO 5
-#define SLAVE_BCK_IO 14
-#define SLAVE_WS_IO 15
-#define DATA_IN_IO 19
-#define DATA_OUT_IO 18
-#elif CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
 #define MASTER_MCK_IO 0
 #define MASTER_BCK_IO 4
 #define MASTER_WS_IO 5
@@ -50,8 +34,8 @@ extern "C" {
 #define MASTER_MCK_IO 51
 #define MASTER_BCK_IO 45
 #define MASTER_WS_IO 46
-#define SLAVE_BCK_IO 22
-#define SLAVE_WS_IO 23
+#define SLAVE_BCK_IO 49
+#define SLAVE_WS_IO 50
 #define DATA_IN_IO 47
 #define DATA_OUT_IO 48
 #else
