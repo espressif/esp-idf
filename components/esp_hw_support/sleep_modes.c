@@ -680,6 +680,9 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+        regi2c_tsens_reg_read();
+#endif
     }
 
 #if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61
@@ -723,6 +726,9 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_write();
+#endif
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    regi2c_tsens_reg_write();
 #endif
 }
 

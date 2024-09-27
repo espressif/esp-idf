@@ -156,6 +156,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
+            :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
 
         以下外设尚未支持：
 

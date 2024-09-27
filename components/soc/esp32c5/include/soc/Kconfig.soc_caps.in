@@ -1407,6 +1407,14 @@ config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     bool
     default y
 
+config SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+    bool
+    default y
+
 config SOC_WIFI_HW_TSF
     bool
     default y

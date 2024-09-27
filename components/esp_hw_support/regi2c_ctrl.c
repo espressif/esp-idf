@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "hal/regi2c_ctrl.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
+#include "soc/soc_caps.h"
 
 static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -109,3 +110,21 @@ void regi2c_saradc_disable(void)
     regi2c_exit_critical();
 
 }
+
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+
+#include "soc/regi2c_saradc.h"
+
+static DRAM_ATTR uint8_t dac_offset_regi2c;
+
+void IRAM_ATTR regi2c_tsens_reg_read(void)
+{
+    dac_offset_regi2c = REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);
+}
+
+void IRAM_ATTR regi2c_tsens_reg_write(void)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, dac_offset_regi2c);
+}
+
+#endif

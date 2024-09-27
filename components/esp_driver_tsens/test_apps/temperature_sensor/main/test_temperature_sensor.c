@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,11 @@
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
 #include "unity_test_utils_cache.h"
+#include "esp_sleep.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_pm.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 
 TEST_CASE("Temperature_sensor_driver_workflow_test", "[temperature_sensor]")
 {
@@ -146,3 +151,59 @@ TEST_CASE("Temperature sensor callback test", "[temperature_sensor]")
 }
 
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+#if SOC_LIGHT_SLEEP_SUPPORTED && CONFIG_PM_ENABLE
+static void test_temperature_sensor_sleep_retention(bool allow_pd)
+{
+    printf("Initializing Temperature sensor\n");
+    float tsens_result0;
+    float tsens_result1;
+    temperature_sensor_config_t temp_sensor = {
+        .range_min = 10,
+        .range_max = 50,
+        .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT,
+        .flags.allow_pd = allow_pd,
+    };
+    temperature_sensor_handle_t temp_handle = NULL;
+    TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
+    TEST_ESP_OK(temperature_sensor_enable(temp_handle));
+    printf("Temperature sensor started\n");
+    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_result0));
+    printf("Temperature out celsius %f°C\n", tsens_result0);
+
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2 * 1000 * 1000));
+    TEST_ESP_OK(esp_light_sleep_start());
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+    printf("check if the sleep happened as expected\r\n");
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+    // check if the power domain also is powered down
+    TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#elif CONFIG_IDF_TARGET_ESP32P4
+    TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+
+    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_result1));
+    printf("Temperature out celsius %f°C\n", tsens_result1);
+    TEST_ASSERT_FLOAT_WITHIN(6.0, tsens_result0, tsens_result1);
+
+    TEST_ESP_OK(temperature_sensor_disable(temp_handle));
+    TEST_ESP_OK(temperature_sensor_uninstall(temp_handle));
+}
+
+TEST_CASE("temperature sensor sleep retention test", "[temperature_sensor]")
+{
+    test_temperature_sensor_sleep_retention(false);
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    test_temperature_sensor_sleep_retention(true);
+#endif
+}
+#endif

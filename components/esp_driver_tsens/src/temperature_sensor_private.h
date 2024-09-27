@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,9 @@ typedef enum {
 #define TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define TEMPERATURE_SENSOR_MEM_ALLOC_CAPS      (MALLOC_CAP_DEFAULT)
 #endif
+
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define TEMPERATURE_SENSOR_USE_RETENTION_LINK  (SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN)
 
 typedef struct temperature_sensor_obj_t temperature_sensor_obj_t;
 
