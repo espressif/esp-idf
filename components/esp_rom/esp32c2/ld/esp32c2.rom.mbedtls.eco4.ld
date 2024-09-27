@@ -48,6 +48,16 @@ mbedtls_mpi_gcd = 0x40002768;
 mbedtls_mpi_inv_mod = 0x4000276c;
 mbedtls_mpi_is_prime_ext = 0x40002770;
 
+/* Moved from mbedtls.ld to mbedtls.eco4 ld */
+mbedtls_cipher_init = 0x4000277c;
+mbedtls_cipher_set_padding_mode = 0x40002780;
+mbedtls_cipher_reset = 0x40002784;
+mbedtls_cipher_finish = 0x40002788;
+mbedtls_cipher_crypt = 0x4000278c;
+mbedtls_cipher_cmac_starts = 0x40002790;
+mbedtls_cipher_cmac_update = 0x40002794;
+mbedtls_cipher_cmac_finish = 0x40002798;
+
 /***************************************
  Group eco4_rom_mbedtls
  ***************************************/
