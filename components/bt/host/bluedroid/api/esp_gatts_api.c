@@ -260,6 +260,11 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
 esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, uint16_t attr_handle,
                                       uint16_t value_len, uint8_t *value, bool need_confirm)
 {
+    if (value_len > ESP_GATT_MAX_ATTR_LEN) {
+        LOG_ERROR("%s, value_len > ESP_GATT_MAX_ATTR_LEN.", __func__);
+        return ESP_ERR_INVALID_SIZE;
+    }
+
     btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
@@ -272,7 +277,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     }
 
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, p_tcb->peer_bda)) {
-        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        LOG_DEBUG("%s, the l2cap channel is congest.", __func__);
         return ESP_FAIL;
     }
 
