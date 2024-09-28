@@ -243,7 +243,7 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components. Paths can be relative to the project directory, or absolute.
 
-- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via the REQUIRES or PRIV_REQUIRES arguments on component registration will automatically have it added to this list, so the ``COMPONENTS`` list can be very short.
+- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via the REQUIRES or PRIV_REQUIRES arguments on component registration will automatically have it added to this list, so the ``COMPONENTS`` list can be very short. The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be used as an alternative to specifying only the ``main`` component in ``COMPONENTS``.
 
 - ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: Optional list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
 
@@ -618,6 +618,11 @@ Including Components in the Build
   - The "common" components that every component depends on.
 
 - Setting ``COMPONENTS`` to the minimal list of required components can significantly reduce compile times.
+- The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
+
+.. note::
+
+   When using the ``COMPONENTS`` variable or the ``MINIMAL_BUILD`` build property to specify components, certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be included by default. To include these features, you must add the relevant components to the ``COMPONENTS`` variable or list them in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
 
 
 .. _component-circular-dependencies:
@@ -1370,6 +1375,7 @@ These are properties that describe the build. Values of build properties can be 
 - INCLUDE_DIRECTORIES - include directories for all component source files
 - KCONFIGS - list of Kconfig files found in components in build; set by ``idf_build_process``
 - KCONFIG_PROJBUILDS - list of Kconfig.projbuild files found in components in build; set by ``idf_build_process``
+- MINIMAL_BUILD - perform a minimal build by including only the "common" components required by all other components, along with the components that are direct or transitive dependencies only of the ``main`` component. By default, this property is disabled (set to ``OFF``), but it can be enabled by setting it to ``ON``.
 - PROJECT_NAME - name of the project; set from ``idf_build_process`` PROJECT_NAME argument
 - PROJECT_DIR - directory of the project; set from ``idf_build_process`` PROJECT_DIR argument
 - PROJECT_VER - version of the project; set from ``idf_build_process`` PROJECT_VER argument

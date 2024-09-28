@@ -46,6 +46,9 @@ For specific details about connecting the SoC or module pins to an external PSRA
 Configuring External RAM
 ========================
 
+.. note::
+    The ``SPI RAM`` configuration options are available only if the ``esp_psram`` component is included in the build.
+
 ESP-IDF fully supports the use of external RAM in applications. Once the external RAM is initialized at startup, ESP-IDF can be configured to integrate the external RAM in several ways:
 
 .. list::
