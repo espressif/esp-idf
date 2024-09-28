@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ Procedure:
     - Expect URB to be USB_TRANSFER_STATUS_CANCELED or USB_TRANSFER_STATUS_COMPLETED
     - Teardown
 */
-TEST_CASE("Test HCD control pipe URBs", "[ctrl][low_speed][full_speed]")
+TEST_CASE("Test HCD control pipe URBs", "[ctrl][low_speed][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
@@ -110,7 +110,7 @@ TEST_CASE("Test HCD control pipe URBs", "[ctrl][low_speed][full_speed]")
 /*
 Test HCD control pipe STALL condition, abort, and clear
 
-@todo this test is not passing with low-speed: test with bus analyzer
+@todo this test is not passing with low-speed: test with bus analyzer IDF-10995
 
 Purpose:
     - Test that a control pipe can react to a STALL (i.e., a HCD_PIPE_EVENT_ERROR_STALL event)
@@ -128,7 +128,7 @@ Procedure:
     - Dequeue URBs
     - Teardown
 */
-TEST_CASE("Test HCD control pipe STALL", "[ctrl][full_speed]")
+TEST_CASE("Test HCD control pipe STALL", "[ctrl][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
@@ -216,6 +216,8 @@ TEST_CASE("Test HCD control pipe STALL", "[ctrl][full_speed]")
 
 /*
 Test control pipe run-time halt and clear
+
+@todo this test is not passing on P4: test with bus analyzer IDF-10996
 
 Purpose:
     - Test that a control pipe can be halted with HCD_PIPE_CMD_HALT whilst there are ongoing URBs
