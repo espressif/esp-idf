@@ -1083,7 +1083,7 @@ config BT_ACL_CONNECTIONS
         is used.
 
 config BT_MULTI_CONNECTION_ENBALE
-    bool "Enable BLE multi-conections"
+    bool "Enable BLE multi-connections"
     depends on BT_BLE_ENABLED
     default y
     help
