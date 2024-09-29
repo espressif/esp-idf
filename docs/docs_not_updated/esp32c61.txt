@@ -28,14 +28,6 @@ api-guides/esp-ble-mesh/ble-mesh-faq.rst
 api-guides/wifi-security.rst
 api-guides/index.rst
 api-guides/openthread.rst
-third-party-tools/platformio.rst
-third-party-tools/clion.rst
-third-party-tools/visualgdb.rst
-COPYRIGHT.rst
-libraries-and-frameworks/libs-frameworks.rst
-libraries-and-frameworks/index.rst
-libraries-and-frameworks/cloud-frameworks.rst
-versions.rst
 api-reference/template.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
@@ -176,8 +168,6 @@ api-reference/protocols/modbus.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst
-about.rst
-resources.rst
 get-started/establish-serial-connection.rst
 get-started/linux-macos-setup.rst
 get-started/linux-macos-start-project.rst
@@ -187,4 +177,4 @@ get-started/flashing-troubleshooting.rst
 get-started/windows-start-project.rst
 get-started/index.rst
 get-started/windows-setup-update.rst
-index.rst
+hw-reference/index.rst
