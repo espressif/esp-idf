@@ -14,6 +14,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
 @pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(

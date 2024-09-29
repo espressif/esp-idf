@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 Bluetooth Power Save Example
 =================================
@@ -24,6 +24,8 @@ This example contains some build configurations. For each configuration, a few c
 - `sdkconfig.26m.esp32c2`: ESP32C2 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32c5`: ESP32C5 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.48m.esp32c5`: ESP32C5 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c61`: ESP32C61 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32c61`: ESP32C61 uses main XTAL as low power clock in light sleep enabled.
 
 ## How to use example
 
