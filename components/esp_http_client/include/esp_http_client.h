@@ -488,6 +488,17 @@ esp_err_t esp_http_client_set_timeout_ms(esp_http_client_handle_t client, int ti
 esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const char *key);
 
 /**
+ * @brief      Delete all http request headers
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *  - ESP_OK
+ *  - ESP_FAIL
+ */
+esp_err_t esp_http_client_delete_all_headers(esp_http_client_handle_t client);
+
+/**
  * @brief      This function will be open the connection, write all header strings and return
  *
  * @param[in]  client     The esp_http_client handle
