@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
@@ -52,6 +53,10 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
+    if (gpio_num > MAX_RTC_GPIO_NUM) {
+        assert(false && "RTCIO number error");
+        return;
+    }
     portENTER_CRITICAL(&s_io_mux_spinlock);
     if (enable) {
         if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {

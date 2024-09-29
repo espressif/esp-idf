@@ -983,6 +983,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 #endif
 
+#if SOC_DCDC_SUPPORTED
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
+#endif
+
             // Enter Deep Sleep
 #if!ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB || SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY || !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #if SOC_PMU_SUPPORTED
@@ -1016,25 +1024,18 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
 
-#if SOC_DCDC_SUPPORTED
-#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
-            if (!deep_sleep) {
-                // Keep DCDC always on during light sleep, no need to adjust LDO voltage.
-            } else
-#endif
-            {
-                uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
-                if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
-                    esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
-                }
-                pmu_sleep_shutdown_dcdc();
-            }
-#endif
-
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
             if (pd_flags & PMU_SLEEP_PD_TOP) {
                 esp_sleep_mmu_retention(true);
             }
+#endif
+
+#if SOC_DCDC_SUPPORTED && !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
 #endif
 
 #if SOC_PMU_SUPPORTED
@@ -1966,8 +1967,9 @@ uint64_t esp_sleep_get_gpio_wakeup_status(void)
 
 static void gpio_deep_sleep_wakeup_prepare(void)
 {
-    for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
-        if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
+    uint32_t valid_wake_io_mask = SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK;
+    for (gpio_num_t gpio_idx = __builtin_ctz(valid_wake_io_mask); valid_wake_io_mask >> gpio_idx; gpio_idx++) {
+        if ((s_config.gpio_wakeup_mask & BIT64(gpio_idx)) == 0) {
             continue;
         }
 #if CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
@@ -1993,13 +1995,20 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
     }
     gpio_int_type_t intr_type = ((mode == ESP_GPIO_WAKEUP_GPIO_LOW) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
     esp_err_t err = ESP_OK;
-    for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++, gpio_pin_mask >>= 1) {
-        if ((gpio_pin_mask & 1) == 0) {
-            continue;
+
+    uint64_t invalid_io_mask = gpio_pin_mask & ~SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK;
+    if (invalid_io_mask != 0) {
+        for (gpio_num_t gpio_idx = __builtin_ctzll(invalid_io_mask); invalid_io_mask >> gpio_idx; gpio_idx++) {
+            if (invalid_io_mask & BIT64(gpio_idx)) {
+                ESP_LOGE(TAG, "gpio %d is an invalid deep sleep wakeup IO", gpio_idx);
+                return ESP_ERR_INVALID_ARG;
+            }
         }
-        if (!esp_sleep_is_valid_wakeup_gpio(gpio_idx)) {
-            ESP_LOGE(TAG, "gpio %d is an invalid deep sleep wakeup IO", gpio_idx);
-            return ESP_ERR_INVALID_ARG;
+    }
+
+    for (gpio_num_t gpio_idx = __builtin_ctzll(gpio_pin_mask); gpio_pin_mask >> gpio_idx; gpio_idx++) {
+        if ((gpio_pin_mask & BIT64(gpio_idx)) == 0) {
+            continue;
         }
         err = gpio_deep_sleep_wakeup_enable(gpio_idx, intr_type);
 
