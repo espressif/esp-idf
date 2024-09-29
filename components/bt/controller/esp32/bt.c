@@ -1634,7 +1634,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_cfg_mask = btdm_config_mask_load();
 
-    if (btdm_controller_init(btdm_cfg_mask, cfg) != 0) {
+    err = btdm_controller_init(btdm_cfg_mask, cfg);
+
+    if (err != 0) {
+        ESP_LOGE(BTDM_LOG_TAG, "%s %d\n",__func__,err);
         err = ESP_ERR_NO_MEM;
         goto error;
     }
