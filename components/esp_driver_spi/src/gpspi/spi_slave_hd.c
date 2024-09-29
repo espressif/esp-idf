@@ -459,6 +459,9 @@ static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
         if (!trans_finish) {
             break;
         }
+        portENTER_CRITICAL_ISR(&host->int_spinlock);
+        hal->tx_used_desc_cnt--;
+        portEXIT_CRITICAL_ISR(&host->int_spinlock);
 
         bool ret_queue = true;
         if (callback->cb_sent) {
@@ -500,7 +503,11 @@ static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
         if (!trans_finish) {
             break;
         }
+        portENTER_CRITICAL_ISR(&host->int_spinlock);
+        hal->rx_used_desc_cnt--;
+        portEXIT_CRITICAL_ISR(&host->int_spinlock);
         ret_priv_trans.trans->trans_len = trans_len;
+
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
         uint16_t alignment = host->internal_mem_align_size;
         uint32_t buff_len = (ret_priv_trans.trans->len + alignment - 1) & (~(alignment - 1));
@@ -646,8 +653,7 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
 
     //Check if there are enough available DMA descriptors for software to use
     int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
-    int not_recycled_desc_num = hal->tx_used_desc_cnt - hal->tx_recycled_desc_cnt;
-    int available_desc_num = hal->dma_desc_num - not_recycled_desc_num;
+    int available_desc_num = hal->dma_desc_num - hal->tx_used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -655,8 +661,7 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     spicommon_dma_desc_setup_link(hal->tx_cur_desc->desc, data, len, false);
     hal->tx_cur_desc->arg = arg;
 
-    if (!hal->tx_dma_started) {
-        hal->tx_dma_started = true;
+    if (!hal->tx_used_desc_cnt) {
         //start a link
         hal->tx_dma_tail = hal->tx_cur_desc;
         spi_dma_reset(host->dma_ctx->tx_dma_chan);
@@ -670,8 +675,10 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     }
 
     //Move the current descriptor pointer according to the number of the linked descriptors
+    portENTER_CRITICAL(&host->int_spinlock);
+    hal->tx_used_desc_cnt += num_required;
+    portEXIT_CRITICAL(&host->int_spinlock);
     for (int i = 0; i < num_required; i++) {
-        hal->tx_used_desc_cnt++;
         hal->tx_cur_desc++;
         if (hal->tx_cur_desc == hal->dmadesc_tx + hal->dma_desc_num) {
             hal->tx_cur_desc = hal->dmadesc_tx;
@@ -687,8 +694,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
 
     //Check if there are enough available dma descriptors for software to use
     int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
-    int not_recycled_desc_num = hal->rx_used_desc_cnt - hal->rx_recycled_desc_cnt;
-    int available_desc_num = hal->dma_desc_num - not_recycled_desc_num;
+    int available_desc_num = hal->dma_desc_num - hal->rx_used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -696,8 +702,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, false);
     hal->rx_cur_desc->arg = arg;
 
-    if (!hal->rx_dma_started) {
-        hal->rx_dma_started = true;
+    if (!hal->rx_used_desc_cnt) {
         //start a link
         hal->rx_dma_tail = hal->rx_cur_desc;
         spi_dma_reset(host->dma_ctx->rx_dma_chan);
@@ -711,8 +716,10 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
     }
 
     //Move the current descriptor pointer according to the number of the linked descriptors
+    portENTER_CRITICAL(&host->int_spinlock);
+    hal->rx_used_desc_cnt += num_required;
+    portEXIT_CRITICAL(&host->int_spinlock);
     for (int i = 0; i < num_required; i++) {
-        hal->rx_used_desc_cnt++;
         hal->rx_cur_desc++;
         if (hal->rx_cur_desc == hal->dmadesc_rx + hal->dma_desc_num) {
             hal->rx_cur_desc = hal->dmadesc_rx;
