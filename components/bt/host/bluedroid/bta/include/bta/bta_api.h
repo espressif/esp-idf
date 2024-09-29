@@ -997,6 +997,7 @@ typedef struct {
 typedef struct {
     BD_ADDR         bd_addr;            /* BD address peer device. */
     tBTA_PM_MODE    mode;               /* the new connection role */
+    UINT16          interval;           /* Number of baseband slots */
 } tBTA_DM_MODE_CHG;
 
 typedef struct {
