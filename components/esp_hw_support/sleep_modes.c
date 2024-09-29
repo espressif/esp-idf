@@ -913,6 +913,10 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
 
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]) {
+        sleep_flags |= RTC_SLEEP_XTAL_AS_RTC_FAST;
+    }
+
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
         s_sleep_ctx->sleep_flags = sleep_flags;
