@@ -192,6 +192,15 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
+Well Known VFS Devices
+----------------------
+
+IDF defines several VFS devices that can be used by applications. These devices are, among others:
+
+ * ``/dev/uart/<UART NUMBER>`` - file mapping to an UART opened with the VFS driver. The UART number is the number of the UART peripheral.
+ * ``/dev/null`` - file that discards all data written to it and returns EOF when read. It is automatically created if :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` is enabled.
+ * ``/dev/console`` - file that is connected to the primary and secondary outputs specified in the menuconfig by :ref:`CONFIG_ESP_CONSOLE_UART` and :ref:`CONFIG_ESP_CONSOLE_SECONDARY` respectively. More information can be found here :doc:`../../api-guides/stdio`.
+
 Application Examples
 --------------------
 

@@ -192,6 +192,15 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 
 注意，用 ``EFD_SUPPORT_ISR`` 创建 eventfd 将导致在读取、写入文件时，以及在设置这个文件的 ``select()`` 开始和结束时，暂时禁用中断。
 
+常用 VFS 设备
+-------------
+
+IDF 定义了多个可供应用程序使用的 VFS 设备。这些设备包括：
+
+ * ``/dev/uart/<UART NUMBER>`` - 此文件映射到使用 VFS 驱动程序打开的 UART 中。UART 编号是 UART 外设的编号。
+ * ``/dev/null`` - 此文件丢弃所有写入的数据，并在读取时返回 EOF。启用 :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` 会自动创建此文件。
+ * ``/dev/console`` - 此文件连接到在 menuconfig 中由 :ref:`CONFIG_ESP_CONSOLE_UART` 和 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 指定的主输出和次输出。更多信息请参考 :doc:`../../api-guides/stdio`。
+
 应用示例
 ----------------
 
