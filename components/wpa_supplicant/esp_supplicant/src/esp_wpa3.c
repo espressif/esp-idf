@@ -583,6 +583,9 @@ bool wpa3_hostap_auth_deinit(void)
 static int wpa3_hostap_handle_auth(u8 *buf, size_t len, u32 auth_transaction, u16 status, u8 *bssid)
 {
     struct hostapd_data *hapd = (struct hostapd_data *)esp_wifi_get_hostap_private_internal();
+    if (!hapd) {
+        return ESP_FAIL;
+    }
     struct sta_info *sta = ap_get_sta(hapd, bssid);
     if (auth_transaction == SAE_MSG_COMMIT) {
         if (sta && sta->sae_commit_processing) {
