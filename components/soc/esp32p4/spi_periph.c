@@ -101,7 +101,7 @@ static const uint32_t spi_regs_map[4] = {0x31ff, 0x33fffc0, 0x0, 0x0};
     /* Additional interrupt setting is required by idf SPI drivers after register recovered */ \
     [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_GPSPI_LINK(1), \
                                             SPI_DMA_INT_SET_REG(num), \
-                                            SPI_TRANS_DONE_INT_SET | SPI_DMA_SEG_TRANS_DONE_INT_SET , \
+                                            SPI_TRANS_DONE_INT_SET | SPI_DMA_SEG_TRANS_DONE_INT_SET | SPI_SLV_CMD7_INT_SET | SPI_SLV_CMD8_INT_SET , \
                                             UINT32_MAX, 1, 0), \
             .owner = ENTRY(0) }, \
 }

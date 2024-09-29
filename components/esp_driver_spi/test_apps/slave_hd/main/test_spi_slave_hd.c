@@ -7,18 +7,20 @@
  Tests for the spi slave hd mode
 */
 
+#include "string.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
-#include "soc/spi_periph.h"
-#include "esp_serial_slave_link/essl_spi.h"
 #include "test_dualboard_utils.h"
-
-#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
+#include "hal/spi_ll.h"
+#include "driver/gpio.h"
 #include "driver/spi_slave_hd.h"
+#include "esp_serial_slave_link/essl_spi.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 
 #if (TEST_SPI_PERIPH_NUM >= 2) //These will be only enabled on chips with 2 or more SPI peripherals
-
 #include "esp_rom_gpio.h"
 
 #define TEST_BUFFER_SIZE    256     ///< buffer size of each wrdma buffer in fifo mode
@@ -110,7 +112,6 @@ static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callbac
 #endif
     spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     slave_hd_cfg.mode = mode;
-    slave_hd_cfg.dma_chan = SPI_DMA_CH_AUTO;
     if (append_mode) {
         slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
     }
@@ -680,16 +681,7 @@ static void hd_slave(void)
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     bus_cfg.max_transfer_sz = 14000 * 30;
 
-    spi_slave_hd_slot_config_t slave_hd_cfg = {
-        .spics_io_num = PIN_NUM_CS,
-        .dma_chan = SPI_DMA_CH_AUTO,
-        .flags = 0,
-        .mode = 0,
-        .command_bits = 8,
-        .address_bits = 8,
-        .dummy_bits = 8,
-        .queue_size = 10,
-    };
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
 
     unity_wait_for_signal("master ready");
@@ -831,16 +823,7 @@ static void hd_slave_quad(void)
         .max_transfer_sz = 14000 * 30
     };
 
-    spi_slave_hd_slot_config_t slave_hd_cfg = {
-        .spics_io_num = PIN_NUM_CS,
-        .dma_chan = SPI_DMA_CH_AUTO,
-        .flags = 0,
-        .mode = 0,
-        .command_bits = 8,
-        .address_bits = 8,
-        .dummy_bits = 8,
-        .queue_size = 10,
-    };
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
 
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
@@ -928,7 +911,6 @@ void slave_run_append(void)
 
     spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
-    slave_hd_cfg.dma_chan = SPI_DMA_CH_AUTO;
     TEST_ESP_OK(spi_slave_hd_init(TEST_SPI_HOST, &bus_cfg, &slave_hd_cfg));
 
     unity_wait_for_signal("Master ready");
@@ -1032,9 +1014,12 @@ void master_run_essl(void)
     bus_cfg.max_transfer_sz = 50000;
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
-    spi_device_interface_config_t dev_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
-    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
+    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
+    dev_cfg.command_bits = 8;
+    dev_cfg.address_bits = 8;
+    dev_cfg.dummy_bits = 8;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devhd));
 
     printf("\n================Master Tx==================\n");
@@ -1076,6 +1061,170 @@ void master_run_essl(void)
     TEST_ESP_OK(spi_bus_remove_device(devhd));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
-
 TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: Append mode", "[spi_ms]", master_run_essl, slave_run_append);
-#endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
+
+#define TEST_SLP_BUF_ID                 12
+#define TEST_SLP_BUF_VAL                0xDEADBEEF
+TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
+{
+    // Prepare a TOP PD sleep
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
+#if ESP_SLEEP_POWER_DOWN_CPU
+    sleep_cpu_configure(true);
+#endif
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+    uint32_t slave_hd_cmd[2][2] = {{SPI_LL_BASE_CMD_HD_WRDMA, SPI_LL_BASE_CMD_HD_WR_END}, {SPI_LL_BASE_CMD_HD_RDDMA, SPI_LL_BASE_CMD_HD_INT0}};
+    uint32_t slave_share_sig = TEST_SLP_BUF_VAL;
+    uint8_t slv_send[14] = "I'm slave  x\n", slv_rexcv[14];
+    uint8_t mst_txbuff[17] = "   I'm master x\n", mst_rxbuff[17];  //more than 3 byte to hold cmd,addrs,dummy
+    uint8_t share_sig_buff[7] = {0};    // cmd + addr + dummy + uint32_t
+    uint8_t *mst_send = &mst_txbuff[3], *mst_rexcv = &mst_rxbuff[3];
+    spi_slave_hd_data_t *ret_trans, tx_data = {
+        .data = slv_send,
+        .len = sizeof(slv_send),
+    }, rx_data = {
+        .data = slv_rexcv,
+        .len = sizeof(slv_rexcv),
+    };
+
+    for (uint8_t allow_pd = 0; allow_pd < 2; allow_pd ++) {
+        spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+        bus_cfg.flags = (allow_pd) ? SPICOMMON_BUSFLAG_SLP_ALLOW_PD : 0;
+        bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+        spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+        TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
+        gpio_pullup_en(slave_hd_cfg.spics_io_num);
+        vTaskDelay(1);
+
+        for (uint8_t cnt = 0; cnt < 3; cnt ++) {
+            printf("Going into sleep with power %s ...\n", (bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");
+            TEST_ESP_OK(esp_light_sleep_start());
+            printf("Waked up!\n");
+            // check if the sleep happened as expected
+            TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+            // check if the power domain also is powered down
+            TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+            // test slave hd segment transactions
+            slv_send[11] = cnt + '0';
+            mst_send[11] = cnt + 'A';
+            memset(mst_rexcv, 0, sizeof(slv_send));
+            memset(slv_rexcv, 0, sizeof(slv_rexcv));
+            TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &tx_data, portMAX_DELAY));
+            TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
+
+            // tx rx transaction
+            mst_txbuff[0] = slave_hd_cmd[0][0];
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_txbuff, NULL, sizeof(mst_txbuff));
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[0][1], NULL, 3);
+            mst_rxbuff[0] = slave_hd_cmd[1][0];
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_rxbuff, mst_rxbuff, sizeof(mst_rxbuff));
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
+
+            // check trans result
+            TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+            printf("master rx %s", mst_rexcv);
+            printf("slave  rx %s", slv_rexcv);
+            spitest_cmp_or_dump(slv_send, mst_rexcv, sizeof(slv_send));
+            spitest_cmp_or_dump(mst_send, slv_rexcv, sizeof(slv_rexcv));
+
+            // test slave hd share registers
+            slave_share_sig += cnt;
+            spi_slave_hd_write_buffer(TEST_SLAVE_HOST, TEST_SLP_BUF_ID, (uint8_t *)&slave_share_sig, sizeof(uint32_t));
+            memset(share_sig_buff, 0, sizeof(share_sig_buff));
+            share_sig_buff[0] = SPI_LL_BASE_CMD_HD_RDBUF;   // cmd
+            share_sig_buff[1] = TEST_SLP_BUF_ID;            // addr
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, share_sig_buff, share_sig_buff, sizeof(share_sig_buff));
+            printf("slave reg %lX\n", *((uint32_t *)&share_sig_buff[3]));
+            TEST_ASSERT_EQUAL_UINT32(slave_share_sig, *((uint32_t *)&share_sig_buff[3]));
+        }
+        spi_slave_hd_deinit(TEST_SLAVE_HOST);
+    }
+
+    esp_sleep_set_sleep_context(NULL);
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+}
+
+#define TEST_SLP_TRANS_NUM          3
+TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
+{
+    // Prepare a TOP PD sleep
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
+#if ESP_SLEEP_POWER_DOWN_CPU
+    sleep_cpu_configure(true);
+#endif
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+    uint32_t slave_hd_cmd[2][2] = {{SPI_LL_BASE_CMD_HD_WRDMA, SPI_LL_BASE_CMD_HD_WR_END}, {SPI_LL_BASE_CMD_HD_RDDMA, SPI_LL_BASE_CMD_HD_INT0}};
+    uint8_t slv_rexcv[14], slv_send[TEST_SLP_TRANS_NUM][14] = {{"I'm append x\n"}, {"I'm append x\n"}, {"I'm append x\n"}};
+    uint8_t mst_txbuff[17] = "   I'm master x\n", mst_rxbuff[17];  //more than 3 byte to hold cmd,addrs,dummy
+    uint8_t *mst_send = &mst_txbuff[3], *mst_rexcv = &mst_rxbuff[3];
+    spi_slave_hd_data_t *ret_trans, tx_data[TEST_SLP_TRANS_NUM], rx_data = {
+        .data = slv_rexcv,
+        .len = sizeof(slv_rexcv),
+    };
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.max_transfer_sz = 4092 * 4; // append mode require at least 2 for tx and 2 for rx dma descs
+    bus_cfg.flags = SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
+    TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
+    gpio_pullup_en(slave_hd_cfg.spics_io_num);
+    vTaskDelay(1);
+
+    for (uint8_t i = 0; i < 2; i++) {
+        printf("Going into sleep with power down ...\n");
+        TEST_ESP_OK(esp_light_sleep_start());
+        printf("Waked up!\n");
+        // check if the sleep happened as expected
+        TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+        // check if the power domain also is powered down
+        TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+
+        // append transaction first
+        for (uint8_t cnt = 0; cnt < TEST_SLP_TRANS_NUM; cnt ++) {
+            slv_send[cnt][11] = cnt + i + '0';
+            tx_data[cnt].data = slv_send[cnt];
+            tx_data[cnt].len = sizeof(slv_send[0]);
+            TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &tx_data[cnt], portMAX_DELAY));
+            TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
+        }
+
+        // test slave hd append transactions
+        for (uint8_t cnt = 0; cnt < TEST_SLP_TRANS_NUM; cnt ++) {
+            mst_send[11] = cnt + i + 'A';
+            memset(mst_rexcv, 0, sizeof(slv_send[0]));
+            memset(slv_rexcv, 0, sizeof(slv_rexcv));
+
+            // tx rx append transaction
+            mst_txbuff[0] = slave_hd_cmd[0][0];
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_txbuff, NULL, sizeof(mst_txbuff));
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[0][1], NULL, 3);
+            mst_rxbuff[0] = slave_hd_cmd[1][0];
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_rxbuff, mst_rxbuff, sizeof(mst_rxbuff));
+            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
+
+            // check append trans result
+            TEST_ESP_OK(spi_slave_hd_get_append_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+            printf("master rx %s", mst_rexcv);
+            printf("slave  rx %s", slv_rexcv);
+            spitest_cmp_or_dump(slv_send[cnt], mst_rexcv, sizeof(slv_send[0]));
+            spitest_cmp_or_dump(mst_send, slv_rexcv, sizeof(slv_rexcv));
+        }
+    }
+    spi_slave_hd_deinit(TEST_SLAVE_HOST);
+    esp_sleep_set_sleep_context(NULL);
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+}
