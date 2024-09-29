@@ -18,7 +18,7 @@ After the previous introduction to low power mode from a systemic perspective, t
 
   .. note::
 
-      All currents in the table are average currents, and the terms in the table are explained in the following text. Users can refer to them as needed.
+      All currents in the table are average currents, and the measured data are obtained by testing in a shielded box. The terms in the table are explained in the following text. Users can refer to them as needed.
 
 .. _Basic Principles of Wi-Fi Power Saving:
 
