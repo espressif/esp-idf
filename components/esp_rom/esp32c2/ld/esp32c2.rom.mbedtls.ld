@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,6 @@ mbedtls_asn1_write_mpi = 0x400026d4;
 mbedtls_base64_decode = 0x400026d8;
 mbedtls_ccm_star_encrypt_and_tag = 0x40002774;
 mbedtls_ccm_star_auth_decrypt = 0x40002778;
-mbedtls_cipher_init = 0x4000277c;
-mbedtls_cipher_set_padding_mode = 0x40002780;
-mbedtls_cipher_reset = 0x40002784;
-mbedtls_cipher_finish = 0x40002788;
-mbedtls_cipher_crypt = 0x4000278c;
-mbedtls_cipher_cmac_starts = 0x40002790;
-mbedtls_cipher_cmac_update = 0x40002794;
-mbedtls_cipher_cmac_finish = 0x40002798;
 mbedtls_ctr_drbg_init = 0x4000279c;
 mbedtls_ctr_drbg_seed = 0x400027a0;
 mbedtls_ctr_drbg_free = 0x400027a4;
