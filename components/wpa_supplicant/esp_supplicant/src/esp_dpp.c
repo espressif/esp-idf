@@ -617,7 +617,7 @@ static void esp_dpp_task(void *pvParameters)
     s_dpp_evt_queue = NULL;
 
     if (s_dpp_api_lock) {
-        os_semphr_delete(s_dpp_api_lock);
+        os_mutex_delete(s_dpp_api_lock);
         s_dpp_api_lock = NULL;
     }
 

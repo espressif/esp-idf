@@ -673,7 +673,7 @@ void esp_nan_app_deinit(void)
     }
 
     if (s_nan_data_lock) {
-        os_semphr_delete(s_nan_data_lock);
+        os_mutex_delete(s_nan_data_lock);
         s_nan_data_lock = NULL;
     }
 }
