@@ -406,8 +406,9 @@ typedef union {
      * @brief ESP_BT_GAP_MODE_CHG_EVT
      */
     struct mode_chg_param {
-        esp_bd_addr_t bda;                      /*!< remote bluetooth device address*/
-        esp_bt_pm_mode_t mode;                  /*!< PM mode*/
+        esp_bd_addr_t bda;                      /*!< remote bluetooth device address */
+        esp_bt_pm_mode_t mode;                  /*!< PM mode */
+        uint16_t interval;                      /*!< Number of baseband slots. unit is 0.625ms */
     } mode_chg;                                 /*!< mode change event parameter struct */
 
     /**
