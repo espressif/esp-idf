@@ -24,6 +24,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
+#include "esp_private/sleep_retention.h"
 
 #if CONFIG_PARLIO_ISR_IRAM_SAFE
 #define PARLIO_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -43,6 +44,9 @@
 #else
 #define PARLIO_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED)
 #endif
+
+// Use retention link only when the target supports sleep retention is enabled
+#define PARLIO_USE_RETENTION_LINK  (SOC_PARLIO_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) // Parlio uses GDMA
 #if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB)
@@ -148,6 +152,11 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit);
  * @param[in]  unit        The TX/RX unit base handle
  */
 void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit);
+
+#if PARLIO_USE_RETENTION_LINK
+esp_err_t parlio_create_sleep_retention_link_cb(void *arg);
+void parlio_create_retention_module(parlio_group_t *group);
+#endif
 
 #ifdef __cplusplus
 }

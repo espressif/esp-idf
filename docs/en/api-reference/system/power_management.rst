@@ -158,6 +158,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
+            :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
 
         The following peripherals are not yet supported:
 
@@ -173,7 +174,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - MCPWM
             - SARADC
             - SDIO
-            - PARL_IO
 
         For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the ``ESP_PM_NO_LIGHT_SLEEP`` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
 

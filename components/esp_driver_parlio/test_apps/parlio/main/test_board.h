@@ -56,14 +56,14 @@ extern "C" {
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define TEST_CLK_GPIO       33
 #define TEST_VALID_GPIO     36
-#define TEST_DATA0_GPIO     20
-#define TEST_DATA1_GPIO     21
-#define TEST_DATA2_GPIO     22
-#define TEST_DATA3_GPIO     23
-#define TEST_DATA4_GPIO     45
-#define TEST_DATA5_GPIO     46
-#define TEST_DATA6_GPIO     47
-#define TEST_DATA7_GPIO     48
+#define TEST_DATA0_GPIO     0
+#define TEST_DATA1_GPIO     1
+#define TEST_DATA2_GPIO     2
+#define TEST_DATA3_GPIO     3
+#define TEST_DATA4_GPIO     4
+#define TEST_DATA5_GPIO     5
+#define TEST_DATA6_GPIO     6
+#define TEST_DATA7_GPIO     7
 #else
 #error "Unsupported target"
 #endif

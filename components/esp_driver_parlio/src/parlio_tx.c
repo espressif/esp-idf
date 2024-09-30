@@ -270,7 +270,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #endif
     esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PARLIO_CLOCK_SRC_ATOMIC() {
-        // turn on the tx module clock to sync the register configuration to the module
+        // turn on the tx module clock to sync the clock divider configuration because of the CDC (Cross Domain Crossing)
         parlio_ll_tx_enable_clock(hal->regs, true);
         parlio_ll_tx_set_clock_source(hal->regs, clk_src);
         // set clock division
@@ -308,6 +308,10 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 #else
     ESP_RETURN_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, TAG, "clock gating is not supported");
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
+
+#if !SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
     // malloc unit memory
     uint32_t mem_caps = PARLIO_MEM_ALLOC_CAPS;
@@ -380,6 +384,12 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
     // GPIO Matrix/MUX configuration
     ESP_GOTO_ON_ERROR(parlio_tx_unit_configure_gpio(unit, config), err, TAG, "configure gpio failed");
+
+#if PARLIO_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        parlio_create_retention_module(group);
+    }
+#endif // PARLIO_USE_RETENTION_LINK
 
     portMUX_INITIALIZE(&unit->spinlock);
     atomic_init(&unit->fsm, PARLIO_TX_FSM_INIT);
@@ -468,13 +478,11 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     while (parlio_ll_tx_is_ready(hal->regs) == false);
     // turn on the core clock after we start the TX unit
     parlio_ll_tx_start(hal->regs, true);
-    PARLIO_CLOCK_SRC_ATOMIC() {
-        parlio_ll_tx_enable_clock(hal->regs, true);
-    }
 }
 
 esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
 {
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
@@ -487,6 +495,11 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
+    }
+
+    // enable clock output
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, true);
     }
 
     // check if we need to start one pending transaction
@@ -531,6 +544,10 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
 
     // stop the TX engine
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
+    // disable clock output
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
+    }
     gdma_stop(tx_unit->dma_chan);
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
@@ -621,9 +638,6 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
 
     if (status & PARLIO_LL_EVENT_TX_EOF) {
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
-        PARLIO_CLOCK_SRC_ATOMIC() {
-            parlio_ll_tx_enable_clock(hal->regs, false);
-        }
         parlio_ll_tx_start(hal->regs, false);
 
         parlio_tx_trans_desc_t *trans_desc = NULL;

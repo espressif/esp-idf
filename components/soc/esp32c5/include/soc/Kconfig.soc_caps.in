@@ -915,6 +915,10 @@ config SOC_PARLIO_TX_SIZE_BY_DMA
     bool
     default y
 
+config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4
