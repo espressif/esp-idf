@@ -509,14 +509,6 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
 #define gpio_hal_deepsleep_wakeup_is_enabled(hal, gpio_num) gpio_ll_deepsleep_wakeup_is_enabled((hal)->dev, gpio_num)
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
 
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-#define gpio_hal_iomux_func_sel(pin_name, func) gpio_ll_iomux_func_sel(pin_name, func)
-
 #if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 /**
  * @brief Control gpio hysteresis enable/disable by software.

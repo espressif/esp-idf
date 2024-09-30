@@ -515,21 +515,6 @@ static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_n
 }
 
 /**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-__attribute__((always_inline))
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    if (pin_name == IO_MUX_GPIO19_REG || pin_name == IO_MUX_GPIO20_REG) {
-        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
-    }
-    PIN_FUNC_SELECT(pin_name, func);
-}
-
-/**
  * @brief  Control the pin in the IOMUX
  *
  * @param  bmap   write mask of control value

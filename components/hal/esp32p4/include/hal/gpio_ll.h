@@ -593,25 +593,6 @@ static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_n
 /**
  * @brief  Select a function for the pin in the IOMUX
  *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    // Disable USB PHY configuration if pins (24, 25) (26, 27) needs to select an IOMUX function
-    // P4 has two internal PHYs connecting to USJ and USB_WRAP(OTG1.1) separately.
-    // We only consider the default connection here: PHY0 -> USJ, PHY1 -> USB_OTG
-    if (pin_name == IO_MUX_GPIO24_REG || pin_name == IO_MUX_GPIO25_REG) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    } else if (pin_name == IO_MUX_GPIO26_REG || pin_name == IO_MUX_GPIO27_REG) {
-        USB_WRAP.otg_conf.usb_pad_enable = 0;
-    }
-    PIN_FUNC_SELECT(pin_name, func);
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
  * @param  hw Peripheral GPIO hardware instance address.
  * @param  gpio_num GPIO number
  * @param  func Function to assign to the pin

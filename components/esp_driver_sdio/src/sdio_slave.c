@@ -89,6 +89,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/gpio.h"
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_retention.h"
 #endif
@@ -283,15 +284,12 @@ no_mem:
 
 static void configure_pin(int pin, uint32_t func, bool pullup)
 {
-    const int sdmmc_func = func;
     const int drive_strength = 3;
     assert(pin != -1);
-    uint32_t reg = GPIO_PIN_MUX_REG[pin];
-    assert(reg != UINT32_MAX);
 
-    PIN_INPUT_ENABLE(reg);
-    gpio_hal_iomux_func_sel(reg, sdmmc_func);
-    PIN_SET_DRV(reg, drive_strength);
+    gpio_input_enable(pin);
+    gpio_func_sel(pin, func);
+    gpio_set_drive_capability(pin, drive_strength);
     gpio_pulldown_dis(pin);
     if (pullup) {
         gpio_pullup_en(pin);
@@ -333,7 +331,7 @@ static void recover_pin(int pin, int sdio_func)
     int func = REG_GET_FIELD(reg, MCU_SEL);
     if (func == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);
-        gpio_hal_iomux_func_sel(reg, PIN_FUNC_GPIO);
+        gpio_func_sel(pin, PIN_FUNC_GPIO);
     }
 }
 
