@@ -325,6 +325,7 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
 
 #if CONFIG_IDF_TARGET_ESP32
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end -= esp_himem_reserved_area_size();
 #endif
 }
 
