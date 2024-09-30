@@ -607,10 +607,18 @@ typedef union {
          *  Package version
          */
         uint32_t pkg_version:3;
-        /** reserved_1_87 : R; bitpos: [31:23]; default: 0;
+        /** reserved_1_87 : R; bitpos: [23]; default: 0;
          *  reserved
          */
-        uint32_t reserved_1_87:9;
+        uint32_t reserved_1_87:1;
+        /** ldo_vo1_dref : R; bitpos: [27:24]; default: 0;
+         *  Output VO1 parameter
+         */
+        uint32_t ldo_vo1_dref:4;
+        /** ldo_vo2_dref : R; bitpos: [31:28]; default: 0;
+         *  Output VO2 parameter
+         */
+        uint32_t ldo_vo2_dref:4;
     };
     uint32_t val;
 } efuse_rd_mac_sys_2_reg_t;
@@ -620,14 +628,30 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_2 : RO; bitpos: [17:0]; default: 0;
-         *  Reserved.
+        /** ldo_vo1_mul : R; bitpos: [2:0]; default: 0;
+         *  Output VO1 parameter
          */
-        uint32_t mac_reserved_2:18;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Stores the first 14 bits of the zeroth part of system data.
+        uint32_t ldo_vo1_mul:3;
+        /** ldo_vo2_mul : R; bitpos: [5:3]; default: 0;
+         *  Output VO2 parameter
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t ldo_vo2_mul:3;
+        /** ldo_vo3_k : R; bitpos: [13:6]; default: 0;
+         *  Output VO3 calibration parameter
+         */
+        uint32_t ldo_vo3_k:8;
+        /** ldo_vo3_vos : R; bitpos: [19:14]; default: 0;
+         *  Output VO3 calibration parameter
+         */
+        uint32_t ldo_vo3_vos:6;
+        /** ldo_vo3_c : R; bitpos: [25:20]; default: 0;
+         *  Output VO3 calibration parameter
+         */
+        uint32_t ldo_vo3_c:6;
+        /** ldo_vo4_k : R; bitpos: [31:26]; default: 0;
+         *  Output VO4 calibration parameter
+         */
+        uint32_t ldo_vo4_k:6;
     };
     uint32_t val;
 } efuse_rd_mac_sys_3_reg_t;
@@ -637,10 +661,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_1 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the first 32 bits of the zeroth part of system data.
+        /** ldo_vo4_k_1 : R; bitpos: [1:0]; default: 0;
+         *  Output VO4 calibration parameter
          */
-        uint32_t sys_data_part0_1:32;
+        uint32_t ldo_vo4_k_1:2;
+        /** ldo_vo4_vos : R; bitpos: [7:2]; default: 0;
+         *  Output VO4 calibration parameter
+         */
+        uint32_t ldo_vo4_vos:6;
+        /** ldo_vo4_c : R; bitpos: [13:8]; default: 0;
+         *  Output VO4 calibration parameter
+         */
+        uint32_t ldo_vo4_c:6;
+        /** reserved_1_142 : R; bitpos: [15:14]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_142:2;
+        /** active_hp_dbias : R; bitpos: [19:16]; default: 0;
+         *  Active HP DBIAS of fixed voltage
+         */
+        uint32_t active_hp_dbias:4;
+        /** active_lp_dbias : R; bitpos: [23:20]; default: 0;
+         *  Active LP DBIAS of fixed voltage
+         */
+        uint32_t active_lp_dbias:4;
+        /** lslp_hp_dbias : R; bitpos: [27:24]; default: 0;
+         *  LSLP HP DBIAS of fixed voltage
+         */
+        uint32_t lslp_hp_dbias:4;
+        /** dslp_dbg : R; bitpos: [31:28]; default: 0;
+         *  DSLP BDG of fixed voltage
+         */
+        uint32_t dslp_dbg:4;
     };
     uint32_t val;
 } efuse_rd_mac_sys_4_reg_t;
@@ -650,10 +702,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_2 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the second 32 bits of the zeroth part of system data.
+        /** dslp_lp_dbias : R; bitpos: [4:0]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
          */
-        uint32_t sys_data_part0_2:32;
+        uint32_t dslp_lp_dbias:5;
+        /** lp_dcdc_dbias_vol_gap : R; bitpos: [9:5]; default: 0;
+         *  DBIAS gap between LP and DCDC
+         */
+        uint32_t lp_dcdc_dbias_vol_gap:5;
+        /** reserved_1_170 : R; bitpos: [31:10]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_170:22;
     };
     uint32_t val;
 } efuse_rd_mac_sys_5_reg_t;
@@ -715,10 +775,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fourth 32 bits of the first part of system data.
+        /** adc1_ave_initcode_atten0 : R; bitpos: [9:0]; default: 0;
+         *  Average initcode of ADC1 atten0
          */
-        uint32_t sys_data_part1_4:32;
+        uint32_t adc1_ave_initcode_atten0:10;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [19:10]; default: 0;
+         *  Average initcode of ADC1 atten1
+         */
+        uint32_t adc1_ave_initcode_atten1:10;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [29:20]; default: 0;
+         *  Average initcode of ADC1 atten2
+         */
+        uint32_t adc1_ave_initcode_atten2:10;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [31:30]; default: 0;
+         *  Average initcode of ADC1 atten3
+         */
+        uint32_t adc1_ave_initcode_atten3:2;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -728,10 +800,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fifth 32 bits of the first part of system data.
+        /** adc1_ave_initcode_atten3_1 : R; bitpos: [7:0]; default: 0;
+         *  Average initcode of ADC1 atten3
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_ave_initcode_atten3_1:8;
+        /** adc2_ave_initcode_atten0 : R; bitpos: [17:8]; default: 0;
+         *  Average initcode of ADC2 atten0
+         */
+        uint32_t adc2_ave_initcode_atten0:10;
+        /** adc2_ave_initcode_atten1 : R; bitpos: [27:18]; default: 0;
+         *  Average initcode of ADC2 atten1
+         */
+        uint32_t adc2_ave_initcode_atten1:10;
+        /** adc2_ave_initcode_atten2 : R; bitpos: [31:28]; default: 0;
+         *  Average initcode of ADC2 atten2
+         */
+        uint32_t adc2_ave_initcode_atten2:4;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -741,10 +825,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of the first part of system data.
+        /** adc2_ave_initcode_atten2_1 : R; bitpos: [5:0]; default: 0;
+         *  Average initcode of ADC2 atten2
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc2_ave_initcode_atten2_1:6;
+        /** adc2_ave_initcode_atten3 : R; bitpos: [15:6]; default: 0;
+         *  Average initcode of ADC2 atten3
+         */
+        uint32_t adc2_ave_initcode_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [25:16]; default: 0;
+         *  HI_DOUT of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0:10;
+        /** adc1_hi_dout_atten1 : R; bitpos: [31:26]; default: 0;
+         *  HI_DOUT of ADC1 atten1
+         */
+        uint32_t adc1_hi_dout_atten1:6;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -754,10 +850,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of the first part of system data.
+        /** adc1_hi_dout_atten1_1 : R; bitpos: [3:0]; default: 0;
+         *  HI_DOUT of ADC1 atten1
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_hi_dout_atten1_1:4;
+        /** adc1_hi_dout_atten2 : R; bitpos: [13:4]; default: 0;
+         *  HI_DOUT of ADC1 atten2
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [23:14]; default: 0;
+         *  HI_DOUT of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3:10;
+        /** reserved_2_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_248:8;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
@@ -1503,10 +1611,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part2_0 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the $nth 32 bits of the 2nd part of system data.
+        /** adc2_hi_dout_atten0 : R; bitpos: [9:0]; default: 0;
+         *  HI_DOUT of ADC2 atten0
          */
-        uint32_t sys_data_part2_0:32;
+        uint32_t adc2_hi_dout_atten0:10;
+        /** adc2_hi_dout_atten1 : R; bitpos: [19:10]; default: 0;
+         *  HI_DOUT of ADC2 atten1
+         */
+        uint32_t adc2_hi_dout_atten1:10;
+        /** adc2_hi_dout_atten2 : R; bitpos: [29:20]; default: 0;
+         *  HI_DOUT of ADC2 atten2
+         */
+        uint32_t adc2_hi_dout_atten2:10;
+        /** adc2_hi_dout_atten3 : R; bitpos: [31:30]; default: 0;
+         *  HI_DOUT of ADC2 atten3
+         */
+        uint32_t adc2_hi_dout_atten3:2;
     };
     uint32_t val;
 } efuse_rd_sys_part2_data0_reg_t;
@@ -1516,10 +1636,34 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part2_1 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the $nth 32 bits of the 2nd part of system data.
+        /** adc2_hi_dout_atten3_1 : R; bitpos: [7:0]; default: 0;
+         *  HI_DOUT of ADC2 atten3
          */
-        uint32_t sys_data_part2_1:32;
+        uint32_t adc2_hi_dout_atten3_1:8;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [11:8]; default: 0;
+         *  Gap between ADC1_ch0 and average initcode
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [15:12]; default: 0;
+         *  Gap between ADC1_ch1 and average initcode
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [19:16]; default: 0;
+         *  Gap between ADC1_ch2 and average initcode
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [23:20]; default: 0;
+         *  Gap between ADC1_ch3 and average initcode
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [27:24]; default: 0;
+         *  Gap between ADC1_ch4 and average initcode
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:4;
+        /** adc1_ch5_atten0_initcode_diff : R; bitpos: [31:28]; default: 0;
+         *  Gap between ADC1_ch5 and average initcode
+         */
+        uint32_t adc1_ch5_atten0_initcode_diff:4;
     };
     uint32_t val;
 } efuse_rd_sys_part2_data1_reg_t;
@@ -1529,10 +1673,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part2_2 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the $nth 32 bits of the 2nd part of system data.
+        /** adc1_ch6_atten0_initcode_diff : R; bitpos: [3:0]; default: 0;
+         *  Gap between ADC1_ch6 and average initcode
          */
-        uint32_t sys_data_part2_2:32;
+        uint32_t adc1_ch6_atten0_initcode_diff:4;
+        /** adc1_ch7_atten0_initcode_diff : R; bitpos: [7:4]; default: 0;
+         *  Gap between ADC1_ch7 and average initcode
+         */
+        uint32_t adc1_ch7_atten0_initcode_diff:4;
+        /** adc2_ch0_atten0_initcode_diff : R; bitpos: [11:8]; default: 0;
+         *  Gap between ADC2_ch0 and average initcode
+         */
+        uint32_t adc2_ch0_atten0_initcode_diff:4;
+        /** adc2_ch1_atten0_initcode_diff : R; bitpos: [15:12]; default: 0;
+         *  Gap between ADC2_ch1 and average initcode
+         */
+        uint32_t adc2_ch1_atten0_initcode_diff:4;
+        /** adc2_ch2_atten0_initcode_diff : R; bitpos: [19:16]; default: 0;
+         *  Gap between ADC2_ch2 and average initcode
+         */
+        uint32_t adc2_ch2_atten0_initcode_diff:4;
+        /** adc2_ch3_atten0_initcode_diff : R; bitpos: [23:20]; default: 0;
+         *  Gap between ADC2_ch3 and average initcode
+         */
+        uint32_t adc2_ch3_atten0_initcode_diff:4;
+        /** adc2_ch4_atten0_initcode_diff : R; bitpos: [27:24]; default: 0;
+         *  Gap between ADC2_ch4 and average initcode
+         */
+        uint32_t adc2_ch4_atten0_initcode_diff:4;
+        /** adc2_ch5_atten0_initcode_diff : R; bitpos: [31:28]; default: 0;
+         *  Gap between ADC2_ch5 and average initcode
+         */
+        uint32_t adc2_ch5_atten0_initcode_diff:4;
     };
     uint32_t val;
 } efuse_rd_sys_part2_data2_reg_t;
@@ -1542,10 +1714,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part2_3 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the $nth 32 bits of the 2nd part of system data.
+        /** temperature_sensor : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t sys_data_part2_3:32;
+        uint32_t temperature_sensor:9;
+        /** reserved_10_105 : R; bitpos: [31:9]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_10_105:23;
     };
     uint32_t val;
 } efuse_rd_sys_part2_data3_reg_t;
