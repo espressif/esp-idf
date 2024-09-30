@@ -146,6 +146,29 @@ static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
     return ((address % length) == 0) ? true : false;
 }
 
+/**
+ * @brief Enable the pseudo-round function during XTS-AES operations
+ *
+ * @param mode set the mode for pseudo rounds, zero to disable, with increasing security upto three.
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(uint8_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    (void) key_rng_cnt;
+
+    REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_MODE_PSEUDO, mode);
+
+    if (mode) {
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_BASE, base);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_INC, increment);
+    } else {
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_BASE, 0);
+        REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_INC, 0);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
