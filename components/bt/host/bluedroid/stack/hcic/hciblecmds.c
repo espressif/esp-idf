@@ -1910,7 +1910,7 @@ UINT8 btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(UINT8 mode, UINT
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
-UINT8 btsnd_hcic_ble_set_privacy_mode(UINT8 addr_type, BD_ADDR addr, UINT8 privacy_mode)
+BOOLEAN btsnd_hcic_ble_set_privacy_mode(UINT8 addr_type, BD_ADDR addr, UINT8 privacy_mode)
 {
     BT_HDR *p;
     UINT8 *pp;
@@ -1932,5 +1932,27 @@ UINT8 btsnd_hcic_ble_set_privacy_mode(UINT8 addr_type, BD_ADDR addr, UINT8 priva
 
     btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
     return (TRUE);
+}
+
+BOOLEAN btsnd_hcic_ble_set_csa_support (UINT8 csa_select)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_SET_CSA_SUPPORT)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_SET_CSA_SUPPORT;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_SET_CSA_SUPPORT);
+    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_SET_CSA_SUPPORT);
+    UINT8_TO_STREAM (pp, csa_select);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
 }
 #endif

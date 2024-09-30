@@ -439,6 +439,8 @@ typedef tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK tBTA_ADD_DEV_TO_RESOLVING_LIST
 
 typedef tBTM_SET_PRIVACY_MODE_CMPL_CBACK tBTA_SET_PRIVACY_MODE_CMPL_CBACK;
 
+typedef tBTM_SET_CSA_SUPPORT_CMPL_CBACK tBTA_SET_CSA_SUPPORT_CMPL_CBACK;
+
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
 
 typedef tBTM_VSC_CMPL tBTA_VSC_CMPL;
@@ -2920,6 +2922,8 @@ extern void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_d
 extern void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 
 extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback);
+
+extern void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
 
 /*******************************************************************************
 **
