@@ -18,14 +18,14 @@
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
-#include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/gpio.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
+#include "soc/io_mux_reg.h"
 #include "soc/twai_periph.h"
-#include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
 #include "esp_rom_gpio.h"
 #if SOC_TWAI_SUPPORT_SLEEP_RETENTION
@@ -289,37 +289,30 @@ static void twai_configure_gpio(int controller_id, gpio_num_t tx, gpio_num_t rx,
 {
     // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     assert(tx >= 0 && rx >= 0);
-    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
-    bool io_loop_back = (tx == rx);
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
-    };
+
     //Set RX pin
-    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << rx;
-    gpio_config(&gpio_conf);
+    gpio_func_sel(rx, PIN_FUNC_GPIO);
+    gpio_set_pull_mode(rx, GPIO_FLOATING);
+    gpio_input_enable(rx);
     esp_rom_gpio_connect_in_signal(rx, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
 
     //Set TX pin
-    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << tx;
-    gpio_config(&gpio_conf);
+    gpio_func_sel(tx, PIN_FUNC_GPIO);
+    gpio_set_pull_mode(tx, GPIO_FLOATING);
     esp_rom_gpio_connect_out_signal(tx, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
         gpio_set_pull_mode(clkout, GPIO_FLOATING);
+        gpio_func_sel(clkout, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(clkout, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(clkout);
     }
 
     //Configure bus status pin (Optional)
     if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
         gpio_set_pull_mode(bus_status, GPIO_FLOATING);
+        gpio_func_sel(bus_status, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(bus_status, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(bus_status);
     }
 }
 
