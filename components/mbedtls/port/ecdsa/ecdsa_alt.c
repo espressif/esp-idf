@@ -10,6 +10,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/error.h"
 #include "mbedtls/ecdsa.h"
+#include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
 #include "esp_private/periph_ctrl.h"
@@ -420,6 +421,37 @@ static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
 /*
  * Verify ECDSA signature of hashed message
  */
+extern int __real_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
+                         const unsigned char *buf, size_t blen,
+                         const mbedtls_ecp_point *Q,
+                         const mbedtls_mpi *r,
+                         const mbedtls_mpi *s,
+                         mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
+                         const unsigned char *buf, size_t blen,
+                         const mbedtls_ecp_point *Q,
+                         const mbedtls_mpi *r,
+                         const mbedtls_mpi *s,
+                         mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_verify_restartable(mbedtls_ecp_group *grp,
+                         const unsigned char *buf, size_t blen,
+                         const mbedtls_ecp_point *Q,
+                         const mbedtls_mpi *r,
+                         const mbedtls_mpi *s,
+                         mbedtls_ecdsa_restart_ctx *rs_ctx)
+{
+    if ((grp->id == MBEDTLS_ECP_DP_SECP192R1 || grp->id == MBEDTLS_ECP_DP_SECP256R1) && blen == ECDSA_SHA_LEN) {
+        return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
+    } else {
+        return __real_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, rs_ctx);
+    }
+}
+
+/*
+ * Verify ECDSA signature of hashed message
+ */
 extern int __real_mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
                          const unsigned char *buf, size_t blen,
                          const mbedtls_ecp_point *Q,
@@ -438,10 +470,84 @@ int __wrap_mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
                          const mbedtls_mpi *r,
                          const mbedtls_mpi *s)
 {
-    if (grp->id == MBEDTLS_ECP_DP_SECP192R1 || grp->id == MBEDTLS_ECP_DP_SECP256R1) {
-        return esp_ecdsa_verify(grp, buf, blen, Q, r, s);
-    } else {
-        return __real_mbedtls_ecdsa_verify(grp, buf, blen, Q, r, s);
+    return __wrap_mbedtls_ecdsa_verify_restartable(grp, buf, blen, Q, r, s, NULL);
+}
+
+
+int __real_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
+                                             const unsigned char *hash, size_t hlen,
+                                             const unsigned char *sig, size_t slen,
+                                             mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
+                                             const unsigned char *hash, size_t hlen,
+                                             const unsigned char *sig, size_t slen,
+                                             mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_read_signature_restartable(mbedtls_ecdsa_context *ctx,
+                                             const unsigned char *hash, size_t hlen,
+                                             const unsigned char *sig, size_t slen,
+                                             mbedtls_ecdsa_restart_ctx *rs_ctx)
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    unsigned char *p = (unsigned char *) sig;
+    const unsigned char *end = sig + slen;
+    size_t len;
+    mbedtls_mpi r, s;
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    if ((ret = mbedtls_asn1_get_tag(&p, end, &len,
+                                    MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) != 0) {
+        ret += MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
     }
+
+    if (p + len != end) {
+        ret = MBEDTLS_ERROR_ADD(MBEDTLS_ERR_ECP_BAD_INPUT_DATA,
+                                MBEDTLS_ERR_ASN1_LENGTH_MISMATCH);
+        goto cleanup;
+    }
+
+    if ((ret = mbedtls_asn1_get_mpi(&p, end, &r)) != 0 ||
+        (ret = mbedtls_asn1_get_mpi(&p, end, &s)) != 0) {
+        ret += MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if ((ret = __wrap_mbedtls_ecdsa_verify_restartable(&ctx->MBEDTLS_PRIVATE(grp), hash, hlen,
+                                                    &ctx->MBEDTLS_PRIVATE(Q), &r, &s, NULL)) != 0) {
+        goto cleanup;
+    }
+
+    /* At this point we know that the buffer starts with a valid signature.
+     * Return 0 if the buffer just contains the signature, and a specific
+     * error code if the valid signature is followed by more data. */
+    if (p != end) {
+        ret = MBEDTLS_ERR_ECP_SIG_LEN_MISMATCH;
+    }
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+
+    return ret;
+}
+
+
+int __real_mbedtls_ecdsa_read_signature(mbedtls_ecdsa_context *ctx,
+                                    const unsigned char *hash, size_t hlen,
+                                    const unsigned char *sig, size_t slen);
+
+int __wrap_mbedtls_ecdsa_read_signature(mbedtls_ecdsa_context *ctx,
+                                    const unsigned char *hash, size_t hlen,
+                                    const unsigned char *sig, size_t slen);
+
+int __wrap_mbedtls_ecdsa_read_signature(mbedtls_ecdsa_context *ctx,
+                                    const unsigned char *hash, size_t hlen,
+                                    const unsigned char *sig, size_t slen)
+{
+    return __wrap_mbedtls_ecdsa_read_signature_restartable(
+            ctx, hash, hlen, sig, slen, NULL);
 }
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY */
