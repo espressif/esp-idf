@@ -64,7 +64,150 @@ DATA=data
 
 It is possible to use Wi-Fi connection on targets that do not support native Wi-Fi peripheral. This example demonstrates using `esp_wifi_remote` on ESP32P4 in the test configuration defined as `sdkconfig.ci.p4_wifi`. This configuration requires another ESP target with native Wi-Fi support physically connected to the ESP32-P4.
 
-### Configure master-slave verification
+This uses [esp_hosted](https://components.espressif.com/components/espressif/esp_hosted) project by default, please refer to its documentation for more details.
+Note, that `esp_hosted` library currently transmits Wi-Fi credentials in plain text. In case this is a concern, please choose the `eppp` option in `esp_wifi_remote` configuration menu (`CONFIG_ESP_WIFI_REMOTE_LIBRARY_EPPP=y`) and setup master-slave verification (please see [eppp: Configure master-slave verification](#eppp)).
+
+### esp-hosted: Configure the slave project
+
+You first need to build and flash the slave project. It's possible to perform this action directly from the host project, these commands can be used to set the slave target device (for example ESP32C6), build and flash the slave project. You will have to hold the RST button to keep the host device (ESP32-P4) in reset while flashing the slave device.
+```
+idf.py -C managed_components/espressif__esp_hosted/slave/ -B build_slave set-target esp32c6
+idf.py -C managed_components/espressif__esp_hosted/slave/ -B build_slave build flash monitor
+```
+
+### esp-hosted: Example Output of the slave device
+
+```
+I (348) cpu_start: Unicore app
+I (357) cpu_start: Pro cpu start user code
+I (357) cpu_start: cpu freq: 160000000 Hz
+I (357) app_init: Application information:
+I (360) app_init: Project name:     network_adapter
+I (365) app_init: App version:      qa-test-full-master-esp32c5-202
+I (372) app_init: Compile time:     Aug 30 2024 08:10:15
+I (378) app_init: ELF file SHA256:  6220fafe8...
+I (383) app_init: ESP-IDF:          v5.4-dev-2600-g1157a27964c-dirt
+I (390) efuse_init: Min chip rev:     v0.0
+I (395) efuse_init: Max chip rev:     v0.99 
+I (400) efuse_init: Chip rev:         v0.1
+I (405) heap_init: Initializing. RAM available for dynamic allocation:
+I (412) heap_init: At 4082FCD0 len 0004C940 (306 KiB): RAM
+I (418) heap_init: At 4087C610 len 00002F54 (11 KiB): RAM
+I (424) heap_init: At 50000000 len 00003FE8 (15 KiB): RTCRAM
+I (432) spi_flash: detected chip: generic
+I (435) spi_flash: flash io: dio
+I (440) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (447) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (454) coexist: coex firmware version: 8da3f50af
+I (481) coexist: coexist rom version 5b8dcfa
+I (481) main_task: Started on CPU0
+I (481) main_task: Calling app_main()
+I (482) fg_mcu_slave: *********************************************************************
+I (491) fg_mcu_slave:                 ESP-Hosted-MCU Slave FW version :: 0.0.6                        
+I (501) fg_mcu_slave:                 Transport used :: SDIO only                     
+I (510) fg_mcu_slave: *********************************************************************
+I (519) fg_mcu_slave: Supported features are:
+I (524) fg_mcu_slave: - WLAN over SDIO
+I (528) h_bt: - BT/BLE
+I (531) h_bt:    - HCI Over SDIO
+I (535) h_bt:    - BLE only
+I (539) fg_mcu_slave: capabilities: 0xd
+I (543) fg_mcu_slave: Supported extended features are:
+I (549) h_bt: - BT/BLE (extended)
+I (553) fg_mcu_slave: extended capabilities: 0x0
+I (563) h_bt: ESP Bluetooth MAC addr: 40:4c:ca:5b:a0:8a
+I (564) BLE_INIT: Using main XTAL as clock source
+I (574) BLE_INIT: ble controller commit:[7491a85]
+I (575) BLE_INIT: Bluetooth MAC: 40:4c:ca:5b:a0:8a
+I (581) phy_init: phy_version 310,dde1ba9,Jun  4 2024,16:38:11
+I (641) phy: libbtbb version: 04952fd, Jun  4 2024, 16:38:26
+I (642) SDIO_SLAVE: Using SDIO interface
+I (642) SDIO_SLAVE: sdio_init: sending mode: SDIO_SLAVE_SEND_STREAM
+I (648) SDIO_SLAVE: sdio_init: ESP32-C6 SDIO RxQ[20] timing[0]
+
+I (1155) fg_mcu_slave: Start Data Path
+I (1165) fg_mcu_slave: Initial set up done
+I (1165) slave_ctrl: event ESPInit
+```
+
+### esp_hosted: Example Output of the master device (ESP32-P4)
+
+```
+I (1833) sdio_wrapper: Function 0 Blocksize: 512
+I (1843) sdio_wrapper: Function 1 Blocksize: 512
+I (1843) H_SDIO_DRV: SDIO Host operating in STREAMING MODE
+I (1853) H_SDIO_DRV: generate slave intr
+I (1863) transport: Received INIT event from ESP32 peripheral
+I (1873) transport: EVENT: 12
+I (1873) transport: EVENT: 11
+I (1873) transport: capabilities: 0xd
+I (1873) transport: Features supported are:
+I (1883) transport: 	 * WLAN
+I (1883) transport: 	   - HCI over SDIO
+I (1893) transport: 	   - BLE only
+I (1893) transport: EVENT: 13
+I (1893) transport: ESP board type is : 13 
+
+I (1903) transport: Base transport is set-up
+
+I (1903) transport: Slave chip Id[12]
+I (1913) hci_stub_drv: Host BT Support: Disabled
+I (1913) H_SDIO_DRV: Received INIT event
+I (1923) rpc_evt: EVENT: ESP INIT
+
+I (1923) rpc_wrap: Received Slave ESP Init
+I (2703) rpc_core: <-- RPC_Req  [0x116], uid 1
+I (2823) rpc_rsp:  --> RPC_Resp [0x216], uid 1
+I (2823) rpc_core: <-- RPC_Req  [0x139], uid 2
+I (2833) rpc_rsp:  --> RPC_Resp [0x239], uid 2
+I (2833) rpc_core: <-- RPC_Req  [0x104], uid 3
+I (2843) rpc_rsp:  --> RPC_Resp [0x204], uid 3
+I (2843) rpc_core: <-- RPC_Req  [0x118], uid 4
+I (2933) rpc_rsp:  --> RPC_Resp [0x218], uid 4
+I (2933) example_connect: Connecting to Cermakowifi...
+I (2933) rpc_core: <-- RPC_Req  [0x11c], uid 5
+I (2943) rpc_evt: Event [0x2b] received
+I (2943) rpc_evt: Event [0x2] received
+I (2953) rpc_evt: EVT rcvd: Wi-Fi Start
+I (2953) rpc_core: <-- RPC_Req  [0x101], uid 6
+I (2973) rpc_rsp:  --> RPC_Resp [0x21c], uid 5
+I (2973) H_API: esp_wifi_remote_connect
+I (2973) rpc_core: <-- RPC_Req  [0x11a], uid 7
+I (2983) rpc_rsp:  --> RPC_Resp [0x201], uid 6
+I (3003) rpc_rsp:  --> RPC_Resp [0x21a], uid 7
+I (3003) example_connect: Waiting for IP(s)
+I (5723) rpc_evt: Event [0x2b] received
+I (5943) esp_wifi_remote: esp_wifi_internal_reg_rxcb: sta: 0x400309fe
+0x400309fe: wifi_sta_receive at /home/david/esp/idf/components/esp_wifi/src/wifi_netif.c:38
+
+I (7573) example_connect: Got IPv6 event: Interface "example_netif_sta" address: fe80:0000:0000:0000:424c:caff:fe5b:a088, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (9943) esp_netif_handlers: example_netif_sta ip: 192.168.0.29, mask: 255.255.255.0, gw: 192.168.0.1
+I (9943) example_connect: Got IPv4 event: Interface "example_netif_sta" address: 192.168.0.29
+I (9943) example_common: Connected to example_netif_sta
+I (9953) example_common: - IPv4 address: 192.168.0.29,
+I (9963) example_common: - IPv6 address: fe80:0000:0000:0000:424c:caff:fe5b:a088, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (9973) mqtt_example: Other event id:7
+I (9973) main_task: Returned from app_main()
+I (10253) mqtt_example: MQTT_EVENT_CONNECTED
+I (10253) mqtt_example: sent publish successful, msg_id=45053
+I (10253) mqtt_example: sent subscribe successful, msg_id=34643
+I (10263) mqtt_example: sent subscribe successful, msg_id=2358
+I (10263) mqtt_example: sent unsubscribe successful, msg_id=57769
+I (10453) mqtt_example: MQTT_EVENT_PUBLISHED, msg_id=45053
+I (10603) mqtt_example: MQTT_EVENT_SUBSCRIBED, msg_id=34643
+I (10603) mqtt_example: sent publish successful, msg_id=0
+I (10603) mqtt_example: MQTT_EVENT_SUBSCRIBED, msg_id=2358
+I (10613) mqtt_example: sent publish successful, msg_id=0
+I (10613) mqtt_example: MQTT_EVENT_UNSUBSCRIBED, msg_id=57769
+I (10713) mqtt_example: MQTT_EVENT_DATA
+TOPIC=/topic/qos0
+DATA=data
+I (10863) mqtt_example: MQTT_EVENT_DATA
+TOPIC=/topic/qos0
+DATA=data
+```
+
+### <a name="eppp"></a>eppp: Configure master-slave verification
 
 In order to secure the physical connection between the ESP32-P4 (master) and the slave device, it is necessary to set certificates and keys for each side.
 To bootstrap this step, you can use one-time generated self-signed RSA keys and certificates running:
@@ -72,7 +215,7 @@ To bootstrap this step, you can use one-time generated self-signed RSA keys and 
 ./managed_components/espressif__esp_wifi_remote/examples/test_certs/generate_test_certs.sh espressif.local
 ```
 
-### Configure the slave project
+#### eppp: Configure the slave project
 
 It is recommended to create a new project from `esp_wifi_remote` component's example with
 ```
@@ -91,7 +234,7 @@ Please follow these steps to setup the slave application:
   - `CONFIG_ESP_WIFI_REMOTE_EPPP_SERVER_KEY` -- slave's private key
 * `idf.py build flash monitor`
 
-### Configure the master project (ESP32-P4)
+#### eppp: Configure the master project (ESP32-P4)
 
 similarly to the slave project, we have to configure
 * the physical connection
@@ -105,7 +248,7 @@ After project configuration, you build and flash the board with
 idf.py build flash monitor
 ```
 
-### Example Output of the slave device
+### eppp: Example Output of the slave device
 
 ```
 I (7982) main_task: Returned from app_main()
@@ -183,7 +326,7 @@ I (15682) rpc_server: Main DNS:185.162.24.55
 I (15682) rpc_server: IP address:192.168.0.33
 ```
 
-### Example Output of the master device (ESP32-P4)
+### eppp: Example Output of the master device (ESP32-P4)
 
 ```
 I (445) example_connect: Start example_connect.
