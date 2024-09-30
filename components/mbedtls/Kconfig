@@ -1192,4 +1192,14 @@ menu "mbedTLS"
             the flash footprint and hence care must be taken to keep some reserved space
             for the application binary in flash layout.
 
+    config MBEDTLS_FS_IO
+        bool "Enable functions that use the filesystem"
+        default y
+        depends on (VFS_SUPPORT_IO && VFS_SUPPORT_DIR) || IDF_TARGET_LINUX
+        help
+            This option enables functions in mbedTLS that use the filesystem.
+            It uses the default filesystem support for the target,
+            which is added through vfs component for ESP32 based targets or by
+            the host system when the target is Linux.
+
 endmenu  # mbedTLS
