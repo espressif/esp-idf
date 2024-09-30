@@ -15,7 +15,6 @@
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
-#include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
@@ -23,6 +22,7 @@
 #include "soc/twai_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 /* ---------------------------- Definitions --------------------------------- */
@@ -278,45 +278,34 @@ TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
 }
 
 /* -------------------------- Helper functions  ----------------------------- */
-static esp_err_t twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
+static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
 {
-    esp_err_t ret = ESP_FAIL;
+    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     assert(tx >= 0 && rx >= 0);
-    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
-    bool io_loop_back = (tx == rx);
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
+
     //Set RX pin
-    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << rx;
-    ret = gpio_config(&gpio_conf);
-    TWAI_CHECK(ESP_OK == ret, ret);
+    gpio_hal_func_sel(&gpio_hal, rx, PIN_FUNC_GPIO);
+    gpio_hal_input_enable(&gpio_hal, rx);
     esp_rom_gpio_connect_in_signal(rx, TWAI_RX_IDX, false);
 
     //Set TX pin
-    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << tx;
-    ret = gpio_config(&gpio_conf);
-    TWAI_CHECK(ESP_OK == ret, ret);
+    gpio_hal_func_sel(&gpio_hal, tx, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(tx, TWAI_TX_IDX, false, false);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(clkout, GPIO_FLOATING);
+        gpio_hal_func_sel(&gpio_hal, clkout, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(clkout, TWAI_CLKOUT_IDX, false, false);
-        esp_rom_gpio_pad_select_gpio(clkout);
     }
 
     //Configure bus status pin (Optional)
     if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(bus_status, GPIO_FLOATING);
+        gpio_hal_func_sel(&gpio_hal, bus_status, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(bus_status, TWAI_BUS_OFF_ON_IDX, false, false);
-        esp_rom_gpio_pad_select_gpio(bus_status);
     }
-    return ESP_OK;
 }
 
 static void twai_free_driver_obj(twai_obj_t *p_obj)
@@ -462,10 +451,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     p_twai_obj_dummy->alerts_enabled = g_config->alerts_enabled;
 
     //Assign GPIO
-    ret = twai_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
-    if (ESP_OK != ret) {
-        goto err;
-    }
+    twai_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
 
     TWAI_ENTER_CRITICAL();
     //Assign the TWAI object
