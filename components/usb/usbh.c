@@ -1050,7 +1050,6 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
     if (dev_obj->dynamic.open_count == 0) {
         // Sanity check.
         assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  // There cannot be any control transfer in-flight
-        assert(!dev_obj->dynamic.flags.waiting_free);   // This can only be set when open_count reaches 0
         if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_free) {
             // Device is already gone or is awaiting to be freed. Trigger the USBH process to free the device
             call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE);
