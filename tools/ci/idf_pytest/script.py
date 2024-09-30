@@ -25,6 +25,7 @@ from idf_py_actions.constants import SUPPORTED_TARGETS as TOOLS_SUPPORTED_TARGET
 from .constants import CollectMode
 from .constants import DEFAULT_BUILD_LOG_FILENAME
 from .constants import DEFAULT_CONFIG_RULES_STR
+from .constants import DEFAULT_SIZE_JSON_FILENAME
 from .constants import PytestCase
 from .plugin import IdfPytestEmbedded
 
@@ -162,7 +163,7 @@ def get_all_apps(
             build_dir='build_@t_@w',
             config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
             build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
-            size_json_filename='size.json',
+            size_json_filename=DEFAULT_SIZE_JSON_FILENAME,
             check_warnings=True,
             manifest_rootpath=IDF_PATH,
             compare_manifest_sha_filepath=compare_manifest_sha_filepath,

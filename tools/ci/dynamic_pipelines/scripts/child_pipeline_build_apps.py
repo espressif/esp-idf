@@ -66,7 +66,7 @@ if __name__ == '__main__':
             check_app_dependencies=True,
             parallel_count=args.parallel_count,
             parallel_index=args.parallel_index,
-            collect_size_info='size_info_@p.txt',
+            collect_size_info='size_info.txt',
             collect_app_info=args.collect_app_info,
             junitxml=args.junitxml,
             copy_sdkconfig=True,
