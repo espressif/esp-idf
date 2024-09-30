@@ -40,7 +40,7 @@ menu "Example Configuration"
     choice EXAMPLE_WIFI_BAND_MODE
         prompt "wifi band"
         default EXAMPLE_WIFI_BAND_MODE_2G
-        depends on SOC_WIFI_HE_SUPPORT_5G
+        depends on SOC_WIFI_SUPPORT_5G
         help
             WiFi band for the example to use.
 
