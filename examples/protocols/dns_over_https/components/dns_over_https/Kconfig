@@ -1,0 +1,10 @@
+menu "DNS-over-HTTPS Configuration"
+
+    config HTTPS_DNS_HTTP_VERSION
+        string
+        prompt "DNS-over-HTTPS Server HTTP version"
+        default "1.1"
+        help
+            HTTP version of DNS-over-HTTPS server.
+
+endmenu
