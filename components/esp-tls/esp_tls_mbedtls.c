@@ -789,7 +789,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #endif
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Resuing the saved client session");
+        ESP_LOGD(TAG, "Reusing the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
@@ -916,8 +916,10 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
     int ret = 0;
-    if ((ret = esp_mbedtls_server_session_create_start(cfg, sockfd, tls)) != 0) return ret;
-    while ((ret = esp_mbedtls_server_session_create_continue_async(tls)) != 0) {
+    if ((ret = esp_mbedtls_server_session_init(cfg, sockfd, tls)) != 0) {
+        return ret;
+    }
+    while ((ret = esp_mbedtls_server_session_continue_async(tls)) != 0) {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             return ret;
         }
@@ -928,7 +930,7 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
 /**
  * @brief      Initialization part of esp_mbedtls_server_session_create
  */
-int esp_mbedtls_server_session_create_start(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
     if (tls == NULL || cfg == NULL) {
         return -1;
@@ -951,11 +953,11 @@ int esp_mbedtls_server_session_create_start(esp_tls_cfg_server_t *cfg, int sockf
 }
 
 /**
- * @brief      Asyncronous continue of esp_mbedtls_server_session_create, to be
+ * @brief      Asynchronous continue of esp_mbedtls_server_session_create, to be
  *             called in a loop by the user until it returns 0, ESP_TLS_ERR_SSL_WANT_READ
  *             or ESP_TLS_ERR_SSL_WANT_WRITE
  */
-int esp_mbedtls_server_session_create_continue_async(esp_tls_t *tls)
+int esp_mbedtls_server_session_continue_async(esp_tls_t *tls)
 {
     int ret = mbedtls_ssl_handshake(&tls->ssl);
     if (ret != 0 && ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {

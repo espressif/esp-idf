@@ -74,7 +74,7 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
  *
  * /note :- The function can only be used with mbedtls ssl library
  */
-int esp_mbedtls_server_session_create_start(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
 
 /**
  * Asynchronous continue of internal callback for mbedtls_server_session_create,
@@ -83,7 +83,7 @@ int esp_mbedtls_server_session_create_start(esp_tls_cfg_server_t *cfg, int sockf
  *
  * /note :- The function can only be used with mbedtls ssl library
  */
-int esp_mbedtls_server_session_create_continue_async(esp_tls_t *tls);
+int esp_mbedtls_server_session_continue_async(esp_tls_t *tls);
 
 /**
  * Internal Callback for mbedtls_server_session_delete
