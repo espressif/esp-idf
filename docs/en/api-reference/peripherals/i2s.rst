@@ -234,6 +234,15 @@ When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the 
 
 The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the user is reading or writing via I2S (i.e., calling :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`), the driver guarantees that the power management lock is acquired. Likewise, the driver releases the lock after the reading or writing finishes.
 
+.. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    """""""""""""""
+
+    {IDF_TARGET_NAME} supports to retain the I2S register context before entering **light sleep** and restore them after woke up. Which means you don't have to re-init the I2S driver even the peripheral is power off during the light sleep.
+
+    This feature can be enabled by setting the flag :cpp:member:`i2s_chan_config_t::allow_pd`. It will allow the system to power down the I2S in light sleep, meanwhile save the I2S register context. It can help to save more power consumption with some extra cost of the memory.
+
 Finite State Machine
 ^^^^^^^^^^^^^^^^^^^^
 

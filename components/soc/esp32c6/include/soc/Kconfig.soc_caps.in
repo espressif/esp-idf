@@ -671,6 +671,10 @@ config SOC_I2S_SUPPORTS_TDM
     bool
     default y
 
+config SOC_I2S_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y

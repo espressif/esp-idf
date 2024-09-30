@@ -41,6 +41,9 @@
 
 #include "esp_private/i2s_platform.h"
 #include "esp_private/esp_clk.h"
+#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -84,6 +87,34 @@ inline void *i2s_dma_calloc(i2s_chan_handle_t handle, size_t num, size_t size)
  ----------------------------------------------------------------------------
     Scope: This file only
  ----------------------------------------------------------------------------*/
+
+#if I2S_USE_RETENTION_LINK
+static esp_err_t s_i2s_create_sleep_retention_link_cb(void *arg)
+{
+    i2s_controller_t *i2s_obj = (i2s_controller_t *)arg;
+    ESP_RETURN_ON_ERROR(sleep_retention_entries_create(i2s_reg_retention_info[i2s_obj->id].entry_array,
+                                                       i2s_reg_retention_info[i2s_obj->id].array_size,
+                                                       REGDMA_LINK_PRI_I2S, i2s_obj->slp_retention_mod),
+                        TAG, "create retention link failed");
+    return ESP_OK;
+}
+
+static void s_i2s_create_retention_module(i2s_controller_t *i2s_obj)
+{
+    sleep_retention_module_t module = i2s_obj->slp_retention_mod;
+
+    _lock_acquire(&i2s_obj->mutex);
+    if (i2s_obj->retention_link_created == false) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            // even though the sleep retention module create failed, I2S driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            i2s_obj->retention_link_created = true;
+        }
+    }
+    _lock_release(&i2s_obj->mutex);
+}
+#endif // I2S_USE_RETENTION_LINK
 
 static void i2s_tx_channel_start(i2s_chan_handle_t handle)
 {
@@ -175,6 +206,14 @@ static esp_err_t i2s_destroy_controller_obj(i2s_controller_t **i2s_obj)
 #if SOC_I2S_HW_VERSION_1
     i2s_ll_enable_dma((*i2s_obj)->hal.dev, false);
 #endif
+#if I2S_USE_RETENTION_LINK
+    if ((*i2s_obj)->slp_retention_mod) {
+        if ((*i2s_obj)->retention_link_created) {
+            sleep_retention_module_free((*i2s_obj)->slp_retention_mod);
+        }
+        sleep_retention_module_deinit((*i2s_obj)->slp_retention_mod);
+    }
+#endif  // I2S_USE_RETENTION_LINK
     free(*i2s_obj);
     *i2s_obj = NULL;
     return i2s_platform_release_occupation(I2S_CTLR_HP, id);
@@ -219,6 +258,25 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
             adc_ll_digi_set_data_source(0);
         }
 #endif
+
+#if I2S_USE_RETENTION_LINK
+        sleep_retention_module_t module = i2s_reg_retention_info[id].retention_module;
+        sleep_retention_module_init_param_t init_param = {
+            .cbs = {
+                .create = {
+                    .handle = s_i2s_create_sleep_retention_link_cb,
+                    .arg = i2s_obj,
+                },
+            },
+            .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+        };
+        if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
+            i2s_obj->slp_retention_mod = module;
+        } else {
+            // even the sleep retention module init failed, I2S driver should still work, so just warning here
+            ESP_LOGW(TAG, "init sleep retention failed for I2S%d, power domain may be turned off during sleep", id);
+        }
+#endif  // I2S_USE_RETENTION_LINK
     } else {
         free(pre_alloc);
         portENTER_CRITICAL(&g_i2s.spinlock);
@@ -879,6 +937,9 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     ESP_RETURN_ON_FALSE(chan_cfg->id < SOC_I2S_NUM || chan_cfg->id == I2S_NUM_AUTO, ESP_ERR_INVALID_ARG, TAG, "invalid I2S port id");
     ESP_RETURN_ON_FALSE(chan_cfg->dma_desc_num >= 2, ESP_ERR_INVALID_ARG, TAG, "there should be at least 2 DMA buffers");
     ESP_RETURN_ON_FALSE(chan_cfg->intr_priority >= 0 && chan_cfg->intr_priority <= 7, ESP_ERR_INVALID_ARG, TAG, "intr_priority should be within 0~7");
+#if !SOC_I2S_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(!chan_cfg->allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif
 
     esp_err_t ret = ESP_OK;
     i2s_controller_t *i2s_obj = NULL;
@@ -937,6 +998,11 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     if ((tx_handle != NULL) && (rx_handle != NULL)) {
         i2s_obj->full_duplex = true;
     }
+#if I2S_USE_RETENTION_LINK
+    if (chan_cfg->allow_pd) {
+        s_i2s_create_retention_module(i2s_obj);
+    }
+#endif
 
     return ESP_OK;
     /* i2s_obj allocated but register channel failed */

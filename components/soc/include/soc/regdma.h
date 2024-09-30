@@ -53,6 +53,7 @@ extern "C" {
 #define REGDMA_TG1_WDT_LINK(_pri)           ((0x1B << 8) | _pri)
 #define REGDMA_TG0_TIMER_LINK(_pri)         ((0x1C << 8) | _pri)
 #define REGDMA_TG1_TIMER_LINK(_pri)         ((0x1D << 8) | _pri)
+#define REGDMA_I2S_LINK(_pri)               ((0x1E << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -69,6 +70,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {

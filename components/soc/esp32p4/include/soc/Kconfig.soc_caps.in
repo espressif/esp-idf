@@ -843,6 +843,10 @@ config SOC_I2S_TDM_FULL_DATA_WIDTH
     bool
     default y
 
+config SOC_I2S_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_LP_I2S_NUM
     int
     default 1

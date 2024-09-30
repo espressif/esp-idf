@@ -234,6 +234,15 @@ I2S 驱动中的资源可分为三个级别：
 
 I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL（若支持）时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
 
+.. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
+
+    睡眠保留
+    """"""""
+
+    {IDF_TARGET_NAME} 支持在进入 **轻度睡眠** 之前保留 I2S 寄存器中的内容，并在唤醒后恢复。也就是说外设若因进入 **轻度睡眠** 而掉电，程序不需要在唤醒后重新配置 I2S。
+
+    该特性可以通过置位配置中的 :cpp:member:`i2s_chan_config_t::allow_pd` 标志位启用。启用后驱动允许系统在轻度睡眠时对 I2S 掉电，同时保存 I2S 的寄存器内容。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+
 有限状态机
 ^^^^^^^^^^
 

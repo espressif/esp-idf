@@ -33,7 +33,6 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_in_sigs[3]  = I2S0I_SD3_IN_IDX,
 
         .irq          = ETS_I2S0_INTR_SOURCE,
-        .module       = PERIPH_I2S0_MODULE,
     },
     {
         .mck_out_sig  = I2S1_MCLK_OUT_IDX,
@@ -57,6 +56,5 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_in_sigs[3]  = -1,
 
         .irq          = ETS_I2S1_INTR_SOURCE,
-        .module       = PERIPH_I2S1_MODULE,
     }
 };

@@ -26,6 +26,7 @@ extern "C" {
     .dma_frame_num = 240, \
     .auto_clear_after_cb = false, \
     .auto_clear_before_cb = false, \
+    .allow_pd = false, \
     .intr_priority = 0, \
 }
 
@@ -72,6 +73,10 @@ typedef struct {
     };
     bool                auto_clear_before_cb; /*!< Set to auto clear DMA TX buffer before `on_sent` callback, I2S will always send zero automatically if no data to send
                                              *   So that user can access data in the callback that just finished to send.
+                                             */
+    bool                allow_pd;           /*!< Set to allow power down. When this flag set, the driver will backup/restore the I2S registers before/after entering/exist sleep mode.
+                                             * By this approach, the system can power off I2S's power domain.
+                                             * This can save power, but at the expense of more RAM being consumed.
                                              */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } i2s_chan_config_t;

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <sys/lock.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
@@ -25,6 +26,9 @@
 #endif
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
+#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 #include "esp_pm.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
@@ -55,6 +59,8 @@ extern "C" {
 #else
 #define I2S_RCC_ATOMIC()
 #endif
+
+#define I2S_USE_RETENTION_LINK  (SOC_I2S_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 
@@ -130,6 +136,11 @@ typedef struct {
     bool                    full_duplex;    /*!< is full_duplex */
     i2s_chan_handle_t       tx_chan;        /*!< tx channel handler */
     i2s_chan_handle_t       rx_chan;        /*!< rx channel handler */
+    _lock_t                 mutex;          /*!< mutex for controller */
+#if SOC_I2S_SUPPORT_SLEEP_RETENTION
+    sleep_retention_module_t slp_retention_mod; /*!< Sleep retention module */
+    bool                    retention_link_created;  /*!< Whether the retention link is created */
+#endif
     int                     mclk;           /*!< MCK out pin, shared by tx/rx*/
 #if CONFIG_IDF_TARGET_ESP32
     esp_clock_output_mapping_handle_t mclk_out_hdl; /*!< The handle of MCLK output signal */
