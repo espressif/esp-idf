@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+import logging
 import os
 
 import pytest
@@ -55,3 +55,33 @@ def test_protocols_icmp_echo(dut: Dut) -> None:
 )
 def test_protocols_icmp_echo_esp32c2_26mhz(dut: Dut) -> None:
     _run_test(dut)
+
+
+@pytest.mark.esp32
+@pytest.mark.wifi_router
+@pytest.mark.parametrize('config', ['ipv6_only',], indirect=True)
+def test_protocols_icmp_echo_ipv6_only(dut: Dut) -> None:
+    # Parse IP address of STA
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
+    ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)
+    ipv6 = dut.expect(ipv6_r, timeout=30)[0].decode()
+    logging.info(f'Connected AP with IPv6={ipv6}')
+    interface_nr = dut.expect(r'Connected on interface: [a-z]{2}\d \((\d+)\)', timeout=30)[1].decode()
+
+    # ping our own address to simplify things
+    dut.write('ping -I {} {} -c 5'.format(interface_nr, ipv6))
+
+    # expect at least two packets (there could be lost packets)
+    ip = dut.expect(r'64 bytes from ([0-9a-fA-F:]+) icmp_seq=\d ttl=\d+ time=\d+ ms')[1].decode()
+    dut.expect(fr'64 bytes from {ip} icmp_seq=[2-5] ttl=\d+ time=')
+
+    dut.expect(r'5 packets transmitted, [2-5] received, \d{1,3}% packet loss')
+    dut.write('')
+    dut.expect('esp>')
