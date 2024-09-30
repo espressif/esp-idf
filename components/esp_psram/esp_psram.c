@@ -292,6 +292,7 @@ esp_err_t esp_psram_init(void)
 
 #if CONFIG_IDF_TARGET_ESP32
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end -= esp_himem_reserved_area_size();
 #endif
 
     //will be removed, TODO: IDF-6944
