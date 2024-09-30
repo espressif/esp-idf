@@ -456,10 +456,10 @@ typedef union {
          *  Represents MAC address. High 16-bit.
          */
         uint32_t mac_1:16;
-        /** c61_no_extention : R; bitpos: [31:16]; default: 0;
-         *  Reserved
+        /** rd_reserve_1_48 : RW; bitpos: [31:16]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
          */
-        uint32_t c61_no_extention:16;
+        uint32_t rd_reserve_1_48:16;
     };
     uint32_t val;
 } efuse_rd_mac_sys1_reg_t;
@@ -627,10 +627,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** temperature_sensor : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t sys_data_part1_4:32;
+        uint32_t temperature_sensor:9;
+        /** ocode : R; bitpos: [16:9]; default: 0;
+         *  ADC OCode calibration
+         */
+        uint32_t ocode:8;
+        /** adc1_ave_init_code_atten0 : R; bitpos: [26:17]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_init_code_atten0:10;
+        /** adc1_ave_init_code_atten1 : R; bitpos: [31:27]; default: 0;
+         *  Average initcode of ADC1 atten1
+         */
+        uint32_t adc1_ave_init_code_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -640,10 +652,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_ave_init_code_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  Average initcode of ADC1 atten1
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_ave_init_code_atten1_1:5;
+        /** adc1_ave_init_code_atten2 : R; bitpos: [14:5]; default: 0;
+         *  Average initcode of ADC1 atten2
+         */
+        uint32_t adc1_ave_init_code_atten2:10;
+        /** adc1_ave_init_code_atten3 : R; bitpos: [24:15]; default: 0;
+         *  Average initcode of ADC1 atten3
+         */
+        uint32_t adc1_ave_init_code_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:25]; default: 0;
+         *  HI_DOUT of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -653,10 +677,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  HI_DOUT of ADC1 atten0
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_hi_dout_atten0_1:3;
+        /** adc1_hi_dout_atten1 : R; bitpos: [12:3]; default: 0;
+         *  HI_DOUT of ADC1 atten1
+         */
+        uint32_t adc1_hi_dout_atten1:10;
+        /** adc1_hi_dout_atten2 : R; bitpos: [22:13]; default: 0;
+         *  HI_DOUT of ADC1 atten2
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:23]; default: 0;
+         *  HI_DOUT of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -666,10 +702,30 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [0]; default: 0;
+         *  HI_DOUT of ADC1 atten3
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_hi_dout_atten3_1:1;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:1]; default: 0;
+         *  Gap between ADC1 CH0 and average initcode
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [8:5]; default: 0;
+         *  Gap between ADC1 CH1 and average initcode
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [12:9]; default: 0;
+         *  Gap between ADC1 CH2 and average initcode
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [16:13]; default: 0;
+         *  Gap between ADC1 CH3 and average initcode
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** reserved_2_241 : R; bitpos: [31:17]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_241:15;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
