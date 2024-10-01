@@ -336,6 +336,21 @@ TEST(esp_netif, dhcp_server_state_transitions_mesh)
 #endif // CONFIG_ESP_WIFI_ENABLED && CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
+/*
+ * This checks some semi-public API for null dereference
+ */
+TEST(esp_netif, wifi_netif_api_null_deref)
+{
+    esp_wifi_destroy_if_driver(NULL);   // returns void: just checking if won't crash
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_wifi_get_if_mac(NULL, NULL));
+    TEST_ASSERT_NOT_EQUAL(true, esp_wifi_is_if_ready_when_started(NULL));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_wifi_register_if_rxcb(NULL, NULL, NULL));
+}
+
+/*
+ * This test validates convenience API esp_netif_create_wifi() which creates WiFi station
+ * or API with the specified inherent network config.
+ */
 TEST(esp_netif, create_custom_wifi_interfaces)
 {
     esp_netif_t *ap = NULL;
@@ -591,6 +606,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
     RUN_TEST_CASE(esp_netif, find_netifs)
 #ifdef CONFIG_ESP_WIFI_ENABLED
+    RUN_TEST_CASE(esp_netif, wifi_netif_api_null_deref)
     RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
     RUN_TEST_CASE(esp_netif, create_destroy_default_wifi)
 #endif
