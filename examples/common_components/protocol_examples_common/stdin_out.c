@@ -15,8 +15,7 @@
 
 esp_err_t example_configure_stdin_stdout(void)
 {
-    static bool configured = false;
-    if (configured) {
+    if (uart_is_driver_installed((uart_port_t)CONFIG_ESP_CONSOLE_UART_NUM)) {
       return ESP_OK;
     }
     // Initialize VFS & UART so we can use std::cout/cin
@@ -29,6 +28,5 @@ esp_err_t example_configure_stdin_stdout(void)
     esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
     esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
-    configured = true;
     return ESP_OK;
 }
