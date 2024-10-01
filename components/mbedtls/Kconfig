@@ -548,6 +548,37 @@ menu "mbedTLS"
             The key should be burnt in little endian format. espefuse.py utility handles it internally
             but care needs to be taken while burning using esp_efuse APIs
 
+    menu "Enable Software Countermeasure for ECDSA signing using on-chip ECDSA peripheral"
+        depends on MBEDTLS_HARDWARE_ECDSA_SIGN
+        depends on IDF_TARGET_ESP32H2
+        config MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
+            bool "Mask original ECDSA sign operation under dummy sign operations"
+            select HAL_ECDSA_GEN_SIG_CM
+            # ToDo: IDF-11051
+            default y
+            help
+                The ECDSA peripheral before ECO5 does not offer constant time ECDSA sign operation.
+                This time can be observed through power profiling of the device,
+                making the ECDSA private key vulnerable to side-channel timing attacks.
+                This countermeasure masks the real ECDSA sign operation
+                under dummy sign operations to add randomness in the generated power signature.
+                It is highly recommended to also enable Secure Boot for the device in addition to this countermeasure
+                so that only trusted software can execute on the device.
+
+        config MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
+            bool "Make ECDSA signature operation pseudo constant time for software"
+            default y
+            help
+                This option adds a delay after the actual ECDSA signature operation
+                so that the entire operation appears to be constant time for the software.
+                This fix helps in protecting the device only in case of remote timing attack on the ECDSA private key.
+                For e.g., When an interface is exposed by the device to perform ECDSA signature
+                of an arbitrary message.
+                The signature time would appear to be constant to the external entity after enabling
+                this option.
+
+    endmenu
+
     config MBEDTLS_HARDWARE_ECDSA_VERIFY
         bool "Enable ECDSA signature verification using on-chip ECDSA peripheral"
         default y
