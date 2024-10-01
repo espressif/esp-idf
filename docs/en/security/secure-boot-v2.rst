@@ -435,17 +435,17 @@ Restrictions After Secure Boot Is Enabled
 
 - Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port.
 
+- After Secure Boot is enabled, further read-protection of eFuse keys is not possible. This is done to prevent an attacker from read-protecting the eFuse block that contains the Secure Boot public key digest, which could result in immediate denial of service and potentially enable a fault injection attack to bypass the signature verification. For further information on read-protected keys, see the details below.
+
 Burning read-protected keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After Secure Boot is enabled, no further eFuses can be read-protected, because this might allow an attacker to read-protect the efuse block holding the public key digest, causing an immediate denial of service and possibly allowing an additional fault injection attack to bypass the signature protection.
-
-If :doc:`/security/flash-encryption` is enabled by the 2nd stage bootloader, it ensures that the flash encryption key generated on the first boot shall already be read-protected.
-
-In case you need to read-protect a key after Secure Boot has been enabled on the device, for example,
+**Read protected keys**:
+The following keys must be read-protected on the device, the respective hardware will have access them directly (not readable by software):
 
 .. list::
-  :SOC_FLASH_ENC_SUPPORTED:* the flash encryption key
+
+  :SOC_FLASH_ENC_SUPPORTED:* Flash encryption key
 
   :SOC_HMAC_SUPPORTED:* HMAC keys
 
@@ -453,12 +453,21 @@ In case you need to read-protect a key after Secure Boot has been enabled on the
 
   :SOC_KEY_MANAGER_SUPPORTED:* Key Manager keys
 
-  you need to enable the config :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot to prevent disabling the ability to read-protect further efuses.
+**Non-read protected keys**:
+The following keys must not be read-protected on the device as the software needs to access them (readable by software):
 
-It is highly recommended that all such keys must been burned before enabling secure boot.
+.. list::
 
-In case you need to enable :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`, make sure that you burn the efuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}, using ``esp_efuse_write_field_bit()`` API from ``esp_efuse.h``, once all the read-protected efuse keys have been programmed.
+  :SOC_SECURE_BOOT_SUPPORTED:* Secure boot public key digest
+  * User data
 
+When Secure Boot is enabled, it shall disable the ability to read-protect further eFuses by default. If you want keep the ability to read-protect an eFuse later in the application (e.g, a key mentioned in the above list of read-protected keys) then you need to enable the config :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS` at the same time when you enable Secure Boot.
+
+Ideally, it is strongly recommended that all such keys must been burned before enabling secure boot. However, if you need to enable :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`, make sure that you burn the eFuse {IDF_TARGET_EFUSE_WR_DIS_RD_DIS}, using :cpp:func:`esp_efuse_write_field_bit`, once all the read-protected eFuse keys have been programmed.
+
+.. note::
+
+   If :doc:`/security/flash-encryption` is enabled by the 2nd stage bootloader at the time of enabling Secure Boot, it ensures that the flash encryption key generated on the first boot shall already be read-protected.
 
 .. _secure-boot-v2-generate-key:
 
@@ -631,7 +640,7 @@ Secure Boot Best Practices
     4. The active partition is set to the new OTA application's partition.
     5. The device resets and loads the bootloader that is verified with key #N-1, which then boots the new app verified with key #N.
     6. The new app verifies the bootloader with key #N as a final check, and then runs code to revoke key #N-1, i.e., sets KEY_REVOKE eFuse bit.
-    7. The API `esp_ota_revoke_secure_boot_public_key()` can be used to revoke the key #N-1.
+    7. The API :cpp:func:`esp_ota_revoke_secure_boot_public_key` can be used to revoke the key #N-1.
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.
 
