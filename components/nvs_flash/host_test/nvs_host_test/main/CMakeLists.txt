@@ -12,6 +12,9 @@ idf_component_register(SRCS "test_nvs.cpp"
                        REQUIRES nvs_flash
                        PRIV_REQUIRES spi_flash)
 
+target_compile_options(${COMPONENT_LIB} PUBLIC --coverage)
+target_link_libraries(${COMPONENT_LIB} PUBLIC --coverage)
+
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++20)
 endif()
