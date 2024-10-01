@@ -702,6 +702,5 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             - CONFIG_ESP_WIFI_EAP_TLS1_3
             - CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-            - CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_LIBC_PICOLIBC
