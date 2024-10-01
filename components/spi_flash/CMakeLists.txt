@@ -2,6 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "linux/spi_flash_linux.c"
                           "linux/cache_utils.c"
+                          "linux/flash_mmap.c"
                            INCLUDE_DIRS include
                            PRIV_INCLUDE_DIRS include/spi_flash)
     return()

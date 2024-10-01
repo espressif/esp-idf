@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
+#include <sys/param.h>
 
 /* interim to enable test_wl_host and test_fatfs_on_host compilation (both use IDF_TARGET_ESP32)
  * should go back to #include "sys/queue.h" once the tests are switched to CMake
@@ -24,11 +25,11 @@
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
 #include "esp_partition.h"
-#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_flash.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_flash_encrypt.h"
-#include "spi_flash_mmap.h"
 #endif
+#include "spi_flash_mmap.h"
 #include "esp_log.h"
 #include "esp_rom_md5.h"
 #include "bootloader_util.h"
@@ -49,6 +50,8 @@
 #define INVARIANTS
 #endif
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 typedef struct partition_list_item_ {
     esp_partition_t info;
     bool user_registered;
@@ -67,6 +70,31 @@ static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list =
 static _lock_t s_partition_list_lock;
 
 static const char *TAG = "partition";
+
+static bool is_partition_encrypted(bool encryption_config, esp_partition_type_t type, esp_partition_subtype_t subtype)
+{
+#if CONFIG_IDF_TARGET_LINUX
+    (void) type;
+    (void) subtype;
+    (void) encryption_config;
+    return false;
+#else
+    bool ret_encrypted = encryption_config;
+    if (!esp_flash_encryption_enabled()) {
+        /* If flash encryption is not turned on, no partitions should be treated as encrypted */
+        ret_encrypted = false;
+    } else if (type == ESP_PARTITION_TYPE_APP
+                || (type == ESP_PARTITION_TYPE_BOOTLOADER)
+                || (type == ESP_PARTITION_TYPE_PARTITION_TABLE)
+                || (type == ESP_PARTITION_TYPE_DATA && subtype == ESP_PARTITION_SUBTYPE_DATA_OTA)
+                || (type == ESP_PARTITION_TYPE_DATA && subtype == ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS)) {
+        /* If encryption is turned on, all app partitions and OTA data
+            are always encrypted */
+        ret_encrypted = true;
+    }
+    return ret_encrypted;
+#endif
+}
 
 // Create linked list of partition_list_item_t structures.
 // This function is called only once, with s_partition_list_lock taken.
@@ -151,24 +179,9 @@ static esp_err_t load_partitions(void)
 #endif
         item->info.type = entry.type;
         item->info.subtype = entry.subtype;
-        item->info.encrypted = entry.flags & PART_FLAG_ENCRYPTED;
+        item->info.encrypted = is_partition_encrypted(entry.flags & PART_FLAG_ENCRYPTED, entry.type, entry.subtype);
         item->info.readonly = entry.flags & PART_FLAG_READONLY;
         item->user_registered = false;
-
-#if CONFIG_IDF_TARGET_LINUX
-        item->info.encrypted = false;
-#else
-        if (!esp_flash_encryption_enabled()) {
-            /* If flash encryption is not turned on, no partitions should be treated as encrypted */
-            item->info.encrypted = false;
-        } else if (entry.type == ESP_PARTITION_TYPE_APP
-                   || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_OTA)
-                   || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS)) {
-            /* If encryption is turned on, all app partitions and OTA data
-               are always encrypted */
-            item->info.encrypted = true;
-        }
-#endif
 
 #if CONFIG_NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
         if (entry.type == ESP_PARTITION_TYPE_DATA &&
@@ -392,10 +405,10 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
         *out_partition = NULL;
     }
 
-#if CONFIG_IDF_TARGET_LINUX
-    return ESP_ERR_NOT_SUPPORTED;
-
-#else
+#if !CONFIG_IDF_TARGET_LINUX
+    if (flash_chip == NULL) {
+        flash_chip = esp_flash_default_chip;
+    }
     if (offset + size > flash_chip->size) {
         return ESP_ERR_INVALID_SIZE;
     }
@@ -415,7 +428,14 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
     item->info.size = size;
     item->info.type = type;
     item->info.subtype = subtype;
+#if CONFIG_IDF_TARGET_LINUX
+    item->info.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
     item->info.encrypted = false;
+#else
+    item->info.erase_size = SPI_FLASH_SEC_SIZE;
+    item->info.encrypted = (flash_chip == esp_flash_default_chip) ? is_partition_encrypted(false, type, subtype) : false;
+#endif // CONFIG_IDF_TARGET_LINUX
+    item->info.readonly = false;
     item->user_registered = true;
     strlcpy(item->info.label, label, sizeof(item->info.label));
 
@@ -465,4 +485,76 @@ esp_err_t esp_partition_deregister_external(const esp_partition_t *partition)
     }
     _lock_release(&s_partition_list_lock);
     return result;
+}
+
+esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_offset, const esp_partition_t* src_part, uint32_t src_offset, size_t size)
+{
+    if (src_part == NULL || dest_part == NULL || src_part == dest_part) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (src_offset > src_part->size || dest_offset > dest_part->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // Check if the source partition is on external flash and return error
+#if !CONFIG_IDF_TARGET_LINUX
+    if (src_part->flash_chip != esp_flash_default_chip) {
+        ESP_LOGE(TAG, "Source partition is on external flash. Operation not supported.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    size_t dest_erase_size = size;
+    if (size == SIZE_MAX) {
+        size = src_part->size - src_offset;
+        dest_erase_size = dest_part->size - dest_offset; // Erase the whole destination partition
+    }
+
+    uint32_t src_end_offset;
+    uint32_t dest_end_offset;
+    if ((__builtin_add_overflow(src_offset, size, &src_end_offset) || (src_end_offset > src_part->size))
+        || (__builtin_add_overflow(dest_offset, size, &dest_end_offset) || (dest_end_offset > dest_part->size))) { // with overflow checks
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    esp_err_t error = esp_partition_erase_range(dest_part, dest_offset, ALIGN_UP(dest_erase_size, SPI_FLASH_SEC_SIZE));
+    if (error) {
+        ESP_LOGE(TAG, "Erasing destination partition range failed (err=0x%x)", error);
+        return error;
+    }
+
+    uint32_t src_current_offset = src_offset;
+    uint32_t dest_current_offset = dest_offset;
+    size_t remaining_size = size;
+    /* Read the portion that fits in the free MMU pages */
+    uint32_t mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+    int attempts_for_mmap = 0;
+    while (remaining_size > 0) {
+        uint32_t chunk_size = MIN(remaining_size, mmu_free_pages_count * SPI_FLASH_MMU_PAGE_SIZE);
+        esp_partition_mmap_handle_t src_part_map;
+        const void *src_data = NULL;
+        error = esp_partition_mmap(src_part, src_current_offset, chunk_size, ESP_PARTITION_MMAP_DATA, &src_data, &src_part_map);
+        if (error == ESP_OK) {
+            attempts_for_mmap = 0;
+            error = esp_partition_write(dest_part, dest_current_offset, src_data, chunk_size);
+            if (error != ESP_OK) {
+                ESP_LOGE(TAG, "Writing to destination partition failed (err=0x%x)", error);
+                esp_partition_munmap(src_part_map);
+                break;
+            }
+            esp_partition_munmap(src_part_map);
+        } else {
+            mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+            chunk_size = 0;
+            if (++attempts_for_mmap >= 3) {
+                ESP_LOGE(TAG, "Failed to mmap source partition after a few attempts, mmu_free_pages = %" PRIu32 " (err=0x%x)", mmu_free_pages_count, error);
+                break;
+            }
+        }
+        src_current_offset += chunk_size;
+        dest_current_offset += chunk_size;
+        remaining_size -= chunk_size;
+    }
+    return error;
 }
