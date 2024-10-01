@@ -268,7 +268,7 @@ static int ieee802_11_parse_extension(struct wpa_supplicant *wpa_s, const struct
  */
 int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t len)
 {
-#if defined(CONFIG_RRM) ||  defined(CONFIG_SAE_PK)
+#if defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined(CONFIG_SAE_PK)
 	const struct element *elem;
 	u8 unknown = 0;
 
@@ -297,7 +297,7 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 			}
 			break;
 #endif /*CONFIG_SAE_PK*/
-#ifdef CONFIG_RRM
+#ifdef CONFIG_WNM
 		case WLAN_EID_EXT_CAPAB:
 			/* extended caps can go beyond 8 octacts but we aren't using them now */
 			os_memcpy(wpa_s->extend_caps, pos, 5);
@@ -311,7 +311,7 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 	if (unknown)
 		return -1;
 
-#endif /* defined(CONFIG_RRM) ||  defined(CONFIG_SAE_PK) */
+#endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined(CONFIG_SAE_PK) */
 	return 0;
 }
 
