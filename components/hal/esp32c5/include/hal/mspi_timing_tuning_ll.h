@@ -63,6 +63,14 @@ static inline __attribute__((always_inline)) void mspi_ll_enable_bus_clock(bool 
     PCR.mspi_conf.mspi_clk_en = enable;
 }
 
+/**
+ * Reset the MSPI clock
+ */
+static inline __attribute__((always_inline)) void _mspi_timing_ll_reset_mspi(void)
+{
+    PCR.mspi_conf.mspi_rst_en = 1;
+    PCR.mspi_conf.mspi_rst_en = 0;
+}
 
 #ifdef __cplusplus
 }

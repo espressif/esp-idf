@@ -499,6 +499,10 @@
 // #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_ECDSA_KEY 1
 
+/*-------------------------- Key Manager CAPS----------------------------*/
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
+
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
