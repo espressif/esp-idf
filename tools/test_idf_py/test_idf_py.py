@@ -549,5 +549,38 @@ class TestMergeBinCommands(TestWrapperCommands):
         self.assertIn(f'Merged binary {merged_binary_name} will be created in the build directory...', output)
 
 
+class TestUF2Commands(TestWrapperCommands):
+    """
+    Test if uf2 commands are invoked as expected.
+    This test is not testing the functionality of mkuf2.py/idf.py uf2, but the invocation of the command from idf.py.
+    """
+
+    def test_uf2(self):
+        uf2_command = [sys.executable, idf_py_path, 'uf2']
+        output = self.call_command(uf2_command)
+        self.assertIn('Executing:', output)
+
+    def test_uf2_with_envvars(self):
+        # Values do not really matter, they should not be used.
+        os.environ['ESPBAUD'] = '115200'
+        os.environ['ESPPORT'] = '/dev/ttyUSB0'
+        self.test_uf2()
+        os.environ.pop('ESPBAUD')
+        os.environ.pop('ESPPORT')
+
+    def test_uf2_app(self):
+        uf2_app_command = [sys.executable, idf_py_path, 'uf2-app']
+        output = self.call_command(uf2_app_command)
+        self.assertIn('Executing:', output)
+
+    def test_uf2_app_with_envvars(self):
+        # Values do not really matter, they should not be used.
+        os.environ['ESPBAUD'] = '115200'
+        os.environ['ESPPORT'] = '/dev/ttyUSB0'
+        self.test_uf2_app()
+        os.environ.pop('ESPBAUD')
+        os.environ.pop('ESPPORT')
+
+
 if __name__ == '__main__':
     main()
