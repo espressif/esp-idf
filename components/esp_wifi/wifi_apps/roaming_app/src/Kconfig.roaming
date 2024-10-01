@@ -66,13 +66,13 @@ menu "Roaming Methods"
         bool "Support Legacy roaming approach"
         default y
         help
-            Roaming between APs that do not support 802.11kv.
+            Roaming between APs that do not support 802.11v.
             This will allow station to roam even when connection is not BTM supported,
             by forcefully disconnecting from current AP and connecting to better AP.
 
     config ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
-        bool "Support Network Assisted roaming using 802.11kv"
-        depends on ESP_WIFI_11KV_SUPPORT
+        bool "Support Network Assisted roaming using 802.11v"
+        depends on ESP_WIFI_WNM_SUPPORT
         default y
         help
             Roaming between APs using network assisted Roaming.
@@ -159,7 +159,7 @@ config ESP_WIFI_ROAMING_BACKOFF_TIME
 
 config ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
     bool "Send periodic neighbor report request to AP for internal list updation"
-    depends on ESP_WIFI_11KV_SUPPORT
+    depends on ESP_WIFI_RRM_SUPPORT
     default y
     help
         This option will enable station to keep sending RRM neighbor list request to AP and

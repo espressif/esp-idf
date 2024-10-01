@@ -71,7 +71,7 @@ static int handle_action_frm(u8 *frame, size_t len,
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 
-#if defined(CONFIG_IEEE80211KV)
+#if defined(CONFIG_RRM)
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                              u8 *payload, size_t len, int8_t rssi)
 {
@@ -88,6 +88,7 @@ static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                                                  payload + 1, len - 1, rssi);
     }
 }
+#endif /* CONFIG_RRM */
 
 static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel)
 {
@@ -103,15 +104,18 @@ static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 cha
 
     category = *frame++;
     len--;
+#if defined(CONFIG_WNM)
     if (category == WLAN_ACTION_WNM) {
         ieee802_11_rx_wnm_action(wpa_s, sender, frame, len);
-    } else if (category == WLAN_ACTION_RADIO_MEASUREMENT) {
+    }
+#endif /* CONFIG_WNM */
+#if defined(CONFIG_RRM)
+    if (category == WLAN_ACTION_RADIO_MEASUREMENT) {
         handle_rrm_frame(wpa_s, sender, frame, len, rssi);
     }
-
+#endif /* CONFIG_RRM */
     return 0;
 }
-#endif /* defined(CONFIG_IEEE80211KV) */
 
 #ifdef CONFIG_SUPPLICANT_TASK
 static void btm_rrm_task(void *pvParameters)
@@ -195,19 +199,20 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
     /* subtype is defined only for action frame */
     wpa_s->subtype = 0;
 
-#ifdef CONFIG_IEEE80211KV
+#ifdef CONFIG_RRM
     /* current supported features in supplicant: rrm and btm */
     if (esp_wifi_is_rm_enabled_internal(WIFI_IF_STA)) {
         wpa_s->subtype = 1 << WLAN_ACTION_RADIO_MEASUREMENT;
     }
+#endif /* CONFIG_RRM */
+#ifdef CONFIG_WNM
     if (esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
         wpa_s->subtype |= 1 << WLAN_ACTION_WNM;
     }
-
+#endif /* CONFIG_WNM */
     if (wpa_s->subtype) {
         wpa_s->type |= 1 << WLAN_FC_STYPE_ACTION;
     }
-#endif /* CONFIG_IEEE80211KV */
 
 #ifdef CONFIG_IEEE80211R
     /* register auth/assoc frames if FT is enabled */
@@ -279,7 +284,7 @@ static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
     int ret = 0;
 
     switch (type) {
-#if defined(CONFIG_IEEE80211R) || defined(CONFIG_IEEE80211KV)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
     case WLAN_FC_STYPE_BEACON:
     case WLAN_FC_STYPE_PROBE_RESP:
         ret = esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
@@ -374,10 +379,10 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
     }
     s_supplicant_task_init_done = true;
 #endif /* CONFIG_SUPPLICANT_TASK */
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM)
     wpas_rrm_reset(wpa_s);
     wpas_clear_beacon_rep_data(wpa_s);
-#endif /* CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_RRM) */
     esp_scan_init(wpa_s);
 
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
@@ -407,10 +412,10 @@ void esp_supplicant_common_deinit(void)
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
     esp_scan_deinit(wpa_s);
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM)
     wpas_rrm_reset(wpa_s);
     wpas_clear_beacon_rep_data(wpa_s);
-#endif /* CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_RRM) */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
     if (wpa_s->type) {
         wpa_s->type = 0;
@@ -468,7 +473,7 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM)
     wpas_rrm_reset(wpa_s);
     wpas_clear_beacon_rep_data(wpa_s);
     /* Not clearing in case of roaming disconnect as BTM induced connection
@@ -477,7 +482,7 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
     if (reason_code != WIFI_REASON_ROAMING) {
         clear_bssid_flag_and_channel(wpa_s);
     }
-#endif /* CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_RRM) */
     if (wpa_s->current_bss) {
         wpa_s->current_bss = NULL;
     }
@@ -491,7 +496,7 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
 }
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM)
 bool esp_rrm_is_rrm_supported_connection(void)
 {
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -584,6 +589,33 @@ int esp_rrm_send_neighbor_report_request(void)
     return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, neighbor_report_recvd_cb, NULL);
 }
 
+static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
+{
+    uint8_t rrm_ie[7] = {0};
+    uint8_t rrm_ie_len = 5;
+    uint8_t *pos = rrm_ie;
+
+    if (!esp_wifi_is_rm_enabled_internal(WIFI_IF_STA)) {
+        return 0;
+    }
+
+    *pos++ = WLAN_EID_RRM_ENABLED_CAPABILITIES;
+    *pos++ = rrm_ie_len;
+    *pos |= WLAN_RRM_CAPS_LINK_MEASUREMENT;
+
+    *pos |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
+#ifdef SCAN_CACHE_SUPPORTED
+            WLAN_RRM_CAPS_BEACON_REPORT_TABLE |
+#endif /* SCAN_CACHE_SUPPORTED */
+            WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE;
+
+    os_memcpy(ie, rrm_ie, sizeof(rrm_ie));
+
+    return rrm_ie_len + 2;
+}
+
+#endif /* defined(CONFIG_RRM) */
+#if defined(CONFIG_WNM)
 bool esp_wnm_is_btm_supported_connection(void)
 {
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -619,6 +651,37 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
     return wnm_send_bss_transition_mgmt_query(wpa_s, query_reason, btm_candidates, cand_list);
 }
 
+static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
+{
+    uint8_t ext_caps_ie[5] = {0};
+    uint8_t ext_caps_ie_len = 3;
+    uint8_t *pos = ext_caps_ie;
+    wifi_ioctl_config_t cfg = {0};
+    esp_err_t err = 0;
+
+    if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
+        return 0;
+    }
+
+    *pos++ = WLAN_EID_EXT_CAPAB;
+    *pos++ = ext_caps_ie_len;
+
+    err = esp_wifi_internal_ioctl(WIFI_IOCTL_GET_STA_HT2040_COEX, &cfg);
+    if (err == ESP_OK && cfg.data.ht2040_coex.enable) {
+        *pos++ |= BIT(WLAN_EXT_CAPAB_20_40_COEX);
+    } else {
+        *pos++ = 0;
+    }
+    *pos ++ = 0;
+#define CAPAB_BSS_TRANSITION BIT(3)
+    *pos |= CAPAB_BSS_TRANSITION;
+#undef CAPAB_BSS_TRANSITION
+    os_memcpy(ie, ext_caps_ie, sizeof(ext_caps_ie));
+
+    return ext_caps_ie_len + 2;
+}
+#endif /* defined(CONFIG_WNM) */
+
 #ifdef CONFIG_MBO
 int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
 {
@@ -626,56 +689,7 @@ int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
 
     return ret;
 }
-#endif /* CONFIG_MBO */
 
-void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
-                            struct wpa_bss *bss, char *ssid)
-{
-    wifi_config_t *config = os_zalloc(sizeof(wifi_config_t));
-
-    if (!config) {
-        wpa_printf(MSG_ERROR, "failed to allocate memory");
-        return;
-    }
-
-    esp_wifi_get_config(WIFI_IF_STA, config);
-    /* We only support roaming in same ESS, therefore only bssid setting is needed */
-    os_memcpy(config->sta.bssid, bss->bssid, ETH_ALEN);
-    config->sta.bssid_set = 1;
-    config->sta.channel = bss->channel;
-    /* supplicant connect will only be called in case of bss transition(roaming) */
-    esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
-    esp_wifi_set_config(WIFI_IF_STA, config);
-    os_free(config);
-    esp_wifi_connect();
-}
-
-static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
-{
-    uint8_t rrm_ie[7] = {0};
-    uint8_t rrm_ie_len = 5;
-    uint8_t *pos = rrm_ie;
-
-    if (!esp_wifi_is_rm_enabled_internal(WIFI_IF_STA)) {
-        return 0;
-    }
-
-    *pos++ = WLAN_EID_RRM_ENABLED_CAPABILITIES;
-    *pos++ = rrm_ie_len;
-    *pos |= WLAN_RRM_CAPS_LINK_MEASUREMENT;
-
-    *pos |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
-#ifdef SCAN_CACHE_SUPPORTED
-            WLAN_RRM_CAPS_BEACON_REPORT_TABLE |
-#endif /* SCAN_CACHE_SUPPORTED */
-            WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE;
-
-    os_memcpy(ie, rrm_ie, sizeof(rrm_ie));
-
-    return rrm_ie_len + 2;
-}
-
-#ifdef CONFIG_MBO
 static size_t get_mbo_oce_scan_ie(uint8_t *ie, size_t len)
 {
     uint8_t mbo_ie[32] = {0};
@@ -732,42 +746,31 @@ static uint8_t get_operating_class_ie(uint8_t *ie, size_t len)
 }
 #endif /* CONFIG_MBO */
 
-static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
+void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
+                            struct wpa_bss *bss, char *ssid)
 {
-    uint8_t ext_caps_ie[5] = {0};
-    uint8_t ext_caps_ie_len = 3;
-    uint8_t *pos = ext_caps_ie;
-    wifi_ioctl_config_t cfg = {0};
-    esp_err_t err = 0;
+    wifi_config_t *config = os_zalloc(sizeof(wifi_config_t));
 
-    if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
-        return 0;
+    if (!config) {
+        wpa_printf(MSG_ERROR, "failed to allocate memory");
+        return;
     }
 
-    *pos++ = WLAN_EID_EXT_CAPAB;
-    *pos++ = ext_caps_ie_len;
-
-    err = esp_wifi_internal_ioctl(WIFI_IOCTL_GET_STA_HT2040_COEX, &cfg);
-    if (err == ESP_OK && cfg.data.ht2040_coex.enable) {
-        *pos++ |= BIT(WLAN_EXT_CAPAB_20_40_COEX);
-    } else {
-        *pos++ = 0;
-    }
-    *pos ++ = 0;
-#define CAPAB_BSS_TRANSITION BIT(3)
-    *pos |= CAPAB_BSS_TRANSITION;
-#undef CAPAB_BSS_TRANSITION
-    os_memcpy(ie, ext_caps_ie, sizeof(ext_caps_ie));
-
-    return ext_caps_ie_len + 2;
+    esp_wifi_get_config(WIFI_IF_STA, config);
+    /* We only support roaming in same ESS, therefore only bssid setting is needed */
+    os_memcpy(config->sta.bssid, bss->bssid, ETH_ALEN);
+    config->sta.bssid_set = 1;
+    config->sta.channel = bss->channel;
+    /* supplicant connect will only be called in case of bss transition(roaming) */
+    esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
+    esp_wifi_set_config(WIFI_IF_STA, config);
+    os_free(config);
+    esp_wifi_connect();
 }
-
-#else /* CONFIG_IEEE80211KV */
-#endif /* CONFIG_IEEE80211KV */
 
 void esp_set_scan_ie(void)
 {
-#ifdef CONFIG_IEEE80211KV
+#ifdef CONFIG_WNM
 #define SCAN_IE_LEN 64
     uint8_t *ie, *pos;
     size_t len = SCAN_IE_LEN, ie_len;
@@ -790,7 +793,7 @@ void esp_set_scan_ie(void)
     esp_wifi_set_appie_internal(WIFI_APPIE_PROBEREQ, ie, SCAN_IE_LEN - len, 0);
     os_free(ie);
 #undef SCAN_IE_LEN
-#endif /* CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_WNM) */
 }
 
 #ifdef CONFIG_IEEE80211R
@@ -824,9 +827,7 @@ static size_t add_mdie(uint8_t *bssid, uint8_t *ie, size_t len)
 
     return mdie_len;
 }
-#endif /* CONFIG_IEEE80211R */
 
-#ifdef CONFIG_IEEE80211R
 int wpa_sm_update_ft_ies(struct wpa_sm *sm, const u8 *md,
                          const u8 *ies, size_t ies_len, bool auth_ie)
 {
@@ -931,9 +932,7 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 #endif /* CONFIG_SUPPLICANT_TASK */
 #else /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 void esp_set_scan_ie(void) { }
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
-#ifndef CONFIG_IEEE80211KV
 bool esp_rrm_is_rrm_supported_connection(void)
 {
     return false;
@@ -961,7 +960,7 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
     return -1;
 }
 
-#endif /* !CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
@@ -978,7 +977,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
         return;
     }
     pos = ie;
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM)
     ie_len = get_rm_enabled_ie(pos, len);
     pos += ie_len;
     len -= ie_len;
@@ -990,7 +989,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     pos += ie_len;
     len -= ie_len;
 #endif /* CONFIG_MBO */
-#endif /* CONFIG_IEEE80211KV */
+#endif /* defined(CONFIG_RRM) */
 #ifdef CONFIG_IEEE80211R
     if (mdie) {
         ie_len = add_mdie(bssid, pos, len);
