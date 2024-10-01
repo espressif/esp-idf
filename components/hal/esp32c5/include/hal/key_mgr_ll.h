@@ -67,7 +67,10 @@ static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
 #define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__)
 
 /**
- * @brief Reset the Key Manager peripheral */
+ * @brief Reset the Key Manager peripheral
+ * Note: Please use key_mgr_ll_reset_register which requires the critical section
+ *       and do not use _key_mgr_ll_reset_register
+ */
 static inline void _key_mgr_ll_reset_register(void)
 {
     PCR.km_conf.km_rst_en = 1;

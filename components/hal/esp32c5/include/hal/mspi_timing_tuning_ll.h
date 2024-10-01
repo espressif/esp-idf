@@ -68,8 +68,11 @@ static inline __attribute__((always_inline)) void mspi_ll_enable_bus_clock(bool 
  */
 static inline __attribute__((always_inline)) void _mspi_timing_ll_reset_mspi(void)
 {
-    PCR.mspi_conf.mspi_rst_en = 1;
-    PCR.mspi_conf.mspi_rst_en = 0;
+    PCR.mspi_clk_conf.mspi_axi_rst_en = 1;
+    PCR.mspi_clk_conf.mspi_axi_rst_en = 0;
+    // Wait for mspi to be ready
+    while (!PCR.mspi_conf.mspi_ready) {
+    };
 }
 
 #ifdef __cplusplus
