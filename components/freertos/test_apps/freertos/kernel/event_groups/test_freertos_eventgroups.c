@@ -132,6 +132,57 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
     vEventGroupDelete(eg);
 }
 
+static TaskHandle_t run_order[2];
+static uint32_t run_order_index = 0;
+
+void task_test_eg_prio(void *arg)
+{
+    TaskHandle_t main_task_hdl = (TaskHandle_t)arg;
+
+    /* Notify the main task that this task has been created */
+    xTaskNotifyGive(main_task_hdl);
+
+    /* Wait for the event group bits to be set */
+    TEST_ASSERT_EQUAL(1, xEventGroupWaitBits(eg, 1, pdTRUE, pdTRUE, portMAX_DELAY));
+
+    /* Record the task handle in the run order array */
+    run_order[run_order_index++] = xTaskGetCurrentTaskHandle();
+
+    /* Suspend the task */
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("FreeRTOS Event Groups do not cause priority inversion when higher priority task is unblocked", "[freertos]")
+{
+    run_order[0] = NULL;
+    run_order[1] = NULL;
+    run_order_index = 0;
+
+    /* Initialize the event group */
+    eg = xEventGroupCreate();
+
+    /* Create a task with higher priority than the task that will set the event group bits */
+    TaskHandle_t higher_prio_hdl;
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(task_test_eg_prio, "task_test_eg_prio", 2048, (void *)xTaskGetCurrentTaskHandle(), CONFIG_UNITY_FREERTOS_PRIORITY + 1, &higher_prio_hdl, CONFIG_UNITY_FREERTOS_CPU));
+
+    /* Wait for the task to be created */
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /* Set the event group bits */
+    xEventGroupSetBits(eg, 1);
+
+    /* Record the task handle in the run order array */
+    run_order[run_order_index++] = xTaskGetCurrentTaskHandle();
+
+    /* Verify that the higher priority task was unblocked and immediately scheduled and the lower priority task was preempted */
+    TEST_ASSERT_EQUAL(higher_prio_hdl, run_order[0]);
+    TEST_ASSERT_EQUAL(xTaskGetCurrentTaskHandle(), run_order[1]);
+
+    /* Clean up */
+    vEventGroupDelete(eg);
+    vTaskDelete(higher_prio_hdl);
+}
+
 /*-----------------Test case for event group trace facilities-----------------*/
 #ifdef  CONFIG_FREERTOS_USE_TRACE_FACILITY
 /*
