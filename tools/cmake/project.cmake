@@ -779,6 +779,33 @@ macro(project project_name)
     # Add DFU build and flash targets
     __add_dfu_targets()
 
+    # Add uf2 related targets
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(python PYTHON)
+
+    set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
+
+    add_custom_target(uf2
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
+
+    add_custom_target(uf2-app
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
+
     idf_build_executable(${project_elf})
 
     __project_info("${test_components}")
