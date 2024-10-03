@@ -255,7 +255,7 @@ TEST_CASE("Digital Signature Blocking HMAC key out of range", "[hw_crypto] [ds]"
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_sign(message, &ds_data, HMAC_KEY0 - 1, signature_data));
 }
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_ESP_SECURITY_ENABLE_FPGA_TESTS
 
 static void burn_hmac_keys(void)
 {
@@ -435,4 +435,4 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
     }
 }
 
-#endif // CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_ESP_SECURITY_ENABLE_FPGA_TESTS

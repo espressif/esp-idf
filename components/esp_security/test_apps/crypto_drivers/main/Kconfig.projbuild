@@ -1,0 +1,9 @@
+menu "ESP Security Tests"
+    config ESP_SECURITY_ENABLE_FPGA_TESTS
+        bool "Allow enabling the esp_security tests that require burning efuses"
+        default y if IDF_ENV_FPGA
+        default n
+        help
+            This includes the esp_security tests that actually require burning some efuses.
+            It is better to run these tests on an FPGA to avoid mistakenly burning eFuses.
+endmenu
