@@ -428,13 +428,13 @@ In this workflow, we shall use ``espsecure`` tool to generate signing keys and u
 
      .. code:: bash
 
-          espefuse.py --port PORT --chip esp32c2 burn_key KEY_BLOCK0 SECURE_BOOT_DIGEST digest.bin
+          espefuse.py --port PORT --chip esp32c2 burn_key KEY_BLOCK0  digest.bin SECURE_BOOT_DIGEST
 
   .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
       .. code:: bash
 
-          espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_key BLOCK SECURE_BOOT_DIGEST0 digest.bin
+          espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_key digest.bin BLOCK SECURE_BOOT_DIGEST0 
 
       where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
 
