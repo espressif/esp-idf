@@ -278,7 +278,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
     cfg->userdata = config->ssl_userdata;
     cfg->alpn_protos = config->alpn_protos;
 
-#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;
 #endif
 
@@ -312,13 +312,13 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
             goto exit;
         }
     } else {
-#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
         if (config->cert_select_cb == NULL) {
 #endif
         ESP_LOGE(TAG, "No Server certificate supplied");
         ret = ESP_ERR_INVALID_ARG;
         goto exit;
-#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
         } else {
             ESP_LOGW(TAG, "Server certificate not supplied, make sure to supply it in the certificate selection hook!");
         }
@@ -349,7 +349,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
                 goto exit;
             }
         } else {
-#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
             if (config->cert_select_cb == NULL) {
                 ESP_LOGE(TAG, "No Server key supplied and no certificate selection hook is present");
                 ret = ESP_ERR_INVALID_ARG;

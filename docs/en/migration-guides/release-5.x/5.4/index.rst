@@ -11,3 +11,4 @@ Migration from 5.3 to 5.4
     bluetooth-classic
     storage
     wifi
+    protocols
