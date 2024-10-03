@@ -1215,6 +1215,16 @@ menu "LWIP"
                 It's typically used with CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
                 which configures a callback to collect the DNS info on esp_netif layer.
 
+        config LWIP_USE_ESP_GETADDRINFO
+            bool "Enable esp_getaddrinfo() instead of lwip_getaddrinfo()"
+            depends on LWIP_IPV4 && LWIP_IPV6
+            default n   # Should be "true" by default, causes DNS issues in OpenThread when enabled (IDF-11771)
+            help
+                Use esp_getaddrinfo() for DNS lookups instead of lwip_getaddrinfo().
+                This function correctly handles the AF_UNSPEC flag for resolving
+                both IPv4 and IPv6 addresses. Available only when both IPv4 and IPv6
+                are enabled.
+
     endmenu # DNS
 
     config LWIP_BRIDGEIF_MAX_PORTS
