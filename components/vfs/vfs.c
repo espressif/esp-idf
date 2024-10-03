@@ -85,7 +85,7 @@ static ssize_t esp_get_free_index(void) {
     return -1;
 }
 
-static void esp_free_minified_vfs(esp_vfs_minified_t *vfs) {
+static void esp_vfs_free_fs_ops(esp_vfs_fs_ops_t *vfs) {
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     free(vfs->termios);
 #endif
@@ -107,16 +107,16 @@ static void esp_vfs_free_entry(vfs_entry_t *entry) {
     }
 
     if (!(entry->flags & ESP_VFS_FLAG_STATIC)) {
-        esp_free_minified_vfs((esp_vfs_minified_t*)entry->vfs); // const cast, but we know it's not static from the flag
+        esp_vfs_free_fs_ops((esp_vfs_fs_ops_t*)entry->vfs); // const cast, but we know it's not static from the flag
     }
 
     free(entry);
 }
 
-static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min) {
+static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
     assert(vfs != NULL);
     assert(min != NULL);
-    *min = (esp_vfs_minified_t) {
+    *min = (esp_vfs_fs_ops_t) {
         .write = vfs->write,
         .lseek = vfs->lseek,
         .read = vfs->read,
@@ -142,7 +142,7 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min)
 #ifdef CONFIG_VFS_SUPPORT_DIR
     // If the dir functions are not implemented, we don't need to convert them
     if (min->dir != NULL) {
-        *(min->dir) = (esp_vfs_dir_t) {
+        *(min->dir) = (esp_vfs_dir_ops_t) {
             .stat = vfs->stat,
             .link = vfs->link,
             .unlink = vfs->unlink,
@@ -166,7 +166,7 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min)
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     // If the termios functions are not implemented, we don't need to convert them
     if (min->termios != NULL) {
-        *(min->termios) = (esp_vfs_termios_t) {
+        *(min->termios) = (esp_vfs_termios_ops_t) {
             .tcsetattr = vfs->tcsetattr,
             .tcgetattr = vfs->tcgetattr,
             .tcdrain = vfs->tcdrain,
@@ -181,7 +181,7 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min)
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     // If the select functions are not implemented, we don't need to convert them
     if (min->select != NULL) {
-        *(min->select) = (esp_vfs_select_t) {
+        *(min->select) = (esp_vfs_select_ops_t) {
             .start_select = vfs->start_select,
             .socket_select = vfs->socket_select,
             .stop_socket_select = vfs->stop_socket_select,
@@ -194,13 +194,13 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_minified_t *min)
 
 }
 
-static esp_vfs_minified_t* esp_duplicate_minified_vfs(const esp_vfs_minified_t *vfs) {
-    esp_vfs_minified_t *min = (esp_vfs_minified_t*) heap_caps_malloc(sizeof(esp_vfs_minified_t), VFS_MALLOC_FLAGS);
+static esp_vfs_fs_ops_t* esp_vfs_duplicate_fs_ops(const esp_vfs_fs_ops_t *vfs) {
+    esp_vfs_fs_ops_t *min = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
     if (min == NULL) {
         return NULL;
     }
 
-    memcpy(min, vfs, sizeof(esp_vfs_minified_t));
+    memcpy(min, vfs, sizeof(esp_vfs_fs_ops_t));
 
     // remove references to the original components
 #ifdef CONFIG_VFS_SUPPORT_DIR
@@ -215,31 +215,31 @@ static esp_vfs_minified_t* esp_duplicate_minified_vfs(const esp_vfs_minified_t *
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     if (vfs->dir != NULL) {
-        min->dir = (esp_vfs_dir_t*) heap_caps_malloc(sizeof(esp_vfs_dir_t), VFS_MALLOC_FLAGS);
+        min->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
         if (min->dir == NULL) {
             goto fail;
         }
-        memcpy(min->dir, vfs->dir, sizeof(esp_vfs_dir_t));
+        memcpy(min->dir, vfs->dir, sizeof(esp_vfs_dir_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     if (vfs->termios != NULL) {
-        min->termios = (esp_vfs_termios_t*) heap_caps_malloc(sizeof(esp_vfs_termios_t), VFS_MALLOC_FLAGS);
+        min->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
         if (min->termios == NULL) {
             goto fail;
         }
-        memcpy(min->termios, vfs->termios, sizeof(esp_vfs_termios_t));
+        memcpy(min->termios, vfs->termios, sizeof(esp_vfs_termios_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     if (vfs->select != NULL) {
-        min->select = (esp_vfs_select_t*) heap_caps_malloc(sizeof(esp_vfs_select_t), VFS_MALLOC_FLAGS);
+        min->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
         if (min->select == NULL) {
             goto fail;
         }
-        memcpy(min->select, vfs->select, sizeof(esp_vfs_select_t));
+        memcpy(min->select, vfs->select, sizeof(esp_vfs_select_ops_t));
     }
 #endif
 
@@ -248,11 +248,11 @@ static esp_vfs_minified_t* esp_duplicate_minified_vfs(const esp_vfs_minified_t *
 #if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
 fail:
 #endif
-    esp_free_minified_vfs(min);
+    esp_vfs_free_fs_ops(min);
     return NULL;
 }
 
-static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minified_t **min) {
+static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **min) {
     if (vfs == NULL) {
         ESP_LOGE(TAG, "Cannot minify NULL VFS");
         return ESP_ERR_INVALID_ARG;
@@ -263,13 +263,13 @@ static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minifie
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_vfs_minified_t *main = (esp_vfs_minified_t*) heap_caps_malloc(sizeof(esp_vfs_minified_t), VFS_MALLOC_FLAGS);
+    esp_vfs_fs_ops_t *main = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
     if (main == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
     // Initialize all fields to NULL
-    memset(main, 0, sizeof(esp_vfs_minified_t));
+    memset(main, 0, sizeof(esp_vfs_fs_ops_t));
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     bool skip_dir =
@@ -291,7 +291,7 @@ static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minifie
         vfs->utime == NULL;
 
     if (!skip_dir) {
-        main->dir = (esp_vfs_dir_t*) heap_caps_malloc(sizeof(esp_vfs_dir_t), VFS_MALLOC_FLAGS);
+        main->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
         if (main->dir == NULL) {
             goto fail;
         }
@@ -309,7 +309,7 @@ static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minifie
         vfs->tcsendbreak == NULL;
 
     if (!skip_termios) {
-        main->termios = (esp_vfs_termios_t*) heap_caps_malloc(sizeof(esp_vfs_termios_t), VFS_MALLOC_FLAGS);
+        main->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
         if (main->termios == NULL) {
             goto fail;
         }
@@ -326,7 +326,7 @@ static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minifie
         vfs->end_select == NULL;
 
     if (!skip_select) {
-        main->select = (esp_vfs_select_t*) heap_caps_malloc(sizeof(esp_vfs_select_t), VFS_MALLOC_FLAGS);
+        main->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
         if (main->select == NULL) {
             goto fail;
         }
@@ -341,12 +341,12 @@ static esp_err_t esp_vfs_make_minified_vfs(const esp_vfs_t *vfs, esp_vfs_minifie
 #if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
 fail:
 
-    esp_free_minified_vfs(main);
+    esp_vfs_free_fs_ops(main);
     return ESP_ERR_NO_MEM;
 #endif
 }
 
-static esp_err_t esp_vfs_register_minified_common(const char* base_path, size_t len, const esp_vfs_minified_t* vfs, int flags, void* ctx, int *vfs_index)
+static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, int *vfs_index)
 {
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
@@ -401,7 +401,7 @@ static esp_err_t esp_vfs_register_minified_common(const char* base_path, size_t 
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minified_t* vfs, int flags, void* ctx)
+esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx)
 {
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
@@ -409,17 +409,17 @@ esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minifie
     }
 
     if ((flags & ESP_VFS_FLAG_STATIC)) {
-        return esp_vfs_register_minified_common(base_path, strlen(base_path), vfs, flags, ctx, NULL);
+        return esp_vfs_register_fs_common(base_path, strlen(base_path), vfs, flags, ctx, NULL);
     }
 
-    esp_vfs_minified_t *_vfs = esp_duplicate_minified_vfs(vfs);
+    esp_vfs_fs_ops_t *_vfs = esp_vfs_duplicate_fs_ops(vfs);
     if (_vfs == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    esp_err_t ret = esp_vfs_register_minified_common(base_path, strlen(base_path), _vfs, flags, ctx, NULL);
+    esp_err_t ret = esp_vfs_register_fs_common(base_path, strlen(base_path), _vfs, flags, ctx, NULL);
     if (ret != ESP_OK) {
-        esp_free_minified_vfs(_vfs);
+        esp_vfs_free_fs_ops(_vfs);
         return ret;
     }
 
@@ -434,19 +434,19 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
     }
 
     if (vfs->flags & ESP_VFS_FLAG_STATIC) {
-        ESP_LOGE(TAG, "ESP_VFS_FLAG_STATIC is not supported for esp_vfs_t, use esp_vfs_register_minified instead");
+        ESP_LOGE(TAG, "ESP_VFS_FLAG_STATIC is not supported for esp_vfs_t, use esp_vfs_register_fs instead");
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_vfs_minified_t *_vfs = NULL;
-    esp_err_t ret = esp_vfs_make_minified_vfs(vfs, &_vfs);
+    esp_vfs_fs_ops_t *_vfs = NULL;
+    esp_err_t ret = esp_vfs_make_fs_ops(vfs, &_vfs);
     if (ret != ESP_OK) {
         return ret;
     }
 
-    ret = esp_vfs_register_minified_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
+    ret = esp_vfs_register_fs_common(base_path, len, _vfs, vfs->flags, ctx, vfs_index);
     if (ret != ESP_OK) {
-        esp_free_minified_vfs(_vfs);
+        esp_vfs_free_fs_ops(_vfs);
         return ret;
     }
 
@@ -495,14 +495,14 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
     return ret;
 }
 
-esp_err_t esp_vfs_register_minified_with_id(const esp_vfs_minified_t *vfs, int flags, void *ctx, esp_vfs_id_t *vfs_id)
+esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, esp_vfs_id_t *vfs_id)
 {
     if (vfs_id == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
     *vfs_id = -1;
-    return esp_vfs_register_minified_common("", LEN_PATH_PREFIX_IGNORED, vfs, flags, ctx, vfs_id);
+    return esp_vfs_register_fs_common("", LEN_PATH_PREFIX_IGNORED, vfs, flags, ctx, vfs_id);
 }
 
 esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t *vfs_id)
@@ -537,7 +537,7 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 
 }
 
-esp_err_t esp_vfs_unregister_minified_with_id(esp_vfs_id_t vfs_id) __attribute__((alias("esp_vfs_unregister_with_id")));
+esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alias("esp_vfs_unregister_with_id")));
 
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
@@ -555,7 +555,7 @@ esp_err_t esp_vfs_unregister(const char* base_path)
     return ESP_ERR_INVALID_STATE;
 }
 
-esp_err_t esp_vfs_unregister_minified(const char* base_path) __attribute__((alias("esp_vfs_unregister")));
+esp_err_t esp_vfs_unregister_fs(const char* base_path) __attribute__((alias("esp_vfs_unregister")));
 
 esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 {
@@ -783,7 +783,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         ret = (*pvfs->vfs->func)(__VA_ARGS__);\
     }
 
-#define CHECK_AND_CALL_MINIFIED(ret, r, pvfs, component, func, ...) \
+#define CHECK_AND_CALL_SUBCOMPONENT(ret, r, pvfs, component, func, ...) \
     if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
         __errno_r(r) = ENOSYS; \
         return -1; \
@@ -805,7 +805,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         (*pvfs->vfs->func)(__VA_ARGS__);\
     }
 
-#define CHECK_AND_CALL_MINIFIEDV(r, pvfs, component, func, ...) \
+#define CHECK_AND_CALL_SUBCOMPONENTV(r, pvfs, component, func, ...) \
     if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
         __errno_r(r) = ENOSYS; \
         return; \
@@ -827,7 +827,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         ret = (*pvfs->vfs->func)(__VA_ARGS__);\
     }
 
-#define CHECK_AND_CALL_MINIFIEDP(ret, r, pvfs, component, func, ...) \
+#define CHECK_AND_CALL_SUBCOMPONENTP(ret, r, pvfs, component, func, ...) \
     if (pvfs->vfs->component == NULL || pvfs->vfs->component->func == NULL) { \
         __errno_r(r) = ENOSYS; \
         return NULL; \
@@ -1042,7 +1042,7 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
     }
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, stat, path_within_vfs, st);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, stat, path_within_vfs, st);
     return ret;
 }
 
@@ -1056,7 +1056,7 @@ int esp_vfs_utime(const char *path, const struct utimbuf *times)
         return -1;
     }
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, utime, path_within_vfs, times);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, utime, path_within_vfs, times);
     return ret;
 }
 
@@ -1078,7 +1078,7 @@ int esp_vfs_link(struct _reent *r, const char* n1, const char* n2)
     const char* path1_within_vfs = translate_path(vfs, n1);
     const char* path2_within_vfs = translate_path(vfs, n2);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, link, path1_within_vfs, path2_within_vfs);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, link, path1_within_vfs, path2_within_vfs);
     return ret;
 }
 
@@ -1094,7 +1094,7 @@ int esp_vfs_unlink(struct _reent *r, const char *path)
 
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, unlink, path_within_vfs);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, unlink, path_within_vfs);
     return ret;
 }
 
@@ -1119,7 +1119,7 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
     const char* src_within_vfs = translate_path(vfs, src);
     const char* dst_within_vfs = translate_path(vfs, dst);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, rename, src_within_vfs, dst_within_vfs);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, rename, src_within_vfs, dst_within_vfs);
     return ret;
 }
 
@@ -1133,7 +1133,7 @@ DIR* esp_vfs_opendir(const char* name)
     }
     const char* path_within_vfs = translate_path(vfs, name);
     DIR* ret;
-    CHECK_AND_CALL_MINIFIEDP(ret, r, vfs, dir, opendir, path_within_vfs);
+    CHECK_AND_CALL_SUBCOMPONENTP(ret, r, vfs, dir, opendir, path_within_vfs);
     if (ret != NULL) {
         ret->dd_vfs_idx = vfs->offset;
     }
@@ -1149,7 +1149,7 @@ struct dirent* esp_vfs_readdir(DIR* pdir)
         return NULL;
     }
     struct dirent* ret;
-    CHECK_AND_CALL_MINIFIEDP(ret, r, vfs, dir, readdir, pdir);
+    CHECK_AND_CALL_SUBCOMPONENTP(ret, r, vfs, dir, readdir, pdir);
     return ret;
 }
 
@@ -1162,7 +1162,7 @@ int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_diren
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, readdir_r, pdir, entry, out_dirent);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, readdir_r, pdir, entry, out_dirent);
     return ret;
 }
 
@@ -1175,7 +1175,7 @@ long esp_vfs_telldir(DIR* pdir)
         return -1;
     }
     long ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, telldir, pdir);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, telldir, pdir);
     return ret;
 }
 
@@ -1187,7 +1187,7 @@ void esp_vfs_seekdir(DIR* pdir, long loc)
         errno = EBADF;
         return;
     }
-    CHECK_AND_CALL_MINIFIEDV(r, vfs, dir, seekdir, pdir, loc);
+    CHECK_AND_CALL_SUBCOMPONENTV(r, vfs, dir, seekdir, pdir, loc);
 }
 
 void esp_vfs_rewinddir(DIR* pdir)
@@ -1204,7 +1204,7 @@ int esp_vfs_closedir(DIR* pdir)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, closedir, pdir);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, closedir, pdir);
     return ret;
 }
 
@@ -1221,7 +1221,7 @@ int esp_vfs_mkdir(const char* name, mode_t mode)
 
     const char* path_within_vfs = translate_path(vfs, name);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, mkdir, path_within_vfs, mode);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, mkdir, path_within_vfs, mode);
     return ret;
 }
 
@@ -1238,7 +1238,7 @@ int esp_vfs_rmdir(const char* name)
 
     const char* path_within_vfs = translate_path(vfs, name);
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, rmdir, path_within_vfs);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, rmdir, path_within_vfs);
     return ret;
 }
 
@@ -1252,7 +1252,7 @@ int esp_vfs_access(const char *path, int amode)
         return -1;
     }
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, access, path_within_vfs, amode);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, access, path_within_vfs, amode);
     return ret;
 }
 
@@ -1269,7 +1269,7 @@ int esp_vfs_truncate(const char *path, off_t length)
     CHECK_VFS_READONLY_FLAG(vfs->flags);
 
     const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, truncate, path_within_vfs, length);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, truncate, path_within_vfs, length);
     return ret;
 }
 
@@ -1286,7 +1286,7 @@ int esp_vfs_ftruncate(int fd, off_t length)
     CHECK_VFS_READONLY_FLAG(vfs->flags);
 
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, dir, ftruncate, local_fd, length);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, dir, ftruncate, local_fd, length);
     return ret;
 }
 
@@ -1645,7 +1645,7 @@ int tcgetattr(int fd, struct termios *p)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcgetattr, local_fd, p);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcgetattr, local_fd, p);
     return ret;
 }
 
@@ -1659,7 +1659,7 @@ int tcsetattr(int fd, int optional_actions, const struct termios *p)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcsetattr, local_fd, optional_actions, p);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcsetattr, local_fd, optional_actions, p);
     return ret;
 }
 
@@ -1673,7 +1673,7 @@ int tcdrain(int fd)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcdrain, local_fd);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcdrain, local_fd);
     return ret;
 }
 
@@ -1687,7 +1687,7 @@ int tcflush(int fd, int select)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcflush, local_fd, select);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcflush, local_fd, select);
     return ret;
 }
 
@@ -1701,7 +1701,7 @@ int tcflow(int fd, int action)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcflow, local_fd, action);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcflow, local_fd, action);
     return ret;
 }
 
@@ -1715,7 +1715,7 @@ pid_t tcgetsid(int fd)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcgetsid, local_fd);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcgetsid, local_fd);
     return ret;
 }
 
@@ -1729,7 +1729,7 @@ int tcsendbreak(int fd, int duration)
         return -1;
     }
     int ret;
-    CHECK_AND_CALL_MINIFIED(ret, r, vfs, termios, tcsendbreak, local_fd, duration);
+    CHECK_AND_CALL_SUBCOMPONENT(ret, r, vfs, termios, tcsendbreak, local_fd, duration);
     return ret;
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS

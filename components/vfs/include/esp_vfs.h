@@ -29,7 +29,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 
-#include "esp_vfs_minified.h"
+#include "esp_vfs_ops.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -496,7 +496,7 @@ void esp_vfs_dump_fds(FILE *fp);
     where:
         index           : internal index in the table of registered FSs (the same as returned when registering fd with id)
         VFS Path Prefix : file prefix used in the esp_vfs_register call or "NULL"
-        VFS entry ptr   : pointer to the esp_vfs_minified_t struct used internally when resolving the calls
+        VFS entry ptr   : pointer to the esp_vfs_fs_ops_t struct used internally when resolving the calls
  @endverbatim
  *
  * @param fp File descriptor where data will be dumped

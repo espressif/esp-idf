@@ -1,4 +1,3 @@
-
 /*
  * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
@@ -11,7 +10,7 @@
 #include <stdlib.h>
 
 #include "esp_err.h"
-#include "esp_vfs_minified.h"
+#include "esp_vfs_ops.h"
 #include "unity.h"
 #include "esp_vfs.h"
 
@@ -98,31 +97,31 @@ int buffer_close(void *ctx, int fd) {
     return 0;
 }
 
-static esp_vfs_minified_t s_buffer_fs = {
+static esp_vfs_fs_ops_t s_buffer_fs = {
     .write_p = buffer_write,
     .read_p = buffer_read,
     .open_p = buffer_open,
     .close_p = buffer_close,
 };
 
-TEST_CASE("VFS won't create a copy when ESP_FLAG_VFS_STATIC is specified", "[vfs_minified]")
+TEST_CASE("VFS won't create a copy when ESP_FLAG_VFS_STATIC is specified", "[esp_vfs_fs_ops_t]")
 {
     TEST_MESSAGE("test");
-    static esp_vfs_dir_t dir = {};
-    static esp_vfs_minified_t vfs = {
+    static esp_vfs_dir_ops_t dir = {};
+    static esp_vfs_fs_ops_t vfs = {
         .dir = &dir,
     };
 
     cb_t *buffer = calloc(1, sizeof(cb_t));
 
     esp_err_t err = ESP_OK;
-    err = esp_vfs_register_minified("/buffer", &s_buffer_fs, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, buffer);
+    err = esp_vfs_register_fs("/buffer", &s_buffer_fs, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, buffer);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = esp_vfs_register_minified("/static", &vfs, ESP_VFS_FLAG_STATIC, NULL);
+    err = esp_vfs_register_fs("/static", &vfs, ESP_VFS_FLAG_STATIC, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
-    err = esp_vfs_register_minified("/dynamic", &vfs, ESP_VFS_FLAG_DEFAULT, NULL);
+    err = esp_vfs_register_fs("/dynamic", &vfs, ESP_VFS_FLAG_DEFAULT, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, err);
 
     FILE *buf_f = fopen("/buffer/a", "r+");

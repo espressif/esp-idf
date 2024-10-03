@@ -196,14 +196,14 @@ Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to 
 Minified VFS
 ------------
 
-To minimize RAM usage, an alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_minified` is provided.
-This version accepts :cpp:class:`esp_vfs_minified_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags,
+To minimize RAM usage, an alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_fs` is provided.
+This version accepts :cpp:class:`esp_vfs_fs_ops_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags,
 unlike :cpp:func:`esp_vfs_register` it can handle statically allocated struct, as long as the ``ESP_VFS_FLAG_STATIC`` is provided.
 
-The :cpp:class:`esp_vfs_minified_t` is split into separate structs based on features (directory operations, select support, termios support, ...).
+The :cpp:class:`esp_vfs_fs_ops_t` is split into separate structs based on features (directory operations, select support, termios support, ...).
 The main struct contains the basic functions (``read``, ``write``, ...), alongside pointers to the feature-specific structs, these pointers can be ``NULL`` indicating lack of support for all the functions provided by that struct, this decreases the required memory.
 
-Internally the vfs component uses this version of API, with additional steps to convert the :cpp:class:`esp_vfs_t` to :cpp:class:`esp_vfs_minified_t` upon registration.
+Internally the vfs component uses this version of API, with additional steps to convert the :cpp:class:`esp_vfs_t` to :cpp:class:`esp_vfs_fs_ops_t` upon registration.
 
 
 Well Known VFS Devices
@@ -228,7 +228,7 @@ API Reference
 
 .. include-build-file:: inc/esp_vfs.inc
 
-.. include-build-file:: inc/esp_vfs_minified.inc
+.. include-build-file:: inc/esp_vfs_ops.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
 

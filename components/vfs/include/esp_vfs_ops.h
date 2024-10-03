@@ -121,7 +121,7 @@ typedef struct {
         int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);                   /*!< utime with context pointer */
         int (*utime)(const char *path, const struct utimbuf *times);                                /*!< utime without context pointer */
     };
-} esp_vfs_dir_t;
+} esp_vfs_dir_ops_t;
 
 #endif // CONFIG_VFS_SUPPORT_DIR
 
@@ -160,7 +160,7 @@ typedef struct {
         int (*tcsendbreak_p)(void *ctx, int fd, int duration);                                      /*!< tcsendbreak with context pointer */
         int (*tcsendbreak)(int fd, int duration);                                                   /*!< tcsendbreak without context pointer */
     };
-} esp_vfs_termios_t;
+} esp_vfs_termios_ops_t;
 
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
@@ -188,7 +188,7 @@ typedef struct {
 
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
     esp_err_t (*end_select)(void *end_select_args);
-} esp_vfs_select_t;
+} esp_vfs_select_ops_t;
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
@@ -243,18 +243,18 @@ typedef struct {
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    esp_vfs_dir_t *dir;                                                                             /*!< pointer to the dir subcomponent */
+    esp_vfs_dir_ops_t *dir;                                                                             /*!< pointer to the dir subcomponent */
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    esp_vfs_termios_t *termios;                                                                     /*!< pointer to the termios subcomponent */
+    esp_vfs_termios_ops_t *termios;                                                                     /*!< pointer to the termios subcomponent */
 #endif
 
 #if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
-    esp_vfs_select_t *select;                                                                       /*!< pointer to the select subcomponent */
+    esp_vfs_select_ops_t *select;                                                                       /*!< pointer to the select subcomponent */
 #endif
 
-} esp_vfs_minified_t;
+} esp_vfs_fs_ops_t;
 
 /**
  * Register a virtual filesystem for given path prefix.
@@ -270,11 +270,11 @@ typedef struct {
  *                   In the special case of an empty base_path, a "fallback"
  *                   VFS is registered. Such VFS will handle paths which are not
  *                   matched by any other registered VFS.
- * @param vfs  Pointer to esp_vfs_minified_t, a structure which maps syscalls to
+ * @param vfs  Pointer to esp_vfs_fs_ops_t, a structure which maps syscalls to
  *             the filesystem driver functions. VFS component does not assume ownership of this struct, but see flags for more info
  *
  * @param flags Set of binary flags controlling how the registered FS should be treated
- *             - ESP_VFS_FLAG_STATIC - if this flag is specified VFS assumes the provided esp_vfs_minified_t and all its subcomponents are statically allocated,
+ *             - ESP_VFS_FLAG_STATIC - if this flag is specified VFS assumes the provided esp_vfs_fs_ops_t and all its subcomponents are statically allocated,
  *                                     if it is not enabled a deep copy of the provided struct will be created, which will be managed by the VFS component
  *             - ESP_VFS_FLAG_CONTEXT_PTR - If set, the VFS will use the context-aware versions of the filesystem operation functions (suffixed with `_p`) in `esp_vfs_fs_ops_t` and its subcomponents.
  *                                          The `ctx` parameter will be passed as the context argument when these functions are invoked.
@@ -285,23 +285,23 @@ typedef struct {
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many FSes are
  *          registered.
  */
-esp_err_t esp_vfs_register_minified(const char* base_path, const esp_vfs_minified_t* vfs, int flags, void* ctx);
+esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx);
 
 /**
- * Analog of esp_vfs_register_with_id which accepts esp_vfs_minified_t instead.
+ * Analog of esp_vfs_register_with_id which accepts esp_vfs_fs_ops_t instead.
  *
  */
-esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_minified_t* vfs, int flags, void* ctx, esp_vfs_id_t* id);
+esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, esp_vfs_id_t* id);
 
 /**
  * Alias for esp_vfs_unregister for naming consistency
  */
-esp_err_t esp_vfs_unregister_minified(const char* base_path);
+esp_err_t esp_vfs_unregister_fs(const char* base_path);
 
 /**
  * Alias for esp_vfs_unregister_with_id for naming consistency
  */
-esp_err_t esp_vfs_unregister_minified_with_id(esp_vfs_id_t id);
+esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t id);
 
 #ifdef __cplusplus
 }
