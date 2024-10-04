@@ -20,6 +20,8 @@ SECTIONS
     ALIGNED_SYMBOL(4, _rtc_fast_start)
     ALIGNED_SYMBOL(4, _rtc_text_start)
 
+    HIDDEN(_rtc_code_start = .);
+
     *(.rtc.entry.literal .rtc.entry.text)
 
     mapping[rtc_text]
@@ -27,9 +29,11 @@ SECTIONS
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
     *(.rtc_text_end_test)
 
-    /* Padding for possible CPU prefetch + alignment for PMS split lines */
-    . += _esp_memprot_prefetch_pad_size;
-    . = ALIGN(_esp_memprot_align_size);
+    HIDDEN(_rtc_code_end = .);
+
+    /* Padding for possible CPU prefetch + 4B alignment for PMS split lines. */
+    . = ((_rtc_code_end - _rtc_code_start) == 0) ?
+        ALIGN(0) : _esp_memprot_prefetch_pad_size + ALIGN(4);
 
     _rtc_text_end = ABSOLUTE(.);
   } > rtc_iram_seg
