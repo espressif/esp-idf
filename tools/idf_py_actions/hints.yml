@@ -443,3 +443,7 @@
 -
     re: "discarded output section: .*\\.got"
     hint: "Some objects being linked were compiled with the \"-fpic\"/\"-fpie\" options. These options may be suitable for \"linux\" builds, but must not be applied for esp32XX targets."
+
+-
+    re: "(error: Total discarded sections size is \\d+ bytes)|(region [`'.\\w]+ overflowed by \\d+ bytes)"
+    hint: "The binary size has exceeded the limit. To resolve the issue consider reducing the binary size.\nYou can explore size optimization techniques in the documentation by running 'idf.py docs -sp api-guides/performance/size.html#reducing-overall-size'.\nNote that the linker performed the dead code elimination."
