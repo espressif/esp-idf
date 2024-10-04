@@ -77,6 +77,7 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr);
 esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width);
 esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status);
 esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
+esp_err_t sdmmc_send_cmd_voltage_switch(sdmmc_card_t* card);
 
 /* Higher level functions */
 esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card);
@@ -139,6 +140,7 @@ esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card);
+esp_err_t sdmmc_init_sd_uhs1(sdmmc_card_t* card);
 
 /* Various helper functions */
 static inline bool host_is_spi(const sdmmc_card_t* card)

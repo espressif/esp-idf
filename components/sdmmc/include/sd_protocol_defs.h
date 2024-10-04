@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -59,6 +59,7 @@ extern "C" {
 #define SD_SEND_RELATIVE_ADDR           3       /* R6 */
 #define SD_SEND_SWITCH_FUNC             6       /* R1 */
 #define SD_SEND_IF_COND                 8       /* R7 */
+#define SD_SWITCH_VOLTAGE               11      /* R1 */
 #define SD_ERASE_GROUP_START            32      /* R1 */
 #define SD_ERASE_GROUP_END              33      /* R1 */
 #define SD_READ_OCR                     58      /* R3 */
@@ -98,8 +99,20 @@ extern "C" {
 #define MMC_OCR_2_0V_2_1V               (1<<8)
 #define MMC_OCR_1_65V_1_95V             (1<<7)
 
-#define SD_OCR_SDHC_CAP                 (1<<30)
-#define SD_OCR_VOL_MASK                 0xFF8000 /* bits 23:15 */
+#define SD_OCR_CARD_READY               MMC_OCR_MEM_READY   /* bit-31: power-up status */
+#define SD_OCR_SDHC_CAP                 (1<<30)             /* HCS bit */
+#define SD_OCR_XPC                      (1<<28)             /* SDXC Power Control (bit 28) */
+#define SD_OCR_S18_RA                   (1<<24)             /* S18R/A bit: 1.8V voltage support, UHS-I only */
+#define SD_OCR_VOL_MASK                 0xFF8000            /* SD OCR voltage bits 23:15 */
+#define SD_OCR_3_5V_3_6V                MMC_OCR_3_5V_3_6V   /* bit-23 */
+#define SD_OCR_3_4V_3_5V                MMC_OCR_3_4V_3_5V   /* bit-22 */
+#define SD_OCR_3_3V_3_4V                MMC_OCR_3_3V_3_4V   /* ...    */
+#define SD_OCR_3_2V_3_3V                MMC_OCR_3_2V_3_3V
+#define SD_OCR_3_1V_3_2V                MMC_OCR_3_1V_3_2V
+#define SD_OCR_3_0V_3_1V                MMC_OCR_3_0V_3_1V
+#define SD_OCR_2_9V_3_0V                MMC_OCR_2_9V_3_0V
+#define SD_OCR_2_8V_2_9V                MMC_OCR_2_8V_2_9V   /* ...    */
+#define SD_OCR_2_7V_2_8V                MMC_OCR_2_7V_2_8V   /* bit-15 */
 
 /* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
