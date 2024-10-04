@@ -3,6 +3,7 @@
 import os
 import os.path as path
 import sys
+from typing import Any
 
 import pytest
 
@@ -19,25 +20,93 @@ def get_line_number(lookup: str, offset: int = 0) -> int:
     return -1
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
-def test_gdbstub_runtime(dut: PanicTestDut) -> None:
+def start_gdb(dut: PanicTestDut) -> None:
     dut.expect_exact('tested app is running.')
     dut.write(b'\x03')  # send Ctrl-C
     dut.start_gdb_for_gdbstub()
+
+
+def run_and_break(dut: PanicTestDut, cmd: str) -> dict[Any, Any]:
+    responses = dut.gdb_write(cmd)
+    assert dut.find_gdb_response('running', 'result', responses) is not None
+    if not dut.find_gdb_response('stopped', 'notify', responses):  # have not stopped on breakpoint yet
+        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
+    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
+    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    assert isinstance(payload, dict)
+    return payload
+
+
+@pytest.mark.esp32p4
+@pytest.mark.generic
+def test_hwloop_jump(dut: PanicTestDut) -> None:
+    start_gdb(dut)
+
+    cmd = '-break-insert --source xesppie_loops.S --function test_loop_start'
+    response = dut.find_gdb_response('done', 'result', dut.gdb_write(cmd))
+    assert response is not None
+
+    # go to the beginning of the loop
+    cmd = '-exec-continue'
+    payload = run_and_break(dut, cmd)
+    assert payload['reason'] == 'breakpoint-hit'
+    assert payload['bkptno'] == '1'
+    assert payload['frame']['func'] == 'test_xesppie_loops'
+    assert payload['stopped-threads'] == 'all'
+
+    cmd = '-break-delete 1'
+    responses = dut.gdb_write(cmd)
+    assert dut.find_gdb_response('done', 'result', responses) is not None
+
+    # go through the loop
+    loop_count = 3
+    while loop_count:
+        inst_count = 2
+        while inst_count:
+            cmd = '-exec-step'
+            payload = run_and_break(dut, cmd)
+            assert payload['reason'] == 'end-stepping-range'
+            assert payload['frame']['func'] == 'test_xesppie_loops'
+            assert payload['stopped-threads'] == 'all'
+            inst_count -= 1
+        cmd = '-data-list-register-values d 11'
+        responses = dut.gdb_write(cmd)
+        response = dut.find_gdb_response('done', 'result', responses)
+        assert response is not None
+        payload = response['payload']
+        assert payload['register-values'][0]['number'] == '11'
+        assert payload['register-values'][0]['value'] == f'{loop_count}'
+        loop_count -= 1
+
+    # go through the func prologue
+    remaining_instructions = 3
+    while remaining_instructions:
+        cmd = '-exec-step'
+        payload = run_and_break(dut, cmd)
+        assert payload['reason'] == 'end-stepping-range'
+        assert payload['frame']['func'] == 'test_xesppie_loops'
+        assert payload['stopped-threads'] == 'all'
+        remaining_instructions -= 1
+
+    # Now we stepping back to app_main
+    cmd = '-exec-step'
+    payload = run_and_break(dut, cmd)
+    assert payload['reason'] == 'end-stepping-range'
+    assert payload['frame']['func'] == 'app_main'
+    assert payload['stopped-threads'] == 'all'
+
+
+@pytest.mark.supported_targets
+@pytest.mark.generic
+def test_gdbstub_runtime(dut: PanicTestDut) -> None:
+    start_gdb(dut)
 
     # Test breakpoint
     cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'
     response = dut.find_gdb_response('done', 'result', dut.gdb_write(cmd))
     assert response is not None
     cmd = '-exec-continue'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'breakpoint-hit'
     assert payload['bkptno'] == '1'
     assert payload['frame']['func'] == 'app_main'
@@ -46,13 +115,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 
     # Test step command
     cmd = '-exec-step'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'end-stepping-range'
     assert payload['frame']['func'] == 'foo'
     assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
@@ -60,13 +123,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 
     # Test finish command
     cmd = '-exec-finish'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'function-finished'
     # On riscv we may have situation when returned from a function but stay on exactly the same line
     #            foo();
@@ -84,13 +141,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 
     # Test next command
     cmd = '-exec-next'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'end-stepping-range'
     assert payload['frame']['line'] == str(get_line_number('label_3:', 1))
     assert payload['frame']['func'] == 'app_main'
@@ -117,12 +168,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     responses = dut.gdb_write(cmd)
     assert dut.find_gdb_response('done', 'result', responses) is not None
     cmd = '-exec-continue'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'signal-received'
     assert payload['frame']['func'] == 'foo'
     assert payload['stopped-threads'] == 'all'
@@ -143,12 +189,7 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 
     # test panic handling
     cmd = '-exec-continue'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'signal-received'
     assert payload['signal-name'] == 'SIGSEGV'
     assert payload['frame']['func'] == 'app_main'
@@ -162,22 +203,14 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
 def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
-    dut.expect_exact('tested app is running.')
-    dut.write(b'\x03')  # send Ctrl-C
-    dut.start_gdb_for_gdbstub()
+    start_gdb(dut)
 
     # Test breakpoint
     cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'
     response = dut.find_gdb_response('done', 'result', dut.gdb_write(cmd))
     assert response is not None
     cmd = '-exec-continue'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'breakpoint-hit'
     assert payload['bkptno'] == '1'
     assert payload['frame']['func'] == 'app_main'
@@ -186,13 +219,7 @@ def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
 
     # Test step command
     cmd = '-exec-step'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'end-stepping-range'
     assert payload['frame']['func'] == 'foo'
     assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
@@ -200,13 +227,7 @@ def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
 
     # Test next command
     cmd = '-exec-next'
-    responses = dut.gdb_write(cmd)
-    assert dut.find_gdb_response('running', 'result', responses) is not None
-    if not dut.find_gdb_response('stopped', 'notify', responses):
-        # have not stopped on breakpoint yet
-        responses = dut.gdbmi.get_gdb_response(timeout_sec=3)
-    assert dut.find_gdb_response('stopped', 'notify', responses) is not None
-    payload = dut.find_gdb_response('stopped', 'notify', responses)['payload']
+    payload = run_and_break(dut, cmd)
     assert payload['reason'] == 'end-stepping-range'
     assert payload['frame']['line'] == str(get_line_number('var_2--;', 0))
     assert payload['frame']['func'] == 'foo'
