@@ -36,6 +36,8 @@ void sdmmc_host_dma_resume(void);
 
 bool sdmmc_host_card_busy(void);
 
+void sdmmc_host_enable_clk_cmd11(int slot, bool enable);
+
 esp_err_t sdmmc_host_transaction_handler_init(void);
 
 void sdmmc_host_transaction_handler_deinit(void);
