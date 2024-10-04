@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -458,7 +458,13 @@ typedef union {
          *  not masked.
          */
         uint32_t ccs_expected:1;
-        uint32_t reserved_24:5;
+        uint32_t reserved_24:4;
+        /** volt_switch : R/W; bitpos: [28]; default: 0;
+         *  Voltage switch bit.
+         *  0: No voltage switching.
+         *  1: Voltage switching enabled; must be set for CMD11 only.
+         */
+        uint32_t volt_switch:1;
         /** use_hole_reg : R/W; bitpos: [29]; default: 1;
          *  Use Hold Register.
          *  0: CMD and DATA sent to card bypassing HOLD Register;
@@ -907,11 +913,17 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:16;
-        /** ddr : R/W; bitpos: [17:16]; default: 0;
-         *  DDR mode selection,1 bit for each card.
-         *  0-Non-DDR mode.
-         *  1-DDR mode.
+        /** volt: R/W; bitpos: [1:0]; default: 0;
+         *  Voltage mode selection, 1 bit for each card.
+         *  0: 3.3V mode.
+         *  1: 1.8V mode.
+         */
+        uint32_t volt:2;
+        uint32_t reserved_0:14;
+        /** ddr: R/W; bitpos: [17:16]; default: 0;
+         *  DDR mode selection, 1 bit for each card.
+         *  0: Non-DDR mode.
+         *  1: DDR mode.
          */
         uint32_t ddr:2;
         uint32_t reserved_18:14;
