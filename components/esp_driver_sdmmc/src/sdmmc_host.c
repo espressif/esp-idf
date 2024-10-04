@@ -176,7 +176,7 @@ static void sdmmc_host_set_clk_div(int div)
     esp_rom_delay_us(10);
 }
 
-static esp_err_t sdmmc_host_clock_update_command(int slot)
+static esp_err_t sdmmc_host_clock_update_command(int slot, bool is_cmd11)
 {
     // Clock update command (not a real command; just updates CIU registers)
     sdmmc_hw_cmd_t cmd_val = {
@@ -184,38 +184,10 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
         .update_clk_reg = 1,
         .wait_complete = 1
     };
-    bool repeat = true;
-    while (repeat) {
-
-        ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
-
-        int64_t yield_delay_us = 100 * 1000; // initially 100ms
-        int64_t t0 = esp_timer_get_time();
-        int64_t t1 = 0;
-        while (true) {
-            t1 = esp_timer_get_time();
-            if (t1 - t0  > SDMMC_HOST_CLOCK_UPDATE_CMD_TIMEOUT_US) {
-                return ESP_ERR_TIMEOUT;
-            }
-            // Sending clock update command to the CIU can generate HLE error.
-            // According to the manual, this is okay and we must retry the command.
-            if (sdmmc_ll_get_interrupt_raw(s_host_ctx.hal.dev) & SDMMC_LL_EVENT_HLE) {
-                sdmmc_ll_clear_interrupt(s_host_ctx.hal.dev, SDMMC_LL_EVENT_HLE);
-                repeat = true;
-                break;
-            }
-            // When the command is accepted by CIU, start_command bit will be
-            // cleared in SDMMC.cmd register.
-            if (sdmmc_ll_is_command_taken(s_host_ctx.hal.dev)) {
-                repeat = false;
-                break;
-            }
-            if (t1 - t0 > yield_delay_us) {
-                yield_delay_us *= 2;
-                vTaskDelay(1);
-            }
-        }
+    if (is_cmd11) {
+        cmd_val.volt_switch = 1;
     }
+    ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
 
     return ESP_OK;
 }
@@ -282,7 +254,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 
     // Disable clock first
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, false);
-    esp_err_t err = sdmmc_host_clock_update_command(slot);
+    esp_err_t err = sdmmc_host_clock_update_command(slot, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "disabling clk failed");
         ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
@@ -299,7 +271,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     // Program card clock settings, send them to the CIU
     sdmmc_ll_set_card_clock_div(s_host_ctx.hal.dev, slot, card_div);
     sdmmc_host_set_clk_div(host_div);
-    err = sdmmc_host_clock_update_command(slot);
+    err = sdmmc_host_clock_update_command(slot, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "setting clk div failed");
         ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
@@ -309,7 +281,7 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     // Re-enable clocks
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, true);
     sdmmc_ll_enable_card_clock_low_power(s_host_ctx.hal.dev, slot, true);
-    err = sdmmc_host_clock_update_command(slot);
+    err = sdmmc_host_clock_update_command(slot, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "re-enabling clk failed");
         ESP_LOGE(TAG, "%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
@@ -425,7 +397,25 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
-    while (!sdmmc_ll_is_command_taken(s_host_ctx.hal.dev)) {
+    bool skip_wait = (cmd.volt_switch && cmd.update_clk_reg);
+    if (!skip_wait) {
+        while (!(sdmmc_ll_is_command_taken(s_host_ctx.hal.dev))) {
+            t1 = esp_timer_get_time();
+            if (t1 - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
+                return ESP_ERR_TIMEOUT;
+            }
+            if (t1 - t0 > yield_delay_us) {
+                yield_delay_us *= 2;
+                vTaskDelay(1);
+            }
+        }
+    }
+    sdmmc_ll_set_command_arg(s_host_ctx.hal.dev, arg);
+    cmd.card_num = slot;
+    cmd.start_command = 1;
+    sdmmc_ll_set_command(s_host_ctx.hal.dev, cmd);
+
+    while (!(sdmmc_ll_is_command_taken(s_host_ctx.hal.dev))) {
         t1 = esp_timer_get_time();
         if (t1 - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
@@ -435,10 +425,6 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
             vTaskDelay(1);
         }
     }
-    sdmmc_ll_set_command_arg(s_host_ctx.hal.dev, arg);
-    cmd.card_num = slot;
-    cmd.start_command = 1;
-    sdmmc_ll_set_command(s_host_ctx.hal.dev, cmd);
     return ESP_OK;
 }
 
@@ -940,8 +926,17 @@ esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on)
     } else {
         sdmmc_ll_enable_card_clock_low_power(s_host_ctx.hal.dev, slot, true);
     }
-    sdmmc_host_clock_update_command(slot);
+    sdmmc_host_clock_update_command(slot, false);
     return ESP_OK;
+}
+
+void sdmmc_host_enable_clk_cmd11(int slot, bool enable)
+{
+    sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, enable);
+    sdmmc_host_clock_update_command(slot, true);
+    if (enable) {
+        sdmmc_ll_enable_18v_mode(s_host_ctx.hal.dev, slot, true);
+    }
 }
 
 void sdmmc_host_dma_stop(void)
