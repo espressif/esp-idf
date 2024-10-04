@@ -44,6 +44,12 @@ esp_err_t sdmmc_init_ocr(sdmmc_card_t* card)
         acmd41_arg |= SD_OCR_SDHC_CAP;
     }
 
+    if ((card->host.flags & SDMMC_HOST_FLAG_UHS1) != 0) {
+        acmd41_arg |= SD_OCR_S18_RA;
+        acmd41_arg |= SD_OCR_XPC;
+    }
+    ESP_LOGV(TAG, "%s: acmd41_arg=0x%08" PRIx32, __func__, card->ocr);
+
     /* Send SEND_OP_COND (ACMD41) command to the card until it becomes ready. */
     err = sdmmc_send_cmd_send_op_cond(card, acmd41_arg, &card->ocr);
 
@@ -280,7 +286,15 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
         type = "MMC";
         print_csd = true;
     } else {
-        type = (card->ocr & SD_OCR_SDHC_CAP) ? "SDHC/SDXC" : "SDSC";
+        if ((card->ocr & SD_OCR_SDHC_CAP) == 0) {
+            type = "SDSC";
+        } else {
+            if (card->ocr & SD_OCR_S18_RA) {
+                type = "SDHC/SDXC (UHS-I)";
+            } else {
+                type = "SDHC";
+            }
+        }
         print_csd = true;
     }
     fprintf(stream, "Type: %s\n", type);

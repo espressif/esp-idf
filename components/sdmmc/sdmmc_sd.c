@@ -322,6 +322,31 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
     return ESP_OK;
 }
 
+static esp_err_t sdmmc_init_sd_uhs1_volt_sw_cb(void* arg, int voltage_mv)
+{
+    sdmmc_card_t* card = (sdmmc_card_t*)arg;
+    ESP_LOGV(TAG, "%s: Voltage switch callback (%umv)", __func__, voltage_mv);
+    return sd_pwr_ctrl_set_io_voltage(card->host.pwr_ctrl_handle, voltage_mv);
+}
+
+esp_err_t sdmmc_init_sd_uhs1(sdmmc_card_t* card)
+{
+    sdmmc_command_t cmd = {
+            .opcode = SD_SWITCH_VOLTAGE,
+            .arg = 0,
+            .flags = SCF_CMD_AC | SCF_RSP_R1,
+            .volt_switch_cb = &sdmmc_init_sd_uhs1_volt_sw_cb,
+            .volt_switch_cb_arg = card
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: send_cmd returned 0x%x", __func__, err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card)
 {
     /* If frequency switch has been performed, read SCR register one more time

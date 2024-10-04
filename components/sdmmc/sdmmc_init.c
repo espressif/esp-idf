@@ -95,6 +95,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     ESP_LOGD(TAG, "%s: card type is %s", __func__,
             is_sdio ? "SDIO" : is_mmc ? "MMC" : "SD");
 
+    /* switch to 1.8V if supported (UHS-I) */
+    bool is_uhs1 = is_sdmem && (card->ocr & SD_OCR_S18_RA) && (card->ocr & SD_OCR_SDHC_CAP);
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_uhs1);
+
     /* Read the contents of CID register*/
     SDMMC_INIT_STEP(is_mem, sdmmc_init_cid);
 

@@ -149,6 +149,8 @@ typedef struct {
     /** @endcond */
     esp_err_t error;            /*!< error returned from transfer */
     uint32_t timeout_ms;        /*!< response timeout, in milliseconds */
+    esp_err_t (*volt_switch_cb)(void*, int); /*!< callback to be called during CMD11 to switch voltage */
+    void* volt_switch_cb_arg;   /*!< argument to be passed to the CMD11 callback */
 } sdmmc_command_t;
 
 /**
@@ -183,6 +185,7 @@ typedef struct {
                                                  Currently this is only used by the SDIO driver. Set this flag when
                                                  using SDIO CMD53 byte mode, with user buffer that is behind the cache
                                                  or not aligned to 4 byte boundary. */
+#define SDMMC_HOST_FLAG_UHS1    BIT(7)       /*!< host supports UHS-I mode */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
