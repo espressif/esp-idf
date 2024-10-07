@@ -213,7 +213,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_post_evt(SIG_DPP_START_NET_INTRO, (u32)bssid);
+            esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
