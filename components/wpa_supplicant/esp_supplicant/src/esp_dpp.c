@@ -685,6 +685,13 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+#ifndef CHANNEL_TO_BIT_NUMBER
+#define CHANNEL_TO_BIT_NUMBER(channel) ((channel >= 1 && channel <= 14) ? (channel) : \
+    ((channel >= 36 && channel <= 64 && (channel - 36) % 4 == 0) ? ((channel - 36) / 4 + 1) : \
+    ((channel >= 100 && channel <= 144 && (channel - 100) % 4 == 0) ? ((channel - 100) / 4 + 9) : \
+    ((channel >= 149 && channel <= 177 && (channel - 149) % 4 == 0) ? ((channel - 149) / 4 + 21) : 0))))
+#endif
+
 static char *esp_dpp_parse_chan_list(const char *chan_list)
 {
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
