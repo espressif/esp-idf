@@ -252,63 +252,7 @@ Custom Reset Sequence
 
 For more advanced users or specific use cases, IDF Monitor supports the configuration of a custom reset sequence using :ref:`configuration-file`. This is particularly useful in extreme edge cases where the default sequence may not suffice.
 
-The sequence is defined with a string in the following format:
-
-- Consists of individual commands divided by ``|`` (e.g. ``R0|D1|W0.5``).
-- Commands (e.g. ``R0``) are defined by a code (``R``) and an argument (``0``).
-
-.. list-table::
-    :header-rows: 1
-    :widths: 15 50 35
-    :align: center
-
-    * - Code
-      - Action
-      - Argument
-    * - D
-      - Set DTR control line
-      - ``1``/``0``
-    * - R
-      - Set RTS control line
-      - ``1``/``0``
-    * - U
-      - Set DTR and RTS control lines at the same time (Unix-like systems only)
-      - ``0,0``/``0,1``/``1,0``/``1,1``
-    * - W
-      - Wait for ``N`` seconds (where ``N`` is a float)
-      - N
-
-Example:
-
-.. code-block:: ini
-
-    [esp-idf-monitor]
-    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
-
-Refer to `custom reset sequence`_ from Esptool documentation for further details. Please note that ``custom_reset_sequence`` is the only used value from the Esptool configuration, and others will be ignored in IDF Monitor.
-
-Share Configuration Across Tools
---------------------------------
-
-The configuration for the custom reset sequence can be specified in a shared configuration file between IDF Monitor and Esptool. In this case, your configuration file name should be either ``setup.cfg`` or ``tox.ini`` so it would be recognized by both tools.
-
-Example of a shared configuration file:
-
-.. code-block:: ini
-
-    [esp-idf-monitor]
-    menu_key = T
-    skip_menu_key = True
-
-    [esptool]
-    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
-
-.. note::
-
-    When using the ``custom_reset_sequence`` parameter in both the ``[esp-idf-monitor]`` section and the ``[esptool]`` section, the configuration from the ``[esp-idf-monitor]`` section will take precedence in IDF Monitor. Any conflicting configuration in the ``[esptool]`` section will be ignored.
-
-    This precedence rule also applies when the configuration is spread across multiple files. The global esp-idf-monitor configuration will take precedence over the local esptool configuration.
-
+If you would like to use a custom reset sequence, take a look at the `IDF Monitor documentation`_ for more details.
 
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -397,107 +341,9 @@ The options ``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:
 Configuration File
 ==================
 
-``esp-idf-monitor`` is using `C0 control codes`_ to interact with the console. Characters from the config file are converted to their C0 control codes. Available characters include the English alphabet (A-Z) and special symbols: ``[``, ``]``, ``\``, ``^``, ``_``.
+``esp-idf-monitor`` offers option to change its default behavior with configuration file. This file can be used for example to set custom key bindings, or set a custom reset sequence for resetting the chip into bootloader mode.
 
-.. warning::
-
-    Please note that some characters may not work on all platforms or can be already reserved as a shortcut for something else. Use this feature with caution!
-
-
-File Location
-~~~~~~~~~~~~~
-
-The default name for a configuration file is ``esp-idf-monitor.cfg``. First, the same directory ``esp-idf-monitor`` is being run if is inspected.
-
-If a configuration file is not found here, the current user's OS configuration directory is inspected next:
-
- - Linux: ``/home/<user>/.config/esp-idf-monitor/``
- - MacOS ``/Users/<user>/.config/esp-idf-monitor/``
- - Windows: ``c:\Users\<user>\AppData\Local\esp-idf-monitor\``
-
-If a configuration file is still not found, the last inspected location is the home directory:
-
- - Linux: ``/home/<user>/``
- - MacOS ``/Users/<user>/``
- - Windows: ``c:\Users\<user>\``
-
-On Windows, the home directory can be set with the ``HOME`` or ``USERPROFILE`` environment variables. Therefore, the Windows configuration directory location also depends on these.
-
-A different location for the configuration file can be specified with the ``ESP_IDF_MONITOR_CFGFILE`` environment variable, e.g., ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``. This overrides the search priorities described above.
-
-``esp-idf-monitor`` will read settings from other usual configuration files if no other configuration file is used. It automatically reads from ``setup.cfg`` or ``tox.ini`` if they exist.
-
-Configuration Options
-~~~~~~~~~~~~~~~~~~~~~
-
-Below is a table listing the available configuration options:
-
-.. list-table::
-    :header-rows: 1
-    :widths: 30 50 20
-    :align: center
-
-    * - Option Name
-      - Description
-      - Default Value
-    * - menu_key
-      - Key to access the main menu.
-      - ``T``
-    * - exit_key
-      - Key to exit the monitor.
-      - ``]``
-    * - chip_reset_key
-      - Key to initiate a chip reset.
-      - ``R``
-    * - recompile_upload_key
-      - Key to recompile and upload.
-      - ``F``
-    * - recompile_upload_app_key
-      - Key to recompile and upload just the application.
-      - ``A``
-    * - toggle_output_key
-      - Key to toggle the output display.
-      - ``Y``
-    * - toggle_log_key
-      - Key to toggle the logging feature.
-      - ``L``
-    * - toggle_timestamp_key
-      - Key to toggle timestamp display.
-      - ``I``
-    * - chip_reset_bootloader_key
-      - Key to reset the chip to bootloader mode.
-      - ``P``
-    * - exit_menu_key
-      - Key to exit the monitor from the menu.
-      - ``X``
-    * - skip_menu_key
-      - Pressing the menu key can be skipped for menu commands.
-      - ``False``
-    * - custom_reset_sequence
-      - Custom reset sequence for resetting into the bootloader.
-      - N/A
-
-
-Syntax
-~~~~~~
-
-The configuration file is in .ini file format: it must be introduced by an ``[esp-idf-monitor]`` header to be recognized as valid. This section then contains name = value entries. Lines beginning with ``#`` or ``;`` are ignored as comments.
-
-.. code-block:: ini
-
-    # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
-    [esp-idf-monitor]
-    menu_key = T
-    exit_key = ]
-    chip_reset_key = R
-    recompile_upload_key = F
-    recompile_upload_app_key = A
-    toggle_output_key = Y
-    toggle_log_key = L
-    toggle_timestamp_key = I
-    chip_reset_bootloader_key = P
-    exit_menu_key = X
-    skip_menu_key = False
+For more details on the configuration file, see the `IDF Monitor documentation`_.
 
 
 Known Issues with IDF Monitor
@@ -505,10 +351,6 @@ Known Issues with IDF Monitor
 
 If you encounter any issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
 
-.. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
+.. _IDF Monitor documentation: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
-.. _pySerial: https://github.com/pyserial/pyserial
-.. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
-.. _C0 control codes: https://en.wikipedia.org/wiki/C0_and_C1_control_codes#C0_controls
-.. _custom reset sequence: https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/esptool/configuration-file.html#custom-reset-sequence
