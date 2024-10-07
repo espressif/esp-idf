@@ -147,3 +147,4 @@ static inline int wps_set_status(uint32_t status)
 bool is_wps_enabled(void);
 int wps_init_cfg_pin(struct wps_config *cfg);
 void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx);
+int wifi_ap_wps_disable_internal(void);
