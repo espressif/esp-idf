@@ -9,8 +9,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include "esp_private/critical_section.h"
 #include "usb_private.h"
 #include "ext_hub.h"
 #include "ext_port.h"
@@ -152,7 +151,6 @@ typedef struct {
 } ext_hub_driver_t;
 
 static ext_hub_driver_t *p_ext_hub_driver = NULL;
-static portMUX_TYPE ext_hub_driver_lock = portMUX_INITIALIZER_UNLOCKED;
 
 const char *EXT_HUB_TAG = "EXT_HUB";
 
@@ -160,10 +158,11 @@ const char *EXT_HUB_TAG = "EXT_HUB";
 // ------------------------------- Helpers -------------------------------------
 // -----------------------------------------------------------------------------
 
-#define EXT_HUB_ENTER_CRITICAL()          portENTER_CRITICAL(&ext_hub_driver_lock)
-#define EXT_HUB_EXIT_CRITICAL()           portEXIT_CRITICAL(&ext_hub_driver_lock)
-#define EXT_HUB_ENTER_CRITICAL_SAFE()     portENTER_CRITICAL_SAFE(&ext_hub_driver_lock)
-#define EXT_HUB_EXIT_CRITICAL_SAFE()      portEXIT_CRITICAL_SAFE(&ext_hub_driver_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(ext_hub_driver_lock);
+#define EXT_HUB_ENTER_CRITICAL()           esp_os_enter_critical(&ext_hub_driver_lock)
+#define EXT_HUB_EXIT_CRITICAL()            esp_os_exit_critical(&ext_hub_driver_lock)
+#define EXT_HUB_ENTER_CRITICAL_SAFE()      esp_os_enter_critical_safe(&ext_hub_driver_lock)
+#define EXT_HUB_EXIT_CRITICAL_SAFE()       esp_os_exit_critical_safe(&ext_hub_driver_lock)
 
 #define EXT_HUB_CHECK(cond, ret_val) ({              \
             if (!(cond)) {                                  \

@@ -16,6 +16,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "esp_private/critical_section.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
@@ -26,14 +27,13 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
-static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
-
-#define HOST_ENTER_CRITICAL_ISR()       portENTER_CRITICAL_ISR(&host_lock)
-#define HOST_EXIT_CRITICAL_ISR()        portEXIT_CRITICAL_ISR(&host_lock)
-#define HOST_ENTER_CRITICAL()           portENTER_CRITICAL(&host_lock)
-#define HOST_EXIT_CRITICAL()            portEXIT_CRITICAL(&host_lock)
-#define HOST_ENTER_CRITICAL_SAFE()      portENTER_CRITICAL_SAFE(&host_lock)
-#define HOST_EXIT_CRITICAL_SAFE()       portEXIT_CRITICAL_SAFE(&host_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(host_lock);
+#define HOST_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&host_lock)
+#define HOST_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&host_lock)
+#define HOST_ENTER_CRITICAL()           esp_os_enter_critical(&host_lock)
+#define HOST_EXIT_CRITICAL()            esp_os_exit_critical(&host_lock)
+#define HOST_ENTER_CRITICAL_SAFE()      esp_os_enter_critical_safe(&host_lock)
+#define HOST_EXIT_CRITICAL_SAFE()       esp_os_exit_critical_safe(&host_lock)
 
 #define HOST_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
