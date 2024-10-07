@@ -28,6 +28,11 @@ static const char *TAG = "example";
 #define APP_QUIT_PIN     GPIO_NUM_0 // BOOT button on most boards
 #define BUFFER_SIZE      4096       // The read/write performance can be improved with larger buffer for the cost of RAM, 4kB is enough for most usecases
 
+// IMPORTANT NOTE
+// MSC Class Driver is not fully support connecting devices through external Hub.
+// TODO: Remove this line after MSC Class Driver will support it
+static bool dev_present = false;
+
 /**
  * @brief Application Queue and its messages ID
  */
@@ -77,7 +82,7 @@ static void gpio_cb(void *arg)
 static void msc_event_cb(const msc_host_event_t *event, void *arg)
 {
     if (event->event == MSC_DEVICE_CONNECTED) {
-        ESP_LOGI(TAG, "MSC device connected");
+        ESP_LOGI(TAG, "MSC device connected (usb_addr=%d)", event->device.address);
         app_message_t message = {
             .id = APP_DEVICE_CONNECTED,
             .data.new_dev_address = event->device.address,
@@ -271,47 +276,56 @@ void app_main(void)
         xQueueReceive(app_queue, &msg, portMAX_DELAY);
 
         if (msg.id == APP_DEVICE_CONNECTED) {
-            // 1. MSC flash drive connected. Open it and map it to Virtual File System
-            ESP_ERROR_CHECK(msc_host_install_device(msg.data.new_dev_address, &msc_device));
-            const esp_vfs_fat_mount_config_t mount_config = {
-                .format_if_mount_failed = false,
-                .max_files = 3,
-                .allocation_unit_size = 8192,
-            };
-            ESP_ERROR_CHECK(msc_host_vfs_register(msc_device, MNT_PATH, &mount_config, &vfs_handle));
+            if (dev_present) {
+                ESP_LOGW(TAG, "MSC Example handles only one device at a time");
+            } else {
+                // 0. Change flag
+                dev_present = true;
+                // 1. MSC flash drive connected. Open it and map it to Virtual File System
+                ESP_ERROR_CHECK(msc_host_install_device(msg.data.new_dev_address, &msc_device));
+                const esp_vfs_fat_mount_config_t mount_config = {
+                    .format_if_mount_failed = false,
+                    .max_files = 3,
+                    .allocation_unit_size = 8192,
+                };
+                ESP_ERROR_CHECK(msc_host_vfs_register(msc_device, MNT_PATH, &mount_config, &vfs_handle));
 
-            // 2. Print information about the connected disk
-            msc_host_device_info_t info;
-            ESP_ERROR_CHECK(msc_host_get_device_info(msc_device, &info));
-            msc_host_print_descriptors(msc_device);
-            print_device_info(&info);
+                // 2. Print information about the connected disk
+                msc_host_device_info_t info;
+                ESP_ERROR_CHECK(msc_host_get_device_info(msc_device, &info));
+                msc_host_print_descriptors(msc_device);
+                print_device_info(&info);
 
-            // 3. List all the files in root directory
-            ESP_LOGI(TAG, "ls command output:");
-            struct dirent *d;
-            DIR *dh = opendir(MNT_PATH);
-            assert(dh);
-            while ((d = readdir(dh)) != NULL) {
-                printf("%s\n", d->d_name);
+                // 3. List all the files in root directory
+                ESP_LOGI(TAG, "ls command output:");
+                struct dirent *d;
+                DIR *dh = opendir(MNT_PATH);
+                assert(dh);
+                while ((d = readdir(dh)) != NULL) {
+                    printf("%s\n", d->d_name);
+                }
+                closedir(dh);
+
+                // 4. The disk is mounted to Virtual File System, perform some basic demo file operation
+                file_operations();
+
+                // 5. Perform speed test
+                speed_test();
+
+                ESP_LOGI(TAG, "Example finished, you can disconnect the USB flash drive");
             }
-            closedir(dh);
-
-            // 4. The disk is mounted to Virtual File System, perform some basic demo file operation
-            file_operations();
-
-            // 5. Perform speed test
-            speed_test();
-
-            ESP_LOGI(TAG, "Example finished, you can disconnect the USB flash drive");
         }
         if ((msg.id == APP_DEVICE_DISCONNECTED) || (msg.id == APP_QUIT)) {
-            if (vfs_handle) {
-                ESP_ERROR_CHECK(msc_host_vfs_unregister(vfs_handle));
-                vfs_handle = NULL;
-            }
-            if (msc_device) {
-                ESP_ERROR_CHECK(msc_host_uninstall_device(msc_device));
-                msc_device = NULL;
+            if (dev_present) {
+                dev_present = false;
+                if (vfs_handle) {
+                    ESP_ERROR_CHECK(msc_host_vfs_unregister(vfs_handle));
+                    vfs_handle = NULL;
+                }
+                if (msc_device) {
+                    ESP_ERROR_CHECK(msc_host_uninstall_device(msc_device));
+                    msc_device = NULL;
+                }
             }
             if (msg.id == APP_QUIT) {
                 // This will cause the usb_task to exit
