@@ -34,7 +34,7 @@ typedef struct {
 } dpp_event_t;
 
 #define BOOTSTRAP_ROC_WAIT_TIME 500
-#define OFFCHAN_TX_WAIT_TIME 500
+#define OFFCHAN_TX_WAIT_TIME 600
 
 struct dpp_bootstrap_params_t {
     enum dpp_bootstrap_type type;

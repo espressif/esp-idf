@@ -848,17 +848,17 @@ void crypto_ec_key_debug_print(struct crypto_ec_key *key, const char *title)
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
     mbedtls_ecp_keypair *ecp = mbedtls_pk_ec(*pkey);
     u8 x[32], y[32], d[32];
-    wpa_printf(MSG_INFO, "curve: %s",
+    wpa_printf(MSG_DEBUG, "curve: %s",
                mbedtls_ecp_curve_info_from_grp_id(ecp->MBEDTLS_PRIVATE(grp).id)->name);
     int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
 
-    wpa_printf(MSG_INFO, "prime len is %d", len);
+    wpa_printf(MSG_DEBUG, "prime len is %d", len);
     crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_key_get_public_key(key), x, y);
     crypto_bignum_to_bin(crypto_ec_key_get_private_key(key),
                          d, len, len);
-    wpa_hexdump(MSG_INFO, "Q_x:", x, 32);
-    wpa_hexdump(MSG_INFO, "Q_y:", y, 32);
-    wpa_hexdump(MSG_INFO, "d:     ",  d, 32);
+    wpa_hexdump(MSG_DEBUG, "Q_x:", x, 32);
+    wpa_hexdump(MSG_DEBUG, "Q_y:", y, 32);
+    wpa_hexdump(MSG_DEBUG, "d:     ",  d, 32);
 #endif
 }
 

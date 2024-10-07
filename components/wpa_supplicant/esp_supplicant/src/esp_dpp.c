@@ -177,36 +177,59 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
 
-    wpa_printf(MSG_DEBUG, "DPP: Sending authentication response.");
+    wpa_printf(MSG_INFO, "DPP: Sending authentication response.");
     esp_dpp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                               wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                               rx_param->channel, OFFCHAN_TX_WAIT_TIME);
-    eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
-    eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout, NULL, NULL);
 
     return;
 fail:
     esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)rc);
 }
 
-static void gas_query_req_tx(struct dpp_authentication *auth)
+static void gas_query_timeout(void *eloop_data, void *user_ctx)
+{
+    struct dpp_authentication *auth = user_ctx;
+
+    if (!auth || !auth->auth_success) {
+        return;
+    }
+
+    wpa_printf(MSG_DEBUG, "GAS: No response received for GAS query");
+    if (auth->conf_req) {
+        wpabuf_free(auth->conf_req);
+        auth->conf_req = NULL;
+    }
+    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_CONF_TIMEOUT);
+}
+
+static int gas_query_req_tx(struct dpp_authentication *auth)
 {
     struct wpabuf *buf;
     int supp_op_classes[] = {81, 0};
+    int ret;
 
     buf = dpp_build_conf_req_helper(auth, NULL, 0, NULL,
                                     supp_op_classes);
     if (!buf) {
         wpa_printf(MSG_DEBUG, "DPP: No configuration request data available");
         esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_FAILURE);
-        return;
+        return ESP_FAIL;
     }
 
-    wpa_printf(MSG_DEBUG, "DPP: GAS request to " MACSTR " (chan %u)",
+    wpa_printf(MSG_INFO, "DPP: GAS request to " MACSTR " (chan %u)",
                MAC2STR(auth->peer_mac_addr), auth->curr_chan);
 
-    esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
-                              auth->curr_chan, OFFCHAN_TX_WAIT_TIME);
+    ret = esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
+                                    auth->curr_chan, OFFCHAN_TX_WAIT_TIME);
+    if (ret != ESP_OK) {
+        wpabuf_free(buf);
+    }
+
+    auth->conf_req = buf;
+    eloop_register_timeout(2, 0, gas_query_timeout, NULL, auth);
+
+    return ret;
 }
 
 static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
@@ -253,7 +276,7 @@ static void esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_
     size_t len = rx_param->vendor_data_len - 2;
     int rc;
 
-    wpa_printf(MSG_DEBUG, "DPP: Authentication Confirmation from " MACSTR,
+    wpa_printf(MSG_INFO, "DPP: Authentication Confirmation from " MACSTR,
                MAC2STR(rx_param->sa));
 
     if (!auth) {
@@ -279,7 +302,9 @@ static void esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_
     }
 
     /* Send GAS Query Req */
-    gas_query_req_tx(auth);
+    if (gas_query_req_tx(auth) != ESP_OK) {
+        goto fail;
+    }
 
     return;
 
@@ -447,6 +472,7 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
 
     if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
             WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
         if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
             wpa_printf(MSG_DEBUG, "DPP: Configuration attempt failed");
             goto fail;
@@ -504,6 +530,7 @@ static esp_err_t esp_dpp_rx_action(struct action_rx_param *rx_param)
                                                  public_action->v.pa_gas_resp.length -
                                                  (u8 *)rx_param->action_frm);
 
+            wpa_printf(MSG_DEBUG, "DPP: Gas response received");
             gas_query_resp_rx(rx_param);
         }
     }
@@ -511,6 +538,32 @@ static esp_err_t esp_dpp_rx_action(struct action_rx_param *rx_param)
     os_free(rx_param->action_frm);
     os_free(rx_param);
     return ret;
+}
+
+void esp_dpp_rx_action_eloop(void *data, void *user_ctx)
+{
+    esp_dpp_rx_action(data);
+}
+
+void esp_dpp_listen_next_channel(void *data, void *user_ctx)
+{
+    struct dpp_bootstrap_params_t *p = &s_dpp_ctx.bootstrap_params;
+    static int counter;
+    int channel;
+    esp_err_t ret = 0;
+
+    if (p->num_chan <= 0) {
+        wpa_printf(MSG_ERROR, "Listen channel not set");
+        return;
+    }
+    channel = p->chan_list[counter++ % p->num_chan];
+    ret = esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
+                                     BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
+    if (ret != ESP_OK) {
+        wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
+        return;
+    }
+    s_dpp_listen_in_progress = true;
 }
 
 static void esp_dpp_task(void *pvParameters)
@@ -648,41 +701,94 @@ int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t chann
         rx_param->frm_len = len;
         os_memcpy(rx_param->action_frm, payload, len);
 
-        ret = esp_dpp_post_evt(SIG_DPP_RX_ACTION, (u32)rx_param);
-        if (ESP_OK != ret) {
-            wpa_printf(MSG_ERROR, "Failed to post event to DPP Task(status=%d)", ret);
-            os_free(rx_param->action_frm);
-            os_free(rx_param);
-            return ret;
-        }
+        eloop_register_timeout(0, 0, esp_dpp_rx_action_eloop, rx_param, NULL);
     }
 
     return ret;
 }
 
+static void esp_dpp_auth_resp_retry_timeout(void *eloop_ctx, void *timeout_ctx)
+{
+    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
+
+    if (!auth || !auth->resp_msg) {
+        return;
+    }
+
+    wpa_printf(MSG_DEBUG,
+               "DPP: Retry Authentication Response after timeout");
+    wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR
+            " chan=%u type=%d",
+            MAC2STR(auth->peer_mac_addr), auth->curr_chan,
+            DPP_PA_AUTHENTICATION_RESP);
+
+    esp_dpp_send_action_frame(s_dpp_ctx.dpp_auth->peer_mac_addr,
+                              wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
+                              wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
+                              auth->curr_chan, OFFCHAN_TX_WAIT_TIME);
+}
+
+static void esp_dpp_auth_resp_retry(void)
+{
+    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
+    unsigned int wait_time, max_tries = 5;
+
+    if (!auth || !auth->resp_msg) {
+        return;
+    }
+
+    auth->auth_resp_tries++;
+    if (auth->auth_resp_tries >= max_tries) {
+        wpa_printf(MSG_INFO, "DPP: No confirm received from initiator - stopping exchange");
+        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+        return;
+    }
+
+    wait_time = 1;
+    wpa_printf(MSG_INFO,
+               "DPP: Schedule retransmission %d of Authentication Response frame in %u s", auth->auth_resp_tries,
+               wait_time);
+    eloop_cancel_timeout(esp_dpp_auth_resp_retry_timeout, NULL, NULL);
+    eloop_register_timeout(wait_time, 0, esp_dpp_auth_resp_retry_timeout, NULL, NULL);
+}
+
 static void offchan_event_handler(void *arg, esp_event_base_t event_base,
                                   int32_t event_id, void *event_data)
 {
-    if (event_id == WIFI_EVENT_ACTION_TX_STATUS) {
-        wifi_event_action_tx_status_t *evt =
-            (wifi_event_action_tx_status_t *)event_data;
-        if (evt->op_id == s_current_tx_op_id) {
-            wpa_printf(MSG_DEBUG,
-                       "Mgmt Tx Status - %d, Context - 0x%x Operation ID : %d", evt->status, (uint32_t)evt->context, evt->op_id);
+    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
 
-            if (evt->status == WIFI_ACTION_TX_FAILED) {
+    if (event_id == WIFI_EVENT_ACTION_TX_STATUS) {
+        wifi_event_action_tx_status_t *evt = event_data;
+
+        wpa_printf(MSG_DEBUG, "Mgmt Tx Status - %d, Cookie - 0x%x",
+                   evt->status, (uint32_t)evt->context);
+        if (!auth) {
+            esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+            return;
+        }
+        if (auth->waiting_auth_conf) {
+            if (evt->status) {
+                /* failed to send auth response frame */
                 eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
-                if (s_dpp_listen_in_progress) {
-                    esp_supp_dpp_stop_listen();
-                }
+                esp_dpp_auth_resp_retry();
+            } else {
+                eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+                eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+            }
+        } else if (auth->auth_success) {
+            if (evt->status) {
+                /* failed to send gas query frame, retry logic needed? */
                 esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+            } else {
+                eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+                eloop_register_timeout(2, 0, gas_query_timeout, NULL, auth);
             }
         }
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
-        /*@TODO : Decide flow for when ROC fails*/
-        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb && evt->status == WIFI_ROC_DONE) {
-            esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
+
+        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb) {
+            eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
         }
     }
 }
@@ -861,7 +967,11 @@ esp_err_t esp_supp_dpp_start_listen(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    return esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
+    /* cancel previous ROC if ongoing */
+    esp_supp_dpp_stop_listen();
+
+    eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
+    return 0;
 }
 
 esp_err_t esp_supp_dpp_stop_listen(void)
@@ -925,7 +1035,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
         goto init_fail;
     }
 
-    ret = os_task_create(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
+    ret = os_task_create(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 15, &s_dpp_task_hdl);
     if (ret != TRUE) {
         wpa_printf(MSG_ERROR, "DPP: failed to create task");
         ret = ESP_ERR_NO_MEM;
