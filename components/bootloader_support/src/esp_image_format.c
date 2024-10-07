@@ -22,6 +22,7 @@
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #include "hal/cache_ll.h"
+#include "spi_flash_mmap.h"
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -77,7 +78,7 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
 
 /* Verify a segment header */
-static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, bool silent);
+static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, esp_image_metadata_t *metadata, bool silent);
 
 /* Log-and-fail macro for use in esp_image_load */
 #define FAIL_LOAD(...) do {                         \
@@ -578,7 +579,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
     ESP_LOGV(TAG, "segment data length 0x%"PRIx32" data starts 0x%"PRIx32, data_len, data_addr);
 
-    CHECK_ERR(verify_segment_header(index, header, data_addr, silent));
+    CHECK_ERR(verify_segment_header(index, header, data_addr, metadata, silent));
 
     if (data_len % 4 != 0) {
         FAIL_LOAD("unaligned segment length 0x%"PRIx32, data_len);
@@ -767,7 +768,7 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
     return ESP_OK;
 }
 
-static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, bool silent)
+static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, esp_image_metadata_t *metadata, bool silent)
 {
     if ((segment->data_len & 3) != 0
             || segment->data_len >= SIXTEEN_MB) {
@@ -780,13 +781,42 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     uint32_t load_addr = segment->load_addr;
     bool map_segment = should_map(load_addr);
 
+#if SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    /* ESP APP descriptor is present in the DROM segment #0 */
+    if (index == 0 && !is_bootloader(metadata->start_addr)) {
+        uint32_t data_len = segment->data_len;
+        const uint32_t *data = (const uint32_t *)bootloader_mmap(segment_data_offs, data_len);
+        if (!data) {
+            ESP_LOGE(TAG, "bootloader_mmap(0x%"PRIx32", 0x%"PRIx32") failed",
+                     segment_data_offs, data_len);
+            return ESP_FAIL;
+        }
+
+        esp_app_desc_t *app_desc = (esp_app_desc_t *)data;
+        // Convert from log base 2 number to actual size while handling legacy image case (value 0)
+        metadata->mmu_page_size = (app_desc->mmu_page_size > 0) ? (1UL << app_desc->mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
+        if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
+            ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
+        }
+        bootloader_munmap(data);
+    } else if (index == 0 && is_bootloader(metadata->start_addr)) {
+        // Bootloader always uses the default MMU page size
+        metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+    }
+#else // SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+#endif // !SOC_MMU_PAGE_SIZE_CONFIGURABLE
+
+    const int mmu_page_size = metadata->mmu_page_size;
+    ESP_LOGV(TAG, "MMU page size 0x%x", mmu_page_size);
+
     /* Check that flash cache mapped segment aligns correctly from flash to its mapped address,
-       relative to the 64KB page mapping size.
+       relative to the MMU page mapping size.
     */
     ESP_LOGV(TAG, "segment %d map_segment %d segment_data_offs 0x%"PRIx32" load_addr 0x%"PRIx32,
              index, map_segment, segment_data_offs, load_addr);
     if (map_segment
-            && ((segment_data_offs % SPI_FLASH_MMU_PAGE_SIZE) != (load_addr % SPI_FLASH_MMU_PAGE_SIZE))) {
+            && ((segment_data_offs % mmu_page_size) != (load_addr % mmu_page_size))) {
         if (!silent) {
             ESP_LOGE(TAG, "Segment %d load address 0x%08"PRIx32", doesn't match data 0x%08"PRIx32,
                      index, load_addr, segment_data_offs);
