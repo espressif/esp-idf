@@ -25,9 +25,9 @@
 #define EXT_PORT_RESET_ATTEMPTS     1
 #endif
 // Delay in ms after sending the SetFeature() class specific request
-#define EXT_PORT_RESET_CUSTOM_DELAY         CONFIG_USB_HOST_EXT_PORT_CUSTOM_RESET_ENABLE
-#define EXT_PORT_RESET_CUSTOM_DELAY_MS      CONFIG_USB_HOST_EXT_PORT_CUSTOM_RESET_MS
-#define EXT_PORT_RESET_DEFAULT_DELAY_MS     100
+#define EXT_PORT_RESET_RECOVERY_DELAY_MS       CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS
+#define EXT_PORT_POWER_ON_CUSTOM_DELAY         CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE
+#define EXT_PORT_POWER_ON_CUSTOM_DELAY_MS      CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS
 
 /**
  * @brief External Port driver action flags
@@ -80,7 +80,7 @@ struct ext_port_s {
         // Port related constant members
         ext_hub_handle_t ext_hub_hdl;           /**< Ports' parent External Hub handle */
         uint8_t port_num;                       /**< Ports' parent External Hub Port number */
-        int reset_delay_ms;                     /**< Ports' Power on time to Power Good, ms */
+        int power_on_delay_ms;                  /**< Ports' Power on time to Power Good, ms */
     } constant;                                 /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
 };
 
@@ -263,8 +263,8 @@ static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_featu
     // Every set feature requires status update
     ext_port->flags.status_outdated = 1;
     // PowerOn to PowerGood delay for port
-    if (feature == USB_FEATURE_PORT_RESET) {
-        vTaskDelay(pdMS_TO_TICKS(ext_port->constant.reset_delay_ms));
+    if (feature == USB_FEATURE_PORT_POWER) {
+        vTaskDelay(pdMS_TO_TICKS(ext_port->constant.power_on_delay_ms));
     }
     return ret;
 }
@@ -451,13 +451,13 @@ static esp_err_t port_alloc(ext_hub_handle_t ext_hub_hdl, usb_device_handle_t pa
     ext_port->constant.parent_dev_addr = parent_dev_addr;
     ext_port->constant.ext_hub_hdl = ext_hub_hdl;
     ext_port->constant.port_num = parent_port_num;
-#if (EXT_PORT_RESET_CUSTOM_DELAY)
-    ext_port->constant.reset_delay_ms = EXT_PORT_RESET_CUSTOM_DELAY_MS;
+#if (EXT_PORT_POWER_ON_CUSTOM_DELAY)
+    ext_port->constant.power_on_delay_ms = EXT_PORT_POWER_ON_CUSTOM_DELAY_MS;
 #else
-    ext_port->constant.reset_delay_ms = (port_delay_ms == 0)
-                                        ? EXT_PORT_RESET_DEFAULT_DELAY_MS
-                                        : port_delay_ms;
-#endif // EXT_PORT_POWER_ON_CUSTOM
+    // We don't need any additional delay in case port_delay_ms == 0, because this usually means
+    // that parent Hub device has no power switches
+    ext_port->constant.power_on_delay_ms = port_delay_ms;
+#endif // EXT_PORT_POWER_ON_CUSTOM_DELAY
 
     ext_port->state = USB_PORT_STATE_NOT_CONFIGURED;
     ext_port->dev_state = PORT_DEV_NOT_PRESENT;
@@ -465,7 +465,7 @@ static esp_err_t port_alloc(ext_hub_handle_t ext_hub_hdl, usb_device_handle_t pa
     ESP_LOGD(EXT_PORT_TAG, "[%d:%d] Port has been added (PwrOn2PwrGood=%d ms)",
              ext_port->constant.parent_dev_addr,
              ext_port->constant.port_num,
-             ext_port->constant.reset_delay_ms);
+             ext_port->constant.power_on_delay_ms);
 
     *port_obj = ext_port;
     return ESP_OK;
@@ -555,8 +555,9 @@ static bool handle_port_status(ext_port_t *ext_port)
         ESP_LOGD(EXT_PORT_TAG, "[%d:%d] Port still in reset, wait and repeat get status...",
                  ext_port->constant.parent_dev_addr,
                  ext_port->constant.port_num);
-        // PowerOn to PowerGood delay for port
-        vTaskDelay(pdMS_TO_TICKS(ext_port->constant.reset_delay_ms));
+        // Rare case, but possible to happen
+        // Add a small delay to give port some time and request status again
+        vTaskDelay(pdMS_TO_TICKS(30));
         port_request_status(ext_port);
         need_processing = true;
     }
@@ -656,6 +657,8 @@ static bool handle_port_changes(ext_port_t *ext_port)
     } else if (port_has_finished_reset(ext_port)) {
         if (port_has_connection(ext_port)) {
             ext_port->state = USB_PORT_STATE_ENABLED;
+            // Port has a device connected and finished the reset, give the port some time to recover
+            vTaskDelay(pdMS_TO_TICKS(EXT_PORT_RESET_RECOVERY_DELAY_MS));
         }
         port_clear_feature(ext_port, USB_FEATURE_C_PORT_RESET);
         need_processing = true;
