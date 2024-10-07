@@ -1247,6 +1247,10 @@ config SOC_WIFI_MAC_VERSION_NUM
     int
     default 3
 
+config SOC_WIFI_NAN_SUPPORT
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
