@@ -243,7 +243,7 @@ ESP-IDF 适用于 Python 3.9 以上版本。
 
 - ``EXTRA_COMPONENT_DIRS``：用于搜索组件的其它可选目录列表。路径可以是相对于项目目录的相对路径，也可以是绝对路径。
 
-- ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
+- ``COMPONENTS``：用于指定要构建到项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目，从而缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。另外，还可以通过设置 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>` 来指定 ``COMPONENTS`` 中的 ``main`` 组件。
 
 - ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：可选组件列表，位于 ``bootloader_components/`` 目录中，引导加载程序编译时会忽略该列表中的组件。使用这一变量可以将一个组件有条件地包含在项目中。
 
@@ -618,6 +618,11 @@ Spark Plug 组件
   * 每个组件都依赖的通用组件。
 
 - 将 ``COMPONENTS`` 设置为所需组件的最小列表，可以显著减少项目的构建时间。
+- 可以将 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>` 设为 ``ON``，从而快捷配置 ``COMPONENTS`` 变量，使其仅包含 ``main`` 组件。如果在启用 ``MINIMAL_BUILD`` 属性的同时定义了 ``COMPONENTS`` 变量，则 ``COMPONENTS`` 会优先生效。
+
+.. note::
+
+   使用 ``COMPONENTS`` 变量或 ``MINIMAL_BUILD`` 构建属性指定组件时，一些功能和配置（如 esp_psram 或 espcoredump 组件提供的功能和配置）可能不会被默认包含。如需使用这些功能，须将相关组件添加到 ``COMPONENTS`` 变量中，或在组件注册时将其列入 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 参数。
 
 
 .. _component-circular-dependencies:
@@ -1370,6 +1375,7 @@ ESP-IDF 构建属性
 - INCLUDE_DIRECTORIES - 包含所有组件源文件的目录。
 - KCONFIGS - 构建过程中组件里的 Kconfig 文件的列表；由 ``idf_build_process`` 设置。
 - KCONFIG_PROJBUILDS - 构建过程中组件中的 Kconfig.projbuild 文件的列表；由 ``idf_build_process`` 设置。
+- MINIMAL_BUILD - 仅包含所有其他组件所需的“通用”组件，以及仅与 ``main`` 组件有直接或传递依赖关系的组件，从而进行最小化构建。默认情况下该属性处于禁用状态（设置为 ``OFF``），如需启用，可将其设置为 ``ON``。
 - PROJECT_NAME - 项目名称；由 ``idf_build_process`` 的 PROJECT_NAME 参数设置。
 - PROJECT_DIR - 项目的目录；由 ``idf_build_process`` 的 PROJECT_DIR 参数设置。
 - PROJECT_VER - 项目的版本；由 ``idf_build_process`` 的 PROJECT_VER 参数设置。
