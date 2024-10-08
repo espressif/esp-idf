@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,10 @@ extern "C" {
 #endif
 
 /*
-Registers and fields were generated based on a set of configuration options.
+Registers and fields were generated based on a set of USB-DWC configuration options.
+ESP32-P4 contains 2 instances of USB-DWC with different configurations, the structure below corresponds to the HS instance.
+The FS instance contains a subset of registers from HS instance, the user (HAL) is responsible for accessing only existing fields.
+
 See ESP32-P4 "usb_dwc_cfg.h" for more details.
 */
 
@@ -1368,6 +1371,7 @@ _Static_assert(sizeof(usb_dwc_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t st
 #endif
 
 extern usb_dwc_dev_t USB_DWC_HS;
+extern usb_dwc_dev_t USB_DWC_FS;
 
 #ifdef __cplusplus
 }
