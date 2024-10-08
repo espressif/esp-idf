@@ -1003,6 +1003,10 @@ config SOC_BLE_SUPPORTED
     bool
     default y
 
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y
+
 config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y
