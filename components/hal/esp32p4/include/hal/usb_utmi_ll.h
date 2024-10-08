@@ -39,7 +39,7 @@ FORCE_INLINE_ATTR void usb_utmi_ll_configure_ls(usb_utmi_dev_t *hw, bool paralle
  *
  * @param[in] clk_en True to enable, false to disable
  */
-FORCE_INLINE_ATTR void usb_utmi_ll_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void _usb_utmi_ll_enable_bus_clock(bool clk_en)
 {
     // Enable/disable system clock for USB_UTMI and USB_DWC_HS
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_usb_otg20_sys_clk_en = clk_en;
@@ -48,7 +48,7 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_bus_clock(bool clk_en)
 }
 
 // HP_SYS_CLKRST.soc_clk_ctrlx and LP_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
-#define usb_utmi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_utmi_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_utmi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_utmi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the USB UTMI PHY and USB_DWC_HS controller
