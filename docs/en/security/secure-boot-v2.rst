@@ -646,8 +646,7 @@ Secure Boot Best Practices
 
     .. note::
 
-        It may be necessary to revoke a key that isn't currently being used.
-        For example, if the active application is signed with key #0, but key #1 becomes compromised, you should revoke key #1 by using the above approach. The new OTA update should continue to be signed with key #0, and the API `esp_ota_revoke_secure_boot_public_key(SECURE_BOOT_PUBLIC_KEY_INDEX_[N])` can be used to revoke the key #N (N would be 1 in this case). After revoking, all remaining unrevoked keys can still be used to sign future applications.
+        It may be necessary to revoke a key that isn't currently being used. For example, if the active application is signed with key #0, but key #1 becomes compromised, you should revoke key #1 by using the above approach. The new OTA update should continue to be signed with key #0, and the API `esp_ota_revoke_secure_boot_public_key (SECURE_BOOT_PUBLIC_KEY_INDEX_[N])` can be used to revoke the key #N (N would be 1 in this case). After revoking, all remaining unrevoked keys can still be used to sign future applications.
 
 
     .. _secure-boot-v2-aggressive-key-revocation:
