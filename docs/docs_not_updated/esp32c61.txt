@@ -1,4 +1,3 @@
-api-guides/core_dump_internals.rst
 api-guides/performance/speed.rst
 api-guides/performance/size.rst
 api-guides/performance/ram-usage.rst
