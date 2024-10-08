@@ -89,6 +89,7 @@ static const void* rom_funcs[] = {
     pm_tx_null_data_done_process,
     pm_start,
     pm_stop,
+    pm_disconnected_wake,
 #endif
 };
 static const char* rom_funcs_name[] = {
@@ -109,6 +110,7 @@ static const char* rom_funcs_name[] = {
     "pm_tx_null_data_done_process",
     "pm_start",
     "pm_stop",
+    "pm_disconnected_wake",
 #endif
 };
 
