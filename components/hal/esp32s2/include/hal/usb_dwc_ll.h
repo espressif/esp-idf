@@ -220,11 +220,9 @@ static inline void usb_dwc_ll_gusbcfg_set_timeout_cal(usb_dwc_dev_t *hw, uint8_t
 
 static inline void usb_dwc_ll_gusbcfg_set_utmi_phy(usb_dwc_dev_t *hw)
 {
-#if (OTG_HSPHY_INTERFACE != 0)
     hw->gusbcfg_reg.phyif = 1;       // 16 bits interface
     hw->gusbcfg_reg.ulpiutmisel = 0; // UTMI+
     hw->gusbcfg_reg.physel = 0;      // HS PHY
-#endif // (OTG_HSPHY_INTERFACE != 0)
 }
 
 // --------------------------- GRSTCTL Register --------------------------------
@@ -351,24 +349,19 @@ static inline uint32_t usb_dwc_ll_gsnpsid_get_id(usb_dwc_dev_t *hw)
 
 // --------------------------- GHWCFGx Register --------------------------------
 
-/**
- * @brief Get the hardware configuration registers of the DWC_OTG controller
- *
- * The hardware configuration regitsers are read only and indicate the various
- * features of the DWC_OTG core.
- *
- * @param hw Start address of the DWC_OTG registers
- * @param[out] ghwcfg1 Hardware configuration registesr 1
- * @param[out] ghwcfg2 Hardware configuration registesr 2
- * @param[out] ghwcfg3 Hardware configuration registesr 3
- * @param[out] ghwcfg4 Hardware configuration registesr 4
- */
-static inline void usb_dwc_ll_ghwcfg_get_hw_config(usb_dwc_dev_t *hw, uint32_t *ghwcfg1, uint32_t *ghwcfg2, uint32_t *ghwcfg3, uint32_t *ghwcfg4)
+static inline unsigned usb_dwc_ll_ghwcfg_get_fifo_depth(usb_dwc_dev_t *hw)
 {
-    *ghwcfg1 = hw->ghwcfg1_reg.val;
-    *ghwcfg2 = hw->ghwcfg2_reg.val;
-    *ghwcfg3 = hw->ghwcfg3_reg.val;
-    *ghwcfg4 = hw->ghwcfg4_reg.val;
+    return hw->ghwcfg3_reg.dfifodepth;
+}
+
+static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg2_reg.hsphytype;
+}
+
+static inline unsigned usb_dwc_ll_ghwcfg_get_channel_num(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg2_reg.numhstchnl;
 }
 
 // --------------------------- HPTXFSIZ Register -------------------------------
@@ -433,47 +426,44 @@ static inline void usb_dwc_ll_hcfg_set_fsls_supp_only(usb_dwc_dev_t *hw)
     hw->hcfg_reg.fslssupp = 1;
 }
 
-static inline void usb_dwc_ll_hcfg_set_fsls_pclk_sel(usb_dwc_dev_t *hw)
-{
-    hw->hcfg_reg.fslspclksel = 1;
-}
-
 /**
- * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
+ * @brief Set FSLS PHY clock
  *
+ * @attention This function should only be called if FSLS PHY is selected
  * @param[in] hw    Start address of the DWC_OTG registers
- * @param[in] speed Speed to initialize the host port at
  */
-static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
+static inline void usb_dwc_ll_hcfg_set_fsls_phy_clock(usb_dwc_dev_t *hw)
 {
-    hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
-#if (OTG_HSPHY_INTERFACE == 0)
     /*
     Indicate to the OTG core what speed the PHY clock is at
-    Note: It seems like S2/S3 PHY has an implicit 8 divider applied when in LS mode,
+    Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
-#endif // (OTG_HSPHY_INTERFACE == 0)
-    hw->hcfg_reg.perschedena = 0;   //Disable perio sched
+    usb_dwc_speed_t speed = (usb_dwc_speed_t)hw->hprt_reg.prtspd;
+    hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
+/**
+ * @brief Set Frame Interval
+ *
+ * @attention This function should only be called if FSLS PHY is selected
+ * @param[in] hw    Start address of the DWC_OTG registers
+ */
+static inline void usb_dwc_ll_hfir_set_frame_interval(usb_dwc_dev_t *hw)
 {
-#if (OTG_HSPHY_INTERFACE == 0)
     usb_dwc_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
-    hfir.hfirrldctrl = 0;       //Disable dynamic loading
+    hfir.hfirrldctrl = 0;       // Disable dynamic loading
     /*
     Set frame interval to be equal to 1ms
-    Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
+    Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
+    usb_dwc_speed_t speed = (usb_dwc_speed_t)hw->hprt_reg.prtspd;
+    hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000;
     hw->hfir_reg.val = hfir.val;
-#endif // (OTG_HSPHY_INTERFACE == 0)
 }
 
 // ----------------------------- HFNUM Register --------------------------------

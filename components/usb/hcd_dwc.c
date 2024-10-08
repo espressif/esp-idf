@@ -1276,7 +1276,9 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
-    usb_dwc_hal_init(port_obj->hal);
+    usb_dwc_hal_init(port_obj->hal, 0);
+    port_obj->hal->channels.hdls = calloc(port_obj->hal->constant_config.chan_num_total, sizeof(usb_dwc_hal_chan_t*));
+    HCD_CHECK_FROM_CRIT(port_obj->hal->channels.hdls != NULL, ESP_ERR_NO_MEM);
     port_obj->initialized = true;
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port_obj->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
@@ -1300,6 +1302,7 @@ esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl)
                         ESP_ERR_INVALID_STATE);
     port->initialized = false;
     esp_intr_disable(s_hcd_obj->isr_hdl);
+    free(port->hal->channels.hdls);
     usb_dwc_hal_deinit(port->hal);
     HCD_EXIT_CRITICAL();
 
@@ -1412,14 +1415,14 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl)
                         && port->num_pipes_idle == 0 && port->num_pipes_queued == 0
                         && port->flags.val == 0 && port->task_waiting_port_notif == NULL,
                         ESP_ERR_INVALID_STATE);
+
     // We are about to do a soft reset on the peripheral. Disable the peripheral throughout
     esp_intr_disable(s_hcd_obj->isr_hdl);
     usb_dwc_hal_core_soft_reset(port->hal);
     port->state = HCD_PORT_STATE_NOT_POWERED;
     port->last_event = HCD_PORT_EVENT_NONE;
     port->flags.val = 0;
-    // Soft reset wipes all registers so we need to reinitialize the HAL
-    usb_dwc_hal_init(port->hal);
+
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
     esp_intr_enable(s_hcd_obj->isr_hdl);
