@@ -6,7 +6,7 @@ Bootloader
 The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
-2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure </security/secure-boot-v2>` features, if configured;
+2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure Boot </security/secure-boot-v2>` features, if configured;
 3. Select the application partition to boot, based on the partition table and ota_data (if any);
 4. Load this image to RAM (IRAM & DRAM) and transfer management to the image that was just loaded.
 

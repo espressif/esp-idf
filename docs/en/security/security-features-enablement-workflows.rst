@@ -18,6 +18,11 @@ When enabling security features on ESP32 SoCs, it is recommended that power supp
 
 This guide describes a set of workflows to enable security features on the device with the assistance of an external host machine. These workflows are broken down into various stages, with each stage generating signing/encryption keys on the host machine. This allows for greater chances of recovery in case of power or other failures. Furthermore, these workflows expedites the overall provisioning process via the use of the host machine (e.g., encrypting firmware on the host is quicker than on the device).
 
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      It is possible to try out the security features for {IDF_TARGET_NAME} target SoC under :doc:`../api-guides/tools/qemu` virtually. Once the security workflow is established, you can then proceed to the real hardware.
 
 Goals
 -----
