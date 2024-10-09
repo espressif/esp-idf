@@ -245,9 +245,9 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
 
-- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：可选组件列表，位于 ``bootloader_components/`` 目录中，引导加载程序编译时会被忽略。使用这一变量可以将一个组件有条件地包含在项目中。
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：可选组件列表，位于 ``bootloader_components/`` 目录中，引导加载程序编译时会忽略该列表。使用这一变量可以将一个组件有条件地包含在项目中。
 
-- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``：可选目录列表，用于搜索要作为引导程序的一部分进行编译的组件。
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``：可选的附加路径列表，引导加载程序编译时将从这些路径中搜索要编译的组件。
 
 以上变量中的路径可以是绝对路径，或者是相对于项目目录的相对路径。
 
