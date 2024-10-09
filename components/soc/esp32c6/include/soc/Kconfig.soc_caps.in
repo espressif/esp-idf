@@ -1546,3 +1546,7 @@ config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y
+
+config SOC_DEBUG_HAVE_OCD_STUB_BINS
+    bool
+    default y

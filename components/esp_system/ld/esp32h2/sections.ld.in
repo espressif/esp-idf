@@ -156,6 +156,21 @@ SECTIONS
   .iram0.text :
   {
     _iram_start = ABSOLUTE(.);
+
+#if CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS
+    /* Do not move this block! OpenOCD expects this to be at the beginning of IRAM. */
+    KEEP(*(.ocd_stub.code));
+    KEEP(*(.ocd_stub.tramp));
+    . = ALIGN(0x800);
+    KEEP(*(.ocd_stub.data));
+    KEEP(*(.ocd_stub.bss));
+    KEEP(*(.ocd_stub.stack));
+    KEEP(*(.ocd_stub.params));
+    . = ALIGN(0x1000);
+    KEEP(*(.ocd_stub.scratchmem));
+    ASSERT(ABSOLUTE(.) == _iram_start + 0x2000, "openocd stub memory must be ended at _iram_start + 0x2000");
+#endif
+
     /* Vectors go to start of IRAM */
     ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
     KEEP(*(.exception_vectors_table.text));
