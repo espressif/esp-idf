@@ -53,6 +53,8 @@
 #define CMD_RST_EN      0x66
 #define CMD_RST_DEV     0x99
 
+#define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
+
 #define SPI_FLASH_DIO_ADDR_BITLEN       24
 #define SPI_FLASH_DIO_DUMMY_BITLEN      4
 #define SPI_FLASH_QIO_ADDR_BITLEN       24

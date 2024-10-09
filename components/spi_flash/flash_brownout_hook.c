@@ -20,7 +20,7 @@ void spi_flash_needs_reset_check(void)
 {
     // Currently only XMC is suggested to reset when brownout
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET_XMC
-    if ((g_rom_flashchip.device_id >> 16) == 0x20 || (g_rom_flashchip.device_id >> 16) == 0x46) {
+    if ((g_rom_flashchip.device_id >> 16) == 0x20) {
         flash_brownout_needs_reset = true;
     }
 #endif
