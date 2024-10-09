@@ -67,6 +67,12 @@ typedef enum {
  * @internal Keep this enum in sync with PartitionDefinition class gen_esp32part.py @endinternal
  */
 typedef enum {
+    ESP_PARTITION_SUBTYPE_BOOTLOADER_PRIMARY = 0x00,                          //!< Primary Bootloader
+    ESP_PARTITION_SUBTYPE_BOOTLOADER_OTA = 0x01,                              //!< Temporary OTA storage for Bootloader, where the OTA uploads a new Bootloader image
+
+    ESP_PARTITION_SUBTYPE_PARTITION_TABLE_PRIMARY = 0x00,                     //!< Primary Partition table
+    ESP_PARTITION_SUBTYPE_PARTITION_TABLE_OTA = 0x01,                         //!< Temporary OTA storage for Partition table, where the OTA uploads a new Partition table image
+
     ESP_PARTITION_SUBTYPE_APP_FACTORY = 0x00,                                 //!< Factory application partition
     ESP_PARTITION_SUBTYPE_APP_OTA_MIN = 0x10,                                 //!< Base for OTA partition subtypes
     ESP_PARTITION_SUBTYPE_APP_OTA_0 = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 0,  //!< OTA partition 0

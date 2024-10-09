@@ -199,6 +199,26 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
                 break;
             }
             break; /* PARTITION_USAGE_DATA */
+        case PART_TYPE_BOOTLOADER: /* Bootloader partition */
+            switch (partition->subtype) {
+            case PART_SUBTYPE_BOOTLOADER_PRIMARY:
+                partition_usage = "primary bootloader";
+                break;
+            case PART_SUBTYPE_BOOTLOADER_OTA:
+                partition_usage = "ota bootloader";
+                break;
+            }
+            break; /* PART_TYPE_BOOTLOADER */
+        case PART_TYPE_PARTITION_TABLE: /* Partition table partition */
+            switch (partition->subtype) {
+            case PART_SUBTYPE_PARTITION_TABLE_PRIMARY:
+                partition_usage = "primary partition_table";
+                break;
+            case PART_SUBTYPE_PARTITION_TABLE_OTA:
+                partition_usage = "ota partition_table";
+                break;
+            }
+            break; /* PART_TYPE_PARTITION_TABLE */
         default: /* other partition type */
             break;
         }
