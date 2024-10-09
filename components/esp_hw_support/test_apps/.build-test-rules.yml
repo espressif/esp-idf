@@ -42,6 +42,10 @@ components/esp_hw_support/test_apps/rtc_power_modes:
       temporary: true
       reason: the other targets are not tested yet
 
+components/esp_hw_support/test_apps/vad_wakeup:
+  disable:
+    - if: SOC_LP_VAD_SUPPORTED != 1
+
 components/esp_hw_support/test_apps/wakeup_tests:
   disable:
     - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux", "esp32c61"]
