@@ -250,9 +250,6 @@ struct mcpwm_cap_channel_t {
     intr_handle_t intr;               // Interrupt handle
     mcpwm_capture_event_cb_t on_cap;  // Callback function which would be invoked in capture interrupt routine
     void *user_data;                  // user data which would be passed to the capture callback
-    struct {
-        uint32_t reset_io_at_exit: 1; // Whether to reset the GPIO configuration when capture channel is deleted
-    } flags;
 };
 
 mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);

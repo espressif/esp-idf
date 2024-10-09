@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,9 +24,11 @@
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
+#include "hal/gpio_hal.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/gpio.h"
 #include "mcpwm_private.h"
+#include "esp_private/gpio.h"
 
 static const char *TAG = "mcpwm";
 
@@ -289,20 +291,25 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
 
     if (config->gpio_num >= 0) {
         // GPIO configuration
-        gpio_config_t gpio_conf = {
-            .intr_type = GPIO_INTR_DISABLE,
-            .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-            .pin_bit_mask = (1ULL << config->gpio_num),
-            .pull_down_en = config->flags.pull_down,
-            .pull_up_en = config->flags.pull_up,
-        };
-        ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config capture GPIO failed");
+        gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->gpio_num);
         esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
+        if (config->flags.pull_down) {
+            gpio_pulldown_en(config->gpio_num);
+        }
+        if (config->flags.pull_up) {
+            gpio_pullup_en(config->gpio_num);
+        }
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_ll_output_enable(&GPIO, config->gpio_num);
+        }
     }
 
     cap_chan->gpio_num = config->gpio_num;
     cap_chan->fsm = MCPWM_CAP_CHAN_FSM_INIT;
-    cap_chan->flags.reset_io_at_exit = !config->flags.keep_io_conf_at_exit && config->gpio_num >= 0;
+
     *ret_cap_channel = cap_chan;
     ESP_LOGD(TAG, "new capture channel (%d,%d) at %p", group->group_id, cap_chan_id, cap_chan);
     return ESP_OK;
@@ -323,14 +330,15 @@ esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
     int cap_chan_id = cap_channel->cap_chan_id;
 
     ESP_LOGD(TAG, "del capture channel (%d,%d)", group->group_id, cap_channel->cap_chan_id);
-    if (cap_channel->flags.reset_io_at_exit) {
-        gpio_reset_pin(cap_channel->gpio_num);
-    }
 
     portENTER_CRITICAL(&group->spinlock);
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_chan_id), false);
     mcpwm_ll_intr_clear_status(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_chan_id));
     portEXIT_CRITICAL(&group->spinlock);
+
+    // disconnect signal from the GPIO pin
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
+                                   mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
 
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_capture_channel_destroy(cap_channel), TAG, "destroy capture channel failed");

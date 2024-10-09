@@ -121,6 +121,22 @@ static bool IRAM_ATTR test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t 
 
 TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
 {
+    const int cbc_fault_gpio = TEST_FAULT_GPIO1;
+    const int ost_fault_gpio = TEST_FAULT_GPIO2;
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
+    printf("init gpios to read generator output and simulate fault signal\r\n");
+    gpio_config_t fault_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(cbc_fault_gpio) | BIT(ost_fault_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&fault_gpio_conf));
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_a_gpio) | BIT(gen_b_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("install timer\r\n");
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -151,13 +167,10 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
         .flags.active_level = 1,
-        .flags.io_loop_back = true,
         .flags.pull_down = true,
     };
     mcpwm_fault_handle_t gpio_cbc_fault = NULL;
     mcpwm_fault_handle_t gpio_ost_fault = NULL;
-    const int cbc_fault_gpio = TEST_FAULT_GPIO1;
-    const int ost_fault_gpio = TEST_FAULT_GPIO2;
 
     gpio_fault_config.gpio_num = cbc_fault_gpio;
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_cbc_fault));
@@ -180,14 +193,12 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = TEST_PWMA_GPIO;
-    const int gen_b_gpio = TEST_PWMB_GPIO;
+
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {
-        .flags.io_loop_back = true,
+        .gen_gpio_num = gen_a_gpio,
     };
-    generator_config.gen_gpio_num = gen_a_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
@@ -249,10 +260,23 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(cbc_fault_gpio));
+    TEST_ESP_OK(gpio_reset_pin(ost_fault_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_a_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_b_gpio));
 }
 
 TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
 {
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
+    printf("init gpios to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_a_gpio) | BIT(gen_b_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("install timer\r\n");
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -286,14 +310,11 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = TEST_PWMA_GPIO;
-    const int gen_b_gpio = TEST_PWMB_GPIO;
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {
-        .flags.io_loop_back = true,
+        .gen_gpio_num = gen_a_gpio,
     };
-    generator_config.gen_gpio_num = gen_a_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
@@ -360,4 +381,6 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(gen_a_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_b_gpio));
 }

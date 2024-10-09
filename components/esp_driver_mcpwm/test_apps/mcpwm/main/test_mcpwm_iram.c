@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,13 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
     const int cap_gpio = TEST_CAP_GPIO;
+    printf("init a gpio to simulate the external capture signal\r\n");
+    gpio_config_t cap_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(cap_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&cap_gpio_conf));
+
     // put the GPIO into a preset state
     gpio_set_level(cap_gpio, 0);
 
@@ -56,7 +63,6 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
         .prescale = 1,
         .flags.pos_edge = true,
         .flags.neg_edge = true,
-        .flags.io_loop_back = true, // so we can use GPIO functions to simulate the external capture signal
         .flags.pull_up = true,
     };
     TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &pps_channel));
@@ -89,6 +95,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
+    TEST_ESP_OK(gpio_reset_pin(cap_gpio));
 }
 
 static bool IRAM_ATTR test_compare_on_reach(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_event_data_t *ev_data, void *user_data)

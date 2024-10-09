@@ -58,15 +58,21 @@ static bool IRAM_ATTR test_fault_exit_callback(mcpwm_fault_handle_t detector, co
 
 TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
 {
-    printf("create gpio fault\r\n");
+    printf("init a gpio to simulate the fault signal\r\n");
     const int fault_gpio = TEST_FAULT_GPIO;
+    gpio_config_t fault_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(fault_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&fault_gpio_conf));
+
+    printf("create gpio fault\r\n");
     mcpwm_fault_handle_t fault = NULL;
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
         .gpio_num = fault_gpio,
         .flags.active_level = true, // active on high level
         .flags.pull_down = true,
-        .flags.io_loop_back = true, // for debug, so that we can use gpio_set_level to mimic a fault source
     };
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &fault));
 
@@ -80,7 +86,7 @@ TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
     };
     TaskHandle_t task_to_notify = xTaskGetCurrentTaskHandle();
     TEST_ESP_OK(mcpwm_fault_register_event_callbacks(fault, &cbs, task_to_notify));
-    TEST_ASSERT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(100)));
 
     printf("trigget a fault event\r\n");
     gpio_set_level(fault_gpio, 1);
@@ -91,4 +97,5 @@ TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)));
 
     TEST_ESP_OK(mcpwm_del_fault(fault));
+    TEST_ESP_OK(gpio_reset_pin(fault_gpio));
 }

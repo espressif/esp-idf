@@ -122,8 +122,6 @@ MCPWM 生成器
 
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` 设置生成器使用的 GPIO 编号。
 - :cpp:member:`mcpwm_generator_config_t::invert_pwm` 设置是否反相 PWM 信号。
-- :cpp:member:`mcpwm_generator_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
-- :cpp:member:`mcpwm_generator_config_t::io_od_mode` 设置是否启用漏极开路输出。
 - :cpp:member:`mcpwm_generator_config_t::pull_up` 和 :cpp:member:`mcpwm_generator_config_t::pull_down` 用来设置是否启用内部上下拉电阻。
 
 分配成功后，:cpp:func:`mcpwm_new_generator` 将返回一个指向已分配生成器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 操作器中没有空闲生成器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
@@ -142,7 +140,6 @@ MCPWM 故障分为两种类型：来自 GPIO 的故障信号和软件故障。
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` 设置故障所使用的 GPIO 编号。
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` 设置故障信号的有效电平。
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
-- :cpp:member:`mcpwm_gpio_fault_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_fault` 将返回一个指向已分配故障的指针。否则，函数将返回错误代码。具体来说，当指定 MCPWM 组中没有空闲 GPIO 故障时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -163,7 +160,6 @@ MCPWM 同步源
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` 设置同步源使用的 GPIO 编号。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` 设置同步信号在下降沿是否有效。
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` 和 :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
 
 分配成功后，:cpp:func:`mcpwm_new_gpio_sync_src` 将返回一个指向已分配同步源的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲 GPIO 时钟源时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -207,8 +203,6 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_up` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::invert_cap_signal` 设置是否取反捕获信号。
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::keep_io_conf_at_exit` 设置是否在删除通道时保留 GPIO 的相关配置。
 
 分配成功后，:cpp:func:`mcpwm_new_capture_channel` 将返回一个指向已分配捕获通道的指针。否则，函数将返回错误代码。具体来说，当捕获定时器中没有空闲捕获通道时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 

@@ -145,8 +145,7 @@ typedef struct {
         uint32_t pull_down: 1;         /*!< Whether to pull down internally */
         uint32_t invert_cap_signal: 1; /*!< Invert the input capture signal */
         uint32_t io_loop_back: 1;      /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t keep_io_conf_at_exit: 1; /*!< For debug/test, whether to keep the GPIO configuration when capture channel is deleted.
-                                            By default, driver will reset the GPIO pin at exit. */
+        uint32_t keep_io_conf_at_exit: 1 __attribute__((deprecated)); /*!< Deprecated. Driver won't change the GPIO configuration in deinilization. */
     } flags;                           /*!< Extra configuration flags for capture channel */
 } mcpwm_capture_channel_config_t;
 
