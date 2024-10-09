@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_private/critical_section.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "soc/interrupts.h" // For interrupt index
@@ -84,10 +85,11 @@
 
 const char *HCD_DWC_TAG = "HCD DWC";
 
-#define HCD_ENTER_CRITICAL_ISR()                portENTER_CRITICAL_ISR(&hcd_lock)
-#define HCD_EXIT_CRITICAL_ISR()                 portEXIT_CRITICAL_ISR(&hcd_lock)
-#define HCD_ENTER_CRITICAL()                    portENTER_CRITICAL(&hcd_lock)
-#define HCD_EXIT_CRITICAL()                     portEXIT_CRITICAL(&hcd_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(hcd_lock);
+#define HCD_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&hcd_lock)
+#define HCD_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&hcd_lock)
+#define HCD_ENTER_CRITICAL()           esp_os_enter_critical(&hcd_lock)
+#define HCD_EXIT_CRITICAL()            esp_os_exit_critical(&hcd_lock)
 
 #define HCD_CHECK(cond, ret_val) ({                                         \
             if (!(cond)) {                                                  \
@@ -270,7 +272,6 @@ typedef struct {
     intr_handle_t isr_hdl;
 } hcd_obj_t;
 
-static portMUX_TYPE hcd_lock = portMUX_INITIALIZER_UNLOCKED;
 static hcd_obj_t *s_hcd_obj = NULL;     // Note: "s_" is for the static pointer
 
 // ------------------------------------------------- Forward Declare ---------------------------------------------------

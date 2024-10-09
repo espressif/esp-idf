@@ -9,10 +9,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/queue.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "esp_err.h"
 #include "esp_heap_caps.h"
+#include "esp_private/critical_section.h"
 #include "esp_log.h"
 #include "usb_private.h"
 #include "hcd.h"
@@ -107,16 +106,16 @@ typedef struct {
 } hub_driver_t;
 
 static hub_driver_t *p_hub_driver_obj = NULL;
-static portMUX_TYPE hub_driver_lock = portMUX_INITIALIZER_UNLOCKED;
 
 const char *HUB_DRIVER_TAG = "HUB";
 
-#define HUB_DRIVER_ENTER_CRITICAL_ISR()                 portENTER_CRITICAL_ISR(&hub_driver_lock)
-#define HUB_DRIVER_EXIT_CRITICAL_ISR()                  portEXIT_CRITICAL_ISR(&hub_driver_lock)
-#define HUB_DRIVER_ENTER_CRITICAL()                     portENTER_CRITICAL(&hub_driver_lock)
-#define HUB_DRIVER_EXIT_CRITICAL()                      portEXIT_CRITICAL(&hub_driver_lock)
-#define HUB_DRIVER_ENTER_CRITICAL_SAFE()                portENTER_CRITICAL_SAFE(&hub_driver_lock)
-#define HUB_DRIVER_EXIT_CRITICAL_SAFE()                 portEXIT_CRITICAL_SAFE(&hub_driver_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(hub_driver_lock);
+#define HUB_DRIVER_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&hub_driver_lock)
+#define HUB_DRIVER_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&hub_driver_lock)
+#define HUB_DRIVER_ENTER_CRITICAL()           esp_os_enter_critical(&hub_driver_lock)
+#define HUB_DRIVER_EXIT_CRITICAL()            esp_os_exit_critical(&hub_driver_lock)
+#define HUB_DRIVER_ENTER_CRITICAL_SAFE()      esp_os_enter_critical_safe(&hub_driver_lock)
+#define HUB_DRIVER_EXIT_CRITICAL_SAFE()       esp_os_exit_critical_safe(&hub_driver_lock)
 
 #define HUB_DRIVER_CHECK(cond, ret_val) ({              \
             if (!(cond)) {                              \
