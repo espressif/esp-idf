@@ -206,7 +206,7 @@ void class_driver_task(void *arg)
     SemaphoreHandle_t mux_lock = xSemaphoreCreateMutex();
     if (mux_lock == NULL) {
         ESP_LOGE(TAG, "Unable to create class driver mutex");
-        vTaskDelete(NULL);
+        vTaskSuspend(NULL);
         return;
     }
 
@@ -256,7 +256,7 @@ void class_driver_task(void *arg)
     if (mux_lock != NULL) {
         vSemaphoreDelete(mux_lock);
     }
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 void class_driver_client_deregister(void)
