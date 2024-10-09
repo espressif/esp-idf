@@ -105,7 +105,7 @@ static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *c
 {
     dns_resolve_entry_t *resolve_entry = (dns_resolve_entry_t *)callback_arg;
     if (resolve_entry && resolve_entry->found) {
-        if (lwip_strnicmp(name, resolve_entry->name, sizeof(resolve_entry->name)) == 0) {
+        if (ipaddr && lwip_strnicmp(name, resolve_entry->name, sizeof(resolve_entry->name)) == 0) {
             ip_addr_t ipaddr_copy = *ipaddr;
             ip6_addr_t nat64_prefix;
             if (ipaddr_copy.type == IPADDR_TYPE_V4 && esp_openthread_get_nat64_prefix(&nat64_prefix) == ESP_OK) {
