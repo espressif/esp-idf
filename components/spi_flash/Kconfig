@@ -109,6 +109,17 @@ menu "Main Flash configuration"
                 This config is used for setting Tsus parameter. Tsus means CS# high to next command after
                 suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
 
+        config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
+            bool "Enable XMC-C series flash chip suspend feature anyway"
+            default n
+            help
+                XMC-C series is regarded as not qualified for the Suspend feature, since its specification
+                has a tRS >= 1ms restriction. We strongly do not suggest using it for the Suspend feature.
+                However, if your product in field has enabled this feature, you may still enable this
+                config option to keep the legacy behavior.
+
+                For new users, DO NOT enable this config.
+
     endmenu
 endmenu
 
