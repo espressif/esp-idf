@@ -228,6 +228,7 @@
 #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
 #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+#define SOC_I2C_SUPPORT_SLEEP_RETENTION        (1)
 
 // /*-------------------------- I2S CAPS ----------------------------------------*/
 // #define SOC_I2S_NUM                 (1U)

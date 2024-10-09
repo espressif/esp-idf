@@ -54,6 +54,9 @@ extern "C" {
 #define I2C_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #endif
 
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define I2C_USE_RETENTION_LINK  (SOC_I2C_SUPPORT_SLEEP_RETENTION && CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 #define I2C_PM_LOCK_NAME_LEN_MAX 16
@@ -119,6 +122,9 @@ struct i2c_bus_t {
     char pm_lock_name[I2C_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
     i2c_bus_mode_t bus_mode; // I2C bus mode
+#if SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool retention_link_created;     // mark if the retention link is created.
+#endif
 };
 
 typedef struct i2c_master_device_list {
@@ -259,6 +265,13 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
  * @return true if the bus is occupied, false if the bus is not occupied.
 */
 bool i2c_bus_occupied(i2c_port_num_t port_num);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param handle I2C bus handle
+ */
+void i2c_create_retention_module(i2c_bus_handle_t handle);
 
 #ifdef __cplusplus
 }

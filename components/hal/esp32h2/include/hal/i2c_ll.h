@@ -76,9 +76,6 @@ typedef enum {
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 #define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2500)  // Approximate value for SCL timeout regs (in us).
 
-// I2C sleep retention module
-#define I2C_SLEEP_RETENTION_MODULE(i2c_num) ((i2c_num == 0) ? SLEEP_RETENTION_MODULE_I2C0 : SLEEP_RETENTION_MODULE_I2C1)
-
 /**
  * @brief  Calculate I2C bus frequency
  *         Note that the clock accuracy is affected by the external pull-up resistor,

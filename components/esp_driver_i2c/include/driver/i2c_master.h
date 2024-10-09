@@ -33,6 +33,9 @@ typedef struct {
     size_t trans_queue_depth;             /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/
     struct {
         uint32_t enable_internal_pullup: 1;  /*!< Enable internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. Recommend proper external pull-up if possible */
+        uint32_t allow_pd:               1;  /*!< If set, the driver will backup/restore the I2C registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off I2C's power domain.
+                                              This can save power, but at the expense of more RAM being consumed */
     } flags;                              /*!< I2C master config flags */
 } i2c_master_bus_config_t;
 
