@@ -153,7 +153,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias_init      = 1,   \
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
-        .slp_mem_dbias   = 0, \
+        .slp_mem_dbias   = 8, /*bit[3] control ext_ldo_1 xpd for ECO2*/ \
         .slp_logic_dbias = 0, \
     }, \
     .regulator1 = {             \
@@ -173,7 +173,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
     .regulator0 = {             \
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
-        .slp_mem_dbias   = 0, \
+        .slp_mem_dbias   = 8, /*bit[3] control ext_ldo_1 xpd for ECO2*/ \
         .slp_logic_dbias = 0, \
     }, \
     .regulator1 = {             \
