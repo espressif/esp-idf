@@ -44,8 +44,8 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
-    :esp32 or esp32s2: * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_bss`
+    * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
 
@@ -94,36 +94,32 @@ If a suitable block of preferred internal/external memory is not available, the 
 
 Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
 
-.. only:: SOC_SPIRAM_SUPPORTED
+.. _external_ram_config_bss:
 
-    .. _external_ram_config_bss:
+Allow .bss Segment to be Placed in External Memory
+-------------------------------------------------------
 
-    Allow .bss Segment to be Placed in External Memory
-    -------------------------------------------------------
+Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, wpa_supplicant and bluedroid ESP-IDF libraries.
 
-    If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, wpa_supplicant and bluedroid ESP-IDF libraries.
+Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
-    Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
+It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
 
-    It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
+This option reduces the internal static memory used by the BSS segment.
 
-    This option reduces the internal static memory used by the BSS segment.
-
-    Remaining external RAM can also be added to the capability heap allocator using the method shown above.
+Remaining external RAM can also be added to the capability heap allocator using the method shown above.
 
 
-.. only:: esp32
+.. _external_ram_config_noinit:
 
-    .. _external_ram_config_noinit:
+Allow .noinit Segment to Be Placed in External Memory
+--------------------------------------------------------------
 
-    Allow .noinit Segment to be Placed in External Memory
-    --------------------------------------------------------------
+Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
-
-    By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
+By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
 
 Restrictions
 ============

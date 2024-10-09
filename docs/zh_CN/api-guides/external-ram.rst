@@ -41,8 +41,8 @@ ESP-IDF 完全支持将片外 RAM 集成到您的应用程序中。在启动并�
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
-    :esp32 or esp32s2: * :ref:`external_ram_config_bss`
-    :esp32: * :ref:`external_ram_config_noinit`
+    * :ref:`external_ram_config_bss`
+    * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
 
@@ -91,36 +91,32 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
 由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部内存池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 标志从该池中分配存储器。
 
-.. only:: SOC_SPIRAM_SUPPORTED
+.. _external_ram_config_bss:
 
-    .. _external_ram_config_bss:
+允许 .bss 段放入片外存储器
+-----------------------------------
 
-    允许 .bss 段放入片外存储器
-    -----------------------------------
+通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与其它三个选项互不影响。
 
-    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与其它三个选项互不影响。
+启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp, wpa_supplicant 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
-    启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp, wpa_supplicant 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+``EXT_RAM_BSS_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
 
-    ``EXT_RAM_BSS_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
+也可以使用链接器片段方案 ``extram_bss`` 将组件或库的 BSS 段放到片外 RAM 中。
 
-    也可以使用链接器片段方案 ``extram_bss`` 将组件或库的 BSS 段放到片外 RAM 中。
+启用此选项可以减少 BSS 段占用的内部静态存储。
 
-    启用此选项可以减少 BSS 段占用的内部静态存储。
-
-    剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
+剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
 
 
-.. only:: esp32
+.. _external_ram_config_noinit:
 
-    .. _external_ram_config_noinit:
+允许 .noinit 段放入片外存储器
+-------------------------------------
 
-    允许 .noinit 段放入片外存储器
-    -------------------------------------
+通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
 
-    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，外部 RAM 中提供的地址空间区域将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
-
-    通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
+通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
 
 片外 RAM 使用限制
 ===================
