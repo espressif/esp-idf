@@ -225,6 +225,11 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
+    # CONFIG_PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS==y, it includes partitions_two_ota_encr_nvs.csv
+    FACTORY_ADDRESS = '0x20000'
+    OTA_0_ADDRESS = '0x120000'
+    # OTA_1_ADDRESS = '0x220000'
+
     # start test
     # Erase flash
     dut.serial.erase_flash()
@@ -234,7 +239,7 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
     thread1.daemon = True
     thread1.start()
     try:
-        dut.expect(f'Loaded app from partition at offset {OTA_0_ADDRESS}', timeout=30)
+        dut.expect(f'Loaded app from partition at offset {FACTORY_ADDRESS}', timeout=30)
         dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
         # Parse IP address of STA
         env_name = 'flash_encryption_wifi_high_traffic' if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True else None
@@ -245,7 +250,7 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
         dut.write(f'https://{host_ip}:8000/simple_ota.bin')
         dut.expect('OTA Succeed, Rebooting...', timeout=60)
         # after reboot
-        dut.expect(f'Loaded app from partition at offset {OTA_1_ADDRESS}', timeout=30)
+        dut.expect(f'Loaded app from partition at offset {OTA_0_ADDRESS}', timeout=30)
         dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
         dut.expect('OTA example app_main start', timeout=10)
     finally:
