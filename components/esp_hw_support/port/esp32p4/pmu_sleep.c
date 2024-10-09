@@ -29,6 +29,7 @@
 #include "hal/pmu_hal.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/lp_sys_ll.h"
+#include "hal/clk_gate_ll.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
 #include "esp_rom_sys.h"
@@ -200,6 +201,10 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
         config->analog.hp_sys.analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
         config->analog.hp_sys.analog.dbias = HP_CALI_ACTIVE_DBIAS_DEFAULT;
+    }
+
+    if (sleep_flags & RTC_SLEEP_LP_PERIPH_USE_XTAL) {
+        _clk_gate_ll_xtal_to_lp_periph_en(true);
     }
 
     config->power = power_default;

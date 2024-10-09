@@ -222,7 +222,7 @@ typedef struct {
     } domain[ESP_PD_DOMAIN_MAX];
     portMUX_TYPE lock;
     uint64_t sleep_duration;
-    uint32_t wakeup_triggers : 15;
+    uint32_t wakeup_triggers : 20;
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t ext1_trigger_mode : 22;  // 22 is the maximum RTCIO number in all chips
     uint32_t ext1_rtc_gpio_mask : 22;
@@ -916,6 +916,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]) {
         sleep_flags |= RTC_SLEEP_XTAL_AS_RTC_FAST;
     }
+
+#if SOC_LP_VAD_SUPPORTED
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_LP_USE_XTAL_MODE] && !deep_sleep) {
+        sleep_flags |= RTC_SLEEP_LP_PERIPH_USE_XTAL;
+    }
+#endif
 
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
@@ -1645,6 +1651,14 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
+#if SOC_LP_VAD_SUPPORTED
+esp_err_t esp_sleep_enable_vad_wakeup(void)
+{
+    s_config.wakeup_triggers |= RTC_LP_VAD_TRIG_EN;
+    return esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, true);
+}
+#endif
+
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 {
     if (sleep_duration < 0) {
@@ -2166,6 +2180,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_LP_CORE_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
 #endif
+#if SOC_LP_VAD_SUPPORTED
+    } else if (wakeup_cause & RTC_LP_VAD_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_VAD;
+#endif
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -2229,6 +2247,7 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
                                 [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
                                 [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
                                 [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
+                                [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
                             }[mode],
                             s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
                             s_sleep_sub_mode_ref_cnt[mode]);

@@ -38,6 +38,7 @@ typedef enum {
     ESP_SLEEP_ULTRA_LOW_MODE,             //!< In ultra low mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
     ESP_SLEEP_RTC_FAST_USE_XTAL_MODE,     //!< The mode in which the crystal is used as the RTC_FAST clock source, need keep XTAL on in HP_SLEEP mode when ULP is working.
     ESP_SLEEP_DIG_USE_XTAL_MODE,          //!< The mode requested by digital peripherals to keep XTAL clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the XTAL domain config by esp_sleep_pd_config)
+    ESP_SLEEP_LP_USE_XTAL_MODE,           //!< The mode requested by lp peripherals to keep XTAL clock on during sleep. Only valid for lightsleep.
     ESP_SLEEP_MODE_MAX,
 } esp_sleep_sub_mode_t;
 

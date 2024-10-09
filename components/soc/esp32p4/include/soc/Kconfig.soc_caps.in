@@ -1859,6 +1859,14 @@ config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
 
+config SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+    bool
+    default y
+
+config SOC_SLEEP_TGWDT_STOP_WORKAROUND
+    bool
+    default y
+
 config SOC_PSRAM_VDD_POWER_MPLL
     bool
     default y

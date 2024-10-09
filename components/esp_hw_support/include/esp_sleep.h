@@ -118,6 +118,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
     ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
+    ESP_SLEEP_WAKEUP_VAD,          //!< Wakeup caused by VAD
 } esp_sleep_source_t;
 
 /**
@@ -178,6 +179,16 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+#if SOC_LP_VAD_SUPPORTED
+/**
+ * @brief Enable wakeup by VAD
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_vad_wakeup(void);
+#endif
 
 #if SOC_TOUCH_SENSOR_SUPPORTED
 /**
