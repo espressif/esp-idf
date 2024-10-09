@@ -510,7 +510,7 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    /* Check if the buffer and length can qualify the requirments */
+    /* Check if the buffer and length can qualify the requirements */
     if (esp_flash_encryption->flash_encryption_check(address, length) != true) {
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -599,8 +599,39 @@ spi_flash_caps_t spi_flash_chip_generic_get_caps(esp_flash_t *chip)
     // 32M-bits address support
 
     // flash suspend support
-    // Only `XMC` support suspend for now.
+    // XMC-D support suspend
+    if (chip->chip_id >> 16 == 0x46) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+    }
+
+    // XMC-D support suspend (some D series flash chip begin with 0x20, difference checked by SFDP)
     if (chip->chip_id >> 16 == 0x20) {
+        uint8_t data = 0;
+        spi_flash_trans_t t = {
+            .command = CMD_RDSFDP,
+            .address_bitlen = 24,
+            .address = 0x32,
+            .mosi_len = 0,
+            .mosi_data = 0,
+            .miso_len = 1,
+            .miso_data = &data,
+            .dummy_bitlen = 8,
+        };
+        chip->host->driver->common_command(chip->host, &t);
+        if((data & 0x8) == 0x8) {
+            caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+        }
+    }
+
+#if CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
+    // XMC-C suspend has big risk. But can enable this anyway.
+    if (chip->chip_id >> 16 == 0x20) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+    }
+#endif
+
+    // FM support suspend
+    if (chip->chip_id >> 16 == 0xa1) {
         caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
     }
     // flash read unique id.
