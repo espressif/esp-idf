@@ -8,6 +8,7 @@
 
 - `esp_log_buffer_hex` 已弃用，应使用 `ESP_LOG_BUFFER_HEX` 替代。
 - `esp_log_buffer_char` 已弃用，应使用 `ESP_LOG_BUFFER_CHAR` 替代。
+- ``CONFIG_LOG_COLORS`` 的默认值设置为 false。默认情况下，IDF Monitor 在主机端添加颜色。如需在其他控制台监视器的日志输出中启用颜色，请将 ``CONFIG_LOG_COLORS`` 设置为 true。如需在 IDF Monitor 中关闭自动的日志颜色显示，请运行命令： ``idf.py monitor --disable-auto-color``。
 
 ESP ROM
 ---------

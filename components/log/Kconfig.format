@@ -2,7 +2,7 @@ menu "Format"
 
     config LOG_COLORS
         bool "Color"
-        default y
+        default n
         help
             Enable ANSI terminal color codes.
             In order to view these, your terminal program must support ANSI color codes.

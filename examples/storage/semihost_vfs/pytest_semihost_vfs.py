@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import os
 import shutil
 import tempfile
@@ -42,7 +41,10 @@ def prepare() -> t.Generator[None, None, None]:
 def test_semihost_vfs(dut: IdfDut) -> None:
     dut.expect_exact('example: Switch to semihosted stdout')
     dut.expect_exact('example: Switched back to UART stdout')
-    dut.expect_exact('example: Wrote 2798 bytes')
+    if dut.app.sdkconfig.get('LOG_COLORS') is True:
+        dut.expect_exact('example: Wrote 2798 bytes')
+    else:
+        dut.expect_exact('example: Wrote 2776 bytes')
     dut.expect_exact('====================== HOST DATA START =========================')
 
     with open(HOST_FILE_PATH) as f:
