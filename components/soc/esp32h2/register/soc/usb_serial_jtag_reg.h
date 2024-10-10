@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1171,51 +1171,11 @@ extern "C" {
 #define USB_SERIAL_JTAG_USB_BUS_RESET_ST_V  0x00000001U
 #define USB_SERIAL_JTAG_USB_BUS_RESET_ST_S  0
 
-/** USB_SERIAL_JTAG_SERIAL_EP_TIMEOUT0_REG register
- *  USB uart out endpoint timeout configuration.
- */
-#define USB_SERIAL_JTAG_SERIAL_EP_TIMEOUT0_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x6c)
-/** USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN : R/W; bitpos: [0]; default: 0;
- *  USB serial out ep timeout enable. When a timeout event occurs, serial out ep buffer
- *  is automatically cleared and reg_serial_timeout_status is asserted.
- */
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN    (BIT(0))
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN_M  (USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN_V << USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN_S)
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN_V  0x00000001U
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_EN_S  0
-/** USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS : R/WTC/SS; bitpos: [1]; default: 0;
- *  Serial out ep triggers a timeout event.
- */
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS    (BIT(1))
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_M  (USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_V << USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_S)
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_V  0x00000001U
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_S  1
-/** USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR : WT; bitpos: [2]; default: 0;
- *  Write 1 to clear reg_serial_timeout_status.
- */
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR    (BIT(2))
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR_M  (USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR_V << USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR_S)
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR_V  0x00000001U
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_STATUS_CLR_S  2
-
-/** USB_SERIAL_JTAG_SERIAL_EP_TIMEOUT1_REG register
- *  USB uart out endpoint timeout configuration.
- */
-#define USB_SERIAL_JTAG_SERIAL_EP_TIMEOUT1_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x70)
-/** USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX : R/W; bitpos: [31:0]; default: 4800768;
- *  USB serial out ep timeout max threshold value, indicates the maximum time that
- *  waiting for ESP to take away data in memory. This value is in steps of 20.83ns.
- */
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX    0xFFFFFFFFU
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX_M  (USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX_V << USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX_S)
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX_V  0xFFFFFFFFU
-#define USB_SERIAL_JTAG_SERIAL_TIMEOUT_MAX_S  0
-
 /** USB_SERIAL_JTAG_DATE_REG register
  *  Date register
  */
 #define USB_SERIAL_JTAG_DATE_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x80)
-/** USB_SERIAL_JTAG_DATE : R/W; bitpos: [31:0]; default: 36770368;
+/** USB_SERIAL_JTAG_DATE : R/W; bitpos: [31:0]; default: 34640416;
  *  register version.
  */
 #define USB_SERIAL_JTAG_DATE    0xFFFFFFFFU

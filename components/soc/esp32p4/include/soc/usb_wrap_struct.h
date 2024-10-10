@@ -121,7 +121,7 @@ typedef union {
          */
         uint32_t test_enable:1;
         /** test_usb_wrap_oe : R/W; bitpos: [1]; default: 0;
-         *  USB pad one in test.
+         *  USB pad oen in test.
          */
         uint32_t test_usb_wrap_oe:1;
         /** test_tx_dp : R/W; bitpos: [2]; default: 0;
