@@ -57,10 +57,6 @@ extern "C" {
 #define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
     (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
 
-// UART sleep retention module
-#define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
-                                                     (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : -1)
-
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1 << 0),

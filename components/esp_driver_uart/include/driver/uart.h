@@ -47,9 +47,9 @@ typedef struct {
 #endif
     };
     struct {
-        uint32_t backup_before_sleep: 1;    /*!< If set, the driver will backup/restore the HP UART registers before entering/after exiting sleep mode.
-                                                 By this approach, the system can power off HP UART's power domain.
-                                                 This can save power, but at the expense of more RAM being consumed */
+        uint32_t allow_pd: 1;               /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                                 This can save power, but at the expense of more RAM being consumed to save register context. */
+        uint32_t backup_before_sleep: 1;    /*!< @deprecated, same meaning as allow_pd */
     } flags;                                /*!< Configuration flags */
 } uart_config_t;
 

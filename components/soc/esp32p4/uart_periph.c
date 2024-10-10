@@ -253,22 +253,27 @@ static const regdma_entries_config_t uart4_regdma_entries[] = UART_SLEEP_RETENTI
 
 const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
     [0] = {
+        .module = SLEEP_RETENTION_MODULE_UART0,
         .regdma_entry_array = uart0_regdma_entries,
         .array_size = ARRAY_SIZE(uart0_regdma_entries),
     },
     [1] = {
+        .module = SLEEP_RETENTION_MODULE_UART1,
         .regdma_entry_array = uart1_regdma_entries,
         .array_size = ARRAY_SIZE(uart1_regdma_entries),
     },
     [2] = {
+        .module = SLEEP_RETENTION_MODULE_UART2,
         .regdma_entry_array = uart2_regdma_entries,
         .array_size = ARRAY_SIZE(uart2_regdma_entries),
     },
     [3] = {
+        .module = SLEEP_RETENTION_MODULE_UART3,
         .regdma_entry_array = uart3_regdma_entries,
         .array_size = ARRAY_SIZE(uart3_regdma_entries),
     },
     [4] = {
+        .module = SLEEP_RETENTION_MODULE_UART4,
         .regdma_entry_array = uart4_regdma_entries,
         .array_size = ARRAY_SIZE(uart4_regdma_entries),
     },

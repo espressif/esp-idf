@@ -45,13 +45,6 @@ extern "C" {
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
 
-// UART sleep retention module
-#define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
-                                                     (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : \
-                                                     (uart_num == UART_NUM_2) ? SLEEP_RETENTION_MODULE_UART2 : \
-                                                     (uart_num == UART_NUM_3) ? SLEEP_RETENTION_MODULE_UART3 : \
-                                                     (uart_num == UART_NUM_4) ? SLEEP_RETENTION_MODULE_UART4 : -1)
-
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1 << 0),
