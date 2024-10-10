@@ -15,3 +15,7 @@ const ledc_signal_conn_t ledc_periph_signal[1] = {
         .sig_out0_idx = LEDC_LS_SIG_OUT0_IDX,
     }
 };
+
+const ledc_reg_retention_info_t ledc_reg_retention_info = {
+	.module_id = SLEEP_RETENTION_MODULE_LEDC,
+};

@@ -152,6 +152,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - SYSTIMER
             :SOC_TIMER_SUPPORT_SLEEP_RETENTION: - GPTimer
             :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
+            :SOC_LEDC_SUPPORT_SLEEP_RETENTION: - LEDC
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
@@ -170,7 +171,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - SPI2
             - PCNT
             - USB-Serial-JTAG
-            - LEDC
             - MCPWM
             - SARADC
             - SDIO

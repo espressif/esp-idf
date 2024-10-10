@@ -451,6 +451,10 @@ config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
 
+config SOC_LEDC_TIMER_NUM
+    int
+    default 4
+
 config SOC_LEDC_CHANNEL_NUM
     int
     default 6

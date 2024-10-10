@@ -483,6 +483,10 @@ config SOC_LEDC_SUPPORT_HS_MODE
     bool
     default y
 
+config SOC_LEDC_TIMER_NUM
+    int
+    default 4
+
 config SOC_LEDC_CHANNEL_NUM
     int
     default 8

@@ -153,6 +153,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_TIMER_SUPPORT_SLEEP_RETENTION: - GPTimer
             :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
             :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
+            :SOC_LEDC_SUPPORT_SLEEP_RETENTION: - LEDC
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
@@ -170,7 +171,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - SPI2
             - PCNT
             - USB-Serial-JTAG
-            - LEDC
             - MCPWM
             - SARADC
             - SDIO

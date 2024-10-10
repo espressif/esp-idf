@@ -6,8 +6,6 @@
 
 #pragma once
 
-// TODO: IDF-5731
-
 #define PMU_ICG_APB_ENA_CORE0_CPU          0
 #define PMU_ICG_APB_ENA_CORE1_CPU          1
 #define PMU_ICG_APB_ENA_CORE0_CLIC         2

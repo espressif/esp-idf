@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,18 @@ extern "C" {
 #define LEDC_ERR_VAL            (-1)
 
 /**
+ * @brief Strategies to be applied to the LEDC channel during system Light-sleep period
+ */
+typedef enum {
+    LEDC_SLEEP_MODE_NO_ALIVE_NO_PD = 0,  /*!< The default mode: no LEDC output, and no power off the LEDC power domain. */
+    LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD,   /*!< The low-power-consumption mode: no LEDC output, and allow to power off the LEDC power domain.
+                                              This can save power, but at the expense of more RAM being consumed to save register context.
+                                              This option is only available on targets that support TOP domain to be powered down. */
+    LEDC_SLEEP_MODE_KEEP_ALIVE,          /*!< The high-power-consumption mode: keep LEDC output when the system enters Light-sleep. */
+    LEDC_SLEEP_MODE_INVALID,             /*!< Invalid LEDC sleep mode strategy */
+} ledc_sleep_mode_t;
+
+/**
  * @brief Configuration parameters of LEDC channel for ledc_channel_config function
  */
 typedef struct {
@@ -44,6 +56,7 @@ typedef struct {
     ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - LEDC_TIMER_MAX-1) */
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the range is [0, (2**duty_resolution)-1] */
+    ledc_sleep_mode_t sleep_mode;   /*!< choose the desired behavior for the LEDC channel in Light-sleep */
     struct {
         unsigned int output_invert: 1;/*!< Enable (1) or disable (0) gpio output invert */
     } flags;                        /*!< LEDC flags */

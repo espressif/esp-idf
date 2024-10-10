@@ -245,6 +245,7 @@
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_TIMER_NUM                  (4)
 #define SOC_LEDC_CHANNEL_NUM                (6)
 #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
 #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
