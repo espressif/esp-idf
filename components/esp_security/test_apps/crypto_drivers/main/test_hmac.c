@@ -8,11 +8,9 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
-
-#if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_ESP_SECURITY_ENABLE_FPGA_TESTS
 
 /* Allow testing varying message lengths (truncating the same message)
    for various results */
@@ -1299,7 +1297,7 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     }
 }
 
-#endif // CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_ESP_SECURITY_ENABLE_FPGA_TESTS
 
 /**
  * This test is just a parameter test and does not write any keys to efuse.
@@ -1315,5 +1313,3 @@ TEST_CASE("HMAC key out of range", "[hw_crypto]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY0 - 1, message, 47, hmac));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY5 + 1, message, 47, hmac));
 }
-
-#endif // SOC_HMAC_SUPPORTED
