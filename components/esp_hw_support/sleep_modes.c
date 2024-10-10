@@ -917,7 +917,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     uint32_t sleep_flags = pd_flags;
 
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_DIG_USE_RC_FAST_MODE] && !deep_sleep) {
-        pd_flags &= ~RTC_SLEEP_PD_INT_8M;
+        sleep_flags &= ~RTC_SLEEP_PD_INT_8M;
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
