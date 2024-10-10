@@ -560,7 +560,7 @@ static bool handle_port_status(ext_port_t *ext_port)
 {
     bool need_processing = false;
     if (port_is_in_reset(ext_port)) {
-        ESP_LOGW(EXT_PORT_TAG, "[%d:%d] Port still in reset, wait and repeat get status...",
+        ESP_LOGD(EXT_PORT_TAG, "[%d:%d] Port still in reset, wait and repeat get status...",
                  ext_port->constant.parent_dev_addr,
                  ext_port->constant.port_num);
         port_request_status(ext_port);
