@@ -24,6 +24,7 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/platform.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #define TRACE_CHECK(_fn, _state) \
 ({ \

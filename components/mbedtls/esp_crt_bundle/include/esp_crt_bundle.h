@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@ extern "C" {
  *
  * @return
  *             - ESP_OK  if adding certificates was successful.
- *             - Other   if an error occured or an action must be taken by the calling process.
+ *             - Other   if an error occurred or an action must be taken by the calling process.
  */
 esp_err_t esp_crt_bundle_attach(void *conf);
 
@@ -55,10 +55,19 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf);
  *
  * @return
  *             - ESP_OK  if adding certificates was successful.
- *             - Other   if an error occured or an action must be taken by the calling process.
+ *             - Other   if an error occurred or an action must be taken by the calling process.
  */
 esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size);
 
+/**
+ * @brief   Check if the given CA certificate chain is the default "dummy"
+ *          certificate chain attached by the esp_crt_bundle
+ *
+ * @param ca_chain  A pointer to the CA chain.
+ * @return true     if the ca_chain is the dummy CA chain attached by esp_crt_bundle
+ * @return false    otherwise
+ */
+bool esp_crt_bundle_in_use(const mbedtls_x509_crt* ca_chain);
 
 #ifdef __cplusplus
 }
