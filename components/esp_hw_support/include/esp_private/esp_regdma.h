@@ -396,9 +396,9 @@ void *regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint3
  */
 void *regdma_find_next_module_link_head(void *link, void *tail, int entry, uint32_t module);
 
-#define regdma_link_init_safe(pcfg, branch, module, ...)    regdma_link_init((pcfg), (branch), (module), __VA_NARG__(__VA_ARGS__), ##__VA_ARGS__)
+#define regdma_link_init_safe(pcfg, branch, module, ...)    regdma_link_init((pcfg), (branch), (module), ESP_VA_NARG(__VA_ARGS__), ##__VA_ARGS__)
 
-#define regdma_link_update_next_safe(link, ...)             regdma_link_update_next((link), __VA_NARG__(__VA_ARGS__), ##__VA_ARGS__)
+#define regdma_link_update_next_safe(link, ...)             regdma_link_update_next((link), ESP_VA_NARG(__VA_ARGS__), ##__VA_ARGS__)
 
 #endif // SOC_PAU_SUPPORTED
 

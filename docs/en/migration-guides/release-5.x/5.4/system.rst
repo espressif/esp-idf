@@ -3,6 +3,11 @@ System
 
 :link_to_translation:`zh_CN:[中文]`
 
+ESP-Common
+----------
+
+``__VA_NARG__`` and its related macros have been re-named to avoid naming collisions, use the new name with ``ESP`` pre-fix, e.g. ``ESP_VA_NARG`` instead.
+
 Log
 ---
 

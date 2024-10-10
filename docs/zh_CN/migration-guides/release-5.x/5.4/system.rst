@@ -3,6 +3,11 @@
 
 :link_to_translation:`en:[English]`
 
+ESP-Common
+----------
+
+``__VA_NARG__`` 及其相关宏已被重新命名以避免命名冲突，请使用带有 ESP 前缀的新名称，例如 ``ESP_VA_NARG``。
+
 日志
 ------
 
