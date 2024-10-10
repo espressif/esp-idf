@@ -352,7 +352,7 @@ inline static bool esp_stack_ptr_in_dram(uint32_t sp)
     return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 /**
  * @brief Check if the stack pointer is in external ram
  *
@@ -374,7 +374,7 @@ __attribute__((always_inline))
 inline static bool esp_stack_ptr_is_sane(uint32_t sp)
 {
     return esp_stack_ptr_in_dram(sp)
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
         || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP

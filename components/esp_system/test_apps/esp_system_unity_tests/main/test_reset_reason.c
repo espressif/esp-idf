@@ -318,7 +318,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
                           do_brownout,
                           check_reset_reason_brownout);
 
-#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 #ifndef CONFIG_FREERTOS_UNICORE
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
@@ -402,6 +402,6 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a ta
 
 #endif //CONFIG_IDF_TARGET_ARCH_XTENSA
 #endif // CONFIG_FREERTOS_UNICORE
-#endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#endif // CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 /* Not tested here: ESP_RST_SDIO */
