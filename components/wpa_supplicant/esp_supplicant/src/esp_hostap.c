@@ -447,6 +447,10 @@ send_resp:
                 omit_rsnxe = true;
             }
 
+            if (hapd->conf->rsn_override_omit_rsnxe) {
+                omit_rsnxe = 1;
+            }
+
             if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
                 status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
             }

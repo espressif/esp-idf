@@ -310,6 +310,7 @@ struct hostapd_bss_config {
 	int *sae_groups;
 #define SAE_ANTI_CLOGGING_THRESHOLD 2 /* max number of commit msg allowed to queue without anti-clogging token request */
 
+    int rsn_override_omit_rsnxe;
 };
 
 
