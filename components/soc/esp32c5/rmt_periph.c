@@ -60,6 +60,7 @@ static const regdma_entries_config_t rmt_regdma_entries[] = {
 
 const rmt_reg_retention_info_t rmt_reg_retention_info[SOC_RMT_GROUPS] = {
     [0] = {
+        .module = SLEEP_RETENTION_MODULE_RMT0,
         .regdma_entry_array = rmt_regdma_entries,
         .array_size = ARRAY_SIZE(rmt_regdma_entries)
     },
