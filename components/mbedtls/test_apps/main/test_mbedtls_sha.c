@@ -563,7 +563,8 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA large buffer", "[hw_crypto]")
 
 #endif //CONFIG_SPIRAM_USE_MALLOC
 
-#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK && !CONFIG_IDF_TARGET_ESP32H2
+// Not enough rtc memory for test on H2
 
 TEST_CASE("mbedtls SHA stack in RTC RAM", "[mbedtls]")
 {

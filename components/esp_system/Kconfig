@@ -92,14 +92,8 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         bool
-        default y if IDF_TARGET_ESP32 && ESP_SYSTEM_SINGLE_CORE_MODE
-        default y if IDF_TARGET_ESP32S2
-        default y if IDF_TARGET_ESP32C3
-        default y if IDF_TARGET_ESP32S3
-        default y if IDF_TARGET_ESP32C6
-        default n if IDF_TARGET_ESP32H2 # IDF-5667
-        default y if IDF_TARGET_ESP32P4
-        default y if IDF_TARGET_ESP32C5
+        default n if IDF_TARGET_ESP32 && !ESP_SYSTEM_SINGLE_CORE_MODE
+        default y
         depends on SOC_RTC_FAST_MEM_SUPPORTED
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -108,9 +102,8 @@ menu "ESP System Settings"
         depends on ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         help
             This config option allows to add RTC fast memory region to system heap with capability
-            similar to that of DRAM region but without DMA. This memory will be consumed first per
-            heap initialization order by early startup services and scheduler related code. Speed
-            wise RTC fast memory operates on APB clock and hence does not have much performance impact.
+            similar to that of DRAM region but without DMA. Speed wise RTC fast memory operates on
+            APB clock and hence does not have much performance impact.
 
     config ESP_SYSTEM_USE_EH_FRAME
         bool "Generate and use eh_frame for backtracing"

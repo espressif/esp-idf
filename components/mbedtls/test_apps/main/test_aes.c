@@ -1540,7 +1540,8 @@ static void __attribute__((unused)) aes_ctr_stream_test_task(void *pv)
     vTaskDelete(NULL);
 }
 
-#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK && !CONFIG_IDF_TARGET_ESP32H2
+// Not enough rtc memory for test on H2
 
 TEST_CASE("mbedtls AES stack in RTC RAM", "[mbedtls]")
 {
@@ -1561,7 +1562,7 @@ TEST_CASE("mbedtls AES stack in RTC RAM", "[mbedtls]")
     vSemaphoreDelete(done_sem);
 }
 
-#endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+#endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK && !CONFIG_IDF_TARGET_ESP32H2
 
 #if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && CONFIG_SPIRAM_USE_MALLOC
 
