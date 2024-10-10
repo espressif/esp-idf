@@ -56,7 +56,7 @@
 //  \#define SOC_RNG_SUPPORTED               1    //TODO: [ESP32C61] IDF-9236
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REG_I2C_SUPPORTED           1
-//  \#define SOC_ETM_SUPPORTED               0
+#define SOC_ETM_SUPPORTED               1
 //  \#define SOC_SDIO_SLAVE_SUPPORTED        0
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
@@ -148,13 +148,13 @@
 #define SOC_AHB_GDMA_VERSION            2U
 #define SOC_GDMA_NUM_GROUPS_MAX         1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    2
-// \#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule TODO: IDF-9964
+#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
 #define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
-// #define SOC_ETM_SUPPORT_SLEEP_RETENTION 1   // Support sleep retention
+#define SOC_ETM_SUPPORT_SLEEP_RETENTION 1   // Support sleep retention
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C61 has 1 GPIO peripheral
@@ -164,7 +164,7 @@
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
 
 // GPIO peripheral has the ETM extension
-//  \#define SOC_GPIO_SUPPORT_ETM          1  //TODO: [ESP32C61] IDF-9318
+#define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
 // On ESP32-C61, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
@@ -340,7 +340,7 @@
 #define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
-// #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
@@ -354,7 +354,7 @@
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_ETM             (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 // #define SOC_MWDT_SUPPORT_XTAL              (1)
