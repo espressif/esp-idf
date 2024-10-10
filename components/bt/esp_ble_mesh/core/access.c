@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "mesh.h"
+#include "tag.h"
 #include "adv.h"
 #include "lpn.h"
 #include "friend.h"
@@ -22,7 +23,9 @@
 #include "fast_prov.h"
 #include "pvnr_mgmt.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #define BLE_MESH_SDU_MAX_LEN    384
 
@@ -814,6 +817,135 @@ static bool ready_to_send(uint16_t dst)
     return false;
 }
 
+#if !CONFIG_BLE_MESH_V11_SUPPORT
+static bool use_friend_cred(uint16_t net_idx, uint16_t dst)
+{
+    /* Currently LPN only supports using NetKey in bt_mesh.sub[0] */
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        net_idx == 0 &&
+        bt_mesh_lpn_match(dst)) {
+        return true;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) &&
+        bt_mesh_friend_match(net_idx, dst)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool bt_mesh_valid_security_cred(struct bt_mesh_net_tx *tx)
+{
+    /* If the message is tagged with immutable-credentials,
+     * then the security credentials shall not be changed
+     * in lower layers.
+     * If not, later a better security credentials could be
+     * chosen for the message.
+     */
+    if (!bt_mesh_tag_immutable_cred(tx->ctx->send_tag)) {
+        return true;
+    }
+
+    if (tx->ctx->send_cred > BLE_MESH_FRIENDSHIP_CRED) {
+        return false;
+    }
+
+    if (tx->ctx->send_cred == BLE_MESH_FRIENDSHIP_CRED &&
+        !use_friend_cred(tx->ctx->net_idx, tx->ctx->addr)) {
+        return false;
+    }
+
+    return true;
+}
+
+void bt_mesh_choose_better_security_cred(struct bt_mesh_net_tx *tx)
+{
+    uint8_t send_cred = 0U;
+    uint8_t send_tag = 0U;
+    uint16_t net_idx = 0U;
+    uint16_t addr = 0U;
+
+    send_cred = tx->ctx->send_cred;
+    send_tag = tx->ctx->send_tag;
+    net_idx = tx->ctx->net_idx;
+    addr = tx->ctx->addr;
+
+    /* If the message is tagged with immutable-credentials,
+     * then the security credentials shall not be changed.
+     */
+    if (bt_mesh_tag_immutable_cred(send_tag)) {
+        return;
+    }
+
+    if (send_cred > BLE_MESH_FRIENDSHIP_CRED) {
+        BT_INFO("Use managed flooding security credentials");
+        tx->ctx->send_cred = BLE_MESH_FLOODING_CRED;
+        return;
+    }
+
+    if (send_cred == BLE_MESH_FRIENDSHIP_CRED) {
+        if (!use_friend_cred(net_idx, addr)) {
+            BT_INFO("Use managed flooding security credentials");
+            tx->ctx->send_cred = BLE_MESH_FLOODING_CRED;
+            tx->ctx->send_tag = send_tag | BLE_MESH_TAG_IMMUTABLE_CRED;
+        } else {
+            /* TODO:
+             * For LPN, do we need to change the friendship security
+             * credentials to managed flooding credentials?
+             * If changed, this could increase the possibility that
+             * the corresponding Friend node receives this message.
+             */
+        }
+        return;
+    }
+
+    /* If the message is destinated to a LPN, the following could be
+     * introduced to send the message with the friendship credentials.
+     *
+     * For LPN, this optimization should not be introduced, since it
+     * may cause the message failed to received by the Friend node,
+     * using friendship credentials will make the message can not be
+     * relayed by other mesh nodes.
+     */
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) &&
+        BLE_MESH_ADDR_IS_UNICAST(addr) &&
+        bt_mesh_friend_match(net_idx, addr)) {
+        BT_INFO("Use friendship security credentials");
+        tx->ctx->send_cred = BLE_MESH_FRIENDSHIP_CRED;
+        tx->ctx->send_tag = send_tag | BLE_MESH_TAG_IMMUTABLE_CRED;
+        return;
+    }
+
+    /**
+     * Spec 3.7.3.1
+     * The Low power node in friendship should use friendship security
+     * material.
+     *
+     * But in Spec 3.6.6.2
+     * Depending on the value of the Publish Friendship Credentials Flag
+     * (see Section 4.2.3.4), the Low Power node model publishes messages
+     * using either the friendship security credentials or the managed
+     * flooding security credentials (see Section 3.9.6.3.1).
+     *
+     * So use the BLE_MESH_TAG_IMMUTABLE_CRED to indicate that the
+     * credentials of the message should not be changed when the
+     * message is sent by model publishing, even though the spec
+     * didn't require this flag to be set when model publishing.
+    */
+
+#if CONFIG_BLE_MESH_LOW_POWER
+    if (BLE_MESH_ADDR_IS_UNICAST(addr) &&
+        bt_mesh.lpn.frnd == addr &&
+        !bt_mesh_tag_immutable_cred(send_tag)) {
+        tx->ctx->send_cred = BLE_MESH_FRIENDSHIP_CRED;
+        tx->ctx->send_tag = send_tag | BLE_MESH_TAG_IMMUTABLE_CRED;
+        return;
+    }
+#endif
+}
+#endif /* !CONFIG_BLE_MESH_V11_SUPPORT */
+
 static int model_send(struct bt_mesh_model *model,
                       struct bt_mesh_net_tx *tx, bool implicit_bind,
                       struct net_buf_simple *msg,
@@ -1108,11 +1240,13 @@ size_t bt_mesh_rx_devkey_size(void)
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {
         size = 1;
+#if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_dev_key_ca_valid()) {
             size += 1;
         }
+#endif /* CONFIG_BLE_MESH_RPR_SRV */
     }
-#endif
+#endif /* CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER */
 
 #if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioner_en()) {
@@ -1122,9 +1256,11 @@ size_t bt_mesh_rx_devkey_size(void)
 
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     size = 1;
+#if CONFIG_BLE_MESH_RPR_SRV
     if (bt_mesh_dev_key_ca_valid()) {
         size += 1;
     }
+#endif /* CONFIG_BLE_MESH_RPR_SRV */
     if (bt_mesh_is_provisioner_en()) {
         size += 1;
     }
@@ -1156,7 +1292,9 @@ const uint8_t *bt_mesh_rx_devkey_get(size_t index, uint16_t src)
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     if (index == 0) {
         key = bt_mesh.dev_key;
-    } else if (index == 1 && bt_mesh_dev_key_ca_valid()) {
+    } else
+#if CONFIG_BLE_MESH_RPR_SRV
+    if (index == 1 && bt_mesh_dev_key_ca_valid()) {
         /* If index == 1, there are two cases.
          *  1. bt_mesh_dev_key_ca_valid() is true, it should be return bt_mesh.dev_key_ca.
          *  2. bt_mesh_is_provisioner_en() is true, it should be return bt_mesh_provisioner_dev_key_get(src).
@@ -1166,7 +1304,9 @@ const uint8_t *bt_mesh_rx_devkey_get(size_t index, uint16_t src)
          * Then this round of function bt_mesh_rx_devkey_get(2, src) will return bt_mesh_provisioner_dev_key_get(src).
          */
         key = bt_mesh.dev_key_ca;
-    } else {
+    } else
+#endif
+    {
         key = bt_mesh_provisioner_dev_key_get(src);
     }
 #endif

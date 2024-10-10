@@ -21,7 +21,9 @@
 #include "mesh/common.h"
 #include "pvnr_mgmt.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #ifdef CONFIG_BLE_MESH_FRIEND
 
