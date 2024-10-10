@@ -8,7 +8,9 @@ examples/phy/antenna:
     - if: IDF_TARGET in ["esp32p4", "esp32h2"]
       reason: not supported
 examples/phy/cert_test:
-  enable:
-    - if: IDF_TARGET in ["esp32c3", "esp32s3"]
+  disable:
+    - if: IDF_TARGET in ["esp32p4"]
+      reason: not supported
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
       temporary: true
-      reason: the other targets are not tested yet
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8851
