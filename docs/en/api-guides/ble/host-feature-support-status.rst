@@ -73,7 +73,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
       - |unsupported|
-      - |experimental|
+      - |developing202412|
     * -
       - GATT Caching
       - |experimental|

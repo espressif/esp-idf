@@ -73,7 +73,7 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
       - |unsupported|
-      - |experimental|
+      - |developing202412|
     * -
       - GATT Caching
       - |experimental|
