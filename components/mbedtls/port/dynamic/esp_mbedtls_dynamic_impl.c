@@ -1,11 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "esp_mbedtls_dynamic_impl.h"
+#include "sdkconfig.h"
+
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #define COUNTER_SIZE (8)
 #define CACHE_IV_SIZE (16)
@@ -532,7 +537,18 @@ void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
     if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(ca_chain)) {
         mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        /* In case of mbedtls certificate bundle, we attach a "static const"
+         * dummy cert, thus we need to avoid the write operations (memset())
+         * performed by `mbedtls_x509_crt_free()`
+         */
+        if (!esp_crt_bundle_in_use(conf->MBEDTLS_PRIVATE(ca_chain))) {
+            mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+        }
+#else
         mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+#endif
+
         conf->MBEDTLS_PRIVATE(ca_chain) = NULL;
     }
 }
