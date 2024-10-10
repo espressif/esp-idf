@@ -78,7 +78,7 @@ static void inc_num_atomic_iter(void *arg)
 
 static void inc_num_mutex(void *arg)
 {
-    int task_index = *(int*)arg;
+    int task_index = (int)arg;
     ESP_LOGI(TAG, "mutex task %d created", task_index);
 
     while (!timed_out) {
@@ -159,7 +159,7 @@ int comp_lock_entry_func(int argc, char **argv)
     s_global_num = 0;
     // create 2 tasks to increase a shared number in turn
     for (thread_id = 0; thread_id < SHARE_RES_THREAD_NUM; thread_id++) {
-        xTaskCreatePinnedToCore(inc_num_mutex, NULL, 4096, &thread_id, TASK_PRIO_3, NULL, tskNO_AFFINITY);
+        xTaskCreatePinnedToCore(inc_num_mutex, NULL, 4096, (void *)thread_id, TASK_PRIO_3, NULL, tskNO_AFFINITY);
     }
 
     // time out and stop running after 5 seconds
