@@ -162,7 +162,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
       - |experimental|
     * -
-      - Advertising Channel Index
+      - Randomized Advertising Channel Indexing
       - |unsupported|
       - |NA|
       - |NA|
