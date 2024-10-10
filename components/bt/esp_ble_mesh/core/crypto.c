@@ -22,7 +22,9 @@
 #include "mesh/common.h"
 #include "mesh/adapter.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)

@@ -46,11 +46,19 @@ set(ble_mesh_include_dirs
     "esp_ble_mesh/api/core/include"
     "esp_ble_mesh/api/models/include"
     "esp_ble_mesh/api"
+)
+
+set(ble_mesh_v11_include_dirs
     "esp_ble_mesh/lib/include"
     "esp_ble_mesh/v1.1/api/core/include"
     "esp_ble_mesh/v1.1/api/models/include"
     "esp_ble_mesh/v1.1/btc/include"
 )
+
+if(CONFIG_IDF_DOC_BUILD)
+    list(APPEND ble_mesh_include_dirs
+                ${ble_mesh_v11_include_dirs})
+endif()
 
 set(bluedroid_include_dirs host/bluedroid/api/include/api)
 
@@ -533,34 +541,41 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/server_common.c"
                     "esp_ble_mesh/models/server/state_binding.c"
                     "esp_ble_mesh/models/server/state_transition.c"
-                    "esp_ble_mesh/models/server/time_scene_server.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_agg_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_brc_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_cm_data_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_df_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_lcd_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_odp_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_prb_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_rpr_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_sar_model_api.c"
-                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_srpl_model_api.c"
-                    "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_mbt_model_api.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_agg_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_brc_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_df_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_lcd_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_mbt_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_odp_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_prb_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
-                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
-                    "esp_ble_mesh/lib/ext.c")
+                    "esp_ble_mesh/models/server/time_scene_server.c")
+        if(CONFIG_BLE_MESH_V11_SUPPORT)
+            list(APPEND include_dirs ${ble_mesh_v11_include_dirs})
 
-        if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
-            list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
+            list(APPEND srcs
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_agg_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_brc_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_cm_data_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_df_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_lcd_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_odp_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_prb_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_rpr_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_sar_model_api.c"
+                        "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_srpl_model_api.c"
+                        "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_mbt_model_api.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_agg_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_brc_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_df_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_lcd_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_mbt_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_odp_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_prb_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
+                        "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
+                        "esp_ble_mesh/lib/ext.c")
+            if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
+                list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
+            else()
+                list(APPEND srcs "esp_ble_mesh/core/transport.c")
+            endif()
         else()
-            list(APPEND srcs "esp_ble_mesh/core/transport.c")
+            list(APPEND srcs
+                        "esp_ble_mesh/core/transport.c")
         endif()
     endif()
 
@@ -881,7 +896,7 @@ if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()
 
-if(CONFIG_BLE_MESH)
+if(CONFIG_BLE_MESH_V11_SUPPORT)
     if(CONFIG_IDF_TARGET_ESP32)
         add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32/libble_mesh.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
