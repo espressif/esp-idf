@@ -73,13 +73,13 @@ ESP 主机主要功能支持状态
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - GATT Caching
       - |experimental|
       - |experimental|
     * -
-      - Advertising Channel Index
+      - Randomized Advertising Channel Indexing
       - |NA|
       - |NA|
     * -
