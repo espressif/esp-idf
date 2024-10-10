@@ -262,9 +262,17 @@ static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_featu
     }
     // Every set feature requires status update
     ext_port->flags.status_outdated = 1;
-    // PowerOn to PowerGood delay for port
-    if (feature == USB_FEATURE_PORT_POWER) {
+    switch (feature) {
+    case USB_FEATURE_PORT_POWER:
+        // PowerOn to PowerGood delay for port
         vTaskDelay(pdMS_TO_TICKS(ext_port->constant.power_on_delay_ms));
+        break;
+    case USB_FEATURE_PORT_RESET:
+        // Port has reset, give the port some time to recover
+        vTaskDelay(pdMS_TO_TICKS(EXT_PORT_RESET_RECOVERY_DELAY_MS));
+        break;
+    default:
+        break;
     }
     return ret;
 }
@@ -552,12 +560,9 @@ static bool handle_port_status(ext_port_t *ext_port)
 {
     bool need_processing = false;
     if (port_is_in_reset(ext_port)) {
-        ESP_LOGD(EXT_PORT_TAG, "[%d:%d] Port still in reset, wait and repeat get status...",
+        ESP_LOGW(EXT_PORT_TAG, "[%d:%d] Port still in reset, wait and repeat get status...",
                  ext_port->constant.parent_dev_addr,
                  ext_port->constant.port_num);
-        // Rare case, but possible to happen
-        // Add a small delay to give port some time and request status again
-        vTaskDelay(pdMS_TO_TICKS(30));
         port_request_status(ext_port);
         need_processing = true;
     }
@@ -657,8 +662,6 @@ static bool handle_port_changes(ext_port_t *ext_port)
     } else if (port_has_finished_reset(ext_port)) {
         if (port_has_connection(ext_port)) {
             ext_port->state = USB_PORT_STATE_ENABLED;
-            // Port has a device connected and finished the reset, give the port some time to recover
-            vTaskDelay(pdMS_TO_TICKS(EXT_PORT_RESET_RECOVERY_DELAY_MS));
         }
         port_clear_feature(ext_port, USB_FEATURE_C_PORT_RESET);
         need_processing = true;
