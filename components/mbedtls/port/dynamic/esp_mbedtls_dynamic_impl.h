@@ -20,6 +20,7 @@ which are undefined if the following flag is not defined */
 #include "ssl_misc.h" // located at mbedtls/library/ssl_misc.h
 #include "mbedtls/platform.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 #define TRACE_CHECK(_fn, _state) \
 ({ \
