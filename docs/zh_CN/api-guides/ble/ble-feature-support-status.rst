@@ -162,7 +162,7 @@
       - |experimental|
       - |experimental|
     * -
-      - Advertising Channel Index
+      - Randomized Advertising Channel Indexing
       - |unsupported|
       - |NA|
       - |NA|
