@@ -1,7 +1,7 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache
+    - .after_script:build:ccache-show-stats
   image: $ESP_ENV_IMAGE
   tags:
     - build
@@ -16,7 +16,7 @@
   extends:
     - .build_template
     - .before_script:build
-    - .after_script:build:ccache
+    - .after_script:build:ccache-show-stats
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
@@ -541,7 +541,7 @@ pytest_build_system_macos:
   extends:
     - .test_build_system_template
     - .before_script:build:macos
-    - .after_script:build:macos:upload-when-fail
+    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
     - .rules:build:macos
   tags:
     - macos_shell
@@ -556,8 +556,9 @@ pytest_build_system_macos:
       junit: XUNIT_RESULT.xml
   variables:
     PYENV_VERSION: "3.8"
-    CI_CCACHE_DISABLE: "1"  # ccache: error: Read-only file system
-
+    # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
+    CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
+    CCACHE_MAXSIZE: "5G" # To preserve the limited Macbook storage. CCACHE automatically prunes old caches to fit the set limit.
 build_docker:
   extends:
     - .before_script:minimal

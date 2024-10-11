@@ -14,12 +14,12 @@ stages:
   - post_deploy
 
 variables:
-# System environment
+  # System environment
 
   # Common parameters for the 'make' during CI tests
   MAKEFLAGS: "-j5 --no-keep-going"
 
-# GitLab-CI environment
+  # GitLab-CI environment
   # Thanks to pack-objects cache, clone strategy should behave faster than fetch
   #   so we pick "clone" as default git strategy
   # Shiny runners by default remove the CI_PROJECT_DIR every time at the beginning of one job
@@ -207,13 +207,14 @@ variables:
     - *setup_tools_and_idf_python_venv
     - fetch_submodules
 
-.after_script:build:macos:upload-when-fail:
+.after_script:build:macos:upload-failed-job-logs:ccache-show-stats:
   after_script:
     # macos is running shell executor, which means it would use
     # the system installed /usr/local/bin/python3 by default.
     # Ensure pyenv and PYENV_VERSION installed
     - eval "$(pyenv init -)"
     - *upload_failed_job_log_artifacts
+    - *show_ccache_statistics
 
 .before_script:build:
   before_script:
@@ -224,7 +225,7 @@ variables:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
-.after_script:build:ccache:
+.after_script:build:ccache-show-stats:
   after_script:
     - *show_ccache_statistics
     - *upload_failed_job_log_artifacts
