@@ -31,11 +31,12 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     binary_file = os.path.join(dut.app.binary_path, 'file_server.bin')
     bin_size = os.path.getsize(binary_file)
     logging.info('file_server_bin_size : {}KB'.format(bin_size // 1024))
-    logging.info('Erasing the flash on the chip')
+    logging.info('Erasing the storage partition on the chip')
+    dut.serial.erase_partition('storage')
     # Upload binary and start testing
     logging.info('Starting http file serving simple test app')
 
-    dut.expect('Initializing SPIFFS', timeout=30)
+    dut.expect('Initializing SPIFFS', timeout=60)
 
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
         dut.expect('Please input ssid password:')
