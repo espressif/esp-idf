@@ -1175,6 +1175,10 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
+config SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     bool
     default y

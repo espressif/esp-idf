@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,6 +114,11 @@ typedef struct {
     uint32_t alerts_enabled;        /**< Bit field of alerts to enable (see documentation) */
     uint32_t clkout_divider;        /**< CLKOUT divider. Can be 1 or any even number from 2 to 14 (optional, set to 0 if unused) */
     int intr_flags;                 /**< Interrupt flags to set the priority of the driver's ISR. Note that to use the ESP_INTR_FLAG_IRAM, the CONFIG_TWAI_ISR_IN_IRAM option should be enabled first. */
+    struct {
+        uint32_t sleep_allow_pd;    /**< Set to allow power down. When this flag set, the driver will backup/restore the TWAI registers before/after entering/exist sleep mode.
+                                         By this approach, the system can power off TWAI's power domain.
+                                         This can save power, but at the expense of more RAM being consumed. */
+    } general_flags;                /**< General flags */
 } twai_general_config_t;
 
 /**
