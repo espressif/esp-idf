@@ -599,6 +599,14 @@ Application Examples
 
 **Self-Test Example:** :example:`peripherals/twai/twai_self_test` demonstrates how a node can transmit TWAI messages to itself using the TWAI driver's "No Acknowledgement" mode and Self Reception Requests, testing the proper connection of a target to a working external transceiver.
 
+.. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    ^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports to retain the TWAI register context before entering **light sleep** and restore them after waking up. This means you don't have to re-init the TWAI driver after the light sleep.
+
+    This feature can be enabled by setting the flag :cpp:member:`twai_general_config_t::sleep_allow_pd`. It will allow the system to power down the TWAI in light sleep, meanwhile saving the register context. It can help save more power consumption with some extra cost of the memory.
 
 .. ---------------------------- API Reference ----------------------------------
 
