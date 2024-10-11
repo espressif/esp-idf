@@ -178,6 +178,13 @@ TEST_CASE("parallel_tx_unit_enable_disable", "[parlio_tx]")
 
 TEST_CASE("parallel_tx_unit_idle_value", "[parlio_tx]")
 {
+    printf("init a gpio to read parlio_tx output\r\n");
+    gpio_config_t test_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT64(TEST_DATA0_GPIO),
+    };
+    TEST_ESP_OK(gpio_config(&test_gpio_conf));
+
     printf("install parlio tx unit\r\n");
     parlio_tx_unit_handle_t tx_unit = NULL;
     parlio_tx_unit_config_t config = {
@@ -201,7 +208,6 @@ TEST_CASE("parallel_tx_unit_idle_value", "[parlio_tx]")
         .max_transfer_size = 64,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
-        .flags.io_loop_back = 1,   // enable loop back by GPIO matrix, so that we can read the level of the data line by gpio driver
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
@@ -224,11 +230,19 @@ TEST_CASE("parallel_tx_unit_idle_value", "[parlio_tx]")
 
     TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    TEST_ESP_OK(gpio_reset_pin(TEST_DATA0_GPIO));
 }
 
 #if SOC_PARLIO_TX_CLK_SUPPORT_GATING
 TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
 {
+    printf("init a gpio to read parlio_tx clk output\r\n");
+    gpio_config_t test_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT64(TEST_CLK_GPIO),
+    };
+    TEST_ESP_OK(gpio_config(&test_gpio_conf));
+
     printf("install parlio tx unit\r\n");
     parlio_tx_unit_handle_t tx_unit = NULL;
     parlio_tx_unit_config_t config = {
@@ -247,7 +261,6 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
         .flags.clk_gate_en = true, // enable clock gating, controlled by the level of TEST_DATA7_GPIO
-        .flags.io_loop_back = true, // for reading the level of the clock line in IDLE state
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
@@ -272,5 +285,6 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
 
     TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    TEST_ESP_OK(gpio_reset_pin(TEST_CLK_GPIO));
 }
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING

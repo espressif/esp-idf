@@ -82,8 +82,6 @@ esp_err_t esp_probe_priv_init_hardware(esp_probe_handle_t handle, esp_probe_conf
         .valid_gpio_num = GPIO_NUM_NC,      // Does not need valid gpio, all data gpio are used as sampling channel
         .flags = {
             .clk_gate_en = false,
-            .io_loop_back = true,
-            .io_no_init = true,
         }
     };
     memcpy(parlio_rx_cfg.data_gpio_nums, config->probe_gpio, PARLIO_RX_UNIT_MAX_DATA_WIDTH * sizeof(gpio_num_t));
