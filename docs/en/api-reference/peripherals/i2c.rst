@@ -44,7 +44,7 @@ I2C Clock Configuration
 
     - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_DEFAULT`: Default I2C source clock.
     :SOC_I2C_SUPPORT_XTAL: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_XTAL`: External crystal for I2C clock source.
-    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_RC_FAST`: Internal 20 MHz RC oscillator for I2C clock source.
+    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_RC_FAST`: Internal 20 MHz RC oscillator for I2C clock source.
     :SOC_I2C_SUPPORT_APB: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_APB`: APB clock as I2C clock source.
     :SOC_I2C_SUPPORT_REF_TICK: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_REF_TICK`: 1 MHZ clock.
 

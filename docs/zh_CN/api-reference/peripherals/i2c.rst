@@ -44,7 +44,7 @@ I2C 时钟配置
 
     - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_DEFAULT`：默认的 I2C 时钟源。
     :SOC_I2C_SUPPORT_XTAL: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_XTAL`：以外部晶振作为 I2C 时钟源。
-    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_RC_FAST`：以内部 20 MHz RC 振荡器作为 I2C 时钟源。
+    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_RC_FAST`：以内部 20 MHz RC 振荡器作为 I2C 时钟源。
     :SOC_I2C_SUPPORT_APB: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_APB`：以 APB 时钟作为 I2C 时钟源。
     :SOC_I2C_SUPPORT_REF_TICK: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_REF_TICK`：1 MHZ 时钟。
 
