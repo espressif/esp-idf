@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#include "soc.h"
+#include "soc/soc.h"
 #include "soc/pmu_reg.h"
 
 typedef union {
