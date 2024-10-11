@@ -1,4 +1,4 @@
-集成电路总线 (I2C)
+I2C 接口
 ==================
 
 :link_to_translation:`en:[English]`
@@ -88,7 +88,7 @@ I2C 驱动程序提供以下服务：
 资源分配
 ^^^^^^^^^
 
-若系统支持 I2C 主机总线和 I2C 从机总线，则由驱动程序中的 :cpp:type:`i2c_bus_handle_t` 来表示。资源池管理可用的端口，并在有请求时分配空闲端口。
+若系统支持 I2C 主机总线，由驱动程序中的 :cpp:type:`i2c_master_bus_handle_t` 来表示。资源池管理可用的端口，并在有请求时分配空闲端口。
 
 安装 I2C 主机总线和设备
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,7 +112,6 @@ I2C 主机总线需要 :cpp:type:`i2c_master_bus_config_t` 指定的配置：
 - :cpp:member:`i2c_master_bus_config_t::trans_queue_depth` 设置内部传输队列的深度，但仅在异步传输中有效。
 - :cpp:member:`i2c_master_bus_config_t::enable_internal_pullup` 启用内部上拉电阻。注意：该设置无法在高速频率下拉高总线，此时建议使用合适的外部上拉电阻。
 - :cpp:member:`i2c_master_bus_config_t::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 I2C 寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
-
 
 如果在 :cpp:type:`i2c_master_bus_config_t` 中指定了配置，则可调用 :cpp:func:`i2c_new_master_bus` 来分配和初始化 I2C 主机总线。如果函数运行正确，则将返回一个 I2C 总线句柄。若没有可用的 I2C 端口，此函数将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 
@@ -452,20 +451,20 @@ I2C 从机的发送 buffer 可作为 FIFO 来存储要发送的数据。在主�
     i2c_slave_config_t i2c_slv_config = {
         .addr_bit_len = I2C_ADDR_BIT_LEN_7,   // 7 位地址
         .clk_source = I2C_CLK_SRC_DEFAULT,    // 设置时钟源
-        .i2c_port = 0,                        // 设置 I2C 端口编号
+        .i2c_port = TEST_I2C_PORT,            // 设置 I2C 端口编号
         .send_buf_depth = 256,                // 设置 TX buffer 长度
-        .scl_io_num = 2,                      // SCL 管脚编号
-        .sda_io_num = 1,                      // SDA 管脚编号
+        .scl_io_num = I2C_SLAVE_SCL_IO,       // SCL 管脚编号
+        .sda_io_num = I2C_SLAVE_SDA_IO,       // SDA 管脚编号
         .slave_addr = 0x58,                   // 从机地址
     };
 
-    i2c_bus_handle_t i2c_bus_handle;
-    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &i2c_bus_handle));
+    i2c_slave_dev_handle_t slave_handle;
+    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
 
-    ESP_ERROR_CHECK(i2c_slave_transmit(i2c_bus_handle, data_wr, DATA_LENGTH, 10000));
+    ESP_ERROR_CHECK(i2c_slave_transmit(slave_handle, data_wr, DATA_LENGTH, 10000));
 
 I2C 从机读取
 ~~~~~~~~~~~~~
