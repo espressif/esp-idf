@@ -45,7 +45,7 @@ typedef enum {
     RESET_REASON_CORE_USB_JTAG     = 0x16, // USB Serial/JTAG controller's JTAG resets the digital core
     RESET_REASON_CORE_USB_UART     = 0x17, // USB Serial/JTAG controller's UART resets the digital core
     RESET_REASON_CPU_JTAG          = 0x18, // Triggered when a reset command from JTAG is received
-    RESET_REASON_CPU_LOCKUP        = 0x1A, // Triggered when the CPU enters lockup (exception inside the execption handler would cause this)
+    RESET_REASON_CPU_LOCKUP        = 0x1A, // Triggered when the CPU enters lockup (exception inside the exception handler would cause this)
 } soc_reset_reason_t;
 
 

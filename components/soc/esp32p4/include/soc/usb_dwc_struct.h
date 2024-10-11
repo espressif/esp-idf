@@ -33,7 +33,7 @@ typedef union {
         uint32_t hnpreq: 1;
         uint32_t hstsethnpen: 1;
         uint32_t devhnpen: 1;
-        uint32_t ehen: 1;
+        uint32_t ehen: 1;    // codespell:ignore ehen
         uint32_t reserved_13: 2;
         uint32_t dbncefltrbypass: 1;
         uint32_t conidsts: 1;
