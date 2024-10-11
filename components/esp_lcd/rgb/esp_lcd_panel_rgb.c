@@ -28,17 +28,17 @@
 #include "soc/soc_caps.h"
 #include "esp_clk_tree.h"
 #include "hal/dma_types.h"
-#include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_bit_defs.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/gpio.h"
 #include "esp_psram.h"
 #include "esp_lcd_common.h"
 #include "esp_memory_utils.h"
 #include "soc/lcd_periph.h"
-#include "soc/soc_caps.h"
+#include "soc/io_mux_reg.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
 #include "hal/cache_hal.h"
@@ -84,7 +84,7 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *panel);
 static void lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
-static void lcd_default_isr_handler(void *args);
+static void rgb_lcd_default_isr_handler(void *args);
 
 struct esp_rgb_panel_t {
     esp_lcd_panel_t base;  // Base class of generic lcd panel
@@ -336,7 +336,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_rgb_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
-                                    LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
+                                    LCD_LL_EVENT_VSYNC_END, rgb_lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
@@ -848,51 +848,45 @@ static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
     return ESP_OK;
 }
 
-static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config)
+static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
-    int panel_id = panel->panel_id;
+    int panel_id = rgb_panel->panel_id;
     // Set the number of output data lines
-    lcd_ll_set_data_wire_width(panel->hal.dev, panel_config->data_width);
+    lcd_ll_set_data_wire_width(rgb_panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
         if (panel_config->data_gpio_nums[i] >= 0) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
-            gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
+            gpio_func_sel(panel_config->data_gpio_nums[i], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
                                             lcd_periph_rgb_signals.panels[panel_id].data_sigs[i], false, false);
         }
     }
     if (panel_config->hsync_gpio_num >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->hsync_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(panel_config->hsync_gpio_num, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(panel_config->hsync_gpio_num,
                                         lcd_periph_rgb_signals.panels[panel_id].hsync_sig, false, false);
     }
     if (panel_config->vsync_gpio_num >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->vsync_gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->vsync_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(panel_config->vsync_gpio_num, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
                                         lcd_periph_rgb_signals.panels[panel_id].vsync_sig, false, false);
     }
     // PCLK may not be necessary in some cases (i.e. VGA output)
     if (panel_config->pclk_gpio_num >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->pclk_gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->pclk_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(panel_config->pclk_gpio_num, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
                                         lcd_periph_rgb_signals.panels[panel_id].pclk_sig, false, false);
     }
     // DE signal might not be necessary for some RGB LCD
     if (panel_config->de_gpio_num >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->de_gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->de_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(panel_config->de_gpio_num, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(panel_config->de_gpio_num,
                                         lcd_periph_rgb_signals.panels[panel_id].de_sig, false, false);
     }
-    // disp enable GPIO is optional
+    // disp enable GPIO is optional, it is a general purpose output GPIO
     if (panel_config->disp_gpio_num >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->disp_gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->disp_gpio_num, GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(panel_config->disp_gpio_num, SIG_GPIO_OUT_IDX, false, false);
+        gpio_func_sel(panel_config->disp_gpio_num, PIN_FUNC_GPIO);
+        gpio_output_enable(panel_config->disp_gpio_num);
     }
     return ESP_OK;
 }
@@ -1147,7 +1141,7 @@ IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
     portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
 }
 
-IRAM_ATTR static void lcd_default_isr_handler(void *args)
+IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
 {
     esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)args;
     bool need_yield = false;

@@ -211,7 +211,7 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
+esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // No peripheral output signal routed to the pin, just as a simple GPIO output
