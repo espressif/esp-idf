@@ -148,10 +148,11 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - INT_MTX
             - TEE/APM
             - IO_MUX / GPIO
-            - Timer Group 0 & Timer Group 1
             - SPI0/1
             - SYSTIMER
+            :SOC_TIMER_SUPPORT_SLEEP_RETENTION: - GPTimer
             :SOC_RMT_SUPPORT_SLEEP_RETENTION: - RMT
+            :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
@@ -160,7 +161,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
 
         .. list::
 
-            - ETM
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA

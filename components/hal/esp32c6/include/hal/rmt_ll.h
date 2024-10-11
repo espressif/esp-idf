@@ -38,8 +38,6 @@ extern "C" {
 #define RMT_LL_MAX_FILTER_VALUE           255
 #define RMT_LL_MAX_IDLE_VALUE             32767
 
-#define RMT_LL_SLEEP_RETENTION_MODULE_ID(group_id) (SLEEP_RETENTION_MODULE_RMT0)
-
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
     RMT_LL_MEM_OWNER_HW = 1,

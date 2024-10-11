@@ -119,10 +119,6 @@ struct rmt_group_t {
     rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
     int intr_priority;     // RMT interrupt priority
-#if RMT_USE_RETENTION_LINK
-    sleep_retention_module_t sleep_retention_module; // sleep retention module
-    bool retention_link_created;       // mark if the retention link is created
-#endif
 };
 
 struct rmt_channel_t {

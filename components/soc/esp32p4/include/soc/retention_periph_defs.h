@@ -46,6 +46,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_I2S2         = 21,
     SLEEP_RETENTION_MODULE_I2C0         = 22,
     SLEEP_RETENTION_MODULE_I2C1         = 23,
+    SLEEP_RETENTION_MODULE_ETM0         = 24,
 
     SLEEP_RETENTION_MODULE_MAX          = 31
 } periph_retention_module_t;
@@ -79,6 +80,7 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_I2S0         = BIT(SLEEP_RETENTION_MODULE_I2S0),
     SLEEP_RETENTION_MODULE_BM_I2S1         = BIT(SLEEP_RETENTION_MODULE_I2S1),
     SLEEP_RETENTION_MODULE_BM_I2S2         = BIT(SLEEP_RETENTION_MODULE_I2S2),
+    SLEEP_RETENTION_MODULE_BM_ETM0         = BIT(SLEEP_RETENTION_MODULE_ETM0),
 
     SLEEP_RETENTION_MODULE_BM_ALL = (uint32_t)-1
 } periph_retention_module_bitmap_t;
@@ -100,9 +102,10 @@ typedef enum periph_retention_module_bitmap {
                                   | SLEEP_RETENTION_MODULE_BM_UART3      \
                                   | SLEEP_RETENTION_MODULE_BM_UART4      \
                                   | SLEEP_RETENTION_MODULE_BM_RMT0       \
-                                  | SLEEP_RETENTION_MODULE_BM_I2S0        \
-                                  | SLEEP_RETENTION_MODULE_BM_I2S1        \
-                                  | SLEEP_RETENTION_MODULE_BM_I2S2        \
+                                  | SLEEP_RETENTION_MODULE_BM_I2S0       \
+                                  | SLEEP_RETENTION_MODULE_BM_I2S1       \
+                                  | SLEEP_RETENTION_MODULE_BM_I2S2       \
+                                  | SLEEP_RETENTION_MODULE_BM_ETM0       \
                                   )
 
 #ifdef __cplusplus
