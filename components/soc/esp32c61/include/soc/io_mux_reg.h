@@ -137,7 +137,7 @@ extern "C" {
 #define SPI_D_GPIO_NUM               21
 #define SPI_Q_GPIO_NUM               16
 
-#define MAX_RTC_GPIO_NUM              7
+#define MAX_RTC_GPIO_NUM              6
 #define MAX_PAD_GPIO_NUM             30
 #define MAX_GPIO_NUM                 34
 #define HIGH_IO_HOLD_BIT_SHIFT       32

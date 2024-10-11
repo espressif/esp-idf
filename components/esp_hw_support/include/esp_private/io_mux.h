@@ -32,7 +32,7 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src);
 
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
 typedef struct {
-    uint8_t rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM];
+    uint8_t rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM + 1];
     uint32_t rtc_io_using_mask;
 } rtc_io_status_t;
 
