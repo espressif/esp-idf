@@ -79,7 +79,7 @@ ESP 主机主要功能支持状态
       - |experimental|
       - |experimental|
     * -
-      - Advertising Channel Index
+      - Randomized Advertising Channel Indexing
       - |NA|
       - |NA|
     * -
