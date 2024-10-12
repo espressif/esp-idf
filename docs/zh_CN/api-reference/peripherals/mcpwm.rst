@@ -978,9 +978,9 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 启用电源管理（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统会在进入 Light-sleep 前调整 PLL 和 APB 频率。该操作有可能会改变 MCPWM 定时器的计数步长，导致计时偏差。
 
-不过，驱动程序可以获取 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 类型的电源管理锁，防止系统改变 APB 频率。每当驱动创建以 :cpp:enumerator:`MCPWM_TIMER_CLK_SRC_PLL160M` 作为时钟源的 MCPWM 定时器实例时，都会在通过 :cpp:func:`mcpwm_timer_enable` 启用定时器时获取电源管理锁。反之，调用 :cpp:func:`mcpwm_timer_disable` 时，驱动程序释放锁。
+不过，驱动程序可以获取 :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP` 类型的电源管理锁，防止系统进入 Light-sleep。每当驱动创建以 PLL 作为时钟源的 MCPWM 定时器实例时，都会在通过 :cpp:func:`mcpwm_timer_enable` 启用定时器时获取电源管理锁。反之，调用 :cpp:func:`mcpwm_timer_disable` 时，驱动程序释放锁。
 
-同理，每当驱动创建一个以 :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB` 作为时钟源的 MCPWM 捕获定时器实例时，都会在通过 :cpp:func:`mcpwm_capture_timer_enable` 启用定时器时获取电源管理锁，并在调用 :cpp:func:`mcpwm_capture_timer_disable` 时释放锁。
+同理，每当驱动创建 MCPWM 捕获定时器实例时，都会在通过 :cpp:func:`mcpwm_capture_timer_enable` 启用定时器时获取电源管理锁，并在调用 :cpp:func:`mcpwm_capture_timer_disable` 时释放锁。
 
 
 .. _mcpwm-iram-safe:
