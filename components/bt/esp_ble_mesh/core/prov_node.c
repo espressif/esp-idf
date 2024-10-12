@@ -1471,6 +1471,9 @@ int bt_mesh_pb_gatt_close(struct bt_mesh_conn *conn, uint8_t reason)
     if (bt_mesh_atomic_test_bit(prov_link.flags, PB_REMOTE)) {
         prov_link.pb_remote_cbd = true;
         prov_link.pb_remote_reset = true;
+        /* @todo: the close reason is disconnect reason, not the
+         * link close reason, should change it to link close reason?
+         */
         prov_link.pb_remote_close(&prov_link, reason);
     }
 #endif

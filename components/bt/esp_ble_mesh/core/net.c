@@ -837,6 +837,9 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
     uint16_t dst = 0U;
     int err = 0;
 
+    /* The variable is not used when proxy server or proxy client is disabled. */
+    ARG_UNUSED(dst);
+
     BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
            buf->len);
 
@@ -914,18 +917,22 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
         return err;
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        bt_mesh_proxy_server_relay(&buf->b, dst) &&
-        BLE_MESH_ADDR_IS_UNICAST(dst)) {
+    /**
+     * TODO: Find a way to determine how the message was sent previously
+     * during a retransmission, to avoid ineffective advertising.
+    */
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    if (bt_mesh_proxy_server_relay(&buf->b, dst) &&
+        BLE_MESH_ADDR_IS_UNICAST(dst) &&
+        bt_mesh_proxy_server_find_client_by_addr(dst)) {
         send_cb_finalize(cb, cb_data);
         return 0;
     }
+#endif
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT) &&
-        bt_mesh_proxy_client_relay(&buf->b, dst)) {
-        send_cb_finalize(cb, cb_data);
-        return 0;
-    }
+#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    bt_mesh_proxy_client_relay(&buf->b, dst);
+#endif
 
     bt_mesh_adv_send(buf, BLE_MESH_ADV(buf)->xmit, cb, cb_data);
     return 0;
@@ -1052,6 +1059,7 @@ static void bt_mesh_net_adv_xmit_update(struct bt_mesh_net_tx *tx)
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
                      const struct bt_mesh_send_cb *cb, void *cb_data)
 {
+    const struct bt_mesh_send_cb *send_cb = cb;
     uint8_t bearer = BLE_MESH_ALL_BEARERS;
     int err = 0;
 
@@ -1116,40 +1124,48 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
      * shall drop all messages secured using the friendship security
      * credentials."
      */
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        (bearer & BLE_MESH_GATT_BEARER) &&
-        (tx->ctx->send_ttl != 1U ||
-         bt_mesh_tag_relay(tx->ctx->send_tag)) &&
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    if ((bearer & BLE_MESH_GATT_BEARER) &&
+        (tx->ctx->send_ttl != 1U || bt_mesh_tag_relay(tx->ctx->send_tag)) &&
         tx->ctx->send_cred != BLE_MESH_FRIENDSHIP_CRED) {
         if (bt_mesh_proxy_server_relay(&buf->b, tx->ctx->addr) &&
             BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-            /**
-             * When a message is sent to a proxy client, the message
-             * can be sent via GATT only, eliminating the need for
-             * an ADV bearer.
+            /* When the destination address is identified as a proxy client
+             * address, the message will be sent only to the proxy client.
+             * This action will enhance the efficiency of the proxy server
+             * in sending data packets.
+             *
+             * It should be noted that this approach does not significantly
+             * reduce the number of advertising packets in the air, as other
+             * proxy clients may receive the message and resend it through
+             * a advertising method.
              */
             if (bt_mesh_proxy_server_find_client_by_addr(tx->ctx->addr)) {
-                bearer &= ~BLE_MESH_ADV_BEARER;
-            }
+                send_cb_finalize(send_cb, cb_data);
+                send_cb = NULL;
 
-            /* Notify completion if this only went
-             * through the Mesh Proxy.
-             */
-            if ((bearer & (~BLE_MESH_GATT_BEARER)) == 0) {
-                send_cb_finalize(cb, cb_data);
-
-                err = 0;
                 goto done;
             }
 
+            /* Finalize transmission if this only went through GATT bearer */
+            if ((bearer & (~BLE_MESH_GATT_BEARER)) == 0) {
+                send_cb_finalize(send_cb, cb_data);
+                send_cb = NULL;
+
+#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+                /* This message will not be transmitted by proxy client */
+                if (!bt_mesh_proxy_client_get_conn_count()) {
+                    goto done;
+                }
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+            }
         }
     }
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT) &&
-        (bearer & BLE_MESH_GATT_BEARER) &&
-        (tx->ctx->send_ttl != 1U ||
-         bt_mesh_tag_relay(tx->ctx->send_tag)) &&
+#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    if ((bearer & BLE_MESH_GATT_BEARER) &&
+        (tx->ctx->send_ttl != 1U || bt_mesh_tag_relay(tx->ctx->send_tag)) &&
         tx->ctx->send_cred != BLE_MESH_FRIENDSHIP_CRED) {
         if (bt_mesh_proxy_client_relay(&buf->b, tx->ctx->addr)) {
             /* If Proxy Client succeeds to send messages with GATT bearer,
@@ -1157,45 +1173,43 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
              * connection has been created with Proxy Client, here we will
              * use advertising bearer for the messages.
              */
-            send_cb_finalize(cb, cb_data);
+            if ((bearer & (~BLE_MESH_GATT_BEARER)) == 0) {
+                send_cb_finalize(send_cb, cb_data);
+                send_cb = NULL;
 
-            err = 0;
-            goto done;
+                goto done;
+            }
         }
     }
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
     /* Deliver to local network interface if necessary */
     if (((IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) ||
          (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en())) &&
         (bt_mesh_fixed_group_match(tx->ctx->addr) || bt_mesh_elem_find(tx->ctx->addr))) {
-        /**
-         * If the target address isn't a unicast address, then the callback function
-         * will be called by `adv task` in place of here, to avoid the callback function
-         * being called twice.
+        /* If the target address isn't a unicast address, then the callback
+         * function will be called by mesh adv task instead of called here
+         * to avoid the callback function being called twice.
          * See BLEMESH24-76 for more details.
          */
         if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-            if (cb && cb->start) {
-                cb->start(0, 0, cb_data);
+            if (send_cb && send_cb->start) {
+                send_cb->start(0, 0, cb_data);
             }
 
             net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
 
-            if (cb && cb->end) {
-                cb->end(0, cb_data);
+            if (send_cb && send_cb->end) {
+                send_cb->end(0, cb_data);
             }
 
             bt_mesh_net_local();
-
-            err = 0;
 
             goto done;
-        } else {
-            net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
-            bt_mesh_net_local();
         }
 
-        err = 0;
+        net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
+        bt_mesh_net_local();
     }
 
     if ((bearer & BLE_MESH_ADV_BEARER) &&
@@ -1217,7 +1231,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
                 BLE_MESH_TRANSMIT_COUNT(tx->xmit), BLE_MESH_TRANSMIT_INT(tx->xmit));
         bt_mesh_adv_send(buf, tx->xmit, cb, cb_data);
 
-        err = 0;
         goto done;
     }
 
@@ -1737,8 +1750,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
      * shall drop all messages secured using the friendship security
      * credentials.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        (bearer & BLE_MESH_GATT_BEARER) &&
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    if ((bearer & BLE_MESH_GATT_BEARER) &&
         ((bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED &&
           cred != BLE_MESH_FRIENDSHIP_CRED) ||
 #if CONFIG_BLE_MESH_PRB_SRV
@@ -1748,11 +1761,14 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
          rx->ctx.recv_cred == BLE_MESH_FRIENDSHIP_CRED)) {
         if (bt_mesh_proxy_server_relay(&buf->b, rx->ctx.recv_dst) &&
             BLE_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
-            if ((bearer & (~BLE_MESH_GATT_BEARER)) == 0) {
+
+            if (((bearer & (~BLE_MESH_GATT_BEARER)) == 0) ||
+                bt_mesh_proxy_server_find_client_by_addr(rx->ctx.recv_dst)) {
                 goto done;
             }
         }
     }
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
     if (((bearer & BLE_MESH_ADV_BEARER) && relay_to_adv(rx->net_if)) ||
         netkey_changed ||
