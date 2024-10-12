@@ -745,7 +745,7 @@ typedef union {
 } efuse_clk_reg_t;
 
 /** Type of conf register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 typedef union {
     struct {

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "soc.h"
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {

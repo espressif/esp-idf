@@ -159,7 +159,7 @@ e, the FSPI bus signals are output. Can be configured in CONF state..*/
 
 #define SPI_CLOCK_REG(i)          (REG_SPI_BASE(i) + 0xC)
 /* SPI_CLK_EQU_SYSCLK : R/W ;bitpos:[31] ;default: 1'b1 ; */
-/*description: In the master mode 1: spi_clk is eqaul to system 0: spi_clk is divided from syst
+/*description: In the master mode 1: spi_clk is equal to system 0: spi_clk is divided from syst
 em clock. Can be configured in CONF state..*/
 #define SPI_CLK_EQU_SYSCLK    (BIT(31))
 #define SPI_CLK_EQU_SYSCLK_M  (BIT(31))
@@ -196,15 +196,15 @@ e 0. Can be configured in CONF state..*/
 
 #define SPI_USER_REG(i)          (REG_SPI_BASE(i) + 0x10)
 /* SPI_USR_COMMAND : R/W ;bitpos:[31] ;default: 1'b1 ; */
-/*description: This bit enable the command phase of an operation. Can be configured in CONF sta
-te..*/
+/*description: This bit enable the command phase of an operation. Can be configured in CONF
+state..*/
 #define SPI_USR_COMMAND    (BIT(31))
 #define SPI_USR_COMMAND_M  (BIT(31))
 #define SPI_USR_COMMAND_V  0x1
 #define SPI_USR_COMMAND_S  31
 /* SPI_USR_ADDR : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: This bit enable the address phase of an operation. Can be configured in CONF sta
-te..*/
+/*description: This bit enable the address phase of an operation. Can be configured in CONF
+state..*/
 #define SPI_USR_ADDR    (BIT(30))
 #define SPI_USR_ADDR_M  (BIT(30))
 #define SPI_USR_ADDR_V  0x1
@@ -392,7 +392,7 @@ n be configured in CONF state..*/
 #define SPI_USR_COMMAND_BITLEN_S  28
 /* SPI_MST_REMPTY_ERR_END_EN : R/W ;bitpos:[27] ;default: 1'b1 ; */
 /*description: 1: SPI transfer is ended when SPI TX AFIFO read empty error is valid in GP-SPI m
-aster FD/HD-mode. 0: SPI transfer is not ended when SPI TX AFIFO read empty erro
+aster FD/HD-mode. 0: SPI transfer is not ended when SPI TX AFIFO read empty error
 r is valid in GP-SPI master FD/HD-mode..*/
 #define SPI_MST_REMPTY_ERR_END_EN    (BIT(27))
 #define SPI_MST_REMPTY_ERR_END_EN_M  (BIT(27))
@@ -1113,7 +1113,7 @@ AFIFO read-empty error when SPI outputs data in master mode. 0: Others..*/
 #define SPI_SLV_CMD_ERR_INT_RAW_V  0x1
 #define SPI_SLV_CMD_ERR_INT_RAW_S  16
 /* SPI_SLV_BUF_ADDR_ERR_INT_RAW : R/WTC/SS ;bitpos:[15] ;default: 1'b0 ; */
-/*description: The raw bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt. 1: The accessing data addres
+/*description: The raw bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt. 1: The accessing data address
 s of the current SPI slave mode CPU controlled FD, Wr_BUF or Rd_BUF transmission
  is bigger than 63. 0: Others..*/
 #define SPI_SLV_BUF_ADDR_ERR_INT_RAW    (BIT(15))
@@ -1684,7 +1684,7 @@ dge   0: output data at tsck posedge.*/
 /* SPI_CLK_MODE : R/W ;bitpos:[1:0] ;default: 2'b0 ; */
 /*description: SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delaye
 d one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inacti
-ve 3: SPI clock is alwasy on. Can be configured in CONF state..*/
+ve 3: SPI clock is always on. Can be configured in CONF state..*/
 #define SPI_CLK_MODE    0x00000003
 #define SPI_CLK_MODE_M  ((SPI_CLK_MODE_V)<<(SPI_CLK_MODE_S))
 #define SPI_CLK_MODE_V  0x3

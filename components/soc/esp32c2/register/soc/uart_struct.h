@@ -29,7 +29,7 @@ typedef volatile struct uart_dev_s {
             uint32_t cts_chg                       :    1;  /*This interrupt raw bit turns to high level when receiver detects the edge change of CTSn signal.*/
             uint32_t brk_det                       :    1;  /*This interrupt raw bit turns to high level when receiver detects a 0 after the stop bit.*/
             uint32_t rxfifo_tout                   :    1;  /*This interrupt raw bit turns to high level when receiver takes more time than rx_tout_thrhd to receive a byte.*/
-            uint32_t sw_xon                        :    1;  /*This interrupt raw bit turns to high level when receiver recevies Xon char when uart_sw_flow_con_en is set to 1.*/
+            uint32_t sw_xon                        :    1;  /*This interrupt raw bit turns to high level when receiver receives Xon char when uart_sw_flow_con_en is set to 1.*/
             uint32_t sw_xoff                       :    1;  /*This interrupt raw bit turns to high level when receiver receives Xoff char when uart_sw_flow_con_en is set to 1.*/
             uint32_t glitch_det                    :    1;  /*This interrupt raw bit turns to high level when receiver detects a glitch in the middle of a start bit.*/
             uint32_t tx_brk_done                   :    1;  /*This interrupt raw bit turns to high level when transmitter completes  sending  NULL characters, after all data in Tx-FIFO are sent.*/
@@ -59,7 +59,7 @@ typedef volatile struct uart_dev_s {
             uint32_t sw_xoff                       :    1;  /*This is the status bit for sw_xoff_int_raw when sw_xoff_int_ena is set to 1.*/
             uint32_t glitch_det                    :    1;  /*This is the status bit for glitch_det_int_raw when glitch_det_int_ena is set to 1.*/
             uint32_t tx_brk_done                   :    1;  /*This is the status bit for tx_brk_done_int_raw when tx_brk_done_int_ena is set to 1.*/
-            uint32_t tx_brk_idle_done              :    1;  /*This is the stauts bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_ena is set to 1.*/
+            uint32_t tx_brk_idle_done              :    1;  /*This is the status bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_ena is set to 1.*/
             uint32_t tx_done                       :    1;  /*This is the status bit for tx_done_int_raw when tx_done_int_ena is set to 1.*/
             uint32_t rs485_parity_err              :    1;  /*This is the status bit for rs485_parity_err_int_raw when rs485_parity_int_ena is set to 1.*/
             uint32_t rs485_frm_err                 :    1;  /*This is the status bit for rs485_frm_err_int_raw when rs485_fm_err_int_ena is set to 1.*/
@@ -162,7 +162,7 @@ typedef volatile struct uart_dev_s {
             uint32_t stop_bit_num                  :    2;  /*This register is used to set the length of  stop bit.*/
             uint32_t sw_rts                        :    1;  /*This register is used to configure the software rts signal which is used in software flow control.*/
             uint32_t sw_dtr                        :    1;  /*This register is used to configure the software dtr signal which is used in software flow control.*/
-            uint32_t txd_brk                       :    1;  /*Set this bit to enbale transmitter to  send NULL when the process of sending data is done.*/
+            uint32_t txd_brk                       :    1;  /*Set this bit to enable transmitter to  send NULL when the process of sending data is done.*/
             uint32_t irda_dplx                     :    1;  /*Set this bit to enable IrDA loopback mode.*/
             uint32_t irda_tx_en                    :    1;  /*This is the start enable bit for IrDA transmitter.*/
             uint32_t irda_wctl                     :    1;  /*1'h1: The IrDA transmitter's 11th bit is the same as 10th bit. 1'h0: Set IrDA transmitter's 11th bit to 0.*/
@@ -194,7 +194,7 @@ typedef volatile struct uart_dev_s {
             uint32_t dis_rx_dat_ovf                :    1;  /*Disable UART Rx data overflow detect. */
             uint32_t rx_tout_flow_dis              :    1;  /*Set this bit to stop accumulating idle_cnt when hardware flow control works.*/
             uint32_t rx_flow_en                    :    1;  /*This is the flow enable bit for UART receiver.*/
-            uint32_t rx_tout_en                    :    1;  /*This is the enble bit for uart receiver's timeout function.*/
+            uint32_t rx_tout_en                    :    1;  /*This is the enable bit for uart receiver's timeout function.*/
             uint32_t reserved22                    :    10;
         };
         uint32_t val;
@@ -208,7 +208,7 @@ typedef volatile struct uart_dev_s {
     } lowpulse;
     union {
         struct {
-            uint32_t min_cnt                       :    12;  /*This register stores  the value of the maxinum duration time for the high level pulse. It is used in baud rate-detect process.*/
+            uint32_t min_cnt                       :    12;  /*This register stores  the value of the maximum duration time for the high level pulse. It is used in baud rate-detect process.*/
             uint32_t reserved12                    :    20;  /*Reserved*/
         };
         uint32_t val;

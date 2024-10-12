@@ -15,14 +15,14 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_INTR_ENA_REG (DR_REG_ASSIST_DEBUG_BASE + 0x0)
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA : R/W; bitpos: [0]; default: 0;
- *  enbale sp underlow monitor
+ *  enable sp underflow monitor
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA    (BIT(0))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA_S)
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA_V  0x00000001U
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA_S  0
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA : R/W; bitpos: [1]; default: 0;
- *  enbale sp overflow monitor
+ *  enable sp overflow monitor
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA    (BIT(1))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA_S)
@@ -34,14 +34,14 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_INTR_RAW_REG (DR_REG_ASSIST_DEBUG_BASE + 0x4)
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW : RO; bitpos: [0]; default: 0;
- *  sp underlow monitor interrupt status register
+ *  sp underflow monitor interrupt status register
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW    (BIT(0))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW_S)
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW_V  0x00000001U
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RAW_S  0
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RAW : RO; bitpos: [1]; default: 0;
- *  sp overflow monitor interupt status register
+ *  sp overflow monitor interrupt status register
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RAW    (BIT(1))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RAW_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RAW_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RAW_S)
@@ -53,14 +53,14 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_INTR_RLS_REG (DR_REG_ASSIST_DEBUG_BASE + 0x8)
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS : R/W; bitpos: [0]; default: 0;
- *  enbale sp underlow monitor interrupt
+ *  enable sp underflow monitor interrupt
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS    (BIT(0))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS_S)
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS_V  0x00000001U
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_RLS_S  0
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RLS : R/W; bitpos: [1]; default: 0;
- *  enbale sp overflow monitor interrupt
+ *  enable sp overflow monitor interrupt
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RLS    (BIT(1))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RLS_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RLS_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_RLS_S)
@@ -72,7 +72,7 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_INTR_CLR_REG (DR_REG_ASSIST_DEBUG_BASE + 0xc)
 /** ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_CLR : WT; bitpos: [0]; default: 0;
- *  clr sp underlow monitor interrupt
+ *  clr sp underflow monitor interrupt
  */
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_CLR    (BIT(0))
 #define ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_CLR_M  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_CLR_V << ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_CLR_S)
@@ -91,7 +91,7 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_SP_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x10)
 /** ASSIST_DEBUG_CORE_0_SP_MIN : R/W; bitpos: [31:0]; default: 0;
- *  core0 sp region configuration regsiter
+ *  core0 sp region configuration register
  */
 #define ASSIST_DEBUG_CORE_0_SP_MIN    0xFFFFFFFFU
 #define ASSIST_DEBUG_CORE_0_SP_MIN_M  (ASSIST_DEBUG_CORE_0_SP_MIN_V << ASSIST_DEBUG_CORE_0_SP_MIN_S)
@@ -115,7 +115,7 @@ extern "C" {
  */
 #define ASSIST_DEBUG_CORE_0_SP_PC_REG (DR_REG_ASSIST_DEBUG_BASE + 0x18)
 /** ASSIST_DEBUG_CORE_0_SP_PC : RO; bitpos: [31:0]; default: 0;
- *  This regsiter stores the PC when trigger stack monitor.
+ *  This register stores the PC when trigger stack monitor.
  */
 #define ASSIST_DEBUG_CORE_0_SP_PC    0xFFFFFFFFU
 #define ASSIST_DEBUG_CORE_0_SP_PC_M  (ASSIST_DEBUG_CORE_0_SP_PC_V << ASSIST_DEBUG_CORE_0_SP_PC_S)
@@ -142,7 +142,7 @@ extern "C" {
 #define ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN_S  1
 
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG register
- *  record status regsiter
+ *  record status register
  */
 #define ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG (DR_REG_ASSIST_DEBUG_BASE + 0x20)
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC : RO; bitpos: [31:0]; default: 0;
@@ -154,7 +154,7 @@ extern "C" {
 #define ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_S  0
 
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP_REG register
- *  record status regsiter
+ *  record status register
  */
 #define ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP_REG (DR_REG_ASSIST_DEBUG_BASE + 0x24)
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP : RO; bitpos: [31:0]; default: 0;

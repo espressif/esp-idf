@@ -7,7 +7,7 @@
 #define _SOC_SPI_MEM_REG_H_
 
 
-#include "soc.h"
+#include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,15 +94,15 @@ he bit will be cleared once the operation done.1: enable 0: disable..*/
 #define SPI_MEM_FLASH_DP_S  21
 /* SPI_MEM_FLASH_RES : R/W/SC ;bitpos:[20] ;default: 1'b0 ; */
 /*description: This bit combined with reg_resandres bit releases Flash from the power-down stat
-e or high performance mode and obtains the devices ID. The bit will be cleared o
-nce the operation done.1: enable 0: disable..*/
+e or high performance mode and obtains the devices ID. The bit will be cleared once
+the operation done.1: enable 0: disable..*/
 #define SPI_MEM_FLASH_RES    (BIT(20))
 #define SPI_MEM_FLASH_RES_M  (BIT(20))
 #define SPI_MEM_FLASH_RES_V  0x1
 #define SPI_MEM_FLASH_RES_S  20
 /* SPI_MEM_FLASH_HPM : R/W/SC ;bitpos:[19] ;default: 1'b0 ; */
-/*description: Drive Flash into high performance mode.  The bit will be cleared once the operat
-ion done.1: enable 0: disable..*/
+/*description: Drive Flash into high performance mode.  The bit will be cleared once the operation
+done.1: enable 0: disable..*/
 #define SPI_MEM_FLASH_HPM    (BIT(19))
 #define SPI_MEM_FLASH_HPM_M  (BIT(19))
 #define SPI_MEM_FLASH_HPM_V  0x1
@@ -123,8 +123,8 @@ peration done.1: enable 0: disable..*/
 #define SPI_MEM_FLASH_PE_V  0x1
 #define SPI_MEM_FLASH_PE_S  17
 /* SPI_MEM_MSPI_ST : RO ;bitpos:[7:4] ;default: 4'b0 ; */
-/*description: The current status of SPI1 slave FSM: mspi_st. 0: idle state, 1: preparation sta
-te, 2: send command state, 3: send address state, 4: wait state, 5: read data st
+/*description: The current status of SPI1 slave FSM: mspi_st. 0: idle state, 1: preparation
+state, 2: send command state, 3: send address state, 4: wait state, 5: read data st
 ate, 6:write data state, 7: done state, 8: read data end state..*/
 #define SPI_MEM_MSPI_ST    0x0000000F
 #define SPI_MEM_MSPI_ST_M  ((SPI_MEM_MSPI_ST_V)<<(SPI_MEM_MSPI_ST_S))
@@ -213,14 +213,14 @@ UT AND SPI_MEM_FREAD_DOUT. 1: enable 0: disable..*/
 #define SPI_MEM_FASTRD_MODE_V  0x1
 #define SPI_MEM_FASTRD_MODE_S  13
 /* SPI_MEM_TX_CRC_EN : R/W ;bitpos:[11] ;default: 1'b0 ; */
-/*description: For SPI1,  enable crc32 when writing encrypted data to flash. 1: enable 0:disabl
+/*description: For SPI1,  enable crc32 when writing encrypted data to flash. 1: enable 0:disable
 e.*/
 #define SPI_MEM_TX_CRC_EN    (BIT(11))
 #define SPI_MEM_TX_CRC_EN_M  (BIT(11))
 #define SPI_MEM_TX_CRC_EN_V  0x1
 #define SPI_MEM_TX_CRC_EN_S  11
 /* SPI_MEM_FCS_CRC_EN : R/W ;bitpos:[10] ;default: 1'b0 ; */
-/*description: For SPI1,  initialize crc32 module before writing encrypted data to flash. Activ
+/*description: For SPI1,  initialize crc32 module before writing encrypted data to flash. Active
 e low..*/
 #define SPI_MEM_FCS_CRC_EN    (BIT(10))
 #define SPI_MEM_FCS_CRC_EN_M  (BIT(10))
@@ -262,7 +262,7 @@ e low..*/
 /* SPI_MEM_CLK_MODE : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
 /*description: SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delaye
 d one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inacti
-ve 3: SPI clock is alwasy on..*/
+ve 3: SPI clock is always on..*/
 #define SPI_MEM_CLK_MODE    0x00000003
 #define SPI_MEM_CLK_MODE_M  ((SPI_MEM_CLK_MODE_V)<<(SPI_MEM_CLK_MODE_S))
 #define SPI_MEM_CLK_MODE_V  0x3
@@ -822,7 +822,7 @@ out, status_in[15:0] is valid when two bytes of data are read out), SUS/SUS1/SUS
 #define SPI_MEM_FLASH_PES_EN_S  5
 /* SPI_MEM_PES_PER_EN : R/W ;bitpos:[4] ;default: 1'b0 ; */
 /*description: Set this bit to enable PES end triggers PER transfer option. If this bit is 0, a
-pplication should send PER after PES is done..*/
+application should send PER after PES is done..*/
 #define SPI_MEM_PES_PER_EN    (BIT(4))
 #define SPI_MEM_PES_PER_EN_M  (BIT(4))
 #define SPI_MEM_PES_PER_EN_V  0x1
@@ -844,8 +844,8 @@ resume command is sent..*/
 #define SPI_MEM_FLASH_PER_WAIT_EN_V  0x1
 #define SPI_MEM_FLASH_PER_WAIT_EN_S  2
 /* SPI_MEM_FLASH_PES : R/W/SC ;bitpos:[1] ;default: 1'b0 ; */
-/*description: program erase suspend bit, program erase suspend operation will be triggered whe
-n the bit is set. The bit will be cleared once the operation done.1: enable 0: d
+/*description: program erase suspend bit, program erase suspend operation will be triggered when
+the bit is set. The bit will be cleared once the operation done.1: enable 0: d
 isable..*/
 #define SPI_MEM_FLASH_PES    (BIT(1))
 #define SPI_MEM_FLASH_PES_M  (BIT(1))
@@ -1148,7 +1148,7 @@ ut with the spi_clk high edge ,6: output with the spi_clk low edge.*/
 #define SPI_MEM_INT_RAW_REG(i)          (REG_SPI_MEM_BASE(i) + 0xC8)
 /* SPI_MEM_BROWN_OUT_INT_RAW : R/WTC/SS ;bitpos:[5] ;default: 1'b0 ; */
 /*description: The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that
-chip is loosing power and RTC module sends out brown out close flash request to
+chip is losing power and RTC module sends out brown out close flash request to
 SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered
  and MSPI returns to idle state. 0: Others..*/
 #define SPI_MEM_BROWN_OUT_INT_RAW    (BIT(5))

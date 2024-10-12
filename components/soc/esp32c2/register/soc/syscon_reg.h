@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
+#include "soc/soc.h"
 
 #define SYSCON_SYSCLK_CONF_REG          (DR_REG_SYSCON_BASE + 0x0)
 /* SYSCON_RST_TICK_CNT : R/W ;bitpos:[12] ;default: 1'b0 ; */

@@ -399,7 +399,7 @@ typedef volatile struct rtc_cntl_dev_s{
             uint32_t swd_signal_width              :    10;  /*adjust signal width send to swd*/
             uint32_t swd_rst_flag_clr              :    1;  /*reset swd reset flag*/
             uint32_t swd_feed                      :    1;  /*Sw feed swd*/
-            uint32_t swd_disable                   :    1;  /*disabel SWD*/
+            uint32_t swd_disable                   :    1;  /*disable SWD*/
             uint32_t swd_auto_feed_en              :    1;  /*automatically feed swd when int comes*/
         };
         uint32_t val;

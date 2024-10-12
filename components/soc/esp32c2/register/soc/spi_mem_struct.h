@@ -64,7 +64,7 @@ typedef volatile struct spi_mem_dev_s{
     } ctrl;
     union {
         struct {
-            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on.*/
+            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is always on.*/
             uint32_t cs_hold_dly_res               :    10;  /*After RES/DP/HPM command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 512) SPI_CLK cycles.*/
             uint32_t reserved2                     :    18;  /*reserved*/
             uint32_t rxfifo_rst                    :    1;  /*SPI0 RX FIFO reset signal.*/
@@ -322,7 +322,7 @@ typedef volatile struct spi_mem_dev_s{
             uint32_t wpe_end                       :    1;  /*The raw bit for SPI_MEM_WPE_END_INT interrupt. 1: Triggered when WRSR/PP/SE/BE/CE is sent and flash is already idle. 0: Others.*/
             uint32_t slv_st_end                    :    1;  /*The raw bit for SPI_MEM_SLV_ST_END_INT interrupt. 1: Triggered when spi1_slv_st is changed from non idle state to idle state. It means that SPI_CS raises high. 0: Others*/
             uint32_t mst_st_end                    :    1;  /*The raw bit for SPI_MEM_MST_ST_END_INT interrupt. 1: Triggered when spi1_mst_st is changed from non idle state to idle state. 0: Others.*/
-            uint32_t brown_out                     :    1;  /*The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that chip is loosing power and RTC module sends out brown out close flash request to SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered and MSPI returns to idle state. 0: Others.*/
+            uint32_t brown_out                     :    1;  /*The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that chip is losing power and RTC module sends out brown out close flash request to SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered and MSPI returns to idle state. 0: Others.*/
             uint32_t reserved6                     :    26;  /*reserved*/
         };
         uint32_t val;

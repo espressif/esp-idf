@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
+#include "soc/soc.h"
 
 #define UART_FIFO_REG(i)          (REG_UART_BASE(i) + 0x0)
 /* UART_RXFIFO_RD_BYTE : RO ;bitpos:[7:0] ;default: 8'b0 ; */
@@ -92,7 +92,7 @@ NULL characters, after all data in Tx-FIFO are sent..*/
 #define UART_SW_XOFF_INT_RAW_V  0x1
 #define UART_SW_XOFF_INT_RAW_S  10
 /* UART_SW_XON_INT_RAW : R/WTC/SS ;bitpos:[9] ;default: 1'b0 ; */
-/*description: This interrupt raw bit turns to high level when receiver recevies Xon char when
+/*description: This interrupt raw bit turns to high level when receiver receives Xon char when
 uart_sw_flow_con_en is set to 1..*/
 #define UART_SW_XON_INT_RAW    (BIT(9))
 #define UART_SW_XON_INT_RAW_M  (BIT(9))
@@ -205,7 +205,7 @@ t to 1..*/
 #define UART_TX_DONE_INT_ST_V  0x1
 #define UART_TX_DONE_INT_ST_S  14
 /* UART_TX_BRK_IDLE_DONE_INT_ST : RO ;bitpos:[13] ;default: 1'b0 ; */
-/*description: This is the stauts bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_en
+/*description: This is the status bit for tx_brk_idle_done_int_raw when tx_brk_idle_done_int_en
 a is set to 1..*/
 #define UART_TX_BRK_IDLE_DONE_INT_ST    (BIT(13))
 #define UART_TX_BRK_IDLE_DONE_INT_ST_M  (BIT(13))
@@ -744,7 +744,7 @@ ansmitter's 11th bit to 0..*/
 #define UART_IRDA_DPLX_V  0x1
 #define UART_IRDA_DPLX_S  9
 /* UART_TXD_BRK : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: Set this bit to enbale transmitter to  send NULL when the process of sending dat
+/*description: Set this bit to enable transmitter to  send NULL when the process of sending dat
 a is done..*/
 #define UART_TXD_BRK    (BIT(8))
 #define UART_TXD_BRK_M  (BIT(8))
@@ -791,7 +791,7 @@ ware flow control..*/
 
 #define UART_CONF1_REG(i)          (REG_UART_BASE(i) + 0x24)
 /* UART_RX_TOUT_EN : R/W ;bitpos:[21] ;default: 1'b0 ; */
-/*description: This is the enble bit for uart receiver's timeout function..*/
+/*description: This is the enable bit for uart receiver's timeout function..*/
 #define UART_RX_TOUT_EN    (BIT(21))
 #define UART_RX_TOUT_EN_M  (BIT(21))
 #define UART_RX_TOUT_EN_V  0x1
@@ -840,7 +840,7 @@ se. It is used in baud rate-detect process..*/
 
 #define UART_HIGHPULSE_REG(i)          (REG_UART_BASE(i) + 0x2C)
 /* UART_HIGHPULSE_MIN_CNT : RO ;bitpos:[11:0] ;default: 12'hfff ; */
-/*description: This register stores  the value of the maxinum duration time for the high level
+/*description: This register stores  the value of the maximum duration time for the high level
 pulse. It is used in baud rate-detect process..*/
 #define UART_HIGHPULSE_MIN_CNT    0x00000FFF
 #define UART_HIGHPULSE_MIN_CNT_M  ((UART_HIGHPULSE_MIN_CNT_V)<<(UART_HIGHPULSE_MIN_CNT_S))
@@ -898,7 +898,7 @@ t process..*/
 #define UART_SLEEP_CONF_REG(i)          (REG_UART_BASE(i) + 0x38)
 /* UART_ACTIVE_THRESHOLD : R/W ;bitpos:[9:0] ;default: 10'hf0 ; */
 /*description: The uart is activated from light sleeping mode when the input rxd edge changes m
-ore times than this register value..*/
+or times than this register value..*/
 #define UART_ACTIVE_THRESHOLD    0x000003FF
 #define UART_ACTIVE_THRESHOLD_M  ((UART_ACTIVE_THRESHOLD_V)<<(UART_ACTIVE_THRESHOLD_S))
 #define UART_ACTIVE_THRESHOLD_V  0x3FF
@@ -951,8 +951,8 @@ of sending data is done. It is active when txd_brk is set to 1..*/
 #define UART_TX_IDLE_NUM_V  0x3FF
 #define UART_TX_IDLE_NUM_S  10
 /* UART_RX_IDLE_THRHD : R/W ;bitpos:[9:0] ;default: 10'h100 ; */
-/*description: It will produce frame end signal when receiver takes more time to receive one by
-te data than this register value..*/
+/*description: It will produce frame end signal when receiver takes more time to receive one byte
+data than this register value..*/
 #define UART_RX_IDLE_THRHD    0x000003FF
 #define UART_RX_IDLE_THRHD_M  ((UART_RX_IDLE_THRHD_V)<<(UART_RX_IDLE_THRHD_S))
 #define UART_RX_IDLE_THRHD_V  0x3FF
@@ -1066,7 +1066,7 @@ akes more time to receive one byte with rx_tout_en set to 1..*/
 #define UART_RX_TOUT_THRHD_V  0x3FF
 #define UART_RX_TOUT_THRHD_S  16
 /* UART_RX_FLOW_THRHD : R/W ;bitpos:[15:7] ;default: 9'h0 ; */
-/*description: This register is used to configure the maximum amount of data that can be receiv
+/*description: This register is used to configure the maximum amount of data that can be receive
 ed  when hardware flow control works..*/
 #define UART_RX_FLOW_THRHD    0x000001FF
 #define UART_RX_FLOW_THRHD_M  ((UART_RX_FLOW_THRHD_V)<<(UART_RX_FLOW_THRHD_S))

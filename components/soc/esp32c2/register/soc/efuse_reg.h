@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "soc/soc.h"
-#include "efuse_defs.h"
+#include "soc/efuse_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -896,7 +896,7 @@ extern "C" {
 #define EFUSE_CLK_EN_S  16
 
 /** EFUSE_CONF_REG register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 #define EFUSE_CONF_REG (DR_REG_EFUSE_BASE + 0x8c)
 /** EFUSE_OP_CODE : R/W; bitpos: [15:0]; default: 0;
