@@ -24,7 +24,7 @@
 #define DR_REG_PCNT_BASE                        0x60012000
 #define DR_REG_SOC_ETM_BASE                     0x60013000
 #define DR_REG_MCPWM_BASE                       0x60014000
-#define DR_REG_PARl_IO_BASE                     0x60015000
+#define DR_REG_PARL_IO_BASE                     0x60015000
 #define DR_REG_PVT_MONITOR_BASE                 0x60019000
 #define DR_REG_GDMA_BASE                        0x60080000
 #define DR_REG_SPI2_BASE                        0x60081000
