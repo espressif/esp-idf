@@ -16,16 +16,14 @@ GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时�
 
 .. note::
 
-    专用 GPIO 更像是 CPU 外设，因此与 CPU 内核关系密切。强烈建议在 pin-to-core 任务中安装和操作 GPIO 捆绑包。例如，如果 GPIOA 连接到了 CPU0，而专用的 GPIO 指令却是从 CPU1 发出的，那么就无法控制 GPIOA。
+    专用 GPIO 更像是 CPU 外设，因此与 CPU 内核关系密切。强烈建议在 pin-to-core 任务中安装和操作 GPIO 捆绑包。例如，如果 GPIO_A 连接到了 CPU_0，而专用的 GPIO 指令却是从 CPU_1 发出的，那么就无法控制 GPIO_A。
 
 安装 GPIO 捆绑包需要调用 :cpp:func:`dedic_gpio_new_bundle` 来分配软件资源并将专用通道连接到用户选择的 GPIO。GPIO 捆绑包的配置在 :cpp:type:`dedic_gpio_bundle_config_t` 结构体中：
 
-- :cpp:member:`gpio_array`：包含 GPIO 编号的数组。
-- :cpp:member:`array_size`：:cpp:member:`gpio_array` 的元素个数。
-- :cpp:member:`flags`：用于控制 GPIO 捆绑包行为的标志。
-
-  - :cpp:member:`in_en` 和 :cpp:member:`out_en` 用于选择是否开启输入输出功能（这两个功能可以同时开启）。
-  - :cpp:member:`in_invert` 和 :cpp:member:`out_invert` 用于选择是否反转 GPIO 信号。
+- :cpp:member:`dedic_gpio_bundle_config_t::gpio_array`：包含 GPIO 编号的数组。
+- :cpp:member:`dedic_gpio_bundle_config_t::array_size`: :cpp:member:`dedic_gpio_bundle_config_t::gpio_array` 的元素个数。
+- :cpp:member:`dedic_gpio_bundle_config_t::in_en` 和 :cpp:member:`dedic_gpio_bundle_config_t::out_en` 用于选择是否开启输入输出功能（这两个功能可以同时开启）。
+- :cpp:member:`dedic_gpio_bundle_config_t::in_invert` 和 :cpp:member:`dedic_gpio_bundle_config_t::out_invert` 用于选择是否反转 GPIO 信号。
 
 以下代码展示了如何安装只有输出功能的 GPIO 捆绑包：
 
@@ -33,15 +31,6 @@ GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时�
 
 ::
 
-    // 配置 GPIO
-    const int bundleA_gpios[] = {0, 1};
-    gpio_config_t io_conf = {
-        .mode = GPIO_MODE_OUTPUT,
-    };
-    for (int i = 0; i < sizeof(bundleA_gpios) / sizeof(bundleA_gpios[0]); i++) {
-        io_conf.pin_bit_mask = 1ULL << bundleA_gpios[i];
-        gpio_config(&io_conf);
-    }
     // 创建 bundleA，仅输出
     dedic_gpio_bundle_handle_t bundleA = NULL;
     dedic_gpio_bundle_config_t bundleA_config = {
@@ -54,10 +43,6 @@ GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时�
     ESP_ERROR_CHECK(dedic_gpio_new_bundle(&bundleA_config, &bundleA));
 
 如需卸载 GPIO 捆绑包，可调用 :cpp:func:`dedic_gpio_del_bundle`。
-
-.. note::
-
-    :cpp:func:`dedic_gpio_new_bundle` 不包含任何 GPIO pad 配置（例如上拉/下拉、驱动能力、输出/输入使能）。因此，在安装专用 GPIO 捆绑包之前，必须使用 GPIO 驱动程序 API（如 :cpp:func:`gpio_config`）单独配置 GPIO。更多关于 GPIO 驱动的信息，请参考 :doc:`GPIO API 参考 <gpio>`。
 
 
 GPIO 捆绑包操作
@@ -92,13 +77,13 @@ GPIO 捆绑包操作
 3. 调用 CPU LL apis（如 `cpu_ll_write_dedic_gpio_mask`）或使用该掩码编写汇编代码
 4. 切换 IO 的最快捷方式是使用专用的“设置/清除”指令：
 
-    .. only:: esp32s2 or esp32s3
+    .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
         - 设置 GPIO 位：``set_bit_gpio_out imm[7:0]``
         - 清除 GPIO 位：``clr_bit_gpio_out imm[7:0]``
         - 注意：立即数宽度取决于专用 GPIO 通道的数量
 
-    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
+    .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
         - 设置 GPIO 位：``csrrsi rd, csr, imm[4:0]``
         - 清除 GPIO 位：``csrrci rd, csr, imm[4:0]``

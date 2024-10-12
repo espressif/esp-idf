@@ -23,7 +23,7 @@ This matrix keyboard driver is interrupt-driven, supports a configurable debounc
 
 This example can run on any target that has the dedicated feature (e.g. ESP32-S2). It's not necessary for your matrix board to have pull-up resisters on row/column lines. The driver has enabled internal pull-up resister by default. A typical matrix board should look as follows:
 
-```
+```text
 row_0   +--------+-------------------+------------------------------+-----------------+
                  |                   |                              |
                  |       +           |       +                      |       +
@@ -51,7 +51,7 @@ row_n   +--------+-------------------+------------------------------+-----------
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
+```text
 idf.py -p PORT flash monitor
 ```
 
@@ -63,7 +63,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-```
+```text
 I (2883) example: press event, key code = 0002
 I (3003) example: release event, key code = 0002
 I (5053) example: press event, key code = 0001
@@ -77,3 +77,7 @@ I (8923) example: release event, key code = 0103
 I (9543) example: press event, key code = 0203
 I (9683) example: release event, key code = 0203
 ```
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

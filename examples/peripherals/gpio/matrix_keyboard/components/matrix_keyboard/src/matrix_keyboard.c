@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,23 +7,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
-#include "esp_compiler.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "driver/dedic_gpio.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "matrix_keyboard.h"
-#include "esp_rom_sys.h"
 
 static const char *TAG = "mkbd";
-
-#define MKBD_CHECK(a, msg, tag, ret, ...)                                         \
-    do {                                                                          \
-        if (unlikely(!(a))) {                                                     \
-            ESP_LOGE(TAG, "%s(%d): " msg, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            ret_code = ret;                                                       \
-            goto tag;                                                             \
-        }                                                                         \
-    } while (0)
 
 typedef struct matrix_kbd_t matrix_kbd_t;
 
@@ -91,45 +82,36 @@ static void matrix_kbd_debounce_timer_callback(TimerHandle_t xTimer)
 
 esp_err_t matrix_kbd_install(const matrix_kbd_config_t *config, matrix_kbd_handle_t *mkbd_handle)
 {
-    esp_err_t ret_code = ESP_OK;
+    esp_err_t ret = ESP_OK;
     matrix_kbd_t *mkbd = NULL;
-    MKBD_CHECK(config, "matrix keyboard configuration can't be null", err, ESP_ERR_INVALID_ARG);
-    MKBD_CHECK(mkbd_handle, "matrix keyboard handle can't be null", err, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(config && mkbd_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     mkbd = calloc(1, sizeof(matrix_kbd_t) + (config->nr_row_gpios) * sizeof(uint32_t));
-    MKBD_CHECK(mkbd, "allocate matrix keyboard context failed", err, ESP_ERR_NO_MEM);
+    ESP_RETURN_ON_FALSE(mkbd, ESP_ERR_NO_MEM, TAG, "no mem for matrix keyboard context");
+
+    // Create a ont-shot os timer, used for key debounce
+    mkbd->debounce_timer = xTimerCreate("kb_debounce", pdMS_TO_TICKS(config->debounce_ms), pdFALSE, mkbd, matrix_kbd_debounce_timer_callback);
+    ESP_GOTO_ON_FALSE(mkbd->debounce_timer, ESP_FAIL, err, TAG, "create debounce timer failed");
 
     mkbd->nr_col_gpios = config->nr_col_gpios;
     mkbd->nr_row_gpios = config->nr_row_gpios;
 
-    // GPIO pad configuration
-    // Each GPIO used in matrix key board should be able to input and output
-    // In case the keyboard doesn't design a resister to pull up row/col line
-    // We enable the internal pull up resister, enable Open Drain as well
-    gpio_config_t io_conf = {
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_up_en = 1
-    };
-
-    for (int i = 0; i < config->nr_row_gpios; i++) {
-        io_conf.pin_bit_mask = 1ULL << config->row_gpios[i];
-        gpio_config(&io_conf);
-    }
-
     dedic_gpio_bundle_config_t bundle_row_config = {
         .gpio_array = config->row_gpios,
         .array_size = config->nr_row_gpios,
+        // Each GPIO used in matrix key board should be able to input and output
         .flags = {
             .in_en = 1,
             .out_en = 1,
         },
     };
-    MKBD_CHECK(dedic_gpio_new_bundle(&bundle_row_config, &mkbd->row_bundle) == ESP_OK,
-               "create row bundle failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(dedic_gpio_new_bundle(&bundle_row_config, &mkbd->row_bundle), err, TAG, "create row bundle failed");
 
-    for (int i = 0; i < config->nr_col_gpios; i++) {
-        io_conf.pin_bit_mask = 1ULL << config->col_gpios[i];
-        gpio_config(&io_conf);
+    // In case the keyboard doesn't design a resister to pull up row/col line
+    // We enable the internal pull up resister, enable Open Drain as well
+    for (int i = 0; i < config->nr_row_gpios; i++) {
+        gpio_pullup_en(config->row_gpios[i]);
+        gpio_od_enable(config->row_gpios[i]);
     }
 
     dedic_gpio_bundle_config_t bundle_col_config = {
@@ -140,8 +122,12 @@ esp_err_t matrix_kbd_install(const matrix_kbd_config_t *config, matrix_kbd_handl
             .out_en = 1,
         },
     };
-    MKBD_CHECK(dedic_gpio_new_bundle(&bundle_col_config, &mkbd->col_bundle) == ESP_OK,
-               "create col bundle failed", err, ESP_FAIL);
+    ESP_GOTO_ON_ERROR(dedic_gpio_new_bundle(&bundle_col_config, &mkbd->col_bundle), err, TAG, "create col bundle failed");
+
+    for (int i = 0; i < config->nr_col_gpios; i++) {
+        gpio_pullup_en(config->col_gpios[i]);
+        gpio_od_enable(config->col_gpios[i]);
+    }
 
     // Disable interrupt
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd->row_bundle, (1 << config->nr_row_gpios) - 1,
@@ -149,45 +135,35 @@ esp_err_t matrix_kbd_install(const matrix_kbd_config_t *config, matrix_kbd_handl
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd->col_bundle, (1 << config->nr_col_gpios) - 1,
                                                  DEDIC_GPIO_INTR_NONE, NULL, NULL);
 
-    // Create a ont-shot os timer, used for key debounce
-    mkbd->debounce_timer = xTimerCreate("kb_debounce", pdMS_TO_TICKS(config->debounce_ms), pdFALSE, mkbd, matrix_kbd_debounce_timer_callback);
-    MKBD_CHECK(mkbd->debounce_timer, "create debounce timer failed", err, ESP_FAIL);
-
     * mkbd_handle = mkbd;
     return ESP_OK;
 err:
-    if (mkbd) {
-        if (mkbd->debounce_timer) {
-            xTimerDelete(mkbd->debounce_timer, 0);
-        }
-        if (mkbd->col_bundle) {
-            dedic_gpio_del_bundle(mkbd->col_bundle);
-        }
-        if (mkbd->row_bundle) {
-            dedic_gpio_del_bundle(mkbd->row_bundle);
-        }
-        free(mkbd);
+    if (mkbd->debounce_timer) {
+        xTimerDelete(mkbd->debounce_timer, 0);
     }
-    return ret_code;
+    if (mkbd->col_bundle) {
+        dedic_gpio_del_bundle(mkbd->col_bundle);
+    }
+    if (mkbd->row_bundle) {
+        dedic_gpio_del_bundle(mkbd->row_bundle);
+    }
+    free(mkbd);
+    return ret;
 }
 
 esp_err_t matrix_kbd_uninstall(matrix_kbd_handle_t mkbd_handle)
 {
-    esp_err_t ret_code = ESP_OK;
-    MKBD_CHECK(mkbd_handle, "matrix keyboard handle can't be null", err, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(mkbd_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     xTimerDelete(mkbd_handle->debounce_timer, 0);
     dedic_gpio_del_bundle(mkbd_handle->col_bundle);
     dedic_gpio_del_bundle(mkbd_handle->row_bundle);
     free(mkbd_handle);
     return ESP_OK;
-err:
-    return ret_code;
 }
 
 esp_err_t matrix_kbd_start(matrix_kbd_handle_t mkbd_handle)
 {
-    esp_err_t ret_code = ESP_OK;
-    MKBD_CHECK(mkbd_handle, "matrix keyboard handle can't be null", err, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(mkbd_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // row lines set to high level
     dedic_gpio_bundle_write(mkbd_handle->row_bundle, (1 << mkbd_handle->nr_row_gpios) - 1, (1 << mkbd_handle->nr_row_gpios) - 1);
@@ -203,15 +179,11 @@ esp_err_t matrix_kbd_start(matrix_kbd_handle_t mkbd_handle)
                                                  DEDIC_GPIO_INTR_BOTH_EDGE, matrix_kbd_row_isr_callback, mkbd_handle);
 
     return ESP_OK;
-err:
-    return ret_code;
 }
 
 esp_err_t matrix_kbd_stop(matrix_kbd_handle_t mkbd_handle)
 {
-    esp_err_t ret_code = ESP_OK;
-    MKBD_CHECK(mkbd_handle, "matrix keyboard handle can't be null", err, ESP_ERR_INVALID_ARG);
-
+    ESP_RETURN_ON_FALSE(mkbd_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     xTimerStop(mkbd_handle->debounce_timer, 0);
 
     // Disable interrupt
@@ -221,17 +193,12 @@ esp_err_t matrix_kbd_stop(matrix_kbd_handle_t mkbd_handle)
                                                  DEDIC_GPIO_INTR_NONE, NULL, NULL);
 
     return ESP_OK;
-err:
-    return ret_code;
 }
 
 esp_err_t matrix_kbd_register_event_handler(matrix_kbd_handle_t mkbd_handle, matrix_kbd_event_handler handler, void *args)
 {
-    esp_err_t ret_code = ESP_OK;
-    MKBD_CHECK(mkbd_handle, "matrix keyboard handle can't be null", err, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(mkbd_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     mkbd_handle->event_handler = handler;
     mkbd_handle->event_handler_args = args;
     return ESP_OK;
-err:
-    return ret_code;
 }
