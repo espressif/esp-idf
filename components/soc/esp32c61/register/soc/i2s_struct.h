@@ -410,7 +410,7 @@ typedef union {
          */
         uint32_t tx_slave_mod:1;
         /** tx_stop_en : R/W; bitpos: [4]; default: 1;
-         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is emtpy
+         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is empty
          */
         uint32_t tx_stop_en:1;
         /** tx_chan_equal : R/W; bitpos: [5]; default: 0;

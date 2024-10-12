@@ -37,7 +37,7 @@ extern "C" {
 #define GPIO_EXT_XPD_COMP_0_V  0x00000001U
 #define GPIO_EXT_XPD_COMP_0_S  0
 /** GPIO_EXT_MODE_COMP_0 : R/W; bitpos: [1]; default: 0;
- *  Configures the reference voltage for analog PAD voltage comparater.. \\
+ *  Configures the reference voltage for analog PAD voltage comparator.. \\
  *  0: Reference voltage is the internal reference voltage, meanwhile GPIO8 PAD can be
  *  used as a regular GPIO\\
  *  1: Reference voltage is the voltage on the GPIO8 PAD\\

@@ -83,7 +83,7 @@ typedef union {
          */
         uint32_t core_0_iram0_exception_monitor_ena:1;
         /** core_0_dram0_exception_monitor_ena : R/W; bitpos: [11]; default: 0;
-         *  DBUS busy monitor enbale
+         *  DBUS busy monitor enable
          */
         uint32_t core_0_dram0_exception_monitor_ena:1;
         uint32_t reserved_12:20;
@@ -372,7 +372,7 @@ typedef union {
          */
         uint32_t core_0_iram0_exception_monitor_intr_ena:1;
         /** core_0_dram0_exception_monitor_intr_ena : R/W; bitpos: [11]; default: 0;
-         *  DBUS busy monitor interrupt enbale
+         *  DBUS busy monitor interrupt enable
          */
         uint32_t core_0_dram0_exception_monitor_intr_ena:1;
         uint32_t reserved_12:20;
@@ -441,7 +441,7 @@ typedef union {
 } assist_debug_core_0_intr_clr_reg_t;
 
 
-/** Group: pc reording configuration register */
+/** Group: pc recording configuration register */
 /** Type of core_0_rcd_en register
  *  HP CPU PC logging enable register
  */
@@ -465,7 +465,7 @@ typedef union {
 } assist_debug_core_0_rcd_en_reg_t;
 
 
-/** Group: pc reording status register */
+/** Group: pc recording status register */
 /** Type of core_0_rcd_pdebugpc register
  *  PC logging register
  */
@@ -493,7 +493,7 @@ typedef union {
 } assist_debug_core_0_rcd_pdebugsp_reg_t;
 
 
-/** Group: exception monitor regsiter */
+/** Group: exception monitor register */
 /** Type of core_0_iram0_exception_monitor_0 register
  *  exception monitor status register0
  */

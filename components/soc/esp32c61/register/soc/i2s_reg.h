@@ -320,7 +320,7 @@ extern "C" {
 #define I2S_TX_SLAVE_MOD_V  0x00000001U
 #define I2S_TX_SLAVE_MOD_S  3
 /** I2S_TX_STOP_EN : R/W; bitpos: [4]; default: 1;
- *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is emtpy
+ *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is empty
  */
 #define I2S_TX_STOP_EN    (BIT(4))
 #define I2S_TX_STOP_EN_M  (I2S_TX_STOP_EN_V << I2S_TX_STOP_EN_S)

@@ -39,7 +39,7 @@ typedef union {
          */
         uint32_t xpd_comp_0:1;
         /** mode_comp_0 : R/W; bitpos: [1]; default: 0;
-         *  Configures the reference voltage for analog PAD voltage comparater.. \\
+         *  Configures the reference voltage for analog PAD voltage comparator.. \\
          *  0: Reference voltage is the internal reference voltage, meanwhile GPIO8 PAD can be
          *  used as a regular GPIO\\
          *  1: Reference voltage is the voltage on the GPIO8 PAD\\

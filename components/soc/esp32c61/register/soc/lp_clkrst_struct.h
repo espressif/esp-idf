@@ -171,7 +171,7 @@ typedef union {
 } lp_clkrst_lp_rst_en_reg_t;
 
 /** Type of reset_cause register
- *  Represents the reset casue
+ *  Represents the reset cause
  */
 typedef union {
     struct {

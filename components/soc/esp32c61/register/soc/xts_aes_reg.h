@@ -32,7 +32,7 @@ s. Please do not use this field..*/
 
 #define XTS_AES_DESTINATION_REG(i)          (REG_SPI_MEM_BASE(i) + 0x344)
 /* XTS_AES_DESTINATION : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: This bit stores the destination parameter which will be used in manual encryptio
+/*description: This bit stores the destination parameter which will be used in manual encryption
 n calculation. 0: flash(default), 1: psram(reserved). Only default value can be
 used..*/
 #define XTS_AES_DESTINATION    (BIT(0))
@@ -54,7 +54,7 @@ size parameter..*/
 /* XTS_AES_TRIGGER : WT ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to trigger the process of manual encryption calculation. This actio
 n should only be asserted when manual encryption status is 0. After this action,
- manual encryption status becomes 1. After calculation is done, manual encryptio
+ manual encryption status becomes 1. After calculation is done, manual encryption
 n status becomes 2..*/
 #define XTS_AES_TRIGGER    (BIT(0))
 #define XTS_AES_TRIGGER_M  (BIT(0))
@@ -115,7 +115,7 @@ ing key 1..*/
 #define XTS_AES_CRYPT_CALC_D_DPA_EN_V  0x1
 #define XTS_AES_CRYPT_CALC_D_DPA_EN_S  3
 /* XTS_AES_CRYPT_SECURITY_LEVEL : R/W ;bitpos:[2:0] ;default: 3'd7 ; */
-/*description: Set the security level of spi mem cryption. 0: Shut off cryption DPA funtion. 1-
+/*description: Set the security level of spi mem cryption. 0: Shut off cryption DPA function. 1-
 7: The bigger the number is, the more secure the cryption is. (Note that the per
 formance of cryption will decrease together with this number increasing).*/
 #define XTS_AES_CRYPT_SECURITY_LEVEL    0x00000007

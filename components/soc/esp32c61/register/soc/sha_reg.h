@@ -161,7 +161,7 @@ extern "C" {
 #define SHA_DATE_S  0
 
 /** SHA_H_MEM register
- *  Sha H memory which contains intermediate hash or finial hash.
+ *  Sha H memory which contains intermediate hash or final hash.
  */
 #define SHA_H_MEM (DR_REG_SHA_BASE + 0x40)
 #define SHA_H_MEM_SIZE_BYTES 64

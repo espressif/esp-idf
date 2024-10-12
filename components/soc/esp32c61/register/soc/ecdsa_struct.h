@@ -57,7 +57,7 @@ typedef union {
 typedef union {
     struct {
         /** start : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start caculation of ECDSA Accelerator. This bit will be self-cleared
+         *  Write 1 to start calculation of ECDSA Accelerator. This bit will be self-cleared
          *  after configuration.
          */
         uint32_t start:1;
@@ -260,7 +260,7 @@ typedef union {
 typedef union {
     struct {
         /** sha_start : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start the first caculation of SHA Calculator in ECDSA Accelerator. This
+         *  Write 1 to start the first calculation of SHA Calculator in ECDSA Accelerator. This
          *  bit will be self-cleared after configuration.
          */
         uint32_t sha_start:1;
@@ -275,7 +275,7 @@ typedef union {
 typedef union {
     struct {
         /** sha_continue : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start the latter caculation of SHA Calculator in ECDSA Accelerator. This
+         *  Write 1 to start the latter calculation of SHA Calculator in ECDSA Accelerator. This
          *  bit will be self-cleared after configuration.
          */
         uint32_t sha_continue:1;
