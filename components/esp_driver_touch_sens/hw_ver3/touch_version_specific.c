@@ -331,8 +331,9 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
                           ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
         /* Enabled touch sensor as wake-up source */
         ESP_GOTO_ON_ERROR(esp_sleep_enable_touchpad_wakeup(), err, TAG, "Failed to enable touch sensor wakeup");
-#if SOC_PM_SUPPORT_RC_FAST_PD
-        ESP_GOTO_ON_ERROR(esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON), err, TAG, "Failed to keep touch sensor module clock during the sleep");
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+        // Keep ESP_PD_DOMAIN_RTC_PERIPH power domain on during the light/deep sleep, so that to keep the touch sensor working
+        ESP_GOTO_ON_ERROR(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON), err, TAG, "Failed to keep touch sensor module clock during the sleep");
 #endif
 
         /* If set the deep sleep channel (i.e., enable deep sleep wake-up),
@@ -360,10 +361,10 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     } else {
         /* Disable the touch sensor as wake-up source */
         esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
-#if SOC_PM_SUPPORT_RC_FAST_PD
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_AUTO);
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_AUTO);
 #endif
-
+        sens_handle->deep_slp_chan = NULL;
         sens_handle->sleep_en = false;
     }
 
