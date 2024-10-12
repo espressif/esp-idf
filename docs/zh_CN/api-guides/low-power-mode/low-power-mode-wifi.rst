@@ -14,14 +14,13 @@ Wi-Fi 场景下低功耗模式介绍
 
   在介绍具体内容前先给出 Wi-Fi 场景下低功耗模式总结表，以方便用户根据需求快速选择想要了解的内容，选择合适的低功耗模式。
 
-
   .. include:: ../sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
 
   .. note::
 
       上表中所有电流均为平均电流，所测数据均在屏蔽箱中测试得出。表中术语在下文均有介绍，用户可根据需求进行查看。
 
-.. _Wi-Fi 省电的基本原理:
+.. _Basic Principles of Wi-Fi Power Saving:
 
 Wi-Fi 省电的基本原理
 ---------------------
@@ -90,9 +89,9 @@ Wi-Fi 省电的基本原理
 
 可以看出影响功耗表现的主要有三点：interval、period 和 base current。
 
-  - **interval** 是 station Wi-Fi 相关模块工作的间隔，既可以由低功耗模式自定义，也可根据 Wi-Fi 协议省电机制（详细内容请见 :ref:`Wi-Fi 省电的基本原理`），由 DTIM 周期决定。可以看出在同等情下，interval 越大，功耗表现会更好，但是响应会更慢，影响通信的及时性。
+  - **interval** 是 station Wi-Fi 相关模块工作的间隔，既可以由低功耗模式自定义，也可根据 Wi-Fi 协议省电机制（详细内容请见 :ref:`Basic Principles of Wi-Fi Power Saving`），由 DTIM 周期决定。可以看出在同等情下，interval 越大，功耗表现会更好，但是响应会更慢，影响通信的及时性。
 
-  - **period** 可以看作每次 station Wi-Fi 工作的时间，这段时间的长度也会影响功耗的表现。period 不是一个固定的时长（详细内容请见 :ref:`Wi-Fi 省电的基本原理`），在保证 Wi-Fi 通信正常的情况下，period 持续时间越短，功耗表现越好。但是减少 period 时间，必然会影响通信的可靠性。
+  - **period** 可以看作每次 station Wi-Fi 工作的时间，这段时间的长度也会影响功耗的表现。period 不是一个固定的时长（详细内容请见 :ref:`Basic Principles of Wi-Fi Power Saving`），在保证 Wi-Fi 通信正常的情况下，period 持续时间越短，功耗表现越好。但是减少 period 时间，必然会影响通信的可靠性。
 
   - **base current** 是 Wi-Fi 相关模块不工作时芯片的电流，影响其大小的因素很多，不同的功耗模式下休眠策略不同。所以，在满足功能的情况下，优化配置降低该电流大小可以提高功耗表现，但同时关闭其余模块会影响相关功能和芯片的唤醒时间。
 
@@ -106,7 +105,7 @@ Modem-sleep 模式主要工作原理基于 DTIM 机制，周期性的醒来处�
 
 Modem-sleep 模式会在 Wi-Fi 任务结束后自动进入休眠无需调用 API，休眠时仅会关闭 Wi-Fi 相关模块 (PHY)，其余模块均处在正常上电状态。
 
-Modem-sleep 模式默认会根据 DTIM 周期或 listen interval（于 :ref:`Modem-sleep 模式配置` 中介绍）醒来，相当于系统自动设置了一个 Wi-Fi 唤醒源，因此用户无需再配置唤醒源，同时系统主动发包时也可以唤醒。
+Modem-sleep 模式默认会根据 DTIM 周期或 listen interval（于 :ref:`Modem-sleep Mode Configuration` 中介绍）醒来，相当于系统自动设置了一个 Wi-Fi 唤醒源，因此用户无需再配置唤醒源，同时系统主动发包时也可以唤醒。
 
 Modem-sleep 模式是一个开关型的模式，调用 API 开启后一直自动运行，其工作流程十分简单，具体如下图。
 
@@ -121,7 +120,7 @@ Modem-sleep 模式是一个开关型的模式，调用 API 开启后一直自动
 
                           Modem-sleep 模式工作流程图
 
-根据上文的基本电流图，结合 Modem-sleep 模式的工作原理，以 Min Modem 模式（于 :ref:`Modem-sleep 模式配置` 中介绍）为例可得理想情况下电流变化图。
+根据上文的基本电流图，结合 Modem-sleep 模式的工作原理，以 Min Modem 模式（于 :ref:`Modem-sleep Mode Configuration` 中介绍）为例可得理想情况下电流变化图。
 
 .. code-block:: text
 
@@ -294,7 +293,7 @@ Deep-sleep 模式在 Wi-Fi 场景下与纯系统下基本相同，详情可以�
   - 丢失 beacon 时睡眠优化 (:ref:`CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT`)
 
 
-.. _Modem-sleep 模式配置:
+.. _Modem-sleep Mode Configuration:
 
 Modem-sleep 模式配置
 +++++++++++++++++++++++

@@ -167,7 +167,7 @@ By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the inte
 
         The benefits of XiP from PSRAM is:
 
-        - PSRAM access speed may be faster than Flash access, so the overall application performance may be better. For example, if the PSRAM is an Octal mode (8-line-PSRAM) and is configured to 80 MHz, then it is faster than a Quad flash (4-line-flash) which is configured to 80 MHz.
+        - PSRAM access speed may be faster than flash access, so the overall application performance may be better. For example, if the PSRAM is an Octal mode (8-line PSRAM) and is configured to 80 MHz, then it is faster than a Quad flash (4-line flash) which is configured to 80 MHz.
 
         - The cache will not be disabled during an SPI1 flash operation, thus optimizing the code execution performance during SPI1 flash operations. For ISRs, ISR callbacks and data which might be accessed during this period, you do not need to place them in internal RAM, thus internal RAM usage can be optimized. This feature is useful for high throughput peripheral involved applications to improve the performance during SPI1 flash operations.
 
@@ -186,11 +186,11 @@ By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the inte
 
         .. only:: SOC_MMU_PER_EXT_MEM_TARGET
 
-            Because {IDF_TARGET_NAME} flash and PSRAM are using two separate SPI buses, moving flash content to PSRAM will actually increase the load of the PSRAM MSPI bus, so the exact impact on performance will be dependent on your app usage of PSRAM.
+            Since the flash and PSRAM in {IDF_TARGET_NAME} use two separate SPI buses, moving flash content to PSRAM will actually increase the load on the PSRAM MSPI bus. Therefore, the exact impact on performance will be dependent on your app usage of PSRAM.
 
-            For example, as the PSRAM bus speed could be faster than flash bus speed (e.g., if the PSRAM is a HEX (16-line-PSRAM on ESP32P4) and is configured to 200 Mhz, then it is much faster than a Quad flash (4-line-flash) which is configured to 80 MHz.).
+            The PSRAM bus can operate at a higher speed than the flash bus. For example, if the PSRAM is a HEX (16-line PSRAM on ESP32P4) running at 200 MHz, it is significantly faster than a Quad flash (4-line flash) running at 80 MHz.
 
-            If the instructions and data that are used to be in flash are not accessed very frequently, you should get better performance with this option enabled. We suggest doing performance profiling to determine how enabling this option will impact your system.
+            If the instructions and data previously stored in flash are not accessed frequently, then enabling this option could improve performance. It is recommended to conduct performance profiling to evaluate how this option will affect your system.
 
 Restrictions
 ============

@@ -114,7 +114,7 @@ Then, in the component ``CMakeLists.txt``, add this name as an unresolved symbol
 
 This will ensure the linker to always includes the file defining ``ld_include_my_isr_file``, so that the ISR is always linked.
 
-- High-priority interrupts can be routed and handled using :cpp:func:`esp_intr_alloc` and associated functions. The handler and handler arguments to :cpp:func:`esp_intr_alloc` must be NULL, however.
+- High-priority interrupts can be routed and handled using :cpp:func:`esp_intr_alloc` and associated functions. However, the handler and handler arguments to :cpp:func:`esp_intr_alloc` must be NULL.
 
 - In theory, medium priority interrupts could also be handled in this way. ESP-IDF does not support this yet.
 
