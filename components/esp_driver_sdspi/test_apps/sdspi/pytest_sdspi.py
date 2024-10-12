@@ -4,6 +4,7 @@ import pytest
 from pytest_embedded_idf import IdfDut
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C5 C61 GPSPI same, so testing on C5 is enough')
 @pytest.mark.esp32
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3

@@ -57,6 +57,8 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
 @pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDFCI-2059, temporary lack runner')
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
+@pytest.mark.esp32c5
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C5 C61 GPSPI same, so testing on C5 is enough')
 @pytest.mark.sdcard_spimode
 @pytest.mark.parametrize(
     'config',
