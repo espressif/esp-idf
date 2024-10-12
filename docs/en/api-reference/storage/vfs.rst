@@ -44,7 +44,7 @@ Case 1: API functions are declared without an extra context pointer (the FS driv
         .write = &myfs_write,
     // ... other members initialized
 
-    // When registering FS, context pointer (third argument) is NULL:
+    // When registering FS, context pointer (the third argument) is NULL:
     ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
 
 Case 2: API functions are declared with an extra context pointer (the FS driver supports multiple instances)::
@@ -141,7 +141,9 @@ A socket VFS driver needs to be registered with the following functions defined:
 Please see :component_file:`lwip/port/esp32xx/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
+
     If you use :cpp:func:`select` for socket file descriptors only then you can disable the :ref:`CONFIG_VFS_SUPPORT_SELECT` option to reduce the code size and improve performance.
+
     You should not change the socket driver during an active :cpp:func:`select` call or you might experience some undefined behavior.
 
 Paths
@@ -196,14 +198,11 @@ Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to 
 Minified VFS
 ------------
 
-To minimize RAM usage, an alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_fs` is provided.
-This version accepts :cpp:class:`esp_vfs_fs_ops_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags,
-unlike :cpp:func:`esp_vfs_register` it can handle statically allocated struct, as long as the ``ESP_VFS_FLAG_STATIC`` is provided.
+To minimize RAM usage, an alternative version of :cpp:func:`esp_vfs_register` function, :cpp:func:`esp_vfs_register_fs` is provided. This version accepts :cpp:class:`esp_vfs_fs_ops_t` instead of :cpp:class:`esp_vfs_t` alongside separate argument for OR-ed flags. Unlike :cpp:func:`esp_vfs_register`, it can handle statically allocated struct, as long as the ``ESP_VFS_FLAG_STATIC`` is provided.
 
-The :cpp:class:`esp_vfs_fs_ops_t` is split into separate structs based on features (directory operations, select support, termios support, ...).
-The main struct contains the basic functions (``read``, ``write``, ...), alongside pointers to the feature-specific structs, these pointers can be ``NULL`` indicating lack of support for all the functions provided by that struct, this decreases the required memory.
+The :cpp:class:`esp_vfs_fs_ops_t` is split into separate structs based on features (directory operations, select support, termios support, ...). The main struct contains the basic functions (``read``, ``write``, ...), alongside pointers to the feature-specific structs. These pointers can be ``NULL`` indicating lack of support for all the functions provided by that struct, which decreases the required memory.
 
-Internally the vfs component uses this version of API, with additional steps to convert the :cpp:class:`esp_vfs_t` to :cpp:class:`esp_vfs_fs_ops_t` upon registration.
+Internally the VFS component uses this version of API, with additional steps to convert the :cpp:class:`esp_vfs_t` to :cpp:class:`esp_vfs_fs_ops_t` upon registration.
 
 
 Well Known VFS Devices
