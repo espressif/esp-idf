@@ -147,12 +147,6 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 {
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags);
 
-    uint32_t iram_pd_flags = 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G0) ? BIT(0) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G1) ? BIT(1) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G2) ? BIT(2) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G3) ? BIT(3) : 0;
-
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
 
@@ -172,6 +166,23 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         analog_default.hp_sys.analog.pd_cur = 0;
         analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 0;
 #endif
+
+        if (!(pd_flags & PMU_SLEEP_PD_XTAL))
+        {
+            // Analog parameters in HP_SLEEP
+            analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+            analog_default.hp_sys.analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
+            analog_default.hp_sys.analog.dbias = HP_CALI_ACTIVE_DBIAS_DEFAULT;
+
+            // Analog parameters in LP_SLEEP
+            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
+#if !CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
+#endif
+        }
 
 #if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
         power_default.hp_sys.dig_power.dcdc_switch_pd_en = 0;
