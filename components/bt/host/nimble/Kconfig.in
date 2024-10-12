@@ -648,7 +648,7 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
 
 config BT_NIMBLE_AOA_AOD
     bool "Direction Finding"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && (BT_CONTROLLER_DISABLED || SOC_BLE_CTE_SUPPORTED)
     default n
     help
         Enable support for Connectionless and Connection Oriented Direction Finding
