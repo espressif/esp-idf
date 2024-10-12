@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,10 @@
 #define I2C_PMU_OR_DREFH_VDDA_MSB     7
 #define I2C_PMU_OR_DREFH_VDDA_LSB     5
 
-#define I2C_BOD_THRESHOLD           I2C_PMU_OR_DREFL_VDDA
-#define I2C_BOD_THRESHOLD_MSB       I2C_PMU_OR_DREFL_VDDA_MSB
-#define I2C_BOD_THRESHOLD_LSB       I2C_PMU_OR_DREFL_VDDA_LSB
+#define I2C_BOD_THRESHOLD_L           I2C_PMU_OR_DREFL_VDDA
+#define I2C_BOD_THRESHOLD_L_MSB       I2C_PMU_OR_DREFL_VDDA_MSB
+#define I2C_BOD_THRESHOLD_L_LSB       I2C_PMU_OR_DREFL_VDDA_LSB
+
+#define I2C_BOD_THRESHOLD_H           I2C_PMU_OR_DREFH_VDDA
+#define I2C_BOD_THRESHOLD_H_MSB       I2C_PMU_OR_DREFH_VDDA_MSB
+#define I2C_BOD_THRESHOLD_H_LSB       I2C_PMU_OR_DREFH_VDDA_LSB
