@@ -110,6 +110,9 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         MCPWM_RCC_ATOMIC() {
             mcpwm_ll_enable_bus_clock(group_id, false);
         }
+        if (group->pm_lock) {
+            esp_pm_lock_delete(group->pm_lock);
+        }
         free(group);
     }
     _lock_release(&s_platform.mutex);
