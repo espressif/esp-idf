@@ -162,7 +162,7 @@
       - |experimental|
       - |experimental|
     * -
-      - Advertising Channel Index
+      - Randomized Advertising Channel Indexing
       - |unsupported|
       - |NA|
       - |NA|
@@ -171,19 +171,19 @@
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5 or esp32c61
 
             |experimental|
     * - .. centered:: |5.2|
@@ -201,14 +201,14 @@
       - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp32c61
 
             |experimental|
       - |unsupported|
       - .. only:: esp32 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5 or esp32c61
 
             |experimental|
     * - .. centered:: |5.3|
@@ -216,31 +216,31 @@
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
            |supported|
       - .. only:: esp32 or esp32c3 or esp32s3
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
 
             |experimental|
       - |unsupported|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
@@ -251,31 +251,31 @@
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
       - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+        .. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61
 
             |experimental|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
 
             |experimental|
       - |unsupported|
-      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5 or esp32c61
 
             |unsupported|
         .. only:: esp32c3 or esp32s3
