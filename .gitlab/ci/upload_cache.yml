@@ -10,12 +10,12 @@ upload-pip-cache:
   extends:
     - .upload_cache_template
     - .before_script:minimal
-    - .rules:patterns:python-cache
+    - .rules:upload-python-cache
   tags:
     - $GEO
     - cache
   cache:
-    key: pip-cache
+    key: pip-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/pip
     policy: push
@@ -30,12 +30,12 @@ upload-submodules-cache:
   extends:
     - .upload_cache_template
     - .before_script:minimal
-    - .rules:patterns:submodule
+    - .rules:upload-submodule-cache
   tags:
     - $GEO
     - cache
   cache:
-    key: submodule-cache
+    key: submodule-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/submodule_archives
     policy: push

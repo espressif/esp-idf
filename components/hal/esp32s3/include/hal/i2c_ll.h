@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,7 @@ typedef enum {
 #define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M | I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_WM_INT_ENA_M)
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
+#define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2000)  // Approximate value for SCL timeout regs (in us).
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -210,6 +211,50 @@ static inline void i2c_ll_master_set_fractional_divider(i2c_dev_t *hw, uint8_t d
     /* Set div_a and div_b to 0, as it's not necessary to use them */
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_a, div_a);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_b, div_b);
+}
+
+/**
+ * @brief Set fractional divider
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_a The denominator of the frequency divider factor of the i2c function clock
+ * @param div_b The numerator of the frequency divider factor of the i2c function clock.
+ */
+static inline void i2c_ll_master_get_fractional_divider(i2c_dev_t *hw, uint32_t *div_a, uint32_t *div_b)
+{
+    /* Set div_a and div_b to 0, as it's not necessary to use them */
+    *div_a = hw->clk_conf.sclk_div_a;
+    *div_b = hw->clk_conf.sclk_div_b;
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_save_clock_configurations(i2c_dev_t *hw, uint32_t *div_num, uint8_t *clk_sel, uint8_t *clk_active)
+{
+    *div_num = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num);
+    *clk_sel = hw->clk_conf.sclk_sel;
+    *clk_active = hw->clk_conf.sclk_active;
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_restore_clock_configurations(i2c_dev_t *hw, uint32_t div_num, uint8_t clk_sel, uint8_t clk_active)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, div_num);
+    hw->clk_conf.sclk_sel = clk_sel;
+    hw->clk_conf.sclk_active = clk_active;
 }
 
 /**
@@ -626,7 +671,7 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  ptr Pointer to data buffer
- * @param  len Amount of data needs to be writen
+ * @param  len Amount of data needs to be written
  *
  * @return None.
  */
@@ -661,7 +706,7 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  * @param  hw Beginning address of the peripheral registers
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
- * @param  len Amount of data needs to be writen
+ * @param  len Amount of data needs to be written
  */
 static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
@@ -733,7 +778,7 @@ static inline void i2c_ll_master_get_filter(i2c_dev_t *hw, uint8_t *filter_conf)
 }
 
 /**
- * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
+ * @brief reset I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
  *
  * @param  hw Beginning address of the peripheral registers
  *
@@ -752,14 +797,27 @@ static inline void i2c_ll_master_fsm_rst(i2c_dev_t *hw)
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  slave_pulses When I2C master is IDLE, the number of pulses will be sent out.
+ * @param  enable True to start the state machine, otherwise, false
  *
  * @return None
  */
-static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses)
+static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses, bool enable)
 {
     hw->scl_sp_conf.scl_rst_slv_num = slave_pulses;
     hw->scl_sp_conf.scl_rst_slv_en = 1;
     hw->ctr.conf_upgate = 1;
+}
+
+/**
+ * @brief Get the clear bus state
+ *
+ * @param hw Beginning address of the peripheral registers
+ *
+ * @return true: the clear bus not finish, otherwise, false.
+ */
+static inline bool i2c_ll_master_is_bus_clear_done(i2c_dev_t *hw)
+{
+    return false; // not supported on esp32s3
 }
 
 /**
@@ -862,6 +920,34 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
     dev->scl_stretch_conf.slave_scl_stretch_clr = 1;
 }
 
+/**
+ * @brief Check if i2c command is done.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  cmd_idx The index of the command register, must be less than 8
+ *
+ * @return True if the `cmd_idx` command is done. Otherwise false.
+ */
+__attribute__((always_inline))
+static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
+{
+    return hw->comd[cmd_idx].command_done;
+}
+
+/**
+ * @brief Calculate SCL timeout us to reg value
+ *
+ * @param timeout_us timeout value in us
+ * @param src_clk_hz source clock frequency
+ * @return uint32_t reg value
+ */
+static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_hz, uint32_t timeout_us)
+{
+    uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
+    // round up to an integer
+    return 32 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
+}
+
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
@@ -914,7 +1000,7 @@ static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, in
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  high_period The I2C SCL height period (in core clock cycle, hight_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  * @param  wait_high_period The I2C SCL wait rising edge period.
  *
@@ -1085,7 +1171,7 @@ static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  high_period The I2C SCL height period (in core clock cycle, hight_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  *
  * @return None.

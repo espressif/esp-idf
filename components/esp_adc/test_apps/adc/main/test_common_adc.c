@@ -13,6 +13,7 @@
 #include "driver/rtc_io.h"
 #include "soc/adc_periph.h"
 #include "test_common_adc.h"
+#include "hal/adc_ll.h"
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 
@@ -98,7 +99,7 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 {
     TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if !ADC_LL_RTC_GPIO_SUPPORTED
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
 #else

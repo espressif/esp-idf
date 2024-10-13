@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -28,23 +28,23 @@ typedef union {
          *  backup direction(reg to mem / mem to reg)
          */
         uint32_t to_mem:1;
-        /** link_sel : R/W; bitpos: [6:5]; default: 0;
+        /** link_sel : R/W; bitpos: [8:5]; default: 0;
          *  Link select
          */
-        uint32_t link_sel:2;
-        /** start_mac : WT; bitpos: [7]; default: 0;
+        uint32_t link_sel:4;
+        /** start_mac : WT; bitpos: [9]; default: 0;
          *  mac sw backup start signal
          */
         uint32_t start_mac:1;
-        /** to_mem_mac : R/W; bitpos: [8]; default: 0;
+        /** to_mem_mac : R/W; bitpos: [10]; default: 0;
          *  mac sw backup direction(reg to mem / mem to reg)
          */
         uint32_t to_mem_mac:1;
-        /** sel_mac : R/W; bitpos: [9]; default: 0;
+        /** sel_mac : R/W; bitpos: [11]; default: 0;
          *  mac hw/sw select
          */
         uint32_t sel_mac:1;
-        uint32_t reserved_10:22;
+        uint32_t reserved_12:20;
     };
     uint32_t val;
 } pau_regdma_conf_reg_t;
@@ -84,75 +84,30 @@ typedef union {
          *  etm_start_3 reg
          */
         uint32_t etm_start_3:1;
-        uint32_t reserved_4:28;
+        /** etm_link_sel_0 : R/W; bitpos: [7:4]; default: 0;
+         *  etm_link sel
+         */
+        uint32_t etm_link_sel_0:4;
+        /** etm_link_sel_1 : R/W; bitpos: [11:8]; default: 0;
+         *  etm_link sel
+         */
+        uint32_t etm_link_sel_1:4;
+        /** etm_link_sel_2 : R/W; bitpos: [15:12]; default: 0;
+         *  etm_link sel
+         */
+        uint32_t etm_link_sel_2:4;
+        /** etm_link_sel_3 : R/W; bitpos: [19:16]; default: 0;
+         *  etm_link sel
+         */
+        uint32_t etm_link_sel_3:4;
+        /** etm_busy_cause : RO; bitpos: [23:20]; default: 0;
+         *  debug
+         */
+        uint32_t etm_busy_cause:4;
+        uint32_t reserved_24:8;
     };
     uint32_t val;
 } pau_regdma_etm_ctrl_reg_t;
-
-/** Type of regdma_link_0_addr register
- *  link_0_addr
- */
-typedef union {
-    struct {
-        /** link_addr_0 : R/W; bitpos: [31:0]; default: 0;
-         *  link_0_addr reg
-         */
-        uint32_t link_addr_0:32;
-    };
-    uint32_t val;
-} pau_regdma_link_0_addr_reg_t;
-
-/** Type of regdma_link_1_addr register
- *  Link_1_addr
- */
-typedef union {
-    struct {
-        /** link_addr_1 : R/W; bitpos: [31:0]; default: 0;
-         *  Link_1_addr reg
-         */
-        uint32_t link_addr_1:32;
-    };
-    uint32_t val;
-} pau_regdma_link_1_addr_reg_t;
-
-/** Type of regdma_link_2_addr register
- *  Link_2_addr
- */
-typedef union {
-    struct {
-        /** link_addr_2 : R/W; bitpos: [31:0]; default: 0;
-         *  Link_2_addr reg
-         */
-        uint32_t link_addr_2:32;
-    };
-    uint32_t val;
-} pau_regdma_link_2_addr_reg_t;
-
-/** Type of regdma_link_3_addr register
- *  Link_3_addr
- */
-typedef union {
-    struct {
-        /** link_addr_3 : R/W; bitpos: [31:0]; default: 0;
-         *  Link_3_addr reg
-         */
-        uint32_t link_addr_3:32;
-    };
-    uint32_t val;
-} pau_regdma_link_3_addr_reg_t;
-
-/** Type of regdma_link_mac_addr register
- *  Link_mac_addr
- */
-typedef union {
-    struct {
-        /** link_addr_mac : R/W; bitpos: [31:0]; default: 0;
-         *  Link_mac_addr reg
-         */
-        uint32_t link_addr_mac:32;
-    };
-    uint32_t val;
-} pau_regdma_link_mac_addr_reg_t;
 
 /** Type of regdma_current_link_addr register
  *  current link addr
@@ -167,18 +122,18 @@ typedef union {
     uint32_t val;
 } pau_regdma_current_link_addr_reg_t;
 
-/** Type of regdma_backup_addr register
+/** Type of regdma_peri_addr register
  *  Backup addr
  */
 typedef union {
     struct {
-        /** backup_addr : RO; bitpos: [31:0]; default: 0;
-         *  backup addr reg
+        /** peri_addr : RO; bitpos: [31:0]; default: 0;
+         *  peri addr reg
          */
-        uint32_t backup_addr:32;
+        uint32_t peri_addr:32;
     };
     uint32_t val;
-} pau_regdma_backup_addr_reg_t;
+} pau_regdma_peri_addr_reg_t;
 
 /** Type of regdma_mem_addr register
  *  mem addr
@@ -192,31 +147,6 @@ typedef union {
     };
     uint32_t val;
 } pau_regdma_mem_addr_reg_t;
-
-/** Type of regdma_bkp_conf register
- *  backup config
- */
-typedef union {
-    struct {
-        /** read_interval : R/W; bitpos: [6:0]; default: 32;
-         *  Link read_interval
-         */
-        uint32_t read_interval:7;
-        /** link_tout_thres : R/W; bitpos: [16:7]; default: 50;
-         *  link wait timeout threshold
-         */
-        uint32_t link_tout_thres:10;
-        /** burst_limit : R/W; bitpos: [21:17]; default: 8;
-         *  burst limit
-         */
-        uint32_t burst_limit:5;
-        /** backup_tout_thres : R/W; bitpos: [31:22]; default: 500;
-         *  Backup timeout threshold
-         */
-        uint32_t backup_tout_thres:10;
-    };
-    uint32_t val;
-} pau_regdma_bkp_conf_reg_t;
 
 /** Type of int_ena register
  *  Read only register for error and done
@@ -297,7 +227,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36708608;
+        /** date : R/W; bitpos: [27:0]; default: 36737360;
          *  REGDMA date information/ REGDMA version information.
          */
         uint32_t date:28;
@@ -307,24 +237,18 @@ typedef union {
 } pau_date_reg_t;
 
 
-typedef struct pau_dev_t {
+typedef struct {
     volatile pau_regdma_conf_reg_t regdma_conf;
     volatile pau_regdma_clk_conf_reg_t regdma_clk_conf;
     volatile pau_regdma_etm_ctrl_reg_t regdma_etm_ctrl;
-    volatile pau_regdma_link_0_addr_reg_t regdma_link_0_addr;
-    volatile pau_regdma_link_1_addr_reg_t regdma_link_1_addr;
-    volatile pau_regdma_link_2_addr_reg_t regdma_link_2_addr;
-    volatile pau_regdma_link_3_addr_reg_t regdma_link_3_addr;
-    volatile pau_regdma_link_mac_addr_reg_t regdma_link_mac_addr;
     volatile pau_regdma_current_link_addr_reg_t regdma_current_link_addr;
-    volatile pau_regdma_backup_addr_reg_t regdma_backup_addr;
+    volatile pau_regdma_peri_addr_reg_t regdma_peri_addr;
     volatile pau_regdma_mem_addr_reg_t regdma_mem_addr;
-    volatile pau_regdma_bkp_conf_reg_t regdma_bkp_conf;
     volatile pau_int_ena_reg_t int_ena;
     volatile pau_int_raw_reg_t int_raw;
     volatile pau_int_clr_reg_t int_clr;
     volatile pau_int_st_reg_t int_st;
-    uint32_t reserved_040[239];
+    uint32_t reserved_028[245];
     volatile pau_date_reg_t date;
 } pau_dev_t;
 

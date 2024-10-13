@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "nimble/nimble_npl.h"
 #include "../../../../controller/esp32c2/esp_bt_cfg.h"
 #include "hal/efuse_hal.h"
+#include "esp_private/esp_modem_clock.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -223,9 +224,10 @@ typedef struct {
     uint8_t cca_drop_mode;                       /*!< CCA drop mode */
     int8_t cca_low_tx_pwr;                       /*!< Low TX power setting for CCA */
     uint8_t main_xtal_freq;                      /*!< Main crystal frequency */
-    uint32_t version_num;                        /*!< Version number */
-    uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
-    uint32_t config_magic;                       /*!< Configuration magic value */
+    uint8_t version_num;                        /*!< Version number */
+    uint8_t ignore_wl_for_direct_adv;           /*!< Ignore the white list for directed advertising */
+    uint8_t csa2_select;                        /*!< Select CSA#2 */
+    uint32_t config_magic;                      /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
@@ -261,13 +263,6 @@ typedef struct {
     .controller_run_cpu         = 0,                                                    \
     .enable_qa_test             = RUN_QA_TEST,                                          \
     .enable_bqb_test            = RUN_BQB_TEST,                                         \
-    .enable_uart_hci            = HCI_UART_EN,                                          \
-    .ble_hci_uart_port          = DEFAULT_BT_LE_HCI_UART_PORT,                          \
-    .ble_hci_uart_baud          = DEFAULT_BT_LE_HCI_UART_BAUD,                          \
-    .ble_hci_uart_data_bits     = DEFAULT_BT_LE_HCI_UART_DATA_BITS,                     \
-    .ble_hci_uart_stop_bits     = DEFAULT_BT_LE_HCI_UART_STOP_BITS,                     \
-    .ble_hci_uart_flow_ctrl     = DEFAULT_BT_LE_HCI_UART_FLOW_CTRL,                     \
-    .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
     .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
     .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
@@ -275,8 +270,9 @@ typedef struct {
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
-    .version_num                = efuse_hal_chip_revision(),                            \
+    .version_num                = esp_ble_get_chip_rev_version(),                       \
     .ignore_wl_for_direct_adv   = 0,                                                    \
+    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
@@ -432,6 +428,12 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
  */
 void esp_ble_controller_log_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
+#if CONFIG_PM_ENABLE
+modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void);
+
+void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src);
+#endif // CONFIG_PM_ENABLE
 
 #ifdef __cplusplus
 }

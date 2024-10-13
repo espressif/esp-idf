@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,9 +42,9 @@
 #if (BTC_L2CAP_INCLUDED == TRUE)
 #include "btc_l2cap.h"
 #endif /* #if (BTC_L2CAP_INCLUDED == TRUE) */
-#if (BTC_SDP_INCLUDED == TRUE)
+#if (BTC_SDP_COMMON_INCLUDED == TRUE)
 #include "btc_sdp.h"
-#endif /* #if (BTC_SDP_INCLUDED == TRUE) */
+#endif /* #if (BTC_SDP_COMMON_INCLUDED == TRUE) */
 #if BTC_HF_INCLUDED
 #include "btc_hf_ag.h"
 #endif/* #if BTC_HF_INCLUDED */
@@ -98,7 +98,7 @@ osi_thread_t *btc_thread;
 static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
-    [BTC_PID_DEV]         = {btc_dev_call_handler,        NULL                    },
+    [BTC_PID_DEV]         = {btc_dev_call_handler,        btc_dev_cb_handler      },
 #if (GATTS_INCLUDED == TRUE)
     [BTC_PID_GATTS]       = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE
@@ -138,9 +138,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (BTC_L2CAP_INCLUDED == TRUE)
     [BTC_PID_L2CAP]       = {btc_l2cap_call_handler,      btc_l2cap_cb_handler    },
 #endif /* #if (BTC_L2CAP_INCLUDED == TRUE) */
-#if (BTC_SDP_INCLUDED == TRUE)
+#if (BTC_SDP_COMMON_INCLUDED == TRUE)
     [BTC_PID_SDP]       = {btc_sdp_call_handler,          btc_sdp_cb_handler      },
-#endif /* #if (BTC_SDP_INCLUDED == TRUE) */
+#endif /* #if (BTC_SDP_COMMON_INCLUDED == TRUE) */
 #if BTC_HF_INCLUDED
     [BTC_PID_HF]   = {btc_hf_call_handler,  btc_hf_cb_handler},
 #endif  /* #if BTC_HF_INCLUDED */
@@ -295,8 +295,8 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 /**
  * transfer an message to another module in the different task.
  * @param  msg       message
- * @param  arg       paramter
- * @param  arg_len   length of paramter
+ * @param  arg       parameter
+ * @param  arg_len   length of parameter
  * @param  copy_func deep copy function
  * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
@@ -342,7 +342,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 }
 
 /**
- * transfer an message to another module in tha same task.
+ * transfer an message to another module in the same task.
  * @param  msg       message
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
@@ -405,6 +405,13 @@ static void btc_deinit_mem(void) {
 #endif
 #endif
 
+#if BTC_HF_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param_ptr) {
+        osi_free(hf_local_param_ptr);
+        hf_local_param_ptr = NULL;
+    }
+#endif
+
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
     if (hf_client_local_param_ptr) {
         osi_free(hf_client_local_param_ptr);
@@ -458,6 +465,13 @@ static bt_status_t btc_init_mem(void) {
     }
     memset((void *)blufi_env_ptr, 0, sizeof(tBLUFI_ENV));
 #endif
+#endif
+
+#if BTC_HF_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
+    if ((hf_local_param_ptr = (hf_local_param_t *)osi_malloc(BTC_HF_NUM_CB * sizeof(hf_local_param_t))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)hf_local_param_ptr, 0, BTC_HF_NUM_CB * sizeof(hf_local_param_t));
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE

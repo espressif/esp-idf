@@ -17,3 +17,10 @@ Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
   0 .literal.ěščřžýáíé 00000018  00000000  00000000  00000034  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+
+o_suffix.c.o:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .find_me         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,7 @@ typedef union {
 typedef union {
     struct {
         /** start : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start caculation of ECDSA Accelerator. This bit will be self-cleared
+         *  Write 1 to start calculation of ECDSA Accelerator. This bit will be self-cleared
          *  after configuration.
          */
         uint32_t start:1;
@@ -99,15 +99,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** calc_done_int_raw : RO/WTC/SS; bitpos: [0]; default: 0;
-         *  The raw interrupt status bit  for the ecdsa_calc_done_int interrupt
+        /** prep_done_int_raw : RO/WTC/SS; bitpos: [0]; default: 0;
+         *  The raw interrupt status bit  for the ecdsa_prep_done_int interrupt
          */
-        uint32_t calc_done_int_raw:1;
-        /** sha_release_int_raw : RO/WTC/SS; bitpos: [1]; default: 0;
+        uint32_t prep_done_int_raw:1;
+        /** proc_done_int_raw : RO/WTC/SS; bitpos: [1]; default: 0;
+         *  The raw interrupt status bit  for the ecdsa_proc_done_int interrupt
+         */
+        uint32_t proc_done_int_raw:1;
+        /** post_done_int_raw : RO/WTC/SS; bitpos: [2]; default: 0;
+         *  The raw interrupt status bit  for the ecdsa_post_done_int interrupt
+         */
+        uint32_t post_done_int_raw:1;
+        /** sha_release_int_raw : RO/WTC/SS; bitpos: [3]; default: 0;
          *  The raw interrupt status bit  for the ecdsa_sha_release_int interrupt
          */
         uint32_t sha_release_int_raw:1;
-        uint32_t reserved_2:30;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ecdsa_int_raw_reg_t;
@@ -117,15 +125,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** calc_done_int_st : RO; bitpos: [0]; default: 0;
-         *  The masked interrupt status bit  for the ecdsa_calc_done_int interrupt
+        /** prep_done_int_st : RO; bitpos: [0]; default: 0;
+         *  The masked interrupt status bit  for the ecdsa_prep_done_int interrupt
          */
-        uint32_t calc_done_int_st:1;
-        /** sha_release_int_st : RO; bitpos: [1]; default: 0;
+        uint32_t prep_done_int_st:1;
+        /** proc_done_int_st : RO; bitpos: [1]; default: 0;
+         *  The masked interrupt status bit  for the ecdsa_proc_done_int interrupt
+         */
+        uint32_t proc_done_int_st:1;
+        /** post_done_int_st : RO; bitpos: [2]; default: 0;
+         *  The masked interrupt status bit  for the ecdsa_post_done_int interrupt
+         */
+        uint32_t post_done_int_st:1;
+        /** sha_release_int_st : RO; bitpos: [3]; default: 0;
          *  The masked interrupt status bit  for the ecdsa_sha_release_int interrupt
          */
         uint32_t sha_release_int_st:1;
-        uint32_t reserved_2:30;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ecdsa_int_st_reg_t;
@@ -135,15 +151,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** calc_done_int_ena : R/W; bitpos: [0]; default: 0;
-         *  The interrupt enable bit  for the ecdsa_calc_done_int interrupt
+        /** prep_done_int_ena : R/W; bitpos: [0]; default: 0;
+         *  The interrupt enable bit  for the ecdsa_prep_done_int interrupt
          */
-        uint32_t calc_done_int_ena:1;
-        /** sha_release_int_ena : R/W; bitpos: [1]; default: 0;
+        uint32_t prep_done_int_ena:1;
+        /** proc_done_int_ena : R/W; bitpos: [1]; default: 0;
+         *  The interrupt enable bit  for the ecdsa_proc_done_int interrupt
+         */
+        uint32_t proc_done_int_ena:1;
+        /** post_done_int_ena : R/W; bitpos: [2]; default: 0;
+         *  The interrupt enable bit  for the ecdsa_post_done_int interrupt
+         */
+        uint32_t post_done_int_ena:1;
+        /** sha_release_int_ena : R/W; bitpos: [3]; default: 0;
          *  The interrupt enable bit  for the ecdsa_sha_release_int interrupt
          */
         uint32_t sha_release_int_ena:1;
-        uint32_t reserved_2:30;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ecdsa_int_ena_reg_t;
@@ -153,15 +177,23 @@ typedef union {
  */
 typedef union {
     struct {
-        /** calc_done_int_clr : WT; bitpos: [0]; default: 0;
-         *  Set this bit to clear the ecdsa_calc_done_int interrupt
+        /** prep_done_int_clr : WT; bitpos: [0]; default: 0;
+         *  Set this bit to clear the ecdsa_prep_done_int interrupt
          */
-        uint32_t calc_done_int_clr:1;
-        /** sha_release_int_clr : WT; bitpos: [1]; default: 0;
+        uint32_t prep_done_int_clr:1;
+        /** proc_done_int_clr : WT; bitpos: [1]; default: 0;
+         *  Set this bit to clear the ecdsa_proc_done_int interrupt
+         */
+        uint32_t proc_done_int_clr:1;
+        /** post_done_int_clr : WT; bitpos: [2]; default: 0;
+         *  Set this bit to clear the ecdsa_post_done_int interrupt
+         */
+        uint32_t post_done_int_clr:1;
+        /** sha_release_int_clr : WT; bitpos: [3]; default: 0;
          *  Set this bit to clear the ecdsa_sha_release_int interrupt
          */
         uint32_t sha_release_int_clr:1;
-        uint32_t reserved_2:30;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } ecdsa_int_clr_reg_t;
@@ -228,7 +260,7 @@ typedef union {
 typedef union {
     struct {
         /** sha_start : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start the first caculation of SHA Calculator in ECDSA Accelerator. This
+         *  Write 1 to start the first calculation of SHA Calculator in ECDSA Accelerator. This
          *  bit will be self-cleared after configuration.
          */
         uint32_t sha_start:1;
@@ -243,7 +275,7 @@ typedef union {
 typedef union {
     struct {
         /** sha_continue : WT; bitpos: [0]; default: 0;
-         *  Write 1 to start the latter caculation of SHA Calculator in ECDSA Accelerator. This
+         *  Write 1 to start the latter calculation of SHA Calculator in ECDSA Accelerator. This
          *  bit will be self-cleared after configuration.
          */
         uint32_t sha_continue:1;
@@ -274,7 +306,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36716656;
+        /** date : R/W; bitpos: [27:0]; default: 36725040;
          *  ECDSA version control register
          */
         uint32_t date:28;
@@ -284,7 +316,7 @@ typedef union {
 } ecdsa_date_reg_t;
 
 
-typedef struct ecdsa_dev_t {
+typedef struct {
     uint32_t reserved_000;
     volatile ecdsa_conf_reg_t conf;
     volatile ecdsa_clk_reg_t clk;
@@ -305,7 +337,7 @@ typedef struct ecdsa_dev_t {
     volatile ecdsa_sha_busy_reg_t sha_busy;
     uint32_t reserved_21c[25];
     volatile uint32_t message[8];
-    uint32_t reserved_2a0[472];
+    uint32_t reserved_2a0[40];
     volatile uint32_t r[8];
     volatile uint32_t s[8];
     volatile uint32_t z[8];
@@ -316,7 +348,7 @@ typedef struct ecdsa_dev_t {
 extern ecdsa_dev_t ECDSA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(ecdsa_dev_t) == 0xaa0, "Invalid size of ecdsa_dev_t structure");
+_Static_assert(sizeof(ecdsa_dev_t) == 0x3e0, "Invalid size of ecdsa_dev_t structure");
 #endif
 
 #ifdef __cplusplus

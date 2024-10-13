@@ -70,6 +70,7 @@ RSN_SELECTOR(0x00, 0x0f, 0xac, 13)
 #define RSN_AUTH_KEY_MGMT_FT_SAE RSN_SELECTOR(0x00, 0x0f, 0xac, 9)
 #define RSN_AUTH_KEY_MGMT_OWE RSN_SELECTOR(0x00, 0x0f, 0xac, 18)
 #define RSN_AUTH_KEY_MGMT_SAE_EXT_KEY RSN_SELECTOR(0x00, 0x0f, 0xac, 24)
+#define RSN_AUTH_KEY_MGMT_DPP RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x02)
 
 #define RSN_CIPHER_SUITE_NONE RSN_SELECTOR(0x00, 0x0f, 0xac, 0)
 #define RSN_CIPHER_SUITE_WEP40 RSN_SELECTOR(0x00, 0x0f, 0xac, 1)
@@ -326,6 +327,9 @@ struct rsn_rdie {
 /* WFA Transition Disable KDE (using OUI_WFA) */
 /* Transition Disable Bitmap bits */
 #define TRANSITION_DISABLE_WPA3_PERSONAL BIT(0)
+#define TRANSITION_DISABLE_SAE_PK BIT(1)
+#define TRANSITION_DISABLE_WPA3_ENTERPRISE BIT(2)
+#define TRANSITION_DISABLE_ENHANCED_OPEN BIT(3)
 
 #ifdef CONFIG_IEEE80211R
 int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,

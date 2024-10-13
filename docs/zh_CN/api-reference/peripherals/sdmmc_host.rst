@@ -71,6 +71,12 @@ SDMMC 主机驱动
 
     卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 和 :c:macro:`SDMMC_HOST_SLOT_1` 都支持 1、4、8 线的 SD 接口，这些卡槽通过 GPIO 交换矩阵连接到 {IDF_TARGET_NAME} 的 GPIO，即每个 SD 卡信号都可以使用任意 GPIO 连接。
 
+.. only:: esp32p4
+
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过 GPIO 交换矩阵路由，即任何 GPIO 都可以用于每个 SD 卡信号。这适用于非 UHS-I 用途。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式，驱动程序中尚不支持该模式。
+
+    在 {IDF_TARGET_NAME} 上，SDMMC 主机需要外部电源为 IO 电压供电。详情请参阅 :ref:`pwr-ctrl`。
 
 支持的速率模式
 ---------------------
@@ -117,7 +123,7 @@ SDMMC 主机驱动支持以下速率模式：
 
 如需选择标准速率以外的特定频率，请根据所使用的 SD 接口（SDMMC 或 SDSPI）确定适当频率范围，并选择其中的任意值。然而，实际的时钟频率会由底层驱动程序计算，可能与你所需的值不同。
 
-使用 SDMMC 接口时，``max_freq_khz`` 即频率上限，因此最终的频率值应始终低于该上限。而使用 SDSPI 接口时，驱动程序会提供最接近的适配频率，因此该值可以大于、等于或小于 ``max_freq_khz``。
+使用 SDMMC 接口时，``max_freq_khz`` 即频率上限，因此最终的频率值应始终低于或等于该上限。而使用 SDSPI 接口时，驱动程序会提供最接近的适配频率，因此该值可以大于、等于或小于 ``max_freq_khz``。
 
 请配置 :cpp:class:`sdmmc_slot_config_t` 的 ``width`` 字段，配置总线宽度。例如，配置 1 线模式的代码如下：
 
@@ -155,6 +161,21 @@ SDMMC 主机驱动支持以下速率模式：
     ``SDMMC_SLOT_CONFIG_DEFAULT`` 将 CD 和 WP 管脚都配置为 ``GPIO_NUM_NC``，表明默认情况下不会使用这两个管脚。
 
     通过上述方式初始化 :cpp:class:`sdmmc_slot_config_t` 结构体后，即可在调用 :cpp:func:`sdmmc_host_init_slot` 或其他任意高层函数（如 :cpp:func:`esp_vfs_fat_sdmmc_mount`）时使用该结构体。
+
+.. only:: SOC_SDMMC_IO_POWER_EXTERNAL
+
+    .. _pwr-ctrl:
+
+    配置电压电平
+    ------------------
+
+    {IDF_TARGET_NAME} SDMMC 主机需要通过 VDDPST_5 (SD_VREF) 管脚从外部提供 IO 电压。如果设计不需要更高速度的 SD 模式，则将此管脚连接到 3.3 V 供电即可。
+
+    如果设计需要更高速度的 SD 模式（仅在 1.8 V IO 电平下工作），则有两种可选方案：
+
+    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
+    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
+
 
 eMMC 芯片的 DDR 模式
 -----------------------

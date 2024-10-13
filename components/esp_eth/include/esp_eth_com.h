@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Offset for start of MAC custom ioctl commands
+ *
+ */
+#define ETH_CMD_CUSTOM_MAC_CMDS_OFFSET      0x0FFF
+/**
+ * @brief Offset for start of PHY custom ioctl commands
+ *
+ */
+#define ETH_CMD_CUSTOM_PHY_CMDS_OFFSET      0x1FFF
 
 /**
 * @brief Ethernet driver state

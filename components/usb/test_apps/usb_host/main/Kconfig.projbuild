@@ -1,0 +1,24 @@
+menu "USB Host Library Test"
+
+    config USB_HOST_TEST_CHECK_MANU_STR
+        bool "Check manufacturer string descriptor"
+        default y
+        help
+            USB Host tests that check string descriptors will check the manufacturer string
+            descriptor of the connected device.
+
+    config USB_HOST_TEST_CHECK_PROD_STR
+        bool "Check product string descriptor"
+        default n
+        help
+            USB Host tests that check string descriptors will check the product string descriptor
+            of the connected device.
+
+    config USB_HOST_TEST_CHECK_SERIAL_STR
+        bool "Check serial string descriptor"
+        default n
+        help
+            USB Host tests that check string descriptors will check the serial string descriptor
+            of the connected device.
+
+endmenu

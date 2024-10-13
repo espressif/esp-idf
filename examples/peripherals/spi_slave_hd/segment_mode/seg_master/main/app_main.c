@@ -203,12 +203,12 @@ void app_main(void)
     printf("Slave MAX Send Buffer Size:       %"PRIu32"\n", slave_max_tx_buf_size);
     printf("Slave MAX Receive Buffer Size:    %"PRIu32"\n", slave_max_rx_buf_size);
 
-    uint8_t *recv_buf = heap_caps_calloc(1, rx_buf_size, MALLOC_CAP_DMA);
+    uint8_t *recv_buf = spi_bus_dma_memory_alloc(MASTER_HOST, rx_buf_size, 0);
     if (!recv_buf) {
         ESP_LOGE(TAG, "No enough memory!");
         abort();
     }
-    uint8_t *send_buf = heap_caps_calloc(1, slave_max_rx_buf_size, MALLOC_CAP_DMA);
+    uint8_t *send_buf = spi_bus_dma_memory_alloc(MASTER_HOST, slave_max_rx_buf_size, 0);
     if (!send_buf) {
         ESP_LOGE(TAG, "No enough memory!");
         abort();

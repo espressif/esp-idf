@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,7 +194,7 @@ void touch_hal_get_meas_mode(touch_pad_t touch_num, touch_hal_meas_mode_t *meas)
  * @return
  *      - If touch sensors measure done.
  */
-#define touch_hal_meas_is_done() touch_ll_meas_is_done()
+#define touch_hal_meas_is_done() touch_ll_is_measure_done()
 
 /**
  * Initialize touch module.

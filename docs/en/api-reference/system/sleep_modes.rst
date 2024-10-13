@@ -32,16 +32,16 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC FAST memory
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC SLOW memory
 
-.. only:: SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
     Wi-Fi/Bluetooth and Sleep Modes
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections are not maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
+    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`nimble_port_stop`, :cpp:func:`nimble_port_deinit`, :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bluedroid_deinit`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_bt_controller_deinit`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections are not maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
 
     If Wi-Fi/Bluetooth connections need to be maintained, enable Wi-Fi/Bluetooth Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This allows the system to wake up from sleep automatically when required by the Wi-Fi/Bluetooth driver, thereby maintaining the connection.
 
-.. only:: not SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and not SOC_BT_SUPPORTED
 
     Wi-Fi and Sleep Modes
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,7 +90,7 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
 
     Features:
 
-    1. RTC IO input/RTC memory at high temperature (experimental): Use RTC IO as input pins, or use RTC memory at high temperature. The chip can go into ultra low power mode when these features are disabled. Controlled by API :cpp:func:`rtc_sleep_enable_ultra_low`.
+    1. RTC IO input/RTC memory at high temperature (experimental): Use RTC IO as input pins, or use RTC memory at high temperature. The chip can go into ultra low power mode when these features are disabled. Controlled by API :cpp:func:`esp_sleep_sub_mode_config` with `ESP_SLEEP_ULTRA_LOW_MODE` argument.
 
     2. ADC_TSEN_MONITOR: Use ADC/Temperature Sensor in monitor mode (controlled by ULP). Enabled by API :cpp:func:`ulp_adc_init` or its higher level APIs. Only available for ESP32-S2 and ESP32-S3 chips with monitor mode.
 
@@ -227,7 +227,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if all the selected pins are low (``ESP_EXT1_WAKEUP_ALL_LOW``)
 
-    .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
+    .. only:: not esp32
 
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if any of the selected pins is low (``ESP_EXT1_WAKEUP_ANY_LOW``)
@@ -254,7 +254,13 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func`esp_sleep_enable_ext1_wakeup_io`.
+        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+        .. note::
+
+           Due to hardware limitation, when we use more than one IO for EXT1 wakeup, it is not allowed to configure different wakeup levels for the IOs, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
 
     .. warning::
 
@@ -298,6 +304,20 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
+    .. only:: SOC_PM_SUPPORT_TOP_PD
+
+       .. note::
+
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+
+                Alternatively，you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly in that condition for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
+
+            .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED
 
     GPIO Wakeup
@@ -307,11 +327,13 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
-           In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate GPIO wakeup.
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
 
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -320,7 +342,9 @@ When {IDF_TARGET_NAME} receives UART input from external devices, it is often ne
 
 :cpp:func:`esp_sleep_enable_uart_wakeup` function can be used to enable this wakeup source.
 
-    .. only:: esp32c6 or esp32h2
+After waking-up from UART, you should send some extra data through the UART port in Active mode, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
+
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
@@ -401,7 +425,7 @@ Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled
 
     Add the following code before :cpp:func:`esp_deep_sleep_start` to remove such extra current::
 
-	rtc_gpio_isolate(GPIO_NUM_12);
+        rtc_gpio_isolate(GPIO_NUM_12);
 
 .. only:: esp32c2 or esp32c3
 
@@ -442,18 +466,17 @@ Checking Sleep Wakeup Cause
 
     For ext1 wakeup sources, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_ext1_wakeup_status` functions.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
 .. list::
 
-    - :example:`protocols/sntp`: the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
-    - :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
-    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
-    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by various sources supported by the chip (RTC Timer, GPIO, EXT0, EXT1, Touch Sensor, etc.).
-    - :example:`system/light_sleep`: the usage of Light-sleep wakeup triggered by various sources supported by the chip (Timer, GPIO, Touch Sensor, etc.).
-
+    - :example:`protocols/sntp` demonstrates the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` demonstrates the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, the touch sensor, supported by {IDF_TARGET_NAME}.
+    - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, the touch sensor, supported by {IDF_TARGET_NAME}.
 
 API Reference
 -------------

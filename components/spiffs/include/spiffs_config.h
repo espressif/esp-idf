@@ -71,7 +71,7 @@ extern void spiffs_api_unlock(struct spiffs_t *fs);
 
 // Defines spiffs debug print formatters
 // some general signed number
-#define _SPIPRIi   "%"PRIdMAX
+#define _SPIPRIi   "%" PRIdMAX
 // address
 #define _SPIPRIad  "%08x"
 // block

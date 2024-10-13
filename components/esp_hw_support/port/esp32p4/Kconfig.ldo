@@ -1,0 +1,66 @@
+menu "LDO Regulator Configurations"
+    depends on SOC_GP_LDO_SUPPORTED
+
+    config ESP_LDO_RESERVE_SPI_NOR_FLASH
+        bool "Reserve one LDO regulator channel for SPI NOR Flash (READ HELP)"
+        default y
+        help
+            The LDO channel 1 can be used to power the SPI Flash chip,
+            because the channel 1 is enabled by default after power on reset.
+            If your SPI flash chip is not powered by ESP internal LDO, you can disable this option.
+            Then you will free up one LDO channel for other general purpose.
+
+    config ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN
+        int "LDO regulator channel that used to power SPI NOR Flash (READ HELP)"
+        depends on ESP_LDO_RESERVE_SPI_NOR_FLASH
+        default 1
+        range 1 1
+        help
+            Select which LDO channel to connect to the SPI Flash chip.
+
+    choice ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN
+        prompt "SPI NOR Flash power domain voltage"
+        depends on ESP_LDO_RESERVE_SPI_NOR_FLASH
+        default ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+        help
+            Select the voltage used by the Flash power domain.
+
+        config ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+            bool "3.3V"
+    endchoice
+
+    config ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN
+        int
+        default 3300 if ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+
+    config ESP_LDO_RESERVE_PSRAM
+        bool "Reserve one LDO regulator channel for PSRAM (READ HELP)"
+        default y
+        help
+            The LDO channel 2 can be used to power the PSRAM chip.
+            If the PSRAM chip is not powered by ESP internal LDO, you can disable this option.
+            Then you will free up one LDO channel for other general purpose.
+
+    config ESP_LDO_CHAN_PSRAM_DOMAIN
+        int "LDO regulator channel that used to power PSRAM and MPLL (READ HELP)"
+        depends on ESP_LDO_RESERVE_PSRAM
+        default 2
+        range 2 2
+        help
+            Select which LDO channel to connect to the PSRAM chip.
+
+    choice ESP_LDO_VOLTAGE_PSRAM_DOMAIN
+        prompt "PSRAM power domain voltage"
+        depends on ESP_LDO_RESERVE_PSRAM
+        default ESP_LDO_VOLTAGE_PSRAM_1900_MV
+        help
+            Select the voltage used by the PSRAM power domain.
+
+        config ESP_LDO_VOLTAGE_PSRAM_1900_MV
+            bool "1.9V"
+    endchoice
+
+    config ESP_LDO_VOLTAGE_PSRAM_DOMAIN
+        int
+        default 1900 if ESP_LDO_VOLTAGE_PSRAM_1900_MV
+endmenu

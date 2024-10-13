@@ -12,12 +12,6 @@ IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`
 
    目前仅支持基于 clang 的工具链。在配置项目前，必须在环境变量或 CMake 缓存中设置 ``IDF_TOOLCHAIN=clang`` 进行激活。
 
-.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
-
-   .. warning::
-
-      当前工具尚不支持基于 RISC-V 的芯片。目前，乐鑫尚未针对 RISC-V 提供基于 clang 的工具链。
-
 准备工作
 =============
 

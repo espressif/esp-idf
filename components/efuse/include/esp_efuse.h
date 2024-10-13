@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -782,6 +782,29 @@ esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *truste
  *         - ESP_FAIL: Error in BLOCK0 requiring reboot.
  */
 esp_err_t esp_efuse_check_errors(void);
+
+/**
+ * @brief   Destroys the data in the given efuse block, if possible.
+ *
+ * Data destruction occurs through the following steps:
+ * 1) Destroy data in the block:
+ *    - If write protection is inactive for the block, then unset bits are burned.
+ *    - If write protection is active, the block remains unaltered.
+ * 2) Set read protection for the block if possible (check write-protection for RD_DIS).
+ *    In this case, data becomes inaccessible, and the software reads it as all zeros.
+ * If write protection is enabled and read protection can not be set,
+ * data in the block remains readable (returns an error).
+ *
+ * Do not use the batch mode with this function as it does the burning itself!
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_FAIL: Data remained readable because the block is write-protected
+ *                and read protection can not be set.
+ */
+esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block);
 
 #ifdef __cplusplus
 }

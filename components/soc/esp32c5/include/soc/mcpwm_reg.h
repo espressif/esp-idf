@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** MCPWM_CLK_CFG_REG register
  *  PWM clock prescaler register.
  */
-#define MCPWM_CLK_CFG_REG (DR_REG_MCPWM_BASE + 0x0)
+#define MCPWM_CLK_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x0)
 /** MCPWM_CLK_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of clock, so that the period of PWM_clk = 6.25ns *
  *  (PWM_CLK_PRESCALE + 1).
@@ -27,7 +27,7 @@ extern "C" {
 /** MCPWM_TIMER0_CFG0_REG register
  *  PWM timer0 period and update method configuration register.
  */
-#define MCPWM_TIMER0_CFG0_REG (DR_REG_MCPWM_BASE + 0x4)
+#define MCPWM_TIMER0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x4)
 /** MCPWM_TIMER0_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer0, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER0_PRESCALE + 1)
@@ -56,7 +56,7 @@ extern "C" {
 /** MCPWM_TIMER0_CFG1_REG register
  *  PWM timer0 working mode and start/stop control register.
  */
-#define MCPWM_TIMER0_CFG1_REG (DR_REG_MCPWM_BASE + 0x8)
+#define MCPWM_TIMER0_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x8)
 /** MCPWM_TIMER0_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer0.\\0: If PWM timer0 starts, then
  *  stops at TEZ\\1: If timer0 starts, then stops at TEP\\2: PWM timer0 starts and runs
@@ -80,7 +80,7 @@ extern "C" {
 /** MCPWM_TIMER0_SYNC_REG register
  *  PWM timer0 sync function configuration register.
  */
-#define MCPWM_TIMER0_SYNC_REG (DR_REG_MCPWM_BASE + 0xc)
+#define MCPWM_TIMER0_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0xc)
 /** MCPWM_TIMER0_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer0 reloading with phase on sync input event
  *  is enabled.\\0: Disable\\1: Enable
@@ -124,7 +124,7 @@ extern "C" {
 /** MCPWM_TIMER0_STATUS_REG register
  *  PWM timer0 status register.
  */
-#define MCPWM_TIMER0_STATUS_REG (DR_REG_MCPWM_BASE + 0x10)
+#define MCPWM_TIMER0_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x10)
 /** MCPWM_TIMER0_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer0 counter value.
  */
@@ -143,7 +143,7 @@ extern "C" {
 /** MCPWM_TIMER1_CFG0_REG register
  *  PWM timer1 period and update method configuration register.
  */
-#define MCPWM_TIMER1_CFG0_REG (DR_REG_MCPWM_BASE + 0x14)
+#define MCPWM_TIMER1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x14)
 /** MCPWM_TIMER1_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer1, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER1_PRESCALE + 1)
@@ -172,7 +172,7 @@ extern "C" {
 /** MCPWM_TIMER1_CFG1_REG register
  *  PWM timer1 working mode and start/stop control register.
  */
-#define MCPWM_TIMER1_CFG1_REG (DR_REG_MCPWM_BASE + 0x18)
+#define MCPWM_TIMER1_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x18)
 /** MCPWM_TIMER1_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer1.\\0: If PWM timer1 starts, then
  *  stops at TEZ\\1: If timer1 starts, then stops at TEP\\2: PWM timer1 starts and runs
@@ -196,7 +196,7 @@ extern "C" {
 /** MCPWM_TIMER1_SYNC_REG register
  *  PWM timer1 sync function configuration register.
  */
-#define MCPWM_TIMER1_SYNC_REG (DR_REG_MCPWM_BASE + 0x1c)
+#define MCPWM_TIMER1_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0x1c)
 /** MCPWM_TIMER1_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer1 reloading with phase on sync input event
  *  is enabled.\\0: Disable\\1: Enable
@@ -240,7 +240,7 @@ extern "C" {
 /** MCPWM_TIMER1_STATUS_REG register
  *  PWM timer1 status register.
  */
-#define MCPWM_TIMER1_STATUS_REG (DR_REG_MCPWM_BASE + 0x20)
+#define MCPWM_TIMER1_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x20)
 /** MCPWM_TIMER1_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer1 counter value.
  */
@@ -259,7 +259,7 @@ extern "C" {
 /** MCPWM_TIMER2_CFG0_REG register
  *  PWM timer2 period and update method configuration register.
  */
-#define MCPWM_TIMER2_CFG0_REG (DR_REG_MCPWM_BASE + 0x24)
+#define MCPWM_TIMER2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x24)
 /** MCPWM_TIMER2_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer2, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER2_PRESCALE + 1)
@@ -288,7 +288,7 @@ extern "C" {
 /** MCPWM_TIMER2_CFG1_REG register
  *  PWM timer2 working mode and start/stop control register.
  */
-#define MCPWM_TIMER2_CFG1_REG (DR_REG_MCPWM_BASE + 0x28)
+#define MCPWM_TIMER2_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x28)
 /** MCPWM_TIMER2_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer2.\\0: If PWM timer2 starts, then
  *  stops at TEZ\\1: If timer2 starts, then stops at TEP\\2: PWM timer2 starts and runs
@@ -312,7 +312,7 @@ extern "C" {
 /** MCPWM_TIMER2_SYNC_REG register
  *  PWM timer2 sync function configuration register.
  */
-#define MCPWM_TIMER2_SYNC_REG (DR_REG_MCPWM_BASE + 0x2c)
+#define MCPWM_TIMER2_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0x2c)
 /** MCPWM_TIMER2_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer2 reloading with phase on sync input event
  *  is enabled.\\0: Disable\\1: Enable
@@ -356,7 +356,7 @@ extern "C" {
 /** MCPWM_TIMER2_STATUS_REG register
  *  PWM timer2 status register.
  */
-#define MCPWM_TIMER2_STATUS_REG (DR_REG_MCPWM_BASE + 0x30)
+#define MCPWM_TIMER2_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x30)
 /** MCPWM_TIMER2_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer2 counter value.
  */
@@ -375,7 +375,7 @@ extern "C" {
 /** MCPWM_TIMER_SYNCI_CFG_REG register
  *  Synchronization input selection register for PWM timers.
  */
-#define MCPWM_TIMER_SYNCI_CFG_REG (DR_REG_MCPWM_BASE + 0x34)
+#define MCPWM_TIMER_SYNCI_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x34)
 /** MCPWM_TIMER0_SYNCISEL : R/W; bitpos: [2:0]; default: 0;
  *  Configures the selection of sync input for PWM timer0.\\1: PWM timer0 sync_out\\2:
  *  PWM timer1 sync_out\\3: PWM timer2 sync_out\\4: SYNC0 from GPIO matrix\\5: SYNC1
@@ -431,7 +431,7 @@ extern "C" {
 /** MCPWM_OPERATOR_TIMERSEL_REG register
  *  PWM operator's timer select register
  */
-#define MCPWM_OPERATOR_TIMERSEL_REG (DR_REG_MCPWM_BASE + 0x38)
+#define MCPWM_OPERATOR_TIMERSEL_REG(i) (REG_MCPWM_BASE(i) + 0x38)
 /** MCPWM_OPERATOR0_TIMERSEL : R/W; bitpos: [1:0]; default: 0;
  *  Configures which PWM timer will be the timing reference for PWM operator0.\\0:
  *  Timer0\\1: Timer1\\2: Timer2\\3: Invalid, will select timer2
@@ -460,72 +460,72 @@ extern "C" {
 /** MCPWM_GEN0_STMP_CFG_REG register
  *  Generator0 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN0_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0x3c)
-/** MCPWM_GEN0_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_GEN0_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x3c)
+/** MCPWM_CMPR0_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 0 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN0_A_UPMETHOD    0x0000000FU
-#define MCPWM_GEN0_A_UPMETHOD_M  (MCPWM_GEN0_A_UPMETHOD_V << MCPWM_GEN0_A_UPMETHOD_S)
-#define MCPWM_GEN0_A_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN0_A_UPMETHOD_S  0
-/** MCPWM_GEN0_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_CMPR0_A_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR0_A_UPMETHOD_M  (MCPWM_CMPR0_A_UPMETHOD_V << MCPWM_CMPR0_A_UPMETHOD_S)
+#define MCPWM_CMPR0_A_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR0_A_UPMETHOD_S  0
+/** MCPWM_CMPR0_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures the update method for PWM generator 0 time stamp B's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN0_B_UPMETHOD    0x0000000FU
-#define MCPWM_GEN0_B_UPMETHOD_M  (MCPWM_GEN0_B_UPMETHOD_V << MCPWM_GEN0_B_UPMETHOD_S)
-#define MCPWM_GEN0_B_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN0_B_UPMETHOD_S  4
-/** MCPWM_GEN0_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
+#define MCPWM_CMPR0_B_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR0_B_UPMETHOD_M  (MCPWM_CMPR0_B_UPMETHOD_V << MCPWM_CMPR0_B_UPMETHOD_S)
+#define MCPWM_CMPR0_B_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR0_B_UPMETHOD_S  4
+/** MCPWM_CMPR0_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
  *  Represents whether or not generator0 time stamp A's shadow reg is transferred.\\0:
  *  A's active reg has been updated with shadow register latest value.\\1: A's shadow
  *  reg is filled and waiting to be transferred to A's active reg
  */
-#define MCPWM_GEN0_A_SHDW_FULL    (BIT(8))
-#define MCPWM_GEN0_A_SHDW_FULL_M  (MCPWM_GEN0_A_SHDW_FULL_V << MCPWM_GEN0_A_SHDW_FULL_S)
-#define MCPWM_GEN0_A_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN0_A_SHDW_FULL_S  8
-/** MCPWM_GEN0_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
+#define MCPWM_CMPR0_A_SHDW_FULL    (BIT(8))
+#define MCPWM_CMPR0_A_SHDW_FULL_M  (MCPWM_CMPR0_A_SHDW_FULL_V << MCPWM_CMPR0_A_SHDW_FULL_S)
+#define MCPWM_CMPR0_A_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR0_A_SHDW_FULL_S  8
+/** MCPWM_CMPR0_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
  *  Represents whether or not generator0 time stamp B's shadow reg is transferred.\\0:
  *  B's active reg has been updated with shadow register latest value.\\1: B's shadow
  *  reg is filled and waiting to be transferred to B's active reg
  */
-#define MCPWM_GEN0_B_SHDW_FULL    (BIT(9))
-#define MCPWM_GEN0_B_SHDW_FULL_M  (MCPWM_GEN0_B_SHDW_FULL_V << MCPWM_GEN0_B_SHDW_FULL_S)
-#define MCPWM_GEN0_B_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN0_B_SHDW_FULL_S  9
+#define MCPWM_CMPR0_B_SHDW_FULL    (BIT(9))
+#define MCPWM_CMPR0_B_SHDW_FULL_M  (MCPWM_CMPR0_B_SHDW_FULL_V << MCPWM_CMPR0_B_SHDW_FULL_S)
+#define MCPWM_CMPR0_B_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR0_B_SHDW_FULL_S  9
 
 /** MCPWM_GEN0_TSTMP_A_REG register
  *  Generator0 time stamp A's shadow register
  */
-#define MCPWM_GEN0_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0x40)
-/** MCPWM_GEN0_A : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN0_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0x40)
+/** MCPWM_CMPR0_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 0 time stamp A's shadow register.
  */
-#define MCPWM_GEN0_A    0x0000FFFFU
-#define MCPWM_GEN0_A_M  (MCPWM_GEN0_A_V << MCPWM_GEN0_A_S)
-#define MCPWM_GEN0_A_V  0x0000FFFFU
-#define MCPWM_GEN0_A_S  0
+#define MCPWM_CMPR0_A    0x0000FFFFU
+#define MCPWM_CMPR0_A_M  (MCPWM_CMPR0_A_V << MCPWM_CMPR0_A_S)
+#define MCPWM_CMPR0_A_V  0x0000FFFFU
+#define MCPWM_CMPR0_A_S  0
 
 /** MCPWM_GEN0_TSTMP_B_REG register
  *  Generator0 time stamp B's shadow register
  */
-#define MCPWM_GEN0_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0x44)
-/** MCPWM_GEN0_B : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN0_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0x44)
+/** MCPWM_CMPR0_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 0 time stamp B's shadow register.
  */
-#define MCPWM_GEN0_B    0x0000FFFFU
-#define MCPWM_GEN0_B_M  (MCPWM_GEN0_B_V << MCPWM_GEN0_B_S)
-#define MCPWM_GEN0_B_V  0x0000FFFFU
-#define MCPWM_GEN0_B_S  0
+#define MCPWM_CMPR0_B    0x0000FFFFU
+#define MCPWM_CMPR0_B_M  (MCPWM_CMPR0_B_V << MCPWM_CMPR0_B_S)
+#define MCPWM_CMPR0_B_V  0x0000FFFFU
+#define MCPWM_CMPR0_B_S  0
 
 /** MCPWM_GEN0_CFG0_REG register
  *  Generator0 fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN0_CFG0_REG (DR_REG_MCPWM_BASE + 0x48)
+#define MCPWM_GEN0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x48)
 /** MCPWM_GEN0_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator 0's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -557,7 +557,7 @@ extern "C" {
 /** MCPWM_GEN0_FORCE_REG register
  *  Generator0 output signal force mode register.
  */
-#define MCPWM_GEN0_FORCE_REG (DR_REG_MCPWM_BASE + 0x4c)
+#define MCPWM_GEN0_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0x4c)
 /** MCPWM_GEN0_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator0.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -621,7 +621,7 @@ extern "C" {
 /** MCPWM_GEN0_A_REG register
  *  PWM0 output signal A actions configuration register
  */
-#define MCPWM_GEN0_A_REG (DR_REG_MCPWM_BASE + 0x50)
+#define MCPWM_GEN0_A_REG(i) (REG_MCPWM_BASE(i) + 0x50)
 /** MCPWM_GEN0_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM0 A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -722,7 +722,7 @@ extern "C" {
 /** MCPWM_GEN0_B_REG register
  *  PWM0 output signal B actions configuration register
  */
-#define MCPWM_GEN0_B_REG (DR_REG_MCPWM_BASE + 0x54)
+#define MCPWM_GEN0_B_REG(i) (REG_MCPWM_BASE(i) + 0x54)
 /** MCPWM_GEN0_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM0 B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -823,431 +823,431 @@ extern "C" {
 /** MCPWM_DT0_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT0_CFG_REG (DR_REG_MCPWM_BASE + 0x58)
-/** MCPWM_DT0_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_DT0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x58)
+/** MCPWM_DB0_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT0_FED_UPMETHOD    0x0000000FU
-#define MCPWM_DT0_FED_UPMETHOD_M  (MCPWM_DT0_FED_UPMETHOD_V << MCPWM_DT0_FED_UPMETHOD_S)
-#define MCPWM_DT0_FED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT0_FED_UPMETHOD_S  0
-/** MCPWM_DT0_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_DB0_FED_UPMETHOD    0x0000000FU
+#define MCPWM_DB0_FED_UPMETHOD_M  (MCPWM_DB0_FED_UPMETHOD_V << MCPWM_DB0_FED_UPMETHOD_S)
+#define MCPWM_DB0_FED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB0_FED_UPMETHOD_S  0
+/** MCPWM_DB0_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures update method for RED (rising edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT0_RED_UPMETHOD    0x0000000FU
-#define MCPWM_DT0_RED_UPMETHOD_M  (MCPWM_DT0_RED_UPMETHOD_V << MCPWM_DT0_RED_UPMETHOD_S)
-#define MCPWM_DT0_RED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT0_RED_UPMETHOD_S  4
-/** MCPWM_DT0_DEB_MODE : R/W; bitpos: [8]; default: 0;
+#define MCPWM_DB0_RED_UPMETHOD    0x0000000FU
+#define MCPWM_DB0_RED_UPMETHOD_M  (MCPWM_DB0_RED_UPMETHOD_V << MCPWM_DB0_RED_UPMETHOD_S)
+#define MCPWM_DB0_RED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB0_RED_UPMETHOD_S  4
+/** MCPWM_DB0_DEB_MODE : R/W; bitpos: [8]; default: 0;
  *  Configures S8 in table, dual-edge B mode.\\0: fed/red take effect on different path
  *  separately\\1: fed/red take effect on B path, A out is in bypass or dulpB mode
  */
-#define MCPWM_DT0_DEB_MODE    (BIT(8))
-#define MCPWM_DT0_DEB_MODE_M  (MCPWM_DT0_DEB_MODE_V << MCPWM_DT0_DEB_MODE_S)
-#define MCPWM_DT0_DEB_MODE_V  0x00000001U
-#define MCPWM_DT0_DEB_MODE_S  8
-/** MCPWM_DT0_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
+#define MCPWM_DB0_DEB_MODE    (BIT(8))
+#define MCPWM_DB0_DEB_MODE_M  (MCPWM_DB0_DEB_MODE_V << MCPWM_DB0_DEB_MODE_S)
+#define MCPWM_DB0_DEB_MODE_V  0x00000001U
+#define MCPWM_DB0_DEB_MODE_S  8
+/** MCPWM_DB0_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
  *  Configures S6 in table.
  */
-#define MCPWM_DT0_A_OUTSWAP    (BIT(9))
-#define MCPWM_DT0_A_OUTSWAP_M  (MCPWM_DT0_A_OUTSWAP_V << MCPWM_DT0_A_OUTSWAP_S)
-#define MCPWM_DT0_A_OUTSWAP_V  0x00000001U
-#define MCPWM_DT0_A_OUTSWAP_S  9
-/** MCPWM_DT0_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
+#define MCPWM_DB0_A_OUTSWAP    (BIT(9))
+#define MCPWM_DB0_A_OUTSWAP_M  (MCPWM_DB0_A_OUTSWAP_V << MCPWM_DB0_A_OUTSWAP_S)
+#define MCPWM_DB0_A_OUTSWAP_V  0x00000001U
+#define MCPWM_DB0_A_OUTSWAP_S  9
+/** MCPWM_DB0_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
  *  Configures S7 in table.
  */
-#define MCPWM_DT0_B_OUTSWAP    (BIT(10))
-#define MCPWM_DT0_B_OUTSWAP_M  (MCPWM_DT0_B_OUTSWAP_V << MCPWM_DT0_B_OUTSWAP_S)
-#define MCPWM_DT0_B_OUTSWAP_V  0x00000001U
-#define MCPWM_DT0_B_OUTSWAP_S  10
-/** MCPWM_DT0_RED_INSEL : R/W; bitpos: [11]; default: 0;
+#define MCPWM_DB0_B_OUTSWAP    (BIT(10))
+#define MCPWM_DB0_B_OUTSWAP_M  (MCPWM_DB0_B_OUTSWAP_V << MCPWM_DB0_B_OUTSWAP_S)
+#define MCPWM_DB0_B_OUTSWAP_V  0x00000001U
+#define MCPWM_DB0_B_OUTSWAP_S  10
+/** MCPWM_DB0_RED_INSEL : R/W; bitpos: [11]; default: 0;
  *  Configures S4 in table.
  */
-#define MCPWM_DT0_RED_INSEL    (BIT(11))
-#define MCPWM_DT0_RED_INSEL_M  (MCPWM_DT0_RED_INSEL_V << MCPWM_DT0_RED_INSEL_S)
-#define MCPWM_DT0_RED_INSEL_V  0x00000001U
-#define MCPWM_DT0_RED_INSEL_S  11
-/** MCPWM_DT0_FED_INSEL : R/W; bitpos: [12]; default: 0;
+#define MCPWM_DB0_RED_INSEL    (BIT(11))
+#define MCPWM_DB0_RED_INSEL_M  (MCPWM_DB0_RED_INSEL_V << MCPWM_DB0_RED_INSEL_S)
+#define MCPWM_DB0_RED_INSEL_V  0x00000001U
+#define MCPWM_DB0_RED_INSEL_S  11
+/** MCPWM_DB0_FED_INSEL : R/W; bitpos: [12]; default: 0;
  *  Configures S5 in table.
  */
-#define MCPWM_DT0_FED_INSEL    (BIT(12))
-#define MCPWM_DT0_FED_INSEL_M  (MCPWM_DT0_FED_INSEL_V << MCPWM_DT0_FED_INSEL_S)
-#define MCPWM_DT0_FED_INSEL_V  0x00000001U
-#define MCPWM_DT0_FED_INSEL_S  12
-/** MCPWM_DT0_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_DB0_FED_INSEL    (BIT(12))
+#define MCPWM_DB0_FED_INSEL_M  (MCPWM_DB0_FED_INSEL_V << MCPWM_DB0_FED_INSEL_S)
+#define MCPWM_DB0_FED_INSEL_V  0x00000001U
+#define MCPWM_DB0_FED_INSEL_S  12
+/** MCPWM_DB0_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
  *  Configures S2 in table.
  */
-#define MCPWM_DT0_RED_OUTINVERT    (BIT(13))
-#define MCPWM_DT0_RED_OUTINVERT_M  (MCPWM_DT0_RED_OUTINVERT_V << MCPWM_DT0_RED_OUTINVERT_S)
-#define MCPWM_DT0_RED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT0_RED_OUTINVERT_S  13
-/** MCPWM_DT0_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
+#define MCPWM_DB0_RED_OUTINVERT    (BIT(13))
+#define MCPWM_DB0_RED_OUTINVERT_M  (MCPWM_DB0_RED_OUTINVERT_V << MCPWM_DB0_RED_OUTINVERT_S)
+#define MCPWM_DB0_RED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB0_RED_OUTINVERT_S  13
+/** MCPWM_DB0_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
  *  Configures S3 in table.
  */
-#define MCPWM_DT0_FED_OUTINVERT    (BIT(14))
-#define MCPWM_DT0_FED_OUTINVERT_M  (MCPWM_DT0_FED_OUTINVERT_V << MCPWM_DT0_FED_OUTINVERT_S)
-#define MCPWM_DT0_FED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT0_FED_OUTINVERT_S  14
-/** MCPWM_DT0_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
+#define MCPWM_DB0_FED_OUTINVERT    (BIT(14))
+#define MCPWM_DB0_FED_OUTINVERT_M  (MCPWM_DB0_FED_OUTINVERT_V << MCPWM_DB0_FED_OUTINVERT_S)
+#define MCPWM_DB0_FED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB0_FED_OUTINVERT_S  14
+/** MCPWM_DB0_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
  *  Configures S1 in table.
  */
-#define MCPWM_DT0_A_OUTBYPASS    (BIT(15))
-#define MCPWM_DT0_A_OUTBYPASS_M  (MCPWM_DT0_A_OUTBYPASS_V << MCPWM_DT0_A_OUTBYPASS_S)
-#define MCPWM_DT0_A_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT0_A_OUTBYPASS_S  15
-/** MCPWM_DT0_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
+#define MCPWM_DB0_A_OUTBYPASS    (BIT(15))
+#define MCPWM_DB0_A_OUTBYPASS_M  (MCPWM_DB0_A_OUTBYPASS_V << MCPWM_DB0_A_OUTBYPASS_S)
+#define MCPWM_DB0_A_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB0_A_OUTBYPASS_S  15
+/** MCPWM_DB0_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
  *  Configures S0 in table.
  */
-#define MCPWM_DT0_B_OUTBYPASS    (BIT(16))
-#define MCPWM_DT0_B_OUTBYPASS_M  (MCPWM_DT0_B_OUTBYPASS_V << MCPWM_DT0_B_OUTBYPASS_S)
-#define MCPWM_DT0_B_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT0_B_OUTBYPASS_S  16
-/** MCPWM_DT0_CLK_SEL : R/W; bitpos: [17]; default: 0;
+#define MCPWM_DB0_B_OUTBYPASS    (BIT(16))
+#define MCPWM_DB0_B_OUTBYPASS_M  (MCPWM_DB0_B_OUTBYPASS_V << MCPWM_DB0_B_OUTBYPASS_S)
+#define MCPWM_DB0_B_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB0_B_OUTBYPASS_S  16
+/** MCPWM_DB0_CLK_SEL : R/W; bitpos: [17]; default: 0;
  *  Configures dead time generator 0 clock selection.\\0: PWM_clk\\1: PT_clk
  */
-#define MCPWM_DT0_CLK_SEL    (BIT(17))
-#define MCPWM_DT0_CLK_SEL_M  (MCPWM_DT0_CLK_SEL_V << MCPWM_DT0_CLK_SEL_S)
-#define MCPWM_DT0_CLK_SEL_V  0x00000001U
-#define MCPWM_DT0_CLK_SEL_S  17
+#define MCPWM_DB0_CLK_SEL    (BIT(17))
+#define MCPWM_DB0_CLK_SEL_M  (MCPWM_DB0_CLK_SEL_V << MCPWM_DB0_CLK_SEL_S)
+#define MCPWM_DB0_CLK_SEL_V  0x00000001U
+#define MCPWM_DB0_CLK_SEL_S  17
 
 /** MCPWM_DT0_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT0_FED_CFG_REG (DR_REG_MCPWM_BASE + 0x5c)
-/** MCPWM_DT0_FED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT0_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x5c)
+/** MCPWM_DB0_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
-#define MCPWM_DT0_FED    0x0000FFFFU
-#define MCPWM_DT0_FED_M  (MCPWM_DT0_FED_V << MCPWM_DT0_FED_S)
-#define MCPWM_DT0_FED_V  0x0000FFFFU
-#define MCPWM_DT0_FED_S  0
+#define MCPWM_DB0_FED    0x0000FFFFU
+#define MCPWM_DB0_FED_M  (MCPWM_DB0_FED_V << MCPWM_DB0_FED_S)
+#define MCPWM_DB0_FED_V  0x0000FFFFU
+#define MCPWM_DB0_FED_S  0
 
 /** MCPWM_DT0_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT0_RED_CFG_REG (DR_REG_MCPWM_BASE + 0x60)
-/** MCPWM_DT0_RED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT0_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x60)
+/** MCPWM_DB0_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
-#define MCPWM_DT0_RED    0x0000FFFFU
-#define MCPWM_DT0_RED_M  (MCPWM_DT0_RED_V << MCPWM_DT0_RED_S)
-#define MCPWM_DT0_RED_V  0x0000FFFFU
-#define MCPWM_DT0_RED_S  0
+#define MCPWM_DB0_RED    0x0000FFFFU
+#define MCPWM_DB0_RED_M  (MCPWM_DB0_RED_V << MCPWM_DB0_RED_S)
+#define MCPWM_DB0_RED_V  0x0000FFFFU
+#define MCPWM_DB0_RED_S  0
 
 /** MCPWM_CARRIER0_CFG_REG register
  *  Carrier0 configuration register
  */
-#define MCPWM_CARRIER0_CFG_REG (DR_REG_MCPWM_BASE + 0x64)
-/** MCPWM_CARRIER0_EN : R/W; bitpos: [0]; default: 0;
+#define MCPWM_CARRIER0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x64)
+/** MCPWM_CHOPPER0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier0.\\0: Bypassed\\1: Enabled
  */
-#define MCPWM_CARRIER0_EN    (BIT(0))
-#define MCPWM_CARRIER0_EN_M  (MCPWM_CARRIER0_EN_V << MCPWM_CARRIER0_EN_S)
-#define MCPWM_CARRIER0_EN_V  0x00000001U
-#define MCPWM_CARRIER0_EN_S  0
-/** MCPWM_CARRIER0_PRESCALE : R/W; bitpos: [4:1]; default: 0;
+#define MCPWM_CHOPPER0_EN    (BIT(0))
+#define MCPWM_CHOPPER0_EN_M  (MCPWM_CHOPPER0_EN_V << MCPWM_CHOPPER0_EN_S)
+#define MCPWM_CHOPPER0_EN_V  0x00000001U
+#define MCPWM_CHOPPER0_EN_S  0
+/** MCPWM_CHOPPER0_PRESCALE : R/W; bitpos: [4:1]; default: 0;
  *  Configures the prescale value of PWM carrier0 clock (PC_clk), so that period of
  *  PC_clk = period of PWM_clk * (PWM_CARRIER0_PRESCALE + 1)
  */
-#define MCPWM_CARRIER0_PRESCALE    0x0000000FU
-#define MCPWM_CARRIER0_PRESCALE_M  (MCPWM_CARRIER0_PRESCALE_V << MCPWM_CARRIER0_PRESCALE_S)
-#define MCPWM_CARRIER0_PRESCALE_V  0x0000000FU
-#define MCPWM_CARRIER0_PRESCALE_S  1
-/** MCPWM_CARRIER0_DUTY : R/W; bitpos: [7:5]; default: 0;
+#define MCPWM_CHOPPER0_PRESCALE    0x0000000FU
+#define MCPWM_CHOPPER0_PRESCALE_M  (MCPWM_CHOPPER0_PRESCALE_V << MCPWM_CHOPPER0_PRESCALE_S)
+#define MCPWM_CHOPPER0_PRESCALE_V  0x0000000FU
+#define MCPWM_CHOPPER0_PRESCALE_S  1
+/** MCPWM_CHOPPER0_DUTY : R/W; bitpos: [7:5]; default: 0;
  *  Configures carrier duty. Duty = PWM_CARRIER0_DUTY / 8
  */
-#define MCPWM_CARRIER0_DUTY    0x00000007U
-#define MCPWM_CARRIER0_DUTY_M  (MCPWM_CARRIER0_DUTY_V << MCPWM_CARRIER0_DUTY_S)
-#define MCPWM_CARRIER0_DUTY_V  0x00000007U
-#define MCPWM_CARRIER0_DUTY_S  5
-/** MCPWM_CARRIER0_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
+#define MCPWM_CHOPPER0_DUTY    0x00000007U
+#define MCPWM_CHOPPER0_DUTY_M  (MCPWM_CHOPPER0_DUTY_V << MCPWM_CHOPPER0_DUTY_S)
+#define MCPWM_CHOPPER0_DUTY_V  0x00000007U
+#define MCPWM_CHOPPER0_DUTY_S  5
+/** MCPWM_CHOPPER0_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
  *  Configures width of the first pulse. Measurement unit: Periods of the carrier.
  */
-#define MCPWM_CARRIER0_OSHTWTH    0x0000000FU
-#define MCPWM_CARRIER0_OSHTWTH_M  (MCPWM_CARRIER0_OSHTWTH_V << MCPWM_CARRIER0_OSHTWTH_S)
-#define MCPWM_CARRIER0_OSHTWTH_V  0x0000000FU
-#define MCPWM_CARRIER0_OSHTWTH_S  8
-/** MCPWM_CARRIER0_OUT_INVERT : R/W; bitpos: [12]; default: 0;
+#define MCPWM_CHOPPER0_OSHTWTH    0x0000000FU
+#define MCPWM_CHOPPER0_OSHTWTH_M  (MCPWM_CHOPPER0_OSHTWTH_V << MCPWM_CHOPPER0_OSHTWTH_S)
+#define MCPWM_CHOPPER0_OSHTWTH_V  0x0000000FU
+#define MCPWM_CHOPPER0_OSHTWTH_S  8
+/** MCPWM_CHOPPER0_OUT_INVERT : R/W; bitpos: [12]; default: 0;
  *  Configures whether or not to invert the output of PWM0 A and PWM0 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER0_OUT_INVERT    (BIT(12))
-#define MCPWM_CARRIER0_OUT_INVERT_M  (MCPWM_CARRIER0_OUT_INVERT_V << MCPWM_CARRIER0_OUT_INVERT_S)
-#define MCPWM_CARRIER0_OUT_INVERT_V  0x00000001U
-#define MCPWM_CARRIER0_OUT_INVERT_S  12
-/** MCPWM_CARRIER0_IN_INVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_CHOPPER0_OUT_INVERT    (BIT(12))
+#define MCPWM_CHOPPER0_OUT_INVERT_M  (MCPWM_CHOPPER0_OUT_INVERT_V << MCPWM_CHOPPER0_OUT_INVERT_S)
+#define MCPWM_CHOPPER0_OUT_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER0_OUT_INVERT_S  12
+/** MCPWM_CHOPPER0_IN_INVERT : R/W; bitpos: [13]; default: 0;
  *  Configures whether or not to invert the input of PWM0 A and PWM0 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER0_IN_INVERT    (BIT(13))
-#define MCPWM_CARRIER0_IN_INVERT_M  (MCPWM_CARRIER0_IN_INVERT_V << MCPWM_CARRIER0_IN_INVERT_S)
-#define MCPWM_CARRIER0_IN_INVERT_V  0x00000001U
-#define MCPWM_CARRIER0_IN_INVERT_S  13
+#define MCPWM_CHOPPER0_IN_INVERT    (BIT(13))
+#define MCPWM_CHOPPER0_IN_INVERT_M  (MCPWM_CHOPPER0_IN_INVERT_V << MCPWM_CHOPPER0_IN_INVERT_S)
+#define MCPWM_CHOPPER0_IN_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER0_IN_INVERT_S  13
 
 /** MCPWM_FH0_CFG0_REG register
  *  PWM0 A and PWM0 B trip events actions configuration register
  */
-#define MCPWM_FH0_CFG0_REG (DR_REG_MCPWM_BASE + 0x68)
-/** MCPWM_FH0_SW_CBC : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x68)
+/** MCPWM_TZ0_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_SW_CBC    (BIT(0))
-#define MCPWM_FH0_SW_CBC_M  (MCPWM_FH0_SW_CBC_V << MCPWM_FH0_SW_CBC_S)
-#define MCPWM_FH0_SW_CBC_V  0x00000001U
-#define MCPWM_FH0_SW_CBC_S  0
-/** MCPWM_FH0_F2_CBC : R/W; bitpos: [1]; default: 0;
+#define MCPWM_TZ0_SW_CBC    (BIT(0))
+#define MCPWM_TZ0_SW_CBC_M  (MCPWM_TZ0_SW_CBC_V << MCPWM_TZ0_SW_CBC_S)
+#define MCPWM_TZ0_SW_CBC_V  0x00000001U
+#define MCPWM_TZ0_SW_CBC_S  0
+/** MCPWM_TZ0_F2_CBC : R/W; bitpos: [1]; default: 0;
  *  Configures whether or not event_f2 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F2_CBC    (BIT(1))
-#define MCPWM_FH0_F2_CBC_M  (MCPWM_FH0_F2_CBC_V << MCPWM_FH0_F2_CBC_S)
-#define MCPWM_FH0_F2_CBC_V  0x00000001U
-#define MCPWM_FH0_F2_CBC_S  1
-/** MCPWM_FH0_F1_CBC : R/W; bitpos: [2]; default: 0;
+#define MCPWM_TZ0_F2_CBC    (BIT(1))
+#define MCPWM_TZ0_F2_CBC_M  (MCPWM_TZ0_F2_CBC_V << MCPWM_TZ0_F2_CBC_S)
+#define MCPWM_TZ0_F2_CBC_V  0x00000001U
+#define MCPWM_TZ0_F2_CBC_S  1
+/** MCPWM_TZ0_F1_CBC : R/W; bitpos: [2]; default: 0;
  *  Configures whether or not event_f1 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F1_CBC    (BIT(2))
-#define MCPWM_FH0_F1_CBC_M  (MCPWM_FH0_F1_CBC_V << MCPWM_FH0_F1_CBC_S)
-#define MCPWM_FH0_F1_CBC_V  0x00000001U
-#define MCPWM_FH0_F1_CBC_S  2
-/** MCPWM_FH0_F0_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ0_F1_CBC    (BIT(2))
+#define MCPWM_TZ0_F1_CBC_M  (MCPWM_TZ0_F1_CBC_V << MCPWM_TZ0_F1_CBC_S)
+#define MCPWM_TZ0_F1_CBC_V  0x00000001U
+#define MCPWM_TZ0_F1_CBC_S  2
+/** MCPWM_TZ0_F0_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures whether or not event_f0 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F0_CBC    (BIT(3))
-#define MCPWM_FH0_F0_CBC_M  (MCPWM_FH0_F0_CBC_V << MCPWM_FH0_F0_CBC_S)
-#define MCPWM_FH0_F0_CBC_V  0x00000001U
-#define MCPWM_FH0_F0_CBC_S  3
-/** MCPWM_FH0_SW_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ0_F0_CBC    (BIT(3))
+#define MCPWM_TZ0_F0_CBC_M  (MCPWM_TZ0_F0_CBC_V << MCPWM_TZ0_F0_CBC_S)
+#define MCPWM_TZ0_F0_CBC_V  0x00000001U
+#define MCPWM_TZ0_F0_CBC_S  3
+/** MCPWM_TZ0_SW_OST : R/W; bitpos: [4]; default: 0;
  *  Configures whether or not to enable software force one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_SW_OST    (BIT(4))
-#define MCPWM_FH0_SW_OST_M  (MCPWM_FH0_SW_OST_V << MCPWM_FH0_SW_OST_S)
-#define MCPWM_FH0_SW_OST_V  0x00000001U
-#define MCPWM_FH0_SW_OST_S  4
-/** MCPWM_FH0_F2_OST : R/W; bitpos: [5]; default: 0;
+#define MCPWM_TZ0_SW_OST    (BIT(4))
+#define MCPWM_TZ0_SW_OST_M  (MCPWM_TZ0_SW_OST_V << MCPWM_TZ0_SW_OST_S)
+#define MCPWM_TZ0_SW_OST_V  0x00000001U
+#define MCPWM_TZ0_SW_OST_S  4
+/** MCPWM_TZ0_F2_OST : R/W; bitpos: [5]; default: 0;
  *  Configures whether or not event_f2 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F2_OST    (BIT(5))
-#define MCPWM_FH0_F2_OST_M  (MCPWM_FH0_F2_OST_V << MCPWM_FH0_F2_OST_S)
-#define MCPWM_FH0_F2_OST_V  0x00000001U
-#define MCPWM_FH0_F2_OST_S  5
-/** MCPWM_FH0_F1_OST : R/W; bitpos: [6]; default: 0;
+#define MCPWM_TZ0_F2_OST    (BIT(5))
+#define MCPWM_TZ0_F2_OST_M  (MCPWM_TZ0_F2_OST_V << MCPWM_TZ0_F2_OST_S)
+#define MCPWM_TZ0_F2_OST_V  0x00000001U
+#define MCPWM_TZ0_F2_OST_S  5
+/** MCPWM_TZ0_F1_OST : R/W; bitpos: [6]; default: 0;
  *  Configures whether or not event_f1 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F1_OST    (BIT(6))
-#define MCPWM_FH0_F1_OST_M  (MCPWM_FH0_F1_OST_V << MCPWM_FH0_F1_OST_S)
-#define MCPWM_FH0_F1_OST_V  0x00000001U
-#define MCPWM_FH0_F1_OST_S  6
-/** MCPWM_FH0_F0_OST : R/W; bitpos: [7]; default: 0;
+#define MCPWM_TZ0_F1_OST    (BIT(6))
+#define MCPWM_TZ0_F1_OST_M  (MCPWM_TZ0_F1_OST_V << MCPWM_TZ0_F1_OST_S)
+#define MCPWM_TZ0_F1_OST_V  0x00000001U
+#define MCPWM_TZ0_F1_OST_S  6
+/** MCPWM_TZ0_F0_OST : R/W; bitpos: [7]; default: 0;
  *  Configures whether or not event_f0 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH0_F0_OST    (BIT(7))
-#define MCPWM_FH0_F0_OST_M  (MCPWM_FH0_F0_OST_V << MCPWM_FH0_F0_OST_S)
-#define MCPWM_FH0_F0_OST_V  0x00000001U
-#define MCPWM_FH0_F0_OST_S  7
-/** MCPWM_FH0_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
+#define MCPWM_TZ0_F0_OST    (BIT(7))
+#define MCPWM_TZ0_F0_OST_M  (MCPWM_TZ0_F0_OST_V << MCPWM_TZ0_F0_OST_S)
+#define MCPWM_TZ0_F0_OST_V  0x00000001U
+#define MCPWM_TZ0_F0_OST_S  7
+/** MCPWM_TZ0_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM0 A when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_A_CBC_D    0x00000003U
-#define MCPWM_FH0_A_CBC_D_M  (MCPWM_FH0_A_CBC_D_V << MCPWM_FH0_A_CBC_D_S)
-#define MCPWM_FH0_A_CBC_D_V  0x00000003U
-#define MCPWM_FH0_A_CBC_D_S  8
-/** MCPWM_FH0_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
+#define MCPWM_TZ0_A_CBC_D    0x00000003U
+#define MCPWM_TZ0_A_CBC_D_M  (MCPWM_TZ0_A_CBC_D_V << MCPWM_TZ0_A_CBC_D_S)
+#define MCPWM_TZ0_A_CBC_D_V  0x00000003U
+#define MCPWM_TZ0_A_CBC_D_S  8
+/** MCPWM_TZ0_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM0 A when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_A_CBC_U    0x00000003U
-#define MCPWM_FH0_A_CBC_U_M  (MCPWM_FH0_A_CBC_U_V << MCPWM_FH0_A_CBC_U_S)
-#define MCPWM_FH0_A_CBC_U_V  0x00000003U
-#define MCPWM_FH0_A_CBC_U_S  10
-/** MCPWM_FH0_A_OST_D : R/W; bitpos: [13:12]; default: 0;
+#define MCPWM_TZ0_A_CBC_U    0x00000003U
+#define MCPWM_TZ0_A_CBC_U_M  (MCPWM_TZ0_A_CBC_U_V << MCPWM_TZ0_A_CBC_U_S)
+#define MCPWM_TZ0_A_CBC_U_V  0x00000003U
+#define MCPWM_TZ0_A_CBC_U_S  10
+/** MCPWM_TZ0_A_OST_D : R/W; bitpos: [13:12]; default: 0;
  *  Configures one-shot mode action on PWM0 A when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_A_OST_D    0x00000003U
-#define MCPWM_FH0_A_OST_D_M  (MCPWM_FH0_A_OST_D_V << MCPWM_FH0_A_OST_D_S)
-#define MCPWM_FH0_A_OST_D_V  0x00000003U
-#define MCPWM_FH0_A_OST_D_S  12
-/** MCPWM_FH0_A_OST_U : R/W; bitpos: [15:14]; default: 0;
+#define MCPWM_TZ0_A_OST_D    0x00000003U
+#define MCPWM_TZ0_A_OST_D_M  (MCPWM_TZ0_A_OST_D_V << MCPWM_TZ0_A_OST_D_S)
+#define MCPWM_TZ0_A_OST_D_V  0x00000003U
+#define MCPWM_TZ0_A_OST_D_S  12
+/** MCPWM_TZ0_A_OST_U : R/W; bitpos: [15:14]; default: 0;
  *  Configures one-shot mode action on PWM0 A when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_A_OST_U    0x00000003U
-#define MCPWM_FH0_A_OST_U_M  (MCPWM_FH0_A_OST_U_V << MCPWM_FH0_A_OST_U_S)
-#define MCPWM_FH0_A_OST_U_V  0x00000003U
-#define MCPWM_FH0_A_OST_U_S  14
-/** MCPWM_FH0_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
+#define MCPWM_TZ0_A_OST_U    0x00000003U
+#define MCPWM_TZ0_A_OST_U_M  (MCPWM_TZ0_A_OST_U_V << MCPWM_TZ0_A_OST_U_S)
+#define MCPWM_TZ0_A_OST_U_V  0x00000003U
+#define MCPWM_TZ0_A_OST_U_S  14
+/** MCPWM_TZ0_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM0 B when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_B_CBC_D    0x00000003U
-#define MCPWM_FH0_B_CBC_D_M  (MCPWM_FH0_B_CBC_D_V << MCPWM_FH0_B_CBC_D_S)
-#define MCPWM_FH0_B_CBC_D_V  0x00000003U
-#define MCPWM_FH0_B_CBC_D_S  16
-/** MCPWM_FH0_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
+#define MCPWM_TZ0_B_CBC_D    0x00000003U
+#define MCPWM_TZ0_B_CBC_D_M  (MCPWM_TZ0_B_CBC_D_V << MCPWM_TZ0_B_CBC_D_S)
+#define MCPWM_TZ0_B_CBC_D_V  0x00000003U
+#define MCPWM_TZ0_B_CBC_D_S  16
+/** MCPWM_TZ0_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM0 B when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_B_CBC_U    0x00000003U
-#define MCPWM_FH0_B_CBC_U_M  (MCPWM_FH0_B_CBC_U_V << MCPWM_FH0_B_CBC_U_S)
-#define MCPWM_FH0_B_CBC_U_V  0x00000003U
-#define MCPWM_FH0_B_CBC_U_S  18
-/** MCPWM_FH0_B_OST_D : R/W; bitpos: [21:20]; default: 0;
+#define MCPWM_TZ0_B_CBC_U    0x00000003U
+#define MCPWM_TZ0_B_CBC_U_M  (MCPWM_TZ0_B_CBC_U_V << MCPWM_TZ0_B_CBC_U_S)
+#define MCPWM_TZ0_B_CBC_U_V  0x00000003U
+#define MCPWM_TZ0_B_CBC_U_S  18
+/** MCPWM_TZ0_B_OST_D : R/W; bitpos: [21:20]; default: 0;
  *  Configures one-shot mode action on PWM0 B when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_B_OST_D    0x00000003U
-#define MCPWM_FH0_B_OST_D_M  (MCPWM_FH0_B_OST_D_V << MCPWM_FH0_B_OST_D_S)
-#define MCPWM_FH0_B_OST_D_V  0x00000003U
-#define MCPWM_FH0_B_OST_D_S  20
-/** MCPWM_FH0_B_OST_U : R/W; bitpos: [23:22]; default: 0;
+#define MCPWM_TZ0_B_OST_D    0x00000003U
+#define MCPWM_TZ0_B_OST_D_M  (MCPWM_TZ0_B_OST_D_V << MCPWM_TZ0_B_OST_D_S)
+#define MCPWM_TZ0_B_OST_D_V  0x00000003U
+#define MCPWM_TZ0_B_OST_D_S  20
+/** MCPWM_TZ0_B_OST_U : R/W; bitpos: [23:22]; default: 0;
  *  Configures one-shot mode action on PWM0 B when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH0_B_OST_U    0x00000003U
-#define MCPWM_FH0_B_OST_U_M  (MCPWM_FH0_B_OST_U_V << MCPWM_FH0_B_OST_U_S)
-#define MCPWM_FH0_B_OST_U_V  0x00000003U
-#define MCPWM_FH0_B_OST_U_S  22
+#define MCPWM_TZ0_B_OST_U    0x00000003U
+#define MCPWM_TZ0_B_OST_U_M  (MCPWM_TZ0_B_OST_U_V << MCPWM_TZ0_B_OST_U_S)
+#define MCPWM_TZ0_B_OST_U_V  0x00000003U
+#define MCPWM_TZ0_B_OST_U_S  22
 
 /** MCPWM_FH0_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH0_CFG1_REG (DR_REG_MCPWM_BASE + 0x6c)
-/** MCPWM_FH0_CLR_OST : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH0_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x6c)
+/** MCPWM_TZ0_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
  */
-#define MCPWM_FH0_CLR_OST    (BIT(0))
-#define MCPWM_FH0_CLR_OST_M  (MCPWM_FH0_CLR_OST_V << MCPWM_FH0_CLR_OST_S)
-#define MCPWM_FH0_CLR_OST_V  0x00000001U
-#define MCPWM_FH0_CLR_OST_S  0
-/** MCPWM_FH0_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
+#define MCPWM_TZ0_CLR_OST    (BIT(0))
+#define MCPWM_TZ0_CLR_OST_M  (MCPWM_TZ0_CLR_OST_V << MCPWM_TZ0_CLR_OST_S)
+#define MCPWM_TZ0_CLR_OST_V  0x00000001U
+#define MCPWM_TZ0_CLR_OST_S  0
+/** MCPWM_TZ0_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
  *  Configures the refresh moment selection of cycle-by-cycle mode action.\\0: Select
  *  nothing, will not refresh\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP
  */
-#define MCPWM_FH0_CBCPULSE    0x00000003U
-#define MCPWM_FH0_CBCPULSE_M  (MCPWM_FH0_CBCPULSE_V << MCPWM_FH0_CBCPULSE_S)
-#define MCPWM_FH0_CBCPULSE_V  0x00000003U
-#define MCPWM_FH0_CBCPULSE_S  1
-/** MCPWM_FH0_FORCE_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ0_CBCPULSE    0x00000003U
+#define MCPWM_TZ0_CBCPULSE_M  (MCPWM_TZ0_CBCPULSE_V << MCPWM_TZ0_CBCPULSE_S)
+#define MCPWM_TZ0_CBCPULSE_V  0x00000003U
+#define MCPWM_TZ0_CBCPULSE_S  1
+/** MCPWM_TZ0_FORCE_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures the generation of software cycle-by-cycle mode action. A toggle
  *  (software negate its value) triggers a cycle-by-cycle mode action.
  */
-#define MCPWM_FH0_FORCE_CBC    (BIT(3))
-#define MCPWM_FH0_FORCE_CBC_M  (MCPWM_FH0_FORCE_CBC_V << MCPWM_FH0_FORCE_CBC_S)
-#define MCPWM_FH0_FORCE_CBC_V  0x00000001U
-#define MCPWM_FH0_FORCE_CBC_S  3
-/** MCPWM_FH0_FORCE_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ0_FORCE_CBC    (BIT(3))
+#define MCPWM_TZ0_FORCE_CBC_M  (MCPWM_TZ0_FORCE_CBC_V << MCPWM_TZ0_FORCE_CBC_S)
+#define MCPWM_TZ0_FORCE_CBC_V  0x00000001U
+#define MCPWM_TZ0_FORCE_CBC_S  3
+/** MCPWM_TZ0_FORCE_OST : R/W; bitpos: [4]; default: 0;
  *  Configures the generation of software one-shot mode action. A toggle (software
  *  negate its value) triggers a one-shot mode action.
  */
-#define MCPWM_FH0_FORCE_OST    (BIT(4))
-#define MCPWM_FH0_FORCE_OST_M  (MCPWM_FH0_FORCE_OST_V << MCPWM_FH0_FORCE_OST_S)
-#define MCPWM_FH0_FORCE_OST_V  0x00000001U
-#define MCPWM_FH0_FORCE_OST_S  4
+#define MCPWM_TZ0_FORCE_OST    (BIT(4))
+#define MCPWM_TZ0_FORCE_OST_M  (MCPWM_TZ0_FORCE_OST_V << MCPWM_TZ0_FORCE_OST_S)
+#define MCPWM_TZ0_FORCE_OST_V  0x00000001U
+#define MCPWM_TZ0_FORCE_OST_S  4
 
 /** MCPWM_FH0_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH0_STATUS_REG (DR_REG_MCPWM_BASE + 0x70)
-/** MCPWM_FH0_CBC_ON : RO; bitpos: [0]; default: 0;
+#define MCPWM_FH0_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x70)
+/** MCPWM_TZ0_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
  */
-#define MCPWM_FH0_CBC_ON    (BIT(0))
-#define MCPWM_FH0_CBC_ON_M  (MCPWM_FH0_CBC_ON_V << MCPWM_FH0_CBC_ON_S)
-#define MCPWM_FH0_CBC_ON_V  0x00000001U
-#define MCPWM_FH0_CBC_ON_S  0
-/** MCPWM_FH0_OST_ON : RO; bitpos: [1]; default: 0;
+#define MCPWM_TZ0_CBC_ON    (BIT(0))
+#define MCPWM_TZ0_CBC_ON_M  (MCPWM_TZ0_CBC_ON_V << MCPWM_TZ0_CBC_ON_S)
+#define MCPWM_TZ0_CBC_ON_V  0x00000001U
+#define MCPWM_TZ0_CBC_ON_S  0
+/** MCPWM_TZ0_OST_ON : RO; bitpos: [1]; default: 0;
  *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
  *  going
  */
-#define MCPWM_FH0_OST_ON    (BIT(1))
-#define MCPWM_FH0_OST_ON_M  (MCPWM_FH0_OST_ON_V << MCPWM_FH0_OST_ON_S)
-#define MCPWM_FH0_OST_ON_V  0x00000001U
-#define MCPWM_FH0_OST_ON_S  1
+#define MCPWM_TZ0_OST_ON    (BIT(1))
+#define MCPWM_TZ0_OST_ON_M  (MCPWM_TZ0_OST_ON_V << MCPWM_TZ0_OST_ON_S)
+#define MCPWM_TZ0_OST_ON_V  0x00000001U
+#define MCPWM_TZ0_OST_ON_S  1
 
 /** MCPWM_GEN1_STMP_CFG_REG register
  *  Generator1 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN1_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0x74)
-/** MCPWM_GEN1_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_GEN1_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x74)
+/** MCPWM_CMPR1_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 1 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN1_A_UPMETHOD    0x0000000FU
-#define MCPWM_GEN1_A_UPMETHOD_M  (MCPWM_GEN1_A_UPMETHOD_V << MCPWM_GEN1_A_UPMETHOD_S)
-#define MCPWM_GEN1_A_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN1_A_UPMETHOD_S  0
-/** MCPWM_GEN1_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_CMPR1_A_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR1_A_UPMETHOD_M  (MCPWM_CMPR1_A_UPMETHOD_V << MCPWM_CMPR1_A_UPMETHOD_S)
+#define MCPWM_CMPR1_A_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR1_A_UPMETHOD_S  0
+/** MCPWM_CMPR1_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures the update method for PWM generator 1 time stamp B's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN1_B_UPMETHOD    0x0000000FU
-#define MCPWM_GEN1_B_UPMETHOD_M  (MCPWM_GEN1_B_UPMETHOD_V << MCPWM_GEN1_B_UPMETHOD_S)
-#define MCPWM_GEN1_B_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN1_B_UPMETHOD_S  4
-/** MCPWM_GEN1_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
+#define MCPWM_CMPR1_B_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR1_B_UPMETHOD_M  (MCPWM_CMPR1_B_UPMETHOD_V << MCPWM_CMPR1_B_UPMETHOD_S)
+#define MCPWM_CMPR1_B_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR1_B_UPMETHOD_S  4
+/** MCPWM_CMPR1_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
  *  Represents whether or not generator1 time stamp A's shadow reg is transferred.\\0:
  *  A's active reg has been updated with shadow register latest value.\\1: A's shadow
  *  reg is filled and waiting to be transferred to A's active reg
  */
-#define MCPWM_GEN1_A_SHDW_FULL    (BIT(8))
-#define MCPWM_GEN1_A_SHDW_FULL_M  (MCPWM_GEN1_A_SHDW_FULL_V << MCPWM_GEN1_A_SHDW_FULL_S)
-#define MCPWM_GEN1_A_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN1_A_SHDW_FULL_S  8
-/** MCPWM_GEN1_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
+#define MCPWM_CMPR1_A_SHDW_FULL    (BIT(8))
+#define MCPWM_CMPR1_A_SHDW_FULL_M  (MCPWM_CMPR1_A_SHDW_FULL_V << MCPWM_CMPR1_A_SHDW_FULL_S)
+#define MCPWM_CMPR1_A_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR1_A_SHDW_FULL_S  8
+/** MCPWM_CMPR1_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
  *  Represents whether or not generator1 time stamp B's shadow reg is transferred.\\0:
  *  B's active reg has been updated with shadow register latest value.\\1: B's shadow
  *  reg is filled and waiting to be transferred to B's active reg
  */
-#define MCPWM_GEN1_B_SHDW_FULL    (BIT(9))
-#define MCPWM_GEN1_B_SHDW_FULL_M  (MCPWM_GEN1_B_SHDW_FULL_V << MCPWM_GEN1_B_SHDW_FULL_S)
-#define MCPWM_GEN1_B_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN1_B_SHDW_FULL_S  9
+#define MCPWM_CMPR1_B_SHDW_FULL    (BIT(9))
+#define MCPWM_CMPR1_B_SHDW_FULL_M  (MCPWM_CMPR1_B_SHDW_FULL_V << MCPWM_CMPR1_B_SHDW_FULL_S)
+#define MCPWM_CMPR1_B_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR1_B_SHDW_FULL_S  9
 
 /** MCPWM_GEN1_TSTMP_A_REG register
  *  Generator1 time stamp A's shadow register
  */
-#define MCPWM_GEN1_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0x78)
-/** MCPWM_GEN1_A : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN1_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0x78)
+/** MCPWM_CMPR1_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 1 time stamp A's shadow register.
  */
-#define MCPWM_GEN1_A    0x0000FFFFU
-#define MCPWM_GEN1_A_M  (MCPWM_GEN1_A_V << MCPWM_GEN1_A_S)
-#define MCPWM_GEN1_A_V  0x0000FFFFU
-#define MCPWM_GEN1_A_S  0
+#define MCPWM_CMPR1_A    0x0000FFFFU
+#define MCPWM_CMPR1_A_M  (MCPWM_CMPR1_A_V << MCPWM_CMPR1_A_S)
+#define MCPWM_CMPR1_A_V  0x0000FFFFU
+#define MCPWM_CMPR1_A_S  0
 
 /** MCPWM_GEN1_TSTMP_B_REG register
  *  Generator1 time stamp B's shadow register
  */
-#define MCPWM_GEN1_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0x7c)
-/** MCPWM_GEN1_B : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN1_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0x7c)
+/** MCPWM_CMPR1_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 1 time stamp B's shadow register.
  */
-#define MCPWM_GEN1_B    0x0000FFFFU
-#define MCPWM_GEN1_B_M  (MCPWM_GEN1_B_V << MCPWM_GEN1_B_S)
-#define MCPWM_GEN1_B_V  0x0000FFFFU
-#define MCPWM_GEN1_B_S  0
+#define MCPWM_CMPR1_B    0x0000FFFFU
+#define MCPWM_CMPR1_B_M  (MCPWM_CMPR1_B_V << MCPWM_CMPR1_B_S)
+#define MCPWM_CMPR1_B_V  0x0000FFFFU
+#define MCPWM_CMPR1_B_S  0
 
 /** MCPWM_GEN1_CFG0_REG register
  *  Generator1 fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN1_CFG0_REG (DR_REG_MCPWM_BASE + 0x80)
+#define MCPWM_GEN1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x80)
 /** MCPWM_GEN1_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator 1's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -1279,7 +1279,7 @@ extern "C" {
 /** MCPWM_GEN1_FORCE_REG register
  *  Generator1 output signal force mode register.
  */
-#define MCPWM_GEN1_FORCE_REG (DR_REG_MCPWM_BASE + 0x84)
+#define MCPWM_GEN1_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0x84)
 /** MCPWM_GEN1_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator1.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -1343,7 +1343,7 @@ extern "C" {
 /** MCPWM_GEN1_A_REG register
  *  PWM1 output signal A actions configuration register
  */
-#define MCPWM_GEN1_A_REG (DR_REG_MCPWM_BASE + 0x88)
+#define MCPWM_GEN1_A_REG(i) (REG_MCPWM_BASE(i) + 0x88)
 /** MCPWM_GEN1_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM1 A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -1444,7 +1444,7 @@ extern "C" {
 /** MCPWM_GEN1_B_REG register
  *  PWM1 output signal B actions configuration register
  */
-#define MCPWM_GEN1_B_REG (DR_REG_MCPWM_BASE + 0x8c)
+#define MCPWM_GEN1_B_REG(i) (REG_MCPWM_BASE(i) + 0x8c)
 /** MCPWM_GEN1_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM1 B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -1545,431 +1545,431 @@ extern "C" {
 /** MCPWM_DT1_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT1_CFG_REG (DR_REG_MCPWM_BASE + 0x90)
-/** MCPWM_DT1_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_DT1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x90)
+/** MCPWM_DB1_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT1_FED_UPMETHOD    0x0000000FU
-#define MCPWM_DT1_FED_UPMETHOD_M  (MCPWM_DT1_FED_UPMETHOD_V << MCPWM_DT1_FED_UPMETHOD_S)
-#define MCPWM_DT1_FED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT1_FED_UPMETHOD_S  0
-/** MCPWM_DT1_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_DB1_FED_UPMETHOD    0x0000000FU
+#define MCPWM_DB1_FED_UPMETHOD_M  (MCPWM_DB1_FED_UPMETHOD_V << MCPWM_DB1_FED_UPMETHOD_S)
+#define MCPWM_DB1_FED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB1_FED_UPMETHOD_S  0
+/** MCPWM_DB1_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures update method for RED (rising edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT1_RED_UPMETHOD    0x0000000FU
-#define MCPWM_DT1_RED_UPMETHOD_M  (MCPWM_DT1_RED_UPMETHOD_V << MCPWM_DT1_RED_UPMETHOD_S)
-#define MCPWM_DT1_RED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT1_RED_UPMETHOD_S  4
-/** MCPWM_DT1_DEB_MODE : R/W; bitpos: [8]; default: 0;
+#define MCPWM_DB1_RED_UPMETHOD    0x0000000FU
+#define MCPWM_DB1_RED_UPMETHOD_M  (MCPWM_DB1_RED_UPMETHOD_V << MCPWM_DB1_RED_UPMETHOD_S)
+#define MCPWM_DB1_RED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB1_RED_UPMETHOD_S  4
+/** MCPWM_DB1_DEB_MODE : R/W; bitpos: [8]; default: 0;
  *  Configures S8 in table, dual-edge B mode.\\0: fed/red take effect on different path
  *  separately\\1: fed/red take effect on B path, A out is in bypass or dulpB mode
  */
-#define MCPWM_DT1_DEB_MODE    (BIT(8))
-#define MCPWM_DT1_DEB_MODE_M  (MCPWM_DT1_DEB_MODE_V << MCPWM_DT1_DEB_MODE_S)
-#define MCPWM_DT1_DEB_MODE_V  0x00000001U
-#define MCPWM_DT1_DEB_MODE_S  8
-/** MCPWM_DT1_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
+#define MCPWM_DB1_DEB_MODE    (BIT(8))
+#define MCPWM_DB1_DEB_MODE_M  (MCPWM_DB1_DEB_MODE_V << MCPWM_DB1_DEB_MODE_S)
+#define MCPWM_DB1_DEB_MODE_V  0x00000001U
+#define MCPWM_DB1_DEB_MODE_S  8
+/** MCPWM_DB1_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
  *  Configures S6 in table.
  */
-#define MCPWM_DT1_A_OUTSWAP    (BIT(9))
-#define MCPWM_DT1_A_OUTSWAP_M  (MCPWM_DT1_A_OUTSWAP_V << MCPWM_DT1_A_OUTSWAP_S)
-#define MCPWM_DT1_A_OUTSWAP_V  0x00000001U
-#define MCPWM_DT1_A_OUTSWAP_S  9
-/** MCPWM_DT1_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
+#define MCPWM_DB1_A_OUTSWAP    (BIT(9))
+#define MCPWM_DB1_A_OUTSWAP_M  (MCPWM_DB1_A_OUTSWAP_V << MCPWM_DB1_A_OUTSWAP_S)
+#define MCPWM_DB1_A_OUTSWAP_V  0x00000001U
+#define MCPWM_DB1_A_OUTSWAP_S  9
+/** MCPWM_DB1_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
  *  Configures S7 in table.
  */
-#define MCPWM_DT1_B_OUTSWAP    (BIT(10))
-#define MCPWM_DT1_B_OUTSWAP_M  (MCPWM_DT1_B_OUTSWAP_V << MCPWM_DT1_B_OUTSWAP_S)
-#define MCPWM_DT1_B_OUTSWAP_V  0x00000001U
-#define MCPWM_DT1_B_OUTSWAP_S  10
-/** MCPWM_DT1_RED_INSEL : R/W; bitpos: [11]; default: 0;
+#define MCPWM_DB1_B_OUTSWAP    (BIT(10))
+#define MCPWM_DB1_B_OUTSWAP_M  (MCPWM_DB1_B_OUTSWAP_V << MCPWM_DB1_B_OUTSWAP_S)
+#define MCPWM_DB1_B_OUTSWAP_V  0x00000001U
+#define MCPWM_DB1_B_OUTSWAP_S  10
+/** MCPWM_DB1_RED_INSEL : R/W; bitpos: [11]; default: 0;
  *  Configures S4 in table.
  */
-#define MCPWM_DT1_RED_INSEL    (BIT(11))
-#define MCPWM_DT1_RED_INSEL_M  (MCPWM_DT1_RED_INSEL_V << MCPWM_DT1_RED_INSEL_S)
-#define MCPWM_DT1_RED_INSEL_V  0x00000001U
-#define MCPWM_DT1_RED_INSEL_S  11
-/** MCPWM_DT1_FED_INSEL : R/W; bitpos: [12]; default: 0;
+#define MCPWM_DB1_RED_INSEL    (BIT(11))
+#define MCPWM_DB1_RED_INSEL_M  (MCPWM_DB1_RED_INSEL_V << MCPWM_DB1_RED_INSEL_S)
+#define MCPWM_DB1_RED_INSEL_V  0x00000001U
+#define MCPWM_DB1_RED_INSEL_S  11
+/** MCPWM_DB1_FED_INSEL : R/W; bitpos: [12]; default: 0;
  *  Configures S5 in table.
  */
-#define MCPWM_DT1_FED_INSEL    (BIT(12))
-#define MCPWM_DT1_FED_INSEL_M  (MCPWM_DT1_FED_INSEL_V << MCPWM_DT1_FED_INSEL_S)
-#define MCPWM_DT1_FED_INSEL_V  0x00000001U
-#define MCPWM_DT1_FED_INSEL_S  12
-/** MCPWM_DT1_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_DB1_FED_INSEL    (BIT(12))
+#define MCPWM_DB1_FED_INSEL_M  (MCPWM_DB1_FED_INSEL_V << MCPWM_DB1_FED_INSEL_S)
+#define MCPWM_DB1_FED_INSEL_V  0x00000001U
+#define MCPWM_DB1_FED_INSEL_S  12
+/** MCPWM_DB1_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
  *  Configures S2 in table.
  */
-#define MCPWM_DT1_RED_OUTINVERT    (BIT(13))
-#define MCPWM_DT1_RED_OUTINVERT_M  (MCPWM_DT1_RED_OUTINVERT_V << MCPWM_DT1_RED_OUTINVERT_S)
-#define MCPWM_DT1_RED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT1_RED_OUTINVERT_S  13
-/** MCPWM_DT1_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
+#define MCPWM_DB1_RED_OUTINVERT    (BIT(13))
+#define MCPWM_DB1_RED_OUTINVERT_M  (MCPWM_DB1_RED_OUTINVERT_V << MCPWM_DB1_RED_OUTINVERT_S)
+#define MCPWM_DB1_RED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB1_RED_OUTINVERT_S  13
+/** MCPWM_DB1_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
  *  Configures S3 in table.
  */
-#define MCPWM_DT1_FED_OUTINVERT    (BIT(14))
-#define MCPWM_DT1_FED_OUTINVERT_M  (MCPWM_DT1_FED_OUTINVERT_V << MCPWM_DT1_FED_OUTINVERT_S)
-#define MCPWM_DT1_FED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT1_FED_OUTINVERT_S  14
-/** MCPWM_DT1_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
+#define MCPWM_DB1_FED_OUTINVERT    (BIT(14))
+#define MCPWM_DB1_FED_OUTINVERT_M  (MCPWM_DB1_FED_OUTINVERT_V << MCPWM_DB1_FED_OUTINVERT_S)
+#define MCPWM_DB1_FED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB1_FED_OUTINVERT_S  14
+/** MCPWM_DB1_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
  *  Configures S1 in table.
  */
-#define MCPWM_DT1_A_OUTBYPASS    (BIT(15))
-#define MCPWM_DT1_A_OUTBYPASS_M  (MCPWM_DT1_A_OUTBYPASS_V << MCPWM_DT1_A_OUTBYPASS_S)
-#define MCPWM_DT1_A_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT1_A_OUTBYPASS_S  15
-/** MCPWM_DT1_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
+#define MCPWM_DB1_A_OUTBYPASS    (BIT(15))
+#define MCPWM_DB1_A_OUTBYPASS_M  (MCPWM_DB1_A_OUTBYPASS_V << MCPWM_DB1_A_OUTBYPASS_S)
+#define MCPWM_DB1_A_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB1_A_OUTBYPASS_S  15
+/** MCPWM_DB1_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
  *  Configures S0 in table.
  */
-#define MCPWM_DT1_B_OUTBYPASS    (BIT(16))
-#define MCPWM_DT1_B_OUTBYPASS_M  (MCPWM_DT1_B_OUTBYPASS_V << MCPWM_DT1_B_OUTBYPASS_S)
-#define MCPWM_DT1_B_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT1_B_OUTBYPASS_S  16
-/** MCPWM_DT1_CLK_SEL : R/W; bitpos: [17]; default: 0;
+#define MCPWM_DB1_B_OUTBYPASS    (BIT(16))
+#define MCPWM_DB1_B_OUTBYPASS_M  (MCPWM_DB1_B_OUTBYPASS_V << MCPWM_DB1_B_OUTBYPASS_S)
+#define MCPWM_DB1_B_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB1_B_OUTBYPASS_S  16
+/** MCPWM_DB1_CLK_SEL : R/W; bitpos: [17]; default: 0;
  *  Configures dead time generator 1 clock selection.\\0: PWM_clk\\1: PT_clk
  */
-#define MCPWM_DT1_CLK_SEL    (BIT(17))
-#define MCPWM_DT1_CLK_SEL_M  (MCPWM_DT1_CLK_SEL_V << MCPWM_DT1_CLK_SEL_S)
-#define MCPWM_DT1_CLK_SEL_V  0x00000001U
-#define MCPWM_DT1_CLK_SEL_S  17
+#define MCPWM_DB1_CLK_SEL    (BIT(17))
+#define MCPWM_DB1_CLK_SEL_M  (MCPWM_DB1_CLK_SEL_V << MCPWM_DB1_CLK_SEL_S)
+#define MCPWM_DB1_CLK_SEL_V  0x00000001U
+#define MCPWM_DB1_CLK_SEL_S  17
 
 /** MCPWM_DT1_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT1_FED_CFG_REG (DR_REG_MCPWM_BASE + 0x94)
-/** MCPWM_DT1_FED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT1_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x94)
+/** MCPWM_DB1_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
-#define MCPWM_DT1_FED    0x0000FFFFU
-#define MCPWM_DT1_FED_M  (MCPWM_DT1_FED_V << MCPWM_DT1_FED_S)
-#define MCPWM_DT1_FED_V  0x0000FFFFU
-#define MCPWM_DT1_FED_S  0
+#define MCPWM_DB1_FED    0x0000FFFFU
+#define MCPWM_DB1_FED_M  (MCPWM_DB1_FED_V << MCPWM_DB1_FED_S)
+#define MCPWM_DB1_FED_V  0x0000FFFFU
+#define MCPWM_DB1_FED_S  0
 
 /** MCPWM_DT1_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT1_RED_CFG_REG (DR_REG_MCPWM_BASE + 0x98)
-/** MCPWM_DT1_RED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT1_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x98)
+/** MCPWM_DB1_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
-#define MCPWM_DT1_RED    0x0000FFFFU
-#define MCPWM_DT1_RED_M  (MCPWM_DT1_RED_V << MCPWM_DT1_RED_S)
-#define MCPWM_DT1_RED_V  0x0000FFFFU
-#define MCPWM_DT1_RED_S  0
+#define MCPWM_DB1_RED    0x0000FFFFU
+#define MCPWM_DB1_RED_M  (MCPWM_DB1_RED_V << MCPWM_DB1_RED_S)
+#define MCPWM_DB1_RED_V  0x0000FFFFU
+#define MCPWM_DB1_RED_S  0
 
 /** MCPWM_CARRIER1_CFG_REG register
  *  Carrier1 configuration register
  */
-#define MCPWM_CARRIER1_CFG_REG (DR_REG_MCPWM_BASE + 0x9c)
-/** MCPWM_CARRIER1_EN : R/W; bitpos: [0]; default: 0;
+#define MCPWM_CARRIER1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x9c)
+/** MCPWM_CHOPPER1_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier1.\\0: Bypassed\\1: Enabled
  */
-#define MCPWM_CARRIER1_EN    (BIT(0))
-#define MCPWM_CARRIER1_EN_M  (MCPWM_CARRIER1_EN_V << MCPWM_CARRIER1_EN_S)
-#define MCPWM_CARRIER1_EN_V  0x00000001U
-#define MCPWM_CARRIER1_EN_S  0
-/** MCPWM_CARRIER1_PRESCALE : R/W; bitpos: [4:1]; default: 0;
+#define MCPWM_CHOPPER1_EN    (BIT(0))
+#define MCPWM_CHOPPER1_EN_M  (MCPWM_CHOPPER1_EN_V << MCPWM_CHOPPER1_EN_S)
+#define MCPWM_CHOPPER1_EN_V  0x00000001U
+#define MCPWM_CHOPPER1_EN_S  0
+/** MCPWM_CHOPPER1_PRESCALE : R/W; bitpos: [4:1]; default: 0;
  *  Configures the prescale value of PWM carrier1 clock (PC_clk), so that period of
  *  PC_clk = period of PWM_clk * (PWM_CARRIER1_PRESCALE + 1)
  */
-#define MCPWM_CARRIER1_PRESCALE    0x0000000FU
-#define MCPWM_CARRIER1_PRESCALE_M  (MCPWM_CARRIER1_PRESCALE_V << MCPWM_CARRIER1_PRESCALE_S)
-#define MCPWM_CARRIER1_PRESCALE_V  0x0000000FU
-#define MCPWM_CARRIER1_PRESCALE_S  1
-/** MCPWM_CARRIER1_DUTY : R/W; bitpos: [7:5]; default: 0;
+#define MCPWM_CHOPPER1_PRESCALE    0x0000000FU
+#define MCPWM_CHOPPER1_PRESCALE_M  (MCPWM_CHOPPER1_PRESCALE_V << MCPWM_CHOPPER1_PRESCALE_S)
+#define MCPWM_CHOPPER1_PRESCALE_V  0x0000000FU
+#define MCPWM_CHOPPER1_PRESCALE_S  1
+/** MCPWM_CHOPPER1_DUTY : R/W; bitpos: [7:5]; default: 0;
  *  Configures carrier duty. Duty = PWM_CARRIER1_DUTY / 8
  */
-#define MCPWM_CARRIER1_DUTY    0x00000007U
-#define MCPWM_CARRIER1_DUTY_M  (MCPWM_CARRIER1_DUTY_V << MCPWM_CARRIER1_DUTY_S)
-#define MCPWM_CARRIER1_DUTY_V  0x00000007U
-#define MCPWM_CARRIER1_DUTY_S  5
-/** MCPWM_CARRIER1_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
+#define MCPWM_CHOPPER1_DUTY    0x00000007U
+#define MCPWM_CHOPPER1_DUTY_M  (MCPWM_CHOPPER1_DUTY_V << MCPWM_CHOPPER1_DUTY_S)
+#define MCPWM_CHOPPER1_DUTY_V  0x00000007U
+#define MCPWM_CHOPPER1_DUTY_S  5
+/** MCPWM_CHOPPER1_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
  *  Configures width of the first pulse. Measurement unit: Periods of the carrier.
  */
-#define MCPWM_CARRIER1_OSHTWTH    0x0000000FU
-#define MCPWM_CARRIER1_OSHTWTH_M  (MCPWM_CARRIER1_OSHTWTH_V << MCPWM_CARRIER1_OSHTWTH_S)
-#define MCPWM_CARRIER1_OSHTWTH_V  0x0000000FU
-#define MCPWM_CARRIER1_OSHTWTH_S  8
-/** MCPWM_CARRIER1_OUT_INVERT : R/W; bitpos: [12]; default: 0;
+#define MCPWM_CHOPPER1_OSHTWTH    0x0000000FU
+#define MCPWM_CHOPPER1_OSHTWTH_M  (MCPWM_CHOPPER1_OSHTWTH_V << MCPWM_CHOPPER1_OSHTWTH_S)
+#define MCPWM_CHOPPER1_OSHTWTH_V  0x0000000FU
+#define MCPWM_CHOPPER1_OSHTWTH_S  8
+/** MCPWM_CHOPPER1_OUT_INVERT : R/W; bitpos: [12]; default: 0;
  *  Configures whether or not to invert the output of PWM1 A and PWM1 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER1_OUT_INVERT    (BIT(12))
-#define MCPWM_CARRIER1_OUT_INVERT_M  (MCPWM_CARRIER1_OUT_INVERT_V << MCPWM_CARRIER1_OUT_INVERT_S)
-#define MCPWM_CARRIER1_OUT_INVERT_V  0x00000001U
-#define MCPWM_CARRIER1_OUT_INVERT_S  12
-/** MCPWM_CARRIER1_IN_INVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_CHOPPER1_OUT_INVERT    (BIT(12))
+#define MCPWM_CHOPPER1_OUT_INVERT_M  (MCPWM_CHOPPER1_OUT_INVERT_V << MCPWM_CHOPPER1_OUT_INVERT_S)
+#define MCPWM_CHOPPER1_OUT_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER1_OUT_INVERT_S  12
+/** MCPWM_CHOPPER1_IN_INVERT : R/W; bitpos: [13]; default: 0;
  *  Configures whether or not to invert the input of PWM1 A and PWM1 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER1_IN_INVERT    (BIT(13))
-#define MCPWM_CARRIER1_IN_INVERT_M  (MCPWM_CARRIER1_IN_INVERT_V << MCPWM_CARRIER1_IN_INVERT_S)
-#define MCPWM_CARRIER1_IN_INVERT_V  0x00000001U
-#define MCPWM_CARRIER1_IN_INVERT_S  13
+#define MCPWM_CHOPPER1_IN_INVERT    (BIT(13))
+#define MCPWM_CHOPPER1_IN_INVERT_M  (MCPWM_CHOPPER1_IN_INVERT_V << MCPWM_CHOPPER1_IN_INVERT_S)
+#define MCPWM_CHOPPER1_IN_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER1_IN_INVERT_S  13
 
 /** MCPWM_FH1_CFG0_REG register
  *  PWM1 A and PWM1 B trip events actions configuration register
  */
-#define MCPWM_FH1_CFG0_REG (DR_REG_MCPWM_BASE + 0xa0)
-/** MCPWM_FH1_SW_CBC : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xa0)
+/** MCPWM_TZ1_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_SW_CBC    (BIT(0))
-#define MCPWM_FH1_SW_CBC_M  (MCPWM_FH1_SW_CBC_V << MCPWM_FH1_SW_CBC_S)
-#define MCPWM_FH1_SW_CBC_V  0x00000001U
-#define MCPWM_FH1_SW_CBC_S  0
-/** MCPWM_FH1_F2_CBC : R/W; bitpos: [1]; default: 0;
+#define MCPWM_TZ1_SW_CBC    (BIT(0))
+#define MCPWM_TZ1_SW_CBC_M  (MCPWM_TZ1_SW_CBC_V << MCPWM_TZ1_SW_CBC_S)
+#define MCPWM_TZ1_SW_CBC_V  0x00000001U
+#define MCPWM_TZ1_SW_CBC_S  0
+/** MCPWM_TZ1_F2_CBC : R/W; bitpos: [1]; default: 0;
  *  Configures whether or not event_f2 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F2_CBC    (BIT(1))
-#define MCPWM_FH1_F2_CBC_M  (MCPWM_FH1_F2_CBC_V << MCPWM_FH1_F2_CBC_S)
-#define MCPWM_FH1_F2_CBC_V  0x00000001U
-#define MCPWM_FH1_F2_CBC_S  1
-/** MCPWM_FH1_F1_CBC : R/W; bitpos: [2]; default: 0;
+#define MCPWM_TZ1_F2_CBC    (BIT(1))
+#define MCPWM_TZ1_F2_CBC_M  (MCPWM_TZ1_F2_CBC_V << MCPWM_TZ1_F2_CBC_S)
+#define MCPWM_TZ1_F2_CBC_V  0x00000001U
+#define MCPWM_TZ1_F2_CBC_S  1
+/** MCPWM_TZ1_F1_CBC : R/W; bitpos: [2]; default: 0;
  *  Configures whether or not event_f1 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F1_CBC    (BIT(2))
-#define MCPWM_FH1_F1_CBC_M  (MCPWM_FH1_F1_CBC_V << MCPWM_FH1_F1_CBC_S)
-#define MCPWM_FH1_F1_CBC_V  0x00000001U
-#define MCPWM_FH1_F1_CBC_S  2
-/** MCPWM_FH1_F0_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ1_F1_CBC    (BIT(2))
+#define MCPWM_TZ1_F1_CBC_M  (MCPWM_TZ1_F1_CBC_V << MCPWM_TZ1_F1_CBC_S)
+#define MCPWM_TZ1_F1_CBC_V  0x00000001U
+#define MCPWM_TZ1_F1_CBC_S  2
+/** MCPWM_TZ1_F0_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures whether or not event_f0 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F0_CBC    (BIT(3))
-#define MCPWM_FH1_F0_CBC_M  (MCPWM_FH1_F0_CBC_V << MCPWM_FH1_F0_CBC_S)
-#define MCPWM_FH1_F0_CBC_V  0x00000001U
-#define MCPWM_FH1_F0_CBC_S  3
-/** MCPWM_FH1_SW_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ1_F0_CBC    (BIT(3))
+#define MCPWM_TZ1_F0_CBC_M  (MCPWM_TZ1_F0_CBC_V << MCPWM_TZ1_F0_CBC_S)
+#define MCPWM_TZ1_F0_CBC_V  0x00000001U
+#define MCPWM_TZ1_F0_CBC_S  3
+/** MCPWM_TZ1_SW_OST : R/W; bitpos: [4]; default: 0;
  *  Configures whether or not to enable software force one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_SW_OST    (BIT(4))
-#define MCPWM_FH1_SW_OST_M  (MCPWM_FH1_SW_OST_V << MCPWM_FH1_SW_OST_S)
-#define MCPWM_FH1_SW_OST_V  0x00000001U
-#define MCPWM_FH1_SW_OST_S  4
-/** MCPWM_FH1_F2_OST : R/W; bitpos: [5]; default: 0;
+#define MCPWM_TZ1_SW_OST    (BIT(4))
+#define MCPWM_TZ1_SW_OST_M  (MCPWM_TZ1_SW_OST_V << MCPWM_TZ1_SW_OST_S)
+#define MCPWM_TZ1_SW_OST_V  0x00000001U
+#define MCPWM_TZ1_SW_OST_S  4
+/** MCPWM_TZ1_F2_OST : R/W; bitpos: [5]; default: 0;
  *  Configures whether or not event_f2 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F2_OST    (BIT(5))
-#define MCPWM_FH1_F2_OST_M  (MCPWM_FH1_F2_OST_V << MCPWM_FH1_F2_OST_S)
-#define MCPWM_FH1_F2_OST_V  0x00000001U
-#define MCPWM_FH1_F2_OST_S  5
-/** MCPWM_FH1_F1_OST : R/W; bitpos: [6]; default: 0;
+#define MCPWM_TZ1_F2_OST    (BIT(5))
+#define MCPWM_TZ1_F2_OST_M  (MCPWM_TZ1_F2_OST_V << MCPWM_TZ1_F2_OST_S)
+#define MCPWM_TZ1_F2_OST_V  0x00000001U
+#define MCPWM_TZ1_F2_OST_S  5
+/** MCPWM_TZ1_F1_OST : R/W; bitpos: [6]; default: 0;
  *  Configures whether or not event_f1 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F1_OST    (BIT(6))
-#define MCPWM_FH1_F1_OST_M  (MCPWM_FH1_F1_OST_V << MCPWM_FH1_F1_OST_S)
-#define MCPWM_FH1_F1_OST_V  0x00000001U
-#define MCPWM_FH1_F1_OST_S  6
-/** MCPWM_FH1_F0_OST : R/W; bitpos: [7]; default: 0;
+#define MCPWM_TZ1_F1_OST    (BIT(6))
+#define MCPWM_TZ1_F1_OST_M  (MCPWM_TZ1_F1_OST_V << MCPWM_TZ1_F1_OST_S)
+#define MCPWM_TZ1_F1_OST_V  0x00000001U
+#define MCPWM_TZ1_F1_OST_S  6
+/** MCPWM_TZ1_F0_OST : R/W; bitpos: [7]; default: 0;
  *  Configures whether or not event_f0 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH1_F0_OST    (BIT(7))
-#define MCPWM_FH1_F0_OST_M  (MCPWM_FH1_F0_OST_V << MCPWM_FH1_F0_OST_S)
-#define MCPWM_FH1_F0_OST_V  0x00000001U
-#define MCPWM_FH1_F0_OST_S  7
-/** MCPWM_FH1_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
+#define MCPWM_TZ1_F0_OST    (BIT(7))
+#define MCPWM_TZ1_F0_OST_M  (MCPWM_TZ1_F0_OST_V << MCPWM_TZ1_F0_OST_S)
+#define MCPWM_TZ1_F0_OST_V  0x00000001U
+#define MCPWM_TZ1_F0_OST_S  7
+/** MCPWM_TZ1_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM1 A when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_A_CBC_D    0x00000003U
-#define MCPWM_FH1_A_CBC_D_M  (MCPWM_FH1_A_CBC_D_V << MCPWM_FH1_A_CBC_D_S)
-#define MCPWM_FH1_A_CBC_D_V  0x00000003U
-#define MCPWM_FH1_A_CBC_D_S  8
-/** MCPWM_FH1_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
+#define MCPWM_TZ1_A_CBC_D    0x00000003U
+#define MCPWM_TZ1_A_CBC_D_M  (MCPWM_TZ1_A_CBC_D_V << MCPWM_TZ1_A_CBC_D_S)
+#define MCPWM_TZ1_A_CBC_D_V  0x00000003U
+#define MCPWM_TZ1_A_CBC_D_S  8
+/** MCPWM_TZ1_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM1 A when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_A_CBC_U    0x00000003U
-#define MCPWM_FH1_A_CBC_U_M  (MCPWM_FH1_A_CBC_U_V << MCPWM_FH1_A_CBC_U_S)
-#define MCPWM_FH1_A_CBC_U_V  0x00000003U
-#define MCPWM_FH1_A_CBC_U_S  10
-/** MCPWM_FH1_A_OST_D : R/W; bitpos: [13:12]; default: 0;
+#define MCPWM_TZ1_A_CBC_U    0x00000003U
+#define MCPWM_TZ1_A_CBC_U_M  (MCPWM_TZ1_A_CBC_U_V << MCPWM_TZ1_A_CBC_U_S)
+#define MCPWM_TZ1_A_CBC_U_V  0x00000003U
+#define MCPWM_TZ1_A_CBC_U_S  10
+/** MCPWM_TZ1_A_OST_D : R/W; bitpos: [13:12]; default: 0;
  *  Configures one-shot mode action on PWM1 A when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_A_OST_D    0x00000003U
-#define MCPWM_FH1_A_OST_D_M  (MCPWM_FH1_A_OST_D_V << MCPWM_FH1_A_OST_D_S)
-#define MCPWM_FH1_A_OST_D_V  0x00000003U
-#define MCPWM_FH1_A_OST_D_S  12
-/** MCPWM_FH1_A_OST_U : R/W; bitpos: [15:14]; default: 0;
+#define MCPWM_TZ1_A_OST_D    0x00000003U
+#define MCPWM_TZ1_A_OST_D_M  (MCPWM_TZ1_A_OST_D_V << MCPWM_TZ1_A_OST_D_S)
+#define MCPWM_TZ1_A_OST_D_V  0x00000003U
+#define MCPWM_TZ1_A_OST_D_S  12
+/** MCPWM_TZ1_A_OST_U : R/W; bitpos: [15:14]; default: 0;
  *  Configures one-shot mode action on PWM1 A when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_A_OST_U    0x00000003U
-#define MCPWM_FH1_A_OST_U_M  (MCPWM_FH1_A_OST_U_V << MCPWM_FH1_A_OST_U_S)
-#define MCPWM_FH1_A_OST_U_V  0x00000003U
-#define MCPWM_FH1_A_OST_U_S  14
-/** MCPWM_FH1_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
+#define MCPWM_TZ1_A_OST_U    0x00000003U
+#define MCPWM_TZ1_A_OST_U_M  (MCPWM_TZ1_A_OST_U_V << MCPWM_TZ1_A_OST_U_S)
+#define MCPWM_TZ1_A_OST_U_V  0x00000003U
+#define MCPWM_TZ1_A_OST_U_S  14
+/** MCPWM_TZ1_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM1 B when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_B_CBC_D    0x00000003U
-#define MCPWM_FH1_B_CBC_D_M  (MCPWM_FH1_B_CBC_D_V << MCPWM_FH1_B_CBC_D_S)
-#define MCPWM_FH1_B_CBC_D_V  0x00000003U
-#define MCPWM_FH1_B_CBC_D_S  16
-/** MCPWM_FH1_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
+#define MCPWM_TZ1_B_CBC_D    0x00000003U
+#define MCPWM_TZ1_B_CBC_D_M  (MCPWM_TZ1_B_CBC_D_V << MCPWM_TZ1_B_CBC_D_S)
+#define MCPWM_TZ1_B_CBC_D_V  0x00000003U
+#define MCPWM_TZ1_B_CBC_D_S  16
+/** MCPWM_TZ1_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM1 B when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_B_CBC_U    0x00000003U
-#define MCPWM_FH1_B_CBC_U_M  (MCPWM_FH1_B_CBC_U_V << MCPWM_FH1_B_CBC_U_S)
-#define MCPWM_FH1_B_CBC_U_V  0x00000003U
-#define MCPWM_FH1_B_CBC_U_S  18
-/** MCPWM_FH1_B_OST_D : R/W; bitpos: [21:20]; default: 0;
+#define MCPWM_TZ1_B_CBC_U    0x00000003U
+#define MCPWM_TZ1_B_CBC_U_M  (MCPWM_TZ1_B_CBC_U_V << MCPWM_TZ1_B_CBC_U_S)
+#define MCPWM_TZ1_B_CBC_U_V  0x00000003U
+#define MCPWM_TZ1_B_CBC_U_S  18
+/** MCPWM_TZ1_B_OST_D : R/W; bitpos: [21:20]; default: 0;
  *  Configures one-shot mode action on PWM1 B when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_B_OST_D    0x00000003U
-#define MCPWM_FH1_B_OST_D_M  (MCPWM_FH1_B_OST_D_V << MCPWM_FH1_B_OST_D_S)
-#define MCPWM_FH1_B_OST_D_V  0x00000003U
-#define MCPWM_FH1_B_OST_D_S  20
-/** MCPWM_FH1_B_OST_U : R/W; bitpos: [23:22]; default: 0;
+#define MCPWM_TZ1_B_OST_D    0x00000003U
+#define MCPWM_TZ1_B_OST_D_M  (MCPWM_TZ1_B_OST_D_V << MCPWM_TZ1_B_OST_D_S)
+#define MCPWM_TZ1_B_OST_D_V  0x00000003U
+#define MCPWM_TZ1_B_OST_D_S  20
+/** MCPWM_TZ1_B_OST_U : R/W; bitpos: [23:22]; default: 0;
  *  Configures one-shot mode action on PWM1 B when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH1_B_OST_U    0x00000003U
-#define MCPWM_FH1_B_OST_U_M  (MCPWM_FH1_B_OST_U_V << MCPWM_FH1_B_OST_U_S)
-#define MCPWM_FH1_B_OST_U_V  0x00000003U
-#define MCPWM_FH1_B_OST_U_S  22
+#define MCPWM_TZ1_B_OST_U    0x00000003U
+#define MCPWM_TZ1_B_OST_U_M  (MCPWM_TZ1_B_OST_U_V << MCPWM_TZ1_B_OST_U_S)
+#define MCPWM_TZ1_B_OST_U_V  0x00000003U
+#define MCPWM_TZ1_B_OST_U_S  22
 
 /** MCPWM_FH1_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH1_CFG1_REG (DR_REG_MCPWM_BASE + 0xa4)
-/** MCPWM_FH1_CLR_OST : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH1_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0xa4)
+/** MCPWM_TZ1_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
  */
-#define MCPWM_FH1_CLR_OST    (BIT(0))
-#define MCPWM_FH1_CLR_OST_M  (MCPWM_FH1_CLR_OST_V << MCPWM_FH1_CLR_OST_S)
-#define MCPWM_FH1_CLR_OST_V  0x00000001U
-#define MCPWM_FH1_CLR_OST_S  0
-/** MCPWM_FH1_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
+#define MCPWM_TZ1_CLR_OST    (BIT(0))
+#define MCPWM_TZ1_CLR_OST_M  (MCPWM_TZ1_CLR_OST_V << MCPWM_TZ1_CLR_OST_S)
+#define MCPWM_TZ1_CLR_OST_V  0x00000001U
+#define MCPWM_TZ1_CLR_OST_S  0
+/** MCPWM_TZ1_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
  *  Configures the refresh moment selection of cycle-by-cycle mode action.\\0: Select
  *  nothing, will not refresh\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP
  */
-#define MCPWM_FH1_CBCPULSE    0x00000003U
-#define MCPWM_FH1_CBCPULSE_M  (MCPWM_FH1_CBCPULSE_V << MCPWM_FH1_CBCPULSE_S)
-#define MCPWM_FH1_CBCPULSE_V  0x00000003U
-#define MCPWM_FH1_CBCPULSE_S  1
-/** MCPWM_FH1_FORCE_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ1_CBCPULSE    0x00000003U
+#define MCPWM_TZ1_CBCPULSE_M  (MCPWM_TZ1_CBCPULSE_V << MCPWM_TZ1_CBCPULSE_S)
+#define MCPWM_TZ1_CBCPULSE_V  0x00000003U
+#define MCPWM_TZ1_CBCPULSE_S  1
+/** MCPWM_TZ1_FORCE_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures the generation of software cycle-by-cycle mode action. A toggle
  *  (software negate its value) triggers a cycle-by-cycle mode action.
  */
-#define MCPWM_FH1_FORCE_CBC    (BIT(3))
-#define MCPWM_FH1_FORCE_CBC_M  (MCPWM_FH1_FORCE_CBC_V << MCPWM_FH1_FORCE_CBC_S)
-#define MCPWM_FH1_FORCE_CBC_V  0x00000001U
-#define MCPWM_FH1_FORCE_CBC_S  3
-/** MCPWM_FH1_FORCE_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ1_FORCE_CBC    (BIT(3))
+#define MCPWM_TZ1_FORCE_CBC_M  (MCPWM_TZ1_FORCE_CBC_V << MCPWM_TZ1_FORCE_CBC_S)
+#define MCPWM_TZ1_FORCE_CBC_V  0x00000001U
+#define MCPWM_TZ1_FORCE_CBC_S  3
+/** MCPWM_TZ1_FORCE_OST : R/W; bitpos: [4]; default: 0;
  *  Configures the generation of software one-shot mode action. A toggle (software
  *  negate its value) triggers a one-shot mode action.
  */
-#define MCPWM_FH1_FORCE_OST    (BIT(4))
-#define MCPWM_FH1_FORCE_OST_M  (MCPWM_FH1_FORCE_OST_V << MCPWM_FH1_FORCE_OST_S)
-#define MCPWM_FH1_FORCE_OST_V  0x00000001U
-#define MCPWM_FH1_FORCE_OST_S  4
+#define MCPWM_TZ1_FORCE_OST    (BIT(4))
+#define MCPWM_TZ1_FORCE_OST_M  (MCPWM_TZ1_FORCE_OST_V << MCPWM_TZ1_FORCE_OST_S)
+#define MCPWM_TZ1_FORCE_OST_V  0x00000001U
+#define MCPWM_TZ1_FORCE_OST_S  4
 
 /** MCPWM_FH1_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH1_STATUS_REG (DR_REG_MCPWM_BASE + 0xa8)
-/** MCPWM_FH1_CBC_ON : RO; bitpos: [0]; default: 0;
+#define MCPWM_FH1_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0xa8)
+/** MCPWM_TZ1_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
  */
-#define MCPWM_FH1_CBC_ON    (BIT(0))
-#define MCPWM_FH1_CBC_ON_M  (MCPWM_FH1_CBC_ON_V << MCPWM_FH1_CBC_ON_S)
-#define MCPWM_FH1_CBC_ON_V  0x00000001U
-#define MCPWM_FH1_CBC_ON_S  0
-/** MCPWM_FH1_OST_ON : RO; bitpos: [1]; default: 0;
+#define MCPWM_TZ1_CBC_ON    (BIT(0))
+#define MCPWM_TZ1_CBC_ON_M  (MCPWM_TZ1_CBC_ON_V << MCPWM_TZ1_CBC_ON_S)
+#define MCPWM_TZ1_CBC_ON_V  0x00000001U
+#define MCPWM_TZ1_CBC_ON_S  0
+/** MCPWM_TZ1_OST_ON : RO; bitpos: [1]; default: 0;
  *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
  *  going
  */
-#define MCPWM_FH1_OST_ON    (BIT(1))
-#define MCPWM_FH1_OST_ON_M  (MCPWM_FH1_OST_ON_V << MCPWM_FH1_OST_ON_S)
-#define MCPWM_FH1_OST_ON_V  0x00000001U
-#define MCPWM_FH1_OST_ON_S  1
+#define MCPWM_TZ1_OST_ON    (BIT(1))
+#define MCPWM_TZ1_OST_ON_M  (MCPWM_TZ1_OST_ON_V << MCPWM_TZ1_OST_ON_S)
+#define MCPWM_TZ1_OST_ON_V  0x00000001U
+#define MCPWM_TZ1_OST_ON_S  1
 
 /** MCPWM_GEN2_STMP_CFG_REG register
  *  Generator2 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN2_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0xac)
-/** MCPWM_GEN2_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_GEN2_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xac)
+/** MCPWM_CMPR2_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 2 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN2_A_UPMETHOD    0x0000000FU
-#define MCPWM_GEN2_A_UPMETHOD_M  (MCPWM_GEN2_A_UPMETHOD_V << MCPWM_GEN2_A_UPMETHOD_S)
-#define MCPWM_GEN2_A_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN2_A_UPMETHOD_S  0
-/** MCPWM_GEN2_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_CMPR2_A_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR2_A_UPMETHOD_M  (MCPWM_CMPR2_A_UPMETHOD_V << MCPWM_CMPR2_A_UPMETHOD_S)
+#define MCPWM_CMPR2_A_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR2_A_UPMETHOD_S  0
+/** MCPWM_CMPR2_B_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures the update method for PWM generator 2 time stamp B's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
  *  set to 1: Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_GEN2_B_UPMETHOD    0x0000000FU
-#define MCPWM_GEN2_B_UPMETHOD_M  (MCPWM_GEN2_B_UPMETHOD_V << MCPWM_GEN2_B_UPMETHOD_S)
-#define MCPWM_GEN2_B_UPMETHOD_V  0x0000000FU
-#define MCPWM_GEN2_B_UPMETHOD_S  4
-/** MCPWM_GEN2_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
+#define MCPWM_CMPR2_B_UPMETHOD    0x0000000FU
+#define MCPWM_CMPR2_B_UPMETHOD_M  (MCPWM_CMPR2_B_UPMETHOD_V << MCPWM_CMPR2_B_UPMETHOD_S)
+#define MCPWM_CMPR2_B_UPMETHOD_V  0x0000000FU
+#define MCPWM_CMPR2_B_UPMETHOD_S  4
+/** MCPWM_CMPR2_A_SHDW_FULL : R/W/WTC/SC; bitpos: [8]; default: 0;
  *  Represents whether or not generator2 time stamp A's shadow reg is transferred.\\0:
  *  A's active reg has been updated with shadow register latest value.\\1: A's shadow
  *  reg is filled and waiting to be transferred to A's active reg
  */
-#define MCPWM_GEN2_A_SHDW_FULL    (BIT(8))
-#define MCPWM_GEN2_A_SHDW_FULL_M  (MCPWM_GEN2_A_SHDW_FULL_V << MCPWM_GEN2_A_SHDW_FULL_S)
-#define MCPWM_GEN2_A_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN2_A_SHDW_FULL_S  8
-/** MCPWM_GEN2_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
+#define MCPWM_CMPR2_A_SHDW_FULL    (BIT(8))
+#define MCPWM_CMPR2_A_SHDW_FULL_M  (MCPWM_CMPR2_A_SHDW_FULL_V << MCPWM_CMPR2_A_SHDW_FULL_S)
+#define MCPWM_CMPR2_A_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR2_A_SHDW_FULL_S  8
+/** MCPWM_CMPR2_B_SHDW_FULL : R/W/WTC/SC; bitpos: [9]; default: 0;
  *  Represents whether or not generator2 time stamp B's shadow reg is transferred.\\0:
  *  B's active reg has been updated with shadow register latest value.\\1: B's shadow
  *  reg is filled and waiting to be transferred to B's active reg
  */
-#define MCPWM_GEN2_B_SHDW_FULL    (BIT(9))
-#define MCPWM_GEN2_B_SHDW_FULL_M  (MCPWM_GEN2_B_SHDW_FULL_V << MCPWM_GEN2_B_SHDW_FULL_S)
-#define MCPWM_GEN2_B_SHDW_FULL_V  0x00000001U
-#define MCPWM_GEN2_B_SHDW_FULL_S  9
+#define MCPWM_CMPR2_B_SHDW_FULL    (BIT(9))
+#define MCPWM_CMPR2_B_SHDW_FULL_M  (MCPWM_CMPR2_B_SHDW_FULL_V << MCPWM_CMPR2_B_SHDW_FULL_S)
+#define MCPWM_CMPR2_B_SHDW_FULL_V  0x00000001U
+#define MCPWM_CMPR2_B_SHDW_FULL_S  9
 
 /** MCPWM_GEN2_TSTMP_A_REG register
  *  Generator2 time stamp A's shadow register
  */
-#define MCPWM_GEN2_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0xb0)
-/** MCPWM_GEN2_A : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN2_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0xb0)
+/** MCPWM_CMPR2_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 2 time stamp A's shadow register.
  */
-#define MCPWM_GEN2_A    0x0000FFFFU
-#define MCPWM_GEN2_A_M  (MCPWM_GEN2_A_V << MCPWM_GEN2_A_S)
-#define MCPWM_GEN2_A_V  0x0000FFFFU
-#define MCPWM_GEN2_A_S  0
+#define MCPWM_CMPR2_A    0x0000FFFFU
+#define MCPWM_CMPR2_A_M  (MCPWM_CMPR2_A_V << MCPWM_CMPR2_A_S)
+#define MCPWM_CMPR2_A_V  0x0000FFFFU
+#define MCPWM_CMPR2_A_S  0
 
 /** MCPWM_GEN2_TSTMP_B_REG register
  *  Generator2 time stamp B's shadow register
  */
-#define MCPWM_GEN2_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0xb4)
-/** MCPWM_GEN2_B : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_GEN2_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0xb4)
+/** MCPWM_CMPR2_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator 2 time stamp B's shadow register.
  */
-#define MCPWM_GEN2_B    0x0000FFFFU
-#define MCPWM_GEN2_B_M  (MCPWM_GEN2_B_V << MCPWM_GEN2_B_S)
-#define MCPWM_GEN2_B_V  0x0000FFFFU
-#define MCPWM_GEN2_B_S  0
+#define MCPWM_CMPR2_B    0x0000FFFFU
+#define MCPWM_CMPR2_B_M  (MCPWM_CMPR2_B_V << MCPWM_CMPR2_B_S)
+#define MCPWM_CMPR2_B_V  0x0000FFFFU
+#define MCPWM_CMPR2_B_S  0
 
 /** MCPWM_GEN2_CFG0_REG register
  *  Generator2 fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN2_CFG0_REG (DR_REG_MCPWM_BASE + 0xb8)
+#define MCPWM_GEN2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xb8)
 /** MCPWM_GEN2_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator 2's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -2001,7 +2001,7 @@ extern "C" {
 /** MCPWM_GEN2_FORCE_REG register
  *  Generator2 output signal force mode register.
  */
-#define MCPWM_GEN2_FORCE_REG (DR_REG_MCPWM_BASE + 0xbc)
+#define MCPWM_GEN2_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0xbc)
 /** MCPWM_GEN2_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator2.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -2065,7 +2065,7 @@ extern "C" {
 /** MCPWM_GEN2_A_REG register
  *  PWM2 output signal A actions configuration register
  */
-#define MCPWM_GEN2_A_REG (DR_REG_MCPWM_BASE + 0xc0)
+#define MCPWM_GEN2_A_REG(i) (REG_MCPWM_BASE(i) + 0xc0)
 /** MCPWM_GEN2_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM2 A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -2166,7 +2166,7 @@ extern "C" {
 /** MCPWM_GEN2_B_REG register
  *  PWM2 output signal B actions configuration register
  */
-#define MCPWM_GEN2_B_REG (DR_REG_MCPWM_BASE + 0xc4)
+#define MCPWM_GEN2_B_REG(i) (REG_MCPWM_BASE(i) + 0xc4)
 /** MCPWM_GEN2_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM2 B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -2267,366 +2267,366 @@ extern "C" {
 /** MCPWM_DT2_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT2_CFG_REG (DR_REG_MCPWM_BASE + 0xc8)
-/** MCPWM_DT2_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
+#define MCPWM_DT2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xc8)
+/** MCPWM_DB2_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT2_FED_UPMETHOD    0x0000000FU
-#define MCPWM_DT2_FED_UPMETHOD_M  (MCPWM_DT2_FED_UPMETHOD_V << MCPWM_DT2_FED_UPMETHOD_S)
-#define MCPWM_DT2_FED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT2_FED_UPMETHOD_S  0
-/** MCPWM_DT2_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
+#define MCPWM_DB2_FED_UPMETHOD    0x0000000FU
+#define MCPWM_DB2_FED_UPMETHOD_M  (MCPWM_DB2_FED_UPMETHOD_V << MCPWM_DB2_FED_UPMETHOD_S)
+#define MCPWM_DB2_FED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB2_FED_UPMETHOD_S  0
+/** MCPWM_DB2_RED_UPMETHOD : R/W; bitpos: [7:4]; default: 0;
  *  Configures update method for RED (rising edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
  *  Sync\\Bit3 is set to 1: Disable the update
  */
-#define MCPWM_DT2_RED_UPMETHOD    0x0000000FU
-#define MCPWM_DT2_RED_UPMETHOD_M  (MCPWM_DT2_RED_UPMETHOD_V << MCPWM_DT2_RED_UPMETHOD_S)
-#define MCPWM_DT2_RED_UPMETHOD_V  0x0000000FU
-#define MCPWM_DT2_RED_UPMETHOD_S  4
-/** MCPWM_DT2_DEB_MODE : R/W; bitpos: [8]; default: 0;
+#define MCPWM_DB2_RED_UPMETHOD    0x0000000FU
+#define MCPWM_DB2_RED_UPMETHOD_M  (MCPWM_DB2_RED_UPMETHOD_V << MCPWM_DB2_RED_UPMETHOD_S)
+#define MCPWM_DB2_RED_UPMETHOD_V  0x0000000FU
+#define MCPWM_DB2_RED_UPMETHOD_S  4
+/** MCPWM_DB2_DEB_MODE : R/W; bitpos: [8]; default: 0;
  *  Configures S8 in table, dual-edge B mode.\\0: fed/red take effect on different path
  *  separately\\1: fed/red take effect on B path, A out is in bypass or dulpB mode
  */
-#define MCPWM_DT2_DEB_MODE    (BIT(8))
-#define MCPWM_DT2_DEB_MODE_M  (MCPWM_DT2_DEB_MODE_V << MCPWM_DT2_DEB_MODE_S)
-#define MCPWM_DT2_DEB_MODE_V  0x00000001U
-#define MCPWM_DT2_DEB_MODE_S  8
-/** MCPWM_DT2_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
+#define MCPWM_DB2_DEB_MODE    (BIT(8))
+#define MCPWM_DB2_DEB_MODE_M  (MCPWM_DB2_DEB_MODE_V << MCPWM_DB2_DEB_MODE_S)
+#define MCPWM_DB2_DEB_MODE_V  0x00000001U
+#define MCPWM_DB2_DEB_MODE_S  8
+/** MCPWM_DB2_A_OUTSWAP : R/W; bitpos: [9]; default: 0;
  *  Configures S6 in table.
  */
-#define MCPWM_DT2_A_OUTSWAP    (BIT(9))
-#define MCPWM_DT2_A_OUTSWAP_M  (MCPWM_DT2_A_OUTSWAP_V << MCPWM_DT2_A_OUTSWAP_S)
-#define MCPWM_DT2_A_OUTSWAP_V  0x00000001U
-#define MCPWM_DT2_A_OUTSWAP_S  9
-/** MCPWM_DT2_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
+#define MCPWM_DB2_A_OUTSWAP    (BIT(9))
+#define MCPWM_DB2_A_OUTSWAP_M  (MCPWM_DB2_A_OUTSWAP_V << MCPWM_DB2_A_OUTSWAP_S)
+#define MCPWM_DB2_A_OUTSWAP_V  0x00000001U
+#define MCPWM_DB2_A_OUTSWAP_S  9
+/** MCPWM_DB2_B_OUTSWAP : R/W; bitpos: [10]; default: 0;
  *  Configures S7 in table.
  */
-#define MCPWM_DT2_B_OUTSWAP    (BIT(10))
-#define MCPWM_DT2_B_OUTSWAP_M  (MCPWM_DT2_B_OUTSWAP_V << MCPWM_DT2_B_OUTSWAP_S)
-#define MCPWM_DT2_B_OUTSWAP_V  0x00000001U
-#define MCPWM_DT2_B_OUTSWAP_S  10
-/** MCPWM_DT2_RED_INSEL : R/W; bitpos: [11]; default: 0;
+#define MCPWM_DB2_B_OUTSWAP    (BIT(10))
+#define MCPWM_DB2_B_OUTSWAP_M  (MCPWM_DB2_B_OUTSWAP_V << MCPWM_DB2_B_OUTSWAP_S)
+#define MCPWM_DB2_B_OUTSWAP_V  0x00000001U
+#define MCPWM_DB2_B_OUTSWAP_S  10
+/** MCPWM_DB2_RED_INSEL : R/W; bitpos: [11]; default: 0;
  *  Configures S4 in table.
  */
-#define MCPWM_DT2_RED_INSEL    (BIT(11))
-#define MCPWM_DT2_RED_INSEL_M  (MCPWM_DT2_RED_INSEL_V << MCPWM_DT2_RED_INSEL_S)
-#define MCPWM_DT2_RED_INSEL_V  0x00000001U
-#define MCPWM_DT2_RED_INSEL_S  11
-/** MCPWM_DT2_FED_INSEL : R/W; bitpos: [12]; default: 0;
+#define MCPWM_DB2_RED_INSEL    (BIT(11))
+#define MCPWM_DB2_RED_INSEL_M  (MCPWM_DB2_RED_INSEL_V << MCPWM_DB2_RED_INSEL_S)
+#define MCPWM_DB2_RED_INSEL_V  0x00000001U
+#define MCPWM_DB2_RED_INSEL_S  11
+/** MCPWM_DB2_FED_INSEL : R/W; bitpos: [12]; default: 0;
  *  Configures S5 in table.
  */
-#define MCPWM_DT2_FED_INSEL    (BIT(12))
-#define MCPWM_DT2_FED_INSEL_M  (MCPWM_DT2_FED_INSEL_V << MCPWM_DT2_FED_INSEL_S)
-#define MCPWM_DT2_FED_INSEL_V  0x00000001U
-#define MCPWM_DT2_FED_INSEL_S  12
-/** MCPWM_DT2_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_DB2_FED_INSEL    (BIT(12))
+#define MCPWM_DB2_FED_INSEL_M  (MCPWM_DB2_FED_INSEL_V << MCPWM_DB2_FED_INSEL_S)
+#define MCPWM_DB2_FED_INSEL_V  0x00000001U
+#define MCPWM_DB2_FED_INSEL_S  12
+/** MCPWM_DB2_RED_OUTINVERT : R/W; bitpos: [13]; default: 0;
  *  Configures S2 in table.
  */
-#define MCPWM_DT2_RED_OUTINVERT    (BIT(13))
-#define MCPWM_DT2_RED_OUTINVERT_M  (MCPWM_DT2_RED_OUTINVERT_V << MCPWM_DT2_RED_OUTINVERT_S)
-#define MCPWM_DT2_RED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT2_RED_OUTINVERT_S  13
-/** MCPWM_DT2_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
+#define MCPWM_DB2_RED_OUTINVERT    (BIT(13))
+#define MCPWM_DB2_RED_OUTINVERT_M  (MCPWM_DB2_RED_OUTINVERT_V << MCPWM_DB2_RED_OUTINVERT_S)
+#define MCPWM_DB2_RED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB2_RED_OUTINVERT_S  13
+/** MCPWM_DB2_FED_OUTINVERT : R/W; bitpos: [14]; default: 0;
  *  Configures S3 in table.
  */
-#define MCPWM_DT2_FED_OUTINVERT    (BIT(14))
-#define MCPWM_DT2_FED_OUTINVERT_M  (MCPWM_DT2_FED_OUTINVERT_V << MCPWM_DT2_FED_OUTINVERT_S)
-#define MCPWM_DT2_FED_OUTINVERT_V  0x00000001U
-#define MCPWM_DT2_FED_OUTINVERT_S  14
-/** MCPWM_DT2_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
+#define MCPWM_DB2_FED_OUTINVERT    (BIT(14))
+#define MCPWM_DB2_FED_OUTINVERT_M  (MCPWM_DB2_FED_OUTINVERT_V << MCPWM_DB2_FED_OUTINVERT_S)
+#define MCPWM_DB2_FED_OUTINVERT_V  0x00000001U
+#define MCPWM_DB2_FED_OUTINVERT_S  14
+/** MCPWM_DB2_A_OUTBYPASS : R/W; bitpos: [15]; default: 1;
  *  Configures S1 in table.
  */
-#define MCPWM_DT2_A_OUTBYPASS    (BIT(15))
-#define MCPWM_DT2_A_OUTBYPASS_M  (MCPWM_DT2_A_OUTBYPASS_V << MCPWM_DT2_A_OUTBYPASS_S)
-#define MCPWM_DT2_A_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT2_A_OUTBYPASS_S  15
-/** MCPWM_DT2_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
+#define MCPWM_DB2_A_OUTBYPASS    (BIT(15))
+#define MCPWM_DB2_A_OUTBYPASS_M  (MCPWM_DB2_A_OUTBYPASS_V << MCPWM_DB2_A_OUTBYPASS_S)
+#define MCPWM_DB2_A_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB2_A_OUTBYPASS_S  15
+/** MCPWM_DB2_B_OUTBYPASS : R/W; bitpos: [16]; default: 1;
  *  Configures S0 in table.
  */
-#define MCPWM_DT2_B_OUTBYPASS    (BIT(16))
-#define MCPWM_DT2_B_OUTBYPASS_M  (MCPWM_DT2_B_OUTBYPASS_V << MCPWM_DT2_B_OUTBYPASS_S)
-#define MCPWM_DT2_B_OUTBYPASS_V  0x00000001U
-#define MCPWM_DT2_B_OUTBYPASS_S  16
-/** MCPWM_DT2_CLK_SEL : R/W; bitpos: [17]; default: 0;
+#define MCPWM_DB2_B_OUTBYPASS    (BIT(16))
+#define MCPWM_DB2_B_OUTBYPASS_M  (MCPWM_DB2_B_OUTBYPASS_V << MCPWM_DB2_B_OUTBYPASS_S)
+#define MCPWM_DB2_B_OUTBYPASS_V  0x00000001U
+#define MCPWM_DB2_B_OUTBYPASS_S  16
+/** MCPWM_DB2_CLK_SEL : R/W; bitpos: [17]; default: 0;
  *  Configures dead time generator 2 clock selection.\\0: PWM_clk\\1: PT_clk
  */
-#define MCPWM_DT2_CLK_SEL    (BIT(17))
-#define MCPWM_DT2_CLK_SEL_M  (MCPWM_DT2_CLK_SEL_V << MCPWM_DT2_CLK_SEL_S)
-#define MCPWM_DT2_CLK_SEL_V  0x00000001U
-#define MCPWM_DT2_CLK_SEL_S  17
+#define MCPWM_DB2_CLK_SEL    (BIT(17))
+#define MCPWM_DB2_CLK_SEL_M  (MCPWM_DB2_CLK_SEL_V << MCPWM_DB2_CLK_SEL_S)
+#define MCPWM_DB2_CLK_SEL_V  0x00000001U
+#define MCPWM_DB2_CLK_SEL_S  17
 
 /** MCPWM_DT2_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT2_FED_CFG_REG (DR_REG_MCPWM_BASE + 0xcc)
-/** MCPWM_DT2_FED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT2_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xcc)
+/** MCPWM_DB2_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
-#define MCPWM_DT2_FED    0x0000FFFFU
-#define MCPWM_DT2_FED_M  (MCPWM_DT2_FED_V << MCPWM_DT2_FED_S)
-#define MCPWM_DT2_FED_V  0x0000FFFFU
-#define MCPWM_DT2_FED_S  0
+#define MCPWM_DB2_FED    0x0000FFFFU
+#define MCPWM_DB2_FED_M  (MCPWM_DB2_FED_V << MCPWM_DB2_FED_S)
+#define MCPWM_DB2_FED_V  0x0000FFFFU
+#define MCPWM_DB2_FED_S  0
 
 /** MCPWM_DT2_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT2_RED_CFG_REG (DR_REG_MCPWM_BASE + 0xd0)
-/** MCPWM_DT2_RED : R/W; bitpos: [15:0]; default: 0;
+#define MCPWM_DT2_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xd0)
+/** MCPWM_DB2_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
-#define MCPWM_DT2_RED    0x0000FFFFU
-#define MCPWM_DT2_RED_M  (MCPWM_DT2_RED_V << MCPWM_DT2_RED_S)
-#define MCPWM_DT2_RED_V  0x0000FFFFU
-#define MCPWM_DT2_RED_S  0
+#define MCPWM_DB2_RED    0x0000FFFFU
+#define MCPWM_DB2_RED_M  (MCPWM_DB2_RED_V << MCPWM_DB2_RED_S)
+#define MCPWM_DB2_RED_V  0x0000FFFFU
+#define MCPWM_DB2_RED_S  0
 
 /** MCPWM_CARRIER2_CFG_REG register
  *  Carrier2 configuration register
  */
-#define MCPWM_CARRIER2_CFG_REG (DR_REG_MCPWM_BASE + 0xd4)
-/** MCPWM_CARRIER2_EN : R/W; bitpos: [0]; default: 0;
+#define MCPWM_CARRIER2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xd4)
+/** MCPWM_CHOPPER2_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier2.\\0: Bypassed\\1: Enabled
  */
-#define MCPWM_CARRIER2_EN    (BIT(0))
-#define MCPWM_CARRIER2_EN_M  (MCPWM_CARRIER2_EN_V << MCPWM_CARRIER2_EN_S)
-#define MCPWM_CARRIER2_EN_V  0x00000001U
-#define MCPWM_CARRIER2_EN_S  0
-/** MCPWM_CARRIER2_PRESCALE : R/W; bitpos: [4:1]; default: 0;
+#define MCPWM_CHOPPER2_EN    (BIT(0))
+#define MCPWM_CHOPPER2_EN_M  (MCPWM_CHOPPER2_EN_V << MCPWM_CHOPPER2_EN_S)
+#define MCPWM_CHOPPER2_EN_V  0x00000001U
+#define MCPWM_CHOPPER2_EN_S  0
+/** MCPWM_CHOPPER2_PRESCALE : R/W; bitpos: [4:1]; default: 0;
  *  Configures the prescale value of PWM carrier2 clock (PC_clk), so that period of
  *  PC_clk = period of PWM_clk * (PWM_CARRIER2_PRESCALE + 1)
  */
-#define MCPWM_CARRIER2_PRESCALE    0x0000000FU
-#define MCPWM_CARRIER2_PRESCALE_M  (MCPWM_CARRIER2_PRESCALE_V << MCPWM_CARRIER2_PRESCALE_S)
-#define MCPWM_CARRIER2_PRESCALE_V  0x0000000FU
-#define MCPWM_CARRIER2_PRESCALE_S  1
-/** MCPWM_CARRIER2_DUTY : R/W; bitpos: [7:5]; default: 0;
+#define MCPWM_CHOPPER2_PRESCALE    0x0000000FU
+#define MCPWM_CHOPPER2_PRESCALE_M  (MCPWM_CHOPPER2_PRESCALE_V << MCPWM_CHOPPER2_PRESCALE_S)
+#define MCPWM_CHOPPER2_PRESCALE_V  0x0000000FU
+#define MCPWM_CHOPPER2_PRESCALE_S  1
+/** MCPWM_CHOPPER2_DUTY : R/W; bitpos: [7:5]; default: 0;
  *  Configures carrier duty. Duty = PWM_CARRIER2_DUTY / 8
  */
-#define MCPWM_CARRIER2_DUTY    0x00000007U
-#define MCPWM_CARRIER2_DUTY_M  (MCPWM_CARRIER2_DUTY_V << MCPWM_CARRIER2_DUTY_S)
-#define MCPWM_CARRIER2_DUTY_V  0x00000007U
-#define MCPWM_CARRIER2_DUTY_S  5
-/** MCPWM_CARRIER2_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
+#define MCPWM_CHOPPER2_DUTY    0x00000007U
+#define MCPWM_CHOPPER2_DUTY_M  (MCPWM_CHOPPER2_DUTY_V << MCPWM_CHOPPER2_DUTY_S)
+#define MCPWM_CHOPPER2_DUTY_V  0x00000007U
+#define MCPWM_CHOPPER2_DUTY_S  5
+/** MCPWM_CHOPPER2_OSHTWTH : R/W; bitpos: [11:8]; default: 0;
  *  Configures width of the first pulse. Measurement unit: Periods of the carrier.
  */
-#define MCPWM_CARRIER2_OSHTWTH    0x0000000FU
-#define MCPWM_CARRIER2_OSHTWTH_M  (MCPWM_CARRIER2_OSHTWTH_V << MCPWM_CARRIER2_OSHTWTH_S)
-#define MCPWM_CARRIER2_OSHTWTH_V  0x0000000FU
-#define MCPWM_CARRIER2_OSHTWTH_S  8
-/** MCPWM_CARRIER2_OUT_INVERT : R/W; bitpos: [12]; default: 0;
+#define MCPWM_CHOPPER2_OSHTWTH    0x0000000FU
+#define MCPWM_CHOPPER2_OSHTWTH_M  (MCPWM_CHOPPER2_OSHTWTH_V << MCPWM_CHOPPER2_OSHTWTH_S)
+#define MCPWM_CHOPPER2_OSHTWTH_V  0x0000000FU
+#define MCPWM_CHOPPER2_OSHTWTH_S  8
+/** MCPWM_CHOPPER2_OUT_INVERT : R/W; bitpos: [12]; default: 0;
  *  Configures whether or not to invert the output of PWM2 A and PWM2 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER2_OUT_INVERT    (BIT(12))
-#define MCPWM_CARRIER2_OUT_INVERT_M  (MCPWM_CARRIER2_OUT_INVERT_V << MCPWM_CARRIER2_OUT_INVERT_S)
-#define MCPWM_CARRIER2_OUT_INVERT_V  0x00000001U
-#define MCPWM_CARRIER2_OUT_INVERT_S  12
-/** MCPWM_CARRIER2_IN_INVERT : R/W; bitpos: [13]; default: 0;
+#define MCPWM_CHOPPER2_OUT_INVERT    (BIT(12))
+#define MCPWM_CHOPPER2_OUT_INVERT_M  (MCPWM_CHOPPER2_OUT_INVERT_V << MCPWM_CHOPPER2_OUT_INVERT_S)
+#define MCPWM_CHOPPER2_OUT_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER2_OUT_INVERT_S  12
+/** MCPWM_CHOPPER2_IN_INVERT : R/W; bitpos: [13]; default: 0;
  *  Configures whether or not to invert the input of PWM2 A and PWM2 B for this
  *  submodule.\\0: Normal\\1: Invert
  */
-#define MCPWM_CARRIER2_IN_INVERT    (BIT(13))
-#define MCPWM_CARRIER2_IN_INVERT_M  (MCPWM_CARRIER2_IN_INVERT_V << MCPWM_CARRIER2_IN_INVERT_S)
-#define MCPWM_CARRIER2_IN_INVERT_V  0x00000001U
-#define MCPWM_CARRIER2_IN_INVERT_S  13
+#define MCPWM_CHOPPER2_IN_INVERT    (BIT(13))
+#define MCPWM_CHOPPER2_IN_INVERT_M  (MCPWM_CHOPPER2_IN_INVERT_V << MCPWM_CHOPPER2_IN_INVERT_S)
+#define MCPWM_CHOPPER2_IN_INVERT_V  0x00000001U
+#define MCPWM_CHOPPER2_IN_INVERT_S  13
 
 /** MCPWM_FH2_CFG0_REG register
  *  PWM2 A and PWM2 B trip events actions configuration register
  */
-#define MCPWM_FH2_CFG0_REG (DR_REG_MCPWM_BASE + 0xd8)
-/** MCPWM_FH2_SW_CBC : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xd8)
+/** MCPWM_TZ2_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_SW_CBC    (BIT(0))
-#define MCPWM_FH2_SW_CBC_M  (MCPWM_FH2_SW_CBC_V << MCPWM_FH2_SW_CBC_S)
-#define MCPWM_FH2_SW_CBC_V  0x00000001U
-#define MCPWM_FH2_SW_CBC_S  0
-/** MCPWM_FH2_F2_CBC : R/W; bitpos: [1]; default: 0;
+#define MCPWM_TZ2_SW_CBC    (BIT(0))
+#define MCPWM_TZ2_SW_CBC_M  (MCPWM_TZ2_SW_CBC_V << MCPWM_TZ2_SW_CBC_S)
+#define MCPWM_TZ2_SW_CBC_V  0x00000001U
+#define MCPWM_TZ2_SW_CBC_S  0
+/** MCPWM_TZ2_F2_CBC : R/W; bitpos: [1]; default: 0;
  *  Configures whether or not event_f2 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F2_CBC    (BIT(1))
-#define MCPWM_FH2_F2_CBC_M  (MCPWM_FH2_F2_CBC_V << MCPWM_FH2_F2_CBC_S)
-#define MCPWM_FH2_F2_CBC_V  0x00000001U
-#define MCPWM_FH2_F2_CBC_S  1
-/** MCPWM_FH2_F1_CBC : R/W; bitpos: [2]; default: 0;
+#define MCPWM_TZ2_F2_CBC    (BIT(1))
+#define MCPWM_TZ2_F2_CBC_M  (MCPWM_TZ2_F2_CBC_V << MCPWM_TZ2_F2_CBC_S)
+#define MCPWM_TZ2_F2_CBC_V  0x00000001U
+#define MCPWM_TZ2_F2_CBC_S  1
+/** MCPWM_TZ2_F1_CBC : R/W; bitpos: [2]; default: 0;
  *  Configures whether or not event_f1 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F1_CBC    (BIT(2))
-#define MCPWM_FH2_F1_CBC_M  (MCPWM_FH2_F1_CBC_V << MCPWM_FH2_F1_CBC_S)
-#define MCPWM_FH2_F1_CBC_V  0x00000001U
-#define MCPWM_FH2_F1_CBC_S  2
-/** MCPWM_FH2_F0_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ2_F1_CBC    (BIT(2))
+#define MCPWM_TZ2_F1_CBC_M  (MCPWM_TZ2_F1_CBC_V << MCPWM_TZ2_F1_CBC_S)
+#define MCPWM_TZ2_F1_CBC_V  0x00000001U
+#define MCPWM_TZ2_F1_CBC_S  2
+/** MCPWM_TZ2_F0_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures whether or not event_f0 will trigger cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F0_CBC    (BIT(3))
-#define MCPWM_FH2_F0_CBC_M  (MCPWM_FH2_F0_CBC_V << MCPWM_FH2_F0_CBC_S)
-#define MCPWM_FH2_F0_CBC_V  0x00000001U
-#define MCPWM_FH2_F0_CBC_S  3
-/** MCPWM_FH2_SW_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ2_F0_CBC    (BIT(3))
+#define MCPWM_TZ2_F0_CBC_M  (MCPWM_TZ2_F0_CBC_V << MCPWM_TZ2_F0_CBC_S)
+#define MCPWM_TZ2_F0_CBC_V  0x00000001U
+#define MCPWM_TZ2_F0_CBC_S  3
+/** MCPWM_TZ2_SW_OST : R/W; bitpos: [4]; default: 0;
  *  Configures whether or not to enable software force one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_SW_OST    (BIT(4))
-#define MCPWM_FH2_SW_OST_M  (MCPWM_FH2_SW_OST_V << MCPWM_FH2_SW_OST_S)
-#define MCPWM_FH2_SW_OST_V  0x00000001U
-#define MCPWM_FH2_SW_OST_S  4
-/** MCPWM_FH2_F2_OST : R/W; bitpos: [5]; default: 0;
+#define MCPWM_TZ2_SW_OST    (BIT(4))
+#define MCPWM_TZ2_SW_OST_M  (MCPWM_TZ2_SW_OST_V << MCPWM_TZ2_SW_OST_S)
+#define MCPWM_TZ2_SW_OST_V  0x00000001U
+#define MCPWM_TZ2_SW_OST_S  4
+/** MCPWM_TZ2_F2_OST : R/W; bitpos: [5]; default: 0;
  *  Configures whether or not event_f2 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F2_OST    (BIT(5))
-#define MCPWM_FH2_F2_OST_M  (MCPWM_FH2_F2_OST_V << MCPWM_FH2_F2_OST_S)
-#define MCPWM_FH2_F2_OST_V  0x00000001U
-#define MCPWM_FH2_F2_OST_S  5
-/** MCPWM_FH2_F1_OST : R/W; bitpos: [6]; default: 0;
+#define MCPWM_TZ2_F2_OST    (BIT(5))
+#define MCPWM_TZ2_F2_OST_M  (MCPWM_TZ2_F2_OST_V << MCPWM_TZ2_F2_OST_S)
+#define MCPWM_TZ2_F2_OST_V  0x00000001U
+#define MCPWM_TZ2_F2_OST_S  5
+/** MCPWM_TZ2_F1_OST : R/W; bitpos: [6]; default: 0;
  *  Configures whether or not event_f1 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F1_OST    (BIT(6))
-#define MCPWM_FH2_F1_OST_M  (MCPWM_FH2_F1_OST_V << MCPWM_FH2_F1_OST_S)
-#define MCPWM_FH2_F1_OST_V  0x00000001U
-#define MCPWM_FH2_F1_OST_S  6
-/** MCPWM_FH2_F0_OST : R/W; bitpos: [7]; default: 0;
+#define MCPWM_TZ2_F1_OST    (BIT(6))
+#define MCPWM_TZ2_F1_OST_M  (MCPWM_TZ2_F1_OST_V << MCPWM_TZ2_F1_OST_S)
+#define MCPWM_TZ2_F1_OST_V  0x00000001U
+#define MCPWM_TZ2_F1_OST_S  6
+/** MCPWM_TZ2_F0_OST : R/W; bitpos: [7]; default: 0;
  *  Configures whether or not event_f0 will trigger one-shot mode action.\\0:
  *  Disable\\1: Enable
  */
-#define MCPWM_FH2_F0_OST    (BIT(7))
-#define MCPWM_FH2_F0_OST_M  (MCPWM_FH2_F0_OST_V << MCPWM_FH2_F0_OST_S)
-#define MCPWM_FH2_F0_OST_V  0x00000001U
-#define MCPWM_FH2_F0_OST_S  7
-/** MCPWM_FH2_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
+#define MCPWM_TZ2_F0_OST    (BIT(7))
+#define MCPWM_TZ2_F0_OST_M  (MCPWM_TZ2_F0_OST_V << MCPWM_TZ2_F0_OST_S)
+#define MCPWM_TZ2_F0_OST_V  0x00000001U
+#define MCPWM_TZ2_F0_OST_S  7
+/** MCPWM_TZ2_A_CBC_D : R/W; bitpos: [9:8]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM2 A when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_A_CBC_D    0x00000003U
-#define MCPWM_FH2_A_CBC_D_M  (MCPWM_FH2_A_CBC_D_V << MCPWM_FH2_A_CBC_D_S)
-#define MCPWM_FH2_A_CBC_D_V  0x00000003U
-#define MCPWM_FH2_A_CBC_D_S  8
-/** MCPWM_FH2_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
+#define MCPWM_TZ2_A_CBC_D    0x00000003U
+#define MCPWM_TZ2_A_CBC_D_M  (MCPWM_TZ2_A_CBC_D_V << MCPWM_TZ2_A_CBC_D_S)
+#define MCPWM_TZ2_A_CBC_D_V  0x00000003U
+#define MCPWM_TZ2_A_CBC_D_S  8
+/** MCPWM_TZ2_A_CBC_U : R/W; bitpos: [11:10]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM2 A when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_A_CBC_U    0x00000003U
-#define MCPWM_FH2_A_CBC_U_M  (MCPWM_FH2_A_CBC_U_V << MCPWM_FH2_A_CBC_U_S)
-#define MCPWM_FH2_A_CBC_U_V  0x00000003U
-#define MCPWM_FH2_A_CBC_U_S  10
-/** MCPWM_FH2_A_OST_D : R/W; bitpos: [13:12]; default: 0;
+#define MCPWM_TZ2_A_CBC_U    0x00000003U
+#define MCPWM_TZ2_A_CBC_U_M  (MCPWM_TZ2_A_CBC_U_V << MCPWM_TZ2_A_CBC_U_S)
+#define MCPWM_TZ2_A_CBC_U_V  0x00000003U
+#define MCPWM_TZ2_A_CBC_U_S  10
+/** MCPWM_TZ2_A_OST_D : R/W; bitpos: [13:12]; default: 0;
  *  Configures one-shot mode action on PWM2 A when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_A_OST_D    0x00000003U
-#define MCPWM_FH2_A_OST_D_M  (MCPWM_FH2_A_OST_D_V << MCPWM_FH2_A_OST_D_S)
-#define MCPWM_FH2_A_OST_D_V  0x00000003U
-#define MCPWM_FH2_A_OST_D_S  12
-/** MCPWM_FH2_A_OST_U : R/W; bitpos: [15:14]; default: 0;
+#define MCPWM_TZ2_A_OST_D    0x00000003U
+#define MCPWM_TZ2_A_OST_D_M  (MCPWM_TZ2_A_OST_D_V << MCPWM_TZ2_A_OST_D_S)
+#define MCPWM_TZ2_A_OST_D_V  0x00000003U
+#define MCPWM_TZ2_A_OST_D_S  12
+/** MCPWM_TZ2_A_OST_U : R/W; bitpos: [15:14]; default: 0;
  *  Configures one-shot mode action on PWM2 A when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_A_OST_U    0x00000003U
-#define MCPWM_FH2_A_OST_U_M  (MCPWM_FH2_A_OST_U_V << MCPWM_FH2_A_OST_U_S)
-#define MCPWM_FH2_A_OST_U_V  0x00000003U
-#define MCPWM_FH2_A_OST_U_S  14
-/** MCPWM_FH2_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
+#define MCPWM_TZ2_A_OST_U    0x00000003U
+#define MCPWM_TZ2_A_OST_U_M  (MCPWM_TZ2_A_OST_U_V << MCPWM_TZ2_A_OST_U_S)
+#define MCPWM_TZ2_A_OST_U_V  0x00000003U
+#define MCPWM_TZ2_A_OST_U_S  14
+/** MCPWM_TZ2_B_CBC_D : R/W; bitpos: [17:16]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM2 B when fault event occurs and timer
  *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_B_CBC_D    0x00000003U
-#define MCPWM_FH2_B_CBC_D_M  (MCPWM_FH2_B_CBC_D_V << MCPWM_FH2_B_CBC_D_S)
-#define MCPWM_FH2_B_CBC_D_V  0x00000003U
-#define MCPWM_FH2_B_CBC_D_S  16
-/** MCPWM_FH2_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
+#define MCPWM_TZ2_B_CBC_D    0x00000003U
+#define MCPWM_TZ2_B_CBC_D_M  (MCPWM_TZ2_B_CBC_D_V << MCPWM_TZ2_B_CBC_D_S)
+#define MCPWM_TZ2_B_CBC_D_V  0x00000003U
+#define MCPWM_TZ2_B_CBC_D_S  16
+/** MCPWM_TZ2_B_CBC_U : R/W; bitpos: [19:18]; default: 0;
  *  Configures cycle-by-cycle mode action on PWM2 B when fault event occurs and timer
  *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_B_CBC_U    0x00000003U
-#define MCPWM_FH2_B_CBC_U_M  (MCPWM_FH2_B_CBC_U_V << MCPWM_FH2_B_CBC_U_S)
-#define MCPWM_FH2_B_CBC_U_V  0x00000003U
-#define MCPWM_FH2_B_CBC_U_S  18
-/** MCPWM_FH2_B_OST_D : R/W; bitpos: [21:20]; default: 0;
+#define MCPWM_TZ2_B_CBC_U    0x00000003U
+#define MCPWM_TZ2_B_CBC_U_M  (MCPWM_TZ2_B_CBC_U_V << MCPWM_TZ2_B_CBC_U_S)
+#define MCPWM_TZ2_B_CBC_U_V  0x00000003U
+#define MCPWM_TZ2_B_CBC_U_S  18
+/** MCPWM_TZ2_B_OST_D : R/W; bitpos: [21:20]; default: 0;
  *  Configures one-shot mode action on PWM2 B when fault event occurs and timer is
  *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_B_OST_D    0x00000003U
-#define MCPWM_FH2_B_OST_D_M  (MCPWM_FH2_B_OST_D_V << MCPWM_FH2_B_OST_D_S)
-#define MCPWM_FH2_B_OST_D_V  0x00000003U
-#define MCPWM_FH2_B_OST_D_S  20
-/** MCPWM_FH2_B_OST_U : R/W; bitpos: [23:22]; default: 0;
+#define MCPWM_TZ2_B_OST_D    0x00000003U
+#define MCPWM_TZ2_B_OST_D_M  (MCPWM_TZ2_B_OST_D_V << MCPWM_TZ2_B_OST_D_S)
+#define MCPWM_TZ2_B_OST_D_V  0x00000003U
+#define MCPWM_TZ2_B_OST_D_S  20
+/** MCPWM_TZ2_B_OST_U : R/W; bitpos: [23:22]; default: 0;
  *  Configures one-shot mode action on PWM2 B when fault event occurs and timer is
  *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
  */
-#define MCPWM_FH2_B_OST_U    0x00000003U
-#define MCPWM_FH2_B_OST_U_M  (MCPWM_FH2_B_OST_U_V << MCPWM_FH2_B_OST_U_S)
-#define MCPWM_FH2_B_OST_U_V  0x00000003U
-#define MCPWM_FH2_B_OST_U_S  22
+#define MCPWM_TZ2_B_OST_U    0x00000003U
+#define MCPWM_TZ2_B_OST_U_M  (MCPWM_TZ2_B_OST_U_V << MCPWM_TZ2_B_OST_U_S)
+#define MCPWM_TZ2_B_OST_U_V  0x00000003U
+#define MCPWM_TZ2_B_OST_U_S  22
 
 /** MCPWM_FH2_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH2_CFG1_REG (DR_REG_MCPWM_BASE + 0xdc)
-/** MCPWM_FH2_CLR_OST : R/W; bitpos: [0]; default: 0;
+#define MCPWM_FH2_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0xdc)
+/** MCPWM_TZ2_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
  */
-#define MCPWM_FH2_CLR_OST    (BIT(0))
-#define MCPWM_FH2_CLR_OST_M  (MCPWM_FH2_CLR_OST_V << MCPWM_FH2_CLR_OST_S)
-#define MCPWM_FH2_CLR_OST_V  0x00000001U
-#define MCPWM_FH2_CLR_OST_S  0
-/** MCPWM_FH2_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
+#define MCPWM_TZ2_CLR_OST    (BIT(0))
+#define MCPWM_TZ2_CLR_OST_M  (MCPWM_TZ2_CLR_OST_V << MCPWM_TZ2_CLR_OST_S)
+#define MCPWM_TZ2_CLR_OST_V  0x00000001U
+#define MCPWM_TZ2_CLR_OST_S  0
+/** MCPWM_TZ2_CBCPULSE : R/W; bitpos: [2:1]; default: 0;
  *  Configures the refresh moment selection of cycle-by-cycle mode action.\\0: Select
  *  nothing, will not refresh\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP
  */
-#define MCPWM_FH2_CBCPULSE    0x00000003U
-#define MCPWM_FH2_CBCPULSE_M  (MCPWM_FH2_CBCPULSE_V << MCPWM_FH2_CBCPULSE_S)
-#define MCPWM_FH2_CBCPULSE_V  0x00000003U
-#define MCPWM_FH2_CBCPULSE_S  1
-/** MCPWM_FH2_FORCE_CBC : R/W; bitpos: [3]; default: 0;
+#define MCPWM_TZ2_CBCPULSE    0x00000003U
+#define MCPWM_TZ2_CBCPULSE_M  (MCPWM_TZ2_CBCPULSE_V << MCPWM_TZ2_CBCPULSE_S)
+#define MCPWM_TZ2_CBCPULSE_V  0x00000003U
+#define MCPWM_TZ2_CBCPULSE_S  1
+/** MCPWM_TZ2_FORCE_CBC : R/W; bitpos: [3]; default: 0;
  *  Configures the generation of software cycle-by-cycle mode action. A toggle
  *  (software negate its value) triggers a cycle-by-cycle mode action.
  */
-#define MCPWM_FH2_FORCE_CBC    (BIT(3))
-#define MCPWM_FH2_FORCE_CBC_M  (MCPWM_FH2_FORCE_CBC_V << MCPWM_FH2_FORCE_CBC_S)
-#define MCPWM_FH2_FORCE_CBC_V  0x00000001U
-#define MCPWM_FH2_FORCE_CBC_S  3
-/** MCPWM_FH2_FORCE_OST : R/W; bitpos: [4]; default: 0;
+#define MCPWM_TZ2_FORCE_CBC    (BIT(3))
+#define MCPWM_TZ2_FORCE_CBC_M  (MCPWM_TZ2_FORCE_CBC_V << MCPWM_TZ2_FORCE_CBC_S)
+#define MCPWM_TZ2_FORCE_CBC_V  0x00000001U
+#define MCPWM_TZ2_FORCE_CBC_S  3
+/** MCPWM_TZ2_FORCE_OST : R/W; bitpos: [4]; default: 0;
  *  Configures the generation of software one-shot mode action. A toggle (software
  *  negate its value) triggers a one-shot mode action.
  */
-#define MCPWM_FH2_FORCE_OST    (BIT(4))
-#define MCPWM_FH2_FORCE_OST_M  (MCPWM_FH2_FORCE_OST_V << MCPWM_FH2_FORCE_OST_S)
-#define MCPWM_FH2_FORCE_OST_V  0x00000001U
-#define MCPWM_FH2_FORCE_OST_S  4
+#define MCPWM_TZ2_FORCE_OST    (BIT(4))
+#define MCPWM_TZ2_FORCE_OST_M  (MCPWM_TZ2_FORCE_OST_V << MCPWM_TZ2_FORCE_OST_S)
+#define MCPWM_TZ2_FORCE_OST_V  0x00000001U
+#define MCPWM_TZ2_FORCE_OST_S  4
 
 /** MCPWM_FH2_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH2_STATUS_REG (DR_REG_MCPWM_BASE + 0xe0)
-/** MCPWM_FH2_CBC_ON : RO; bitpos: [0]; default: 0;
+#define MCPWM_FH2_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0xe0)
+/** MCPWM_TZ2_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
  */
-#define MCPWM_FH2_CBC_ON    (BIT(0))
-#define MCPWM_FH2_CBC_ON_M  (MCPWM_FH2_CBC_ON_V << MCPWM_FH2_CBC_ON_S)
-#define MCPWM_FH2_CBC_ON_V  0x00000001U
-#define MCPWM_FH2_CBC_ON_S  0
-/** MCPWM_FH2_OST_ON : RO; bitpos: [1]; default: 0;
+#define MCPWM_TZ2_CBC_ON    (BIT(0))
+#define MCPWM_TZ2_CBC_ON_M  (MCPWM_TZ2_CBC_ON_V << MCPWM_TZ2_CBC_ON_S)
+#define MCPWM_TZ2_CBC_ON_V  0x00000001U
+#define MCPWM_TZ2_CBC_ON_S  0
+/** MCPWM_TZ2_OST_ON : RO; bitpos: [1]; default: 0;
  *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
  *  going
  */
-#define MCPWM_FH2_OST_ON    (BIT(1))
-#define MCPWM_FH2_OST_ON_M  (MCPWM_FH2_OST_ON_V << MCPWM_FH2_OST_ON_S)
-#define MCPWM_FH2_OST_ON_V  0x00000001U
-#define MCPWM_FH2_OST_ON_S  1
+#define MCPWM_TZ2_OST_ON    (BIT(1))
+#define MCPWM_TZ2_OST_ON_M  (MCPWM_TZ2_OST_ON_V << MCPWM_TZ2_OST_ON_S)
+#define MCPWM_TZ2_OST_ON_V  0x00000001U
+#define MCPWM_TZ2_OST_ON_S  1
 
 /** MCPWM_FAULT_DETECT_REG register
  *  Fault detection configuration and status register
  */
-#define MCPWM_FAULT_DETECT_REG (DR_REG_MCPWM_BASE + 0xe4)
+#define MCPWM_FAULT_DETECT_REG(i) (REG_MCPWM_BASE(i) + 0xe4)
 /** MCPWM_F0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable event_f0 generation.\\0: Disable\\1: Enable
  */
@@ -2697,7 +2697,7 @@ extern "C" {
 /** MCPWM_CAP_TIMER_CFG_REG register
  *  Capture timer configuration register
  */
-#define MCPWM_CAP_TIMER_CFG_REG (DR_REG_MCPWM_BASE + 0xe8)
+#define MCPWM_CAP_TIMER_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xe8)
 /** MCPWM_CAP_TIMER_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture timer increment.\\0: Disable\\1: Enable
  */
@@ -2734,7 +2734,7 @@ extern "C" {
 /** MCPWM_CAP_TIMER_PHASE_REG register
  *  Capture timer sync phase register
  */
-#define MCPWM_CAP_TIMER_PHASE_REG (DR_REG_MCPWM_BASE + 0xec)
+#define MCPWM_CAP_TIMER_PHASE_REG(i) (REG_MCPWM_BASE(i) + 0xec)
 /** MCPWM_CAP_PHASE : R/W; bitpos: [31:0]; default: 0;
  *  Configures phase value for capture timer sync operation.
  */
@@ -2746,7 +2746,7 @@ extern "C" {
 /** MCPWM_CAP_CH0_CFG_REG register
  *  Capture channel 0 configuration register
  */
-#define MCPWM_CAP_CH0_CFG_REG (DR_REG_MCPWM_BASE + 0xf0)
+#define MCPWM_CAP_CH0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf0)
 /** MCPWM_CAP0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 0.\\0: Disable\\1: Enable
  */
@@ -2764,7 +2764,7 @@ extern "C" {
 #define MCPWM_CAP0_MODE_V  0x00000003U
 #define MCPWM_CAP0_MODE_S  1
 /** MCPWM_CAP0_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP0. Prescale value =
+ *  Configures prescale value on positive edge of CAP0. Prescale value =
  *  PWM_CAP0_PRESCALE + 1
  */
 #define MCPWM_CAP0_PRESCALE    0x000000FFU
@@ -2791,7 +2791,7 @@ extern "C" {
 /** MCPWM_CAP_CH1_CFG_REG register
  *  Capture channel 1 configuration register
  */
-#define MCPWM_CAP_CH1_CFG_REG (DR_REG_MCPWM_BASE + 0xf4)
+#define MCPWM_CAP_CH1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf4)
 /** MCPWM_CAP1_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 1.\\0: Disable\\1: Enable
  */
@@ -2809,7 +2809,7 @@ extern "C" {
 #define MCPWM_CAP1_MODE_V  0x00000003U
 #define MCPWM_CAP1_MODE_S  1
 /** MCPWM_CAP1_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP1. Prescale value =
+ *  Configures prescale value on positive edge of CAP1. Prescale value =
  *  PWM_CAP1_PRESCALE + 1
  */
 #define MCPWM_CAP1_PRESCALE    0x000000FFU
@@ -2836,7 +2836,7 @@ extern "C" {
 /** MCPWM_CAP_CH2_CFG_REG register
  *  Capture channel 2 configuration register
  */
-#define MCPWM_CAP_CH2_CFG_REG (DR_REG_MCPWM_BASE + 0xf8)
+#define MCPWM_CAP_CH2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf8)
 /** MCPWM_CAP2_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 2.\\0: Disable\\1: Enable
  */
@@ -2854,7 +2854,7 @@ extern "C" {
 #define MCPWM_CAP2_MODE_V  0x00000003U
 #define MCPWM_CAP2_MODE_S  1
 /** MCPWM_CAP2_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP2. Prescale value =
+ *  Configures prescale value on positive edge of CAP2. Prescale value =
  *  PWM_CAP2_PRESCALE + 1
  */
 #define MCPWM_CAP2_PRESCALE    0x000000FFU
@@ -2881,7 +2881,7 @@ extern "C" {
 /** MCPWM_CAP_CH0_REG register
  *  CAP0 capture value register
  */
-#define MCPWM_CAP_CH0_REG (DR_REG_MCPWM_BASE + 0xfc)
+#define MCPWM_CAP_CH0_REG(i) (REG_MCPWM_BASE(i) + 0xfc)
 /** MCPWM_CAP0_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP0
  */
@@ -2893,7 +2893,7 @@ extern "C" {
 /** MCPWM_CAP_CH1_REG register
  *  CAP1 capture value register
  */
-#define MCPWM_CAP_CH1_REG (DR_REG_MCPWM_BASE + 0x100)
+#define MCPWM_CAP_CH1_REG(i) (REG_MCPWM_BASE(i) + 0x100)
 /** MCPWM_CAP1_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP1
  */
@@ -2905,7 +2905,7 @@ extern "C" {
 /** MCPWM_CAP_CH2_REG register
  *  CAP2 capture value register
  */
-#define MCPWM_CAP_CH2_REG (DR_REG_MCPWM_BASE + 0x104)
+#define MCPWM_CAP_CH2_REG(i) (REG_MCPWM_BASE(i) + 0x104)
 /** MCPWM_CAP2_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP2
  */
@@ -2917,7 +2917,7 @@ extern "C" {
 /** MCPWM_CAP_STATUS_REG register
  *  Last capture trigger edge information register
  */
-#define MCPWM_CAP_STATUS_REG (DR_REG_MCPWM_BASE + 0x108)
+#define MCPWM_CAP_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x108)
 /** MCPWM_CAP0_EDGE : RO; bitpos: [0]; default: 0;
  *  Represents edge of last capture trigger on channel0.\\0: Posedge\\1: Negedge
  */
@@ -2943,7 +2943,7 @@ extern "C" {
 /** MCPWM_UPDATE_CFG_REG register
  *  Generator Update configuration register
  */
-#define MCPWM_UPDATE_CFG_REG (DR_REG_MCPWM_BASE + 0x10c)
+#define MCPWM_UPDATE_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x10c)
 /** MCPWM_GLOBAL_UP_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether or not to enable global update for all active registers in MCPWM
  *  module.\\0: Disable\\1: Enable
@@ -2962,7 +2962,7 @@ extern "C" {
 #define MCPWM_GLOBAL_FORCE_UP_V  0x00000001U
 #define MCPWM_GLOBAL_FORCE_UP_S  1
 /** MCPWM_OP0_UP_EN : R/W; bitpos: [2]; default: 1;
- *  Configures whether or not to enable update of active registers in PWM operator$n.
+ *  Configures whether or not to enable update of active registers in PWM operator0.
  *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
  */
 #define MCPWM_OP0_UP_EN    (BIT(2))
@@ -2979,7 +2979,7 @@ extern "C" {
 #define MCPWM_OP0_FORCE_UP_V  0x00000001U
 #define MCPWM_OP0_FORCE_UP_S  3
 /** MCPWM_OP1_UP_EN : R/W; bitpos: [4]; default: 1;
- *  Configures whether or not to enable update of active registers in PWM operator$n.
+ *  Configures whether or not to enable update of active registers in PWM operator1.
  *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
  */
 #define MCPWM_OP1_UP_EN    (BIT(4))
@@ -2996,7 +2996,7 @@ extern "C" {
 #define MCPWM_OP1_FORCE_UP_V  0x00000001U
 #define MCPWM_OP1_FORCE_UP_S  5
 /** MCPWM_OP2_UP_EN : R/W; bitpos: [6]; default: 1;
- *  Configures whether or not to enable update of active registers in PWM operator$n.
+ *  Configures whether or not to enable update of active registers in PWM operator2.
  *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
  */
 #define MCPWM_OP2_UP_EN    (BIT(6))
@@ -3016,7 +3016,7 @@ extern "C" {
 /** MCPWM_INT_ENA_REG register
  *  Interrupt enable register
  */
-#define MCPWM_INT_ENA_REG (DR_REG_MCPWM_BASE + 0x110)
+#define MCPWM_INT_ENA_REG(i) (REG_MCPWM_BASE(i) + 0x110)
 /** MCPWM_TIMER0_STOP_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Enable bit: Write 1 to enable the interrupt triggered when the timer 0 stops.
  */
@@ -3237,7 +3237,7 @@ extern "C" {
 /** MCPWM_INT_RAW_REG register
  *  Interrupt raw status register
  */
-#define MCPWM_INT_RAW_REG (DR_REG_MCPWM_BASE + 0x114)
+#define MCPWM_INT_RAW_REG(i) (REG_MCPWM_BASE(i) + 0x114)
 /** MCPWM_TIMER0_STOP_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  Raw status bit: The raw interrupt status of the interrupt triggered when the timer
  *  0 stops.
@@ -3482,7 +3482,7 @@ extern "C" {
 /** MCPWM_INT_ST_REG register
  *  Interrupt masked status register
  */
-#define MCPWM_INT_ST_REG (DR_REG_MCPWM_BASE + 0x118)
+#define MCPWM_INT_ST_REG(i) (REG_MCPWM_BASE(i) + 0x118)
 /** MCPWM_TIMER0_STOP_INT_ST : RO; bitpos: [0]; default: 0;
  *  Masked status bit: The masked interrupt status of the interrupt triggered when the
  *  timer 0 stops.
@@ -3727,7 +3727,7 @@ extern "C" {
 /** MCPWM_INT_CLR_REG register
  *  Interrupt clear register
  */
-#define MCPWM_INT_CLR_REG (DR_REG_MCPWM_BASE + 0x11c)
+#define MCPWM_INT_CLR_REG(i) (REG_MCPWM_BASE(i) + 0x11c)
 /** MCPWM_TIMER0_STOP_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Clear bit: Write 1 to clear the interrupt triggered when the timer 0 stops.
  */
@@ -3948,7 +3948,7 @@ extern "C" {
 /** MCPWM_EVT_EN_REG register
  *  Event enable register
  */
-#define MCPWM_EVT_EN_REG (DR_REG_MCPWM_BASE + 0x120)
+#define MCPWM_EVT_EN_REG(i) (REG_MCPWM_BASE(i) + 0x120)
 /** MCPWM_EVT_TIMER0_STOP_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer0 stop event generate.\\0: Disable\\1:
  *  Enable
@@ -4187,7 +4187,7 @@ extern "C" {
 /** MCPWM_TASK_EN_REG register
  *  Task enable register
  */
-#define MCPWM_TASK_EN_REG (DR_REG_MCPWM_BASE + 0x124)
+#define MCPWM_TASK_EN_REG(i) (REG_MCPWM_BASE(i) + 0x124)
 /** MCPWM_TASK_CMPR0_A_UP_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable PWM generator0 timer stamp A's shadow register
  *  update task receive.\\0: Disable\\1: Enable
@@ -4362,7 +4362,7 @@ extern "C" {
 /** MCPWM_EVT_EN2_REG register
  *  Event enable register2
  */
-#define MCPWM_EVT_EN2_REG (DR_REG_MCPWM_BASE + 0x128)
+#define MCPWM_EVT_EN2_REG(i) (REG_MCPWM_BASE(i) + 0x128)
 /** MCPWM_EVT_OP0_TEE1_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E1_REG
  *  event generate.\\0: Disable\\1: Enable
@@ -4415,7 +4415,7 @@ extern "C" {
 /** MCPWM_OP0_TSTMP_E1_REG register
  *  Generator0 timer stamp E1 value register
  */
-#define MCPWM_OP0_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x12c)
+#define MCPWM_OP0_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x12c)
 /** MCPWM_OP0_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator0 timer stamp E1 value register
  */
@@ -4427,7 +4427,7 @@ extern "C" {
 /** MCPWM_OP0_TSTMP_E2_REG register
  *  Generator0 timer stamp E2 value register
  */
-#define MCPWM_OP0_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x130)
+#define MCPWM_OP0_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x130)
 /** MCPWM_OP0_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator0 timer stamp E2 value register
  */
@@ -4439,7 +4439,7 @@ extern "C" {
 /** MCPWM_OP1_TSTMP_E1_REG register
  *  Generator1 timer stamp E1 value register
  */
-#define MCPWM_OP1_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x134)
+#define MCPWM_OP1_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x134)
 /** MCPWM_OP1_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator1 timer stamp E1 value register
  */
@@ -4451,7 +4451,7 @@ extern "C" {
 /** MCPWM_OP1_TSTMP_E2_REG register
  *  Generator1 timer stamp E2 value register
  */
-#define MCPWM_OP1_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x138)
+#define MCPWM_OP1_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x138)
 /** MCPWM_OP1_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator1 timer stamp E2 value register
  */
@@ -4463,7 +4463,7 @@ extern "C" {
 /** MCPWM_OP2_TSTMP_E1_REG register
  *  Generator2 timer stamp E1 value register
  */
-#define MCPWM_OP2_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x13c)
+#define MCPWM_OP2_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x13c)
 /** MCPWM_OP2_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator2 timer stamp E1 value register
  */
@@ -4475,7 +4475,7 @@ extern "C" {
 /** MCPWM_OP2_TSTMP_E2_REG register
  *  Generator2 timer stamp E2 value register
  */
-#define MCPWM_OP2_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x140)
+#define MCPWM_OP2_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x140)
 /** MCPWM_OP2_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator2 timer stamp E2 value register
  */
@@ -4487,7 +4487,7 @@ extern "C" {
 /** MCPWM_CLK_REG register
  *  Global configuration register
  */
-#define MCPWM_CLK_REG (DR_REG_MCPWM_BASE + 0x144)
+#define MCPWM_CLK_REG(i) (REG_MCPWM_BASE(i) + 0x144)
 /** MCPWM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
  *  when application writes registers\\1: Force open the clock gate for register
@@ -4500,7 +4500,7 @@ extern "C" {
 /** MCPWM_VERSION_REG register
  *  Version register.
  */
-#define MCPWM_VERSION_REG (DR_REG_MCPWM_BASE + 0x148)
+#define MCPWM_VERSION_REG(i) (REG_MCPWM_BASE(i) + 0x148)
 /** MCPWM_DATE : R/W; bitpos: [27:0]; default: 35725968;
  *  Configures the version.
  */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 78dff63df528392f0f37f4880b83c6db
+// md5_digest_table 0d4e1f49db99de4dd9d3eac8d8e6078b
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -21,6 +21,98 @@ static const esp_efuse_desc_t WR_DIS[] = {
 
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // [] wr_dis of RD_DIS,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_RND_SWITCH_CYCLE[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_RND_SWITCH_CYCLE,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_DEPLOY_ONLY_ONCE,
+};
+
+static const esp_efuse_desc_t WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of FORCE_USE_KEY_MANAGER_KEY,
+};
+
+static const esp_efuse_desc_t WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of FORCE_DISABLE_SW_INIT_KEY,
+};
+
+static const esp_efuse_desc_t WR_DIS_XTS_KEY_LENGTH_256[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of XTS_KEY_LENGTH_256,
+};
+
+static const esp_efuse_desc_t WR_DIS_LOCK_KM_KEY[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of LOCK_KM_KEY,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
+    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of KM_DISABLE_DEPLOY_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_USB_JTAG[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_USB_JTAG,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_FORCE_DOWNLOAD[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_FORCE_DOWNLOAD,
+};
+
+static const esp_efuse_desc_t WR_DIS_SPI_DOWNLOAD_MSPI_DIS[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of SPI_DOWNLOAD_MSPI_DIS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_TWAI[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_TWAI,
+};
+
+static const esp_efuse_desc_t WR_DIS_JTAG_SEL_ENABLE[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of JTAG_SEL_ENABLE,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_PAD_JTAG[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_PAD_JTAG,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_MANUAL_ENCRYPT,
+};
+
+static const esp_efuse_desc_t WR_DIS_WDT_DELAY_SEL[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of WDT_DELAY_SEL,
+};
+
+static const esp_efuse_desc_t WR_DIS_HYS_EN_PAD[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of HYS_EN_PAD,
+};
+
+static const esp_efuse_desc_t WR_DIS_PXA0_TIEH_SEL_0[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PXA0_TIEH_SEL_0,
+};
+
+static const esp_efuse_desc_t WR_DIS_PXA0_TIEH_SEL_1[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PXA0_TIEH_SEL_1,
+};
+
+static const esp_efuse_desc_t WR_DIS_PXA0_TIEH_SEL_2[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PXA0_TIEH_SEL_2,
+};
+
+static const esp_efuse_desc_t WR_DIS_PXA0_TIEH_SEL_3[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PXA0_TIEH_SEL_3,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_WDT[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_WDT,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_SWD[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_SWD,
+};
+
+static const esp_efuse_desc_t WR_DIS_HP_PWR_SRC_SEL[] = {
+    {EFUSE_BLK0, 3, 1}, 	 // [] wr_dis of HP_PWR_SRC_SEL,
 };
 
 static const esp_efuse_desc_t WR_DIS_SPI_BOOT_CRYPT_CNT[] = {
@@ -63,8 +155,84 @@ static const esp_efuse_desc_t WR_DIS_KEY_PURPOSE_5[] = {
     {EFUSE_BLK0, 13, 1}, 	 // [WR_DIS.KEY5_PURPOSE] wr_dis of KEY_PURPOSE_5,
 };
 
+static const esp_efuse_desc_t WR_DIS_SEC_DPA_LEVEL[] = {
+    {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of SEC_DPA_LEVEL,
+};
+
+static const esp_efuse_desc_t WR_DIS_CRYPT_DPA_ENABLE[] = {
+    {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of CRYPT_DPA_ENABLE,
+};
+
 static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_EN[] = {
     {EFUSE_BLK0, 15, 1}, 	 // [] wr_dis of SECURE_BOOT_EN,
+};
+
+static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
+    {EFUSE_BLK0, 16, 1}, 	 // [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE,
+};
+
+static const esp_efuse_desc_t WR_DIS_ECDSA_ENABLE_SOFT_K[] = {
+    {EFUSE_BLK0, 17, 1}, 	 // [] wr_dis of ECDSA_ENABLE_SOFT_K,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TYPE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FLASH_TYPE,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_PAGE_SIZE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FLASH_PAGE_SIZE,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_ECC_EN[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FLASH_ECC_EN,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_USB_OTG_DOWNLOAD_MODE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_USB_OTG_DOWNLOAD_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TPUW[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FLASH_TPUW,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_MODE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_DIRECT_BOOT[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_DIRECT_BOOT,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT,
+};
+
+static const esp_efuse_desc_t WR_DIS_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_ENABLE_SECURITY_DOWNLOAD[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of ENABLE_SECURITY_DOWNLOAD,
+};
+
+static const esp_efuse_desc_t WR_DIS_UART_PRINT_CONTROL[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of UART_PRINT_CONTROL,
+};
+
+static const esp_efuse_desc_t WR_DIS_FORCE_SEND_RESUME[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of FORCE_SEND_RESUME,
+};
+
+static const esp_efuse_desc_t WR_DIS_SECURE_VERSION[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of SECURE_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of SECURE_BOOT_DISABLE_FAST_WAKE,
+};
+
+static const esp_efuse_desc_t WR_DIS_KM_HUK_GEN_STATE[] = {
+    {EFUSE_BLK0, 19, 1}, 	 // [] wr_dis of KM_HUK_GEN_STATE,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLK1[] = {
@@ -75,16 +243,60 @@ static const esp_efuse_desc_t WR_DIS_MAC[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [WR_DIS.MAC_FACTORY] wr_dis of MAC,
 };
 
-static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MINOR,
 };
 
-static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA1[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [WR_DIS.SYS_DATA_PART1] wr_dis of BLOCK_SYS_DATA1,
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
+};
+
+static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
     {EFUSE_BLK0, 22, 1}, 	 // [WR_DIS.USER_DATA] wr_dis of BLOCK_USR_DATA,
+};
+
+static const esp_efuse_desc_t WR_DIS_CUSTOM_MAC[] = {
+    {EFUSE_BLK0, 22, 1}, 	 // [WR_DIS.MAC_CUSTOM WR_DIS.USER_DATA_MAC_CUSTOM] wr_dis of CUSTOM_MAC,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_KEY0[] = {
@@ -113,6 +325,22 @@ static const esp_efuse_desc_t WR_DIS_BLOCK_KEY5[] = {
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA2[] = {
     {EFUSE_BLK0, 29, 1}, 	 // [WR_DIS.SYS_DATA_PART2] wr_dis of BLOCK_SYS_DATA2,
+};
+
+static const esp_efuse_desc_t WR_DIS_USB_DEVICE_EXCHG_PINS[] = {
+    {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_DEVICE_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t WR_DIS_USB_OTG11_EXCHG_PINS[] = {
+    {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_OTG11_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t WR_DIS_USB_PHY_SEL[] = {
+    {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_PHY_SEL,
+};
+
+static const esp_efuse_desc_t WR_DIS_SOFT_DIS_JTAG[] = {
+    {EFUSE_BLK0, 31, 1}, 	 // [] wr_dis of SOFT_DIS_JTAG,
 };
 
 static const esp_efuse_desc_t RD_DIS[] = {
@@ -195,12 +423,8 @@ static const esp_efuse_desc_t USB_PHY_SEL[] = {
     {EFUSE_BLK0, 57, 1}, 	 // [] TBD,
 };
 
-static const esp_efuse_desc_t KM_HUK_GEN_STATE_LOW[] = {
-    {EFUSE_BLK0, 58, 6}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
-};
-
-static const esp_efuse_desc_t KM_HUK_GEN_STATE_HIGH[] = {
-    {EFUSE_BLK0, 64, 3}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
+static const esp_efuse_desc_t KM_HUK_GEN_STATE[] = {
+    {EFUSE_BLK0, 58, 9}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
 };
 
 static const esp_efuse_desc_t KM_RND_SWITCH_CYCLE[] = {
@@ -400,13 +624,48 @@ static const esp_efuse_desc_t MAC[] = {
     {EFUSE_BLK1, 0, 8}, 	 // [MAC_FACTORY] MAC address,
 };
 
-static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address [0],
-    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address [1],
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 64, 4}, 	 // [] Minor chip version,
 };
 
-static const esp_efuse_desc_t BLOCK_SYS_DATA1[] = {
-    {EFUSE_BLK2, 0, 256}, 	 // [SYS_DATA_PART1] System data part 1,
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 68, 2}, 	 // [] Major chip version,
+};
+
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 70, 1}, 	 // [] Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 71, 1}, 	 // [] Disables check of blk version major,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 72, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 75, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t PSRAM_CAP[] = {
+    {EFUSE_BLK1, 77, 3}, 	 // [] PSRAM capacity,
+};
+
+static const esp_efuse_desc_t TEMP[] = {
+    {EFUSE_BLK1, 80, 2}, 	 // [] Operating temperature of the ESP chip,
+};
+
+static const esp_efuse_desc_t PSRAM_VENDOR[] = {
+    {EFUSE_BLK1, 82, 2}, 	 // [] PSRAM vendor,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 84, 3}, 	 // [] Package version,
+};
+
+static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK2, 0, 128}, 	 // [] Optional unique 128-bit ID,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -414,7 +673,7 @@ static const esp_efuse_desc_t USER_DATA[] = {
 };
 
 static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
-    {EFUSE_BLK3, 200, 48}, 	 // [MAC_CUSTOM CUSTOM_MAC] Custom MAC (TODO,
+    {EFUSE_BLK3, 200, 48}, 	 // [MAC_CUSTOM CUSTOM_MAC] Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -456,6 +715,121 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     &WR_DIS_RD_DIS[0],    		// [] wr_dis of RD_DIS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_RND_SWITCH_CYCLE[] = {
+    &WR_DIS_KM_RND_SWITCH_CYCLE[0],    		// [] wr_dis of KM_RND_SWITCH_CYCLE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DEPLOY_ONLY_ONCE[] = {
+    &WR_DIS_KM_DEPLOY_ONLY_ONCE[0],    		// [] wr_dis of KM_DEPLOY_ONLY_ONCE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_USE_KEY_MANAGER_KEY[] = {
+    &WR_DIS_FORCE_USE_KEY_MANAGER_KEY[0],    		// [] wr_dis of FORCE_USE_KEY_MANAGER_KEY
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_DISABLE_SW_INIT_KEY[] = {
+    &WR_DIS_FORCE_DISABLE_SW_INIT_KEY[0],    		// [] wr_dis of FORCE_DISABLE_SW_INIT_KEY
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_KEY_LENGTH_256[] = {
+    &WR_DIS_XTS_KEY_LENGTH_256[0],    		// [] wr_dis of XTS_KEY_LENGTH_256
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LOCK_KM_KEY[] = {
+    &WR_DIS_LOCK_KM_KEY[0],    		// [] wr_dis of LOCK_KM_KEY
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_DISABLE_DEPLOY_MODE[] = {
+    &WR_DIS_KM_DISABLE_DEPLOY_MODE[0],    		// [] wr_dis of KM_DISABLE_DEPLOY_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_JTAG[] = {
+    &WR_DIS_DIS_USB_JTAG[0],    		// [] wr_dis of DIS_USB_JTAG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_FORCE_DOWNLOAD[] = {
+    &WR_DIS_DIS_FORCE_DOWNLOAD[0],    		// [] wr_dis of DIS_FORCE_DOWNLOAD
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_DOWNLOAD_MSPI_DIS[] = {
+    &WR_DIS_SPI_DOWNLOAD_MSPI_DIS[0],    		// [] wr_dis of SPI_DOWNLOAD_MSPI_DIS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_TWAI[] = {
+    &WR_DIS_DIS_TWAI[0],    		// [] wr_dis of DIS_TWAI
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_JTAG_SEL_ENABLE[] = {
+    &WR_DIS_JTAG_SEL_ENABLE[0],    		// [] wr_dis of JTAG_SEL_ENABLE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_PAD_JTAG[] = {
+    &WR_DIS_DIS_PAD_JTAG[0],    		// [] wr_dis of DIS_PAD_JTAG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
+    &WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// [] wr_dis of DIS_DOWNLOAD_MANUAL_ENCRYPT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WDT_DELAY_SEL[] = {
+    &WR_DIS_WDT_DELAY_SEL[0],    		// [] wr_dis of WDT_DELAY_SEL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HYS_EN_PAD[] = {
+    &WR_DIS_HYS_EN_PAD[0],    		// [] wr_dis of HYS_EN_PAD
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PXA0_TIEH_SEL_0[] = {
+    &WR_DIS_PXA0_TIEH_SEL_0[0],    		// [] wr_dis of PXA0_TIEH_SEL_0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PXA0_TIEH_SEL_1[] = {
+    &WR_DIS_PXA0_TIEH_SEL_1[0],    		// [] wr_dis of PXA0_TIEH_SEL_1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PXA0_TIEH_SEL_2[] = {
+    &WR_DIS_PXA0_TIEH_SEL_2[0],    		// [] wr_dis of PXA0_TIEH_SEL_2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PXA0_TIEH_SEL_3[] = {
+    &WR_DIS_PXA0_TIEH_SEL_3[0],    		// [] wr_dis of PXA0_TIEH_SEL_3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_WDT[] = {
+    &WR_DIS_DIS_WDT[0],    		// [] wr_dis of DIS_WDT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_SWD[] = {
+    &WR_DIS_DIS_SWD[0],    		// [] wr_dis of DIS_SWD
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HP_PWR_SRC_SEL[] = {
+    &WR_DIS_HP_PWR_SRC_SEL[0],    		// [] wr_dis of HP_PWR_SRC_SEL
     NULL
 };
 
@@ -509,8 +883,103 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY_PURPOSE_5[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SEC_DPA_LEVEL[] = {
+    &WR_DIS_SEC_DPA_LEVEL[0],    		// [] wr_dis of SEC_DPA_LEVEL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CRYPT_DPA_ENABLE[] = {
+    &WR_DIS_CRYPT_DPA_ENABLE[0],    		// [] wr_dis of CRYPT_DPA_ENABLE
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_EN[] = {
     &WR_DIS_SECURE_BOOT_EN[0],    		// [] wr_dis of SECURE_BOOT_EN
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
+    &WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_ENABLE_SOFT_K[] = {
+    &WR_DIS_ECDSA_ENABLE_SOFT_K[0],    		// [] wr_dis of ECDSA_ENABLE_SOFT_K
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TYPE[] = {
+    &WR_DIS_FLASH_TYPE[0],    		// [] wr_dis of FLASH_TYPE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_PAGE_SIZE[] = {
+    &WR_DIS_FLASH_PAGE_SIZE[0],    		// [] wr_dis of FLASH_PAGE_SIZE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_ECC_EN[] = {
+    &WR_DIS_FLASH_ECC_EN[0],    		// [] wr_dis of FLASH_ECC_EN
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_OTG_DOWNLOAD_MODE[] = {
+    &WR_DIS_DIS_USB_OTG_DOWNLOAD_MODE[0],    		// [] wr_dis of DIS_USB_OTG_DOWNLOAD_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TPUW[] = {
+    &WR_DIS_FLASH_TPUW[0],    		// [] wr_dis of FLASH_TPUW
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MODE[] = {
+    &WR_DIS_DIS_DOWNLOAD_MODE[0],    		// [] wr_dis of DIS_DOWNLOAD_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DIRECT_BOOT[] = {
+    &WR_DIS_DIS_DIRECT_BOOT[0],    		// [] wr_dis of DIS_DIRECT_BOOT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
+    &WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
+    &WR_DIS_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// [] wr_dis of DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ENABLE_SECURITY_DOWNLOAD[] = {
+    &WR_DIS_ENABLE_SECURITY_DOWNLOAD[0],    		// [] wr_dis of ENABLE_SECURITY_DOWNLOAD
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_UART_PRINT_CONTROL[] = {
+    &WR_DIS_UART_PRINT_CONTROL[0],    		// [] wr_dis of UART_PRINT_CONTROL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_SEND_RESUME[] = {
+    &WR_DIS_FORCE_SEND_RESUME[0],    		// [] wr_dis of FORCE_SEND_RESUME
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_VERSION[] = {
+    &WR_DIS_SECURE_VERSION[0],    		// [] wr_dis of SECURE_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
+    &WR_DIS_SECURE_BOOT_DISABLE_FAST_WAKE[0],    		// [] wr_dis of SECURE_BOOT_DISABLE_FAST_WAKE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KM_HUK_GEN_STATE[] = {
+    &WR_DIS_KM_HUK_GEN_STATE[0],    		// [] wr_dis of KM_HUK_GEN_STATE
     NULL
 };
 
@@ -524,18 +993,73 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
-    &WR_DIS_MAC_EXT[0],    		// [] wr_dis of MAC_EXT
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[] = {
+    &WR_DIS_WAFER_VERSION_MINOR[0],    		// [] wr_dis of WAFER_VERSION_MINOR
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA1[] = {
-    &WR_DIS_BLOCK_SYS_DATA1[0],    		// [WR_DIS.SYS_DATA_PART1] wr_dis of BLOCK_SYS_DATA1
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_BLK_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
+    &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_BLK_VERSION_MAJOR[0],    		// [] wr_dis of BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[] = {
+    &WR_DIS_PSRAM_CAP[0],    		// [] wr_dis of PSRAM_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[] = {
+    &WR_DIS_TEMP[0],    		// [] wr_dis of TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[] = {
+    &WR_DIS_PSRAM_VENDOR[0],    		// [] wr_dis of PSRAM_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
+    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
+    &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[] = {
     &WR_DIS_BLOCK_USR_DATA[0],    		// [WR_DIS.USER_DATA] wr_dis of BLOCK_USR_DATA
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[] = {
+    &WR_DIS_CUSTOM_MAC[0],    		// [WR_DIS.MAC_CUSTOM WR_DIS.USER_DATA_MAC_CUSTOM] wr_dis of CUSTOM_MAC
     NULL
 };
 
@@ -571,6 +1095,26 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[] = {
     &WR_DIS_BLOCK_SYS_DATA2[0],    		// [WR_DIS.SYS_DATA_PART2] wr_dis of BLOCK_SYS_DATA2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_DEVICE_EXCHG_PINS[] = {
+    &WR_DIS_USB_DEVICE_EXCHG_PINS[0],    		// [] wr_dis of USB_DEVICE_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_OTG11_EXCHG_PINS[] = {
+    &WR_DIS_USB_OTG11_EXCHG_PINS[0],    		// [] wr_dis of USB_OTG11_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_PHY_SEL[] = {
+    &WR_DIS_USB_PHY_SEL[0],    		// [] wr_dis of USB_PHY_SEL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SOFT_DIS_JTAG[] = {
+    &WR_DIS_SOFT_DIS_JTAG[0],    		// [] wr_dis of SOFT_DIS_JTAG
     NULL
 };
 
@@ -674,13 +1218,8 @@ const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_LOW[] = {
-    &KM_HUK_GEN_STATE_LOW[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_HIGH[] = {
-    &KM_HUK_GEN_STATE_HIGH[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
+const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE[] = {
+    &KM_HUK_GEN_STATE[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
     NULL
 };
 
@@ -929,14 +1468,58 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[0],    		// [] Stores the extended bits of MAC address [0]
-    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address [1]
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// [] Minor chip version
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK_SYS_DATA1[] = {
-    &BLOCK_SYS_DATA1[0],    		// [SYS_DATA_PART1] System data part 1
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// [] Major chip version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// [] Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// [] Disables check of blk version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// [] BLK_VERSION_MAJOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[] = {
+    &PSRAM_CAP[0],    		// [] PSRAM capacity
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP[] = {
+    &TEMP[0],    		// [] Operating temperature of the ESP chip
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[] = {
+    &PSRAM_VENDOR[0],    		// [] PSRAM vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
+    &OPTIONAL_UNIQUE_ID[0],    		// [] Optional unique 128-bit ID
     NULL
 };
 
@@ -946,7 +1529,7 @@ const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
-    &USER_DATA_MAC_CUSTOM[0],    		// [MAC_CUSTOM CUSTOM_MAC] Custom MAC (TODO
+    &USER_DATA_MAC_CUSTOM[0],    		// [MAC_CUSTOM CUSTOM_MAC] Custom MAC
     NULL
 };
 

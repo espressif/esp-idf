@@ -9,7 +9,6 @@
 #include "unity.h"
 #include "esp_system.h"
 
-
 typedef struct {
     jmp_buf jmp_env;
     uint32_t retval;

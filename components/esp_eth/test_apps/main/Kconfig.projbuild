@@ -80,6 +80,12 @@ menu "esp_eth TEST_APPS Configuration"
             help
                 Set the clock speed (MHz) of SPI interface.
 
+        config TARGET_ETH_SPI_POLL_MS
+            int "SPI Ethernet Polling period in msec"
+            default 0
+            help
+                SPI Ethernet module polling period.
+
     endif # TARGET_USE_SPI_ETHERNET
 
 endmenu

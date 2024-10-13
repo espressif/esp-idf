@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,9 @@ void bootloader_init_mem(void)
      * So, at boot disabling these filters. They will enable as per the
      * use case by TEE initialization code.
      */
+#ifdef SOC_APM_CTRL_FILTER_SUPPORTED
     apm_hal_apm_ctrl_filter_enable_all(false);
+#endif
 #endif
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,8 +109,11 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (sec_mask != ESP_SPP_SEC_NONE && sec_mask != ESP_SPP_SEC_AUTHORIZE && sec_mask != ESP_SPP_SEC_AUTHENTICATE) {
-        LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only\n");
+    if (sec_mask != ESP_SPP_SEC_NONE &&
+        sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
+        sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
+        LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE"
+                 "or (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -152,8 +155,16 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (sec_mask != ESP_SPP_SEC_NONE && sec_mask != ESP_SPP_SEC_AUTHORIZE && sec_mask != ESP_SPP_SEC_AUTHENTICATE) {
-        LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only\n");
+    if (sec_mask != ESP_SPP_SEC_NONE &&
+        sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
+        sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) &&
+        sec_mask != ESP_SPP_SEC_IN_16_DIGITS &&
+        sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE) &&
+        sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
+        LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE,"
+                 "(ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT),"
+                 "ESP_SPP_SEC_IN_16_DIGITS, (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE), or"
+                 "(ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
     }
 
     msg.sig = BTC_SIG_API_CALL;

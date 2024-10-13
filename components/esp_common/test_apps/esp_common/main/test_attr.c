@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,16 @@
 #include "esp_log.h"
 #include "soc/soc.h"
 #include "esp_system.h"
+#include "hal/cache_ll.h"
+#include "hal/cache_hal.h"
+#include "esp_cache.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_private/esp_psram_extram.h"
 #endif
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+
+static const char *TAG = "attr_test";
 
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;
@@ -29,7 +36,6 @@ extern int _ext_ram_noinit_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 
-
 //Variables for test: Attributes place variables into correct sections
 static __NOINIT_ATTR uint32_t s_noinit;
 #if SOC_RTC_MEM_SUPPORTED
@@ -45,6 +51,7 @@ static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
 
 static bool data_in_segment(void *ptr, int *seg_start, int *seg_end)
 {
+    ESP_LOGV(TAG, "ptr:%p seg_start:%p seg_end:%p", ptr, seg_start, seg_end);
     return ((intptr_t)ptr < (intptr_t)seg_end) && \
            ((intptr_t)ptr >= (intptr_t)seg_start);
 }
@@ -95,7 +102,13 @@ static void write_spiram_and_reset(void)
     }
     printf("Flushing cache\n");
     // Flush the cache out to SPIRAM before resetting.
+#if CONFIG_IDF_TARGET_ESP32
     esp_psram_extram_writeback_cache();
+#else
+    size_t psram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    uint32_t ext_noinit_size = sizeof(s_noinit_buffer);
+    TEST_ESP_OK(esp_cache_msync(&s_noinit_buffer, ALIGN_UP(ext_noinit_size, psram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+#endif
 
     printf("Restarting\n");
     // Reset to test that noinit memory is left intact.
@@ -118,7 +131,6 @@ static void check_spiram_contents(void)
 TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[psram][ld]", write_spiram_and_reset, check_spiram_contents);
 
 #endif // CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 #define TEST_BSS_NUM    (256 * 1024)

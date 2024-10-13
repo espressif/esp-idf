@@ -25,7 +25,7 @@ This example is located in the examples folder of the ESP-IDF under the [bluetoo
 #include "esp_gatt_common_api.h"
 ```
 
-These `includes` are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
 
 * `bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
@@ -60,8 +60,7 @@ void app_main()
         return;
     }
 
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed, error code = %x", __func__, ret);
         return;
@@ -137,8 +136,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+ret = esp_bluedroid_init();
 ret = esp_bluedroid_enable();
 ```
 The main function ends by registering the GAP and GATT event handlers, as well as the Application Profile and set the maximum supported MTU size.
@@ -359,14 +357,16 @@ We are interested in the `ESP_GAP_SEARCH_INQ_RES_EVT` event, which is called eve
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
 	        case ESP_GAP_SEARCH_INQ_RES_EVT:
-		        esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+		        ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
 		        ESP_LOGI(GATTC_TAG, "searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
 		        adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
 		        ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
-		        esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
+		        ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 		        ESP_LOGI(GATTC_TAG, " ");
 		        if (adv_name != NULL) {
 			        if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
+                    // Note: If there are multiple devices with the same device name, the device may connect to an unintended one.
+                    // It is recommended to change the default device name to ensure it is unique.
                     ESP_LOGI(GATTC_TAG, "searched device %s", remote_device_name);
                     if (connect == false) {
                         connect = true;
@@ -388,7 +388,7 @@ Every time we receive a result from the `ESP_GAP_SEARCH_INQ_RES_EVT` event, the 
 
 ```c
 case ESP_GAP_SEARCH_INQ_RES_EVT:
-     esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+     ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
 ```
 
 The client then prints the advertised data length and the scan response length:
@@ -402,7 +402,7 @@ In order to get the device name, we use the `esp_ble_resolve_adv_data()` functio
 ```c
 adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
 ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
-esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
+ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 ```
 
 Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it’s done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
@@ -419,7 +419,7 @@ ATT_MTU is defined as the maximum size of any packet sent between a client and a
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req (gattc_if, conn_id);
         if (mtu_ret){
             ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -435,7 +435,7 @@ gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
 memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda,
 		sizeof(esp_bd_addr_t));
 ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
+ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
 		sizeof(esp_bd_addr_t));
 ```
 
@@ -564,7 +564,7 @@ static esp_gatt_srvc_id_t remote_service_id = {
 };
 ```
 
-Once defined, we can get the characteristics from that service using the `esp_ble_gattc_get_characteristic()` function, which is called in the `ESP_GATTC_SEARCH_CMPL_EVT` event after the search for services is completed and the client has found the service that it was looking for.
+Once defined, we can get the characteristics from that service using the `esp_ble_gattc_get_char_by_uuid()` function, which is called in the `ESP_GATTC_SEARCH_CMPL_EVT` event after the search for services is completed and the client has found the service that it was looking for.
 
 ```c
 case ESP_GATTC_SEARCH_CMPL_EVT:

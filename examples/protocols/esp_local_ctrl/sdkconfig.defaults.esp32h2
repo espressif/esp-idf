@@ -1,0 +1,5 @@
+# Override some defaults so BT stack is enabled and
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+
+CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE=y

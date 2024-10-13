@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,9 @@ extern "C" {
 #ifndef __ASSEMBLER__
 
 #include <stdbool.h>
-#include "esp_err.h"
+#include "sdkconfig.h"
 #include "soc/soc.h"  // [refactor-todo] IDF-2297
+#include "esp_err.h"
 #include "esp_cpu.h"
 
 /*
@@ -113,6 +114,20 @@ esp_err_t esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t*
  *      - ESP_FAIL  Backtrace is corrupted
  */
 esp_err_t esp_backtrace_print(int depth);
+
+/**
+ * @brief Print the backtrace of all tasks
+ *
+ * @param depth The maximum number of stack frames to print (must be > 0)
+ *
+ * @note Users must ensure that no tasks are created or deleted while this function is running.
+ * @note This function must be called from a task context.
+ *
+ * @return
+ *      - ESP_OK    All backtraces successfully printed to completion or to depth limit
+ *      - ESP_FAIL  One or more backtraces are corrupt
+ */
+esp_err_t esp_backtrace_print_all_tasks(int depth);
 
 /**
  * @brief Set a watchpoint to break/panic when a certain memory range is accessed.

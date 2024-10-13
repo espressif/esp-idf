@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,6 @@ static const char TAG[] = "essl_sdio";
 #define HOST_SLCHOST_CONF_W7_REG        (DR_REG_SLCHOST_BASE + 0x8C)
 #define HOST_SLC0HOST_INT_CLR_REG       (DR_REG_SLCHOST_BASE + 0xD4)
 #define HOST_SLC0HOST_FUNC1_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xDC)
-
 
 #define HOST_SLCHOST_CONF_W_REG(pos)    (HOST_SLCHOST_CONF_W0_REG+pos+(pos>23?4:0)+(pos>31?12:0))
 
@@ -78,7 +77,6 @@ typedef struct {
     ///< Should be set according to length of data, and larger than ``TRANS_LEN_MAX/511``.
     ///< Block size of the SDIO function 1. After the initialization this will hold the value the slave really do. Valid value is 1-2048.
 } essl_sdio_context_t;
-
 
 esp_err_t essl_sdio_update_tx_buffer_num(void *arg, uint32_t wait_ms);
 esp_err_t essl_sdio_update_rx_data_size(void *arg, uint32_t wait_ms);
@@ -139,7 +137,7 @@ cleanup:
 esp_err_t essl_sdio_deinit_dev(essl_handle_t handle)
 {
     if (handle) {
-        free (handle->args);
+        free(handle->args);
     }
     free(handle);
     return ESP_OK;
@@ -297,7 +295,7 @@ esp_err_t essl_sdio_send_packet(void *arg, const void *start, size_t length, uin
         const int block_size = 512;
         /* Though the driver supports to split packet of unaligned size into
          * length of 4x and 1~3, we still send aligned size of data to get
-         * higher effeciency. The length is determined by the SDIO address, and
+         * higher efficiency. The length is determined by the SDIO address, and
          * the remainning will be discard by the slave hardware.
          */
         int block_n = len_remain / block_size;
@@ -350,7 +348,7 @@ esp_err_t essl_sdio_get_packet(void *arg, void *out_data, size_t size, uint32_t 
             len_to_send = len_remain;
             /* though the driver supports to split packet of unaligned size into length
              * of 4x and 1~3, we still get aligned size of data to get higher
-             * effeciency. The length is determined by the SDIO address, and the
+             * efficiency. The length is determined by the SDIO address, and the
              * remainning will be ignored by the slave hardware.
              */
             err = sdmmc_io_read_bytes(ctx->card, 1, ESSL_CMD53_END_ADDR - len_remain, start, (len_to_send + 3) & (~3));
@@ -412,11 +410,10 @@ esp_err_t essl_sdio_update_rx_data_size(void *arg, uint32_t wait_ms)
     return ESP_OK;
 }
 
-
 esp_err_t essl_sdio_write_reg(void *arg, uint8_t addr, uint8_t value, uint8_t *value_o, uint32_t wait_ms)
 {
     ESP_LOGV(TAG, "write_reg: 0x%02"PRIX8, value);
-    // addrress over range
+    // address over range
     if (addr >= 60) {
         return ESP_ERR_INVALID_ARG;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -133,7 +133,7 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
     }
     if(handle == db[SPP_IDX_SPP_DATA_NTY_VAL].attribute_handle){
 #ifdef SPP_DEBUG_MODE
-        esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_CHAR(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
 #else
         if((p_data->notify.value[0] == '#')&&(p_data->notify.value[1] == '#')){
             if((++notify_value_count) != p_data->notify.value[3]){
@@ -179,10 +179,10 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
         }
 #endif
     }else if(handle == ((db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle)){
-        esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_CHAR(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
         //TODO:server notify status characteristic
     }else{
-        esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_CHAR(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
     }
 }
 
@@ -228,14 +228,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             ESP_LOGE(GATTC_TAG, "Scan start failed: %s", esp_err_to_name(err));
             break;
         }
-        ESP_LOGI(GATTC_TAG, "Scan start successed");
+        ESP_LOGI(GATTC_TAG, "Scan start successfully");
         break;
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
         if ((err = param->scan_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
             ESP_LOGE(GATTC_TAG, "Scan stop failed: %s", esp_err_to_name(err));
             break;
         }
-        ESP_LOGI(GATTC_TAG, "Scan stop successed");
+        ESP_LOGI(GATTC_TAG, "Scan stop successfully");
         if (is_connect == false) {
             ESP_LOGI(GATTC_TAG, "Connect to the remote device.");
             esp_ble_gattc_open(gl_profile_tab[PROFILE_APP_ID].gattc_if, scan_rst.scan_rst.bda, scan_rst.scan_rst.ble_addr_type, true);
@@ -245,11 +245,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+            ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
             ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+            adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
+                                                        scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
+                                                        ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                        &adv_name_len);
             ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d", adv_name_len);
-            esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
+            ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, " ");
             if (adv_name != NULL) {
                 if ( strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
@@ -317,7 +320,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_CONNECT_EVT:
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT: conn_id=%d, gatt_if = %d", spp_conn_id, gattc_if);
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         spp_gattc_if = gattc_if;
         is_connect = true;
         spp_conn_id = p_data->connect.conn_id;
@@ -409,11 +412,11 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
         db = (esp_gattc_db_elem_t *)malloc(count*sizeof(esp_gattc_db_elem_t));
         if(db == NULL){
-            ESP_LOGE(GATTC_TAG,"%s:malloc db falied",__func__);
+            ESP_LOGE(GATTC_TAG,"%s:malloc db failed",__func__);
             break;
         }
         if(esp_ble_gattc_get_db(spp_gattc_if, spp_conn_id, spp_srv_start_handle, spp_srv_end_handle, db, &count) != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG,"%s:get db falied",__func__);
+            ESP_LOGE(GATTC_TAG,"%s:get db failed",__func__);
             break;
         }
         if(count != SPP_IDX_NB){
@@ -553,7 +556,7 @@ void uart_task(void *pvParameters)
         //Waiting for UART event.
         if (xQueueReceive(spp_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
-            //Event of UART receving data
+            //Event of UART receiving data
             case UART_DATA:
                 if (event.size && (is_connect == true) && (db != NULL) && ((db+SPP_IDX_SPP_DATA_RECV_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))) {
                     uint8_t * temp = NULL;
@@ -625,8 +628,8 @@ void app_main(void)
     }
 
     ESP_LOGI(GATTC_TAG, "%s init bluetooth", __func__);
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

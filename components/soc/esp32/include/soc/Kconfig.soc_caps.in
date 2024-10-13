@@ -51,6 +51,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_WIFI_SUPPORTED
     bool
     default y
@@ -167,6 +171,26 @@ config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
 
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_PERIPH_SHARE_INTERRUPT
+    bool
+    default y
+
+config SOC_PM_SUPPORTED
+    bool
+    default y
+
 config SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL
     int
     default 5
@@ -275,6 +299,10 @@ config SOC_CPU_HAS_FPU
     bool
     default y
 
+config SOC_HP_CPU_HAS_MULTIPLE_CORES
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -327,7 +355,19 @@ config SOC_GPIO_CLOCKOUT_BY_IO_MUX
     bool
     default y
 
+config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
+    int
+    default 3
+
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_I2C_NUM
+    int
+    default 2
+
+config SOC_HP_I2C_NUM
     int
     default 2
 
@@ -402,6 +442,10 @@ config SOC_I2S_SUPPORTS_DAC
 config SOC_I2S_SUPPORTS_LCD_CAMERA
     bool
     default y
+
+config SOC_I2S_MAX_DATA_WIDTH
+    int
+    default 24
 
 config SOC_I2S_TRANS_SIZE_ALIGN_WORD
     bool
@@ -667,7 +711,7 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 10
 
-config SOC_TOUCH_SAMPLER_NUM
+config SOC_TOUCH_SAMPLE_CFG_NUM
     int
     default 1
 
@@ -827,6 +871,10 @@ config SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     bool
     default y
 
+config SOC_PM_MODEM_PD_BY_SW
+    bool
+    default y
+
 config SOC_CLK_APLL_SUPPORTED
     bool
     default y
@@ -895,10 +943,18 @@ config SOC_BLUFI_SUPPORTED
     bool
     default y
 
+config SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED
+    bool
+    default y
+
 config SOC_ULP_HAS_ADC
     bool
     default y
 
 config SOC_PHY_COMBO_MODULE
+    bool
+    default y
+
+config SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     bool
     default y

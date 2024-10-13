@@ -5,6 +5,8 @@ set(priv_requires
         sdmmc_tests
         # general
         unity
+        # for PSRAM tests
+        esp_psram
 )
 
 idf_component_register(SRCS ${srcs}

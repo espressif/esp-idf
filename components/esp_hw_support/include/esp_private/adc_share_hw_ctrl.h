@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
  *
  * However, usages of above components are different.
  * Therefore, we put the common used parts into `esp_hw_support`, including:
- * - adc power maintainance
+ * - adc power maintenance
  * - adc hw calibration settings
  * - adc locks, to prevent concurrently using adc hw
  */
@@ -24,6 +24,12 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if SOC_RCC_IS_INDEPENDENT || CONFIG_IDF_TARGET_ESP32
+#define ADC_BUS_CLK_ATOMIC()
+#else
+#define ADC_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
 #endif
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -155,6 +161,24 @@ void adc2_cal_include(void);
  */
 #define adc2_cal_include()
 #endif //CONFIG_IDF_TARGET_*
+
+/*------------------------------------------------------------------------------
+* For those who use APB_SARADC periph
+*----------------------------------------------------------------------------*/
+/**
+ * @brief Claim the usage of the APB_SARADC periph
+ *
+ * Reference count inside
+ */
+void adc_apb_periph_claim(void);
+
+/**
+ * @brief Free the usage of the APB_SARADC periph
+ *
+ * Reference count inside
+ */
+void adc_apb_periph_free(void);
+
 
 #ifdef __cplusplus
 }

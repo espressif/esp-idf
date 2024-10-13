@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,3 +50,7 @@ esp_err_t esp_psram_impl_enable(void);
  * @return psram CS IO
  */
 uint8_t esp_psram_impl_get_cs_io(void);
+
+#ifdef __cplusplus
+}
+#endif

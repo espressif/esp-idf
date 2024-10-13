@@ -17,11 +17,10 @@ In order to use the Himem API, you have to enable it in the menuconfig using :re
 
 The Himem API is more-or-less an abstraction of the bank switching scheme: it allows you to claim one or more banks of address space (called 'regions' in the API) as well as one or more of banks of memory to map into the ranges.
 
-Example
--------
+Application Examples
+--------------------
 
-An example doing a simple memory test of the high memory range is available in ESP-IDF: :example:`system/himem`
-
+- :example:`system/himem` demonstrates how to use the Himem API on {IDF_TARGET_NAME} to run a memory test of the upper 4 MiB of an 8 MiB PSRAM chip, illustrating how to allocate address space, allocate the physical memory, and switch it in or out of the allocated address space.
 
 API Reference
 -------------

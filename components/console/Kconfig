@@ -1,0 +1,10 @@
+menu "Console Library"
+
+    config CONSOLE_SORTED_HELP
+        bool "Enable sorted help"
+        default n
+        help
+            Instead of listing the commands in the order of registration, the help command lists
+            the available commands in sorted order, if this option is enabled.
+
+endmenu

@@ -1,4 +1,4 @@
-set(srcs "sdmmc_test_cd_wp_common.c" "sdmmc_test_rw_common.c")
+set(srcs "sdmmc_test_cd_wp_common.c" "sdmmc_test_rw_common.c" "sdmmc_test_erase_common_sd.c")
 
 set(public_include "include")
 

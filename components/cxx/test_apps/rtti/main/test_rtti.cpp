@@ -101,7 +101,7 @@ TEST_CASE("unsuccessful dynamic cast on reference throws exception", "[cxx]")
     DerivedA derived_a;
     Base &base = derived_a;
     try {
-        DerivedB &derived_b = dynamic_cast<DerivedB&>(base);
+        DerivedB &derived_b = dynamic_cast<DerivedB &>(base);
         derived_b.name(); // suppress warning
     } catch (bad_cast &e) {
         thrown = true;

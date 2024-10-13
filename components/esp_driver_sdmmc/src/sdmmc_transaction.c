@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "soc/sdmmc_periph.h"
-#include "soc/soc_memory_layout.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
@@ -28,12 +27,6 @@
  * of SD memory cards (most data transfers are multiples of 512 bytes).
  */
 #define SDMMC_DMA_DESC_CNT  4
-
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-#define SDMMC_ALIGN_ATTR         __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE)))
-#else
-#define SDMMC_ALIGN_ATTR
-#endif
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -67,7 +60,7 @@ const uint32_t SDMMC_CMD_ERR_MASK =
     SDMMC_INTMASK_RCRC |
     SDMMC_INTMASK_RESP_ERR;
 
-SDMMC_ALIGN_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
+DRAM_DMA_ALIGNED_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
@@ -136,14 +129,18 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     if (cmdinfo->data) {
         // Length should be either <4 or >=4 and =0 (mod 4).
         if (cmdinfo->datalen >= 4 && cmdinfo->datalen % 4 != 0) {
-            ESP_LOGD(TAG, "%s: invalid size: total=%d",
+            ESP_LOGE(TAG, "%s: invalid size: total=%d",
                      __func__, cmdinfo->datalen);
             ret = ESP_ERR_INVALID_SIZE;
             goto out;
         }
-        if ((intptr_t) cmdinfo->data % 4 != 0 ||
-                !esp_ptr_dma_capable(cmdinfo->data)) {
-            ESP_LOGD(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
+        esp_dma_mem_info_t dma_mem_info;
+        sdmmc_host_get_dma_info(slot, &dma_mem_info);
+#ifdef SOC_SDMMC_PSRAM_DMA_CAPABLE
+        dma_mem_info.extra_heap_caps |= MALLOC_CAP_SPIRAM;
+#endif
+        if (!esp_dma_is_buffer_alignment_satisfied(cmdinfo->data, cmdinfo->buflen, dma_mem_info)) {
+            ESP_LOGE(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
             ret = ESP_ERR_INVALID_ARG;
             goto out;
         }

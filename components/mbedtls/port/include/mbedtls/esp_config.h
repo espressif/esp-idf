@@ -59,7 +59,7 @@
 /**
  * \def MBEDTLS_PLATFORM_MS_TIME_ALT
  *
- * Define platform specific function to get time since bootup in milliseconds.
+ * Define platform specific function to get time since boot up in milliseconds.
  */
 #define MBEDTLS_PLATFORM_MS_TIME_ALT
 #else
@@ -71,7 +71,7 @@
  * \def MBEDTLS_HAVE_TIME_DATE
  *
  * System has time.h and time(), gmtime() and the clock is correct.
- * The time needs to be correct (not necesarily very accurate, but at least
+ * The time needs to be correct (not necessarily very accurate, but at least
  * the date should be correct). This is used to verify the validity period of
  * X.509 certificates.
  *
@@ -155,6 +155,12 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
 #define MBEDTLS_GCM_ALT
+#ifdef CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
+    /* Prefer hardware and fallback to software */
+    #define MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#else
+    #undef MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#endif
 #endif
 
 /* MBEDTLS_SHAxx_ALT to enable hardware SHA support
@@ -406,6 +412,14 @@
  */
 #ifdef CONFIG_MBEDTLS_CMAC_C
 #define MBEDTLS_CMAC_C
+#else
+#ifdef CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
+/* The mbedtls present in ROM is built with the MBEDTLS_CMAC_C symbol being enabled,
+ * thus when using the mbedtls from ROM, CONFIG_MBEDTLS_CMAC_C needs to be enabled.
+ */
+#error "CONFIG_MBEDTLS_CMAC_C cannot be disabled when CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL is enabled"
+#endif
+#undef MBEDTLS_CMAC_C
 #endif
 
 /**
@@ -835,7 +849,28 @@
  *
  * Disable if you only need to support RFC 5915 + 5480 key formats.
  */
+#ifdef CONFIG_MBEDTLS_PK_PARSE_EC_EXTENDED
 #define MBEDTLS_PK_PARSE_EC_EXTENDED
+#else
+#undef MBEDTLS_PK_PARSE_EC_EXTENDED
+#endif
+
+/**
+ * \def MBEDTLS_PK_PARSE_EC_COMPRESSED
+ *
+ * Enable the support for parsing public keys of type Short Weierstrass
+ * (MBEDTLS_ECP_DP_SECP_XXX and MBEDTLS_ECP_DP_BP_XXX) which are using the
+ * compressed point format. This parsing is done through ECP module's functions.
+ *
+ * \note As explained in the description of MBEDTLS_ECP_PF_COMPRESSED (in ecp.h)
+ *       the only unsupported curves are MBEDTLS_ECP_DP_SECP224R1 and
+ *       MBEDTLS_ECP_DP_SECP224K1.
+ */
+#ifdef CONFIG_MBEDTLS_PK_PARSE_EC_COMPRESSED
+#define MBEDTLS_PK_PARSE_EC_COMPRESSED
+#else
+#undef MBEDTLS_PK_PARSE_EC_COMPRESSED
+#endif
 
 /**
  * \def MBEDTLS_ERROR_STRERROR_DUMMY
@@ -866,7 +901,13 @@
  *
  * Enable functions that use the filesystem.
  */
+#if CONFIG_MBEDTLS_FS_IO
 #define MBEDTLS_FS_IO
+#else
+#undef MBEDTLS_FS_IO
+#undef MBEDTLS_PSA_ITS_FILE_C
+#undef MBEDTLS_PSA_CRYPTO_STORAGE_C
+#endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 /**
@@ -990,7 +1031,7 @@
  * functions mbedtls_ssl_context_save() and mbedtls_ssl_context_load().
  *
  * This pair of functions allows one side of a connection to serialize the
- * context associated with the connection, then free or re-use that context
+ * context associated with the connection, then free or reuse that context
  * while the serialized state is persisted elsewhere, and finally deserialize
  * that state to a live context for resuming read/write operations on the
  * connection. From a protocol perspective, the state of the connection is
@@ -1488,7 +1529,7 @@
  * \def MBEDTLS_SSL_SESSION_TICKETS
  *
  * Enable support for RFC 5077 session tickets in SSL.
- * Client-side, provides full support for session tickets (maintainance of a
+ * Client-side, provides full support for session tickets (maintenance of a
  * session store remains the responsibility of the application, though).
  * Server-side, you also need to provide callbacks for writing and parsing
  * tickets, including authenticated encryption and key management. Example
@@ -2070,7 +2111,11 @@
  *
  * This module enables mbedtls_strerror().
  */
+#if CONFIG_MBEDTLS_ERROR_STRINGS
 #define MBEDTLS_ERROR_C
+#else
+#undef MBEDTLS_ERROR_C
+#endif
 
 /**
  * \def MBEDTLS_GCM_C
@@ -2120,7 +2165,7 @@
  *
  * Requires: MBEDTLS_MD_C
  *
- * Uncomment to enable the HMAC_DRBG random number geerator.
+ * Uncomment to enable the HMAC_DRBG random number generator.
  */
 #define MBEDTLS_HMAC_DRBG_C
 
@@ -2812,7 +2857,7 @@
 /* SSL options */
 #ifndef CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN
 
-#define MBEDTLS_SSL_MAX_CONTENT_LEN             CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN /**< Maxium fragment length in bytes, determines the size of each of the two internal I/O buffers */
+#define MBEDTLS_SSL_MAX_CONTENT_LEN             CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN /**< Maximum fragment length in bytes, determines the size of each of the two internal I/O buffers */
 
 #else
 

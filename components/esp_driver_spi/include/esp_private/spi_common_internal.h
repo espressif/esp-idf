@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,8 @@
 #include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
-#include "soc/gdma_channel.h"
+#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
+#include "esp_private/spi_dma.h"
 #include "esp_pm.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #if SOC_GDMA_SUPPORTED
@@ -25,26 +26,22 @@ extern "C"
 {
 #endif
 
-#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
-#define SPI_MASTER_ISR_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ISR_ATTR
-#endif
-
-#ifdef CONFIG_SPI_MASTER_IN_IRAM
-#define SPI_MASTER_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ATTR
-#endif
-
-#if SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB
-#define DMA_DESC_MEM_ALIGN_SIZE 4
-#define SPI_GDMA_NEW_CHANNEL    gdma_new_ahb_channel
-typedef dma_descriptor_align4_t spi_dma_desc_t;
-#else
-#define DMA_DESC_MEM_ALIGN_SIZE  8
-#define SPI_GDMA_NEW_CHANNEL     gdma_new_axi_channel
+//NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
+#if SOC_GPSPI_SUPPORTED && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
+#define DMA_DESC_MEM_ALIGN_SIZE 8
 typedef dma_descriptor_align8_t spi_dma_desc_t;
+#else
+#define DMA_DESC_MEM_ALIGN_SIZE 4
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#endif
+
+#if SOC_NON_CACHEABLE_OFFSET
+#include "hal/cache_ll.h"
+#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
+#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
+#else
+#define ADDR_DMA_2_CPU(addr)   (addr)
+#define ADDR_CPU_2_DMA(addr)   (addr)
 #endif
 
 /// Attributes of an SPI bus
@@ -53,61 +50,75 @@ typedef struct {
     uint32_t flags;                     ///< Flags (attributes) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
-    uint16_t internal_mem_align_size;   ///< Buffer align byte requirement for internal memory
-    int tx_dma_chan;                    ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
-    int rx_dma_chan;                    ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
-    int dma_desc_num;                   ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
-    spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
-    spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
+    size_t internal_mem_align_size;     ///< Buffer align byte requirement for internal memory
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;       ///< Power management lock
 #endif
 } spi_bus_attr_t;
 
+typedef struct {
+#if SOC_GDMA_SUPPORTED
+    gdma_channel_handle_t tx_dma_chan;  ///< GDMA tx channel
+    gdma_channel_handle_t rx_dma_chan;  ///< GDMA rx channel
+#else
+    spi_dma_chan_handle_t tx_dma_chan;  ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
+    spi_dma_chan_handle_t rx_dma_chan;  ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
+#endif
+    int dma_desc_num;               ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
+    spi_dma_desc_t *dmadesc_tx;     ///< DMA descriptor array for TX
+    spi_dma_desc_t *dmadesc_rx;     ///< DMA descriptor array for RX
+} spi_dma_ctx_t;
+
 /// Destructor called when a bus is deinitialized.
 typedef esp_err_t (*spi_destroy_func_t)(void*);
 
 /**
- * @brief Alloc DMA for SPI
+ * @brief Alloc DMA channel for SPI
  *
- * @param host_id                      SPI host ID
- * @param dma_chan                     DMA channel to be used
- * @param[out] out_actual_tx_dma_chan  Actual TX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
- * @param[out] out_actual_rx_dma_chan  Actual RX DMA channel (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
+ * @param host_id                  SPI host ID
+ * @param dma_chan                 DMA channel to be used
+ * @param out_dma_ctx              Actual DMA channel context (if you choose to assign a specific DMA channel, this will be the channel you assigned before)
  *
  * @return
  *        - ESP_OK:                On success
  *        - ESP_ERR_NO_MEM:        No enough memory
  *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, spi_dma_ctx_t **out_dma_ctx);
+
+/**
+ * @brief Alloc DMA descriptors for SPI
+ *
+ * @param dma_ctx                  DMA context returned by `spicommon_dma_chan_alloc`
+ * @param[in]  cfg_max_sz          Expected maximum transfer size, in bytes.
+ * @param[out] actual_max_sz       Actual max transfer size one transaction can be, in bytes.
+ *
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_NO_MEM:        No enough memory
+ */
+esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *actual_max_sz);
+
+/**
+ * Setupt/Configure dma descriptor link list
+ *
+ * @param dmadesc start of dma descriptor memory
+ * @param data    start of data buffer to be configured in
+ * @param len     length of data buffer, in byte
+ * @param is_rx   if descriptor is for rx/receive direction
+ */
+void spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx);
 
 /**
  * @brief Free DMA for SPI
  *
- * @param host_id  SPI host ID
+ * @param dma_ctx  spi_dma_ctx_t struct pointer
  *
  * @return
  *        - ESP_OK: On success
  */
-esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id);
-
-#if SOC_GDMA_SUPPORTED
-/**
- * @brief Get SPI GDMA Handle for GMDA Supported Chip
- *
- * @param host_id           SPI host ID
- * @param gdma_handle       GDMA Handle to Return
- * @param gdma_direction    GDMA Channel Direction in Enum
- *                          - GDMA_CHANNEL_DIRECTION_TX
- *                          - GDMA_CHANNEL_DIRECTION_RX
- *
- * @return
- *        - ESP_OK: On success
- */
-esp_err_t spicommon_gdma_get_handle(spi_host_device_t host_id, gdma_channel_handle_t *gdma_handle, gdma_channel_direction_t gdma_direction);
-#endif
+esp_err_t spicommon_dma_chan_free(spi_dma_ctx_t *dma_ctx);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
@@ -212,7 +223,7 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
  * @brief Request a reset for a certain DMA channel
  *
  * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
- * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
+ * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for this will reset _both_ DMA channels, and
  * as such can only done safely when both DMA channels are idle. These functions coordinate this.
  *
  * Essentially, when a reset is needed, a driver can request this using spicommon_dmaworkaround_req_reset. This is supposed to be called
@@ -271,6 +282,14 @@ void spi_bus_main_set_lock(spi_bus_lock_handle_t lock);
  * @return (Const) Pointer to the attributes
  */
 const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id);
+
+/**
+ * @brief Get the dma context of a specified SPI bus.
+ *
+ * @param host_id The specified host to get attribute
+ * @return (Const) Pointer to the dma context
+ */
+const spi_dma_ctx_t* spi_bus_get_dma_ctx(spi_host_device_t host_id);
 
 /**
  * @brief Register a function to a initialized bus to make it called when deinitializing the bus.

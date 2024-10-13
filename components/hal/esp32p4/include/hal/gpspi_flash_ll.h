@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "hal/misc.h"
-//TODO: IDF-7499
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +32,7 @@ extern "C" {
 #define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : ({abort();(spi_dev_t*)0;}) )
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
-typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
+typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
 #define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)
 
 /*------------------------------------------------------------------------------
@@ -46,18 +45,17 @@ typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
  */
 static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
 {
-    // dev->user.val = 0;
-    // dev->ctrl.val = 0;
+    dev->user.val = 0;
+    dev->ctrl.val = 0;
 
-    // dev->clk_gate.clk_en = 1;
-    // dev->clk_gate.mst_clk_active = 1;
-    // dev->clk_gate.mst_clk_sel = 1;
+    dev->clk_gate.clk_en = 1;
+    dev->clk_gate.mst_clk_active = 1;
+    dev->clk_gate.mst_clk_sel = 1;
 
-    // dev->dma_conf.val = 0;
-    // dev->dma_conf.tx_seg_trans_clr_en = 1;
-    // dev->dma_conf.rx_seg_trans_clr_en = 1;
-    // dev->dma_conf.dma_seg_trans_en = 0;
-    abort();  //TODO: IDF-7499
+    dev->dma_conf.val = 0;
+    dev->dma_conf.slv_tx_seg_trans_clr_en = 1;
+    dev->dma_conf.slv_rx_seg_trans_clr_en = 1;
+    dev->dma_conf.dma_slv_seg_trans_en = 0;
 }
 
 /**
@@ -81,21 +79,20 @@ static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, uint32_t read_len)
 {
-    // if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
-    //     // If everything is word-aligned, do a faster memcpy
-    //     memcpy(buffer, (void *)dev->data_buf, read_len);
-    // } else {
-    //     // Otherwise, slow(er) path copies word by word
-    //     int copy_len = read_len;
-    //     for (int i = 0; i < (read_len + 3) / 4; i++) {
-    //         int word_len = MIN(sizeof(uint32_t), copy_len);
-    //         uint32_t word = dev->data_buf[i];
-    //         memcpy(buffer, &word, word_len);
-    //         buffer = (void *)((intptr_t)buffer + word_len);
-    //         copy_len -= word_len;
-    //     }
-    // }
-    abort();  //TODO: IDF-7499
+    if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
+        // If everything is word-aligned, do a faster memcpy
+        memcpy(buffer, (void *)dev->data_buf, read_len);
+    } else {
+        // Otherwise, slow(er) path copies word by word
+        int copy_len = read_len;
+        for (int i = 0; i < (read_len + 3) / 4; i++) {
+            int word_len = MIN(sizeof(uint32_t), copy_len);
+            uint32_t word = dev->data_buf[i].buf;
+            memcpy(buffer, &word, word_len);
+            buffer = (void *)((intptr_t)buffer + word_len);
+            copy_len -= word_len;
+        }
+    }
 }
 
 /**
@@ -106,8 +103,7 @@ static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, 
  */
 static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 {
-    // dev->data_buf[0] = word;
-    abort();  //TODO: IDF-7499
+    dev->data_buf[0].buf = word;
 }
 
 /**
@@ -119,17 +115,16 @@ static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
  */
 static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length)
 {
-    // // Load data registers, word at a time
-    // int num_words = (length + 3) / 4;
-    // for (int i = 0; i < num_words; i++) {
-    //     uint32_t word = 0;
-    //     uint32_t word_len = MIN(length, sizeof(word));
-    //     memcpy(&word, buffer, word_len);
-    //     dev->data_buf[i] = word;
-    //     length -= word_len;
-    //     buffer = (void *)((intptr_t)buffer + word_len);
-    // }
-    abort();  //TODO: IDF-7499
+    // Load data registers, word at a time
+    int num_words = (length + 3) / 4;
+    for (int i = 0; i < num_words; i++) {
+        uint32_t word = 0;
+        uint32_t word_len = MIN(length, sizeof(word));
+        memcpy(&word, buffer, word_len);
+        dev->data_buf[i].buf = word;
+        length -= word_len;
+        buffer = (void *)((intptr_t)buffer + word_len);
+    }
 }
 
 /**
@@ -141,7 +136,6 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  */
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev,  bool pe_ops)
 {
-    dev->ctrl.hold_pol = 1;
     dev->cmd.update = 1;
     while (dev->cmd.update);
     dev->cmd.usr = 1;
@@ -264,7 +258,7 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
  */
 static inline void gpspi_flash_ll_set_clock(spi_dev_t *dev, gpspi_flash_ll_clock_reg_t *clock_val)
 {
-    dev->clock.val = (*clock_val).val;
+    dev->clock.val = *clock_val;
 }
 
 /**
@@ -344,10 +338,9 @@ static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitle
  */
 static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
-    // // The blank region should be all ones
-    // uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
-    // dev->addr = (addr << (32 - bitlen)) | padding_ones;
-    abort();  //TODO: IDF-7499
+    // The blank region should be all ones
+    uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
+    dev->addr.val = (addr << (32 - bitlen)) | padding_ones;
 }
 
 /**
@@ -358,8 +351,7 @@ static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr,
  */
 static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 {
-    // dev->addr = addr;
-    abort();  //TODO: IDF-7499
+    dev->addr.val = addr;
 }
 
 /**
@@ -371,7 +363,7 @@ static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**

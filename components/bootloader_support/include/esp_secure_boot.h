@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,28 @@
 #include "sdkconfig.h"
 #include "esp_rom_crc.h"
 #include "hal/efuse_ll.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/secure_boot.h"
+#endif
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
 #if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
@@ -41,6 +63,42 @@ extern "C" {
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#endif
+
+/**
+ * @brief   Secure Boot Signature Block Version field
+ */
+typedef enum {
+    ESP_SECURE_BOOT_V1_ECDSA = 0,           /*!< Secure Boot v1 */
+    ESP_SECURE_BOOT_V2_RSA   = 2,           /*!< Secure Boot v2 with RSA key */
+    ESP_SECURE_BOOT_V2_ECDSA = 3,           /*!< Secure Boot v2 with ECDSA key */
+} esp_secure_boot_sig_scheme_t;
+
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V1_ECDSA
+#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_RSA
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_ECDSA
+#endif
+
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+/** @brief Get the selected secure boot scheme key type
+ *
+ * @return key type for the selected secure boot scheme
+ */
+static inline const char* esp_secure_boot_get_scheme_name(esp_secure_boot_sig_scheme_t scheme)
+{
+    switch (scheme) {
+        case ESP_SECURE_BOOT_V2_RSA:
+            return "RSA";
+        case ESP_SECURE_BOOT_V1_ECDSA:
+        case ESP_SECURE_BOOT_V2_ECDSA:
+            return "ECDSA";
+        default:
+            return "Unknown";
+    }
+}
 #endif
 
 /** @brief Is secure boot currently enabled in hardware?
@@ -192,6 +250,24 @@ typedef struct {
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
 
 #if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+
+/** @brief Verify the secure boot signature block for Secure Boot V2.
+ *
+ *  Performs RSA-PSS or ECDSA verification of the SHA-256 image based on the public key
+ *  in the signature block, compared against the public key digest stored in efuse.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param[in] sig_block Pointer to signature block data
+ * @param[in] image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ * @param[out] verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
+ *
+ */
+esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+
+#endif /* CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT */
+
 /**
  * @brief Structure to hold public key digests calculated from the signature blocks of a single image.
  *
@@ -256,7 +332,7 @@ void esp_secure_boot_init_checks(void);
  * @return
  *  - ESP_OK - At least one signature was found
  *  - ESP_ERR_NOT_FOUND - No signatures were found, num_digests value will be zero
- *  - ESP_FAIL - An error occured trying to read the signature blocks from flash
+ *  - ESP_FAIL - An error occurred trying to read the signature blocks from flash
  */
 esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_public_keys, esp_image_sig_public_key_digests_t *public_key_digests);
 
@@ -264,6 +340,11 @@ esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_publi
 
 /** @brief Set all secure eFuse features related to secure_boot
  *
+ *  @note
+ *      This API needs to be called in the eFuse batch mode.
+ *      i.e. A call to esp_efuse_batch_write_begin() should be made prior to calling this API to start the batch mode
+ *      After the API has been executed a call to esp_efuse_batch_write_commit()/esp_efuse_batch_write_cancel()
+ *      should be made accordingly.
  * @return
  *  - ESP_OK - Successfully
  */

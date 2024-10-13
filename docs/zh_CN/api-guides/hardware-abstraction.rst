@@ -140,6 +140,29 @@ HAL 将外设的操作过程建模成一组通用步骤，其中每个步骤都�
     // 去初始化 WDT
     void wdt_hal_deinit(wdt_hal_context_t *hal);
 
+.. _hw-abstraction-hal-layer-disable-rtc-wdt:
+
+禁用 RTC_WDT
+^^^^^^^^^^^^
+
+.. code-block:: c
+
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+.. _hw-abstraction-hal-layer-feed-rtc-wdt:
+
+重置 RTC_WDT 计数器
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 HAL 函数通常具有以下特点：
 

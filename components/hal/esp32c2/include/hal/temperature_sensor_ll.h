@@ -21,6 +21,7 @@
 #include "soc/apb_saradc_struct.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "soc/system_struct.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -48,10 +49,27 @@ static inline void temperature_sensor_ll_enable(bool enable)
 /**
  * @brief Enable the clock
  */
-static inline void temperature_sensor_ll_clk_enable(bool enable)
+static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
-    // No need to enable the temperature clock on esp32c2
+    SYSTEM.perip_clk_en1.tsens_clk_en = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_bus_clk_enable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_bus_clk_enable(__VA_ARGS__);} while(0)
+
+/**
+ * @brief Reset the Temperature sensor module
+ */
+static inline void temperature_sensor_ll_reset_module(void)
+{
+    SYSTEM.perip_rst_en1.tsens_rst = 1;
+    SYSTEM.perip_rst_en1.tsens_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
  * @brief Select the clock source for temperature sensor. On ESP32-C2, temperautre sensor

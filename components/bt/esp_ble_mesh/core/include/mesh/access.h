@@ -54,8 +54,8 @@ extern "C" {
 {                                               \
     .loc              = (_loc),                 \
     .model_count      = ARRAY_SIZE(_mods),      \
-    .models           = (_mods),                \
     .vnd_model_count  = ARRAY_SIZE(_vnd_mods),  \
+    .models           = (_mods),                \
     .vnd_models       = (_vnd_mods),            \
 }
 
@@ -306,14 +306,12 @@ struct bt_mesh_model_op {
 #define BLE_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)          \
 {                                                                   \
     .id = (_id),                                                    \
-    .op = (_op),                                                    \
-    .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =       \
-            BLE_MESH_KEY_UNUSED },                                  \
     .pub = (_pub),                                                  \
-    .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =   \
-            BLE_MESH_ADDR_UNASSIGNED },                             \
-    .user_data = (_user_data),                                      \
+    .keys = ESP_BLE_MESH_MODEL_KEYS_UNUSED,                         \
+    .groups = ESP_BLE_MESH_MODEL_GROUPS_UNASSIGNED,                 \
+    .op = (_op),                                                    \
     .cb = (_cb),                                                    \
+    .user_data = (_user_data),                                      \
 }
 
 /** @def BLE_MESH_MODEL_VND_CB
@@ -331,14 +329,12 @@ struct bt_mesh_model_op {
 {                                                                   \
     .vnd.company = (_company),                                      \
     .vnd.id = (_id),                                                \
-    .op = (_op),                                                    \
     .pub = (_pub),                                                  \
-    .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =       \
-            BLE_MESH_KEY_UNUSED },                                  \
-    .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =   \
-            BLE_MESH_ADDR_UNASSIGNED },                             \
-    .user_data = (_user_data),                                      \
+    .keys = ESP_BLE_MESH_MODEL_KEYS_UNUSED,                         \
+    .groups = ESP_BLE_MESH_MODEL_GROUPS_UNASSIGNED,                 \
+    .op = (_op),                                                    \
     .cb = (_cb),                                                    \
+    .user_data = (_user_data),                                      \
 }
 
 /** @def BLE_MESH_TRANSMIT
@@ -475,8 +471,8 @@ struct bt_mesh_model_pub {
 #define BLE_MESH_MODEL_PUB_DEFINE(_name, _update, _msg_len) \
     NET_BUF_SIMPLE_DEFINE_STATIC(bt_mesh_pub_msg_##_name, _msg_len); \
     static struct bt_mesh_model_pub _name = { \
-        .update = _update, \
         .msg = &bt_mesh_pub_msg_##_name, \
+        .update = _update, \
     }
 
 /** Model callback functions. */

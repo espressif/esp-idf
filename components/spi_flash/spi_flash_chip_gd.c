@@ -37,6 +37,7 @@ spi_flash_caps_t spi_flash_chip_gd_get_caps(esp_flash_t *chip)
 #if CONFIG_SPI_FLASH_AUTO_SUSPEND
     switch (chip->chip_id) {
     /* The flash listed here can support suspend */
+    case 0xC84016:
     case 0xC84017:
     case 0xC84018:
         caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;

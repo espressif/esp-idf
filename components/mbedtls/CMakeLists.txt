@@ -12,6 +12,10 @@ endif()
 set(mbedtls_srcs "")
 set(mbedtls_include_dirs "port/include" "mbedtls/include" "mbedtls/library")
 
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    list(APPEND mbedtls_include_dirs "port/mbedtls_rom")
+endif()
+
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
     list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
@@ -94,6 +98,11 @@ set(Python3_EXECUTABLE ${python})
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_DIR}/port/include")
 
+# Needed to for mbedtls_rom includes to work from within mbedtls
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    include_directories("${COMPONENT_DIR}/port/mbedtls_rom")
+endif()
+
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
 
@@ -153,7 +162,11 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
-# Choose perihperal type
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_security)
+endif()
+
+# Choose peripheral type
 
 if(CONFIG_SOC_SHA_SUPPORTED)
     if(CONFIG_SOC_SHA_SUPPORT_DMA)
@@ -180,7 +193,6 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
         set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
     else()
         set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
-
     endif()
     target_sources(mbedcrypto PRIVATE  "${SHA_DMA_SRCS}")
 endif()
@@ -189,14 +201,24 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
-        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c"
-                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
     endif()
+
+    list(APPEND AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
 
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
 
+if(SHA_PERIPHERAL_TYPE STREQUAL "dma" OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
+    if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
+        if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)
+            target_link_libraries(mbedcrypto PRIVATE idf::bootloader_support)
+        endif()
+        target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+    endif()
+endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
@@ -206,6 +228,7 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
 )
 
 if(CONFIG_SOC_AES_SUPPORTED)
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
@@ -242,7 +265,7 @@ if(CONFIG_MBEDTLS_HARDWARE_SHA)
     )
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_GCM OR (NOT CONFIG_SOC_AES_SUPPORT_GCM AND CONFIG_MBEDTLS_HARDWARE_AES))
+if(CONFIG_MBEDTLS_HARDWARE_GCM OR CONFIG_MBEDTLS_HARDWARE_AES)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 endif()
 
@@ -259,10 +282,19 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_restartable")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature_restartable")
+
+        if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
+        endif()
+
     endif()
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify_restartable")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature_restartable")
     endif()
 endif()
 
@@ -277,6 +309,9 @@ endif()
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
+        target_compile_options(${target} PRIVATE "-fno-analyzer")
+    endif()
 endforeach()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
@@ -314,7 +349,20 @@ if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
 endif()
 
+# Additional optional dependencies for the mbedcrypto library
+function(mbedcrypto_optional_deps component_name)
+    idf_build_get_property(components BUILD_COMPONENTS)
+    if(${component_name} IN_LIST components)
+        idf_component_get_property(lib_name ${component_name} COMPONENT_LIB)
+        target_link_libraries(mbedcrypto PRIVATE ${lib_name})
+    endif()
+endfunction()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
+    mbedcrypto_optional_deps(esp_timer idf::esp_timer)
+endif()
+
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
-    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
+    mbedcrypto_optional_deps(espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()

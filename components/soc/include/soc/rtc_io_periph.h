@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,7 @@
 #include "soc/rtc_io_channel.h"
 #endif
 
-#if SOC_ADC_RTC_CTRL_SUPPORTED
-#include "soc/sens_struct.h"
-#endif
+#include "soc/io_mux_reg.h"
 
 #ifdef __cplusplus
 extern "C"

@@ -1,5 +1,5 @@
-ESP-BLE-MESH Architecture
-=========================
+Architecture
+=============
 
 :link_to_translation:`zh_CN:[中文]`
 

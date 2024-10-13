@@ -10,4 +10,4 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES esp_driver_i2s esp_driver_gpio
-                    INCLUDE_DIRS ".")
+                    INCLUDE_DIRS "." "$ENV{IDF_PATH}/examples/peripherals/i2s/common")

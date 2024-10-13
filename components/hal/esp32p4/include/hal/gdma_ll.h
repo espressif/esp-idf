@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/soc_etm_source.h"
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
@@ -44,6 +45,49 @@
 #define GDMA_LL_AHB_MAX_CRC_BIT_WIDTH   32 // Max CRC bit width supported by AHB GDMA
 #define GDMA_LL_AXI_MAX_CRC_BIT_WIDTH   16 // Max CRC bit width supported by AXI GDMA
 
+#define GDMA_LL_AHB_DESC_ALIGNMENT      4
+#define GDMA_LL_AXI_DESC_ALIGNMENT      8
+
+#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
+    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
+        {                                                             \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_OUT_EOF_CH0 + (chan), \
+        },                                                            \
+        {                                                             \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_OUT_EOF_CH0 + (chan), \
+        },                                                            \
+    }[group][event]
+
+#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                   \
+    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                   \
+        {                                                                \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_IN_SUC_EOF_CH0 + (chan), \
+        },                                                               \
+        {                                                                \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_IN_SUC_EOF_CH0 + (chan), \
+        },                                                               \
+    }[group][event]
+
+#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                      \
+    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                     \
+        {                                                                 \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_OUT_START_CH0 + (chan), \
+        },                                                                \
+        {                                                                 \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_OUT_START_CH0 + (chan), \
+        },                                                                \
+    }[group][task]
+
+#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                     \
+    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                    \
+        {                                                                \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_IN_START_CH0 + (chan), \
+        },                                                               \
+        {                                                                \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_IN_START_CH0 + (chan), \
+        },                                                               \
+    }[group][task]
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,7 +95,7 @@ extern "C" {
 /**
  * @brief Enable the bus clock for the DMA module
  */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 {
     if (group_id == 0) {
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_ahb_pdma_sys_clk_en = enable;
@@ -62,12 +106,12 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_enable_bus_clock(__VA_ARGS__)
+#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the DMA module
  */
-static inline void gdma_ll_reset_register(int group_id)
+static inline void _gdma_ll_reset_register(int group_id)
 {
     if (group_id == 0) {
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_ahb_pdma = 1;
@@ -80,7 +124,7 @@ static inline void gdma_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
+#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

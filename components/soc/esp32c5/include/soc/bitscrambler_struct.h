@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -208,7 +208,7 @@ typedef union {
         uint32_t tx_cond_mode:1;
         /** tx_fetch_mode : R/W; bitpos: [5]; default: 0;
          *  write this bit to set the bitscrambler tx core fetch instruction mode, 0: prefetch
-         *  by reset, 1: fetch by instrutions
+         *  by reset, 1: fetch by instructions
          */
         uint32_t tx_fetch_mode:1;
         /** tx_halt_mode : R/W; bitpos: [6]; default: 0;
@@ -261,7 +261,7 @@ typedef union {
         uint32_t rx_cond_mode:1;
         /** rx_fetch_mode : R/W; bitpos: [5]; default: 0;
          *  write this bit to set the bitscrambler rx core fetch instruction mode, 0: prefetch
-         *  by reset, 1: fetch by instrutions
+         *  by reset, 1: fetch by instructions
          */
         uint32_t rx_fetch_mode:1;
         /** rx_halt_mode : R/W; bitpos: [6]; default: 0;
@@ -324,7 +324,7 @@ typedef union {
          *  represents the bitscrambler tx core in pause mode
          */
         uint32_t tx_in_pause:1;
-        /** tx_fifo_empty : RO; bitpos: [4]; default: 0;
+        /** tx_fifo_empty : RO; bitpos: [4]; default: 1;
          *  represents the bitscrambler tx fifo in empty state
          */
         uint32_t tx_fifo_empty:1;
@@ -396,7 +396,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** bitscrambler_ver : R/W; bitpos: [27:0]; default: 36713024;
+        /** bitscrambler_ver : R/W; bitpos: [27:0]; default: 36766257;
          *  Reserved
          */
         uint32_t bitscrambler_ver:28;
@@ -406,7 +406,7 @@ typedef union {
 } bitscrambler_version_reg_t;
 
 
-typedef struct bitscrambler_dev_t {
+typedef struct {
     volatile bitscrambler_tx_inst_cfg0_reg_t tx_inst_cfg0;
     volatile bitscrambler_tx_inst_cfg1_reg_t tx_inst_cfg1;
     volatile bitscrambler_rx_inst_cfg0_reg_t rx_inst_cfg0;

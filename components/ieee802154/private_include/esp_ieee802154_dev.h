@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "soc/soc.h"
@@ -17,8 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define IEEE802154_TAG "ieee802154"
 
 // These three macros are in microseconds, used for transmit_at
 #define IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US   256
@@ -56,6 +55,17 @@ void ieee802154_enable(void);
 void ieee802154_disable(void);
 
 /**
+ * @brief  Enable the RF.
+ *
+ */
+void ieee802154_rf_enable(void);
+
+/**
+ * @brief  Disable the RF.
+ *
+ */
+void ieee802154_rf_disable(void);
+/**
  * @brief  Initialize the IEEE 802.15.4 MAC.
  *
  * @return
@@ -66,6 +76,16 @@ void ieee802154_disable(void);
 esp_err_t ieee802154_mac_init(void);
 
 /**
+ * @brief  Deinitialize the IEEE 802.15.4 MAC.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ *
+ */
+esp_err_t ieee802154_mac_deinit(void);
+
+/**
  * @brief  Transmit the given frame.
  *
  * @param[in]  frame  The pointer to the frame
@@ -73,6 +93,7 @@ esp_err_t ieee802154_mac_init(void);
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
@@ -89,6 +110,19 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca);
 esp_err_t ieee802154_receive(void);
 
 /**
+ * @brief  Notify the IEEE 802.15.4 Radio that the frame is handled done by upper layer.
+ *
+ * @param[in]  frame  The pointer to the frame which was passed from the function esp_ieee802154_receive_done.
+ *                    or ack frame from esp_ieee802154_transmit_done.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL if frame is invalid.
+ *
+ */
+esp_err_t ieee802154_receive_handle_done(const uint8_t* frame);
+
+/**
  * @brief  Transmit the given frame at a specific time.
  *
  * @param[in]  frame  The pointer to the frame. Refer to `esp_ieee802154_transmit()`.
@@ -97,6 +131,7 @@ esp_err_t ieee802154_receive(void);
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  * Note: The transmit result will be reported via esp_ieee802154_transmit_done()
@@ -212,6 +247,7 @@ extern void esp_ieee802154_timer1_done(void);
 #define IEEE802154_STATIC  static
 #define IEEE802154_INLINE  inline
 #endif // CONFIG_IEEE802154_TEST
+#define IEEE802154_NOINLINE __attribute__((noinline))
 
 #ifdef __cplusplus
 }

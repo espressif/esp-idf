@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-/** Group: ICM AXI VERID FILEDS REG */
+/** Group: ICM AXI VERID FIELDS REG */
 /** Type of verid_fileds register
  *  NA
  */
@@ -144,11 +144,13 @@ typedef struct {
     volatile icm_hw_cfg_reg_reg_t hw_cfg_reg;
     volatile icm_cmd_reg_t cmd;
     volatile icm_data_reg_t data;
-} icm_dev_t;
+} axi_icm_qos_dev_t;
+
+extern axi_icm_qos_dev_t AXI_ICM_QOS;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(icm_dev_t) == 0x10, "Invalid size of icm_dev_t structure");
+_Static_assert(sizeof(axi_icm_qos_dev_t) == 0x10, "Invalid size of axi_icm_qos_dev_t structure");
 #endif
 
 #ifdef __cplusplus

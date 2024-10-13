@@ -276,7 +276,7 @@ static void bta_hh_di_sdp_cback(UINT16 result)
                 bta_hh_update_di_info(p_cb, di_rec.rec.vendor, di_rec.rec.product, di_rec.rec.version, 0);
             }
 
-        } else { /* no DI recrod available */
+        } else { /* no DI record available */
             bta_hh_update_di_info(p_cb, BTA_HH_VENDOR_ID_INVALID, 0, 0, 0);
         }
 
@@ -358,7 +358,7 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
         return;
     }
-    /* GetSDPRecord. at one time only one SDP precedure can be active */
+    /* GetSDPRecord. at one time only one SDP procedure can be active */
     else if (!bta_hh_cb.p_disc_db) {
         bta_hh_cb.p_disc_db = (tSDP_DISCOVERY_DB *) osi_malloc(p_bta_hh_cfg->sdp_db_size);
 
@@ -429,6 +429,7 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                 APPL_TRACE_DEBUG ("bta_hh_sdp_cmpl:  HID_HostOpenDev failed: \
                     Status 0x%2X", ret);
 #endif
+                conn_dat.is_orig = HID_HostConnectOrig(p_cb->hid_handle);
                 /* open fail, remove device from management device list */
                 HID_HostRemoveDev( p_cb->hid_handle);
                 status = BTA_HH_ERR;
@@ -452,8 +453,6 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
             HID_HostRemoveDev( p_cb->incoming_hid_handle);
         }
         conn_dat.status = status;
-        /* check if host initiate the connection*/
-        conn_dat.is_orig = !p_cb->incoming_conn;
         (* bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
 
         /* move state machine W4_CONN ->IDLE */
@@ -523,8 +522,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
     memset((void *)&conn, 0, sizeof (tBTA_HH_CONN));
     conn.handle = dev_handle;
-    /* check if host initiate the connection*/
-    conn.is_orig = !p_cb->incoming_conn;
+    conn.is_orig = HID_HostConnectOrig(dev_handle);
     bdcpy(conn.bda, p_cb->addr);
 
     /* increase connection number */
@@ -596,7 +594,7 @@ void bta_hh_open_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     if (p_cb->app_id != 0) {
         bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, p_data);
     } else
-        /*  app_id == 0 indicates an incoming conenction request arrives without SDP
+        /*  app_id == 0 indicates an incoming connection request arrives without SDP
             performed, do it first */
     {
         /* store the handle here in case sdp fails - need to disconnect */
@@ -637,7 +635,7 @@ void bta_hh_data_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 **
 ** Function         bta_hh_handsk_act
 **
-** Description      HID Host process a handshake acknoledgement.
+** Description      HID Host process a handshake acknowledgement.
 **
 **
 ** Returns          void
@@ -674,7 +672,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         p_cb->w4_evt = 0;
         break;
 
-    /* acknoledgement from HID device for SET_ transaction */
+    /* acknowledgement from HID device for SET_ transaction */
     case BTA_HH_SET_RPT_EVT:
     case BTA_HH_SET_PROTO_EVT:
     case BTA_HH_SET_IDLE_EVT :
@@ -693,8 +691,7 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     case BTA_HH_OPEN_EVT:
         conn.status = p_data->hid_cback.data ? BTA_HH_ERR_PROTO : BTA_HH_OK;
         conn.handle = p_cb->hid_handle;
-        /* check if host initiate the connection*/
-        conn.is_orig = !p_cb->incoming_conn;
+        conn.is_orig = HID_HostConnectOrig(p_cb->hid_handle);
         bdcpy(conn.bda, p_cb->addr);
         (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&conn);
 #if BTA_HH_DEBUG
@@ -704,12 +701,12 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         break;
 
     default:
-        /* unknow transaction handshake response */
+        /* unknown transaction handshake response */
         APPL_TRACE_DEBUG("unknown transaction type");
         break;
     }
 
-    /* transaction achknoledgement received, inform PM for mode change */
+    /* transaction acknowledgement received, inform PM for mode change */
     bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
     return;
 }
@@ -799,7 +796,7 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ?
                       BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
     /* check if host initiate the connection*/
-    conn_dat.is_orig = !p_cb->incoming_conn;
+    conn_dat.is_orig = HID_HostConnectOrig(p_cb->hid_handle);
     bdcpy(conn_dat.bda, p_cb->addr);
     HID_HostCloseDev(p_cb->hid_handle);
 
@@ -844,13 +841,13 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
     /* Check reason for closing */
     if ((reason & (HID_L2CAP_CONN_FAIL | HID_L2CAP_REQ_FAIL)) || /* Failure to initialize connection (page timeout or l2cap error) */
-            (reason == HID_ERR_AUTH_FAILED) ||                      /* Authenication error (while initiating) */
+            (reason == HID_ERR_AUTH_FAILED) ||                      /* Authentication error (while initiating) */
             (reason == HID_ERR_L2CAP_FAILED)) {                     /* Failure creating l2cap connection */
         /* Failure in opening connection */
         conn_dat.handle = p_cb->hid_handle;
         conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ? BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
         /* check if host initiate the connection*/
-        conn_dat.is_orig = !p_cb->incoming_conn;
+        conn_dat.is_orig = HID_HostConnectOrig(p_cb->hid_handle);
         bdcpy(conn_dat.bda, p_cb->addr);
         HID_HostCloseDev(p_cb->hid_handle);
 

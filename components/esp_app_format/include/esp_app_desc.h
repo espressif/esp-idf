@@ -33,11 +33,14 @@ typedef struct {
     char date[16];              /*!< Compile date*/
     char idf_ver[32];           /*!< Version IDF */
     uint8_t app_elf_sha256[32]; /*!< sha256 of elf file */
-    uint32_t reserv2[20];       /*!< reserv2 */
+    uint16_t min_efuse_blk_rev_full; /*!< Minimal eFuse block revision supported by image, in format: major * 100 + minor */
+    uint16_t max_efuse_blk_rev_full; /*!< Maximal eFuse block revision supported by image, in format: major * 100 + minor */
+    uint32_t reserv2[19];       /*!< reserv2 */
 } esp_app_desc_t;
 
 /** @cond */
 ESP_STATIC_ASSERT(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
+ESP_STATIC_ASSERT(offsetof(esp_app_desc_t, secure_version) == 4, "secure_version field must be at 4 offset");
 /** @endcond */
 
 /**

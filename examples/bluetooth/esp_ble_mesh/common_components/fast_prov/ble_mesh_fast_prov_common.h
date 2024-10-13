@@ -7,6 +7,10 @@
 #ifndef _BLE_MESH_FAST_PROV_COMMON_H_
 #define _BLE_MESH_FAST_PROV_COMMON_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_config_model_api.h"
 
@@ -108,5 +112,9 @@ typedef struct {
     uint8_t status_key; /* Indicate the result of adding network key */
     uint8_t status_act; /* Indicate the result of action */
 } example_fast_prov_net_key_status_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_FAST_PROV_COMMON_H_ */

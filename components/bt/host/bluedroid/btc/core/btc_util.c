@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -338,8 +338,11 @@ esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
         case HCI_ERR_ILLEGAL_PARAMETER_FMT:
             esp_status = ESP_BT_STATUS_ERR_ILLEGAL_PARAMETER_FMT;
             break;
+        case HCI_ERR_UNSUPPORTED_VALUE:
+            esp_status = ESP_BT_STATUS_UNSUPPORTED;
+            break;
         default:
-            esp_status = ESP_BT_STATUS_FAIL;
+            esp_status = hci_status | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
             break;
     }
 
@@ -349,7 +352,7 @@ esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
 esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
 {
     esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
-    switch(btm_status){
+    switch(btm_status) {
         case BTM_SUCCESS:
             esp_status = ESP_BT_STATUS_SUCCESS;
             break;
@@ -378,7 +381,11 @@ esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
             esp_status = ESP_BT_STATUS_FAIL;
             break;
         default:
-            esp_status = ESP_BT_STATUS_FAIL;
+            if (btm_status & BTM_HCI_ERROR) {
+                esp_status = ESP_BT_STATUS_BASE_FOR_HCI_ERR | (btm_status & 0x7F);
+            } else {
+                esp_status = ESP_BT_STATUS_FAIL;
+            }
             break;
     }
 

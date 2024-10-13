@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -149,10 +149,10 @@ typedef union {
          *  Write 1 to continue HUK Generator operation at LOAD/GAIN state.
          */
         uint32_t start:1;
-        /** continue : WT; bitpos: [1]; default: 0;
+        /** conti : WT; bitpos: [1]; default: 0;
          *  Write 1 to start HUK Generator at IDLE state.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -213,7 +213,7 @@ typedef union {
 } huk_date_reg_t;
 
 
-typedef struct huk_dev_t {
+typedef struct {
     uint32_t reserved_000;
     volatile huk_clk_reg_t clk;
     volatile huk_int_raw_reg_t int_raw;

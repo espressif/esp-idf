@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,6 @@
 
 #define TEST_SPI_PERIPH_NUM     (SOC_SPI_PERIPH_NUM - 1)
 
-
 #if CONFIG_IDF_TARGET_ESP32C6   // cs_pin conflict with uart pin
 #define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
 #define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
@@ -46,7 +45,6 @@
 #define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
 #endif
 
-
 #if (TEST_SPI_PERIPH_NUM >= 2)  // esp32, s2, s3
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI3_HOST
@@ -61,7 +59,6 @@
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI2_HOST
 #endif
-
 
 #if CONFIG_IDF_TARGET_ESP32     // spi3 have iomux pin only on esp32
 #define SLAVE_IOMUX_PIN_MISO    SPI3_IOMUX_PIN_NUM_MISO
@@ -97,14 +94,12 @@
 #define WIRE_DELAY              12.5
 #endif  //CONFIG_IDF_TARGET_ESP32
 
-
 #define GET_DMA_CHAN(HOST)      (HOST)
 
 #define TEST_DMA_CHAN_MASTER    GET_DMA_CHAN(TEST_SPI_HOST)
 #define TEST_DMA_CHAN_SLAVE     GET_DMA_CHAN(TEST_SLAVE_HOST)
 
-
-#define FUNC_SPI    1
+#define FUNC_SPI    SPI2_FUNC_NUM
 #define FUNC_GPIO   PIN_FUNC_GPIO
 
 //Delay information
@@ -266,7 +261,7 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
     int r = memcmp(expected, actual, len);\
     if (r != 0) {\
         ESP_LOG_BUFFER_HEXDUMP("actual ", actual, len, ESP_LOG_WARN);\
-        ESP_LOG_BUFFER_HEXDUMP("expecte", expected, len, ESP_LOG_INFO);\
+        ESP_LOG_BUFFER_HEXDUMP("expected", expected, len, ESP_LOG_INFO);\
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, actual, len);\
     }\
     r;\
@@ -274,7 +269,7 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
 
 static inline int get_trans_len(spi_dup_t dup, spi_transaction_t *master_t)
 {
-    if (dup!=HALF_DUPLEX_MISO) {
+    if (dup != HALF_DUPLEX_MISO) {
         return master_t->length;
     } else {
         return master_t->rxlength;
@@ -283,10 +278,10 @@ static inline int get_trans_len(spi_dup_t dup, spi_transaction_t *master_t)
 //remove device from bus and free the bus
 void master_free_device_bus(spi_device_handle_t spi);
 
-//use this function to fix the output source when assign multiple funcitons to a same pin
+//use this function to fix the output source when assign multiple functions to a same pin
 void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
-//use this function to fix the input source when assign multiple funcitons to a same pin
+//use this function to fix the input source when assign multiple functions to a same pin
 void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,

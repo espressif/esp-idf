@@ -44,12 +44,12 @@
 static inline void write32_be(uint32_t n, uint8_t out[4])
 {
 #if defined(__GNUC__) && __GNUC__ >= 4 && __BYTE_ORDER == __LITTLE_ENDIAN
-  *(uint32_t *)(out) = __builtin_bswap32(n);
+    *(uint32_t *)(out) = __builtin_bswap32(n);
 #else
-  out[0] = (n >> 24) & 0xff;
-  out[1] = (n >> 16) & 0xff;
-  out[2] = (n >> 8) & 0xff;
-  out[3] = n & 0xff;
+    out[0] = (n >> 24) & 0xff;
+    out[1] = (n >> 16) & 0xff;
+    out[2] = (n >> 8) & 0xff;
+    out[3] = n & 0xff;
 #endif
 }
 
@@ -59,10 +59,10 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
  * Message length is expressed in 32 bits (so suitable for sha1, sha256, sha512). */
 static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t msg)
 {
-  memset(block + used, 0, blocksz - used - 4);
-  block[used] = 0x80;
-  block += blocksz - 4;
-  write32_be((uint32_t) (msg * 8), block);
+    memset(block + used, 0, blocksz - used - 4);
+    block[used] = 0x80;
+    block += blocksz - 4;
+    write32_be((uint32_t)(msg * 8), block);
 }
 
 /* Internal function/type names for hash-specific things. */
@@ -237,76 +237,76 @@ static inline void sha1_extract(mbedtls_sha1_context *restrict ctx, uint8_t *res
 {
 #if defined(MBEDTLS_SHA1_ALT)
 #if CONFIG_IDF_TARGET_ESP32
-  /* ESP32 stores internal SHA state in BE format similar to software */
-  write32_be(ctx->state[0], out);
-  write32_be(ctx->state[1], out + 4);
-  write32_be(ctx->state[2], out + 8);
-  write32_be(ctx->state[3], out + 12);
-  write32_be(ctx->state[4], out + 16);
+    /* ESP32 stores internal SHA state in BE format similar to software */
+    write32_be(ctx->state[0], out);
+    write32_be(ctx->state[1], out + 4);
+    write32_be(ctx->state[2], out + 8);
+    write32_be(ctx->state[3], out + 12);
+    write32_be(ctx->state[4], out + 16);
 #else
-  *(uint32_t *)(out) = ctx->state[0];
-  *(uint32_t *)(out + 4) = ctx->state[1];
-  *(uint32_t *)(out + 8) = ctx->state[2];
-  *(uint32_t *)(out + 12) = ctx->state[3];
-  *(uint32_t *)(out + 16) = ctx->state[4];
+    *(uint32_t *)(out) = ctx->state[0];
+    *(uint32_t *)(out + 4) = ctx->state[1];
+    *(uint32_t *)(out + 8) = ctx->state[2];
+    *(uint32_t *)(out + 12) = ctx->state[3];
+    *(uint32_t *)(out + 16) = ctx->state[4];
 #endif
 #else
-  write32_be(ctx->MBEDTLS_PRIVATE(state)[0], out);
-  write32_be(ctx->MBEDTLS_PRIVATE(state)[1], out + 4);
-  write32_be(ctx->MBEDTLS_PRIVATE(state)[2], out + 8);
-  write32_be(ctx->MBEDTLS_PRIVATE(state)[3], out + 12);
-  write32_be(ctx->MBEDTLS_PRIVATE(state)[4], out + 16);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[0], out);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[1], out + 4);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[2], out + 8);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[3], out + 12);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[4], out + 16);
 #endif
 }
 
 static inline void sha1_cpy(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
 {
 #if defined(MBEDTLS_SHA1_ALT)
-  out->state[0] = in->state[0];
-  out->state[1] = in->state[1];
-  out->state[2] = in->state[2];
-  out->state[3] = in->state[3];
-  out->state[4] = in->state[4];
+    out->state[0] = in->state[0];
+    out->state[1] = in->state[1];
+    out->state[2] = in->state[2];
+    out->state[3] = in->state[3];
+    out->state[4] = in->state[4];
 #else
-  out->MBEDTLS_PRIVATE(state)[0] = in->MBEDTLS_PRIVATE(state)[0];
-  out->MBEDTLS_PRIVATE(state)[1] = in->MBEDTLS_PRIVATE(state)[1];
-  out->MBEDTLS_PRIVATE(state)[2] = in->MBEDTLS_PRIVATE(state)[2];
-  out->MBEDTLS_PRIVATE(state)[3] = in->MBEDTLS_PRIVATE(state)[3];
-  out->MBEDTLS_PRIVATE(state)[4] = in->MBEDTLS_PRIVATE(state)[4];
+    out->MBEDTLS_PRIVATE(state)[0] = in->MBEDTLS_PRIVATE(state)[0];
+    out->MBEDTLS_PRIVATE(state)[1] = in->MBEDTLS_PRIVATE(state)[1];
+    out->MBEDTLS_PRIVATE(state)[2] = in->MBEDTLS_PRIVATE(state)[2];
+    out->MBEDTLS_PRIVATE(state)[3] = in->MBEDTLS_PRIVATE(state)[3];
+    out->MBEDTLS_PRIVATE(state)[4] = in->MBEDTLS_PRIVATE(state)[4];
 #endif
 }
 
 static inline void sha1_xor(mbedtls_sha1_context *restrict out, const mbedtls_sha1_context *restrict in)
 {
 #if defined(MBEDTLS_SHA1_ALT)
-  out->state[0] ^= in->state[0];
-  out->state[1] ^= in->state[1];
-  out->state[2] ^= in->state[2];
-  out->state[3] ^= in->state[3];
-  out->state[4] ^= in->state[4];
+    out->state[0] ^= in->state[0];
+    out->state[1] ^= in->state[1];
+    out->state[2] ^= in->state[2];
+    out->state[3] ^= in->state[3];
+    out->state[4] ^= in->state[4];
 #else
-  out->MBEDTLS_PRIVATE(state)[0] ^= in->MBEDTLS_PRIVATE(state)[0];
-  out->MBEDTLS_PRIVATE(state)[1] ^= in->MBEDTLS_PRIVATE(state)[1];
-  out->MBEDTLS_PRIVATE(state)[2] ^= in->MBEDTLS_PRIVATE(state)[2];
-  out->MBEDTLS_PRIVATE(state)[3] ^= in->MBEDTLS_PRIVATE(state)[3];
-  out->MBEDTLS_PRIVATE(state)[4] ^= in->MBEDTLS_PRIVATE(state)[4];
+    out->MBEDTLS_PRIVATE(state)[0] ^= in->MBEDTLS_PRIVATE(state)[0];
+    out->MBEDTLS_PRIVATE(state)[1] ^= in->MBEDTLS_PRIVATE(state)[1];
+    out->MBEDTLS_PRIVATE(state)[2] ^= in->MBEDTLS_PRIVATE(state)[2];
+    out->MBEDTLS_PRIVATE(state)[3] ^= in->MBEDTLS_PRIVATE(state)[3];
+    out->MBEDTLS_PRIVATE(state)[4] ^= in->MBEDTLS_PRIVATE(state)[4];
 #endif
 }
 
 static int mbedtls_sha1_init_start(mbedtls_sha1_context *ctx)
 {
-  mbedtls_sha1_init(ctx);
-  mbedtls_sha1_starts(ctx);
+    mbedtls_sha1_init(ctx);
+    mbedtls_sha1_starts(ctx);
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_SHA1_ALT)
-  /* Use software mode for esp32 since hardware can't give output more than 20 */
-  esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
+    /* Use software mode for esp32 since hardware can't give output more than 20 */
+    esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
 #endif
-  return 0;
+    return 0;
 }
 
 #ifndef MBEDTLS_SHA1_ALT
 static int sha1_finish(mbedtls_sha1_context *ctx,
-                        unsigned char output[20])
+                       unsigned char output[20])
 {
     int ret = -1;
     uint32_t used;
@@ -384,5 +384,5 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
                           uint32_t iterations,
                           uint8_t *out, size_t nout)
 {
-  PBKDF2(sha1)(pw, npw, salt, nsalt, iterations, out, nout);
+    PBKDF2(sha1)(pw, npw, salt, nsalt, iterations, out, nout);
 }

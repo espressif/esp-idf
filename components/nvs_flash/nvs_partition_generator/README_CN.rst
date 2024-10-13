@@ -18,6 +18,8 @@ NVS 分区生成程序适合用于生成二进制数据 (blob)，其中包括设
 
 根目录下的 `requirements.txt` 包含必需 python 包，请预先安装。
 
+.. _nvs-csv-file-format:
+
 CSV 文件格式
 ~~~~~~~~~~~~
 
@@ -241,6 +243,8 @@ NVS 分区生成程序还可使用 XTS-AES 加密生成二进制加密文件或�
         python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
 
     .. note:: 可将自定义文件名作为参数提供给 HMAC 密钥和加密密钥。
+
+.. _generate-encrypted-nvs-partition:
 
 生成 NVS 加密分区
 ~~~~~~~~~~~~~~~~~

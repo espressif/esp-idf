@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,11 @@ void esp_openthread_task_switching_lock_release(void)
 {
     ESP_RETURN_ON_FALSE(s_openthread_task_mutex, , OT_PLAT_LOG_TAG,
             "Failed to release the lock because the mutex is not ready");
+    if (xSemaphoreGetMutexHolder(s_openthread_task_mutex) != xTaskGetCurrentTaskHandle()) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Task %s is attempting to release the OpenThread task switching lock but never acquired it.",
+                pcTaskGetName(xTaskGetCurrentTaskHandle()));
+        assert(false);
+    }
     xSemaphoreGiveRecursive(s_openthread_task_mutex);
 }
 

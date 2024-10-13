@@ -1,0 +1,7 @@
+{
+    "jobs": [
+        {"failed_count": 2, "failure_ratio": 0.2, "total_count": 10, "name": "build_clang_test_apps_esp32h2"},
+        {"failed_count": 3, "failure_ratio": 0.3, "total_count": 10, "name": "build_template_app"},
+        {"failed_count": 4, "failure_ratio": 0.4, "total_count": 10, "name": "check_public_headers"}
+    ]
+}

@@ -130,7 +130,6 @@ esp_err_t touch_pad_set_fsm_mode(touch_fsm_mode_t mode);
  */
 esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
 
-
 /**
  * @brief To clear the touch sensor channel active status.
  *

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,7 @@
 #include "hal/ieee802154_ll.h"
 #include "esp_check.h"
 #include "esp_ieee802154_timer.h"
-
-static const char *TAG = "ieee802154_timer";
+#include "esp_ieee802154_util.h"
 
 void ieee802154_timer0_start(void)
 {
@@ -23,7 +22,7 @@ void ieee802154_timer0_stop(void)
 
 esp_err_t ieee802154_timer0_set_threshold(uint32_t value)
 {
-    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER0_THRESHOLD), ESP_ERR_INVALID_ARG, TAG, "invalid timer0 threshold\r\n");
+    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER0_THRESHOLD), ESP_ERR_INVALID_ARG, IEEE802154_TAG, "invalid timer0 threshold");
 
     ieee802154_ll_timer0_set_threshold(value);
 
@@ -47,7 +46,7 @@ void ieee802154_timer1_stop(void)
 
 esp_err_t ieee802154_timer1_set_threshold(uint32_t value)
 {
-    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER1_THRESHOLD), ESP_ERR_INVALID_ARG, TAG, "invalid timer1 threshold\r\n");
+    ESP_RETURN_ON_FALSE((value < IEEE802154_TIMER1_THRESHOLD), ESP_ERR_INVALID_ARG, IEEE802154_TAG, "invalid timer1 threshold");
 
     ieee802154_ll_timer1_set_threshold(value);
 

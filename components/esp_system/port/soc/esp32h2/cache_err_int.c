@@ -20,6 +20,23 @@
 
 static const char *TAG = "CACHE_ERR";
 
+const char cache_error_msg[] = "Cache access error";
+
+const char *esp_cache_err_panic_string(void)
+{
+    const uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+
+    /* Return the error string if a cache error is active */
+    const char* err_str = access_err_status ? cache_error_msg : NULL;
+
+    return err_str;
+}
+
+bool esp_cache_err_has_active_err(void)
+{
+    return cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+}
+
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;
@@ -39,8 +56,8 @@ void esp_cache_err_int_init(void)
     esp_rom_route_intr_matrix(core_id, ETS_CACHE_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     /* Set the type and priority to cache error interrupts. */
-    esprv_intc_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esprv_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
+    esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* On the hardware side, start by clearing all the bits reponsible for cache access error */

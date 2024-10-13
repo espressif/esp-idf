@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <random>
 #include <fcntl.h>
 #include <unistd.h>
+#include "esp_partition.h"
 
 class PartitionEmulationFixture {
 public:
@@ -22,8 +23,9 @@ public:
             FAIL("Failed to initialize esp_partition_file_mmap");
         }
 
-        esp_partition.address = start_sector * SPI_FLASH_SEC_SIZE;
-        esp_partition.size = (start_sector + sector_size) * SPI_FLASH_SEC_SIZE;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        esp_partition.address = start_sector * sec_size;
+        esp_partition.size = (start_sector + sector_size) * sec_size;
         esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition.type = ESP_PARTITION_TYPE_DATA;
         esp_partition.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
@@ -42,6 +44,7 @@ public:
         off_t size = -1;
         void *p_buff = nullptr;
         char const *fail_msg = nullptr;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
 
         do {
             // get file size
@@ -52,12 +55,12 @@ public:
             }
             size = lseek(file_fd, 0L, SEEK_END);
             if (size < 0) {
-                fail_msg = "falied to seek in file with partition content";
+                fail_msg = "failed to seek in file with partition content";
                 break;
             }
 
             // check if file fits into the partitiion
-            if (size > sector_size * SPI_FLASH_SEC_SIZE) {
+            if (size > sector_size * sec_size) {
                 fail_msg = "file with partition content doesn't fit into the partition";
                 break;
             }
@@ -72,7 +75,7 @@ public:
             // laoad file into local buffer
             int res = lseek(file_fd, 0L, SEEK_SET);
             if (res < 0) {
-                fail_msg = "falied to seek in file with partition content";
+                fail_msg = "failed to seek in file with partition content";
                 break;
             }
             size = read(file_fd, p_buff, size);
@@ -82,7 +85,7 @@ public:
             }
 
             // erase whole partition
-            if (ESP_OK != esp_partition_erase_range(&esp_partition, 0, sector_size * SPI_FLASH_SEC_SIZE)) {
+            if (ESP_OK != esp_partition_erase_range(&esp_partition, 0, sector_size * sec_size)) {
                 fail_msg = "cannot erase partition prior to write partition binary from file";
                 break;
             }
@@ -123,7 +126,8 @@ public:
     // absolute sectorNumber is used here
     bool erase(size_t sectorNumber)
     {
-        size_t offset = sectorNumber * SPI_FLASH_SEC_SIZE;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        size_t offset = sectorNumber * sec_size;
 
         // check the upper bound
         esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_act();
@@ -132,17 +136,17 @@ public:
             return false;
         }
 
-        // esp_partition_erase_range uses offset relative to the begining of partition
+        // esp_partition_erase_range uses offset relative to the beginning of partition
         return (esp_partition_erase_range(&esp_partition,
                                           offset - esp_partition.address,
-                                          SPI_FLASH_SEC_SIZE) == ESP_OK);
+                                          sec_size) == ESP_OK);
     }
 
     ~PartitionEmulationFixture()
     {
         delete p_part;
 
-        // ensure underlying mmaped file gets deleted after unmap.
+        // ensure underlying mapped file gets deleted after unmap.
         esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_input();
         p_ctrl->remove_dump = true;
         esp_partition_file_munmap();
@@ -175,9 +179,10 @@ public:
                               ) :
         PartitionEmulationFixture(start_sector1, sector_size1, partition_name1), esp_partition2()
     {
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
         // for 2nd partition
-        esp_partition2.address = start_sector2 * SPI_FLASH_SEC_SIZE;
-        esp_partition2.size = (start_sector2 + sector_size2) * SPI_FLASH_SEC_SIZE;
+        esp_partition2.address = start_sector2 * sec_size;
+        esp_partition2.size = (start_sector2 + sector_size2) * sec_size;
         esp_partition2.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition2.type = ESP_PARTITION_TYPE_DATA;
         esp_partition2.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;

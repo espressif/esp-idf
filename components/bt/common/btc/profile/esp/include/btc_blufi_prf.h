@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,11 @@
 #else
 #define ESP_BLUFI_ERROR 0x85
 #define ESP_BLUFI_SUCCESS 0x00
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -100,4 +105,7 @@ void btc_blufi_call_deep_free(btc_msg_t *msg);
 
 uint16_t btc_blufi_get_version(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __BTC_BLUFI_PRF_H__ */

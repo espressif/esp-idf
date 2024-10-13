@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/queue.h"
+#include "openthread/tasklet.h"
 
 static QueueHandle_t s_task_queue = NULL;
 static int s_task_queue_event_fd = -1;
 static const char *task_queue_workflow = "task_queue";
+
+#define OT_TASK_QUEUE_SENDING_WAIT_TIME pdMS_TO_TICKS(100)
 
 typedef struct {
     esp_openthread_task_t task;
@@ -37,6 +40,14 @@ esp_err_t esp_openthread_task_queue_init(const esp_openthread_platform_config_t 
                                                      &esp_openthread_task_queue_process, task_queue_workflow);
 }
 
+void otTaskletsSignalPending(otInstance *aInstance)
+{
+    uint64_t val = 1;
+    ssize_t ret;
+    ret = write(s_task_queue_event_fd, &val, sizeof(val));
+    assert(ret == sizeof(val));
+}
+
 esp_err_t IRAM_ATTR esp_openthread_task_queue_post(esp_openthread_task_t task, void *arg)
 {
     task_storage_t task_storage = {
@@ -51,7 +62,7 @@ esp_err_t IRAM_ATTR esp_openthread_task_queue_post(esp_openthread_task_t task, v
         ESP_RETURN_ON_FALSE_ISR(xQueueSendFromISR(s_task_queue, &task_storage, &task_woken), ESP_FAIL, OT_PLAT_LOG_TAG,
                                 "Failed to post task to OpenThread task queue");
     } else {
-        ESP_RETURN_ON_FALSE(xQueueSend(s_task_queue, &task_storage, portMAX_DELAY), ESP_FAIL, OT_PLAT_LOG_TAG,
+        ESP_RETURN_ON_FALSE(xQueueSend(s_task_queue, &task_storage, OT_TASK_QUEUE_SENDING_WAIT_TIME), ESP_FAIL, OT_PLAT_LOG_TAG,
                             "Failed to post task to OpenThread task queue");
     }
     ret = write(s_task_queue_event_fd, &val, sizeof(val));

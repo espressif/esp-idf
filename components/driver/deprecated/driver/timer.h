@@ -215,7 +215,7 @@ esp_err_t timer_isr_callback_remove(timer_group_t group_num, timer_idx_t timer_n
  * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
  *        be returned here.
  *
- * @note If use this function to reigster ISR, you need to write the whole ISR.
+ * @note If use this function to register ISR, you need to write the whole ISR.
  *       In the interrupt handler, you need to call timer_spinlock_take(..) before
  *       your handling, and call timer_spinlock_give(...) after your handling.
  *
@@ -358,7 +358,6 @@ void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t tim
  *
  */
 void timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en);
-
 
 /** @brief Get interrupt status, just used in ISR
  *

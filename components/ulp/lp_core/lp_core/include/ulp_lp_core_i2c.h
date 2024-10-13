@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,8 @@ extern "C" {
  * @note the LP I2C port number is ignored at the moment.
  */
 esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            uint8_t *data_rd, size_t size,
-                                            int32_t ticks_to_wait);
+                                              uint8_t *data_rd, size_t size,
+                                              int32_t ticks_to_wait);
 
 /**
  * @brief Write to I2C device
@@ -54,8 +54,8 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
  * @note the LP I2C port number is ignored at the moment.
  */
 esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            const uint8_t *data_wr, size_t size,
-                                            int32_t ticks_to_wait);
+                                             const uint8_t *data_wr, size_t size,
+                                             int32_t ticks_to_wait);
 
 /**
  * @brief Write to and then read from an I2C device in a single transaction
@@ -77,9 +77,9 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
  * @note the LP I2C port number is ignored at the moment.
  */
 esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            const uint8_t *data_wr, size_t write_size,
-                                            uint8_t *data_rd, size_t read_size,
-                                            int32_t ticks_to_wait);
+                                               const uint8_t *data_wr, size_t write_size,
+                                               uint8_t *data_rd, size_t read_size,
+                                               int32_t ticks_to_wait);
 
 /**
  * @brief Enable or disable ACK checking by the LP_I2C controller during write operations

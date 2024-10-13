@@ -1,0 +1,22 @@
+menu "ESP-Driver:ISP Configurations"
+    depends on SOC_ISP_SUPPORTED
+
+    config ISP_ISR_IRAM_SAFE
+        bool "ISP driver ISR IRAM-Safe"
+        default n
+        help
+            Ensure the ISP driver ISR is IRAM-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+    config ISP_CTRL_FUNC_IN_IRAM
+        bool "Place ISP control functions into IRAM"
+        default n
+        help
+            Place ISP control functions into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+            Enabling this option can improve driver performance as well.
+
+            Function list:
+            - `esp_isp_sharpen_configure`
+
+endmenu # ISP Configuration

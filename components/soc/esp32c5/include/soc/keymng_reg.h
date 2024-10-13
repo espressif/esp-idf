@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -15,13 +15,13 @@ extern "C" {
  *  Key Manager clock gate control register
  */
 #define KEYMNG_CLK_REG (DR_REG_KEYMNG_BASE + 0x4)
-/** KEYMNG_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** KEYMNG_REG_CG_FORCE_ON : R/W; bitpos: [0]; default: 1;
  *  Write 1 to force on register clock gate.
  */
-#define KEYMNG_CLK_EN    (BIT(0))
-#define KEYMNG_CLK_EN_M  (KEYMNG_CLK_EN_V << KEYMNG_CLK_EN_S)
-#define KEYMNG_CLK_EN_V  0x00000001U
-#define KEYMNG_CLK_EN_S  0
+#define KEYMNG_REG_CG_FORCE_ON    (BIT(0))
+#define KEYMNG_REG_CG_FORCE_ON_M  (KEYMNG_REG_CG_FORCE_ON_V << KEYMNG_REG_CG_FORCE_ON_S)
+#define KEYMNG_REG_CG_FORCE_ON_V  0x00000001U
+#define KEYMNG_REG_CG_FORCE_ON_S  0
 /** KEYMNG_MEM_CG_FORCE_ON : R/W; bitpos: [1]; default: 0;
  *  Write 1 to force on memory clock gate.
  */
@@ -138,71 +138,87 @@ extern "C" {
  *  Key Manager static configuration register
  */
 #define KEYMNG_STATIC_REG (DR_REG_KEYMNG_BASE + 0x18)
-/** KEYMNG_USE_EFUSE_KEY : R/W; bitpos: [1:0]; default: 0;
+/** KEYMNG_USE_EFUSE_KEY : R/W; bitpos: [4:0]; default: 0;
  *  Set each bit to choose efuse key instead of key manager deployed key. Each bit
- *  stands for a key type: bit 1 for xts_key; bit 0 for ecdsa_key
+ *  stands for a key type:bit 4 for psram_key; bit 3 for ds_key; bit 2 for hmac_key;
+ *  bit 1 for flash_key; bit 0 for ecdsa_key
  */
-#define KEYMNG_USE_EFUSE_KEY    0x00000003U
+#define KEYMNG_USE_EFUSE_KEY    0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_M  (KEYMNG_USE_EFUSE_KEY_V << KEYMNG_USE_EFUSE_KEY_S)
-#define KEYMNG_USE_EFUSE_KEY_V  0x00000003U
+#define KEYMNG_USE_EFUSE_KEY_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_S  0
-/** KEYMNG_RND_SWITCH_CYCLE : R/W; bitpos: [8:4]; default: 15;
+/** KEYMNG_RND_SWITCH_CYCLE : R/W; bitpos: [9:5]; default: 15;
  *  The core clock cycle number to sample one rng input data. Please set it bigger than
  *  the clock cycle ratio: T_rng/T_km
  */
 #define KEYMNG_RND_SWITCH_CYCLE    0x0000001FU
 #define KEYMNG_RND_SWITCH_CYCLE_M  (KEYMNG_RND_SWITCH_CYCLE_V << KEYMNG_RND_SWITCH_CYCLE_S)
 #define KEYMNG_RND_SWITCH_CYCLE_V  0x0000001FU
-#define KEYMNG_RND_SWITCH_CYCLE_S  4
-/** KEYMNG_USE_SW_INIT_KEY : R/W; bitpos: [9]; default: 0;
+#define KEYMNG_RND_SWITCH_CYCLE_S  5
+/** KEYMNG_USE_SW_INIT_KEY : R/W; bitpos: [10]; default: 0;
  *  Set this bit to use software written init key instead of efuse_init_key.
  */
-#define KEYMNG_USE_SW_INIT_KEY    (BIT(9))
+#define KEYMNG_USE_SW_INIT_KEY    (BIT(10))
 #define KEYMNG_USE_SW_INIT_KEY_M  (KEYMNG_USE_SW_INIT_KEY_V << KEYMNG_USE_SW_INIT_KEY_S)
 #define KEYMNG_USE_SW_INIT_KEY_V  0x00000001U
-#define KEYMNG_USE_SW_INIT_KEY_S  9
-/** KEYMNG_XTS_AES_KEY_LEN : R/W; bitpos: [10]; default: 0;
- *  Set this bit to choose using xts-aes-256 or xts-aes-128. 1: use xts-aes-256. 0: use
- *  xts-aes-128.
+#define KEYMNG_USE_SW_INIT_KEY_S  10
+/** KEYMNG_FLASH_KEY_LEN : R/W; bitpos: [11]; default: 0;
+ *  Set this bit to choose flash crypt using xts-aes-256 or xts-aes-128. 1: use
+ *  xts-aes-256. 0: use xts-aes-128.
  */
-#define KEYMNG_XTS_AES_KEY_LEN    (BIT(10))
-#define KEYMNG_XTS_AES_KEY_LEN_M  (KEYMNG_XTS_AES_KEY_LEN_V << KEYMNG_XTS_AES_KEY_LEN_S)
-#define KEYMNG_XTS_AES_KEY_LEN_V  0x00000001U
-#define KEYMNG_XTS_AES_KEY_LEN_S  10
+#define KEYMNG_FLASH_KEY_LEN    (BIT(11))
+#define KEYMNG_FLASH_KEY_LEN_M  (KEYMNG_FLASH_KEY_LEN_V << KEYMNG_FLASH_KEY_LEN_S)
+#define KEYMNG_FLASH_KEY_LEN_V  0x00000001U
+#define KEYMNG_FLASH_KEY_LEN_S  11
+/** KEYMNG_PSRAM_KEY_LEN : R/W; bitpos: [12]; default: 0;
+ *  Set this bit to choose psram crypt using xts-aes-256 or xts-aes-128. 1: use
+ *  xts-aes-256. 0: use xts-aes-128.
+ */
+#define KEYMNG_PSRAM_KEY_LEN    (BIT(12))
+#define KEYMNG_PSRAM_KEY_LEN_M  (KEYMNG_PSRAM_KEY_LEN_V << KEYMNG_PSRAM_KEY_LEN_S)
+#define KEYMNG_PSRAM_KEY_LEN_V  0x00000001U
+#define KEYMNG_PSRAM_KEY_LEN_S  12
 
 /** KEYMNG_LOCK_REG register
  *  Key Manager static configuration locker register
  */
 #define KEYMNG_LOCK_REG (DR_REG_KEYMNG_BASE + 0x1c)
-/** KEYMNG_USE_EFUSE_KEY_LOCK : R/W1; bitpos: [1:0]; default: 0;
+/** KEYMNG_USE_EFUSE_KEY_LOCK : R/W1; bitpos: [4:0]; default: 0;
  *  Write 1 to lock reg_use_efuse_key. Each bit locks the corresponding bit of
  *  reg_use_efuse_key.
  */
-#define KEYMNG_USE_EFUSE_KEY_LOCK    0x00000003U
+#define KEYMNG_USE_EFUSE_KEY_LOCK    0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_LOCK_M  (KEYMNG_USE_EFUSE_KEY_LOCK_V << KEYMNG_USE_EFUSE_KEY_LOCK_S)
-#define KEYMNG_USE_EFUSE_KEY_LOCK_V  0x00000003U
+#define KEYMNG_USE_EFUSE_KEY_LOCK_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_LOCK_S  0
-/** KEYMNG_RND_SWITCH_CYCLE_LOCK : R/W1; bitpos: [4]; default: 0;
+/** KEYMNG_RND_SWITCH_CYCLE_LOCK : R/W1; bitpos: [5]; default: 0;
  *  Write 1 to lock reg_rnd_switch_cycle.
  */
-#define KEYMNG_RND_SWITCH_CYCLE_LOCK    (BIT(4))
+#define KEYMNG_RND_SWITCH_CYCLE_LOCK    (BIT(5))
 #define KEYMNG_RND_SWITCH_CYCLE_LOCK_M  (KEYMNG_RND_SWITCH_CYCLE_LOCK_V << KEYMNG_RND_SWITCH_CYCLE_LOCK_S)
 #define KEYMNG_RND_SWITCH_CYCLE_LOCK_V  0x00000001U
-#define KEYMNG_RND_SWITCH_CYCLE_LOCK_S  4
-/** KEYMNG_USE_SW_INIT_KEY_LOCK : R/W1; bitpos: [5]; default: 0;
+#define KEYMNG_RND_SWITCH_CYCLE_LOCK_S  5
+/** KEYMNG_USE_SW_INIT_KEY_LOCK : R/W1; bitpos: [6]; default: 0;
  *  Write 1 to lock reg_use_sw_init_key.
  */
-#define KEYMNG_USE_SW_INIT_KEY_LOCK    (BIT(5))
+#define KEYMNG_USE_SW_INIT_KEY_LOCK    (BIT(6))
 #define KEYMNG_USE_SW_INIT_KEY_LOCK_M  (KEYMNG_USE_SW_INIT_KEY_LOCK_V << KEYMNG_USE_SW_INIT_KEY_LOCK_S)
 #define KEYMNG_USE_SW_INIT_KEY_LOCK_V  0x00000001U
-#define KEYMNG_USE_SW_INIT_KEY_LOCK_S  5
-/** KEYMNG_XTS_AES_KEY_LEN_LOCK : R/W1; bitpos: [6]; default: 0;
- *  Write 1 to lock reg_xts_aes_key_len.
+#define KEYMNG_USE_SW_INIT_KEY_LOCK_S  6
+/** KEYMNG_FLASH_KEY_LEN_LOCK : R/W1; bitpos: [7]; default: 0;
+ *  Write 1 to lock reg_flash_key_len.
  */
-#define KEYMNG_XTS_AES_KEY_LEN_LOCK    (BIT(6))
-#define KEYMNG_XTS_AES_KEY_LEN_LOCK_M  (KEYMNG_XTS_AES_KEY_LEN_LOCK_V << KEYMNG_XTS_AES_KEY_LEN_LOCK_S)
-#define KEYMNG_XTS_AES_KEY_LEN_LOCK_V  0x00000001U
-#define KEYMNG_XTS_AES_KEY_LEN_LOCK_S  6
+#define KEYMNG_FLASH_KEY_LEN_LOCK    (BIT(7))
+#define KEYMNG_FLASH_KEY_LEN_LOCK_M  (KEYMNG_FLASH_KEY_LEN_LOCK_V << KEYMNG_FLASH_KEY_LEN_LOCK_S)
+#define KEYMNG_FLASH_KEY_LEN_LOCK_V  0x00000001U
+#define KEYMNG_FLASH_KEY_LEN_LOCK_S  7
+/** KEYMNG_PSRAM_KEY_LEN_LOCK : R/W1; bitpos: [8]; default: 0;
+ *  Write 1 to lock reg_psram_key_len.
+ */
+#define KEYMNG_PSRAM_KEY_LEN_LOCK    (BIT(8))
+#define KEYMNG_PSRAM_KEY_LEN_LOCK_M  (KEYMNG_PSRAM_KEY_LEN_LOCK_V << KEYMNG_PSRAM_KEY_LEN_LOCK_S)
+#define KEYMNG_PSRAM_KEY_LEN_LOCK_V  0x00000001U
+#define KEYMNG_PSRAM_KEY_LEN_LOCK_S  8
 
 /** KEYMNG_CONF_REG register
  *  Key Manager configuration register
@@ -217,8 +233,9 @@ extern "C" {
 #define KEYMNG_KGEN_MODE_V  0x00000007U
 #define KEYMNG_KGEN_MODE_S  0
 /** KEYMNG_KEY_PURPOSE : R/W; bitpos: [6:3]; default: 0;
- *  Set this field to choose the key purpose. 1: ecdsa_key 2: xts_256_1_key. 3:
- *  xts_256_2_key. 4. xts_128_key. others: reserved.
+ *  Set this field to choose the key purpose. 1: ecdsa_key 2: flash_256_1_key. 3:
+ *  flash_256_2_key. 4: flash_128_key. 6: hmac_key. 7: ds_key. 8: psram_256_1_key. 9:
+ *  psram_256_2_key. 10: psram_128_key. Others: reserved.
  */
 #define KEYMNG_KEY_PURPOSE    0x0000000FU
 #define KEYMNG_KEY_PURPOSE_M  (KEYMNG_KEY_PURPOSE_V << KEYMNG_KEY_PURPOSE_S)
@@ -281,14 +298,38 @@ extern "C" {
 #define KEYMNG_KEY_ECDSA_VLD_M  (KEYMNG_KEY_ECDSA_VLD_V << KEYMNG_KEY_ECDSA_VLD_S)
 #define KEYMNG_KEY_ECDSA_VLD_V  0x00000001U
 #define KEYMNG_KEY_ECDSA_VLD_S  0
-/** KEYMNG_KEY_XTS_VLD : RO; bitpos: [1]; default: 0;
- *  The status bit for key_xts.        1: The key has been deployed correctly. 0: The
+/** KEYMNG_KEY_FLASH_VLD : RO; bitpos: [1]; default: 0;
+ *  The status bit for key_flash.     1: The key has been deployed correctly. 0: The
  *  key has not been deployed yet.
  */
-#define KEYMNG_KEY_XTS_VLD    (BIT(1))
-#define KEYMNG_KEY_XTS_VLD_M  (KEYMNG_KEY_XTS_VLD_V << KEYMNG_KEY_XTS_VLD_S)
-#define KEYMNG_KEY_XTS_VLD_V  0x00000001U
-#define KEYMNG_KEY_XTS_VLD_S  1
+#define KEYMNG_KEY_FLASH_VLD    (BIT(1))
+#define KEYMNG_KEY_FLASH_VLD_M  (KEYMNG_KEY_FLASH_VLD_V << KEYMNG_KEY_FLASH_VLD_S)
+#define KEYMNG_KEY_FLASH_VLD_V  0x00000001U
+#define KEYMNG_KEY_FLASH_VLD_S  1
+/** KEYMNG_KEY_HMAC_VLD : RO; bitpos: [2]; default: 0;
+ *  The status bit for key_hmac.    1: The key has been deployed correctly. 0: The key
+ *  has not been deployed yet.
+ */
+#define KEYMNG_KEY_HMAC_VLD    (BIT(2))
+#define KEYMNG_KEY_HMAC_VLD_M  (KEYMNG_KEY_HMAC_VLD_V << KEYMNG_KEY_HMAC_VLD_S)
+#define KEYMNG_KEY_HMAC_VLD_V  0x00000001U
+#define KEYMNG_KEY_HMAC_VLD_S  2
+/** KEYMNG_KEY_DS_VLD : RO; bitpos: [3]; default: 0;
+ *  The status bit for key_ds.         1: The key has been deployed correctly. 0: The
+ *  key has not been deployed yet.
+ */
+#define KEYMNG_KEY_DS_VLD    (BIT(3))
+#define KEYMNG_KEY_DS_VLD_M  (KEYMNG_KEY_DS_VLD_V << KEYMNG_KEY_DS_VLD_S)
+#define KEYMNG_KEY_DS_VLD_V  0x00000001U
+#define KEYMNG_KEY_DS_VLD_S  3
+/** KEYMNG_KEY_PSRAM_VLD : RO; bitpos: [4]; default: 0;
+ *  The status bit for key_psram.   1: The key has been deployed correctly. 0: The key
+ *  has not been deployed yet.
+ */
+#define KEYMNG_KEY_PSRAM_VLD    (BIT(4))
+#define KEYMNG_KEY_PSRAM_VLD_M  (KEYMNG_KEY_PSRAM_VLD_V << KEYMNG_KEY_PSRAM_VLD_S)
+#define KEYMNG_KEY_PSRAM_VLD_V  0x00000001U
+#define KEYMNG_KEY_PSRAM_VLD_S  4
 
 /** KEYMNG_HUK_VLD_REG register
  *  Key Manager HUK status register
@@ -306,7 +347,7 @@ extern "C" {
  *  Version control register
  */
 #define KEYMNG_DATE_REG (DR_REG_KEYMNG_BASE + 0xfc)
-/** KEYMNG_DATE : R/W; bitpos: [27:0]; default: 36720704;
+/** KEYMNG_DATE : R/W; bitpos: [27:0]; default: 36774224;
  *  Key Manager version control register.
  */
 #define KEYMNG_DATE    0x0FFFFFFFU

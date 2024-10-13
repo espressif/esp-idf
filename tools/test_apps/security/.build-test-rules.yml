@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/security/secure_boot:
+  disable:
+    - if: IDF_ENV_FPGA != 1
+      reason: the test can only run on an FPGA as efuses need to be reset during the test.
+
+tools/test_apps/security/signed_app_no_secure_boot:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3"]
+      temporary: true
+      reason: No need to test on all targets

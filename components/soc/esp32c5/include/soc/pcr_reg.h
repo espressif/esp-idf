@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,10 @@ extern "C" {
 #define PCR_UART0_SCLK_DIV_NUM_V  0x000000FFU
 #define PCR_UART0_SCLK_DIV_NUM_S  12
 /** PCR_UART0_SCLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0: XTAL, 1: fosc, 2: 80MHz
+ *  Configures the clock source of UART0.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_UART0_SCLK_SEL    0x00000003U
 #define PCR_UART0_SCLK_SEL_M  (PCR_UART0_SCLK_SEL_V << PCR_UART0_SCLK_SEL_S)
@@ -82,14 +85,14 @@ extern "C" {
  */
 #define PCR_UART0_PD_CTRL_REG (DR_REG_PCR_BASE + 0x8)
 /** PCR_UART0_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
- *  Set this bit to force power down UART0 memory.
+ *  Set this bit to force power up UART0 memory.
  */
 #define PCR_UART0_MEM_FORCE_PU    (BIT(1))
 #define PCR_UART0_MEM_FORCE_PU_M  (PCR_UART0_MEM_FORCE_PU_V << PCR_UART0_MEM_FORCE_PU_S)
 #define PCR_UART0_MEM_FORCE_PU_V  0x00000001U
 #define PCR_UART0_MEM_FORCE_PU_S  1
 /** PCR_UART0_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
- *  Set this bit to force power up UART0 memory.
+ *  Set this bit to force power down UART0 memory.
  */
 #define PCR_UART0_MEM_FORCE_PD    (BIT(2))
 #define PCR_UART0_MEM_FORCE_PD_M  (PCR_UART0_MEM_FORCE_PD_V << PCR_UART0_MEM_FORCE_PD_S)
@@ -148,7 +151,10 @@ extern "C" {
 #define PCR_UART1_SCLK_DIV_NUM_V  0x000000FFU
 #define PCR_UART1_SCLK_DIV_NUM_S  12
 /** PCR_UART1_SCLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0: XTAL, 1: fosc, 2: 80MHz
+ *  Configures the clock source of UART1.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_UART1_SCLK_SEL    0x00000003U
 #define PCR_UART1_SCLK_SEL_M  (PCR_UART1_SCLK_SEL_V << PCR_UART1_SCLK_SEL_S)
@@ -167,14 +173,14 @@ extern "C" {
  */
 #define PCR_UART1_PD_CTRL_REG (DR_REG_PCR_BASE + 0x14)
 /** PCR_UART1_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
- *  Set this bit to force power down UART1 memory.
+ *  Set this bit to force power up UART1 memory.
  */
 #define PCR_UART1_MEM_FORCE_PU    (BIT(1))
 #define PCR_UART1_MEM_FORCE_PU_M  (PCR_UART1_MEM_FORCE_PU_V << PCR_UART1_MEM_FORCE_PU_S)
 #define PCR_UART1_MEM_FORCE_PU_V  0x00000001U
 #define PCR_UART1_MEM_FORCE_PU_S  1
 /** PCR_UART1_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
- *  Set this bit to force power up UART1 memory.
+ *  Set this bit to force power down UART1 memory.
  */
 #define PCR_UART1_MEM_FORCE_PD    (BIT(2))
 #define PCR_UART1_MEM_FORCE_PD_M  (PCR_UART1_MEM_FORCE_PD_V << PCR_UART1_MEM_FORCE_PD_S)
@@ -220,7 +226,7 @@ extern "C" {
 #define PCR_MSPI_CLK_CONF_REG (DR_REG_PCR_BASE + 0x1c)
 /** PCR_MSPI_FAST_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Set as one within (0,1,2) to generate div1(default)/div2/div4 of low-speed
- *  clock-source to drive clk_mspi_fast. Only avaiable whe the clck-source is a
+ *  clock-source to drive clk_mspi_fast. Only available when the clock-source is a
  *  low-speed clock-source such as XTAL/FOSC.
  */
 #define PCR_MSPI_FAST_DIV_NUM    0x000000FFU
@@ -228,7 +234,10 @@ extern "C" {
 #define PCR_MSPI_FAST_DIV_NUM_V  0x000000FFU
 #define PCR_MSPI_FAST_DIV_NUM_S  0
 /** PCR_MSPI_FUNC_CLK_SEL : R/W; bitpos: [9:8]; default: 0;
- *  set this field to select clock-source.
+ *  Configures the clock source for MSPI.\\
+ *  0(default): XTAL_CLK\\
+ *  1 RC_FAST_CLK\\
+ *  2: PLL_F480M_CLK\\
  */
 #define PCR_MSPI_FUNC_CLK_SEL    0x00000003U
 #define PCR_MSPI_FUNC_CLK_SEL_M  (PCR_MSPI_FUNC_CLK_SEL_V << PCR_MSPI_FUNC_CLK_SEL_S)
@@ -253,7 +262,7 @@ extern "C" {
  *  I2C configuration register
  */
 #define PCR_I2C_CONF_REG (DR_REG_PCR_BASE + 0x20)
-/** PCR_I2C_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** PCR_I2C_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable i2c apb clock
  */
 #define PCR_I2C_CLK_EN    (BIT(0))
@@ -294,13 +303,15 @@ extern "C" {
 #define PCR_I2C_SCLK_DIV_NUM_V  0x000000FFU
 #define PCR_I2C_SCLK_DIV_NUM_S  12
 /** PCR_I2C_SCLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+ *  Configures the clock source of I2C.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
  */
 #define PCR_I2C_SCLK_SEL    (BIT(20))
 #define PCR_I2C_SCLK_SEL_M  (PCR_I2C_SCLK_SEL_V << PCR_I2C_SCLK_SEL_S)
 #define PCR_I2C_SCLK_SEL_V  0x00000001U
 #define PCR_I2C_SCLK_SEL_S  20
-/** PCR_I2C_SCLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_I2C_SCLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable i2c function clock
  */
 #define PCR_I2C_SCLK_EN    (BIT(22))
@@ -312,7 +323,7 @@ extern "C" {
  *  TWAI0 configuration register
  */
 #define PCR_TWAI0_CONF_REG (DR_REG_PCR_BASE + 0x28)
-/** PCR_TWAI0_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** PCR_TWAI0_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable twai0 apb clock
  */
 #define PCR_TWAI0_CLK_EN    (BIT(0))
@@ -339,13 +350,15 @@ extern "C" {
  */
 #define PCR_TWAI0_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0x2c)
 /** PCR_TWAI0_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+ *  Configures the clock source of TWAI0.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
  */
 #define PCR_TWAI0_FUNC_CLK_SEL    (BIT(20))
 #define PCR_TWAI0_FUNC_CLK_SEL_M  (PCR_TWAI0_FUNC_CLK_SEL_V << PCR_TWAI0_FUNC_CLK_SEL_S)
 #define PCR_TWAI0_FUNC_CLK_SEL_V  0x00000001U
 #define PCR_TWAI0_FUNC_CLK_SEL_S  20
-/** PCR_TWAI0_FUNC_CLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_TWAI0_FUNC_CLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable twai0 function clock
  */
 #define PCR_TWAI0_FUNC_CLK_EN    (BIT(22))
@@ -357,7 +370,7 @@ extern "C" {
  *  TWAI1 configuration register
  */
 #define PCR_TWAI1_CONF_REG (DR_REG_PCR_BASE + 0x30)
-/** PCR_TWAI1_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** PCR_TWAI1_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable twai1 apb clock
  */
 #define PCR_TWAI1_CLK_EN    (BIT(0))
@@ -384,13 +397,15 @@ extern "C" {
  */
 #define PCR_TWAI1_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0x34)
 /** PCR_TWAI1_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+ *  Configures the clock source of TWAI1.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
  */
 #define PCR_TWAI1_FUNC_CLK_SEL    (BIT(20))
 #define PCR_TWAI1_FUNC_CLK_SEL_M  (PCR_TWAI1_FUNC_CLK_SEL_V << PCR_TWAI1_FUNC_CLK_SEL_S)
 #define PCR_TWAI1_FUNC_CLK_SEL_V  0x00000001U
 #define PCR_TWAI1_FUNC_CLK_SEL_S  20
-/** PCR_TWAI1_FUNC_CLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_TWAI1_FUNC_CLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable twai1 function clock
  */
 #define PCR_TWAI1_FUNC_CLK_EN    (BIT(22))
@@ -428,7 +443,7 @@ extern "C" {
  *  RMT configuration register
  */
 #define PCR_RMT_CONF_REG (DR_REG_PCR_BASE + 0x3c)
-/** PCR_RMT_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** PCR_RMT_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable rmt apb clock
  */
 #define PCR_RMT_CLK_EN    (BIT(0))
@@ -469,13 +484,16 @@ extern "C" {
 #define PCR_RMT_SCLK_DIV_NUM_V  0x000000FFU
 #define PCR_RMT_SCLK_DIV_NUM_S  12
 /** PCR_RMT_SCLK_SEL : R/W; bitpos: [21:20]; default: 1;
- *  set this field to select clock-source. 0: XTAL, 1(default):  FOSC, 2: 80MHz
+ *  Configures the clock source of RMT.\\
+ *  0: XTAL_CLK\\
+ *  1 (default): RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_RMT_SCLK_SEL    0x00000003U
 #define PCR_RMT_SCLK_SEL_M  (PCR_RMT_SCLK_SEL_V << PCR_RMT_SCLK_SEL_S)
 #define PCR_RMT_SCLK_SEL_V  0x00000003U
 #define PCR_RMT_SCLK_SEL_S  20
-/** PCR_RMT_SCLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_RMT_SCLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable rmt function clock
  */
 #define PCR_RMT_SCLK_EN    (BIT(22))
@@ -483,11 +501,30 @@ extern "C" {
 #define PCR_RMT_SCLK_EN_V  0x00000001U
 #define PCR_RMT_SCLK_EN_S  22
 
+/** PCR_RMT_PD_CTRL_REG register
+ *  RMT power control register
+ */
+#define PCR_RMT_PD_CTRL_REG (DR_REG_PCR_BASE + 0x44)
+/** PCR_RMT_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
+ *  Set this bit to force power up RMT memory.
+ */
+#define PCR_RMT_MEM_FORCE_PU    (BIT(1))
+#define PCR_RMT_MEM_FORCE_PU_M  (PCR_RMT_MEM_FORCE_PU_V << PCR_RMT_MEM_FORCE_PU_S)
+#define PCR_RMT_MEM_FORCE_PU_V  0x00000001U
+#define PCR_RMT_MEM_FORCE_PU_S  1
+/** PCR_RMT_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to force power down RMT memory.
+ */
+#define PCR_RMT_MEM_FORCE_PD    (BIT(2))
+#define PCR_RMT_MEM_FORCE_PD_M  (PCR_RMT_MEM_FORCE_PD_V << PCR_RMT_MEM_FORCE_PD_S)
+#define PCR_RMT_MEM_FORCE_PD_V  0x00000001U
+#define PCR_RMT_MEM_FORCE_PD_S  2
+
 /** PCR_LEDC_CONF_REG register
  *  LEDC configuration register
  */
-#define PCR_LEDC_CONF_REG (DR_REG_PCR_BASE + 0x44)
-/** PCR_LEDC_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_LEDC_CONF_REG (DR_REG_PCR_BASE + 0x48)
+/** PCR_LEDC_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable ledc apb clock
  */
 #define PCR_LEDC_CLK_EN    (BIT(0))
@@ -512,16 +549,18 @@ extern "C" {
 /** PCR_LEDC_SCLK_CONF_REG register
  *  LEDC_SCLK configuration register
  */
-#define PCR_LEDC_SCLK_CONF_REG (DR_REG_PCR_BASE + 0x48)
+#define PCR_LEDC_SCLK_CONF_REG (DR_REG_PCR_BASE + 0x4c)
 /** PCR_LEDC_SCLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
- *  80MHz, 2: FOSC, 3: XTAL.
+ *  Configures the clock source of LEDC.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_LEDC_SCLK_SEL    0x00000003U
 #define PCR_LEDC_SCLK_SEL_M  (PCR_LEDC_SCLK_SEL_V << PCR_LEDC_SCLK_SEL_S)
 #define PCR_LEDC_SCLK_SEL_V  0x00000003U
 #define PCR_LEDC_SCLK_SEL_S  20
-/** PCR_LEDC_SCLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_LEDC_SCLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable ledc function clock
  */
 #define PCR_LEDC_SCLK_EN    (BIT(22))
@@ -529,10 +568,29 @@ extern "C" {
 #define PCR_LEDC_SCLK_EN_V  0x00000001U
 #define PCR_LEDC_SCLK_EN_S  22
 
+/** PCR_LEDC_PD_CTRL_REG register
+ *  LEDC power control register
+ */
+#define PCR_LEDC_PD_CTRL_REG (DR_REG_PCR_BASE + 0x50)
+/** PCR_LEDC_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
+ *  Set this bit to force power up LEDC memory.
+ */
+#define PCR_LEDC_MEM_FORCE_PU    (BIT(1))
+#define PCR_LEDC_MEM_FORCE_PU_M  (PCR_LEDC_MEM_FORCE_PU_V << PCR_LEDC_MEM_FORCE_PU_S)
+#define PCR_LEDC_MEM_FORCE_PU_V  0x00000001U
+#define PCR_LEDC_MEM_FORCE_PU_S  1
+/** PCR_LEDC_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to force power down LEDC memory.
+ */
+#define PCR_LEDC_MEM_FORCE_PD    (BIT(2))
+#define PCR_LEDC_MEM_FORCE_PD_M  (PCR_LEDC_MEM_FORCE_PD_V << PCR_LEDC_MEM_FORCE_PD_S)
+#define PCR_LEDC_MEM_FORCE_PD_V  0x00000001U
+#define PCR_LEDC_MEM_FORCE_PD_S  2
+
 /** PCR_TIMERGROUP0_CONF_REG register
  *  TIMERGROUP0 configuration register
  */
-#define PCR_TIMERGROUP0_CONF_REG (DR_REG_PCR_BASE + 0x4c)
+#define PCR_TIMERGROUP0_CONF_REG (DR_REG_PCR_BASE + 0x54)
 /** PCR_TG0_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable timer_group0 apb clock
  */
@@ -562,7 +620,7 @@ extern "C" {
 #define PCR_TG0_TIMER0_READY_V  0x00000001U
 #define PCR_TG0_TIMER0_READY_S  3
 /** PCR_TG0_TIMER1_READY : RO; bitpos: [4]; default: 1;
- *  reserved
+ *  Query this field after reset timer_group0 timer1 module
  */
 #define PCR_TG0_TIMER1_READY    (BIT(4))
 #define PCR_TG0_TIMER1_READY_M  (PCR_TG0_TIMER1_READY_V << PCR_TG0_TIMER1_READY_S)
@@ -572,10 +630,12 @@ extern "C" {
 /** PCR_TIMERGROUP0_TIMER_CLK_CONF_REG register
  *  TIMERGROUP0_TIMER_CLK configuration register
  */
-#define PCR_TIMERGROUP0_TIMER_CLK_CONF_REG (DR_REG_PCR_BASE + 0x50)
+#define PCR_TIMERGROUP0_TIMER_CLK_CONF_REG (DR_REG_PCR_BASE + 0x58)
 /** PCR_TG0_TIMER_CLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of general-purpose timers in Timer Group 0.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_TG0_TIMER_CLK_SEL    0x00000003U
 #define PCR_TG0_TIMER_CLK_SEL_M  (PCR_TG0_TIMER_CLK_SEL_V << PCR_TG0_TIMER_CLK_SEL_S)
@@ -592,10 +652,12 @@ extern "C" {
 /** PCR_TIMERGROUP0_WDT_CLK_CONF_REG register
  *  TIMERGROUP0_WDT_CLK configuration register
  */
-#define PCR_TIMERGROUP0_WDT_CLK_CONF_REG (DR_REG_PCR_BASE + 0x54)
+#define PCR_TIMERGROUP0_WDT_CLK_CONF_REG (DR_REG_PCR_BASE + 0x5c)
 /** PCR_TG0_WDT_CLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of WDT in Timer Group 0.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_TG0_WDT_CLK_SEL    0x00000003U
 #define PCR_TG0_WDT_CLK_SEL_M  (PCR_TG0_WDT_CLK_SEL_V << PCR_TG0_WDT_CLK_SEL_S)
@@ -612,7 +674,7 @@ extern "C" {
 /** PCR_TIMERGROUP1_CONF_REG register
  *  TIMERGROUP1 configuration register
  */
-#define PCR_TIMERGROUP1_CONF_REG (DR_REG_PCR_BASE + 0x58)
+#define PCR_TIMERGROUP1_CONF_REG (DR_REG_PCR_BASE + 0x60)
 /** PCR_TG1_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable timer_group1 apb clock
  */
@@ -642,7 +704,7 @@ extern "C" {
 #define PCR_TG1_TIMER0_READY_V  0x00000001U
 #define PCR_TG1_TIMER0_READY_S  3
 /** PCR_TG1_TIMER1_READY : RO; bitpos: [4]; default: 1;
- *  reserved
+ *  Query this field after reset timer_group1 timer1 module
  */
 #define PCR_TG1_TIMER1_READY    (BIT(4))
 #define PCR_TG1_TIMER1_READY_M  (PCR_TG1_TIMER1_READY_V << PCR_TG1_TIMER1_READY_S)
@@ -652,10 +714,12 @@ extern "C" {
 /** PCR_TIMERGROUP1_TIMER_CLK_CONF_REG register
  *  TIMERGROUP1_TIMER_CLK configuration register
  */
-#define PCR_TIMERGROUP1_TIMER_CLK_CONF_REG (DR_REG_PCR_BASE + 0x5c)
+#define PCR_TIMERGROUP1_TIMER_CLK_CONF_REG (DR_REG_PCR_BASE + 0x64)
 /** PCR_TG1_TIMER_CLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of general-purpose timers in Timer Group 1.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_TG1_TIMER_CLK_SEL    0x00000003U
 #define PCR_TG1_TIMER_CLK_SEL_M  (PCR_TG1_TIMER_CLK_SEL_V << PCR_TG1_TIMER_CLK_SEL_S)
@@ -672,10 +736,12 @@ extern "C" {
 /** PCR_TIMERGROUP1_WDT_CLK_CONF_REG register
  *  TIMERGROUP1_WDT_CLK configuration register
  */
-#define PCR_TIMERGROUP1_WDT_CLK_CONF_REG (DR_REG_PCR_BASE + 0x60)
+#define PCR_TIMERGROUP1_WDT_CLK_CONF_REG (DR_REG_PCR_BASE + 0x68)
 /** PCR_TG1_WDT_CLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of WDT in Timer Group 1.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_TG1_WDT_CLK_SEL    0x00000003U
 #define PCR_TG1_WDT_CLK_SEL_M  (PCR_TG1_WDT_CLK_SEL_V << PCR_TG1_WDT_CLK_SEL_S)
@@ -692,7 +758,7 @@ extern "C" {
 /** PCR_SYSTIMER_CONF_REG register
  *  SYSTIMER configuration register
  */
-#define PCR_SYSTIMER_CONF_REG (DR_REG_PCR_BASE + 0x64)
+#define PCR_SYSTIMER_CONF_REG (DR_REG_PCR_BASE + 0x6c)
 /** PCR_SYSTIMER_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable systimer apb clock
  */
@@ -718,9 +784,11 @@ extern "C" {
 /** PCR_SYSTIMER_FUNC_CLK_CONF_REG register
  *  SYSTIMER_FUNC_CLK configuration register
  */
-#define PCR_SYSTIMER_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0x68)
+#define PCR_SYSTIMER_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0x70)
 /** PCR_SYSTIMER_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+ *  Configures the clock source of System Timer.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
  */
 #define PCR_SYSTIMER_FUNC_CLK_SEL    (BIT(20))
 #define PCR_SYSTIMER_FUNC_CLK_SEL_M  (PCR_SYSTIMER_FUNC_CLK_SEL_V << PCR_SYSTIMER_FUNC_CLK_SEL_S)
@@ -737,8 +805,8 @@ extern "C" {
 /** PCR_I2S_CONF_REG register
  *  I2S configuration register
  */
-#define PCR_I2S_CONF_REG (DR_REG_PCR_BASE + 0x6c)
-/** PCR_I2S_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_I2S_CONF_REG (DR_REG_PCR_BASE + 0x74)
+/** PCR_I2S_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable i2s apb clock
  */
 #define PCR_I2S_CLK_EN    (BIT(0))
@@ -770,7 +838,7 @@ extern "C" {
 /** PCR_I2S_TX_CLKM_CONF_REG register
  *  I2S_TX_CLKM configuration register
  */
-#define PCR_I2S_TX_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x70)
+#define PCR_I2S_TX_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x78)
 /** PCR_I2S_TX_CLKM_DIV_NUM : R/W; bitpos: [19:12]; default: 2;
  *  Integral I2S TX clock divider value. f_I2S_CLK = f_I2S_CLK_S/(N+b/a). There will be
  *  (a-b) * n-div and b * (n+1)-div.  So the average combination will be:  for b <=
@@ -782,14 +850,17 @@ extern "C" {
 #define PCR_I2S_TX_CLKM_DIV_NUM_V  0x000000FFU
 #define PCR_I2S_TX_CLKM_DIV_NUM_S  12
 /** PCR_I2S_TX_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
- *  Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3:
- *  I2S_MCLK_in.
+ *  Configures the clock source of I2S TX.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: PLL_F240M_CLK\\
+ *  2: PLL_F160M_CLK\\
+ *  3: I2S_MCLK_in\\
  */
 #define PCR_I2S_TX_CLKM_SEL    0x00000003U
 #define PCR_I2S_TX_CLKM_SEL_M  (PCR_I2S_TX_CLKM_SEL_V << PCR_I2S_TX_CLKM_SEL_S)
 #define PCR_I2S_TX_CLKM_SEL_V  0x00000003U
 #define PCR_I2S_TX_CLKM_SEL_S  20
-/** PCR_I2S_TX_CLKM_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_I2S_TX_CLKM_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable i2s_tx function clock
  */
 #define PCR_I2S_TX_CLKM_EN    (BIT(22))
@@ -800,7 +871,7 @@ extern "C" {
 /** PCR_I2S_TX_CLKM_DIV_CONF_REG register
  *  I2S_TX_CLKM_DIV configuration register
  */
-#define PCR_I2S_TX_CLKM_DIV_CONF_REG (DR_REG_PCR_BASE + 0x74)
+#define PCR_I2S_TX_CLKM_DIV_CONF_REG (DR_REG_PCR_BASE + 0x7c)
 /** PCR_I2S_TX_CLKM_DIV_Z : R/W; bitpos: [8:0]; default: 0;
  *  For b <= a/2, the value of I2S_TX_CLKM_DIV_Z is b. For b > a/2, the value of
  *  I2S_TX_CLKM_DIV_Z is (a-b).
@@ -837,7 +908,7 @@ extern "C" {
 /** PCR_I2S_RX_CLKM_CONF_REG register
  *  I2S_RX_CLKM configuration register
  */
-#define PCR_I2S_RX_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x78)
+#define PCR_I2S_RX_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x80)
 /** PCR_I2S_RX_CLKM_DIV_NUM : R/W; bitpos: [19:12]; default: 2;
  *  Integral I2S clock divider value
  */
@@ -846,13 +917,17 @@ extern "C" {
 #define PCR_I2S_RX_CLKM_DIV_NUM_V  0x000000FFU
 #define PCR_I2S_RX_CLKM_DIV_NUM_S  12
 /** PCR_I2S_RX_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
- *  Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.
+ *  Configures the clock source of I2S RX.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: PLL_F240M_CLK\\
+ *  2: PLL_F160M_CLK\\
+ *  3: I2S_MCLK_in\\
  */
 #define PCR_I2S_RX_CLKM_SEL    0x00000003U
 #define PCR_I2S_RX_CLKM_SEL_M  (PCR_I2S_RX_CLKM_SEL_V << PCR_I2S_RX_CLKM_SEL_S)
 #define PCR_I2S_RX_CLKM_SEL_V  0x00000003U
 #define PCR_I2S_RX_CLKM_SEL_S  20
-/** PCR_I2S_RX_CLKM_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_I2S_RX_CLKM_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable i2s_rx function clock
  */
 #define PCR_I2S_RX_CLKM_EN    (BIT(22))
@@ -860,7 +935,9 @@ extern "C" {
 #define PCR_I2S_RX_CLKM_EN_V  0x00000001U
 #define PCR_I2S_RX_CLKM_EN_S  22
 /** PCR_I2S_MCLK_SEL : R/W; bitpos: [23]; default: 0;
- *  This field is used to select master-clock. 0(default): clk_i2s_rx, 1: clk_i2s_tx
+ *  Configures to select master clock.\\
+ *  0 (default): I2S_TX_CLK\\
+ *  1: I2S_RX_CLK\\
  */
 #define PCR_I2S_MCLK_SEL    (BIT(23))
 #define PCR_I2S_MCLK_SEL_M  (PCR_I2S_MCLK_SEL_V << PCR_I2S_MCLK_SEL_S)
@@ -870,7 +947,7 @@ extern "C" {
 /** PCR_I2S_RX_CLKM_DIV_CONF_REG register
  *  I2S_RX_CLKM_DIV configuration register
  */
-#define PCR_I2S_RX_CLKM_DIV_CONF_REG (DR_REG_PCR_BASE + 0x7c)
+#define PCR_I2S_RX_CLKM_DIV_CONF_REG (DR_REG_PCR_BASE + 0x84)
 /** PCR_I2S_RX_CLKM_DIV_Z : R/W; bitpos: [8:0]; default: 0;
  *  For b <= a/2, the value of I2S_RX_CLKM_DIV_Z is b. For b > a/2, the value of
  *  I2S_RX_CLKM_DIV_Z is (a-b).
@@ -907,7 +984,7 @@ extern "C" {
 /** PCR_SARADC_CONF_REG register
  *  SARADC configuration register
  */
-#define PCR_SARADC_CONF_REG (DR_REG_PCR_BASE + 0x80)
+#define PCR_SARADC_CONF_REG (DR_REG_PCR_BASE + 0x88)
 /** PCR_SARADC_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  no use
  */
@@ -922,7 +999,7 @@ extern "C" {
 #define PCR_SARADC_RST_EN_M  (PCR_SARADC_RST_EN_V << PCR_SARADC_RST_EN_S)
 #define PCR_SARADC_RST_EN_V  0x00000001U
 #define PCR_SARADC_RST_EN_S  1
-/** PCR_SARADC_REG_CLK_EN : R/W; bitpos: [2]; default: 1;
+/** PCR_SARADC_REG_CLK_EN : R/W; bitpos: [2]; default: 0;
  *  Set 1 to enable saradc apb clock
  */
 #define PCR_SARADC_REG_CLK_EN    (BIT(2))
@@ -940,7 +1017,7 @@ extern "C" {
 /** PCR_SARADC_CLKM_CONF_REG register
  *  SARADC_CLKM configuration register
  */
-#define PCR_SARADC_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x84)
+#define PCR_SARADC_CLKM_CONF_REG (DR_REG_PCR_BASE + 0x8c)
 /** PCR_SARADC_CLKM_DIV_A : R/W; bitpos: [5:0]; default: 0;
  *  The  denominator of the frequency divider factor of the saradc function clock.
  */
@@ -963,14 +1040,16 @@ extern "C" {
 #define PCR_SARADC_CLKM_DIV_NUM_V  0x000000FFU
 #define PCR_SARADC_CLKM_DIV_NUM_S  12
 /** PCR_SARADC_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of SAR ADC.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_SARADC_CLKM_SEL    0x00000003U
 #define PCR_SARADC_CLKM_SEL_M  (PCR_SARADC_CLKM_SEL_V << PCR_SARADC_CLKM_SEL_S)
 #define PCR_SARADC_CLKM_SEL_V  0x00000003U
 #define PCR_SARADC_CLKM_SEL_S  20
-/** PCR_SARADC_CLKM_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_SARADC_CLKM_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable saradc function clock
  */
 #define PCR_SARADC_CLKM_EN    (BIT(22))
@@ -981,15 +1060,17 @@ extern "C" {
 /** PCR_TSENS_CLK_CONF_REG register
  *  TSENS_CLK configuration register
  */
-#define PCR_TSENS_CLK_CONF_REG (DR_REG_PCR_BASE + 0x88)
+#define PCR_TSENS_CLK_CONF_REG (DR_REG_PCR_BASE + 0x90)
 /** PCR_TSENS_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0(default): FOSC, 1: XTAL.
+ *  Configures the clock source of the temperature sensor.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
  */
 #define PCR_TSENS_CLK_SEL    (BIT(20))
 #define PCR_TSENS_CLK_SEL_M  (PCR_TSENS_CLK_SEL_V << PCR_TSENS_CLK_SEL_S)
 #define PCR_TSENS_CLK_SEL_V  0x00000001U
 #define PCR_TSENS_CLK_SEL_S  20
-/** PCR_TSENS_CLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_TSENS_CLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable tsens clock
  */
 #define PCR_TSENS_CLK_EN    (BIT(22))
@@ -1007,7 +1088,7 @@ extern "C" {
 /** PCR_USB_DEVICE_CONF_REG register
  *  USB_DEVICE configuration register
  */
-#define PCR_USB_DEVICE_CONF_REG (DR_REG_PCR_BASE + 0x8c)
+#define PCR_USB_DEVICE_CONF_REG (DR_REG_PCR_BASE + 0x94)
 /** PCR_USB_DEVICE_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable usb_device clock
  */
@@ -1033,7 +1114,7 @@ extern "C" {
 /** PCR_INTMTX_CONF_REG register
  *  INTMTX configuration register
  */
-#define PCR_INTMTX_CONF_REG (DR_REG_PCR_BASE + 0x90)
+#define PCR_INTMTX_CONF_REG (DR_REG_PCR_BASE + 0x98)
 /** PCR_INTMTX_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable intmtx clock
  */
@@ -1059,8 +1140,8 @@ extern "C" {
 /** PCR_PCNT_CONF_REG register
  *  PCNT configuration register
  */
-#define PCR_PCNT_CONF_REG (DR_REG_PCR_BASE + 0x94)
-/** PCR_PCNT_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_PCNT_CONF_REG (DR_REG_PCR_BASE + 0x9c)
+/** PCR_PCNT_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable pcnt clock
  */
 #define PCR_PCNT_CLK_EN    (BIT(0))
@@ -1085,8 +1166,8 @@ extern "C" {
 /** PCR_ETM_CONF_REG register
  *  ETM configuration register
  */
-#define PCR_ETM_CONF_REG (DR_REG_PCR_BASE + 0x98)
-/** PCR_ETM_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_ETM_CONF_REG (DR_REG_PCR_BASE + 0xa0)
+/** PCR_ETM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable etm clock
  */
 #define PCR_ETM_CLK_EN    (BIT(0))
@@ -1111,8 +1192,8 @@ extern "C" {
 /** PCR_PWM_CONF_REG register
  *  PWM configuration register
  */
-#define PCR_PWM_CONF_REG (DR_REG_PCR_BASE + 0x9c)
-/** PCR_PWM_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_PWM_CONF_REG (DR_REG_PCR_BASE + 0xa4)
+/** PCR_PWM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable pwm clock
  */
 #define PCR_PWM_CLK_EN    (BIT(0))
@@ -1137,7 +1218,7 @@ extern "C" {
 /** PCR_PWM_CLK_CONF_REG register
  *  PWM_CLK configuration register
  */
-#define PCR_PWM_CLK_CONF_REG (DR_REG_PCR_BASE + 0xa0)
+#define PCR_PWM_CLK_CONF_REG (DR_REG_PCR_BASE + 0xa8)
 /** PCR_PWM_DIV_NUM : R/W; bitpos: [19:12]; default: 4;
  *  The integral part of the frequency divider factor of the pwm function clock.
  */
@@ -1146,14 +1227,16 @@ extern "C" {
 #define PCR_PWM_DIV_NUM_V  0x000000FFU
 #define PCR_PWM_DIV_NUM_S  12
 /** PCR_PWM_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
- *  160MHz, 2: XTAL, 3: FOSC.
+ *  Configures the clock source of MCPWM.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F160M_CLK\\
  */
 #define PCR_PWM_CLKM_SEL    0x00000003U
 #define PCR_PWM_CLKM_SEL_M  (PCR_PWM_CLKM_SEL_V << PCR_PWM_CLKM_SEL_S)
 #define PCR_PWM_CLKM_SEL_V  0x00000003U
 #define PCR_PWM_CLKM_SEL_S  20
-/** PCR_PWM_CLKM_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_PWM_CLKM_EN : R/W; bitpos: [22]; default: 0;
  *  set this field as 1 to activate pwm clkm.
  */
 #define PCR_PWM_CLKM_EN    (BIT(22))
@@ -1164,8 +1247,8 @@ extern "C" {
 /** PCR_PARL_IO_CONF_REG register
  *  PARL_IO configuration register
  */
-#define PCR_PARL_IO_CONF_REG (DR_REG_PCR_BASE + 0xa4)
-/** PCR_PARL_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_PARL_IO_CONF_REG (DR_REG_PCR_BASE + 0xac)
+/** PCR_PARL_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable parl apb clock
  */
 #define PCR_PARL_CLK_EN    (BIT(0))
@@ -1190,7 +1273,7 @@ extern "C" {
 /** PCR_PARL_CLK_RX_CONF_REG register
  *  PARL_CLK_RX configuration register
  */
-#define PCR_PARL_CLK_RX_CONF_REG (DR_REG_PCR_BASE + 0xa8)
+#define PCR_PARL_CLK_RX_CONF_REG (DR_REG_PCR_BASE + 0xb0)
 /** PCR_PARL_CLK_RX_DIV_NUM : R/W; bitpos: [15:0]; default: 0;
  *  The integral part of the frequency divider factor of the parl rx clock.
  */
@@ -1199,14 +1282,17 @@ extern "C" {
 #define PCR_PARL_CLK_RX_DIV_NUM_V  0x0000FFFFU
 #define PCR_PARL_CLK_RX_DIV_NUM_S  0
 /** PCR_PARL_CLK_RX_SEL : R/W; bitpos: [17:16]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
- *  user clock from pad.
+ *  Configures the clock source of Paraller IO RX\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F240M_CLK\\
+ *  3: Use the clock from chip pin\\
  */
 #define PCR_PARL_CLK_RX_SEL    0x00000003U
 #define PCR_PARL_CLK_RX_SEL_M  (PCR_PARL_CLK_RX_SEL_V << PCR_PARL_CLK_RX_SEL_S)
 #define PCR_PARL_CLK_RX_SEL_V  0x00000003U
 #define PCR_PARL_CLK_RX_SEL_S  16
-/** PCR_PARL_CLK_RX_EN : R/W; bitpos: [18]; default: 1;
+/** PCR_PARL_CLK_RX_EN : R/W; bitpos: [18]; default: 0;
  *  Set 1 to enable parl rx clock
  */
 #define PCR_PARL_CLK_RX_EN    (BIT(18))
@@ -1224,7 +1310,7 @@ extern "C" {
 /** PCR_PARL_CLK_TX_CONF_REG register
  *  PARL_CLK_TX configuration register
  */
-#define PCR_PARL_CLK_TX_CONF_REG (DR_REG_PCR_BASE + 0xac)
+#define PCR_PARL_CLK_TX_CONF_REG (DR_REG_PCR_BASE + 0xb4)
 /** PCR_PARL_CLK_TX_DIV_NUM : R/W; bitpos: [15:0]; default: 0;
  *  The integral part of the frequency divider factor of the parl tx clock.
  */
@@ -1233,14 +1319,17 @@ extern "C" {
 #define PCR_PARL_CLK_TX_DIV_NUM_V  0x0000FFFFU
 #define PCR_PARL_CLK_TX_DIV_NUM_S  0
 /** PCR_PARL_CLK_TX_SEL : R/W; bitpos: [17:16]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
- *  user clock from pad.
+ *  Configures the clock source of Paraller IO RX\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F240M_CLK\\
+ *  3: Use the clock from chip pin\\
  */
 #define PCR_PARL_CLK_TX_SEL    0x00000003U
 #define PCR_PARL_CLK_TX_SEL_M  (PCR_PARL_CLK_TX_SEL_V << PCR_PARL_CLK_TX_SEL_S)
 #define PCR_PARL_CLK_TX_SEL_V  0x00000003U
 #define PCR_PARL_CLK_TX_SEL_S  16
-/** PCR_PARL_CLK_TX_EN : R/W; bitpos: [18]; default: 1;
+/** PCR_PARL_CLK_TX_EN : R/W; bitpos: [18]; default: 0;
  *  Set 1 to enable parl tx clock
  */
 #define PCR_PARL_CLK_TX_EN    (BIT(18))
@@ -1258,8 +1347,8 @@ extern "C" {
 /** PCR_PVT_MONITOR_CONF_REG register
  *  PVT_MONITOR configuration register
  */
-#define PCR_PVT_MONITOR_CONF_REG (DR_REG_PCR_BASE + 0xb0)
-/** PCR_PVT_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_PVT_MONITOR_CONF_REG (DR_REG_PCR_BASE + 0xb8)
+/** PCR_PVT_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable apb clock of pvt module
  */
 #define PCR_PVT_MONITOR_CLK_EN    (BIT(0))
@@ -1298,7 +1387,7 @@ extern "C" {
 /** PCR_PVT_MONITOR_FUNC_CLK_CONF_REG register
  *  PVT_MONITOR function clock configuration register
  */
-#define PCR_PVT_MONITOR_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0xb4)
+#define PCR_PVT_MONITOR_FUNC_CLK_CONF_REG (DR_REG_PCR_BASE + 0xbc)
 /** PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM : R/W; bitpos: [3:0]; default: 0;
  *  The integral part of the frequency divider factor of the pvt_monitor function clock.
  */
@@ -1307,14 +1396,15 @@ extern "C" {
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_V  0x0000000FU
 #define PCR_PVT_MONITOR_FUNC_CLK_DIV_NUM_S  0
 /** PCR_PVT_MONITOR_FUNC_CLK_SEL : R/W; bitpos: [20]; default: 0;
- *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz drived by SPLL
- *  divided by 3.
+ *  Configures the clock source of PVT MONITOR.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: PLL_F160M_CLK\\
  */
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL    (BIT(20))
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_M  (PCR_PVT_MONITOR_FUNC_CLK_SEL_V << PCR_PVT_MONITOR_FUNC_CLK_SEL_S)
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_V  0x00000001U
 #define PCR_PVT_MONITOR_FUNC_CLK_SEL_S  20
-/** PCR_PVT_MONITOR_FUNC_CLK_EN : R/W; bitpos: [22]; default: 1;
+/** PCR_PVT_MONITOR_FUNC_CLK_EN : R/W; bitpos: [22]; default: 0;
  *  Set 1 to enable source clock of pvt sitex
  */
 #define PCR_PVT_MONITOR_FUNC_CLK_EN    (BIT(22))
@@ -1325,7 +1415,7 @@ extern "C" {
 /** PCR_GDMA_CONF_REG register
  *  GDMA configuration register
  */
-#define PCR_GDMA_CONF_REG (DR_REG_PCR_BASE + 0xb8)
+#define PCR_GDMA_CONF_REG (DR_REG_PCR_BASE + 0xc0)
 /** PCR_GDMA_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable gdma clock
  */
@@ -1344,7 +1434,7 @@ extern "C" {
 /** PCR_SPI2_CONF_REG register
  *  SPI2 configuration register
  */
-#define PCR_SPI2_CONF_REG (DR_REG_PCR_BASE + 0xbc)
+#define PCR_SPI2_CONF_REG (DR_REG_PCR_BASE + 0xc4)
 /** PCR_SPI2_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable spi2 apb clock
  */
@@ -1370,7 +1460,7 @@ extern "C" {
 /** PCR_SPI2_CLKM_CONF_REG register
  *  SPI2_CLKM configuration register
  */
-#define PCR_SPI2_CLKM_CONF_REG (DR_REG_PCR_BASE + 0xc0)
+#define PCR_SPI2_CLKM_CONF_REG (DR_REG_PCR_BASE + 0xc8)
 /** PCR_SPI2_CLKM_DIV_NUM : R/W; bitpos: [19:12]; default: 0;
  *  The integral part of the frequency divider factor of the spi2_mst clock.
  */
@@ -1379,8 +1469,11 @@ extern "C" {
 #define PCR_SPI2_CLKM_DIV_NUM_V  0x000000FFU
 #define PCR_SPI2_CLKM_DIV_NUM_S  12
 /** PCR_SPI2_CLKM_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
- *  reserved.
+ *  Configures the clock source of SPI2.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: PLL_F160M_CLK\\
+ *  2: RC_FAST_CLK\\
+ *  3: PLL_F120M_CLK\\
  */
 #define PCR_SPI2_CLKM_SEL    0x00000003U
 #define PCR_SPI2_CLKM_SEL_M  (PCR_SPI2_CLKM_SEL_V << PCR_SPI2_CLKM_SEL_S)
@@ -1397,8 +1490,8 @@ extern "C" {
 /** PCR_AES_CONF_REG register
  *  AES configuration register
  */
-#define PCR_AES_CONF_REG (DR_REG_PCR_BASE + 0xc4)
-/** PCR_AES_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_AES_CONF_REG (DR_REG_PCR_BASE + 0xcc)
+/** PCR_AES_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable aes clock
  */
 #define PCR_AES_CLK_EN    (BIT(0))
@@ -1423,8 +1516,8 @@ extern "C" {
 /** PCR_SHA_CONF_REG register
  *  SHA configuration register
  */
-#define PCR_SHA_CONF_REG (DR_REG_PCR_BASE + 0xc8)
-/** PCR_SHA_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_SHA_CONF_REG (DR_REG_PCR_BASE + 0xd0)
+/** PCR_SHA_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable sha clock
  */
 #define PCR_SHA_CLK_EN    (BIT(0))
@@ -1449,8 +1542,8 @@ extern "C" {
 /** PCR_RSA_CONF_REG register
  *  RSA configuration register
  */
-#define PCR_RSA_CONF_REG (DR_REG_PCR_BASE + 0xcc)
-/** PCR_RSA_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_RSA_CONF_REG (DR_REG_PCR_BASE + 0xd4)
+/** PCR_RSA_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable rsa clock
  */
 #define PCR_RSA_CLK_EN    (BIT(0))
@@ -1475,22 +1568,22 @@ extern "C" {
 /** PCR_RSA_PD_CTRL_REG register
  *  RSA power control register
  */
-#define PCR_RSA_PD_CTRL_REG (DR_REG_PCR_BASE + 0xd0)
-/** PCR_RSA_MEM_PD : R/W; bitpos: [0]; default: 0;
+#define PCR_RSA_PD_CTRL_REG (DR_REG_PCR_BASE + 0xd8)
+/** PCR_RSA_MEM_PD : R/W; bitpos: [0]; default: 1;
  *  Set this bit to power down rsa internal memory.
  */
 #define PCR_RSA_MEM_PD    (BIT(0))
 #define PCR_RSA_MEM_PD_M  (PCR_RSA_MEM_PD_V << PCR_RSA_MEM_PD_S)
 #define PCR_RSA_MEM_PD_V  0x00000001U
 #define PCR_RSA_MEM_PD_S  0
-/** PCR_RSA_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
+/** PCR_RSA_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
  *  Set this bit to force power up rsa internal memory
  */
 #define PCR_RSA_MEM_FORCE_PU    (BIT(1))
 #define PCR_RSA_MEM_FORCE_PU_M  (PCR_RSA_MEM_FORCE_PU_V << PCR_RSA_MEM_FORCE_PU_S)
 #define PCR_RSA_MEM_FORCE_PU_V  0x00000001U
 #define PCR_RSA_MEM_FORCE_PU_S  1
-/** PCR_RSA_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
+/** PCR_RSA_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
  *  Set this bit to force power down rsa internal memory.
  */
 #define PCR_RSA_MEM_FORCE_PD    (BIT(2))
@@ -1501,8 +1594,8 @@ extern "C" {
 /** PCR_ECC_CONF_REG register
  *  ECC configuration register
  */
-#define PCR_ECC_CONF_REG (DR_REG_PCR_BASE + 0xd4)
-/** PCR_ECC_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_ECC_CONF_REG (DR_REG_PCR_BASE + 0xdc)
+/** PCR_ECC_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable ecc clock
  */
 #define PCR_ECC_CLK_EN    (BIT(0))
@@ -1527,22 +1620,22 @@ extern "C" {
 /** PCR_ECC_PD_CTRL_REG register
  *  ECC power control register
  */
-#define PCR_ECC_PD_CTRL_REG (DR_REG_PCR_BASE + 0xd8)
-/** PCR_ECC_MEM_PD : R/W; bitpos: [0]; default: 0;
+#define PCR_ECC_PD_CTRL_REG (DR_REG_PCR_BASE + 0xe0)
+/** PCR_ECC_MEM_PD : R/W; bitpos: [0]; default: 1;
  *  Set this bit to power down ecc internal memory.
  */
 #define PCR_ECC_MEM_PD    (BIT(0))
 #define PCR_ECC_MEM_PD_M  (PCR_ECC_MEM_PD_V << PCR_ECC_MEM_PD_S)
 #define PCR_ECC_MEM_PD_V  0x00000001U
 #define PCR_ECC_MEM_PD_S  0
-/** PCR_ECC_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
+/** PCR_ECC_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
  *  Set this bit to force power up ecc internal memory
  */
 #define PCR_ECC_MEM_FORCE_PU    (BIT(1))
 #define PCR_ECC_MEM_FORCE_PU_M  (PCR_ECC_MEM_FORCE_PU_V << PCR_ECC_MEM_FORCE_PU_S)
 #define PCR_ECC_MEM_FORCE_PU_V  0x00000001U
 #define PCR_ECC_MEM_FORCE_PU_S  1
-/** PCR_ECC_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
+/** PCR_ECC_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
  *  Set this bit to force power down ecc internal memory.
  */
 #define PCR_ECC_MEM_FORCE_PD    (BIT(2))
@@ -1553,8 +1646,8 @@ extern "C" {
 /** PCR_DS_CONF_REG register
  *  DS configuration register
  */
-#define PCR_DS_CONF_REG (DR_REG_PCR_BASE + 0xdc)
-/** PCR_DS_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_DS_CONF_REG (DR_REG_PCR_BASE + 0xe4)
+/** PCR_DS_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable ds clock
  */
 #define PCR_DS_CLK_EN    (BIT(0))
@@ -1579,8 +1672,8 @@ extern "C" {
 /** PCR_HMAC_CONF_REG register
  *  HMAC configuration register
  */
-#define PCR_HMAC_CONF_REG (DR_REG_PCR_BASE + 0xe0)
-/** PCR_HMAC_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_HMAC_CONF_REG (DR_REG_PCR_BASE + 0xe8)
+/** PCR_HMAC_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable hmac clock
  */
 #define PCR_HMAC_CLK_EN    (BIT(0))
@@ -1605,8 +1698,8 @@ extern "C" {
 /** PCR_ECDSA_CONF_REG register
  *  ECDSA configuration register
  */
-#define PCR_ECDSA_CONF_REG (DR_REG_PCR_BASE + 0xe4)
-/** PCR_ECDSA_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_ECDSA_CONF_REG (DR_REG_PCR_BASE + 0xec)
+/** PCR_ECDSA_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable ecdsa clock
  */
 #define PCR_ECDSA_CLK_EN    (BIT(0))
@@ -1631,7 +1724,7 @@ extern "C" {
 /** PCR_IOMUX_CONF_REG register
  *  IOMUX configuration register
  */
-#define PCR_IOMUX_CONF_REG (DR_REG_PCR_BASE + 0xe8)
+#define PCR_IOMUX_CONF_REG (DR_REG_PCR_BASE + 0xf0)
 /** PCR_IOMUX_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable iomux apb clock
  */
@@ -1650,10 +1743,12 @@ extern "C" {
 /** PCR_IOMUX_CLK_CONF_REG register
  *  IOMUX_CLK configuration register
  */
-#define PCR_IOMUX_CLK_CONF_REG (DR_REG_PCR_BASE + 0xec)
+#define PCR_IOMUX_CLK_CONF_REG (DR_REG_PCR_BASE + 0xf4)
 /** PCR_IOMUX_FUNC_CLK_SEL : R/W; bitpos: [21:20]; default: 0;
- *  set this field to select clock-source. 0: do not select anyone clock, 1: 80MHz, 2:
- *  FOSC, 3(default): XTAL.
+ *  Configures the clock source of IO MUX.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F80M_CLK\\
  */
 #define PCR_IOMUX_FUNC_CLK_SEL    0x00000003U
 #define PCR_IOMUX_FUNC_CLK_SEL_M  (PCR_IOMUX_FUNC_CLK_SEL_V << PCR_IOMUX_FUNC_CLK_SEL_S)
@@ -1667,36 +1762,10 @@ extern "C" {
 #define PCR_IOMUX_FUNC_CLK_EN_V  0x00000001U
 #define PCR_IOMUX_FUNC_CLK_EN_S  22
 
-/** PCR_MEM_MONITOR_CONF_REG register
- *  MEM_MONITOR configuration register
- */
-#define PCR_MEM_MONITOR_CONF_REG (DR_REG_PCR_BASE + 0xf0)
-/** PCR_MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable mem_monitor clock
- */
-#define PCR_MEM_MONITOR_CLK_EN    (BIT(0))
-#define PCR_MEM_MONITOR_CLK_EN_M  (PCR_MEM_MONITOR_CLK_EN_V << PCR_MEM_MONITOR_CLK_EN_S)
-#define PCR_MEM_MONITOR_CLK_EN_V  0x00000001U
-#define PCR_MEM_MONITOR_CLK_EN_S  0
-/** PCR_MEM_MONITOR_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 0 to reset mem_monitor module
- */
-#define PCR_MEM_MONITOR_RST_EN    (BIT(1))
-#define PCR_MEM_MONITOR_RST_EN_M  (PCR_MEM_MONITOR_RST_EN_V << PCR_MEM_MONITOR_RST_EN_S)
-#define PCR_MEM_MONITOR_RST_EN_V  0x00000001U
-#define PCR_MEM_MONITOR_RST_EN_S  1
-/** PCR_MEM_MONITOR_READY : RO; bitpos: [2]; default: 1;
- *  Query this field after reset mem_monitor module
- */
-#define PCR_MEM_MONITOR_READY    (BIT(2))
-#define PCR_MEM_MONITOR_READY_M  (PCR_MEM_MONITOR_READY_V << PCR_MEM_MONITOR_READY_S)
-#define PCR_MEM_MONITOR_READY_V  0x00000001U
-#define PCR_MEM_MONITOR_READY_S  2
-
 /** PCR_REGDMA_CONF_REG register
  *  REGDMA configuration register
  */
-#define PCR_REGDMA_CONF_REG (DR_REG_PCR_BASE + 0xf4)
+#define PCR_REGDMA_CONF_REG (DR_REG_PCR_BASE + 0xf8)
 /** PCR_REGDMA_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable regdma clock
  */
@@ -1715,8 +1784,8 @@ extern "C" {
 /** PCR_TRACE_CONF_REG register
  *  TRACE configuration register
  */
-#define PCR_TRACE_CONF_REG (DR_REG_PCR_BASE + 0xf8)
-/** PCR_TRACE_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_TRACE_CONF_REG (DR_REG_PCR_BASE + 0xfc)
+/** PCR_TRACE_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable trace clock
  */
 #define PCR_TRACE_CLK_EN    (BIT(0))
@@ -1734,8 +1803,8 @@ extern "C" {
 /** PCR_ASSIST_CONF_REG register
  *  ASSIST configuration register
  */
-#define PCR_ASSIST_CONF_REG (DR_REG_PCR_BASE + 0xfc)
-/** PCR_ASSIST_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_ASSIST_CONF_REG (DR_REG_PCR_BASE + 0x100)
+/** PCR_ASSIST_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable assist clock
  */
 #define PCR_ASSIST_CLK_EN    (BIT(0))
@@ -1753,7 +1822,7 @@ extern "C" {
 /** PCR_CACHE_CONF_REG register
  *  CACHE configuration register
  */
-#define PCR_CACHE_CONF_REG (DR_REG_PCR_BASE + 0x100)
+#define PCR_CACHE_CONF_REG (DR_REG_PCR_BASE + 0x104)
 /** PCR_CACHE_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable cache clock
  */
@@ -1768,23 +1837,52 @@ extern "C" {
 #define PCR_CACHE_RST_EN_M  (PCR_CACHE_RST_EN_V << PCR_CACHE_RST_EN_S)
 #define PCR_CACHE_RST_EN_V  0x00000001U
 #define PCR_CACHE_RST_EN_S  1
+/** PCR_CACHE_PU_EN : R/W; bitpos: [2]; default: 1;
+ *  Set 0 to power up cache mem
+ */
+#define PCR_CACHE_PU_EN    (BIT(2))
+#define PCR_CACHE_PU_EN_M  (PCR_CACHE_PU_EN_V << PCR_CACHE_PU_EN_S)
+#define PCR_CACHE_PU_EN_V  0x00000001U
+#define PCR_CACHE_PU_EN_S  2
+/** PCR_CACHE_PD_EN : R/W; bitpos: [3]; default: 0;
+ *  Set 0 to power down cache mem
+ */
+#define PCR_CACHE_PD_EN    (BIT(3))
+#define PCR_CACHE_PD_EN_M  (PCR_CACHE_PD_EN_V << PCR_CACHE_PD_EN_S)
+#define PCR_CACHE_PD_EN_V  0x00000001U
+#define PCR_CACHE_PD_EN_S  3
 
 /** PCR_MODEM_CONF_REG register
  *  MODEM_APB configuration register
  */
-#define PCR_MODEM_CONF_REG (DR_REG_PCR_BASE + 0x104)
-/** PCR_MODEM_RST_EN : R/W; bitpos: [2]; default: 0;
+#define PCR_MODEM_CONF_REG (DR_REG_PCR_BASE + 0x108)
+/** PCR_MODEM_APB_CLK_EN : R/W; bitpos: [0]; default: 1;
+ *  This field indicates if modem_apb clock is enable. 0: disable, 1: enable(default).
+ */
+#define PCR_MODEM_APB_CLK_EN    (BIT(0))
+#define PCR_MODEM_APB_CLK_EN_M  (PCR_MODEM_APB_CLK_EN_V << PCR_MODEM_APB_CLK_EN_S)
+#define PCR_MODEM_APB_CLK_EN_V  0x00000001U
+#define PCR_MODEM_APB_CLK_EN_S  0
+/** PCR_MODEM_RST_EN : R/W; bitpos: [1]; default: 0;
  *  Set this file as 1 to reset modem-subsystem.
  */
-#define PCR_MODEM_RST_EN    (BIT(2))
+#define PCR_MODEM_RST_EN    (BIT(1))
 #define PCR_MODEM_RST_EN_M  (PCR_MODEM_RST_EN_V << PCR_MODEM_RST_EN_S)
 #define PCR_MODEM_RST_EN_V  0x00000001U
-#define PCR_MODEM_RST_EN_S  2
+#define PCR_MODEM_RST_EN_S  1
+/** PCR_MODEM_CLK_EN : R/W; bitpos: [2]; default: 1;
+ *  This field indicates if modem source clock is enable. 0: disable, 1:
+ *  enable(default).
+ */
+#define PCR_MODEM_CLK_EN    (BIT(2))
+#define PCR_MODEM_CLK_EN_M  (PCR_MODEM_CLK_EN_V << PCR_MODEM_CLK_EN_S)
+#define PCR_MODEM_CLK_EN_V  0x00000001U
+#define PCR_MODEM_CLK_EN_S  2
 
 /** PCR_TIMEOUT_CONF_REG register
  *  TIMEOUT configuration register
  */
-#define PCR_TIMEOUT_CONF_REG (DR_REG_PCR_BASE + 0x108)
+#define PCR_TIMEOUT_CONF_REG (DR_REG_PCR_BASE + 0x10c)
 /** PCR_CPU_TIMEOUT_RST_EN : R/W; bitpos: [1]; default: 0;
  *  Set 0 to reset cpu_peri timeout module
  */
@@ -1803,25 +1901,13 @@ extern "C" {
 /** PCR_SYSCLK_CONF_REG register
  *  SYSCLK configuration register
  */
-#define PCR_SYSCLK_CONF_REG (DR_REG_PCR_BASE + 0x10c)
-/** PCR_LS_DIV_NUM : HRO; bitpos: [7:0]; default: 0;
- *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
- *  clock-source such as XTAL/FOSC.
- */
-#define PCR_LS_DIV_NUM    0x000000FFU
-#define PCR_LS_DIV_NUM_M  (PCR_LS_DIV_NUM_V << PCR_LS_DIV_NUM_S)
-#define PCR_LS_DIV_NUM_V  0x000000FFU
-#define PCR_LS_DIV_NUM_S  0
-/** PCR_HS_DIV_NUM : HRO; bitpos: [15:8]; default: 2;
- *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
- */
-#define PCR_HS_DIV_NUM    0x000000FFU
-#define PCR_HS_DIV_NUM_M  (PCR_HS_DIV_NUM_V << PCR_HS_DIV_NUM_S)
-#define PCR_HS_DIV_NUM_V  0x000000FFU
-#define PCR_HS_DIV_NUM_S  8
+#define PCR_SYSCLK_CONF_REG (DR_REG_PCR_BASE + 0x110)
 /** PCR_SOC_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
- *  This field is used to select clock source. 0: XTAL, 1: FOSC, 2: 160M_PLL, 3:
- *  240M_PLL.
+ *  Configures to select the clock source of HP_ROOT_CLK.\\
+ *  0 (default): XTAL_CLK\\
+ *  1: RC_FAST_CLK\\
+ *  2: PLL_F160M_CLK\\
+ *  2: PLL_F240M_CLK\\
  */
 #define PCR_SOC_CLK_SEL    0x00000003U
 #define PCR_SOC_CLK_SEL_M  (PCR_SOC_CLK_SEL_V << PCR_SOC_CLK_SEL_S)
@@ -1834,11 +1920,33 @@ extern "C" {
 #define PCR_CLK_XTAL_FREQ_M  (PCR_CLK_XTAL_FREQ_V << PCR_CLK_XTAL_FREQ_S)
 #define PCR_CLK_XTAL_FREQ_V  0x0000007FU
 #define PCR_CLK_XTAL_FREQ_S  24
+/** PCR_CPU_DBGMD_CLK_EN : R/W; bitpos: [31]; default: 1;
+ *  This field indicates if cpu debug mode clock is enable. 0: disable, 1:
+ *  enable(default).
+ */
+#define PCR_CPU_DBGMD_CLK_EN    (BIT(31))
+#define PCR_CPU_DBGMD_CLK_EN_M  (PCR_CPU_DBGMD_CLK_EN_V << PCR_CPU_DBGMD_CLK_EN_S)
+#define PCR_CPU_DBGMD_CLK_EN_V  0x00000001U
+#define PCR_CPU_DBGMD_CLK_EN_S  31
 
 /** PCR_CPU_WAITI_CONF_REG register
  *  CPU_WAITI configuration register
  */
-#define PCR_CPU_WAITI_CONF_REG (DR_REG_PCR_BASE + 0x110)
+#define PCR_CPU_WAITI_CONF_REG (DR_REG_PCR_BASE + 0x114)
+/** PCR_CPUPERIOD_SEL : HRO; bitpos: [1:0]; default: 1;
+ *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+ */
+#define PCR_CPUPERIOD_SEL    0x00000003U
+#define PCR_CPUPERIOD_SEL_M  (PCR_CPUPERIOD_SEL_V << PCR_CPUPERIOD_SEL_S)
+#define PCR_CPUPERIOD_SEL_V  0x00000003U
+#define PCR_CPUPERIOD_SEL_S  0
+/** PCR_PLL_FREQ_SEL : HRO; bitpos: [2]; default: 1;
+ *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+ */
+#define PCR_PLL_FREQ_SEL    (BIT(2))
+#define PCR_PLL_FREQ_SEL_M  (PCR_PLL_FREQ_SEL_V << PCR_PLL_FREQ_SEL_S)
+#define PCR_PLL_FREQ_SEL_V  0x00000001U
+#define PCR_PLL_FREQ_SEL_S  2
 /** PCR_CPU_WAIT_MODE_FORCE_ON : R/W; bitpos: [3]; default: 1;
  *  Set 1 to force cpu_waiti_clk enable.
  */
@@ -1858,10 +1966,10 @@ extern "C" {
 /** PCR_CPU_FREQ_CONF_REG register
  *  CPU_FREQ configuration register
  */
-#define PCR_CPU_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x114)
+#define PCR_CPU_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x118)
 /** PCR_CPU_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
- *  Set this field to generate clk_cpu drived by clk_hproot. The clk_cpu is
- *  div1(default)/div2/div4 of clk_hproot. This field is only avaliable for low-speed
+ *  Set this field to generate clk_cpu driven by clk_hproot. The clk_cpu is
+ *  div1(default)/div2/div4 of clk_hproot. This field is only available for low-speed
  *  clock-source such as XTAL/FOSC, and should be used together with PCR_AHB_DIV_NUM.
  */
 #define PCR_CPU_DIV_NUM    0x000000FFU
@@ -1872,10 +1980,10 @@ extern "C" {
 /** PCR_AHB_FREQ_CONF_REG register
  *  AHB_FREQ configuration register
  */
-#define PCR_AHB_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x118)
+#define PCR_AHB_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x11c)
 /** PCR_AHB_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
- *  Set this field to generate clk_ahb drived by clk_hproot. The clk_ahb is
- *  div1(default)/div2/div4/div8 of clk_hproot. This field is only avaliable for
+ *  Set this field to generate clk_ahb driven by clk_hproot. The clk_ahb is
+ *  div1(default)/div2/div4/div8 of clk_hproot. This field is only available for
  *  low-speed clock-source such as XTAL/FOSC, and should be used together with
  *  PCR_CPU_DIV_NUM.
  */
@@ -1887,7 +1995,7 @@ extern "C" {
 /** PCR_APB_FREQ_CONF_REG register
  *  APB_FREQ configuration register
  */
-#define PCR_APB_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x11c)
+#define PCR_APB_FREQ_CONF_REG (DR_REG_PCR_BASE + 0x120)
 /** PCR_APB_DECREASE_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  If this field's value is grater than PCR_APB_DIV_NUM, the clk_apb will be
  *  automatically down to clk_apb_decrease only when no access is on apb-bus, and will
@@ -1902,7 +2010,7 @@ extern "C" {
 #define PCR_APB_DECREASE_DIV_NUM_V  0x000000FFU
 #define PCR_APB_DECREASE_DIV_NUM_S  0
 /** PCR_APB_DIV_NUM : R/W; bitpos: [15:8]; default: 0;
- *  Set as one within (0,1,3) to generate clk_apb drived by clk_ahb. The clk_apb is
+ *  Set as one within (0,1,3) to generate clk_apb driven by clk_ahb. The clk_apb is
  *  div1(default)/div2/div4 of clk_ahb.
  */
 #define PCR_APB_DIV_NUM    0x000000FFU
@@ -1913,7 +2021,7 @@ extern "C" {
 /** PCR_SYSCLK_FREQ_QUERY_0_REG register
  *  SYSCLK frequency query 0 register
  */
-#define PCR_SYSCLK_FREQ_QUERY_0_REG (DR_REG_PCR_BASE + 0x120)
+#define PCR_SYSCLK_FREQ_QUERY_0_REG (DR_REG_PCR_BASE + 0x124)
 /** PCR_FOSC_FREQ : HRO; bitpos: [7:0]; default: 8;
  *  This field indicates the frequency(MHz) of FOSC.
  */
@@ -1932,74 +2040,74 @@ extern "C" {
 /** PCR_PLL_DIV_CLK_EN_REG register
  *  SPLL DIV clock-gating configuration register
  */
-#define PCR_PLL_DIV_CLK_EN_REG (DR_REG_PCR_BASE + 0x124)
+#define PCR_PLL_DIV_CLK_EN_REG (DR_REG_PCR_BASE + 0x128)
 /** PCR_PLL_240M_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  This field is used to open 240 MHz clock (div2 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 240 MHz clock (div2 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_240M_CLK_EN    (BIT(0))
 #define PCR_PLL_240M_CLK_EN_M  (PCR_PLL_240M_CLK_EN_V << PCR_PLL_240M_CLK_EN_S)
 #define PCR_PLL_240M_CLK_EN_V  0x00000001U
 #define PCR_PLL_240M_CLK_EN_S  0
 /** PCR_PLL_160M_CLK_EN : R/W; bitpos: [1]; default: 1;
- *  This field is used to open 160 MHz clock (div3 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 160 MHz clock (div3 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_160M_CLK_EN    (BIT(1))
 #define PCR_PLL_160M_CLK_EN_M  (PCR_PLL_160M_CLK_EN_V << PCR_PLL_160M_CLK_EN_S)
 #define PCR_PLL_160M_CLK_EN_V  0x00000001U
 #define PCR_PLL_160M_CLK_EN_S  1
 /** PCR_PLL_120M_CLK_EN : R/W; bitpos: [2]; default: 1;
- *  This field is used to open 120 MHz clock (div4 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 120 MHz clock (div4 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_120M_CLK_EN    (BIT(2))
 #define PCR_PLL_120M_CLK_EN_M  (PCR_PLL_120M_CLK_EN_V << PCR_PLL_120M_CLK_EN_S)
 #define PCR_PLL_120M_CLK_EN_V  0x00000001U
 #define PCR_PLL_120M_CLK_EN_S  2
 /** PCR_PLL_80M_CLK_EN : R/W; bitpos: [3]; default: 1;
- *  This field is used to open 80 MHz clock (div6  of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 80 MHz clock (div6  of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_80M_CLK_EN    (BIT(3))
 #define PCR_PLL_80M_CLK_EN_M  (PCR_PLL_80M_CLK_EN_V << PCR_PLL_80M_CLK_EN_S)
 #define PCR_PLL_80M_CLK_EN_V  0x00000001U
 #define PCR_PLL_80M_CLK_EN_S  3
 /** PCR_PLL_60M_CLK_EN : R/W; bitpos: [4]; default: 1;
- *  This field is used to open 60 MHz clock (div8 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 60 MHz clock (div8 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_60M_CLK_EN    (BIT(4))
 #define PCR_PLL_60M_CLK_EN_M  (PCR_PLL_60M_CLK_EN_V << PCR_PLL_60M_CLK_EN_S)
 #define PCR_PLL_60M_CLK_EN_V  0x00000001U
 #define PCR_PLL_60M_CLK_EN_S  4
 /** PCR_PLL_48M_CLK_EN : R/W; bitpos: [5]; default: 1;
- *  This field is used to open 48 MHz clock (div10 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 48 MHz clock (div10 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_48M_CLK_EN    (BIT(5))
 #define PCR_PLL_48M_CLK_EN_M  (PCR_PLL_48M_CLK_EN_V << PCR_PLL_48M_CLK_EN_S)
 #define PCR_PLL_48M_CLK_EN_V  0x00000001U
 #define PCR_PLL_48M_CLK_EN_S  5
 /** PCR_PLL_40M_CLK_EN : R/W; bitpos: [6]; default: 1;
- *  This field is used to open 40 MHz clock (div12 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 40 MHz clock (div12 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_40M_CLK_EN    (BIT(6))
 #define PCR_PLL_40M_CLK_EN_M  (PCR_PLL_40M_CLK_EN_V << PCR_PLL_40M_CLK_EN_S)
 #define PCR_PLL_40M_CLK_EN_V  0x00000001U
 #define PCR_PLL_40M_CLK_EN_S  6
 /** PCR_PLL_20M_CLK_EN : R/W; bitpos: [7]; default: 1;
- *  This field is used to open 20 MHz clock (div24 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 20 MHz clock (div24 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_20M_CLK_EN    (BIT(7))
 #define PCR_PLL_20M_CLK_EN_M  (PCR_PLL_20M_CLK_EN_V << PCR_PLL_20M_CLK_EN_S)
 #define PCR_PLL_20M_CLK_EN_V  0x00000001U
 #define PCR_PLL_20M_CLK_EN_S  7
 /** PCR_PLL_12M_CLK_EN : R/W; bitpos: [8]; default: 1;
- *  This field is used to open 12 MHz clock (div40 of SPLL) drived from SPLL. 0: close,
- *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+ *  This field is used to open 12 MHz clock (div40 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
 #define PCR_PLL_12M_CLK_EN    (BIT(8))
 #define PCR_PLL_12M_CLK_EN_M  (PCR_PLL_12M_CLK_EN_V << PCR_PLL_12M_CLK_EN_S)
@@ -2009,7 +2117,7 @@ extern "C" {
 /** PCR_CTRL_CLK_OUT_EN_REG register
  *  CLK_OUT_EN configuration register
  */
-#define PCR_CTRL_CLK_OUT_EN_REG (DR_REG_PCR_BASE + 0x128)
+#define PCR_CTRL_CLK_OUT_EN_REG (DR_REG_PCR_BASE + 0x12c)
 /** PCR_CLK20_OEN : R/W; bitpos: [0]; default: 1;
  *  Set 1 to enable 20m clock
  */
@@ -2088,51 +2196,30 @@ extern "C" {
 #define PCR_CLK_XTAL_OEN_V  0x00000001U
 #define PCR_CLK_XTAL_OEN_S  10
 
-/** PCR_CTRL_TICK_CONF_REG register
- *  TICK configuration register
+/** PCR_CTRL_32K_CONF_REG register
+ *  32KHz clock configuration register
  */
-#define PCR_CTRL_TICK_CONF_REG (DR_REG_PCR_BASE + 0x12c)
-/** PCR_XTAL_TICK_NUM : R/W; bitpos: [7:0]; default: 39;
- *  ******* Description ***********
+#define PCR_CTRL_32K_CONF_REG (DR_REG_PCR_BASE + 0x130)
+/** PCR_32K_SEL : R/W; bitpos: [2:0]; default: 0;
+ *  Configures the 32KHz clock for TIMER_GROUP.\\
+ *  0 (default): RC32K_CLK\\
+ *  1: XTAL32K_CLK\\
+ *  2: OSC_SLOW_CLK\\
+ *  3: RC_SLOW_CLK\\
+ *  4: RC_FAST_CLK\\
  */
-#define PCR_XTAL_TICK_NUM    0x000000FFU
-#define PCR_XTAL_TICK_NUM_M  (PCR_XTAL_TICK_NUM_V << PCR_XTAL_TICK_NUM_S)
-#define PCR_XTAL_TICK_NUM_V  0x000000FFU
-#define PCR_XTAL_TICK_NUM_S  0
+#define PCR_32K_SEL    0x00000007U
+#define PCR_32K_SEL_M  (PCR_32K_SEL_V << PCR_32K_SEL_S)
+#define PCR_32K_SEL_V  0x00000007U
+#define PCR_32K_SEL_S  0
 /** PCR_FOSC_TICK_NUM : R/W; bitpos: [15:8]; default: 7;
- *  ******* Description ***********
+ *  When PCR_32K_SEL set as 4, This field PCR_FOSC_TICK_NUM is used to set the divider
+ *  number of fosc.
  */
 #define PCR_FOSC_TICK_NUM    0x000000FFU
 #define PCR_FOSC_TICK_NUM_M  (PCR_FOSC_TICK_NUM_V << PCR_FOSC_TICK_NUM_S)
 #define PCR_FOSC_TICK_NUM_V  0x000000FFU
 #define PCR_FOSC_TICK_NUM_S  8
-/** PCR_TICK_ENABLE : R/W; bitpos: [16]; default: 1;
- *  ******* Description ***********
- */
-#define PCR_TICK_ENABLE    (BIT(16))
-#define PCR_TICK_ENABLE_M  (PCR_TICK_ENABLE_V << PCR_TICK_ENABLE_S)
-#define PCR_TICK_ENABLE_V  0x00000001U
-#define PCR_TICK_ENABLE_S  16
-/** PCR_RST_TICK_CNT : R/W; bitpos: [17]; default: 0;
- *  ******* Description ***********
- */
-#define PCR_RST_TICK_CNT    (BIT(17))
-#define PCR_RST_TICK_CNT_M  (PCR_RST_TICK_CNT_V << PCR_RST_TICK_CNT_S)
-#define PCR_RST_TICK_CNT_V  0x00000001U
-#define PCR_RST_TICK_CNT_S  17
-
-/** PCR_CTRL_32K_CONF_REG register
- *  32KHz clock configuration register
- */
-#define PCR_CTRL_32K_CONF_REG (DR_REG_PCR_BASE + 0x130)
-/** PCR_32K_SEL : R/W; bitpos: [1:0]; default: 0;
- *  This field indicates which one 32KHz clock will be used by timergroup. 0:
- *  OSC32K(default), 1: XTAL32K, 2/3: 32KHz from pad GPIO0.
- */
-#define PCR_32K_SEL    0x00000003U
-#define PCR_32K_SEL_M  (PCR_32K_SEL_V << PCR_32K_SEL_S)
-#define PCR_32K_SEL_V  0x00000003U
-#define PCR_32K_SEL_S  0
 
 /** PCR_SRAM_POWER_CONF_0_REG register
  *  HP SRAM/ROM configuration register
@@ -2189,11 +2276,15 @@ extern "C" {
 #define PCR_SRAM_CLKGATE_FORCE_ON_S  20
 
 /** PCR_SEC_CONF_REG register
- *  xxxx
+ *  Clock source configuration register for External Memory Encryption and Decryption
  */
 #define PCR_SEC_CONF_REG (DR_REG_PCR_BASE + 0x13c)
 /** PCR_SEC_CLK_SEL : R/W; bitpos: [1:0]; default: 0;
- *  xxxx
+ *  Configures the clock source for the External Memory Encryption and Decryption
+ *  module.\\
+ *  0(default): XTAL_CLK\\
+ *  1 RC_FAST_CLK\\
+ *  2: PLL_F480M_CLK\\
  */
 #define PCR_SEC_CLK_SEL    0x00000003U
 #define PCR_SEC_CLK_SEL_M  (PCR_SEC_CLK_SEL_V << PCR_SEC_CLK_SEL_S)
@@ -2207,12 +2298,42 @@ extern "C" {
 #define PCR_SEC_RST_EN_V  0x00000001U
 #define PCR_SEC_RST_EN_S  2
 
-/** PCR_BUS_CLK_UPDATE_REG register
+/** PCR_ADC_DAC_INV_PHASE_CONF_REG register
  *  xxxx
  */
-#define PCR_BUS_CLK_UPDATE_REG (DR_REG_PCR_BASE + 0x148)
-/** PCR_BUS_CLOCK_UPDATE : R/W/WTC; bitpos: [0]; default: 0;
+#define PCR_ADC_DAC_INV_PHASE_CONF_REG (DR_REG_PCR_BASE + 0x140)
+/** PCR_CLK_RX_ADC_INV_PHASE_ENA : R/W; bitpos: [0]; default: 0;
  *  xxxx
+ */
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA    (BIT(0))
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_M  (PCR_CLK_RX_ADC_INV_PHASE_ENA_V << PCR_CLK_RX_ADC_INV_PHASE_ENA_S)
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_S  0
+/** PCR_CLK_TX_DAC_INV_PHASE_ENA : R/W; bitpos: [1]; default: 0;
+ *  xxxx
+ */
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA    (BIT(1))
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_M  (PCR_CLK_TX_DAC_INV_PHASE_ENA_V << PCR_CLK_TX_DAC_INV_PHASE_ENA_S)
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_S  1
+/** PCR_CLK_PWDET_ADC_INV_PHASE_ENA : R/W; bitpos: [2]; default: 0;
+ *  xxxx
+ */
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA    (BIT(2))
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_M  (PCR_CLK_PWDET_ADC_INV_PHASE_ENA_V << PCR_CLK_PWDET_ADC_INV_PHASE_ENA_S)
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_S  2
+
+/** PCR_BUS_CLK_UPDATE_REG register
+ *  Configuration register for applying updated high-performance system clock sources
+ */
+#define PCR_BUS_CLK_UPDATE_REG (DR_REG_PCR_BASE + 0x144)
+/** PCR_BUS_CLOCK_UPDATE : R/W/WTC; bitpos: [0]; default: 0;
+ *  Configures whether or not to update configurations for CPU_CLK division, AHB_CLK
+ *  division and HP_ROOT_CLK clock source selection.\\
+ *  0: Not update configurations\\
+ *  1: Update configurations\\
+ *  This bit is automatically cleared when configurations have been updated.\\
  */
 #define PCR_BUS_CLOCK_UPDATE    (BIT(0))
 #define PCR_BUS_CLOCK_UPDATE_M  (PCR_BUS_CLOCK_UPDATE_V << PCR_BUS_CLOCK_UPDATE_S)
@@ -2220,18 +2341,20 @@ extern "C" {
 #define PCR_BUS_CLOCK_UPDATE_S  0
 
 /** PCR_SAR_CLK_DIV_REG register
- *  xxxx
+ *  SAR ADC clock divisor configuration register
  */
-#define PCR_SAR_CLK_DIV_REG (DR_REG_PCR_BASE + 0x14c)
+#define PCR_SAR_CLK_DIV_REG (DR_REG_PCR_BASE + 0x148)
 /** PCR_SAR2_CLK_DIV_NUM : R/W; bitpos: [7:0]; default: 4;
- *  xxxx
+ *  Configures the divisor for SAR ADC 2  clock to generate ADC analog control
+ *  signals.\\
  */
 #define PCR_SAR2_CLK_DIV_NUM    0x000000FFU
 #define PCR_SAR2_CLK_DIV_NUM_M  (PCR_SAR2_CLK_DIV_NUM_V << PCR_SAR2_CLK_DIV_NUM_S)
 #define PCR_SAR2_CLK_DIV_NUM_V  0x000000FFU
 #define PCR_SAR2_CLK_DIV_NUM_S  0
 /** PCR_SAR1_CLK_DIV_NUM : R/W; bitpos: [15:8]; default: 4;
- *  xxxx
+ *  Configures the divisor for SAR ADC 1  clock to generate ADC analog control
+ *  signals.\\
  */
 #define PCR_SAR1_CLK_DIV_NUM    0x000000FFU
 #define PCR_SAR1_CLK_DIV_NUM_M  (PCR_SAR1_CLK_DIV_NUM_V << PCR_SAR1_CLK_DIV_NUM_S)
@@ -2241,7 +2364,7 @@ extern "C" {
 /** PCR_PWDET_SAR_CLK_CONF_REG register
  *  xxxx
  */
-#define PCR_PWDET_SAR_CLK_CONF_REG (DR_REG_PCR_BASE + 0x150)
+#define PCR_PWDET_SAR_CLK_CONF_REG (DR_REG_PCR_BASE + 0x14c)
 /** PCR_PWDET_SAR_CLK_DIV_NUM : R/W; bitpos: [7:0]; default: 7;
  *  xxxx
  */
@@ -2257,97 +2380,11 @@ extern "C" {
 #define PCR_PWDET_SAR_CLK_EN_V  0x00000001U
 #define PCR_PWDET_SAR_CLK_EN_S  8
 
-/** PCR_SDIO_SLAVE_CONF_REG register
- *  SDIO_SLAVE configuration register
- */
-#define PCR_SDIO_SLAVE_CONF_REG (DR_REG_PCR_BASE + 0x154)
-/** PCR_SDIO_SLAVE_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable sdio_slave clock
- */
-#define PCR_SDIO_SLAVE_CLK_EN    (BIT(0))
-#define PCR_SDIO_SLAVE_CLK_EN_M  (PCR_SDIO_SLAVE_CLK_EN_V << PCR_SDIO_SLAVE_CLK_EN_S)
-#define PCR_SDIO_SLAVE_CLK_EN_V  0x00000001U
-#define PCR_SDIO_SLAVE_CLK_EN_S  0
-/** PCR_SDIO_SLAVE_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 0 to reset sdio_slave module
- */
-#define PCR_SDIO_SLAVE_RST_EN    (BIT(1))
-#define PCR_SDIO_SLAVE_RST_EN_M  (PCR_SDIO_SLAVE_RST_EN_V << PCR_SDIO_SLAVE_RST_EN_S)
-#define PCR_SDIO_SLAVE_RST_EN_V  0x00000001U
-#define PCR_SDIO_SLAVE_RST_EN_S  1
-
-/** PCR_USB_OTG_CONF_REG register
- *  USB_OTG configuration register
- */
-#define PCR_USB_OTG_CONF_REG (DR_REG_PCR_BASE + 0x158)
-/** PCR_USB_OTG_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable usb_otg bus clock
- */
-#define PCR_USB_OTG_CLK_EN    (BIT(0))
-#define PCR_USB_OTG_CLK_EN_M  (PCR_USB_OTG_CLK_EN_V << PCR_USB_OTG_CLK_EN_S)
-#define PCR_USB_OTG_CLK_EN_V  0x00000001U
-#define PCR_USB_OTG_CLK_EN_S  0
-/** PCR_USB_OTG_ADP_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 0 to reset usb_otg core adp
- */
-#define PCR_USB_OTG_ADP_RST_EN    (BIT(1))
-#define PCR_USB_OTG_ADP_RST_EN_M  (PCR_USB_OTG_ADP_RST_EN_V << PCR_USB_OTG_ADP_RST_EN_S)
-#define PCR_USB_OTG_ADP_RST_EN_V  0x00000001U
-#define PCR_USB_OTG_ADP_RST_EN_S  1
-/** PCR_USB_OTG_MISC_RST_EN : R/W; bitpos: [2]; default: 0;
- *  Set 0 to reset usb_otg misc
- */
-#define PCR_USB_OTG_MISC_RST_EN    (BIT(2))
-#define PCR_USB_OTG_MISC_RST_EN_M  (PCR_USB_OTG_MISC_RST_EN_V << PCR_USB_OTG_MISC_RST_EN_S)
-#define PCR_USB_OTG_MISC_RST_EN_V  0x00000001U
-#define PCR_USB_OTG_MISC_RST_EN_S  2
-/** PCR_USB_OTG_GLOBAL_RST_EN : R/W; bitpos: [3]; default: 0;
- *  Set 0 to reset usb_otg module
- */
-#define PCR_USB_OTG_GLOBAL_RST_EN    (BIT(3))
-#define PCR_USB_OTG_GLOBAL_RST_EN_M  (PCR_USB_OTG_GLOBAL_RST_EN_V << PCR_USB_OTG_GLOBAL_RST_EN_S)
-#define PCR_USB_OTG_GLOBAL_RST_EN_V  0x00000001U
-#define PCR_USB_OTG_GLOBAL_RST_EN_S  3
-
-/** PCR_USB_OTG_CLK_CONF_REG register
- *  USB_OTG func clk configuration register
- */
-#define PCR_USB_OTG_CLK_CONF_REG (DR_REG_PCR_BASE + 0x15c)
-/** PCR_USB_OTG_PHY_REFCLK_SEL : R/W; bitpos: [20]; default: 1;
- *  Set 1 to sel 12m pll clock, set 0 to sel pad clock
- */
-#define PCR_USB_OTG_PHY_REFCLK_SEL    (BIT(20))
-#define PCR_USB_OTG_PHY_REFCLK_SEL_M  (PCR_USB_OTG_PHY_REFCLK_SEL_V << PCR_USB_OTG_PHY_REFCLK_SEL_S)
-#define PCR_USB_OTG_PHY_REFCLK_SEL_V  0x00000001U
-#define PCR_USB_OTG_PHY_REFCLK_SEL_S  20
-/** PCR_USB_OTG_PHY_REFCLK_EN : R/W; bitpos: [21]; default: 1;
- *  Set 1 to enable usb_otg_phy_refclk clock
- */
-#define PCR_USB_OTG_PHY_REFCLK_EN    (BIT(21))
-#define PCR_USB_OTG_PHY_REFCLK_EN_M  (PCR_USB_OTG_PHY_REFCLK_EN_V << PCR_USB_OTG_PHY_REFCLK_EN_S)
-#define PCR_USB_OTG_PHY_REFCLK_EN_V  0x00000001U
-#define PCR_USB_OTG_PHY_REFCLK_EN_S  21
-/** PCR_USB_OTG_ADP_CLK_SEL : R/W; bitpos: [23:22]; default: 0;
- *  Set 0 to sel clock from gpio_matrix, set 1 to sel osc32k, set 2 to sel xtal32k, set
- *  3 to sel ext32k
- */
-#define PCR_USB_OTG_ADP_CLK_SEL    0x00000003U
-#define PCR_USB_OTG_ADP_CLK_SEL_M  (PCR_USB_OTG_ADP_CLK_SEL_V << PCR_USB_OTG_ADP_CLK_SEL_S)
-#define PCR_USB_OTG_ADP_CLK_SEL_V  0x00000003U
-#define PCR_USB_OTG_ADP_CLK_SEL_S  22
-/** PCR_USB_OTG_ADP_CLK_EN : R/W; bitpos: [24]; default: 1;
- *  Set 1 to enable usb_otg_adp_clk clock
- */
-#define PCR_USB_OTG_ADP_CLK_EN    (BIT(24))
-#define PCR_USB_OTG_ADP_CLK_EN_M  (PCR_USB_OTG_ADP_CLK_EN_V << PCR_USB_OTG_ADP_CLK_EN_S)
-#define PCR_USB_OTG_ADP_CLK_EN_V  0x00000001U
-#define PCR_USB_OTG_ADP_CLK_EN_S  24
-
 /** PCR_BS_CONF_REG register
  *  BS configuration register
  */
-#define PCR_BS_CONF_REG (DR_REG_PCR_BASE + 0x160)
-/** PCR_BS_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_BS_CONF_REG (DR_REG_PCR_BASE + 0x150)
+/** PCR_BS_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable bs clock
  */
 #define PCR_BS_CLK_EN    (BIT(0))
@@ -2365,7 +2402,7 @@ extern "C" {
 /** PCR_BS_FUNC_CONF_REG register
  *  BS_FUNC_CLK configuration register
  */
-#define PCR_BS_FUNC_CONF_REG (DR_REG_PCR_BASE + 0x164)
+#define PCR_BS_FUNC_CONF_REG (DR_REG_PCR_BASE + 0x154)
 /** PCR_BS_TX_RST_EN : R/W; bitpos: [23]; default: 0;
  *  Set 0 to reset bs tx module
  */
@@ -2381,10 +2418,29 @@ extern "C" {
 #define PCR_BS_RX_RST_EN_V  0x00000001U
 #define PCR_BS_RX_RST_EN_S  24
 
+/** PCR_BS_PD_CTRL_REG register
+ *  BS power control register
+ */
+#define PCR_BS_PD_CTRL_REG (DR_REG_PCR_BASE + 0x158)
+/** PCR_BS_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
+ *  Set this bit to force power up bs memory.
+ */
+#define PCR_BS_MEM_FORCE_PU    (BIT(1))
+#define PCR_BS_MEM_FORCE_PU_M  (PCR_BS_MEM_FORCE_PU_V << PCR_BS_MEM_FORCE_PU_S)
+#define PCR_BS_MEM_FORCE_PU_V  0x00000001U
+#define PCR_BS_MEM_FORCE_PU_S  1
+/** PCR_BS_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to force power down bs memory.
+ */
+#define PCR_BS_MEM_FORCE_PD    (BIT(2))
+#define PCR_BS_MEM_FORCE_PD_M  (PCR_BS_MEM_FORCE_PD_V << PCR_BS_MEM_FORCE_PD_S)
+#define PCR_BS_MEM_FORCE_PD_V  0x00000001U
+#define PCR_BS_MEM_FORCE_PD_S  2
+
 /** PCR_TIMERGROUP_WDT_CONF_REG register
  *  TIMERGROUP_WDT configuration register
  */
-#define PCR_TIMERGROUP_WDT_CONF_REG (DR_REG_PCR_BASE + 0x168)
+#define PCR_TIMERGROUP_WDT_CONF_REG (DR_REG_PCR_BASE + 0x15c)
 /** PCR_TG0_WDT_RST_EN : R/W; bitpos: [0]; default: 0;
  *  Set 0 to reset timer_group0 wdt module
  */
@@ -2403,7 +2459,7 @@ extern "C" {
 /** PCR_TIMERGROUP_XTAL_CONF_REG register
  *  TIMERGROUP1 configuration register
  */
-#define PCR_TIMERGROUP_XTAL_CONF_REG (DR_REG_PCR_BASE + 0x16c)
+#define PCR_TIMERGROUP_XTAL_CONF_REG (DR_REG_PCR_BASE + 0x160)
 /** PCR_TG0_XTAL_RST_EN : R/W; bitpos: [0]; default: 0;
  *  Set 0 to reset timer_group0 xtal clock domain
  */
@@ -2418,12 +2474,19 @@ extern "C" {
 #define PCR_TG1_XTAL_RST_EN_M  (PCR_TG1_XTAL_RST_EN_V << PCR_TG1_XTAL_RST_EN_S)
 #define PCR_TG1_XTAL_RST_EN_V  0x00000001U
 #define PCR_TG1_XTAL_RST_EN_S  1
+/** PCR_TG0_XTAL_CLK_EN : R/W; bitpos: [2]; default: 1;
+ *  Set 1 to enable tg0 xtal clock
+ */
+#define PCR_TG0_XTAL_CLK_EN    (BIT(2))
+#define PCR_TG0_XTAL_CLK_EN_M  (PCR_TG0_XTAL_CLK_EN_V << PCR_TG0_XTAL_CLK_EN_S)
+#define PCR_TG0_XTAL_CLK_EN_V  0x00000001U
+#define PCR_TG0_XTAL_CLK_EN_S  2
 
 /** PCR_KM_CONF_REG register
  *  Key Manager configuration register
  */
-#define PCR_KM_CONF_REG (DR_REG_PCR_BASE + 0x170)
-/** PCR_KM_CLK_EN : R/W; bitpos: [0]; default: 1;
+#define PCR_KM_CONF_REG (DR_REG_PCR_BASE + 0x164)
+/** PCR_KM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable km clock
  */
 #define PCR_KM_CLK_EN    (BIT(0))
@@ -2445,11 +2508,150 @@ extern "C" {
 #define PCR_KM_READY_V  0x00000001U
 #define PCR_KM_READY_S  2
 
+/** PCR_KM_PD_CTRL_REG register
+ *  Key Manager power control register
+ */
+#define PCR_KM_PD_CTRL_REG (DR_REG_PCR_BASE + 0x168)
+/** PCR_KM_MEM_FORCE_PU : R/W; bitpos: [1]; default: 0;
+ *  Set this bit to force power up KM memory.
+ */
+#define PCR_KM_MEM_FORCE_PU    (BIT(1))
+#define PCR_KM_MEM_FORCE_PU_M  (PCR_KM_MEM_FORCE_PU_V << PCR_KM_MEM_FORCE_PU_S)
+#define PCR_KM_MEM_FORCE_PU_V  0x00000001U
+#define PCR_KM_MEM_FORCE_PU_S  1
+/** PCR_KM_MEM_FORCE_PD : R/W; bitpos: [2]; default: 1;
+ *  Set this bit to force power down KM memory.
+ */
+#define PCR_KM_MEM_FORCE_PD    (BIT(2))
+#define PCR_KM_MEM_FORCE_PD_M  (PCR_KM_MEM_FORCE_PD_V << PCR_KM_MEM_FORCE_PD_S)
+#define PCR_KM_MEM_FORCE_PD_V  0x00000001U
+#define PCR_KM_MEM_FORCE_PD_S  2
+
+/** PCR_TCM_MEM_MONITOR_CONF_REG register
+ *  TCM_MEM_MONITOR configuration register
+ */
+#define PCR_TCM_MEM_MONITOR_CONF_REG (DR_REG_PCR_BASE + 0x16c)
+/** PCR_TCM_MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 1;
+ *  Set 1 to enable tcm_mem_monitor clock
+ */
+#define PCR_TCM_MEM_MONITOR_CLK_EN    (BIT(0))
+#define PCR_TCM_MEM_MONITOR_CLK_EN_M  (PCR_TCM_MEM_MONITOR_CLK_EN_V << PCR_TCM_MEM_MONITOR_CLK_EN_S)
+#define PCR_TCM_MEM_MONITOR_CLK_EN_V  0x00000001U
+#define PCR_TCM_MEM_MONITOR_CLK_EN_S  0
+/** PCR_TCM_MEM_MONITOR_RST_EN : R/W; bitpos: [1]; default: 0;
+ *  Set 0 to reset tcm_mem_monitor module
+ */
+#define PCR_TCM_MEM_MONITOR_RST_EN    (BIT(1))
+#define PCR_TCM_MEM_MONITOR_RST_EN_M  (PCR_TCM_MEM_MONITOR_RST_EN_V << PCR_TCM_MEM_MONITOR_RST_EN_S)
+#define PCR_TCM_MEM_MONITOR_RST_EN_V  0x00000001U
+#define PCR_TCM_MEM_MONITOR_RST_EN_S  1
+/** PCR_TCM_MEM_MONITOR_READY : RO; bitpos: [2]; default: 1;
+ *  Query this field after reset tcm_mem_monitor module
+ */
+#define PCR_TCM_MEM_MONITOR_READY    (BIT(2))
+#define PCR_TCM_MEM_MONITOR_READY_M  (PCR_TCM_MEM_MONITOR_READY_V << PCR_TCM_MEM_MONITOR_READY_S)
+#define PCR_TCM_MEM_MONITOR_READY_V  0x00000001U
+#define PCR_TCM_MEM_MONITOR_READY_S  2
+
+/** PCR_PSRAM_MEM_MONITOR_CONF_REG register
+ *  PSRAM_MEM_MONITOR configuration register
+ */
+#define PCR_PSRAM_MEM_MONITOR_CONF_REG (DR_REG_PCR_BASE + 0x170)
+/** PCR_PSRAM_MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 1;
+ *  Set 1 to enable psram_mem_monitor clock
+ */
+#define PCR_PSRAM_MEM_MONITOR_CLK_EN    (BIT(0))
+#define PCR_PSRAM_MEM_MONITOR_CLK_EN_M  (PCR_PSRAM_MEM_MONITOR_CLK_EN_V << PCR_PSRAM_MEM_MONITOR_CLK_EN_S)
+#define PCR_PSRAM_MEM_MONITOR_CLK_EN_V  0x00000001U
+#define PCR_PSRAM_MEM_MONITOR_CLK_EN_S  0
+/** PCR_PSRAM_MEM_MONITOR_RST_EN : R/W; bitpos: [1]; default: 0;
+ *  Set 0 to reset psram_mem_monitor module
+ */
+#define PCR_PSRAM_MEM_MONITOR_RST_EN    (BIT(1))
+#define PCR_PSRAM_MEM_MONITOR_RST_EN_M  (PCR_PSRAM_MEM_MONITOR_RST_EN_V << PCR_PSRAM_MEM_MONITOR_RST_EN_S)
+#define PCR_PSRAM_MEM_MONITOR_RST_EN_V  0x00000001U
+#define PCR_PSRAM_MEM_MONITOR_RST_EN_S  1
+/** PCR_PSRAM_MEM_MONITOR_READY : RO; bitpos: [2]; default: 1;
+ *  Query this field after reset psram_mem_monitor module
+ */
+#define PCR_PSRAM_MEM_MONITOR_READY    (BIT(2))
+#define PCR_PSRAM_MEM_MONITOR_READY_M  (PCR_PSRAM_MEM_MONITOR_READY_V << PCR_PSRAM_MEM_MONITOR_READY_S)
+#define PCR_PSRAM_MEM_MONITOR_READY_V  0x00000001U
+#define PCR_PSRAM_MEM_MONITOR_READY_S  2
+
+/** PCR_RESET_EVENT_BYPASS_REG register
+ *  reset event bypass backdoor configuration register
+ */
+#define PCR_RESET_EVENT_BYPASS_REG (DR_REG_PCR_BASE + 0x174)
+/** PCR_RESET_EVENT_BYPASS_APM : R/W; bitpos: [0]; default: 0;
+ *  This field is used to control reset event relationship for
+ *  tee_reg/apm_reg/hp_system_reg. 1: tee_reg/apm_reg/hp_system_reg will only be reset
+ *  by power-reset. some reset event will be bypass. 0: tee_reg/apm_reg/hp_system_reg
+ *  will not only be reset by power-reset, but also some reset event.
+ */
+#define PCR_RESET_EVENT_BYPASS_APM    (BIT(0))
+#define PCR_RESET_EVENT_BYPASS_APM_M  (PCR_RESET_EVENT_BYPASS_APM_V << PCR_RESET_EVENT_BYPASS_APM_S)
+#define PCR_RESET_EVENT_BYPASS_APM_V  0x00000001U
+#define PCR_RESET_EVENT_BYPASS_APM_S  0
+/** PCR_RESET_EVENT_BYPASS : R/W; bitpos: [1]; default: 1;
+ *  This field is used to control reset event relationship for system-bus. 1: system
+ *  bus (including arbiter/router) will only be reset by power-reset. some reset event
+ *  will be bypass. 0: system bus (including arbiter/router) will not only be reset by
+ *  power-reset, but also some reset event.
+ */
+#define PCR_RESET_EVENT_BYPASS    (BIT(1))
+#define PCR_RESET_EVENT_BYPASS_M  (PCR_RESET_EVENT_BYPASS_V << PCR_RESET_EVENT_BYPASS_S)
+#define PCR_RESET_EVENT_BYPASS_V  0x00000001U
+#define PCR_RESET_EVENT_BYPASS_S  1
+
+/** PCR_HPCORE_0_PD_CTRL_REG register
+ *  HP CORE0 power control register
+ */
+#define PCR_HPCORE_0_PD_CTRL_REG (DR_REG_PCR_BASE + 0x178)
+/** PCR_HPCORE_0_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
+ *  Set this bit to force power up HP CORE0 memory.
+ */
+#define PCR_HPCORE_0_MEM_FORCE_PU    (BIT(1))
+#define PCR_HPCORE_0_MEM_FORCE_PU_M  (PCR_HPCORE_0_MEM_FORCE_PU_V << PCR_HPCORE_0_MEM_FORCE_PU_S)
+#define PCR_HPCORE_0_MEM_FORCE_PU_V  0x00000001U
+#define PCR_HPCORE_0_MEM_FORCE_PU_S  1
+/** PCR_HPCORE_0_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
+ *  Set this bit to force power down HP CORE0 memory.
+ */
+#define PCR_HPCORE_0_MEM_FORCE_PD    (BIT(2))
+#define PCR_HPCORE_0_MEM_FORCE_PD_M  (PCR_HPCORE_0_MEM_FORCE_PD_V << PCR_HPCORE_0_MEM_FORCE_PD_S)
+#define PCR_HPCORE_0_MEM_FORCE_PD_V  0x00000001U
+#define PCR_HPCORE_0_MEM_FORCE_PD_S  2
+
+/** PCR_FPGA_DEBUG_REG register
+ *  fpga debug register
+ */
+#define PCR_FPGA_DEBUG_REG (DR_REG_PCR_BASE + 0xff4)
+/** PCR_FPGA_DEBUG : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Only used in fpga debug.
+ */
+#define PCR_FPGA_DEBUG    0xFFFFFFFFU
+#define PCR_FPGA_DEBUG_M  (PCR_FPGA_DEBUG_V << PCR_FPGA_DEBUG_S)
+#define PCR_FPGA_DEBUG_V  0xFFFFFFFFU
+#define PCR_FPGA_DEBUG_S  0
+
+/** PCR_CLOCK_GATE_REG register
+ *  PCR clock gating configure register
+ */
+#define PCR_CLOCK_GATE_REG (DR_REG_PCR_BASE + 0xff8)
+/** PCR_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  Set this bit as 1 to force on clock gating.
+ */
+#define PCR_CLK_EN    (BIT(0))
+#define PCR_CLK_EN_M  (PCR_CLK_EN_V << PCR_CLK_EN_S)
+#define PCR_CLK_EN_V  0x00000001U
+#define PCR_CLK_EN_S  0
+
 /** PCR_DATE_REG register
  *  Date register.
  */
 #define PCR_DATE_REG (DR_REG_PCR_BASE + 0xffc)
-/** PCR_DATE : R/W; bitpos: [27:0]; default: 36720976;
+/** PCR_DATE : R/W; bitpos: [27:0]; default: 36774528;
  *  PCR version information.
  */
 #define PCR_DATE    0x0FFFFFFFU

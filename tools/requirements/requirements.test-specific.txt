@@ -1,0 +1,20 @@
+# Python package requirements for specific test scripts in ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-test-specific"
+
+# dependencies in pytest test scripts
+scapy
+websocket-client
+netifaces
+rangehttpserver
+dbus-python; sys_platform == 'linux'
+protobuf
+bleak
+paho-mqtt
+paramiko
+netmiko
+
+# iperf_test_util
+pyecharts
+
+# for twai tests, communicate with socket can device (e.g. Canable)
+python-can

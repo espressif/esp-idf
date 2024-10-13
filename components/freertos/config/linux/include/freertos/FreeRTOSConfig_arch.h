@@ -31,7 +31,7 @@
 /* ---------------- Amazon SMP FreeRTOS -------------------- */
 
 #if CONFIG_FREERTOS_SMP
-    #define configUSE_MINIMAL_IDLE_HOOK    0             /* Not implemented yet, TODO IDF-6654 */
+    #define configUSE_PASSIVE_IDLE_HOOK    0             /* Not implemented yet, TODO IDF-6654 */
 #endif
 
 /* ----------------------- System -------------------------- */

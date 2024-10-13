@@ -185,6 +185,11 @@ Use menuconfig to set the serial port for flashing. For more information, see :i
 Running Unit Tests
 ------------------
 
+.. note::
+
+    We also provide the pytest-based framework `pytest-embedded <https://github.com/espressif/pytest-embedded>`_ to help make running unit-tests more convenient and efficient. If you need to run tests in CI or run multiple tests in a row we recommend checking out this project. For more information see `Pytest-embedded Docs <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_ and :doc:`/contribute/esp-idf-tests-with-pytest`.
+
+
 After flashing reset the {IDF_TARGET_NAME} and it will boot the unit test app.
 
 When unit test app is idle, press "Enter" will make it print test menu with all available tests::
@@ -363,3 +368,8 @@ The unit test needs to inform the cmake build system to mock dependent component
 Both methods will override existing components in ESP-IDF with the component mock. The latter is particularly convenient if you use component mocks that are already supplied by IDF.
 
 Users can refer to the ``esp_event`` host-based unit test and its :component_file:`esp_event/host_test/esp_event_unit_test/CMakeLists.txt` as an example of a component mock.
+
+Application Examples
+--------------------
+
+:example:`system/unit_test` demonstrates how to use the Unity library to add unit tests to custom components in an {IDF_TARGET_NAME} development environment, showcasing features such as assertions, test registration, and the use of UNITY_BEGIN() and UNITY_END() macros.

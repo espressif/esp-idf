@@ -1,9 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 The Apache Software Foundation (ASF)
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <assert.h>
@@ -18,12 +16,12 @@
 #include "freertos/timers.h"
 #include "freertos/portable.h"
 #include "nimble/npl_freertos.h"
-#include "nimble/nimble_port.h"
 
 #include "os/os_mempool.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "esp_bt.h"
+#include "bt_osi_mem.h"
 
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 
@@ -37,11 +35,19 @@ static const char *TAG = "Timer";
 #error "not defined SOC_ESP_NIMBLE_CONTROLLER or SOC_ESP_NIMBLE_CONTROLLER is zero"
 #endif
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #define BLE_HOST_CO_COUNT    (8)
 #define BLE_HOST_EV_COUNT    (11 + BLE_HOST_CO_COUNT)
 #define BLE_HOST_EVQ_COUNT   (3)
 #define BLE_HOST_SEM_COUNT   (10)
 #define BLE_HOST_MUTEX_COUNT (4)
+#else
+#define BLE_HOST_CO_COUNT    (0)
+#define BLE_HOST_EV_COUNT    (0)
+#define BLE_HOST_EVQ_COUNT   (0)
+#define BLE_HOST_SEM_COUNT   (0)
+#define BLE_HOST_MUTEX_COUNT (0)
+#endif
 
 struct os_mempool ble_freertos_ev_pool;
 static os_membuf_t *ble_freertos_ev_buf = NULL;
@@ -90,7 +96,7 @@ IRAM_ATTR npl_freertos_event_init(struct ble_npl_event *ev, ble_npl_event_fn *fn
     }
 #else
     if(!ev->event) {
-        ev->event = malloc(sizeof(struct ble_npl_event_freertos));
+        ev->event = bt_osi_mem_malloc_internal(sizeof(struct ble_npl_event_freertos));
     }
 #endif
     event = (struct ble_npl_event_freertos *)ev->event;
@@ -108,7 +114,7 @@ IRAM_ATTR npl_freertos_event_deinit(struct ble_npl_event *ev)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_ev_pool,ev->event);
 #else
-    free(ev->event);
+    bt_osi_mem_free(ev->event);
 #endif
     ev->event = NULL;
 }
@@ -133,15 +139,21 @@ npl_freertos_eventq_init(struct ble_npl_eventq *evq)
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #else
     if(!evq->eventq) {
-        evq->eventq = malloc(sizeof(struct ble_npl_eventq_freertos));
+        evq->eventq = bt_osi_mem_malloc_internal(sizeof(struct ble_npl_eventq_freertos));
         eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
         BLE_LL_ASSERT(eventq);
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #endif
 }
@@ -156,7 +168,7 @@ npl_freertos_eventq_deinit(struct ble_npl_eventq *evq)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_evq_pool,eventq);
 #else
-    free((void *)eventq);
+    bt_osi_mem_free((void *)eventq);
 #endif
     evq->eventq = NULL;
 }
@@ -229,6 +241,32 @@ IRAM_ATTR npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_eve
         }
     } else {
         ret = xQueueSendToBack(eventq->q, &ev, portMAX_DELAY);
+    }
+
+    BLE_LL_ASSERT(ret == pdPASS);
+}
+
+void
+IRAM_ATTR npl_freertos_eventq_put_to_front(struct ble_npl_eventq *evq, struct ble_npl_event *ev)
+{
+    BaseType_t woken;
+    BaseType_t ret;
+    struct ble_npl_eventq_freertos *eventq = (struct ble_npl_eventq_freertos *)evq->eventq;
+    struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
+
+    if (event->queued) {
+        return;
+    }
+
+    event->queued = true;
+
+    if (in_isr()) {
+        ret = xQueueSendToFrontFromISR(eventq->q, &ev, &woken);
+        if( woken == pdTRUE ) {
+            portYIELD_FROM_ISR();
+        }
+    } else {
+        ret = xQueueSendToFront(eventq->q, &ev, portMAX_DELAY);
     }
 
     BLE_LL_ASSERT(ret == pdPASS);
@@ -320,7 +358,7 @@ npl_freertos_mutex_init(struct ble_npl_mutex *mu)
     }
 #else
     if(!mu->mutex) {
-        mu->mutex = malloc(sizeof(struct ble_npl_mutex_freertos));
+        mu->mutex = bt_osi_mem_malloc_internal(sizeof(struct ble_npl_mutex_freertos));
         mutex = (struct ble_npl_mutex_freertos *)mu->mutex;
 
         if (!mutex) {
@@ -351,7 +389,7 @@ npl_freertos_mutex_deinit(struct ble_npl_mutex *mu)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_mutex_pool,mutex);
 #else
-    free((void *)mutex);
+    bt_osi_mem_free((void *)mutex);
 #endif
     mu->mutex = NULL;
 
@@ -441,32 +479,32 @@ IRAM_ATTR npl_freertos_mutex_release(struct ble_npl_mutex *mu)
 ble_npl_error_t
 npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 {
-    struct ble_npl_sem_freertos *semaphor = NULL;
+    struct ble_npl_sem_freertos *semaphore = NULL;
 #if OS_MEM_ALLOC
     if (!os_memblock_from(&ble_freertos_sem_pool,sem->sem)) {
         sem->sem = os_memblock_get(&ble_freertos_sem_pool);
-        semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+        semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-        if (!semaphor) {
+        if (!semaphore) {
             return BLE_NPL_INVALID_PARAM;
         }
 
-        memset(semaphor, 0, sizeof(*semaphor));
-        semaphor->handle = xSemaphoreCreateCounting(128, tokens);
-        BLE_LL_ASSERT(semaphor->handle);
+        memset(semaphore, 0, sizeof(*semaphore));
+        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
+        BLE_LL_ASSERT(semaphore->handle);
     }
 #else
     if(!sem->sem) {
-        sem->sem = malloc(sizeof(struct ble_npl_sem_freertos));
-        semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+        sem->sem = bt_osi_mem_malloc_internal(sizeof(struct ble_npl_sem_freertos));
+        semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-        if (!semaphor) {
+        if (!semaphore) {
             return BLE_NPL_INVALID_PARAM;
         }
 
-        memset(semaphor, 0, sizeof(*semaphor));
-        semaphor->handle = xSemaphoreCreateCounting(128, tokens);
-        BLE_LL_ASSERT(semaphor->handle);
+        memset(semaphore, 0, sizeof(*semaphore));
+        semaphore->handle = xSemaphoreCreateCounting(128, tokens);
+        BLE_LL_ASSERT(semaphore->handle);
     }
 #endif
 
@@ -476,19 +514,19 @@ npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 ble_npl_error_t
 npl_freertos_sem_deinit(struct ble_npl_sem *sem)
 {
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
-    vSemaphoreDelete(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
+    vSemaphoreDelete(semaphore->handle);
 
 #if OS_MEM_ALLOC
-    os_memblock_put(&ble_freertos_sem_pool,semaphor);
+    os_memblock_put(&ble_freertos_sem_pool,semaphore);
 #else
-    free((void *)semaphor);
+    bt_osi_mem_free((void *)semaphore);
 #endif
     sem->sem = NULL;
 
@@ -500,22 +538,22 @@ IRAM_ATTR npl_freertos_sem_pend(struct ble_npl_sem *sem, ble_npl_time_t timeout)
 {
     BaseType_t woken;
     BaseType_t ret;
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
         BLE_LL_ASSERT(timeout == 0);
-        ret = xSemaphoreTakeFromISR(semaphor->handle, &woken);
+        ret = xSemaphoreTakeFromISR(semaphore->handle, &woken);
         if( woken == pdTRUE ) {
             portYIELD_FROM_ISR();
         }
     } else {
-        ret = xSemaphoreTake(semaphor->handle, timeout);
+        ret = xSemaphoreTake(semaphore->handle, timeout);
     }
 
     return ret == pdPASS ? BLE_NPL_OK : BLE_NPL_TIMEOUT;
@@ -526,21 +564,21 @@ IRAM_ATTR npl_freertos_sem_release(struct ble_npl_sem *sem)
 {
     BaseType_t ret;
     BaseType_t woken;
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
 
-    if (!semaphor) {
+    if (!semaphore) {
         return BLE_NPL_INVALID_PARAM;
     }
 
-    BLE_LL_ASSERT(semaphor->handle);
+    BLE_LL_ASSERT(semaphore->handle);
 
     if (in_isr()) {
-        ret = xSemaphoreGiveFromISR(semaphor->handle, &woken);
+        ret = xSemaphoreGiveFromISR(semaphore->handle, &woken);
         if( woken == pdTRUE ) {
             portYIELD_FROM_ISR();
         }
     } else {
-        ret = xSemaphoreGive(semaphor->handle);
+        ret = xSemaphoreGive(semaphore->handle);
     }
 
     BLE_LL_ASSERT(ret == pdPASS);
@@ -647,7 +685,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
 #else
 
     if(!co->co) {
-        co->co = malloc(sizeof(struct ble_npl_callout_freertos));
+        co->co = bt_osi_mem_malloc_internal(sizeof(struct ble_npl_callout_freertos));
         callout = (struct ble_npl_callout_freertos *)co->co;
         if (!callout) {
             return -1;
@@ -667,7 +705,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
 
         if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
             ble_npl_event_deinit(&callout->ev);
-            free((void *)callout);
+            bt_osi_mem_free((void *)callout);
             co->co = NULL;
             return -1;
         }
@@ -676,7 +714,7 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
 
         if (!callout->handle) {
             ble_npl_event_deinit(&callout->ev);
-            free((void *)callout);
+            bt_osi_mem_free((void *)callout);
             co->co = NULL;
             return -1;
         }
@@ -724,7 +762,7 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_co_pool,callout);
 #else
-    free((void *)callout);
+    bt_osi_mem_free((void *)callout);
 #endif // OS_MEM_ALLOC
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
@@ -733,8 +771,8 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 uint16_t
 IRAM_ATTR npl_freertos_sem_get_count(struct ble_npl_sem *sem)
 {
-    struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
-    return uxSemaphoreGetCount(semaphor->handle);
+    struct ble_npl_sem_freertos *semaphore = (struct ble_npl_sem_freertos *)sem->sem;
+    return uxSemaphoreGetCount(semaphore->handle);
 }
 
 
@@ -802,15 +840,35 @@ ble_npl_time_t
 IRAM_ATTR npl_freertos_callout_get_ticks(struct ble_npl_callout *co)
 {
 #if BLE_NPL_USE_ESP_TIMER
-   /* Currently, esp_timer does not support an API which gets the expiry time for
-    * current timer.
-    * Returning 0 from here should not cause any effect.
+
+     uint32_t exp = 0;
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+     uint64_t expiry = 0;
+     esp_err_t err;
+
+     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
+
+     //Fetch expiry time in microseconds
+     err = esp_timer_get_expiry_time((esp_timer_handle_t)(callout->handle), &expiry);
+     if (err != ESP_OK) {
+         //Error. Could not fetch the expiry time
+         return 0;
+     }
+
+     //Convert microseconds to ticks
+     npl_freertos_time_ms_to_ticks((uint32_t)(expiry / 1000), &exp);
+#else
+     //esp_timer_get_expiry_time() is only available from IDF 5.0 onwards
+    /* Returning 0 from here should not cause any effect.
     * Drawback of this approach is that existing code to reset timer would be called
     * more often (since the if condition to invoke reset timer would always succeed if
     * timer is active).
     */
+     exp = 0;
+#endif //ESP_IDF_VERSION
 
-    return 0;
+    return exp;
 #else
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
     return xTimerGetExpiryTime(callout->handle);
@@ -980,6 +1038,7 @@ const struct npl_funcs_t npl_funcs_ro = {
     .p_ble_npl_eventq_deinit = npl_freertos_eventq_deinit,
     .p_ble_npl_eventq_get = npl_freertos_eventq_get,
     .p_ble_npl_eventq_put = npl_freertos_eventq_put,
+    .p_ble_npl_eventq_put_to_front = npl_freertos_eventq_put_to_front,
     .p_ble_npl_eventq_remove = npl_freertos_eventq_remove,
     .p_ble_npl_event_run = npl_freertos_event_run,
     .p_ble_npl_eventq_is_empty = npl_freertos_eventq_is_empty,
@@ -1031,7 +1090,7 @@ struct npl_funcs_t * npl_freertos_funcs_get(void)
 
 void npl_freertos_funcs_init(void)
 {
-    npl_funcs = (struct npl_funcs_t *)malloc(sizeof(struct npl_funcs_t));
+    npl_funcs = (struct npl_funcs_t *)bt_osi_mem_malloc_internal(sizeof(struct npl_funcs_t));
     if(!npl_funcs) {
         printf("npl funcs init failed\n");
         assert(0);
@@ -1065,7 +1124,7 @@ int npl_freertos_mempool_init(void)
     ble_freertos_total_event_cnt = ble_total_evt_count;
 
     if (ble_total_evt_count) {
-        ble_freertos_ev_buf  = malloc(OS_MEMPOOL_SIZE(ble_total_evt_count,
+        ble_freertos_ev_buf  = bt_osi_mem_malloc_internal(OS_MEMPOOL_SIZE(ble_total_evt_count,
                                       sizeof (struct ble_npl_event_freertos)) *
                                       sizeof(os_membuf_t));
         if (!ble_freertos_ev_buf) {
@@ -1080,7 +1139,7 @@ int npl_freertos_mempool_init(void)
     }
 
     if (ble_total_evtq_count) {
-        ble_freertos_evq_buf  = malloc(OS_MEMPOOL_SIZE(ble_total_evtq_count,
+        ble_freertos_evq_buf  = bt_osi_mem_malloc_internal(OS_MEMPOOL_SIZE(ble_total_evtq_count,
                                        sizeof (struct ble_npl_eventq_freertos)) *
                                        sizeof(os_membuf_t));
         if (!ble_freertos_evq_buf) {
@@ -1095,7 +1154,7 @@ int npl_freertos_mempool_init(void)
     }
 
     if (ble_total_co_count) {
-        ble_freertos_co_buf  = malloc(OS_MEMPOOL_SIZE(ble_total_co_count,
+        ble_freertos_co_buf  = bt_osi_mem_malloc_internal(OS_MEMPOOL_SIZE(ble_total_co_count,
                                       sizeof (struct ble_npl_callout_freertos)) *
                                       sizeof(os_membuf_t));
         if (!ble_freertos_co_buf) {
@@ -1110,7 +1169,7 @@ int npl_freertos_mempool_init(void)
     }
 
     if (ble_total_sem_count) {
-        ble_freertos_sem_buf  = malloc(OS_MEMPOOL_SIZE(ble_total_sem_count,
+        ble_freertos_sem_buf  = bt_osi_mem_malloc_internal(OS_MEMPOOL_SIZE(ble_total_sem_count,
                                        sizeof (struct ble_npl_sem_freertos)) *
                                        sizeof(os_membuf_t));
         if (!ble_freertos_sem_buf) {
@@ -1125,7 +1184,7 @@ int npl_freertos_mempool_init(void)
     }
 
     if (ble_total_mutex_count) {
-        ble_freertos_mutex_buf  = malloc(OS_MEMPOOL_SIZE(ble_total_mutex_count,
+        ble_freertos_mutex_buf  = bt_osi_mem_malloc_internal(OS_MEMPOOL_SIZE(ble_total_mutex_count,
                                          sizeof (struct ble_npl_mutex_freertos)) *
                                          sizeof(os_membuf_t));
         if (!ble_freertos_mutex_buf) {
@@ -1142,27 +1201,27 @@ int npl_freertos_mempool_init(void)
     return 0;
 _error:
     if (ble_freertos_ev_buf) {
-        free(ble_freertos_ev_buf);
+        bt_osi_mem_free(ble_freertos_ev_buf);
         ble_freertos_ev_buf = NULL;
     }
 
     if (ble_freertos_evq_buf) {
-        free(ble_freertos_evq_buf);
+        bt_osi_mem_free(ble_freertos_evq_buf);
         ble_freertos_evq_buf = NULL;
     }
 
     if (ble_freertos_co_buf) {
-        free(ble_freertos_co_buf);
+        bt_osi_mem_free(ble_freertos_co_buf);
         ble_freertos_co_buf = NULL;
     }
 
     if (ble_freertos_sem_buf) {
-        free(ble_freertos_sem_buf);
+        bt_osi_mem_free(ble_freertos_sem_buf);
         ble_freertos_sem_buf = NULL;
     }
 
     if (ble_freertos_mutex_buf) {
-        free(ble_freertos_mutex_buf);
+        bt_osi_mem_free(ble_freertos_mutex_buf);
         ble_freertos_mutex_buf = NULL;
     }
     return -1;
@@ -1171,23 +1230,23 @@ _error:
 void npl_freertos_mempool_deinit(void)
 {
     if (ble_freertos_ev_buf) {
-        free(ble_freertos_ev_buf);
+        bt_osi_mem_free(ble_freertos_ev_buf);
         ble_freertos_ev_buf = NULL;
     }
     if (ble_freertos_evq_buf) {
-        free(ble_freertos_evq_buf);
+        bt_osi_mem_free(ble_freertos_evq_buf);
         ble_freertos_evq_buf = NULL;
     }
     if (ble_freertos_co_buf) {
-        free(ble_freertos_co_buf);
+        bt_osi_mem_free(ble_freertos_co_buf);
         ble_freertos_co_buf = NULL;
     }
     if (ble_freertos_sem_buf) {
-        free(ble_freertos_sem_buf);
+        bt_osi_mem_free(ble_freertos_sem_buf);
         ble_freertos_sem_buf = NULL;
     }
     if (ble_freertos_mutex_buf) {
-        free(ble_freertos_mutex_buf);
+        bt_osi_mem_free(ble_freertos_mutex_buf);
         ble_freertos_mutex_buf = NULL;
     }
 }
@@ -1195,7 +1254,7 @@ void npl_freertos_mempool_deinit(void)
 void npl_freertos_funcs_deinit(void)
 {
     if (npl_funcs) {
-        free(npl_funcs);
+        bt_osi_mem_free(npl_funcs);
     }
     npl_funcs = NULL;
 }

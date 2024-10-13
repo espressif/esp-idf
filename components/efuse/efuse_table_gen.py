@@ -4,11 +4,9 @@
 #
 # Converts efuse table to header file efuse_table.h.
 #
-# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import division, print_function
-
 import argparse
 import hashlib
 import os
@@ -371,7 +369,7 @@ class FuseDefinition(object):
         res.bit_count = res.parse_bit_count(fields[3])
         if res.bit_count is None or res.bit_count == 0:
             raise InputError("Field bit_count can't be empty")
-        res.comment = fields[4]
+        res.comment = fields[4].rstrip('\\').rstrip()
         return res
 
     def parse_num(self, strval):
@@ -498,7 +496,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
     parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3',
-                        'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4'], default='esp32')
+                        'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')

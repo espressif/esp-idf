@@ -136,7 +136,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
                 retries++;
                 if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
-                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, reseting provisioned credentials");
+                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, resetting provisioned credentials");
                     wifi_prov_mgr_reset_sm_state_on_failure();
                     retries = 0;
                 }
@@ -230,6 +230,8 @@ static void get_device_service_name(char *service_name, size_t max)
 /* Handler for the optional provisioning endpoint registered by the application.
  * The data format can be chosen by applications. Here, we are using plain ascii text.
  * Applications can choose to use other formats like protobuf, JSON, XML, etc.
+ * Note that memory for the response buffer must be allocated using heap as this buffer
+ * gets freed by the protocomm layer once it has been sent by the transport layer.
  */
 esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
                                           uint8_t **outbuf, ssize_t *outlen, void *priv_data)
@@ -278,6 +280,34 @@ static void wifi_prov_print_qr(const char *name, const char *username, const cha
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s", QRCODE_BASE_URL, payload);
 }
 
+#ifdef CONFIG_EXAMPLE_PROV_ENABLE_APP_CALLBACK
+void wifi_prov_app_callback(void *user_data, wifi_prov_cb_event_t event, void *event_data)
+{
+    /**
+     * This is blocking callback, any configurations that needs to be set when a particular
+     * provisioning event is triggered can be set here.
+    */
+    switch (event) {
+        case WIFI_PROV_SET_STA_CONFIG: {
+            /**
+             * Wi-Fi configurations can be set here before the Wi-Fi is enabled in
+             * STA mode.
+            */
+            wifi_config_t *wifi_config = (wifi_config_t*)event_data;
+            (void) wifi_config;
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+const wifi_prov_event_handler_t wifi_prov_event_handler = {
+    .event_cb = wifi_prov_app_callback,
+    .user_data = NULL,
+};
+#endif /* EXAMPLE_PROV_ENABLE_APP_CALLBACK */
+
 void app_main(void)
 {
     /* Initialize NVS partition */
@@ -325,6 +355,9 @@ void app_main(void)
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
         .scheme = wifi_prov_scheme_softap,
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
+#ifdef CONFIG_EXAMPLE_PROV_ENABLE_APP_CALLBACK
+        .app_event_handler = wifi_prov_event_handler,
+#endif /* EXAMPLE_PROV_ENABLE_APP_CALLBACK */
 
         /* Any default scheme specific event handler that you would
          * like to choose. Since our example application requires

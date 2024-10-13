@@ -16,7 +16,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 生成证书包时，你需选择：
 
-* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2023 年 1 月 10 日，星期二，04:12:06 (GMT)。
+* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2024 年 3 月 11 日，星期一，15:25:27 (GMT)。
 * 一组预先筛选的常用根证书。其中仅包含约 41 份证书，但根据 SSL 证书颁发机构统计数据，其绝对使用率约达到 90%，市场覆盖率约达 99%。
 
 此外，还可指定证书文件的路径或包含证书的目录，将其他证书添加到生成的证书包中。
@@ -76,14 +76,19 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 证书包嵌入到应用程序中，通过 OTA 更新与应用程序一起更新。如果想使用比目前 ESP-IDF 中的证书包更新的包，则可按照 :ref:`updating_bundle` 中的说明从 Mozilla 下载证书列表。
 
 
+定期同步
+-------------
+
+证书包会与 Mozilla 的 NSS 根证书商店定期同步。在 ESP-IDF 的次要版本或补丁版本中，为了保证兼容性，会将上游证书包中已弃用的证书添加到弃用列表。如有需要，可以通过 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST` 将弃用证书加入默认证书包。这些弃用证书将在下一个 ESP-IDF 主要版本中移除。
+
 应用示例
 ---------
 
-使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例：:example:`protocols/https_x509_bundle`，该示例使用了证书包并添加了两个自定义证书用于验证。
+:example:`protocols/https_x509_bundle` 演示了如何使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例，该示例使用了证书包并添加了两个自定义证书用于验证。
 
-使用 ESP-TLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_request`。
+:example:`protocols/https_request` 演示了如何使用 ESP-TLS 和默认证书包的 HTTPS 示例。
 
-使用 mbedTLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_mbedtls`。
+:example:`protocols/https_mbedtls` 演示了如何使用 Mbed TLS 和默认证书包的 HTTPS 示例。
 
 API 参考
 ----------

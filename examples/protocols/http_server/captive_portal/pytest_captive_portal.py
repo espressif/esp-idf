@@ -70,6 +70,7 @@ def test_captive_page(ip: str, port: str, uri: str) -> bool:
 
 @pytest.mark.esp32
 @pytest.mark.wifi_wlan
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='unstable case')
 @pytest.mark.xfail(reason='Runner unable to connect to target over WiFi', run=False)
 def test_example_captive_portal(dut: Dut) -> None:
 

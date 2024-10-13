@@ -1,7 +1,9 @@
 # ulp_embed_binary
 #
 # Create ULP binary and embed into the application.
-function(ulp_embed_binary app_name s_sources exp_dep_srcs)
+
+function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
+
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         spaces2list(s_sources)
         foreach(source ${s_sources})
@@ -30,6 +32,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         string(REPLACE ";" "|" ulp_s_sources "${ulp_s_sources}")
 
         idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
+        idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(idf_target IDF_TARGET)
         idf_build_get_property(python PYTHON)
@@ -41,21 +44,19 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
             if(CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y")
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
-                set(ULP_IS_RISCV ON)
             else()
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
-                set(ULP_IS_RISCV OFF)
             endif()
         elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
-                set(ULP_IS_LP_CORE_RISCV ON)
         endif()
 
         externalproject_add(${app_name}
-                SOURCE_DIR ${idf_path}/components/ulp/cmake
+                SOURCE_DIR ${project_path}
                 BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
                 INSTALL_COMMAND ""
-                CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+                            -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
                             -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
                             -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
                             -DULP_APP_NAME=${app_name}
@@ -64,9 +65,9 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DIDF_TARGET=${idf_target}
                             -DIDF_PATH=${idf_path}
                             -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
+                            -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
                             -DPYTHON=${python}
-                            -DULP_COCPU_IS_RISCV=${ULP_IS_RISCV}
-                            -DULP_COCPU_IS_LP_CORE=${ULP_IS_LP_CORE_RISCV}
+                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
                             ${extra_cmake_args}
                 BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
@@ -88,4 +89,12 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         target_linker_script(${COMPONENT_LIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.ld)
         target_add_binary_data(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.bin BINARY)
     endif()
+endfunction()
+
+function(ulp_embed_binary app_name s_sources exp_dep_srcs)
+    __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake" "${s_sources}" "${exp_dep_srcs}")
+endfunction()
+
+function(ulp_add_project app_name project_path)
+    __setup_ulp_project("${app_name}" "${project_path}" "" "")
 endfunction()

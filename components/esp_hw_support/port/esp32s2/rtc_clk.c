@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp32s2/rom/rtc.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/soc_caps.h"
@@ -174,8 +175,17 @@ void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32
 
 void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
-    clk_ll_rtc_slow_set_src(clk_src);
+#ifndef BOOTLOADER_BUILD
+    soc_rtc_slow_clk_src_t clk_src_before_switch = clk_ll_rtc_slow_get_src();
+    // Keep the RTC8M_CLK on in sleep if RTC clock is rc_fast_d256.
+    if (clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 && clk_src_before_switch != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {       // Switch to RC_FAST_D256
+        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_USE_RC_FAST_MODE, true);
+    } else if (clk_src != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 && clk_src_before_switch == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) { // Switch away from RC_FAST_D256
+        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_USE_RC_FAST_MODE, false);
+    }
+#endif
 
+    clk_ll_rtc_slow_set_src(clk_src);
     /* Why we need to connect this clock to digital?
      * Or maybe this clock should be connected to digital when xtal 32k clock is enabled instead?
      */
@@ -184,7 +194,6 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
     } else {
         clk_ll_xtal32k_digi_disable();
     }
-
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
 }
 
@@ -225,9 +234,9 @@ static void rtc_clk_bbpll_enable(void)
     clk_ll_bbpll_enable();
 }
 
-static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
-    assert(xtal_freq == RTC_XTAL_FREQ_40M);
+    assert(xtal_freq == SOC_XTAL_FREQ_40M);
 
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
@@ -353,7 +362,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         }
     } else if (config->source == SOC_CPU_CLK_SRC_PLL) {
         rtc_clk_bbpll_enable();
-        rtc_clk_bbpll_configure((rtc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ, config->source_freq_mhz);
+        rtc_clk_bbpll_configure((soc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ, config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
@@ -471,10 +480,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     // Note, inside esp32s2-only code it's better to use CLK_LL_XTAL_FREQ_MHZ constant
-    return (rtc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ;
+    return (soc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ;
 }
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)

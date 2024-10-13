@@ -13,23 +13,23 @@ The ULP RISC-V coprocessor code is written in C (assembly is also possible) and 
 If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../../get-started/index>`, then the toolchain should already be installed.
 
 .. note::
-    
+
     In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: ``riscv-none-embed-gcc``.
 
-Compiling the ULP RISC-V Code
------------------------------
+Compiling Code for the ULP RISC-V
+----------------------------------
 
-To compile the ULP RISC-V code as part of the component, the following steps must be taken:
+The ULP RISC-V code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. There are two ways to achieve this:
 
-1. The ULP RISC-V code, written in C or assembly (must use the ``.S`` extension), must be placed in a separate directory inside the component directory, for instance, ``ulp/``.
+Using ``ulp_embed_binary``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note:: 
-    
-    When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files.
+1. Place the ULP RISC-V code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 
-2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
+2. After registering the component in the ``CMakeLists.txt`` file, call the ``ulp_embed_binary`` function. Here is an example:
 
-    ...
+.. code-block:: cmake
+
     idf_component_register()
 
     set(ulp_app_name ulp_${COMPONENT_NAME})
@@ -38,25 +38,81 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
-3. Build the application as usual (e.g., ``idf.py app``).
 
-   Inside, the build system will take the following steps to build ULP program:
+Using a Custom CMake Project
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   1. **Run each source file through the C compiler and assembler.** This step generates the object files (``.obj.c`` or ``.obj.S`` depending of source file processed) in the component build directory.
+It is also possible to create a custom CMake project for the ULP RISC-V. This gives more control over the build process and allows you to set compile options, link external libraries and all other things that are possible with a regular CMake project.
 
-   2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+To do this, add the ULP project as an external project in your component ``CMakeLists.txt`` file:
 
-   3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
+.. code-block:: cmake
 
-   4. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
+    ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
 
-   5. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
+Create a folder which contains your ULP project files and a ``CMakeLists.txt`` file, located at the path given to ``ulp_add_project``. The ``CMakeLists.txt`` file should look like this:
 
-   6. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
+.. code-block:: cmake
 
-   7. **Add the generated binary to the list of binary files** to be embedded into the application.
+    cmake_minimum_required(VERSION 3.16)
+
+    # Project/target name is passed from the main project to allow IDF to have a dependency on this target
+    # as well as embed the binary into the main app
+    project(${ULP_APP_NAME})
+    add_executable(${ULP_APP_NAME} main.c)
+
+    # Import the ULP project helper functions
+    include(IDFULPProject)
+
+    # Apply default compile options
+    ulp_apply_default_options(${ULP_APP_NAME})
+
+    # Apply default sources provided by the IDF ULP component
+    ulp_apply_default_sources(${ULP_APP_NAME})
+
+    # Add targets for building the binary, as well as the linkerscript which exports ULP shared variables to the main app
+    ulp_add_build_binary_targets(${ULP_APP_NAME})
+
+    # Everything below this line is optional and can be used to customize the build process
+
+    # Create a custom library
+    set(lib_path "${CMAKE_CURRENT_LIST_DIR}/lib")
+    add_library(custom_lib STATIC "${lib_path}/lib_src.c")
+    target_include_directories(custom_lib PUBLIC "${lib_path}/")
+
+    # Link the library
+    target_link_libraries(${ULP_APP_NAME} PRIVATE custom_lib)
+
+    # Set custom compile flags
+    target_compile_options(${ULP_APP_NAME} PRIVATE -msave-restore)
+
+Building Your Project
+^^^^^^^^^^^^^^^^^^^^^
+
+To compile and build your project:
+
+1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menuconfig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+
+2. Build the application as usual (e.g., ``idf.py app``).
+
+During the build process, the following steps are taken to build ULP program:
+
+    1. **Run each source file through the C compiler and assembler.** This step generates the object files ``.obj.c`` or ``.obj.S`` in the component build directory depending on the source file processed.
+
+    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+
+    3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file ``ulp_app_name.map`` generated at this stage may be useful for debugging purposes.
+
+    4. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
+
+    5. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
+
+    6. **Create an LD export script and a header file** ``ulp_app_name.ld`` and ``ulp_app_name.h`` containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
+
+    7. **Add the generated binary to the list of binary files** to be embedded into the application.
+
 
 .. _ulp-riscv-access-variables:
 
@@ -102,6 +158,11 @@ To access the ULP RISC-V program variables from the main program, the generated 
     void init_ulp_vars() {
         ulp_measurement_count = 64;
     }
+
+.. note::
+
+    Variables declared in the global scope of the ULP RISC-V program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the ULP RISC-V binary is loaded and executed. Accessing these variables from the main program on the main CPU before the first ULP RISC-V run may result in undefined behavior.
+
 
 Mutual Exclusion
 ^^^^^^^^^^^^^^^^
@@ -167,12 +228,12 @@ The RTC I2C controller provides I2C master functionality in the RTC domain. The 
 
 Once the RTC I2C controller is initialized, the I2C slave device address must be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API before any read or write operation is performed.
 
-.. note:: 
-    
+.. note::
+
     The RTC I2C peripheral always expects a slave sub-register address to be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not, the I2C peripheral uses the ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for the subsequent read or write operations. This could make the RTC I2C peripheral incompatible with certain I2C devices or sensors which do not need any sub-register to be programmed.
 
-.. note:: 
-    
+.. note::
+
     There is no hardware atomicity protection in accessing the RTC I2C peripheral between the main CPU and the ULP RISC-V core. Therefore, care must be taken that both cores are not accessing the peripheral simultaneously.
 
 In case your RTC I2C based ULP RISC-V program is not working as expected, the following sanity checks can help in debugging the issue:
@@ -191,12 +252,43 @@ In case your RTC I2C based ULP RISC-V program is not working as expected, the fo
 
 * Other methods of debugging problems would be to ensure that the RTC I2C controller is operational **only** on the main CPU **without** any ULP RISC-V code interfering and **without** any sleep mode being activated. This is the basic configuration under which the RTC I2C peripheral must work. This way you can rule out any potential issues due to the ULP or sleep modes.
 
+ULP RISC-V Interrupt Handling
+------------------------------
+
+The ULP RISC-V core supports interrupt handling from certain internal and external events. By design, the ULP RISC-V core can handle interrupts from the following sources:
+
+.. list-table:: ULP RISC-V interrupt sources
+    :widths: 10 5 5
+    :header-rows: 1
+
+    * - Interrupt Source
+      - Type
+      - IRQ
+    * - Internal Timer Interrupt
+      - Internal
+      - 0
+    * - EBREAK or ECALL or Illegal Instruction
+      - Internal
+      - 1
+    * - Unaligned Memory Access
+      - Internal
+      - 2
+    * - RTC Peripheral Sources
+      - External
+      - 31
+
+Interrupt handling is enabled via special 32-bit registers Q0-Q3 and custom R-type instructions. For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *ULP Coprocessor* > *ULP-RISC-V* > *ULP-RISC-V Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__].
+
+All interrupts are enabled globally during start-up. When an interrupt occurs, the processor jumps to the IRQ vector. The IRQ vector performs the task of saving the register context and then calling the global interrupt dispatcher. The ULP RISC-V driver implements a *weak* interrupt dispatcher :cpp:func:`_ulp_riscv_interrupt_handler` which serves as the central point for handling all interrupts. This global dispatcher calls respective interrupt handlers which have been allocated via the :cpp:func:`ulp_riscv_intr_alloc`.
+
+Interrupt handling on the ULP RISC-V is not fully featured yet. At present, interrupt handling for internal interrupt sources is not supported. Support is provided for two RTC peripheral sources, viz., software-triggered interrupts and RTC IO-triggered interrupts. ULP RISC-V does not support nested interrupts. If users need custom interrupt handling then they may override the default global interrupt dispatcher by defining their own :cpp:func:`_ulp_riscv_interrupt_handler`.
+
 Debugging Your ULP RISC-V Program
 ----------------------------------
 
 When programming the ULP RISC-V, it can sometimes be challenging to figure out why the program is not behaving as expected. Due to the simplicity of the core, many of the standard methods of debugging, e.g., JTAG or ``printf``, are simply not available.
 
-Keeping this in mind, here are some ways that may help you debug you ULP RISC-V program:
+Keeping this in mind, here are some ways that may help you debug your ULP RISC-V program:
 
  * Share program state through shared variables: as described in :ref:`ulp-riscv-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
@@ -207,10 +299,23 @@ Keeping this in mind, here are some ways that may help you debug you ULP RISC-V 
 Application Examples
 --------------------
 
-* ULP RISC-V Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp/ulp_riscv/gpio`.
-* ULP RISC-V Coprocessor uses bit-banged UART driver to print: :example:`system/ulp/ulp_riscv/uart_print`.
-* ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp/ulp_riscv/ds18b20_onewire`.
-* ULP RISC-V Coprocessor reads external I2C temperature and humidity sensor (BMP180) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp/ulp_riscv/i2c`.
+* :example:`system/ulp/ulp_riscv/gpio` demonstrates how to program the ULP-RISC-V coprocessor to monitor a GPIO pin and wake up the main CPU when its state changes.
+
+* :example:`system/ulp/ulp_riscv/uart_print` demonstrates how to program the ULP-RISC-V coprocessor on the development board to bitbang a UART TX line, allowing for output logging directly from the ULP-RISC-V coprocessor even when the main CPU is in deep sleep.
+
+.. only:: esp32s2
+
+    * :example:`system/ulp/ulp_riscv/ds18b20_onewire` demonstrates how to use the ULP-RISC-V co-processor to read temperature from a DS18B20 sensor over 1-Wire, and wake up the main CPU from deep-sleep when the temperature exceeds a set limit.
+
+* :example:`system/ulp/ulp_riscv/i2c` demonstrates how to use the RTC I2C peripheral from the ULP RISC-V coprocessor in deep sleep mode to periodically measure temperature and pressure values from the BMP180 sensor and wake up the main CPU when these values exceed a certain threshold.
+
+* :example:`system/ulp/ulp_riscv/interrupts` demonstrates how the ULP-RISC-V coprocessor can register and handle software and RTC IO triggered interrupts, keeping a count of the software interrupts and waking up the main processor from deep sleep after a certain threshold or when a button is pressed.
+
+* :example:`system/ulp/ulp_riscv/adc` demonstrates how to use the ULP-RISC-V coprocessor to periodically measure input voltage and wake up the system from deep sleep if the voltage exceeds a set threshold.
+
+* :example:`system/ulp/ulp_riscv/gpio_interrupt` demonstrates how to program the ULP-RISC-V coprocessor to wake up from a RTC IO interrupt using GPIO0 as the input signal, and how to configure and run the coprocessor, putting the chip into deep sleep mode until the wakeup source pin is pulled low.
+
+* :example:`system/ulp/ulp_riscv/touch` demonstrates how to program the ULP RISC-V coprocessor to periodically scan and read touch pad sensors, and wake up the main CPU when a touch pad is active.
 
 API Reference
 -------------

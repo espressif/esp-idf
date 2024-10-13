@@ -1,0 +1,19 @@
+menu "ESP-Driver:Parallel IO Configurations"
+    depends on SOC_PARLIO_SUPPORTED
+
+    config PARLIO_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            whether to enable the debug log message for parallel IO driver.
+            Note that, this option only controls the parallel IO driver log, won't affect other drivers.
+
+    config PARLIO_ISR_IRAM_SAFE
+        bool "Parallel IO ISR IRAM-Safe"
+        default n
+        select GDMA_CTRL_FUNC_IN_IRAM # the driver needs to start the GDMA in the interrupt
+        help
+            Ensure the Parallel IO interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+endmenu # Parallel IO Configuration

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/system_struct.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/adc_types.h"
@@ -58,6 +59,13 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
+
+/**
+ * Workaround: on ESP32C3, the internal hardware counter that counts ADC samples will not be automatically cleared,
+ * and there is no dedicated register to manually clear it. (see section 3.2 of the errata document).
+ * Therefore, traverse from 0 to the value configured last time, so as to clear the ADC sample counter.
+ */
+#define ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER            (1)
 
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
@@ -487,6 +495,18 @@ static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
 }
 
 /**
+ * Clear ADC sample counter of adc digital controller.
+ */
+static inline void adc_ll_digi_dma_clr_eof(void)
+{
+    uint32_t eof_num = HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num);
+    for (int i = 0; i <= eof_num; i++)
+    {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num, i);
+    }
+}
+
+/**
  * Enable output data to DMA from adc digital controller.
  */
 static inline void adc_ll_digi_dma_enable(void)
@@ -541,6 +561,29 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
+
+/**
+ * @brief Enable the ADC clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.perip_clk_en0.reg_apb_saradc_clk_en = enable;
+}
+// SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset ADC module
+ */
+static inline void adc_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en0.reg_apb_saradc_rst = 1;
+    SYSTEM.perip_rst_en0.reg_apb_saradc_rst = 0;
+}
+//  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+
 /**
  * Set ADC module power management.
  *

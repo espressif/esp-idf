@@ -1,0 +1,20 @@
+no_env_marker_test_cases:
+  - components/nvs_flash/test_apps/pytest_nvs_flash.py::test_nvs_flash[default]
+  - components/vfs/test_apps/pytest_vfs.py::test_vfs_ccomp[ccomp]
+  - components/vfs/test_apps/pytest_vfs.py::test_vfs_default[default]
+  - components/vfs/test_apps/pytest_vfs.py::test_vfs_default[iram]
+  - examples/storage/nvs_rw_blob/pytest_nvs_rw_blob.py::test_examples_nvs_rw_blob
+  - examples/storage/nvs_rw_value/pytest_nvs_rw_value.py::test_examples_nvs_rw_value
+  - examples/storage/nvs_rw_value_cxx/pytest_nvs_rw_value_cxx.py::test_examples_nvs_rw_value_cxx
+  - examples/storage/wear_levelling/pytest_wear_levelling_example.py::test_wear_levelling_example
+no_runner_tags:
+  - esp32,ip101
+  - esp32c2,jtag,xtal_40mhz
+  - esp32c3,flash_multi
+  - esp32c3,sdcard_sdmode
+  - esp32c5,jtag
+  - esp32c6,jtag
+  - esp32c61,jtag
+  - esp32h2,jtag
+  - esp32p4,jtag
+  - esp32s2,usb_host_flash_disk

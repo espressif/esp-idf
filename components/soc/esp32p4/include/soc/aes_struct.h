@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -240,6 +240,21 @@ typedef union {
     uint32_t val;
 } aes_mode_reg_t;
 
+/** Type of endian register
+ *  AES Endian configure register
+ */
+typedef union {
+    struct {
+        /** endian : R/W; bitpos: [5:0]; default: 0;
+         *  endian. [1:0] key endian, [3:2] text_in endian or in_stream endian,  [5:4] text_out
+         *  endian or out_stream endian
+         */
+        uint32_t endian:6;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} aes_endian_reg_t;
+
 /** Type of block_mode register
  *  AES cipher block mode register
  */
@@ -281,6 +296,33 @@ typedef union {
     };
     uint32_t val;
 } aes_inc_sel_reg_t;
+
+/** Type of aad_block_num register
+ *  Additional Authential Data block number register
+ */
+typedef union {
+    struct {
+        /** aad_block_num : R/W; bitpos: [31:0]; default: 0;
+         *  Those bits stores the number of AAD block.
+         */
+        uint32_t aad_block_num:32;
+    };
+    uint32_t val;
+} aes_aad_block_num_reg_t;
+
+/** Type of remainder_bit_num register
+ *  AES remainder bit number register
+ */
+typedef union {
+    struct {
+        /** remainder_bit_num : R/W; bitpos: [6:0]; default: 0;
+         *  Those bits stores the number of remainder bit.
+         */
+        uint32_t remainder_bit_num:7;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} aes_remainder_bit_num_reg_t;
 
 
 /** Group: Control/Status register */
@@ -326,6 +368,20 @@ typedef union {
     };
     uint32_t val;
 } aes_dma_enable_reg_t;
+
+/** Type of continue register
+ *  AES continue register
+ */
+typedef union {
+    struct {
+        /** continue : WT; bitpos: [0]; default: 0;
+         *  Set this bit to continue GCM operation.
+         */
+        uint32_t conti:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} aes_continue_reg_t;
 
 /** Type of dma_exit register
  *  AES-DMA exit config
@@ -409,7 +465,7 @@ typedef struct {
     volatile aes_text_out_2_reg_t text_out_2;
     volatile aes_text_out_3_reg_t text_out_3;
     volatile aes_mode_reg_t mode;
-    uint32_t reserved_044;
+    volatile aes_endian_reg_t endian;
     volatile aes_trigger_reg_t trigger;
     volatile aes_state_reg_t state;
     volatile uint32_t iv[4];
@@ -420,7 +476,9 @@ typedef struct {
     volatile aes_block_mode_reg_t block_mode;
     volatile aes_block_num_reg_t block_num;
     volatile aes_inc_sel_reg_t inc_sel;
-    uint32_t reserved_0a0[3];
+    volatile aes_aad_block_num_reg_t aad_block_num;
+    volatile aes_remainder_bit_num_reg_t remainder_bit_num;
+    volatile aes_continue_reg_t conti;
     volatile aes_int_clear_reg_t int_clear;
     volatile aes_int_ena_reg_t int_ena;
     volatile aes_date_reg_t date;

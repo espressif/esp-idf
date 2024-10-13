@@ -15,8 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "esp_netif.h"
 #include "lwip/sockets.h"
@@ -107,7 +106,7 @@ static void uart1_init(void)
         uart1_deinit();
     }
 
-    esp_vfs_dev_uart_use_driver(1);
+    uart_vfs_dev_use_driver(1);
 }
 
 static void uart1_write_task(void *param)

@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "ulp_riscv_utils.h"
 
-int main (void)
+int main(void)
 {
     // Wait for the main core in the test case to enter lightsleep
     ulp_riscv_delay_cycles(100 * ULP_RISCV_CYCLES_PER_MS);

@@ -262,7 +262,7 @@ menu "SPI RAM config"
     config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
         bool "Allow external memory as an argument to xTaskCreateStatic"
         default n
-        depends on SPIRAM_USE_MALLOC
+        depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
         help
             Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround,
             normally tasks cannot be safely run with their stack residing in external memory; for this reason

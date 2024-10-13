@@ -40,7 +40,7 @@ typedef enum {
  *
  * @note Uses the HMAC peripheral in "upstream" mode.
  *
- * @param key_id Determines which of the 6 key blocks in the efuses should be used for the HMAC calcuation.
+ * @param key_id Determines which of the 6 key blocks in the efuses should be used for the HMAC calculation.
  *        The corresponding purpose field of the key block in the efuse must be set to the HMAC upstream purpose value.
  * @param message the message for which to calculate the HMAC
  * @param message_len message length

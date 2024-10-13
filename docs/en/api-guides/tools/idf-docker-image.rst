@@ -98,6 +98,10 @@ Then inside the container, use ``idf.py`` as usual:
 
     Commands which communicate with the development board, such as ``idf.py flash`` and ``idf.py monitor`` does not work in the container, unless the serial port is passed through into the container. This can be done with Docker for Linux with the `device option`_. However, currently, this is not possible with Docker for Windows (https://github.com/docker/for-win/issues/1018) and Docker for Mac (https://github.com/docker/for-mac/issues/900). This limitation may be overcome by using `remote serial ports`_. An example of how to do this can be found in the following `using remote serial port`_ section.
 
+.. note::
+
+    On Linux, when adding the host serial port device into the container using options like ``--device`` or ``--privileged``, and starting the container with a specific user using ``-u $UID``, ensure that this user has read/write access to the device. This can be achieved by adding the container user into the group ID that is assigned to the device on the host, using the ``--group-add`` option. For instance, if the host device has the ``dialout`` group assigned, you can utilize ``--group-add $(getent group dialout | cut -d':' -f3)`` to add the container user to the host's ``dialout`` group.
+
 
 .. _using remote serial port:
 
@@ -143,7 +147,8 @@ The Docker file in ESP-IDF repository provides several build arguments which can
 - ``IDF_CLONE_URL``: URL of the repository to clone ESP-IDF from. Can be set to a custom URL when working with a fork of ESP-IDF. The default is ``https://github.com/espressif/esp-idf.git``.
 - ``IDF_CLONE_BRANCH_OR_TAG``: Name of a git branch or tag used when cloning ESP-IDF. This value is passed to the ``git clone`` command using the ``--branch`` argument. The default is ``master``.
 - ``IDF_CHECKOUT_REF``: If this argument is set to a non-empty value, ``git checkout $IDF_CHECKOUT_REF`` command performs after cloning. This argument can be set to the SHA of the specific commit to check out, for example, if some specific commit on a release branch is desired.
-- ``IDF_CLONE_SHALLOW``: If this argument is set to a non-empty value, ``--depth=1 --shallow-submodules`` arguments are be used when performing ``git clone``. This significantly reduces the amount of data downloaded and the size of the resulting Docker image. However, if switching to a different branch in such a "shallow" repository is necessary, an additional ``git fetch origin <branch>`` command must be executed first.
+- ``IDF_CLONE_SHALLOW``: If this argument is set to a non-empty value, ``--depth=1 --shallow-submodules`` arguments are used when performing ``git clone``. Depth can be customized using ``IDF_CLONE_SHALLOW_DEPTH``. Doing a shallow clone significantly reduces the amount of data downloaded and the size of the resulting Docker image. However, if switching to a different branch in such a "shallow" repository is necessary, an additional ``git fetch origin <branch>`` command must be executed first.
+- ``IDF_CLONE_SHALLOW_DEPTH``: This argument specifies the depth value to use when doing a shallow clone. If not set, ``--depth=1`` will be used. This argument has effect only if ``IDF_CLONE_SHALLOW`` is used. Use this argument if you are building a Docker image for a branch, and the image has to contain the latest tag on that branch. To determine the required depth, run ``git describe`` for the given branch and note the offset number. Increment it by 1, then use it as the value of this argument. The resulting image will contain the latest tag on the branch, and consequently ``git describe`` command inside the Docker image will work as expected.
 - ``IDF_INSTALL_TARGETS``: Comma-separated list of ESP-IDF targets to install toolchains for, or ``all`` to install toolchains for all targets. Selecting specific targets reduces the amount of data downloaded and the size of the resulting Docker image. The default is ``all``.
 
 To use these arguments, pass them via the ``--build-arg`` command line option. For example, the following command builds a Docker image with a shallow clone of ESP-IDF v4.4.1 and tools for ESP32-C3 only:

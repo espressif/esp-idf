@@ -68,19 +68,20 @@ TEST_CASE("Double start error cause test", "[temperature_sensor]")
 TEST_CASE("Double Start-Stop test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
-    float tsens_out;
+    float tsens_result0;
+    float tsens_result1;
     temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
     TEST_ESP_OK(temperature_sensor_enable(temp_handle));
     printf("Temperature sensor started\n");
-    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_out));
-    printf("Temperature out celsius %f°C\n", tsens_out);
+    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_result0));
+    printf("Temperature out celsius %f°C\n", tsens_result0);
     TEST_ESP_OK(temperature_sensor_disable(temp_handle));
     TEST_ESP_OK(temperature_sensor_enable(temp_handle));
-    printf("Temperature sensor started again\n");
-    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_out));
-    printf("Temperature out celsius %f°C\n", tsens_out);
+    TEST_ESP_OK(temperature_sensor_get_celsius(temp_handle, &tsens_result1));
+    printf("Temperature out celsius %f°C\n", tsens_result1);
+    TEST_ASSERT_FLOAT_WITHIN(4.0, tsens_result0, tsens_result1);
     TEST_ESP_OK(temperature_sensor_disable(temp_handle));
     TEST_ESP_OK(temperature_sensor_uninstall(temp_handle));
 }

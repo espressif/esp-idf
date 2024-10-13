@@ -63,7 +63,7 @@ void app_main(void)
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 
-    // Check consistency of reported partiton size info.
+    // Check consistency of reported partition size info.
     if (used > total) {
         ESP_LOGW(TAG, "Number of used bytes cannot be larger than total. Performing SPIFFS_check().");
         ret = esp_spiffs_check(conf.partition_label);

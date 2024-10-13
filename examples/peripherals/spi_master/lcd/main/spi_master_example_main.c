@@ -100,7 +100,7 @@ DRAM_ATTR static const lcd_init_cmd_t st_init_cmds[] = {
 };
 
 DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
-    /* Power contorl B, power control = 0, DC_ENA = 1 */
+    /* Power control B, power control = 0, DC_ENA = 1 */
     {0xCF, {0x00, 0x83, 0X30}, 3},
     /* Power on sequence control,
      * cp1 keeps 1 frame, 1st frame enable
@@ -128,7 +128,7 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
     {0xC5, {0x35, 0x3E}, 2},
     /* VCOM control 2, VCOMH=VMH-2, VCOML=VML-2 */
     {0xC7, {0xBE}, 1},
-    /* Memory access contorl, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
+    /* Memory access control, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
     {0x36, {0x28}, 1},
     /* Pixel format, 16bits/pixel for RGB/MCU interface */
     {0x3A, {0x55}, 1},
@@ -333,13 +333,13 @@ static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
     trans[0].tx_data[0] = 0x2A;         //Column Address Set
     trans[1].tx_data[0] = 0;            //Start Col High
     trans[1].tx_data[1] = 0;            //Start Col Low
-    trans[1].tx_data[2] = (320) >> 8;   //End Col High
-    trans[1].tx_data[3] = (320) & 0xff; //End Col Low
+    trans[1].tx_data[2] = (320 - 1) >> 8;   //End Col High
+    trans[1].tx_data[3] = (320 - 1) & 0xff; //End Col Low
     trans[2].tx_data[0] = 0x2B;         //Page address set
     trans[3].tx_data[0] = ypos >> 8;    //Start page high
     trans[3].tx_data[1] = ypos & 0xff;  //start page low
-    trans[3].tx_data[2] = (ypos + PARALLEL_LINES) >> 8; //end page high
-    trans[3].tx_data[3] = (ypos + PARALLEL_LINES) & 0xff; //end page low
+    trans[3].tx_data[2] = (ypos + PARALLEL_LINES - 1) >> 8; //end page high
+    trans[3].tx_data[3] = (ypos + PARALLEL_LINES - 1) & 0xff; //end page low
     trans[4].tx_data[0] = 0x2C;         //memory write
     trans[5].tx_buffer = linedata;      //finally send the line data
     trans[5].length = 320 * 2 * 8 * PARALLEL_LINES;  //Data length, in bits
@@ -377,7 +377,7 @@ static void display_pretty_colors(spi_device_handle_t spi)
     uint16_t *lines[2];
     //Allocate memory for the pixel buffers
     for (int i = 0; i < 2; i++) {
-        lines[i] = heap_caps_malloc(320 * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
+        lines[i] = spi_bus_dma_memory_alloc(LCD_HOST, 320 * PARALLEL_LINES * sizeof(uint16_t), 0);
         assert(lines[i] != NULL);
     }
     int frame = 0;

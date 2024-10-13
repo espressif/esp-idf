@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Job Report</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.css"
+        />
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            .text-toggle,
+            .full-text {
+                cursor: pointer;
+            }
+            th:nth-child(1),
+            td:nth-child(1) {
+                width: 5%;
+            }
+            th:nth-child(2),
+            td:nth-child(2),
+            th:nth-child(3),
+            td:nth-child(3) {
+                width: 30%;
+            }
+            th,
+            td {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            h2 {
+                margin-top: 10px;
+            }
+            .copy-link-icon {
+                font-size: 20px;
+                margin-left: 10px;
+                color: #8f8f97;
+                cursor: pointer;
+            }
+            .copy-link-icon:hover {
+                color: #282b2c;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid"><h2 id="failed-jobs">Failed Jobs (Excludes "integration_test" and "target_test" jobs)<i class="fas fa-link copy-link-icon"
+        onclick="copyPermalink('#failed-jobs')"></i></h2><table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">
+    <thead>
+        <tr>
+            <th>Job Name</th>
+            <th>Failure Reason</th>
+            <th>Failure Log</th>
+            <th>Failures across all other branches (10 latest jobs)</th>
+            <th>URL</th>
+            <th>CI Dashboard URL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>build_clang_test_apps_esp32h2</td>
+            <td>Some Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure Reason</td>
+            <td>Some Failure LogSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure Reason</td>
+            <td>2 / 10</td>
+            <td><a href="https://test.com/-/jobs/48838695">link</a></td>
+            <td><a href="https://test_dashboard_host/d/LoUa-qLWz/job-list?var-job_name=build_clang_test_apps_esp32h2">link</a></td>
+        </tr>
+        <tr>
+            <td>build_template_app</td>
+            <td>Some Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure Reason</td>
+            <td>Some Failure LogSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure Reason</td>
+            <td>3 / 10</td>
+            <td><a href="https://test.com/-/jobs/48838704">link</a></td>
+            <td><a href="https://test_dashboard_host/d/LoUa-qLWz/job-list?var-job_name=build_template_app">link</a></td>
+        </tr>
+        <tr>
+            <td>check_public_headers</td>
+            <td>Some Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure ReasonSome Failure Reason</td>
+            <td>Some Failure Log</td>
+            <td>4 / 10</td>
+            <td><a href="https://test.com/-/jobs/48838705">link</a></td>
+            <td><a href="https://test_dashboard_host/d/LoUa-qLWz/job-list?var-job_name=check_public_headers">link</a></td>
+        </tr>
+    </tbody>
+</table></div>
+        <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+        <script>
+            $(window).on("load", function () {
+                var hash = window.location.hash;
+                if (hash) {
+                    setTimeout(function () {
+                        $("html, body").animate(
+                            { scrollTop: $(hash).offset().top },
+                            100
+                        );
+                    }, 100);
+                }
+            });
+        </script>
+        <script>
+            $(document).ready(function () {
+                scrollToHashLocation();
+                setupTextToggles();
+                setupEventHandlers();
+            });
+
+            function setupEventHandlers() {
+                $(window).on("load", scrollToHashLocation);
+                $("body").on("click", ".toggle-link", toggleText);
+            }
+
+            function scrollToHashLocation() {
+                const hash = window.location.hash;
+                if (hash) {
+                    setTimeout(() => {
+                        $("html, body").animate(
+                            { scrollTop: $(hash).offset().top },
+                            100
+                        );
+                    }, 100);
+                }
+            }
+
+            function copyPermalink(anchorId) {
+                const fullUrl = `${window.location.origin}${window.location.pathname}${anchorId}`;
+                history.pushState(null, null, anchorId);
+                navigator.clipboard.writeText(fullUrl);
+                scrollToHashLocation();
+            }
+
+            function toggleText(e) {
+                e.preventDefault();
+                const link = $(this),
+                    textSpan = link.siblings(".full-text"),
+                    toggleSpan = link.siblings(".text-toggle");
+                const visible = textSpan.is(":visible");
+                link.text(visible ? "Show More" : "Show Less");
+                textSpan.toggle();
+                toggleSpan.toggle();
+            }
+
+            function setupTextToggles() {
+                $("table.table td").each(function () {
+                    var cell = $(this);
+                    if (cell.text().length > 100) {
+                        var originalText = cell.text();
+                        var displayText =
+                            originalText.substring(0, 100) + "...";
+                        cell.html(
+                            `<span class="text-toggle">${displayText}</span><span class="full-text" style="display: none;">${originalText}</span><a href="#" class="toggle-link">Show More</a>`
+                        );
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>

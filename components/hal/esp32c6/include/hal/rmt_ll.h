@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "hal/rmt_types.h"
 #include "soc/rmt_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,8 @@ extern "C" {
 #define RMT_LL_MAX_LOOP_COUNT_PER_BATCH   1023
 #define RMT_LL_MAX_FILTER_VALUE           255
 #define RMT_LL_MAX_IDLE_VALUE             32767
+
+#define RMT_LL_SLEEP_RETENTION_MODULE_ID(group_id) (SLEEP_RETENTION_MODULE_RMT0)
 
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
@@ -79,15 +82,36 @@ static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
 }
 
 /**
- * @brief Power down memory
+ * @brief Force power on the RMT memory block, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
- * @param enable True to power down, False to power up
  */
-static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, bool enable)
+static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 {
-    dev->sys_conf.mem_force_pu = !enable;
-    dev->sys_conf.mem_force_pd = enable;
+    dev->sys_conf.mem_force_pu = 1;
+    dev->sys_conf.mem_force_pd = 0;
+}
+
+/**
+ * @brief Force power off the RMT memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
+{
+    dev->sys_conf.mem_force_pd = 1;
+    dev->sys_conf.mem_force_pu = 0;
+}
+
+/**
+ * @brief Power control the RMT memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
+{
+    dev->sys_conf.mem_force_pd = 0;
+    dev->sys_conf.mem_force_pu = 0;
 }
 
 /**
@@ -112,7 +136,7 @@ static inline void rmt_ll_enable_mem_access_nonfifo(rmt_dev_t *dev, bool enable)
  * @param divider_numerator Numerator part of the divider
  */
 static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, rmt_clock_source_t src,
-        uint32_t divider_integral, uint32_t divider_denominator, uint32_t divider_numerator)
+                                              uint32_t divider_integral, uint32_t divider_denominator, uint32_t divider_numerator)
 {
     // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
     (void)channel; // the source clock is set for all channels
@@ -433,7 +457,7 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  *
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
- * @param enable True to output carrier signal in all RMT state, False to only ouput carrier signal for effective data
+ * @param enable True to output carrier signal in all RMT state, False to only output carrier signal for effective data
  */
 static inline void rmt_ll_tx_enable_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
@@ -664,7 +688,7 @@ static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool e
  * @brief Clear RMT interrupt status by mask
  *
  * @param dev Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void rmt_ll_clear_interrupt_status(rmt_dev_t *dev, uint32_t mask)
@@ -818,12 +842,9 @@ static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel
     return dev->chnconf0[channel].idle_out_lv_chn;
 }
 
-static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
+static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
 {
-    // the RTC domain can also power down RMT memory
-    // so it's probably not enough to detect whether it's powered down or not
-    // mem_force_pd has higher priority than mem_force_pu
-    return (dev->sys_conf.mem_force_pd) || !(dev->sys_conf.mem_force_pu);
+    return dev->sys_conf.mem_force_pd;
 }
 
 __attribute__((always_inline))

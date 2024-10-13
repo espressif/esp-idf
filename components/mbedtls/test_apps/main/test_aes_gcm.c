@@ -468,7 +468,7 @@ TEST_CASE("mbedtls AES GCM performance, start, update, ret", "[aes-gcm]")
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_GCM
     // Don't put a hard limit on software AES performance
-    TEST_PERFORMANCE_GREATER_THAN(AES_GCM_UPDATE_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+    TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_GCM_UPDATE_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
 
@@ -527,7 +527,7 @@ TEST_CASE("mbedtls AES GCM performance, crypt-and-tag", "[aes-gcm]")
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_GCM
     // Don't put a hard limit on software AES performance
-    TEST_PERFORMANCE_GREATER_THAN(AES_GCM_CRYPT_TAG_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
+    TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_GCM_CRYPT_TAG_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
 

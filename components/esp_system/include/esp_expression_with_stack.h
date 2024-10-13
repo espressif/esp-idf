@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -30,19 +22,32 @@ typedef void (*shared_stack_function)(void);
     esp_execute_shared_stack_function(lock, stack, stack_size, expression)
 
 /**
- * @brief Calls user defined shared stack space function
+ * @brief Calls function on user defined shared stack space
+ *
+ * After returning, the original stack is used again.
+ *
+ * @warning This function does minimal preparation of the provided piece of memory (\c stack).
+ *          DO NOT do any of the following in \c function or any of its callees:
+ *          * Use Thread-local storage
+ *          * Use the Floating-point unit on ESP32-P4
+ *          * Use the AI co-processor on ESP32-P4
+ *          * Call vTaskDelete(NULL) (deleting the currently running task)
+ *          Furthermore, backtraces will be wrong when called from \c function or any of its callees.
+ *          The limitations are quite sever, so that we might deprecate this function in the future.
+ *          If you have any use case which can only be implemented using this function, please open
+ *          an issue on github.
+ *
  * @param lock Mutex object to protect in case of shared stack
- * @param stack Pointer to user alocated stack
+ * @param stack Pointer to user allocated stack
  * @param stack_size Size of current stack in bytes
  * @param function pointer to the shared stack function to be executed
  * @note  if either lock, stack or stack size is invalid, the expression will
  *          be called using the current stack.
  */
 void esp_execute_shared_stack_function(SemaphoreHandle_t lock,
-                                      void *stack,
-                                      size_t stack_size,
-                                      shared_stack_function function);
-
+                                       void *stack,
+                                       size_t stack_size,
+                                       shared_stack_function function);
 
 #ifdef __cplusplus
 }

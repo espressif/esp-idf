@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,6 @@
 #include "esp_log.h"
 const static char *TAG = "pthread_rw_lock";
 
-
 /** pthread rw_mutex FreeRTOS wrapper */
 typedef struct {
     /**
@@ -46,8 +45,8 @@ typedef struct {
 #define WRITER_QUEUE_SIZE 4
 #define READER_QUEUE_SIZE 4
 
-int	pthread_rwlock_init (pthread_rwlock_t *rwlock,
-			     const pthread_rwlockattr_t *attr)
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+                        const pthread_rwlockattr_t *attr)
 {
     int result;
     if (!rwlock) {
@@ -99,7 +98,7 @@ static int pthread_rwlock_init_if_static(pthread_rwlock_t *rwlock)
     return res;
 }
 
-int	pthread_rwlock_destroy (pthread_rwlock_t *rwlock)
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
 
@@ -158,7 +157,7 @@ static int checkrw_lock(pthread_rwlock_t *rwlock)
     return 0;
 }
 
-int	pthread_rwlock_rdlock (pthread_rwlock_t *rwlock)
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
     int res;
@@ -191,7 +190,7 @@ int	pthread_rwlock_rdlock (pthread_rwlock_t *rwlock)
     return 0;
 }
 
-int	pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
     int res;
@@ -219,7 +218,7 @@ int	pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
     return res;
 }
 
-int	pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
     int res;
@@ -247,7 +246,8 @@ int	pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
     return 0;
 }
 
-int	pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock) {
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
+{
     esp_pthread_rwlock_t *esp_rwlock;
     int res;
 
@@ -276,7 +276,7 @@ int	pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock) {
     return res;
 }
 
-int	pthread_rwlock_unlock (pthread_rwlock_t *rwlock)
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 {
     esp_pthread_rwlock_t *esp_rwlock;
     int res;

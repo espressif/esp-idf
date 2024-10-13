@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <inttypes.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -103,9 +104,11 @@ static void print_device_info(msc_host_device_info_t *info)
     printf("\t Sector count: %"PRIu32"\n", info->sector_count);
     printf("\t PID: 0x%04X \n", info->idProduct);
     printf("\t VID: 0x%04X \n", info->idVendor);
+#ifndef CONFIG_NEWLIB_NANO_FORMAT
     wprintf(L"\t iProduct: %S \n", info->iProduct);
     wprintf(L"\t iManufacturer: %S \n", info->iManufacturer);
     wprintf(L"\t iSerialNumber: %S \n", info->iSerialNumber);
+#endif
 }
 
 static void file_operations(void)
@@ -217,17 +220,19 @@ static void usb_task(void *args)
     };
     ESP_ERROR_CHECK(msc_host_install(&msc_config));
 
+    bool has_clients = true;
     while (true) {
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
 
         // Release devices once all clients has deregistered
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
+            has_clients = false;
             if (usb_host_device_free_all() == ESP_OK) {
                 break;
             };
         }
-        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
+        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE && !has_clients) {
             break;
         }
     }

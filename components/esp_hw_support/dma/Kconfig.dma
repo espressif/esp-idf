@@ -1,0 +1,84 @@
+menu "GDMA Configurations"
+    depends on SOC_GDMA_SUPPORTED
+    config GDMA_CTRL_FUNC_IN_IRAM
+        bool "Place GDMA control functions in IRAM"
+        default n
+        help
+            Place GDMA control functions (like start/stop/append/reset) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+    config GDMA_ISR_IRAM_SAFE
+        bool "GDMA ISR IRAM-Safe"
+        default n
+        help
+            This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write).
+
+    config GDMA_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Whether to enable the debug log message for GDMA driver.
+            Note that, this option only controls the GDMA driver log, won't affect other drivers.
+endmenu # GDMA Configurations
+
+menu "DW_GDMA Configurations"
+    depends on SOC_DW_GDMA_SUPPORTED
+
+    config DW_GDMA_CTRL_FUNC_IN_IRAM
+        bool
+        default n
+        help
+            Place DW_GDMA control functions (e.g. dw_gdma_channel_continue) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+    config DW_GDMA_SETTER_FUNC_IN_IRAM
+        bool
+        default n
+        help
+            Place DW_GDMA setter functions (e.g. dw_gdma_channel_set_block_markers) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+    config DW_GDMA_GETTER_FUNC_IN_IRAM
+        bool
+        default n
+        help
+            Place DW_GDMA getter functions (e.g. dw_gdma_link_list_get_item) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+    config DW_GDMA_ISR_IRAM_SAFE
+        bool
+        default n
+        help
+            This will ensure the DW_GDMA interrupt handler is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write).
+
+    config DW_GDMA_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Whether to enable the debug log message for DW_GDMA driver.
+            Note that, this option only controls the DW_GDMA driver log, won't affect other drivers.
+endmenu # DW_GDMA Configurations
+
+menu "2D-DMA Configurations"
+    depends on SOC_DMA2D_SUPPORTED
+
+    config DMA2D_OPERATION_FUNC_IN_IRAM
+        bool "Place 2D-DMA operation functions into IRAM"
+        default n
+        help
+            Place 2D-DMA all operation functions, including control functions (e.g. start/stop/append/reset) and setter
+            functions (e.g. connect/strategy/callback registration) into IRAM, so that these functions can be IRAM-safe
+            and able to be called in the other IRAM interrupt context. It also helps optimizing the performance.
+
+    config DMA2D_ISR_IRAM_SAFE
+        bool "2D-DMA ISR IRAM-Safe"
+        default n
+        help
+            This will ensure the 2D-DMA interrupt handler is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write).
+endmenu # 2D-DMA Configurations

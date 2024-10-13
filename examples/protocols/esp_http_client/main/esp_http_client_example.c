@@ -108,8 +108,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_ON_FINISH:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
             if (output_buffer != NULL) {
-                // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-                // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+#if CONFIG_EXAMPLE_ENABLE_RESPONSE_BUFFER_DUMP
+                ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+#endif
                 free(output_buffer);
                 output_buffer = NULL;
             }
@@ -145,7 +146,7 @@ static void http_rest_with_url(void)
     // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
     /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+     * NOTE: All the configuration parameters for http_client must be specified either in URL or as host and path parameters.
      * If host and path parameters are not set, query parameter will be ignored. In such cases,
      * query parameter should be specified in URL.
      *
@@ -375,7 +376,7 @@ static void http_auth_basic_redirect(void)
 #endif
 
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
-static void http_auth_digest(void)
+static void http_auth_digest_md5(void)
 {
     esp_http_client_config_t config = {
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/MD5/never",
@@ -385,11 +386,31 @@ static void http_auth_digest(void)
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "HTTP Digest Auth Status = %d, content_length = %"PRId64,
+        ESP_LOGI(TAG, "HTTP MD5 Digest Auth Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
     } else {
-        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
+static void http_auth_digest_sha256(void)
+{
+    esp_http_client_config_t config = {
+        .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/SHA-256/never",
+        .event_handler = _http_event_handler,
+        .buffer_size_tx = 1024, // Increase buffer size as header size will increase as it contains SHA-256.
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP SHA256 Digest Auth Status = %d, content_length = %"PRId64,
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
     }
     esp_http_client_cleanup(client);
 }
@@ -631,6 +652,31 @@ static void https_async(void)
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
     }
     esp_http_client_cleanup(client);
+
+    // Test HTTP_METHOD_HEAD with is_async enabled
+    config.url = "https://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get";
+    config.event_handler = _http_event_handler;
+    config.crt_bundle_attach = esp_crt_bundle_attach;
+    config.is_async = true;
+    config.timeout_ms = 5000;
+
+    client = esp_http_client_init(&config);
+    esp_http_client_set_method(client, HTTP_METHOD_HEAD);
+
+    while (1) {
+        err = esp_http_client_perform(client);
+        if (err != ESP_ERR_HTTP_EAGAIN) {
+            break;
+        }
+    }
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %"PRId64,
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
 }
 
 static void https_with_invalid_url(void)
@@ -779,7 +825,8 @@ static void http_test_task(void *pvParameters)
     http_auth_basic_redirect();
 #endif
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
-    http_auth_digest();
+    http_auth_digest_md5();
+    http_auth_digest_sha256();
 #endif
     http_encoded_query();
     http_relative_redirect();

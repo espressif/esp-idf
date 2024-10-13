@@ -451,9 +451,13 @@
     }
 
 应用示例
--------------------
+--------
 
-查看使用触摸元件库的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/touch_sensor/touch_element` 目录。
+- :example:`peripherals/touch_sensor/touch_element/touch_element_waterproof` 演示了如何使用触摸元件库来设置带有防水保护的电容式触摸传感器。
+- :example:`peripherals/touch_sensor/touch_element/touch_slider` 演示了如何使用触摸元件库来设置和操作触摸滑条。
+- :example:`peripherals/touch_sensor/touch_element/touch_elements_combination` 演示了如何使用触摸元件库来设置多种类型的触摸元件，并在一个任务中处理所有的事件消息。
+- :example:`peripherals/touch_sensor/touch_element/touch_matrix` 演示了如何通过触摸元件库，在 {IDF_TARGET_NAME} 开发板上使用电容式触摸传感器来构建触摸矩阵。
+- :example:`peripherals/touch_sensor/touch_element/touch_button` 演示了如何通过触摸元件库，在 {IDF_TARGET_NAME} 开发板上设置和使用触摸按键。
 
 
 API 参考 - 触摸元件核心

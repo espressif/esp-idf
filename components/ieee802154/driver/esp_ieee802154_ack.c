@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,11 @@
 
 static ieee802154_pending_table_t ieee802154_pending_table;
 
-#define BIT_SET(mask, pos) ((mask) |= (1UL << (pos)))
-#define BIT_CLR(mask, pos) ((mask) &= ~(1UL << (pos)))
-#define BIT_IST(mask, pos) ((mask) & (1UL << (pos)))
+#define GET_MASK_ITEM_FROM_TABLE(mask, pos) (mask[(pos) / IEEE802154_PENDING_TABLE_MASK_BITS])
+
+#define BIT_SET(mask, pos) (GET_MASK_ITEM_FROM_TABLE(mask, pos) |= (1UL << (pos % IEEE802154_PENDING_TABLE_MASK_BITS)))
+#define BIT_CLR(mask, pos) (GET_MASK_ITEM_FROM_TABLE(mask, pos) &= ~(1UL << (pos % IEEE802154_PENDING_TABLE_MASK_BITS)))
+#define BIT_IST(mask, pos) (GET_MASK_ITEM_FROM_TABLE(mask, pos) & (1UL << (pos % IEEE802154_PENDING_TABLE_MASK_BITS)))
 
 static IRAM_ATTR bool ieee802154_addr_in_pending_table(const uint8_t *addr, bool is_short)
 {
@@ -114,9 +116,9 @@ void ieee802154_reset_pending_table(bool is_short)
 {
     // Consider this function may be called in ISR, only clear the mask bits for finishing the process quickly.
     if (is_short) {
-        ieee802154_pending_table.short_addr_mask = 0;
+        memset(ieee802154_pending_table.short_addr_mask, 0, IEEE802154_PENDING_TABLE_MASK_SIZE);
     } else {
-        ieee802154_pending_table.ext_addr_mask = 0;
+        memset(ieee802154_pending_table.ext_addr_mask, 0, IEEE802154_PENDING_TABLE_MASK_SIZE);
     }
 }
 

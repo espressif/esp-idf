@@ -419,6 +419,14 @@ IP Layer Features
 
 - IPV4-mapped IPV6 addresses are supported
 
+NAPT and Port Forwarding
+++++++++++++++++++++++++
+
+IPV4 network address port translation (NAPT) and port forwarding are supported. However, the enabling of NAPT is limited to a single interface.
+
+- To use NAPT for forwarding packets between two interfaces, it needs to be enabled on the interface connecting to the target network. For example, to enable internet access for Ethernet traffic through the Wi-Fi interface, NAPT must be enabled on the Ethernet interface.
+- Usage of NAPT is demonstrated in :example:`network/vlan_support`.
+
 .. _lwip-custom-hooks:
 
 Customized lwIP Hooks
@@ -451,6 +459,10 @@ Limitations
 
 ESP-IDF additions to lwIP still suffer from the global DNS limitation, described in :ref:`lwip-dns-limitation`. To address this limitation from application code, the ``FALLBACK_DNS_SERVER_ADDRESS()`` macro can be utilized to define a global DNS fallback server accessible from all interfaces. Alternatively, you have the option to maintain per-interface DNS servers and reconfigure them whenever the default interface changes.
 
+The number of IP addresses returned by network database APIs such as ``getaddrinfo()`` and ``gethostbyname()`` is restricted by the macro ``DNS_MAX_HOST_IP``. By default, the value of this macro is set to 1.
+
+In the implementation of ``getaddrinfo()``, the canonical name is not available. Therefore, the ``ai_canonname`` field of the first returned ``addrinfo`` structure will always refer to the ``nodename`` argument or a string with the same contents.
+
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This failure occurs due to the limitations of buffer sizes in the lower-layer network interface drivers. If all driver transmit buffers are full, the UDP transmission will fail. For applications that transmit a high volume of UDP datagrams and aim to avoid any dropped datagrams by the sender, it is advisable to implement error code checking and employ a retransmission mechanism with a short delay.
 
 .. only:: esp32
@@ -471,9 +483,7 @@ TCP/IP performance is a complex subject, and performance can be optimized toward
 Maximum Throughput
 ^^^^^^^^^^^^^^^^^^
 
-Espressif tests ESP-IDF TCP/IP throughput using the :example:`wifi/iperf` example in an RF-sealed enclosure.
-
-The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example contains settings known to maximize TCP/IP throughput, usually at the expense of higher RAM usage. To get maximum TCP/IP throughput in an application at the expense of other factors, it is suggested to apply settings from this file into the project sdkconfig.
+Espressif tests ESP-IDF TCP/IP throughput using the iperf test application: https://iperf.fr/, please refer to :ref:`improve-network-speed` for more details about the actual testing and using the optimized configuration.
 
 .. important::
 
@@ -505,6 +515,7 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 
 - Reducing :ref:`CONFIG_LWIP_MAX_SOCKETS` reduces the maximum number of sockets in the system. This also causes TCP sockets in the ``WAIT_CLOSE`` state to be closed and recycled more rapidly when needed to open a new socket, further reducing peak RAM usage.
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce RAM usage at the expense of throughput, depending on usage.
+- Reducing :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` reduce RAM usage by limiting concurrent accepted connections.
 - Reducing :ref:`CONFIG_LWIP_TCP_MSL` and :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` reduces the maximum segment lifetime in the system. This also causes TCP sockets in the ``TIME_WAIT`` and ``FIN_WAIT_2`` states to be closed and recycled more rapidly.
 - Disabling :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2 KB RAM when the system is powered up and 7 KB RAM when the TCP/IP stack is running. If there is no requirement for supporting IPV6, it can be disabled to save flash and RAM footprint.
 - Disabling :ref:`CONFIG_LWIP_IPV4` can save about 26 KB of firmware size and 600 B RAM on power up and 6 KB RAM when the TCP/IP stack is running. If the local network supports IPv6-only configuration, IPv4 can be disabled to save flash and RAM footprint.

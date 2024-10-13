@@ -84,7 +84,7 @@ This solution is available on Github: `ESP-IoT-Solution on GitHub <https://githu
 ESP-Protocols
 -------------
 
-The `ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains a collection of protocol components for ESP-IDF. The code within ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. Additionally, each component is available in `IDF Component Registry <https://components.espressif.com/>`_.
+The `ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains a collection of protocol components for ESP-IDF. The code within ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. Additionally, each component is available in `ESP Component Registry <https://components.espressif.com/>`_.
 
 ESP-Protocols components:
 
@@ -96,6 +96,8 @@ ESP-Protocols components:
 
 * `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. See the `asio documentation <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_.
 
+* `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ is a Wi-Fi communication library that provides standard Wi-Fi API and networking of an external, Wi-Fi capable ESP32 chipset connected to the target device via a specified transport interface. See the :doc:`../api-guides/wifi-expansion`.
+
 ESP-BSP
 -------
 
@@ -104,4 +106,5 @@ The `ESP-BSP <https://github.com/espressif/esp-bsp>`_ repository contains Board 
 ESP-IDF-CXX
 -----------
 
-`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is `available as a component <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ from the component registry. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.
+`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is available as a component from `ESP Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`__. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.
+

@@ -1,0 +1,5 @@
+#
+# Example Configuration
+#
+CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT=y
+# end of Example Configuration

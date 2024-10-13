@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,24 @@ int lp_core_uart_tx_chars(uart_port_t lp_uart_num, const void *src, size_t size)
 
     /* Return the number of bytes written */
     return tx_len;
+}
+
+void lp_core_uart_tx_flush(uart_port_t lp_uart_num)
+{
+    (void)lp_uart_num;
+    int loop_cnt = 0;
+
+    if (uart_ll_is_enabled(LP_UART_NUM_0) && !uart_hal_is_tx_idle(&hal)) {
+        /* Wait for the Tx FIFO to be empty */
+        while (!(uart_hal_get_intraw_mask(&hal) & (LP_UART_TX_INT_FLAG | LP_UART_ERR_INT_FLAG))) {
+            loop_cnt++;
+            if (loop_cnt > 10000) {
+                /* Bail out */
+                break;
+            }
+        }
+        uart_hal_clr_intsts_mask(&hal, LP_UART_TX_INT_FLAG | LP_UART_ERR_INT_FLAG);
+    }
 }
 
 esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, size_t size, int32_t timeout)
@@ -182,7 +200,7 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
             /* We have some data to read from the Rx FIFO. Check Rx interrupt status */
             intr_status = uart_hal_get_intsts_mask(&hal);
             if ((intr_status & UART_INTR_RXFIFO_FULL) ||
-                (intr_status & UART_INTR_RXFIFO_TOUT)) {
+                    (intr_status & UART_INTR_RXFIFO_TOUT)) {
                 /* This is expected. Clear interrupt status and break */
                 uart_hal_clr_intsts_mask(&hal, intr_mask);
                 break;

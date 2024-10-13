@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,11 @@ TEST_CASE("sdmmc read/write performance, slot 0, 4-bit DDR", "[sdmmc]")
 TEST_CASE("sdmmc read/write performance, slot 0, 8-bit", "[sdmmc]")
 {
     do_one_sdmmc_perf_test(SLOT_0, 8, SDMMC_FREQ_HIGHSPEED, NO_DDR, NULL);
+}
+
+TEST_CASE("sdmmc read/write performance, slot 1, 1-bit", "[sdmmc]")
+{
+    do_one_sdmmc_perf_test(SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR, NULL);
 }
 
 TEST_CASE("sdmmc read/write performance, slot 1, 4-bit", "[sdmmc]")

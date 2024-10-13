@@ -156,6 +156,24 @@ TEST_CASE("SDIO_Slave: test reset", "[sdio]")
 }
 
 /*---------------------------------------------------------------
+                SDMMC_SDIO: test fixed addr
+---------------------------------------------------------------*/
+TEST_CASE("SDIO_Slave: test fixed addr", "[sdio]")
+{
+    s_slave_init(SDIO_SLAVE_SEND_PACKET);
+    TEST_ESP_OK(sdio_slave_start());
+    ESP_LOGI(TAG, "slave ready");
+
+    for (int i = 0; i < 64; i++) {
+        sdio_slave_write_reg(i, 0xcc);
+    }
+
+    wait_for_finish(&s_test_slv_ctx);
+
+    sdio_slave_stop();
+    sdio_slave_deinit();
+}
+/*---------------------------------------------------------------
                 Transaction Tests
 ---------------------------------------------------------------*/
 #define TEST_SLAVE_TRANS_BUF_NUMS    10

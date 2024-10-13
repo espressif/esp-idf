@@ -22,6 +22,14 @@
 
   {IDF_TARGET_NAME} 有一个核，28 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 4 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
+.. only:: esp32p4
+
+  {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+
+.. only:: esp32c5 or esp32c61
+
+  {IDF_TARGET_NAME} 有一个核，32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** > **高性能处理器** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+
 由于中断源数量多于中断，有时多个驱动程序可以共用一个中断。:cpp:func:`esp_intr_alloc` 抽象隐藏了这些实现细节。
 
 驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`，或 :cpp:func:`esp_intr_alloc_intrstatus` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。
@@ -61,9 +69,18 @@
     外部外设中断
     ^^^^^^^^^^^^^^^^^^^^
 
-    剩余的中断源来自外部外设，在 ``soc/soc.h`` 中定义为 ``ETS_*_INTR_SOURCE``。
+    其余中断源来自外部外设。
 
-    两个 CPU 的非内部中断源槽都与中断矩阵相连，可以将任何外部中断源发送到这些中断槽中。
+.. only:: esp32p4
+
+    多核问题
+    --------
+
+    每个 {IDF_TARGET_NAME} 内核都同时提供内部中断和外部中断，内部中断由内核自身触发，外部中断由外设触发。但 ESP-IDF 仅使用 {IDF_TARGET_NAME} 上的外部中断。大多数 {IDF_TARGET_NAME} 中断源都属于外部中断。
+
+    每个内核的各个外部中断槽都与中断矩阵相连。通过中断矩阵可将任何外部中断源连接到任何中断槽，也可将多个外部中断源映射到同一个中断槽。外部中断源在 ``soc/interrupts.h`` 中定义为 ``ETS_*_INTR_SOURCE``。
+
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     - 外部中断会始终被分配到执行该分配的内核上。
     - 释放外部中断必须在分配该中断的内核上进行。
@@ -72,17 +89,45 @@
 
     须注意从未关联到内核的任务中调用 :cpp:func:`esp_intr_alloc` 的情况。在任务切换期间，这些任务可能在不同内核之间进行迁移，因此无法确定中断分配到了哪个 CPU，给释放中断句柄造成困难，也可能引起调试问题。建议使用特定 CoreID 参数的 :cpp:func:`xTaskCreatePinnedToCore` 来创建中断分配任务，这对于内部中断源而言是必要的。
 
+.. _iram_safe_interrupts_handlers:
 
-IRAM-safe 中断处理程序
-----------------------
+IRAM 安全中断处理程序
+---------------------
 
-``ESP_INTR_FLAG_IRAM`` flag 注册的中断处理程序始终在 IRAM（并从 DRAM 读取其所有数据）中运行，因此在擦除和写入 flash 时无需禁用。
+在执行 SPI flash 的写入和擦除操作时，{IDF_TARGET_NAME} 会禁用 cache，中断处理程序将无法访问 SPI flash 和 SPIRAM。因此，ESP-IDF 中存在两种中断处理程序，它们各有优缺点：
 
-这对于需要保证最小执行延迟的中断来说非常有用，因为 flash 写入和擦除操作可能很慢（擦除可能需要数十毫秒或数百毫秒才能完成）。
+**IRAM 安全中断处理程序** - 只能访问内部内存中的代码和数据（代码存储在 IRAM 中，数据存储在 DRAM 中）。
 
-如果中断被频繁调用，可以将中断处理程序保留在 IRAM 中，避免 flash cache 丢失。
+.. list::
 
-有关更多详细信息，请参阅 :ref:`SPI flash API 相关文档 <iram-safe-interrupt-handlers>`。
+    - **+** **延迟**：flash 写入和擦除操作相对缓慢，例如擦除可能需要几十或几百毫秒才能完成，但这些中断处理程序不受影响，执行速度较快且延迟较低，能够保证最小执行延迟。
+    - **-** **占用内部内存**：中断处理程序占用了宝贵的内部内存，这些内存本可以用于其他目的。
+    - **+** **cache 未命中**：中断处理程序不依赖 cache, 因此就不会出现 cache 未命中带来的不确定性，因为代码和数据已存储在内部存储器中了。
+    - **使用场景**：请使用 :c:macro:`ESP_INTR_FLAG_IRAM` 标志，通过中断分配器 API 注册此类中断。
+
+**非 IRAM 安全中断处理程序** - 可能会访问 flash 中的代码和（只读）数据。
+
+.. list::
+
+    - **-** **延迟**：在进行 flash 操作时，中断处理程序会被推迟，因此平均延迟较高且难以预测。
+    - **+** **占用内部内存**：该中断处理程序不使用内部 RAM，或者使用的内存比 IRAM 安全中断要少。
+    - **使用场景**：通过中断分配器 API 注册此类中断时，请 **不要** 使用 :c:macro:`ESP_INTR_FLAG_IRAM` 标志。
+
+*请注意，没有任何显式标记将中断处理程序标识为 IRAM 安全。* 当且仅当要访问的代码和数据存储在内部内存中时，中断处理程序才被隐式标记为 IRAM 安全。“IRAM 安全”这个术语实际上有点误导性，因为除了将处理程序的代码放在 IRAM 中之外，还有更多其他要求。以下是 **不属于** IRAM 安全的中断处理程序示例：
+
+.. list::
+
+    - 部分代码放置在 flash 中。
+    - 放置在 IRAM 中但调用了存储在 flash 里的函数。
+    - 代码放置在 IRAM 中但访问了位于 flash 中的只读变量。
+
+关于如何将代码和数据放置在 IRAM 或 DRAM 中，请参见 :ref:`how-to-place-code-in-iram`。
+
+有关 SPI flash 操作及其与中断处理程序交互的更多详细信息，请参见 :ref:`SPI flash API 文档 <iram-safe-interrupt-handlers>`。
+
+.. note::
+
+    如果不能 100% 确定中断处理程序访问的所有代码和数据都位于 IRAM（代码）或 DRAM（数据）中，切勿使用 ``ESP_INTR_FLAG_IRAM`` 标志注册中断处理程序。忽略这一点将导致（有时是偶发性的）:ref:`cache 错误 <cache_error>`。通过调用函数间接访问代码和数据时也需要注意这点。
 
 .. _intr-alloc-shared-interrupts:
 
@@ -143,7 +188,7 @@ CPU 中断在大多数 Espressif SoC 上都是有限的资源。因此，一个�
 
 .. list::
 
-    :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - 在多核 SoC 上，尝试通过固定在第二个核的任务来初始化某些外设驱动程序。中断通常分配在运行外设驱动程序初始化函数的同一个内核上，因此，通过在第二个内核上运行初始化函数，就可以使用更多的中断输入。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 在多核目标上，尝试通过固定在第二个核的任务来初始化某些外设驱动程序。中断通常分配在运行外设驱动程序初始化函数的同一个内核上，因此，通过在第二个内核上运行初始化函数，就可以使用更多的中断输入。
     - 找到可接受更高延迟的中断，并用 ``ESP_INTR_FLAG_SHARED`` flag （或与 ``ESP_INTR_FLAG_LOWMED`` 进行 OR 运算）分配这些中断。对两个或更多外设使用此 flag 能让它们使用单个中断输入，从而为其他外设节约中断输入。参见 :ref:`intr-alloc-shared-interrupts`。
     :not SOC_CPU_HAS_FLEXIBLE_INTC: - 一些外设驱动程序可能默认使用 ``ESP_INTR_FLAG_LEVEL1`` flag 来分配中断，因此默认情况下不会使用优先级为 2 或 3 的中断。如果 :cpp:func:`esp_intr_dump` 显示某些优先级为 2 或 3 的中断可用，尝试在初始化驱动程序时将中断分配 flag 改为 ``ESP_INTR_FLAG_LEVEL2`` 或 ``ESP_INTR_FLAG_LEVEL3``。
     - 检查是否有些外设驱动程序不需要一直启用，并按需将其初始化或取消初始化。这样可以减少同时分配的中断数量。

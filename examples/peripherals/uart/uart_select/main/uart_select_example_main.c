@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <string.h>
 #include <sys/fcntl.h>
 #include <sys/errno.h>
 #include <sys/unistd.h>
@@ -14,8 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 
 static const char* TAG = "uart_select_example";
@@ -48,7 +48,7 @@ static void uart_select_task(void *arg)
         }
 
         // We have a driver now installed so set up the read/write functions to use driver also.
-        esp_vfs_dev_uart_use_driver(0);
+        uart_vfs_dev_use_driver(UART_NUM_0);
 
         while (1) {
             int s;
@@ -64,7 +64,7 @@ static void uart_select_task(void *arg)
             s = select(fd + 1, &rfds, NULL, NULL, &tv);
 
             if (s < 0) {
-                ESP_LOGE(TAG, "Select failed: errno %d", errno);
+                ESP_LOGE(TAG, "Select failed: errno %d (%s)", errno, strerror(errno));
                 break;
             } else if (s == 0) {
                 ESP_LOGI(TAG, "Timeout has been reached and nothing has been received");

@@ -3,17 +3,23 @@ idf_build_get_property(target IDF_TARGET)
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "esp_system.c"
+                        "esp_err.c"
                         "port/soc/linux/reset_reason.c"
                         "port/soc/linux/system_internal.c"
                         "port/esp_system_linux.c"
-                        INCLUDE_DIRS "include")
+                        INCLUDE_DIRS "include"
+                        PRIV_REQUIRES spi_flash)
     return()
 endif()
 
 set(srcs "esp_err.c")
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
-    list(APPEND srcs "fpga_overrides.c")
+    list(APPEND srcs "fpga_overrides_clk.c")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    list(APPEND srcs "fpga_overrides_rng.c")
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -33,8 +39,7 @@ else()
             "system_time.c"
             "stack_check.c"
             "ubsan.c"
-            "xt_wdt.c"
-            "debug_stubs.c")
+            "xt_wdt.c")
 
     if(CONFIG_ESP_TASK_WDT_EN)
         list(APPEND srcs "task_wdt/task_wdt.c")
@@ -64,9 +69,7 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    # [refactor-todo] esp_partition required for virtual efuse
-                                    # init code. Move to esp_efuse component.
-                                    pthread bootloader_support efuse esp_partition esp_pm
+                                    bootloader_support esp_pm
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -82,7 +85,7 @@ else()
 
     # Disable stack protection in files which are involved in initialization of that feature
     set_source_files_properties(
-        "startup.c" "stack_check.c"
+        "startup.c" "stack_check.c" "port/cpu_start.c"
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
@@ -91,7 +94,12 @@ endif()
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_clk")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    # Forces the linker to include fpga stubs from this component
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_rng")
 endif()
 
 # Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
@@ -134,4 +142,8 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+endif()
+
+if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()

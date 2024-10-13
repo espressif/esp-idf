@@ -13,7 +13,6 @@ The {IDF_TARGET_NAME} chip features 22 physical GPIO pins (GPIO0 ~ GPIO21). Each
 
 The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
-
 .. list-table::
     :header-rows: 1
     :widths: 12 12 22
@@ -113,8 +112,8 @@ The table below provides more information on pin usage, and please note the comm
 .. note::
 
     - Strapping pin: GPIO2, GPIO8 and GPIO9 are strapping pins. For more information, please refer to `ESP32-C3 Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_.
-    - SPI0/1: GPIO12-17 are usually used for SPI flash and PSRAM and are not recommended for other uses.
-    - USB-JTAG: GPIO 18 and 19 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
-    - RTC: GPIO0-5 can be used to wake up the chip from Deep-sleep mode. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources<api-reference-wakeup-source>`.
+    - SPI0/1: GPIO12 ~ GPIO17 are usually used for SPI flash and PSRAM and are not recommended for other uses.
+    - USB-JTAG: GPIO18 and GPIO19 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
+    - RTC: GPIO0 ~ GPIO5 can be used to wake up the chip from Deep-sleep mode. Other GPIOs can only wake up the chip from Light-sleep mode. For more information, please refer to Section :ref:`Wakeup Sources<api-reference-wakeup-source>`.
 
 ---

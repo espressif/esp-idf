@@ -19,6 +19,11 @@ if(CONFIG_BT_ENABLED)
              "src/bt_hidh.c"
              "src/bt_hidd.c")
     endif()
+    if(CONFIG_BT_NIMBLE_ENABLED)
+        list(APPEND srcs
+                "src/nimble_hidd.c"
+                "src/nimble_hidh.c")
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"

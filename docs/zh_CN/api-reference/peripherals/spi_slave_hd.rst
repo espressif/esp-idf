@@ -122,10 +122,16 @@ SPI 从机半双工模式
 当主机发送 ``CMD8``、``CMD9`` 或 ``CMDA`` 时，从机会触发相应的动作。目前，``CMD8`` 固定用于指示 ``Rd_DMA`` 段的终止。要接收通用中断，可以在从机初始化时为 ``CMD9`` 和 ``CMDA`` 注册回调函数，详情请参阅 :ref:`spi_slave_hd_callbacks`。
 
 
-应用示例
--------------------
+.. only:: not esp32
 
-查看从机设备/主机通信的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_slave_hd` 目录。
+  应用示例
+  -------------------
+
+  查看从机设备/主机通信的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_slave_hd` 目录。
+
+  :example:`peripherals/spi_slave_hd/append_mode` 演示了如何使用 SPI Slave HD 驱动程序和 ESSL 驱动程序进行通信（ESSL 驱动程序是基于 SPI 主机驱动程序的封装层，用于与半双工模式的 SPI 从设备通信）。
+
+  :example:`peripherals/spi_slave_hd/segment_mode` 演示了两种使用 SPI 从机半双工分段模式的方法：一种是使用 SPI 从机半双工驱动程序，通过两个任务与 SPI 主机进行多次通信；另一种是使用 ESP 串行从机连接 API 与从机进行多次数据交换。
 
 
 API 参考

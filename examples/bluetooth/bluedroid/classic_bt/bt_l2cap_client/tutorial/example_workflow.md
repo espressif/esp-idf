@@ -34,9 +34,9 @@ Step `7` in sequence diagram is the setting of SDP and process of service discov
     - The SDP callback is registered by calling `esp_sdp_register_callback()`.
     - The `Server` initiates SDP by calling `esp_sdp_init()`, and the asynchronous callback event `ESP_SDP_INIT_EVT` is returned to indicate the initialization completion.
     - Then the `Server` creates an SDP record by calling `esp_sdp_create_record()`, and an asynchronous callback event `ESP_SDP_CREATE_RECORD_COMP_EVT` is returned to indicate the completion of the record creation.
-    - The `Server` can also set the device name by calling `esp_bt_dev_set_device_name()` and make itself connectable and discoverable by calling `esp_bt_gap_set_scan_mode()`.
+    - The `Server` can also set the device name by calling `esp_bt_gap_set_device_name()` and make itself connectable and discoverable by calling `esp_bt_gap_set_scan_mode()`.
 - In the client path:
-    - The `Client` also calls functions `esp_sdp_register_callback()`, `esp_sdp_init()`, `esp_sdp_create_record()`, `esp_bt_dev_set_device_name()` and `esp_bt_gap_set_scan_mode()` to register SDP callback, initiate the SDP, create sdp record, set device name and set the scan mode.
+    - The `Client` also calls functions `esp_sdp_register_callback()`, `esp_sdp_init()`, `esp_sdp_create_record()`, `esp_bt_gap_set_device_name()` and `esp_bt_gap_set_scan_mode()` to register SDP callback, initiate the SDP, create sdp record, set device name and set the scan mode.
     - Additionally, the `Client` calls `esp_bt_gap_start_discovery()` to start `Inquiry`. When the `Inquiry` process is completed, the asynchronous callback event `ESP_BT_GAP_DISC_RES_EVT` will be returned.
 
 Once the event `ESP_BT_GAP_DISC_RES_EVT` is returned, the `Client` will try to make a L2CAP connection to the `BD Address` of `Server` by calling function `esp_bt_connect()` in step `8`.

@@ -1,0 +1,92 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ *                    ESP32-C61 Linker Script Memory Layout
+ * This file describes the memory layout (memory blocks) by virtual memory addresses.
+ * This linker script is passed through the C preprocessor to include configuration options.
+ * Please use preprocessor features sparingly!
+ * Restrict to simple macros with numeric values, and/or #if/#endif blocks.
+ */
+
+#include "sdkconfig.h"
+#include "ld.common"
+
+#define SRAM_SEG_START     0x40800000
+#define SRAM_SEG_END       0x4083ea70  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
+
+/*
+ * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
+ */
+#define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
+
+MEMORY
+{
+  /**
+   *  All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
+   *  of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
+   *  are connected to the data port of the CPU and eg allow byte-wise access.
+   */
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  /* Flash mapped instruction data */
+  irom_seg (RX) :                    org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+
+  /**
+   * (0x20 offset above is a convenience for the app binary image generation.
+   * Flash cache has 64KB pages. The .bin file which is flashed to the chip
+   * has a 0x18 byte file header, and each segment has a 0x08 byte segment
+   * header. Setting this offset makes it simple to meet the flash cache MMU's
+   * constraint that (paddr % 64KB == vaddr % 64KB).)
+   */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+  /**
+   * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
+   * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
+   */
+  sram_seg (RWX) :                   org = SRAM_SEG_START, len = SRAM_SEG_SIZE
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  /* Flash mapped constant data */
+  drom_seg (R) :                     org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+
+  /* (See irom_seg for meaning of 0x20 offset in the above.) */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+    /* PSRAM seg */
+  extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+}
+
+/* Heap ends at top of sram_seg */
+_heap_end = 0x40000000;
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("default_code_seg", irom_seg);
+#else
+  REGION_ALIAS("default_code_seg", sram_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("default_rodata_seg", drom_seg);
+#else
+  REGION_ALIAS("default_rodata_seg", sram_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+/**
+ *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
+ *  also be first in the segment.
+ */
+#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
+         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
+#endif
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
+    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#endif

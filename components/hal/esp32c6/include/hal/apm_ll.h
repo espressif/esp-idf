@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include "soc/hp_apm_reg.h"
 #include "soc/lp_apm_reg.h"
 #include "soc/interrupts.h"
-#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,68 +40,68 @@ extern "C" {
 
 #define APM_CTRL_REGION_FILTER_EN_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION_FILTER_EN_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION_FILTER_EN_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION_FILTER_EN_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION_FILTER_EN_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION_FILTER_EN_REG) :  \
+                                     (LP_APM_REGION_FILTER_EN_REG));  \
     })
 
 #define TEE_LL_MODE_CTRL_REG(master_id) (TEE_M0_MODE_CTRL_REG + 4 * (master_id))
 
 #define APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_START_REG + 0xC * (regn_num)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_START_REG + 0xC * (regn_num)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)) :  \
+                                     (LP_APM_REGION0_ADDR_START_REG + 0xC * (regn_num)));  \
     })
 
 #define APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_END_REG + 0xC * (regn_num)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_ADDR_END_REG + 0xC * (regn_num)) :  \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)) :   \
+                                     (LP_APM_REGION0_ADDR_END_REG + 0xC * (regn_num)));   \
     })
 
 #define APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)) :  \
+                                     (LP_APM_REGION0_PMS_ATTR_REG + 0xC * (regn_num)));  \
     })
 
 #define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_CTRL_M_REGION_STATUS_CLR    (BIT(0))
 #define APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_STATUS_CLR_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_TEE_EXCP_INFO0_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_EXCEPTION_INFO0_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_STATUS_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_STATUS_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_TEE_EXCP_INFO1_REG(apm_ctrl, apm_m_path) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)) :  \
+                                     (LP_APM_M0_EXCEPTION_INFO1_REG + 0x10 * (apm_m_path)));  \
     })
 
 #define APM_LL_SEC_MODE_REGION_ATTR(sec_mode, regn_pms) ((regn_pms) << (4 * (sec_mode - 1)))
@@ -111,24 +110,24 @@ extern "C" {
 
 #define APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_INT_EN_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_INT_EN_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_INT_EN_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_INT_EN_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_INT_EN_REG) :  \
+                                     (LP_APM_INT_EN_REG));  \
     })
 
 #define APM_CTRL_CLK_EN    (BIT(0))
 #define APM_LL_APM_CTRL_CLOCK_GATE_REG(apm_ctrl) \
     ({\
-        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_CLOCK_GATE_REG) :     \
-        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_CLOCK_GATE_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_CLOCK_GATE_REG) : 0)); \
+        (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_CLOCK_GATE_REG) : \
+        ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_CLOCK_GATE_REG) :  \
+                                     (LP_APM_CLOCK_GATE_REG));  \
     })
 
 #define APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl) \
     ({\
         (LP_APM0_CTRL == apm_ctrl) ? (LP_APM0_FUNC_CTRL_REG) :     \
         ((HP_APM_CTRL == apm_ctrl) ? (HP_APM_FUNC_CTRL_REG) :      \
-        ((LP_APM_CTRL == apm_ctrl) ? (LP_APM_FUNC_CTRL_REG) : 0)); \
+                                     (LP_APM_FUNC_CTRL_REG)); \
     })
 
 /**
@@ -259,11 +258,6 @@ static inline void apm_ll_apm_ctrl_region_filter_enable(apm_ll_apm_ctrl_t apm_ct
 static inline void apm_ll_apm_ctrl_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
                                                  apm_ll_ctrl_access_path_t apm_m_path, bool enable)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     if (enable) {
         REG_SET_BIT(APM_LL_APM_CTRL_FUNC_CTRL_REG(apm_ctrl), BIT(apm_m_path));
     } else {
@@ -281,10 +275,6 @@ static inline void apm_ll_apm_ctrl_filter_enable(apm_ll_apm_ctrl_t apm_ctrl,
 static inline void apm_ll_apm_ctrl_set_region_start_address(apm_ll_apm_ctrl_t apm_ctrl,
                                                             uint32_t regn_num, uint32_t addr)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     REG_WRITE(APM_LL_REGION_ADDR_START_REG(apm_ctrl, regn_num), addr);
 }
 
@@ -298,10 +288,6 @@ static inline void apm_ll_apm_ctrl_set_region_start_address(apm_ll_apm_ctrl_t ap
 static inline void apm_ll_apm_ctrl_set_region_end_address(apm_ll_apm_ctrl_t apm_ctrl,
                                                           uint32_t regn_num, uint32_t addr)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     REG_WRITE(APM_LL_REGION_ADDR_END_REG(apm_ctrl, regn_num), addr);
 }
 
@@ -316,10 +302,6 @@ static inline void apm_ll_apm_ctrl_set_region_end_address(apm_ll_apm_ctrl_t apm_
 static inline void apm_ll_apm_ctrl_sec_mode_region_attr_config(apm_ll_apm_ctrl_t apm_ctrl,
                                                                uint32_t regn_num, apm_ll_secure_mode_t sec_mode, uint32_t regn_pms)
 {
-    HAL_ASSERT((((apm_ctrl == LP_APM0_CTRL) || (apm_ctrl == LP_APM_CTRL)) && (regn_num <= APM_LL_LP_MAX_REGION_NUM)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (regn_num <= APM_LL_HP_MAX_REGION_NUM))
-              );
-
     uint32_t val = 0;
     val = REG_READ(APM_LL_REGION_ADDR_ATTR_REG(apm_ctrl, regn_num));
     val &= ~APM_LL_SEC_MODE_REGION_ATTR_M(sec_mode);
@@ -336,11 +318,6 @@ static inline void apm_ll_apm_ctrl_sec_mode_region_attr_config(apm_ll_apm_ctrl_t
 static inline uint8_t apm_ll_apm_ctrl_exception_status(apm_ll_apm_ctrl_t apm_ctrl,
                                                        apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     return REG_READ(APM_LL_APM_CTRL_EXCP_STATUS_REG(apm_ctrl, apm_m_path));
 }
 
@@ -353,11 +330,6 @@ static inline uint8_t apm_ll_apm_ctrl_exception_status(apm_ll_apm_ctrl_t apm_ctr
 static inline void apm_ll_apm_ctrl_exception_clear(apm_ll_apm_ctrl_t apm_ctrl,
                                                    apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     REG_SET_BIT(APM_LL_APM_CTRL_EXCP_CLR_REG(apm_ctrl, apm_m_path),
                 APM_CTRL_M_REGION_STATUS_CLR);
 }
@@ -370,11 +342,6 @@ static inline void apm_ll_apm_ctrl_exception_clear(apm_ll_apm_ctrl_t apm_ctrl,
  */
 static inline void apm_ll_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t *excp_info)
 {
-    HAL_ASSERT(((excp_info->apm_path.apm_ctrl == LP_APM0_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((excp_info->apm_path.apm_ctrl == HP_APM_CTRL) && (excp_info->apm_path.apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((excp_info->apm_path.apm_ctrl == LP_APM_CTRL) && (excp_info->apm_path.apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     excp_info->excp_id = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
                                        APM_LL_CTRL_EXCEPTION_ID);
     excp_info->excp_mode = REG_GET_FIELD(APM_LL_TEE_EXCP_INFO0_REG(excp_info->apm_path.apm_ctrl, excp_info->apm_path.apm_m_path),
@@ -395,11 +362,6 @@ static inline void apm_ll_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t 
 static inline void apm_ll_apm_ctrl_interrupt_enable(apm_ll_apm_ctrl_t apm_ctrl,
                                                     apm_ll_ctrl_access_path_t apm_m_path, bool enable)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     if (enable) {
         REG_SET_BIT(APM_LL_APM_CTRL_INT_EN_REG(apm_ctrl), BIT(apm_m_path));
     } else {
@@ -442,25 +404,20 @@ static inline void apm_ll_apm_ctrl_reset_event_enable(bool enable)
 }
 
 /**
- * @brief Return APM Ctrl interrupt source number.
+ * @brief Fetch the APM Ctrl interrupt source number.
  *
  * @param apm_ctrl   APM Ctrl (LP_APM0/HP_APM/LP_APM)
  * @param apm_m_path APM Ctrl access patch(M[0:n])
  */
-static inline esp_err_t apm_ll_apm_ctrl_get_int_src_num(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_ctrl_access_path_t apm_m_path)
+static inline int apm_ll_apm_ctrl_get_int_src_num(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_ctrl_access_path_t apm_m_path)
 {
-    HAL_ASSERT(((apm_ctrl == LP_APM0_CTRL) && (apm_m_path < LP_APM0_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == HP_APM_CTRL) && (apm_m_path < HP_APM_MAX_ACCESS_PATH)) ||
-               ((apm_ctrl == LP_APM_CTRL) && (apm_m_path < LP_APM_MAX_ACCESS_PATH))
-              );
-
     switch (apm_ctrl) {
-    case LP_APM0_CTRL :
-        return (ETS_LP_APM0_INTR_SOURCE);
-    case HP_APM_CTRL :
-        return (ETS_HP_APM_M0_INTR_SOURCE + apm_m_path);
-    case LP_APM_CTRL :
-        return (ETS_LP_APM_M0_INTR_SOURCE + apm_m_path);
+        case LP_APM0_CTRL :
+            return (ETS_LP_APM0_INTR_SOURCE);
+        case HP_APM_CTRL :
+            return (ETS_HP_APM_M0_INTR_SOURCE + apm_m_path);
+        case LP_APM_CTRL :
+            return (ETS_LP_APM_M0_INTR_SOURCE + apm_m_path);
     }
 
     return -1;

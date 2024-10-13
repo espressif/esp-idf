@@ -65,6 +65,23 @@ esp_err_t NVSHandleSimple::get_item_size(ItemType datatype, const char *key, siz
     return mStoragePtr->getItemDataSize(mNsIndex, datatype, key, size);
 }
 
+esp_err_t NVSHandleSimple::find_key(const char* key, nvs_type_t &nvstype)
+{
+    if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
+
+    nvs::ItemType datatype;
+    esp_err_t err = mStoragePtr->findKey(mNsIndex, key, &datatype);
+    if(err != ESP_OK)
+        return err;
+
+    if(datatype == ItemType::BLOB_IDX || datatype == ItemType::BLOB)
+        datatype = ItemType::BLOB_DATA;
+
+    nvstype = (nvs_type_t) datatype;
+
+    return err;
+}
+
 esp_err_t NVSHandleSimple::erase_item(const char* key)
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;

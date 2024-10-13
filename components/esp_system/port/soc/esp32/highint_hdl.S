@@ -139,7 +139,7 @@ Interrupt , a high-priority interrupt, is used for several things:
 
     .data
 _lx_intr_stack:
-    .space      LX_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
+    .space      LX_INTR_STACK_SIZE*CONFIG_FREERTOS_NUMBER_OF_CORES /* This allocates stacks for each individual CPU. */
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
     .global _lx_intr_livelock_counter

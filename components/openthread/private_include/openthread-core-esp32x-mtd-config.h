@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
  * The platform-specific string to insert into the OpenThread version string.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_IDF_TARGET
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -131,7 +131,7 @@
  * Define to the full name of this package.
  *
  */
-#define PACKAGE_NAME "openthread-esp32"
+#define PACKAGE_NAME CONFIG_OPENTHREAD_PACKAGE_NAME
 
 /**
  * @def PACKAGE_STRING
@@ -169,13 +169,13 @@
 #define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS 3
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE
+ * @def OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE
  *
  * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
  * `RadioSpinel` platform is used.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE 1024
+#define OPENTHREAD_LIB_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
@@ -217,7 +217,7 @@
 #endif // CONFIG_OPENTHREAD_MACFILTER_ENABLE
 
 #if CONFIG_OPENTHREAD_JOINER
-#define OPENTHREAD_CONFIG_JOINER_ENABLE 0
+#define OPENTHREAD_CONFIG_JOINER_ENABLE 1
 #endif
 
 #if CONFIG_OPENTHREAD_DIAG
@@ -272,6 +272,48 @@
  */
 #if CONFIG_OPENTHREAD_RADIO_STATS_ENABLE
 #define OPENTHREAD_CONFIG_RADIO_STATS_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+ *
+ * The timeout value (in seconds) waiting for a address notification response after sending an address query.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT CONFIG_OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+ *
+ * Initial retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+ *
+ * Maximum retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+ *
+ * The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access failure.
+ *
+ * Equivalent to macMaxCSMABackoffs in IEEE 802.15.4-2006, default value is 4.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+#define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 #endif
 
 #define OPENTHREAD_MTD 1

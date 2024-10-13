@@ -6,6 +6,7 @@ set(CMAKE_C_COMPILER "xtensa-esp32-elf-gcc")
 set(CMAKE_CXX_COMPILER "xtensa-esp32-elf-g++")
 
 set(CMAKE_ASM_COMPILER "esp32ulp-elf-as")
+set(CMAKE_OBJCOPY "esp32ulp-elf-objcopy")
 set(CMAKE_LINKER "esp32ulp-elf-ld")
 
 

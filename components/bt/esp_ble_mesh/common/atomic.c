@@ -13,7 +13,7 @@
 /*
  * SPDX-FileCopyrightText: 2016 Intel Corporation
  * SPDX-FileCopyrightText: 2011-2014 Wind River Systems, Inc.
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,6 +168,20 @@ bt_mesh_atomic_val_t bt_mesh_atomic_inc(bt_mesh_atomic_t *target)
     bt_mesh_atomic_unlock();
 
     return ret;
+}
+
+bool bt_mesh_atomic_cas(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
+{
+    bt_mesh_atomic_lock();
+
+    if (*target == excepted) {
+        *target = new_val;
+        bt_mesh_atomic_unlock();
+        return true;
+    }
+
+    bt_mesh_atomic_unlock();
+    return false;
 }
 
 #endif /* #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN */

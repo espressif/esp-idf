@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,6 @@
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
-
 
 #define TEST_TIMES  11
 
@@ -37,11 +36,13 @@ static uint32_t s_t_ref;
 static void sorted_array_insert(uint32_t* array, int* size, uint32_t item)
 {
     int pos;
-    for (pos = *size; pos>0; pos--) {
-        if (array[pos-1] < item) break;
-        array[pos] = array[pos-1];
+    for (pos = *size; pos > 0; pos--) {
+        if (array[pos - 1] < item) {
+            break;
+        }
+        array[pos] = array[pos - 1];
     }
-    array[pos]=item;
+    array[pos] = item;
     (*size)++;
 }
 
@@ -56,7 +57,7 @@ static void test_flow(const char* name, test_f func)
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_op);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%s: %" PRIu32 " ops", name, t_flight_sorted[i]-s_t_ref);
+        ESP_LOGI(TAG, "%s: %" PRIu32 " ops", name, t_flight_sorted[i] - s_t_ref);
     }
 }
 
@@ -126,7 +127,7 @@ static IRAM_ATTR void test_atomic_compare_exchange(uint32_t* t_op)
     (void) res;
 }
 
-TEST_CASE("test atomic","[atomic]")
+TEST_CASE("test atomic", "[atomic]")
 {
     test_flow("ref", test_ref);
 

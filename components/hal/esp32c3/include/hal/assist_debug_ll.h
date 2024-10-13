@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "hal/assert.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +55,7 @@ extern "C" {
  * interrupt, instead of "ENA".
  */
 
- /* These functions are optimazed and designed for internal usage.
+ /* These functions are optimized and designed for internal usage.
   * So, the API may differ from general ll layer pattern */
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
@@ -110,6 +111,17 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_max(__attribute__((unuse
 FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused)) uint32_t core_id)
 {
     return REG_READ(ASSIST_DEBUG_CORE_0_SP_PC_REG);
+}
+
+FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.cpu_peri_clk_en.reg_clk_en_assist_debug = enable;
+}
+
+FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
+{
+    SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = true;
+    SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = false;
 }
 
 #ifdef __cplusplus

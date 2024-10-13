@@ -103,7 +103,7 @@ static httpd_uri_t* httpd_find_uri_handler(struct httpd_data *hd,
             hd->config.uri_match_fn(hd->hd_calls[i]->uri, uri, uri_len) :
             httpd_uri_match_simple(hd->hd_calls[i]->uri, uri, uri_len)) {
             /* URIs match. Now check if method is supported */
-            if (hd->hd_calls[i]->method == method) {
+            if (hd->hd_calls[i]->method == method || hd->hd_calls[i]->method == HTTP_ANY) {
                 /* Match found! */
                 if (err) {
                     /* Unset any error that may
@@ -146,11 +146,13 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 
     for (int i = 0; i < hd->config.max_uri_handlers; i++) {
         if (hd->hd_calls[i] == NULL) {
+            ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // False-positive detection. TODO GCC-366
             hd->hd_calls[i] = malloc(sizeof(httpd_uri_t));
             if (hd->hd_calls[i] == NULL) {
                 /* Failed to allocate memory */
                 return ESP_ERR_HTTPD_ALLOC_MEM;
             }
+            ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 
             /* Copy URI string */
             hd->hd_calls[i]->uri = strdup(uri_handler->uri);

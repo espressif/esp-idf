@@ -83,7 +83,6 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num
  */
 esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data);
 
-
 /**
  * @brief Reset benchmark of touch sensor sleep channel.
  * @note Refer `touch_pad_sleep_channel_reset_benchmark()` for more details

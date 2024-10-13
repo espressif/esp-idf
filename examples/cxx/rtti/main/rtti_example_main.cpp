@@ -25,24 +25,27 @@ class DerivedB;
 
 static string demangle(const char* name);
 
-class Base
-{
+class Base {
 public:
     virtual ~Base() {} ;
     virtual string name() = 0;
     static shared_ptr<Base> make_random_derived();
 };
 
-class DerivedA : public Base
-{
+class DerivedA : public Base {
 public:
-    string name() override { return "DerivedA"; }
+    string name() override
+    {
+        return "DerivedA";
+    }
 };
 
-class DerivedB : public Base
-{
+class DerivedB : public Base {
 public:
-    string name() override { return "DerivedB"; }
+    string name() override
+    {
+        return "DerivedB";
+    }
 };
 
 /* Creates either DerivedA or DerivedB, depending on a random number */
@@ -70,7 +73,7 @@ extern "C" void app_main()
     std::vector<shared_ptr<Base>> objects(5);
     cout << "Generating " << objects.size() << " random objects and printing their types:" << endl;
     std::generate(objects.begin(), objects.end(), Base::make_random_derived);
-    for (auto &obj: objects) {
+    for (auto &obj : objects) {
         cout << "obj->name() is: " << obj->name() << endl << '\t';
         cout << "typeid(*obj).name() is: " << demangle(typeid(*obj).name()) << endl << '\t';
 

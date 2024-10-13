@@ -9,6 +9,10 @@
 
 #ifdef CONFIG_HEAP_TASK_TRACKING
 
+#include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -161,7 +161,7 @@ typedef volatile struct gdma_dev_s {
                     uint32_t reserved12                    :    20;
                 };
                 uint32_t val;
-            } wight;
+            } weight;
             uint32_t reserved_40;
             union {
                 struct {
@@ -321,7 +321,7 @@ typedef volatile struct gdma_dev_s {
                     uint32_t reserved12                    :    20;
                 };
                 uint32_t val;
-            } wight;
+            } weight;
             uint32_t reserved_a0;
             union {
                 struct {

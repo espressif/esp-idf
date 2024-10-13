@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -273,10 +273,10 @@ typedef union {
          *  1:mean disable cmd of this ch0
          */
         uint32_t in_cmd_disable_chn: 1;
-        /** in_ecc_aec_en_chn : R/W; bitpos: [8]; default: 0;
+        /** in_ecc_aes_en_chn : R/W; bitpos: [8]; default: 0;
          *  1: mean access ecc or aes domain,0: mean not
          */
-        uint32_t in_ecc_aec_en_chn: 1;
+        uint32_t in_ecc_aes_en_chn: 1;
         /** indscr_burst_en_chn : R/W; bitpos: [9]; default: 0;
          *  Set this bit to 1 to enable INCR burst transfer for Rx channel 0 reading link
          *  descriptor when accessing internal SRAM.
@@ -567,7 +567,7 @@ typedef union {
          */
         uint32_t rx_ch_arb_weigh_chn: 4;
         /** rx_arb_weigh_opt_dir_chn : R/W; bitpos: [8]; default: 0;
-         *  0: mean not optimazation weight function ,1: mean optimazation
+         *  0: mean not optimization weight function ,1: mean optimization
          */
         uint32_t rx_arb_weigh_opt_dir_chn: 1;
         uint32_t reserved_9: 23;
@@ -952,10 +952,10 @@ typedef union {
          *  1:mean disable cmd of this chn
          */
         uint32_t out_cmd_disable_chn: 1;
-        /** out_ecc_aec_en_chn : R/W; bitpos: [9]; default: 0;
+        /** out_ecc_aes_en_chn : R/W; bitpos: [9]; default: 0;
          *  1: mean access ecc or aes domain,0: mean not
          */
-        uint32_t out_ecc_aec_en_chn: 1;
+        uint32_t out_ecc_aes_en_chn: 1;
         /** outdscr_burst_en_chn : R/W; bitpos: [10]; default: 0;
          *  Set this bit to 1 to enable INCR burst transfer for Tx channel0 reading link
          *  descriptor when accessing internal SRAM.
@@ -1238,7 +1238,7 @@ typedef union {
          */
         uint32_t tx_ch_arb_weigh_chn: 4;
         /** tx_arb_weigh_opt_dir_chn : R/W; bitpos: [8]; default: 0;
-         *  0: mean not optimazation weight function ,1: mean optimazation
+         *  0: mean not optimization weight function ,1: mean optimization
          */
         uint32_t tx_arb_weigh_opt_dir_chn: 1;
         uint32_t reserved_9: 23;
@@ -1373,106 +1373,6 @@ typedef union {
     };
     uint32_t val;
 } axi_dma_tx_crc_data_en_addr_chn_reg_t;
-
-/** Type of out_conf0_ch1 register
- *  Configure 0 register of Tx channel1
- */
-typedef union {
-    struct {
-        /** out_rst_ch1 : R/W; bitpos: [0]; default: 0;
-         *  This bit is used to reset AXI_DMA channel1 Tx FSM and Tx FIFO pointer.
-         */
-        uint32_t out_rst_ch1: 1;
-        /** out_loop_test_ch1 : R/W; bitpos: [1]; default: 0;
-         *  reserved
-         */
-        uint32_t out_loop_test_ch1: 1;
-        /** out_auto_wrback_ch1 : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to enable automatic outlink-writeback when all the data in tx buffer
-         *  has been transmitted.
-         */
-        uint32_t out_auto_wrback_ch1: 1;
-        /** out_eof_mode_ch1 : R/W; bitpos: [3]; default: 1;
-         *  EOF flag generation mode when transmitting data. 1: EOF flag for Tx channel1 is
-         *  generated when data need to transmit has been popped from FIFO in AXI_DMA
-         */
-        uint32_t out_eof_mode_ch1: 1;
-        /** out_etm_en_ch1 : R/W; bitpos: [4]; default: 0;
-         *  Set this bit to 1 to enable etm control mode, dma Tx channel1 is triggered by etm
-         *  task.
-         */
-        uint32_t out_etm_en_ch1: 1;
-        /** out_burst_size_sel_ch1 : R/W; bitpos: [7:5]; default: 0;
-         *  3'b000-3'b100:burst length 8byte~128byte
-         */
-        uint32_t out_burst_size_sel_ch1: 3;
-        /** out_cmd_disable_ch1 : R/W; bitpos: [8]; default: 0;
-         *  1:mean disable cmd of this ch1
-         */
-        uint32_t out_cmd_disable_ch1: 1;
-        /** out_ecc_aec_en_ch1 : R/W; bitpos: [9]; default: 0;
-         *  1: mean access ecc or aes domain,0: mean not
-         */
-        uint32_t out_ecc_aec_en_ch1: 1;
-        /** outdscr_burst_en_ch1 : R/W; bitpos: [10]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel1 reading link
-         *  descriptor when accessing internal SRAM.
-         */
-        uint32_t outdscr_burst_en_ch1: 1;
-        uint32_t reserved_11: 21;
-    };
-    uint32_t val;
-} axi_dma_out_conf0_ch1_reg_t;
-
-/** Type of out_conf0_ch2 register
- *  Configure 0 register of Tx channel2
- */
-typedef union {
-    struct {
-        /** out_rst_ch2 : R/W; bitpos: [0]; default: 0;
-         *  This bit is used to reset AXI_DMA channel2 Tx FSM and Tx FIFO pointer.
-         */
-        uint32_t out_rst_ch2: 1;
-        /** out_loop_test_ch2 : R/W; bitpos: [1]; default: 0;
-         *  reserved
-         */
-        uint32_t out_loop_test_ch2: 1;
-        /** out_auto_wrback_ch2 : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to enable automatic outlink-writeback when all the data in tx buffer
-         *  has been transmitted.
-         */
-        uint32_t out_auto_wrback_ch2: 1;
-        /** out_eof_mode_ch2 : R/W; bitpos: [3]; default: 1;
-         *  EOF flag generation mode when transmitting data. 1: EOF flag for Tx channel2 is
-         *  generated when data need to transmit has been popped from FIFO in AXI_DMA
-         */
-        uint32_t out_eof_mode_ch2: 1;
-        /** out_etm_en_ch2 : R/W; bitpos: [4]; default: 0;
-         *  Set this bit to 1 to enable etm control mode, dma Tx channel2 is triggered by etm
-         *  task.
-         */
-        uint32_t out_etm_en_ch2: 1;
-        /** out_burst_size_sel_ch2 : R/W; bitpos: [7:5]; default: 0;
-         *  3'b000-3'b100:burst length 8byte~128byte
-         */
-        uint32_t out_burst_size_sel_ch2: 3;
-        /** out_cmd_disable_ch2 : R/W; bitpos: [8]; default: 0;
-         *  1:mean disable cmd of this ch2
-         */
-        uint32_t out_cmd_disable_ch2: 1;
-        /** out_ecc_aec_en_ch2 : R/W; bitpos: [9]; default: 0;
-         *  1: mean access ecc or aes domain,0: mean not
-         */
-        uint32_t out_ecc_aec_en_ch2: 1;
-        /** outdscr_burst_en_ch2 : R/W; bitpos: [10]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel2 reading link
-         *  descriptor when accessing internal SRAM.
-         */
-        uint32_t outdscr_burst_en_ch2: 1;
-        uint32_t reserved_11: 21;
-    };
-    uint32_t val;
-} axi_dma_out_conf0_ch2_reg_t;
 
 /** Group: Configuration Registers */
 /** Type of arb_timeout register
@@ -1705,12 +1605,12 @@ typedef union {
 
 /** Group: Status Registers */
 /** Type of wresp_cnt register
- *  AXI wr responce cnt register.
+ *  AXI wr response cnt register.
  */
 typedef union {
     struct {
         /** wresp_cnt : RO; bitpos: [3:0]; default: 0;
-         *  axi wr responce cnt reg.
+         *  axi wr response cnt reg.
          */
         uint32_t wresp_cnt: 4;
         uint32_t reserved_4: 28;
@@ -1719,12 +1619,12 @@ typedef union {
 } axi_dma_wresp_cnt_reg_t;
 
 /** Type of rresp_cnt register
- *  AXI wr responce cnt register.
+ *  AXI wr response cnt register.
  */
 typedef union {
     struct {
         /** rresp_cnt : RO; bitpos: [3:0]; default: 0;
-         *  axi rd responce cnt reg.
+         *  axi rd response cnt reg.
          */
         uint32_t rresp_cnt: 4;
         uint32_t reserved_4: 28;

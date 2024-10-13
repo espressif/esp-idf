@@ -1,50 +1,88 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
-# High Resolution Timer Example (`esp_timer`)
+# ESP Timer Example (High Resolution Timer)
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+(For general overview of examples and their usage, see the [README](../../README.md) file in the upper level `examples` directory.)
 
-The [High Resolution Timer (`esp_timer`)](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html) APIs allow an application to create multiple timers using a single hardware timer, and hides complexity associated with managing multiple timers, invoking callbacks, accounting for APB frequency changes (if dynamic frequency scaling is enabled), and maintaining correct time after light sleep.
+> [!NOTE]
+> After you click any link to [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/index.html), go to the top of the sidebar, then make sure you have the appropriate **Espressif chip** (target) and **ESP-IDF version** selected in the dropdown menus.
 
-This example illustrates the usage of the [`esp_timer` API](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html#api-reference) to create one-shot and periodic software timers.
+This example shows how to use the [ESP Timer](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html) feature to create timers and execute callback functions. On the linked page, you will find detailed information about the feature as well as the functions and procedures used in this example.
 
-The `esp_timer` API also provides the `esp_timer_get_time()` function which returns the time since boot in microseconds. This can be useful for fine-grained timing in tasks and ISRs thus is also demonstrated in this example.
+In addition, the [Sleep Modes](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/sleep_modes.html) feature is used to briefly enter light sleep. This demonstrates that timekeeping continues correctly after light sleep.
 
-## How to use example
+The example starts by creating and starting a periodic and a one-shot timer. Their callback functions print the time elapsed since the example was booted. Then the `oneshot_timer_callback()` function redefines the period of the periodic timer and restarts it.
+
+After that, the chip enters light sleep for 0.5 seconds. Once the chip wakes up, the timers execute a couple of more callback functions, then the timers are stopped and deleted to free up memory.
+
+
+## Usage
+
+The subsections below give only absolutely necessary information. For full steps to configure ESP-IDF and use it to build and run projects, see [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started).
+
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP development board.
+* An Espressif development board based on a chip listed in supported targets
+* A USB cable for power supply and serial communication
+* Computer with ESP-IDF installed and configured
 
-### Configure the project
+
+### Set Chip Target
+
+First of all, your target must be supported by both:
+
+- **By your ESP-IDF version**: For the full list of supported targets, run:
+  ```
+  idf.py --list-targets
+  ```
+- **By this example**: For the full list of supported targets,  refer to the supported targets table at the top of this README.
+
+After you make sure that your target is supported, go to your example project directory and [set the chip target](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-py.html#select-the-target-chip-set-target):
+
+```
+idf.py set-target <target>
+```
+
+For example, to set esp32 as the chip target, run:
+
+```
+idf.py set-target esp32
+```
+
+
+### Configure the Project
+
+This example does not need configuration. The required Kconfig options differing from the ESP-IDF defaults are pre-set for this particular example in [sdkconfig.defaults](./sdkconfig.defaults).
+
+For more information about those and other Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html#esp-timer-high-resolution-timer) > ESP Timer (High Resolution Timer).
+
+To conveniently check or modify Kconfig options for this example in a project configuration menu, run:
 
 ```
 idf.py menuconfig
 ```
 
-Under `Component config > Common ESP-related` are the following `esp_timer` related configurations
-
-* `High-resolution timer task stack size` can be increased if timer callbacks require a larger stack
-* `Enable esp_timer profiling features` will cause `esp_timer_dump()` to include more information.
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+Execute the following command to build the project, flash it to your development board, and run the monitor tool to view the serial output:
 
 ```
-idf.py -p PORT flash monitor
+idf.py build flash monitor
 ```
 
-(Replace PORT with the name of the serial port to use.)
+This command can be reduced to `idf.py flash monitor`.
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+If the above command fails, check the log on the serial monitor which usually provides information on the possible cause of the issue.
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+To exit the serial monitor, use `Ctrl` + `]`.
+
 
 ## Example Output
 
-The example should have the following log output:
+If you see the following console output, your example should be running correctly:
 
 ```
 ...
@@ -81,79 +119,39 @@ I (10314) example: Woke up from light sleep, time since boot: 10525143 us
 ...
 ```
 
+
 ## Example Breakdown
 
-### 1. Creating and starting timers
+The subsections below walk you through the important parts of the application example.
 
-The example starts by creating a periodic and a one shot timer using the `esp_timer_create()` function. Once created, the two timers are started using the `esp_timer_start_periodic()` and `esp_timer_start_once()` functions.
 
-```
-I (265) example: Starting timers, time since boot: 2479 us
-```
+### Creating Callback Functions
 
-### 2. Getting initial timer dump
+Timers are used to execute a callback function as a delayed action. So the callback functions `periodic_timer_callback()` and `oneshot_timer_callback()` are crucial parts of this application example.
 
-These two repeating lines are the output of `esp_timer_dump()` function. There is one line for each of the timers created. This function can be useful for debugging purposes. Note that such debugging information is available because the example sets `CONFIG_ESP_TIMER_PROFILING` option in sdkconfig. Without this option, less information will be available. See documentation of `esp_timer_dump()` in ESP-IDF programming guide for more details.
 
-```
-timer               period     next time      times        times       times        callback
-name                            to fire      started       fired      skipped      run time (us)
--------------------------------------------------------------------------------------------------
+### Printing Timer Dumps
 
-periodic            500000        502455          1          0           0              0
-one-shot                 0       5002469          1          0           0              0
-```
+The function `esp_timer_dump()` is used to print the timer dumps which can be useful for debugging purposes. For details, see *ESP Timer API Reference* > [Debugging Timers](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html#debugging-timers).
 
-### 3. Periodic timer keeps running at 500ms period:
+To make the output of the dump function more detailed, this example's file `sdkconfig.defaults` has the option `CONFIG_ESP_TIMER_PROFILING` set (see [Configure the Project](#configure-the-project)).
 
-```
-I (765) example: Periodic timer called, time since boot: 502506 us
-I (1265) example: Periodic timer called, time since boot: 1002478 us
-I (1765) example: Periodic timer called, time since boot: 1502478 us
-I (2265) example: Periodic timer called, time since boot: 2002478 us
-periodic            500000       2502455          1          4          0          511
-one-shot                 0       5002469          1          0          0            0
-I (2765) example: Periodic timer called, time since boot: 2502478 us
-I (3265) example: Periodic timer called, time since boot: 3002478 us
-I (3765) example: Periodic timer called, time since boot: 3502478 us
-I (4265) example: Periodic timer called, time since boot: 4002478 us
-periodic            500000       4502455          1          8          0          971
-one-shot                 0       5002469          1          0          0            0
-I (4765) example: Periodic timer called, time since boot: 4502478 us
-I (5265) example: Periodic timer called, time since boot: 5002476 us
-```
 
-### 4. One-shot timer runs
+### Entering and Waking Up from Light Sleep
 
-The one-shot timer runs and changes the period of the periodic timer. Now the periodic timer runs with a period of 1 second:
+To demonstrate that timekeeping continues correctly after light sleep, the example briefly enters light sleep using `esp_sleep_enable_timer_wakeup()` and `esp_light_sleep_start()`.
 
-```
-I (5265) example: One-shot timer called, time since boot: 5002586 us
-I (5265) example: Restarted periodic timer with 1s period, time since boot: 5005475 us
-I (6265) example: Periodic timer called, time since boot: 6005492 us
-periodic           1000000       7005469          2         11          0          1316
-one-shot                 0             0          1          1          0         11474
-I (7265) example: Periodic timer called, time since boot: 7005492 us
-I (8265) example: Periodic timer called, time since boot: 8005492 us
-periodic           1000000       9005469          2         13          0          1550
-one-shot                 0             0          1          1          0         11474
-I (9265) example: Periodic timer called, time since boot: 9005492 us
-I (10265) example: Periodic timer called, time since boot: 10005492 us
-```
+During light sleep, the CPU is not running, so callbacks cannot be dispatched. On wakeup, the system attempts to execute all unhandled callbacks if any, then ESP Timer resumes its normal operation.
 
-### 5. Continuation through light sleep
 
-To illustrate that timekeeping continues correctly after light sleep, the example enters light sleep for 0.5 seconds. This sleep does not impact timer period, and the timer is executed 1 second after the previous iteration. Note that the timers can not execute during light sleep, since the CPU is not running at that time. Such timers would execute immediately after light sleep, and then continue running with their normal period.
+## Troubleshooting
 
-```
-I (10275) example: Entering light sleep for 0.5s, time since boot: 10011559 us
-I (10275) example: Woke up from light sleep, time since boot: 10512007 us
-I (10765) example: Periodic timer called, time since boot: 11005492 us
-I (11765) example: Periodic timer called, time since boot: 12005492 us
-```
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub.
 
-### 6. Finally, timers are deleted.
 
-```
-I (12275) example: Stopped and deleted timers
-```
+## Reference
+
+- [ESP-IDF: ESP Timer feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html)
+- [ESP-IDF: Sleep Modes feature](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/sleep_modes.html)
+- [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
+- [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html#esp-timer-high-resolution-timer) (Kconfig Options)

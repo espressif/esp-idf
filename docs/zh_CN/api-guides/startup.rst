@@ -3,17 +3,19 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 本文将会介绍 {IDF_TARGET_NAME} 从上电到运行 ``app_main`` 函数中间所经历的步骤（即启动流程）。
 
 宏观上，该启动流程可以分为如下 3 个步骤：
 
-1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
+.. list::
 
-2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+   1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
 
-3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 的调度器启动。
+   2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
+
+   :not SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
 
 下面会对上述过程进行更为详细的阐述。
 
@@ -22,11 +24,11 @@
 一级引导程序
 ~~~~~~~~~~~~
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    SoC 复位后，PRO CPU 会立即开始运行，执行复位向量代码，而 APP CPU 仍然保持复位状态。在启动过程中，PRO CPU 会执行所有的初始化操作。APP CPU 的复位状态会在应用程序启动代码的 ``call_start_cpu0`` 函数中失效。复位向量代码位于 {IDF_TARGET_NAME} 芯片掩膜 ROM 处，且不能被修改。
 
-.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    SoC 复位后，CPU 会立即开始运行，执行所有的初始化操作。复位向量代码位于 {IDF_TARGET_NAME} 芯片掩膜 ROM 处，且不能被修改。
 
@@ -34,7 +36,7 @@
 
 .. list::
 
-   :SOC_RTC_MEM_SUPPORTED: #. 从深度睡眠模式复位：如果 ``RTC_CNTL_STORE6_REG`` 寄存器的值非零，且 ``RTC_CNTL_STORE7_REG`` 寄存器中的 RTC 内存的 CRC 校验值有效，那么程序会使用 ``RTC_CNTL_STORE6_REG`` 寄存器的值作为入口地址，并立即跳转到该地址运行。如果  ``RTC_CNTL_STORE6_REG`` 的值为零，或 ``RTC_CNTL_STORE7_REG`` 中的 CRC 校验值无效，又或通过 ``RTC_CNTL_STORE6_REG`` 调用的代码返回，那么则像上电复位一样继续启动。 **注意**：如果想在这里运行自定义的代码，可以参考 :doc:`深度睡眠 <deep-sleep-stub>` 文档里面介绍的深度睡眠存根机制方法。
+   :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: #. 从深度睡眠模式复位：如果 ``RTC_CNTL_STORE6_REG`` 寄存器的值非零，且 ``RTC_CNTL_STORE7_REG`` 寄存器中的 RTC 内存的 CRC 校验值有效，那么程序会使用 ``RTC_CNTL_STORE6_REG`` 寄存器的值作为入口地址，并立即跳转到该地址运行。如果  ``RTC_CNTL_STORE6_REG`` 的值为零，或 ``RTC_CNTL_STORE7_REG`` 中的 CRC 校验值无效，又或通过 ``RTC_CNTL_STORE6_REG`` 调用的代码返回，那么则像上电复位一样继续启动。 **注意**：如果想在这里运行自定义的代码，可以参考 :doc:`深度睡眠 <deep-sleep-stub>` 文档里面介绍的深度睡眠存根机制方法。
 
    #. 上电复位、软件 SoC 复位、看门狗 SoC 复位：检查 ``GPIO_STRAP_REG`` 寄存器，判断是否请求自定义启动模式，如 UART 下载模式。如果是，ROM 会执行此自定义加载模式，否则会像软件 CPU 复位一样继续启动。请参考 {IDF_TARGET_NAME} 技术规格书了解 SoC 启动模式以及具体执行过程。
 
@@ -46,15 +48,19 @@
 
 .. only:: esp32
 
-    二级引导程序二进制镜像会从 flash 的 ``0x1000`` 偏移地址处加载。如果正在使用 :doc:`/security/secure-boot-v1`，则 flash 的第一个 4 kB 扇区用于存储安全启动 IV 以及引导程序镜像的摘要，否则不使用该扇区。
+    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。如果正在使用 :doc:`/security/secure-boot-v1`，则 flash 的第一个 4 kB 扇区用于存储安全启动 IV 以及引导程序镜像的摘要，否则不使用该扇区。
 
 .. only:: esp32s2
 
-    二级引导程序二进制镜像会从 flash 的 ``0x1000`` 偏移地址处加载。该地址前面的 flash 4 kB 扇区未使用。
+    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 4 kB 扇区未使用。
 
- .. only:: not (esp32 or esp32s2)
+.. only:: SOC_KEY_MANAGER_SUPPORTED
 
-    二级引导程序二进制镜像会从 flash 的 `` 0x0`` 偏移地址处加载。
+    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 8 kB 扇区将为密钥管理器保留，用于与 flash 加密 (AES-XTS) 相关的操作。
+
+ .. only:: not (esp32 or esp32s2 or SOC_KEY_MANAGER_SUPPORTED)
+
+    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。
 
 .. TODO: describe application binary image format, describe optional flash configuration commands.
 
@@ -63,11 +69,11 @@
 二级引导程序
 ~~~~~~~~~~~~
 
-在 ESP-IDF 中，存放在 flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处的二进制镜像就是二级引导程序。二级引导程序的源码可以在 ESP-IDF 的 :idf:`components/bootloader` 目录下找到。ESP-IDF 使用二级引导程序可以增加 flash 分区的灵活性（使用分区表），并且方便实现 flash 加密，安全引导和空中升级 (OTA) 等功能。
+在 ESP-IDF 中，存放在 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处的二进制镜像就是二级引导程序。二级引导程序的源码可以在 ESP-IDF 的 :idf:`components/bootloader` 目录下找到。ESP-IDF 使用二级引导程序可以增加 flash 分区的灵活性（使用分区表），并且方便实现 flash 加密，安全引导和空中升级 (OTA) 等功能。
 
 当一级引导程序校验并加载完二级引导程序后，它会从二进制镜像的头部找到二级引导程序的入口点，并跳转过去运行。
 
-二级引导程序默认从 flash 的 ``0x8000`` 偏移地址处（:ref:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
+二级引导程序默认从 flash 的 {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} 偏移地址处（:ref:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
 
 关于 ESP-IDF 引导程序可用的配置选项，请参考 :doc:`bootloader`。
 
@@ -76,7 +82,7 @@
 - 对于在内部 :ref:`iram` 或 :ref:`dram` 中具有加载地址的段，将把数据从 flash 复制到它们的加载地址处。
 - 对于一些加载地址位于 :ref:`drom` 或 :ref:`irom` 区域的段，通过配置 flash MMU，可为从 flash 到加载地址提供正确的映射。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: esp32
 
     请注意，二级引导程序同时为 PRO CPU 和 APP CPU 配置 flash MMU，但仅使能 PRO CPU 的 flash MMU。原因是二级引导程序代码已加载到 APP CPU 的高速缓存使用的内存区域中。因此使能 APP CPU 高速缓存的任务就交给了应用程序。
 
@@ -112,15 +118,15 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
    - 完成 MMU 高速缓存配置。
    :SOC_SPIRAM_SUPPORTED: - 如果配置了 PSRAM，则使能 PSRAM。
    - 将 CPU 时钟设置为项目配置的频率。
-   :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - 如果配置了内存保护，则初始化内存保护。
+   :SOC_MEMPROT_SUPPORTED: - 如果配置了内存保护，则初始化内存保护。
    :esp32: - 根据应用程序头部设置重新配置主 SPI flash，这是为了与 ESP-IDF V4.0 之前的引导程序版本兼容，请参考 :ref:`bootloader-compatibility`。
-   :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - 如果应用程序被配置为在多个内核上运行，则启动另一个内核并等待其初始化（在类似的“端口层”初始化函数 ``call_start_cpu1`` 内）。
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 如果应用程序被配置为在多个内核上运行，则启动另一个内核并等待其初始化（在类似的“端口层”初始化函数 ``call_start_cpu1`` 内）。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    ``call_start_cpu0`` 完成运行后，将调用在 :idf_file:`components/esp_system/startup.c` 中找到的“系统层”初始化函数 ``start_cpu0``。其他内核也将完成端口层的初始化，并调用同一文件中的 ``start_other_cores``。
 
-.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    ``call_start_cpu0`` 完成运行后，将调用在 :idf_file:`components/esp_system/startup.c` 中找到的“系统层”初始化函数 ``start_cpu0``。
 
@@ -156,13 +162,13 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 
 运行 ``app_main`` 的主任务有一个固定的 RTOS 优先级（比最小值高）和一个 :ref:`可配置的堆栈大小<CONFIG_ESP_MAIN_TASK_STACK_SIZE>`。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    主任务的内核亲和性也是可以配置的，请参考 :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`。
 
-与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
+与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果 ``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     APP CPU 的内核启动流程
     ------------------------------------

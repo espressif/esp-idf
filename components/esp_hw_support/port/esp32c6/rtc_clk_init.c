@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,13 +76,16 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
-    REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, HP_CALI_DBIAS);
-    REG_SET_FIELD(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, LP_CALI_DBIAS);
 
-    clk_ll_rc_fast_tick_conf();
+    uint32_t hp_cali_dbias = get_act_hp_dbias();
+    uint32_t lp_cali_dbias = get_act_lp_dbias();
 
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_uart_tx_wait_idle(0);
+    SET_PERI_REG_BITS(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_S);
+    SET_PERI_REG_BITS(PMU_HP_MODEM_HP_REGULATOR0_REG, PMU_HP_MODEM_HP_REGULATOR_DBIAS, hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
+    SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
+
+    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
+    esp_rom_output_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
 
     // On ESP32C6, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration

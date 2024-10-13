@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/gpio_hal.h"
 #include "unity.h"
 #include "math.h"
@@ -47,9 +48,9 @@
 static void i2s_test_io_config(int mode)
 {
     // Connect internal signals using IO matrix.
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_BCK_IO], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[DATA_OUT_IO], PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_BCK_IO, PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
+    gpio_func_sel(DATA_OUT_IO, PIN_FUNC_GPIO);
 
     gpio_set_direction(MASTER_BCK_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
@@ -447,11 +448,11 @@ TEST_CASE("I2S_TDM_loopback_test_with_master_tx_and_rx", "[i2s_legacy]")
     i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
     printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
-    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
+    uint8_t *data_wr = (uint8_t *)calloc(1, sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
     size_t bytes_read = 0;
     int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
+    uint8_t *i2s_read_buff = (uint8_t *)calloc(1, sizeof(uint8_t) * 10000);
 
     for (int i = 0; i < 100; i++) {
         data_wr[i] = i + 1;
@@ -582,7 +583,7 @@ TEST_CASE("I2S_write_and_read_test_with_master_tx_and_slave_rx", "[i2s_legacy]")
         }
         length = length + bytes_read;
     }
-    // test the readed data right or not
+    // test the read data right or not
     for (int i = end_position - 99; i <= end_position; i++) {
         TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
     }
@@ -687,7 +688,7 @@ TEST_CASE("I2S_write_and_read_test_master_rx_and_slave_tx", "[i2s_legacy]")
         }
         length = length + bytes_read;
     }
-    // test the readed data right or not
+    // test the read data right or not
     for (int i = end_position - 99; i <= end_position; i++) {
         TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
     }
@@ -869,7 +870,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
 
     // Reconfig GPIO signal
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(MASTER_WS_IO, i2s_periph_signal[0].m_tx_ws_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(MASTER_WS_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);
@@ -880,7 +881,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
         96000, 128000, 144000, 196000
     };
     int real_pulse = 0;
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_IDF_ENV_FPGA || CONFIG_IDF_TARGET_ESP32P4
     // Limit the test sample rate on FPGA platform due to the low frequency it supports.
     int case_cnt = 10;
 #else
@@ -892,7 +893,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     case_cnt = 15;
 #endif
 
-    // Acquire the PM lock incase Dynamic Frequency Scaling(DFS) lower the frequency
+    // Acquire the PM lock in case Dynamic Frequency Scaling(DFS) lower the frequency
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
@@ -923,7 +924,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
 }
 
-TEST_CASE("I2S clock freqency test", "[i2s_legacy]")
+TEST_CASE("I2S clock frequency test", "[i2s_legacy]")
 {
     // master driver installed and send data
     i2s_config_t master_i2s_config = {

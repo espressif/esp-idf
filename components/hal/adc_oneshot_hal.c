@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,15 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT);
     adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);
 #else
+#if SOC_LP_ADC_SUPPORTED
+    if (hal->work_mode == ADC_HAL_LP_MODE) {
+        adc_ll_set_sar_clk_div(unit, LP_ADC_LL_SAR_CLK_DIV_DEFAULT(unit));
+    } else {
+        adc_ll_set_sar_clk_div(unit, ADC_LL_SAR_CLK_DIV_DEFAULT(unit));
+    }
+#else
     adc_ll_set_sar_clk_div(unit, ADC_LL_SAR_CLK_DIV_DEFAULT(unit));
+#endif //SOC_LP_ADC_SUPPORTED
     if (unit == ADC_UNIT_2) {
         adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
     }
@@ -142,7 +150,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
     }
     esp_rom_delay_us(read_delay_us);
     *out_raw = adc_oneshot_ll_get_raw_result(hal->unit);
-#if (SOC_ADC_PERIPH_NUM == 2)
+#if SOC_ADC_ARBITER_SUPPORTED
     if (hal->unit == ADC_UNIT_2) {
         valid = adc_oneshot_ll_raw_check_valid(ADC_UNIT_2, *out_raw);
         if (!valid) {

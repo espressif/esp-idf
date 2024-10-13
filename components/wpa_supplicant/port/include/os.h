@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include "esp_err.h"
 #include "supplicant_opt.h"
+#include "esp_private/esp_wifi_private.h"
 #include "esp_wifi.h"
 
 typedef time_t os_time_t;

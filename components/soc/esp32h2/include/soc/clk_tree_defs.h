@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
  *
  * 2) External 32MHz Crystal Clock: XTAL
  *
- * 3) Internal 136kHz RC Oscillator: RC_SLOW (usually referrred as SOSC in TRM or reg. description)
+ * 3) Internal 136kHz RC Oscillator: RC_SLOW (usually referred as SOSC in TRM or reg. description)
  *
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
@@ -111,6 +111,16 @@ typedef enum {
     SOC_LP_PLL_CLK_SRC_XTAL32K = 1,        /*!< Select XTAL32K_CLK as LP_PLL_CLK source */
     SOC_LP_PLL_CLK_SRC_INVALID,            /*!< Invalid LP_PLL_CLK source */
 } soc_lp_pll_clk_src_t;
+
+/**
+ * @brief Possible main XTAL frequency options on the target
+ * @note Enum values equal to the frequency value in MHz
+ * @note Not all frequency values listed here are supported in IDF. Please check SOC_XTAL_SUPPORT_XXX in soc_caps.h for
+ *       the supported ones.
+ */
+typedef enum {
+    SOC_XTAL_FREQ_32M = 32,                /*!< 32MHz XTAL */
+} soc_xtal_freq_t;
 
 // Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
 // {[upstream]clock_name}: XTAL, (BB)PLL, etc.
@@ -225,6 +235,11 @@ typedef enum {
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**
+ * @brief Array initializer for all supported clock sources of UART
+ */
+#define SOC_UART_CLKS {SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
  * @brief Type of UART clock source, reserved for the legacy UART driver
  */
 typedef enum {
@@ -317,7 +332,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SPI
  */
-#define SOC_SPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F48M}
+#define SOC_SPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief Type of SPI clock source.
@@ -451,7 +466,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of PARLIO
  */
-#define SOC_PARLIO_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M}
+#define SOC_PARLIO_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F96M, SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief PARLIO clock source
@@ -459,6 +474,8 @@ typedef enum {
 typedef enum {
     PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the source clock */
     PARLIO_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M,  /*!< Select PLL_F96M as the source clock */
+    PARLIO_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,    /*!< Select RC_FAST as the source clock */
+    PARLIO_CLK_SRC_EXTERNAL = -1,                    /*!< Select EXTERNAL clock as the source clock */
     PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL_F96M as the default clock choice */
 } soc_periph_parlio_clk_src_t;
 

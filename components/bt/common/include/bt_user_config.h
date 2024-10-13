@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,7 @@
  * Thread/Task reference
  **********************************************************/
 #ifdef CONFIG_BT_BLUEDROID_PINNED_TO_CORE
-#define UC_TASK_PINNED_TO_CORE              (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#define UC_TASK_PINNED_TO_CORE              (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < CONFIG_FREERTOS_NUMBER_OF_CORES ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
 #define UC_TASK_PINNED_TO_CORE              (0)
 #endif
@@ -48,6 +48,15 @@
 #define UC_BTC_TASK_STACK_SIZE              CONFIG_BT_BTC_TASK_STACK_SIZE
 #else
 #define UC_BTC_TASK_STACK_SIZE              4096
+#endif
+
+/**********************************************************
+ * Alarm reference
+ **********************************************************/
+#ifdef CONFIG_BT_ALARM_MAX_NUM
+#define UC_ALARM_MAX_NUM                    CONFIG_BT_ALARM_MAX_NUM
+#else
+#define UC_ALARM_MAX_NUM                    50
 #endif
 
 /**********************************************************
@@ -91,11 +100,42 @@
 #define UC_BT_BLUFI_ENABLE                  FALSE
 #endif
 
-//MEMORY DEBUG
+//MEMORY
 #ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
 #define UC_BT_BLUEDROID_MEM_DEBUG TRUE
 #else
 #define UC_BT_BLUEDROID_MEM_DEBUG FALSE
+#endif
+
+#ifdef CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#define UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST    CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#else
+#define UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST    FALSE
+#endif
+
+#ifdef CONFIG_BT_ABORT_WHEN_ALLOCATION_FAILS
+#define UC_BT_ABORT_WHEN_ALLOCATION_FAILS       CONFIG_BT_ABORT_WHEN_ALLOCATION_FAILS
+#else
+#define UC_BT_ABORT_WHEN_ALLOCATION_FAILS       FALSE
+#endif
+
+//HCI LOG
+#ifdef CONFIG_BT_HCI_LOG_DEBUG_EN
+#define UC_BT_HCI_LOG_DEBUG_EN  TRUE
+#else
+#define UC_BT_HCI_LOG_DEBUG_EN  FALSE
+#endif
+
+#ifdef CONFIG_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define UC_BT_HCI_LOG_DATA_BUFFER_SIZE  CONFIG_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define UC_BT_HCI_LOG_DATA_BUFFER_SIZE  (5)
+#endif
+
+#ifdef CONFIG_BT_HCI_LOG_ADV_BUFFER_SIZE
+#define UC_BT_HCI_LOG_ADV_BUFFER_SIZE CONFIG_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define UC_BT_HCI_LOG_ADV_BUFFER_SIZE  (5)
 #endif
 
 #endif /* __BT_USER_CONFIG_H__ */

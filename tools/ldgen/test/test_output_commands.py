@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import os
 import sys
 import unittest
@@ -122,14 +121,14 @@ class InputSectionDescTest(unittest.TestCase):
 
     def test_empty_sections(self):
         # Test empty sections
-        expected = '*libfreertos.a:croutine.*( )'
+        expected = '*libfreertos.a:croutine.*'
 
         desc = InputSectionDesc(Entity('libfreertos.a', 'croutine'), [])
         self.assertEqual(expected, str(desc))
 
     def test_keep(self):
         # Test KEEP
-        expected = 'KEEP(*libfreertos.a:croutine.*( ))'
+        expected = 'KEEP(*libfreertos.a:croutine.*)'
 
         desc = InputSectionDesc(Entity('libfreertos.a', 'croutine'), [], keep=True)
         self.assertEqual(expected, str(desc))

@@ -1,12 +1,12 @@
 /*
- Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
-*/
-
-/*
- * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/*
+ Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
+*/
 
 #include "sdkconfig.h"
 #include "string.h"
@@ -18,7 +18,7 @@
 #include "../esp_psram_impl.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/efuse.h"
+#include "rom/efuse.h"
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
@@ -93,11 +93,12 @@ typedef enum {
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
 // hardcode the flash pins as well, making this code incompatible with either a setup
 // that has the flash on non-standard pins or ESP32s with built-in flash.
-#define PSRAM_SPIQ_SD0_IO          7
-#define PSRAM_SPID_SD1_IO          8
-#define PSRAM_SPIWP_SD3_IO         10
-#define PSRAM_SPIHD_SD2_IO         9
+#define PSRAM_SPIQ_SD0_IO          MSPI_IOMUX_PIN_NUM_MISO
+#define PSRAM_SPID_SD1_IO          MSPI_IOMUX_PIN_NUM_MOSI
+#define PSRAM_SPIHD_SD2_IO         MSPI_IOMUX_PIN_NUM_HD
+#define PSRAM_SPIWP_SD3_IO         MSPI_IOMUX_PIN_NUM_WP
 
+// HSPI Pins
 #define FLASH_HSPI_CLK_IO          14
 #define FLASH_HSPI_CS_IO           15
 #define PSRAM_HSPI_SPIQ_SD0_IO     12
@@ -235,8 +236,8 @@ typedef struct {
     uint16_t addrBitLen;         /*!< Address byte length*/
     uint32_t *txData;            /*!< Point to send data buffer*/
     uint16_t txDataBitLen;       /*!< Send data byte length.*/
-    uint32_t *rxData;            /*!< Point to recevie data buffer*/
-    uint16_t rxDataBitLen;       /*!< Recevie Data byte length.*/
+    uint32_t *rxData;            /*!< Point to receive data buffer*/
+    uint16_t rxDataBitLen;       /*!< Receive Data byte length.*/
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
@@ -607,7 +608,7 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
 
     // setp3: keep cs as high level
     //        send 128 cycles clock
-    //        send 1 bit high levle in ninth clock from the back to PSRAM SIO1
+    //        send 1 bit high level in ninth clock from the back to PSRAM SIO1
     static gpio_hal_context_t _gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -800,7 +801,7 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     esp_rom_gpio_connect_in_signal(psram_io->psram_spihd_sd2_io, SPIHD_IN_IDX, 0);
 
     //select pin function gpio
-    if ((psram_io->flash_clk_io == SPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
+    if ((psram_io->flash_clk_io == MSPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
         //flash clock signal should come from IO MUX.
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUNC_SD_CLK_SPICLK);
     } else {
@@ -829,14 +830,14 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     }
 
     // Reserve psram pins
-    esp_gpio_reserve_pins(BIT64(psram_io->flash_clk_io)        |
-                          BIT64(psram_io->flash_cs_io)         |
-                          BIT64(psram_io->psram_clk_io)        |
-                          BIT64(psram_io->psram_cs_io)         |
-                          BIT64(psram_io->psram_spiq_sd0_io)   |
-                          BIT64(psram_io->psram_spid_sd1_io)   |
-                          BIT64(psram_io->psram_spihd_sd2_io)  |
-                          BIT64(psram_io->psram_spiwp_sd3_io));
+    esp_gpio_reserve(BIT64(psram_io->flash_clk_io)        |
+                     BIT64(psram_io->flash_cs_io)         |
+                     BIT64(psram_io->psram_clk_io)        |
+                     BIT64(psram_io->psram_cs_io)         |
+                     BIT64(psram_io->psram_spiq_sd0_io)   |
+                     BIT64(psram_io->psram_spid_sd1_io)   |
+                     BIT64(psram_io->psram_spihd_sd2_io)  |
+                     BIT64(psram_io->psram_spiwp_sd3_io));
 }
 
 //used in UT only
@@ -902,15 +903,15 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_clk_io = D0WDR2_V3_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
-        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
+        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %" PRIu32, pkg_ver);
         abort();
     }
     s_psram_cs_io = psram_io.psram_cs_io;
 
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
-        psram_io.flash_clk_io       = SPI_IOMUX_PIN_NUM_CLK;
-        psram_io.flash_cs_io        = SPI_IOMUX_PIN_NUM_CS;
+        psram_io.flash_clk_io       = MSPI_IOMUX_PIN_NUM_CLK;
+        psram_io.flash_cs_io        = MSPI_IOMUX_PIN_NUM_CS0;
         psram_io.psram_spiq_sd0_io  = PSRAM_SPIQ_SD0_IO;
         psram_io.psram_spid_sd1_io  = PSRAM_SPID_SD1_IO;
         psram_io.psram_spiwp_sd3_io = PSRAM_SPIWP_SD3_IO;
@@ -955,7 +956,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
             /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
             We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
-            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
+            the GPIO matrix causes the delay. We use GPIO28/29 (which is not in any package but has pad logic in
             silicon) as a temporary pad for this. So the signal path is:
             SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
             */
@@ -985,7 +986,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(spi_num, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported", (uint32_t)s_psram_id);
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }

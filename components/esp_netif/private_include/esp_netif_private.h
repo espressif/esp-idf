@@ -117,34 +117,6 @@ esp_err_t esp_netif_remove_from_list_unsafe(esp_netif_t* netif);
 bool esp_netif_is_netif_listed(esp_netif_t *esp_netif);
 
 /**
- * @brief  Cause the TCP/IP stack to add an IPv6 address to the interface
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- * @param[in]  addr      The address to be added
- *
- * @return
- *         - ESP_OK
- *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
- *         - ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
- *         - ESP_ERR_NO_MEM
- */
-esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_ip6_t *addr);
-
-/**
- * @brief  Cause the TCP/IP stack to remove an IPv6 address from the interface
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- * @param[in]  addr      The address to be removed
- *
- * @return
- *         - ESP_OK
- *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
- *         - ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
- *         - ESP_ERR_NO_MEM
- */
-esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
-
-/**
  * @brief Get esp_netif handle based on the if_key
  * This doesn't lock the list nor TCPIP context
  *

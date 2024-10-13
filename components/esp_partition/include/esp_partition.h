@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,8 +29,8 @@ typedef struct esp_flash_t esp_flash_t;
  * @brief Enumeration which specifies memory space requested in an mmap call
  */
 typedef enum {
-    ESP_PARTITION_MMAP_DATA,    /**< map to data memory (Vaddr0), allows byte-aligned access, 4 MB total */
-    ESP_PARTITION_MMAP_INST,    /**< map to instruction memory (Vaddr1-3), allows only 4-byte-aligned access, 11 MB total */
+    ESP_PARTITION_MMAP_DATA,    /**< map to data memory (Vaddr0), allows byte-aligned access, (4 MB total - only for esp32) */
+    ESP_PARTITION_MMAP_INST,    /**< map to instruction memory (Vaddr1-3), allows only 4-byte-aligned access, (11 MB total - only for esp32) */
 } esp_partition_mmap_memory_t;
 
 /**
@@ -50,6 +50,8 @@ typedef uint32_t esp_partition_mmap_handle_t;
 typedef enum {
     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
     ESP_PARTITION_TYPE_DATA = 0x01,      //!< Data partition type
+    ESP_PARTITION_TYPE_BOOTLOADER = 0x02, //!< Bootloader partition type
+    ESP_PARTITION_TYPE_PARTITION_TABLE = 0x03, //!< Partition table type
 
     ESP_PARTITION_TYPE_ANY = 0xff,       //!< Used to search for partitions with any type
 } esp_partition_type_t;
@@ -429,7 +431,7 @@ bool esp_partition_check_identity(const esp_partition_t* partition_1, const esp_
  * This API allows designating certain areas of external flash chips (identified by the esp_flash_t structure)
  * as partitions. This allows using them with components which access SPI flash through the esp_partition API.
  *
- * @param flash_chip  Pointer to the structure identifying the flash chip
+ * @param flash_chip  Pointer to the structure identifying the flash chip. If NULL then the internal flash chip is used (esp_flash_default_chip).
  * @param offset  Address in bytes, where the partition starts
  * @param size  Size of the partition in bytes
  * @param label  Partition name
@@ -463,6 +465,43 @@ esp_err_t esp_partition_deregister_external(const esp_partition_t* partition);
  * @brief Unload partitions and free space allocated by them
  */
 void esp_partition_unload_all(void);
+
+/**
+ * @brief Get the main flash sector size
+ * @return
+ *      - SPI_FLASH_SEC_SIZE - For esp32xx target
+ *      - ESP_PARTITION_EMULATED_SECTOR_SIZE - For linux target
+ */
+uint32_t esp_partition_get_main_flash_sector_size(void);
+
+/**
+ * @brief Copy data from a source partition at a specific offset to a destination partition at a specific offset.
+ *
+ * The destination offset must be aligned to the flash sector size (SPI_FLASH_SEC_SIZE = 0x1000).
+ * If "size" is SIZE_MAX, the entire destination partition (from dest_offset onward) will be erased,
+ * and the function will copy all of the source partition starting from src_offset into the destination.
+ * The function ensures that the destination partition is erased on sector boundaries (erase size is aligned up SPI_FLASH_SEC_SIZE).
+ *
+ * This function does the following:
+ * - erases the destination partition from dest_offset to the specified size (or the whole partition if "size" == SIZE_MAX),
+ * - maps data from the source partition in chunks,
+ * - writes the source data into the destination partition in corresponding chunks.
+ *
+ * @param dest_part   Pointer to a destination partition.
+ * @param dest_offset Offset in the destination partition where the data should be written (must be aligned to SPI_FLASH_SEC_SIZE = 0x1000).
+ * @param src_part    Pointer to a source partition (must be located on internal flash).
+ * @param src_offset  Offset in the source partition where the data should be read from.
+ * @param size        Number of bytes to copy from the source partition to the destination partition. If "size" is SIZE_MAX,
+ *                    the function copies from src_offset to the end of the source partition and erases
+ *                    the entire destination partition (from dest_offset onward).
+ *
+ * @return ESP_OK, if the source partition was copied successfully to the destination partition;
+ *         ESP_ERR_INVALID_ARG, if src_part or dest_part are incorrect, or if dest_offset is not sector aligned;
+ *         ESP_ERR_INVALID_SIZE, if the copy would go out of bounds of the source or destination partition;
+ *         ESP_ERR_NOT_ALLOWED, if the destination partition is read-only;
+ *         or one of the error codes from the lower-level flash driver.
+ */
+esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_offset, const esp_partition_t* src_part, uint32_t src_offset, size_t size);
 
 #ifdef __cplusplus
 }

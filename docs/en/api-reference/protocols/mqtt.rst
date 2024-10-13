@@ -66,7 +66,7 @@ Broker address can be set by usage of :cpp:class:`address <esp_mqtt_client_confi
 
 The :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field is used in the format ``scheme://hostname:port/path``.
 
--  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
+-  Currently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
 
    -  ``mqtt://mqtt.eclipseprojects.io``: MQTT over TCP, default port 1883
@@ -145,13 +145,13 @@ It is possible to set authentication parameters through the :cpp:class:`authenti
 
  * :cpp:member:`password <esp_mqtt_client_config_t::credentials_t::authentication_t::password>`: use a password by setting
  * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` and :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`: mutual authentication with TLS, and both can be provided in PEM or DER format
- * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element available in ESP32-WROOM-32SE
+ * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element (ATECC608A) interfaced to ESP32
  * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`: use Digital Signature Peripheral available in some Espressif devices
 
 Session
 ^^^^^^^^^^^
 
-For MQTT session related configurations, :cpp:class:`session <esp_mqtt_client_config_t::session_t>` fields should be used.
+For MQTT session-related configurations, :cpp:class:`session <esp_mqtt_client_config_t::session_t>` fields should be used.
 
 =======================
 Last Will and Testament

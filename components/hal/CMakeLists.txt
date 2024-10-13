@@ -4,10 +4,9 @@ set(srcs "hal_utils.c")
 set(includes "platform_port/include")
 
 # target specific include must be added before the generic one
-# becuase of the "include_next" directive used by the efuse_hal.h
-if(NOT ${target} STREQUAL "linux")
-    list(APPEND includes "${target}/include")
-endif()
+# because of the "include_next" directive used by the efuse_hal.h
+list(APPEND includes "${target}/include")
+
 list(APPEND includes "include")
 
 if(CONFIG_SOC_MPU_SUPPORTED)
@@ -26,6 +25,11 @@ if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND srcs "wdt_hal_iram.c")
 endif()
 
+if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+    list(APPEND srcs "key_mgr_hal.c")
+    list(APPEND srcs "huk_hal.c")
+endif()
+
 if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SOC_MMU_PERIPH_NUM)
         list(APPEND srcs "mmu_hal.c")
@@ -41,6 +45,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
 endif()
 
 if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "color_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         if(CONFIG_SOC_SPI_FLASH_SUPPORTED)
@@ -87,6 +92,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "isp_hal.c")
     endif()
 
+    if(CONFIG_SOC_LP_I2S_SUPPORTED)
+        list(APPEND srcs "lp_i2s_hal.c")
+    endif()
+
     if(CONFIG_SOC_RMT_SUPPORTED)
         list(APPEND srcs "rmt_hal.c")
     endif()
@@ -105,26 +114,30 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "gdma_hal_top.c")
-    endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-        list(APPEND srcs "gdma_hal_crc_gen.c")
-    endif()
+        if(CONFIG_SOC_GDMA_SUPPORT_CRC)
+            list(APPEND srcs "gdma_hal_crc_gen.c")
+        endif()
 
-    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
-        list(APPEND srcs "gdma_hal_ahb_v1.c")
-    endif()
+        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
+            list(APPEND srcs "gdma_hal_ahb_v1.c")
+        endif()
 
-    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
-        list(APPEND srcs "gdma_hal_ahb_v2.c")
-    endif()
+        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
+            list(APPEND srcs "gdma_hal_ahb_v2.c")
+        endif()
 
-    if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma_hal_axi.c")
+        if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
+            list(APPEND srcs "gdma_hal_axi.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_DW_GDMA_SUPPORTED)
         list(APPEND srcs "dw_gdma_hal.c")
+    endif()
+
+    if(CONFIG_SOC_DMA2D_SUPPORTED)
+        list(APPEND srcs "dma2d_hal.c")
     endif()
 
     if(CONFIG_SOC_I2S_SUPPORTED)
@@ -153,14 +166,22 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
-    endif()
 
-    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-        list(APPEND srcs "adc_hal.c")
+        if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+            list(APPEND srcs "adc_hal.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_LCDCAM_SUPPORTED)
         list(APPEND srcs "lcd_hal.c")
+    endif()
+
+    if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
+        list(APPEND srcs "mipi_dsi_hal.c")
+    endif()
+
+    if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
+        list(APPEND srcs "mipi_csi_hal.c")
     endif()
 
     if(CONFIG_SOC_ECC_SUPPORTED)
@@ -183,7 +204,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "aes_hal.c")
     endif()
 
-    if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
+    if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT AND CONFIG_SOC_MODEM_CLOCK_SUPPORTED)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
@@ -195,16 +216,25 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "brownout_hal.c")
     endif()
 
-    if(CONFIG_SOC_GPSPI_SUPPORTED)
-        list(APPEND srcs
-                    "spi_hal.c"
-                    "spi_hal_iram.c"
-                    "spi_slave_hal.c"
-                    "spi_slave_hal_iram.c")
+    if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
+        list(APPEND srcs "jpeg_hal.c")
     endif()
 
-    if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
-        list(APPEND srcs "spi_slave_hd_hal.c")
+    if(CONFIG_SOC_PPA_SUPPORTED)
+        list(APPEND srcs "ppa_hal.c")
+    endif()
+
+    if(CONFIG_SOC_GPSPI_SUPPORTED)
+        list(APPEND srcs
+            "spi_hal.c"
+            "spi_hal_iram.c"
+            "spi_slave_hal.c"
+            "spi_slave_hal_iram.c"
+        )
+
+        if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
+            list(APPEND srcs "spi_slave_hd_hal.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_GPSPI_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32)
@@ -233,38 +263,42 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
-    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
-        list(APPEND srcs "key_mgr_hal.c")
-        list(APPEND srcs "huk_hal.c")
+    if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
+        list(APPEND srcs "cam_hal.c")
+    endif()
+
+    if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
+        list(APPEND srcs "usb_serial_jtag_hal.c")
+    endif()
+
+    if(CONFIG_SOC_USB_OTG_SUPPORTED)
+        list(APPEND srcs
+                    "usb_dwc_hal.c"
+                    "usb_wrap_hal.c")
+    endif()
+
+    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+        list(APPEND srcs "${target}/touch_sensor_hal.c")
+        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
+            list(APPEND srcs "touch_sensor_hal.c")
+        endif()
     endif()
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "touch_sensor_hal.c"
-            "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
     endif()
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "touch_sensor_hal.c"
-                    "usb_hal.c"
-                    "usb_phy_hal.c"
                     "xt_wdt_hal.c"
-                    "esp32s2/cp_dma_hal.c"
-                    "esp32s2/touch_sensor_hal.c"
-                    "usb_dwc_hal.c")
+                    "esp32s2/cp_dma_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "touch_sensor_hal.c"
-            "usb_hal.c"
-            "usb_phy_hal.c"
             "xt_wdt_hal.c"
-            "esp32s3/touch_sensor_hal.c"
-            "esp32s3/rtc_cntl_hal.c"
-            "usb_dwc_hal.c")
+            "esp32s3/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c3")
@@ -295,4 +329,9 @@ if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
 elseif(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 2)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __assert_func")
+endif()
+
+if((CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3) AND
+   CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10234
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
 endif()

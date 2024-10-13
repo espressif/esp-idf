@@ -20,6 +20,9 @@ extern "C" {
 #endif
 
 #define MMU_LL_PSRAM_ENTRY_START_ID    1152
+#define MMU_LL_END_DROM_ENTRY_VADDR    (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
+#define MMU_LL_END_DROM_ENTRY_ID       (64 - 1)
+
 
 /**
  * Convert MMU virtual address to linear address
@@ -302,7 +305,7 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
  * @param mmu_id   MMU ID
  * @param entry_id MMU entry ID
  *
- * @return         Ture for MMU entry is valid; False for invalid
+ * @return         True for MMU entry is valid; False for invalid
  */
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {

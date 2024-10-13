@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +56,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     flash_pages += Cache_Count_Flash_Pages(CACHE_IBUS, &page0_mapped);
 #endif
     if ((flash_pages + page_id) > BYTES_TO_MMU_PAGE(psram_size)) {
-        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %d B, from %d B to %d B",
+        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %" PRIu32 " B, from %" PRIu32 " B to %" PRIu32 " B",
                        MMU_PAGE_TO_BYTES(flash_pages), MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(flash_pages + page_id));
         return ESP_FAIL;
     }
@@ -77,7 +77,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #elif CONFIG_IDF_TARGET_ESP32S3
     page_id = Cache_Flash_To_SPIRAM_Copy(CACHE_IBUS, SOC_IRAM0_CACHE_ADDRESS_LOW, page_id, &page0_page);
 #endif
-    ESP_EARLY_LOGV(TAG, "after copy instruction, page_id is %d", page_id);
+    ESP_EARLY_LOGV(TAG, "after copy instruction, page_id is %" PRIu32, page_id);
     ESP_EARLY_LOGI(TAG, "Instructions copied and mapped to SPIRAM");
 
     *out_page = page_id - start_page;
@@ -101,7 +101,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     flash_pages += Cache_Count_Flash_Pages(CACHE_DBUS, &page0_mapped);
 #endif
     if ((flash_pages + page_id) > BYTES_TO_MMU_PAGE(psram_size)) {
-        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, need to copy to %d B.", MMU_PAGE_TO_BYTES(flash_pages + page_id));
+        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, need to copy to %" PRIu32 " B.", MMU_PAGE_TO_BYTES(flash_pages + page_id));
         return ESP_FAIL;
     }
 
@@ -124,7 +124,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     page_id = Cache_Flash_To_SPIRAM_Copy(CACHE_DBUS, SOC_DRAM0_CACHE_ADDRESS_LOW, page_id, &page0_page);
 #endif
 
-    ESP_EARLY_LOGV(TAG, "after copy rodata, page_id is %d", page_id);
+    ESP_EARLY_LOGV(TAG, "after copy rodata, page_id is %" PRIu32, page_id);
     ESP_EARLY_LOGI(TAG, "Read only data copied and mapped to SPIRAM");
 
     *out_page = page_id - start_page;
@@ -136,10 +136,18 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
 /*----------------------------------------------------------------------------
                     Part 2 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/
-extern int _instruction_reserved_start;
-extern int _instruction_reserved_end;
-extern int _rodata_reserved_start;
-extern int _rodata_reserved_end;
+/**
+ * If using `int`, then for CLANG, with enabled optimization when inlined function is provided with the address of external symbol, the two least bits of the constant used inside that function get cleared.
+ * Optimizer assumes that address of external symbol should be aligned to 4-bytes and therefore aligns constant value used for bitwise AND operation with that address.
+ *
+ * This means `extern int _instruction_reserved_start;` can be unaligned to 4 bytes, whereas using `char` can solve this issue.
+ *
+ * As we only use these symbol address, we declare them as `char` here
+ */
+extern char _instruction_reserved_start;
+extern char _instruction_reserved_end;
+extern char _rodata_reserved_start;
+extern char _rodata_reserved_end;
 
 //------------------------------------Copy Flash .text to PSRAM-------------------------------------//
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS

@@ -91,7 +91,6 @@ RingbufHandle_t xRingbufferCreate(size_t xBufferSize, RingbufferType_t xBufferTy
  */
 RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
 
-
 /**
  * @brief       Create a ring buffer but manually provide the required memory
  *
@@ -450,7 +449,6 @@ size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer);
  */
 BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet);
 
-
 /**
  * @brief   Check if the selected queue set member is a particular ring buffer
  *
@@ -492,7 +490,7 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
  * free/read/write/acquire pointer positions, and number of items waiting to be retrieved.
  * Arguments can be set to NULL if they are not required.
  *
- * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
+ * @param[in]   xRingbuffer     Ring buffer handle
  * @param[out]  uxFree          Pointer use to store free pointer position
  * @param[out]  uxRead          Pointer use to store read pointer position
  * @param[out]  uxWrite         Pointer use to store write pointer position

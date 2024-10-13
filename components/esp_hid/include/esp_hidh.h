@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -44,6 +36,7 @@ typedef enum {
     ESP_HIDH_CLOSE_EVENT,                           /*!< HID device closed */
     ESP_HIDH_START_EVENT,                           /*!< HID host stack started, used only for Classic Bluetooth */
     ESP_HIDH_STOP_EVENT,                            /*!< HID host stack stopped, used only for Classic Bluetooth */
+    ESP_HIDH_CONN_REQUEST_EVENT,                    /*!< HID device requested connection, used only for USB */
     ESP_HIDH_MAX_EVENT,                             /*!< HID events end marker */
 } esp_hidh_event_t;
 
@@ -118,6 +111,15 @@ typedef union {
         esp_err_t status;                           /*!< HID host operation status, used only for Classic Bluetooth */
         esp_hid_trans_type_t trans_type;            /*!< HID host feature transaction type, used only for Classic Bluetooth */
     } feature;                                      /*!< HID callback param of ESP_HIDH_FEATURE_EVENT */
+
+    /**
+     * @brief ESP_HIDH_CONN_REQUEST_EVENT
+     */
+    struct {
+        esp_hid_transport_t trans_type;        /*!< Transport type, currently only USB */
+        esp_hid_address_t address;             /*!< Address of the device */
+        const void *dev_info;                  /*!< Information about the device that requests connection. usb_intf_desc_t* for USB */
+    } conn_request;
 
 } esp_hidh_event_data_t;
 

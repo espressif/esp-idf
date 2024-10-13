@@ -307,7 +307,7 @@ J3
 
 .. note::
 
-    目前两个版本开发板均可订购，主要差异在于 RGB LED 所连接的管脚不同。
+    目前首次发布和 v1.1 版本的开发板均可订购，两个版本的主要差异在于 RGB LED 所连接的管脚不同。首次发布版本的 RGB LED 连接到 GPIO48，而 v1.1 版本的 RGB LED 连接到 GPIO38。
 
 
 相关文档
@@ -318,8 +318,8 @@ J3
 - `ESP32-S3-WROOM-2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-2_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-S3-DevKitC-1_V1.1_20221130.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-S3-DevKitC-1_V1.1_20220429.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 尺寸图源文件 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
+- `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/schematics/esp_idf/DXF_ESP32-S3-DevKitC-1_V1.1_20220429.pdf>`_ (PDF)
+- `ESP32-S3-DevKitC-1 尺寸图源文件 <https://dl.espressif.com/dl/schematics/esp_idf/DXF_ESP32-S3-DevKitC-1_V1.1_20220429.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
 

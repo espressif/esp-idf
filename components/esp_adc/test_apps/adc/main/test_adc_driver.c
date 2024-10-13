@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ static bool IRAM_ATTR s_alarm_callback(gptimer_handle_t timer, const gptimer_ala
 
     /**
      * This test won't disable the cache, so having some code on Flash is OK.
-     * If you copy this test callback with cache disabled, do remeber to put all code in internal RAM.
+     * If you copy this test callback with cache disabled, do remember to put all code in internal RAM.
      */
 
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
@@ -196,13 +196,13 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
         uint32_t cnt = 0;
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         TEST_ESP_OK(adc_continuous_read(handle, result, ADC_FRAME_TEST_SIZE, &ret_num, ADC_MAX_DELAY));
-        esp_rom_printf("ret_num: %d\n", ret_num);
+        esp_rom_printf("ret_num: %" PRIu32 "\n", ret_num);
         for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t *p = (adc_digi_output_data_t*)&result[i];
             sum += ADC_DRIVER_TEST_GET_DATA(p);
             cnt++;
         }
-        esp_rom_printf("avg: %d\n", sum / cnt);
+        esp_rom_printf("avg: %" PRIu32 "\n", sum / cnt);
         TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, sum / cnt);
     }
 
@@ -213,7 +213,7 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
 
 #define ADC_FLUSH_TEST_SIZE    64
 
-TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignore]")
+TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][manual][ignore]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
@@ -264,12 +264,10 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 //TODO: DIG-270
-
 #define ADC_RESTART_TEST_SIZE   4096
-#define ADC_READ_TEST_COUNT     10
+#define ADC_READ_TEST_COUNT     100
 
-TEST_CASE("ADC continuous test after restarting", "[adc_continuous]")
+TEST_CASE("ADC continuous test after restarting", "[adc_continuous][ignore]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
@@ -313,7 +311,6 @@ TEST_CASE("ADC continuous test after restarting", "[adc_continuous]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
     free(result);
 }
-#endif //!CONFIG_IDF_TARGET_ESP32C3
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")

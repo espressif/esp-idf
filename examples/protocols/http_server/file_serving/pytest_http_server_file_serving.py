@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import hashlib
 import http.client
 import logging
@@ -17,12 +16,14 @@ except ModuleNotFoundError:
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'tools', 'ci', 'python_packages'))
     from idf_http_server_test import adder as client
 
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.wifi_router
 @pytest.mark.parametrize('config', ['spiffs',], indirect=True)
 def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
 
@@ -35,6 +36,14 @@ def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
     logging.info('Starting http file serving simple test app')
 
     dut.expect('Initializing SPIFFS', timeout=30)
+
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+
     # Parse IP address of STA
     logging.info('Waiting to connect with AP')
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()

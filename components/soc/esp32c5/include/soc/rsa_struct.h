@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,12 +14,12 @@ extern "C" {
 
 /** Group: Control / Configuration Registers */
 /** Type of m_prime register
- *  Represents M’
+ *  Represents M'
  */
 typedef union {
     struct {
         /** m_prime : R/W; bitpos: [31:0]; default: 0;
-         *  Represents M’
+         *  Represents M'
          */
         uint32_t m_prime:32;
     };
@@ -46,12 +46,9 @@ typedef union {
 typedef union {
     struct {
         /** set_start_modexp : WT; bitpos: [0]; default: 0;
-         *  Configure whether or not to start the modular exponentiation.
-         *
-         *  0: No effect
-         *
-         *  1: Start
-         *
+         *  Configures whether or not to starts the modular exponentiation. \\
+         *  0: No effect\\
+         *  1: Start\\
          */
         uint32_t set_start_modexp:1;
         uint32_t reserved_1:31;
@@ -65,12 +62,9 @@ typedef union {
 typedef union {
     struct {
         /** set_start_modmult : WT; bitpos: [0]; default: 0;
-         *  Configure whether or not to start the modular multiplication.
-         *
-         *  0: No effect
-         *
-         *  1: Start
-         *
+         *  Configures whether or not to start the modular multiplication.\\
+         *  0: No effect\\
+         *  1: Start\\
          */
         uint32_t set_start_modmult:1;
         uint32_t reserved_1:31;
@@ -84,12 +78,9 @@ typedef union {
 typedef union {
     struct {
         /** set_start_mult : WT; bitpos: [0]; default: 0;
-         *  Configure whether or not to start the multiplication.
-         *
-         *  0: No effect
-         *
-         *  1: Start
-         *
+         *  Configures whether or not to start the multiplication.\\
+         *  0: No effect\\
+         *  1: Start\\
          */
         uint32_t set_start_mult:1;
         uint32_t reserved_1:31;
@@ -103,12 +94,9 @@ typedef union {
 typedef union {
     struct {
         /** query_idle : RO; bitpos: [0]; default: 0;
-         *  Represents the RSA status.
-         *
-         *  0: Busy
-         *
-         *  1: Idle
-         *
+         *  Represents the RSA status.\\
+         *  0: Busy\\
+         *  1: Idle\\
          */
         uint32_t query_idle:1;
         uint32_t reserved_1:31;
@@ -122,12 +110,9 @@ typedef union {
 typedef union {
     struct {
         /** constant_time : R/W; bitpos: [0]; default: 1;
-         *  Configures the constant_time option.
-         *
-         *  0: Acceleration
-         *
-         *  1: No acceleration (default)
-         *
+         *  Configures the constant_time option. \\
+         *  0: Acceleration\\
+         *  1: No acceleration (default)\\
          */
         uint32_t constant_time:1;
         uint32_t reserved_1:31;
@@ -141,13 +126,10 @@ typedef union {
 typedef union {
     struct {
         /** search_enable : R/W; bitpos: [0]; default: 0;
-         *  Configure the search option.
-         *
-         *  0: No acceleration (default)
-         *
-         *  1: Acceleration
-         *
-         *  This option should be used together with RSA_SEARCH_POS.
+         *  Configures the search option. \\
+         *  0: No acceleration (default)\\
+         *  1: Acceleration\\
+         *  This option should be used together with RSA_SEARCH_POS_REG.
          */
         uint32_t search_enable:1;
         uint32_t reserved_1:31;
@@ -162,7 +144,7 @@ typedef union {
     struct {
         /** search_pos : R/W; bitpos: [11:0]; default: 0;
          *  Configures the starting address to start search. This field should be used together
-         *  with RSA_SEARCH_ENABLE. The field is only valid when RSA_SEARCH_ENABLE is high.
+         *  with RSA_SEARCH_ENABLE_REG. The field is only valid when RSA_SEARCH_ENABLE is high.
          */
         uint32_t search_pos:12;
         uint32_t reserved_12:20;
@@ -173,17 +155,14 @@ typedef union {
 
 /** Group: Status Register */
 /** Type of query_clean register
- *  RSA clean register
+ *  RSA initialization status
  */
 typedef union {
     struct {
         /** query_clean : RO; bitpos: [0]; default: 0;
-         *  Represents whether or not the RSA memory completes initialization.
-         *
-         *  0: Not complete
-         *
-         *  1: Completed
-         *
+         *  Represents whether or not the RSA memory completes initialization.\\
+         *  0: Not complete\\
+         *  1: Completed\\
          */
         uint32_t query_clean:1;
         uint32_t reserved_1:31;
@@ -238,7 +217,7 @@ typedef union {
 } rsa_date_reg_t;
 
 
-typedef struct rsa_dev_t {
+typedef struct {
     volatile uint32_t m[4];
     uint32_t reserved_010[124];
     volatile uint32_t z[4];

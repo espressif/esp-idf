@@ -10,10 +10,9 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
-#include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "esp_vfs_fat.h"
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
@@ -144,14 +143,14 @@ static void init(int *uart_fd, int *socket_fd)
     *uart_fd = open("/dev/uart/1", O_RDWR);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(*uart_fd, -1, "Cannot open UART");
 
-    esp_vfs_dev_uart_use_driver(1);
+    uart_vfs_dev_use_driver(1);
 
     *socket_fd = socket_init();
 }
 
 static void deinit(int uart_fd, int socket_fd)
 {
-    esp_vfs_dev_uart_use_nonblocking(1);
+    uart_vfs_dev_use_nonblocking(1);
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 

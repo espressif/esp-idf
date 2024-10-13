@@ -93,12 +93,16 @@ check_docs_lang_sync:
   tags:
     - build_docs
   script:
+    - if [ -n "${BREATHE_ALT_INSTALL_URL}" ]; then pip uninstall -y breathe && pip install -U ${BREATHE_ALT_INSTALL_URL}; fi
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
+  artifacts:
+    expire_in: 4 days
+    when: always
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32h2", "esp32p4"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5","esp32h2", "esp32p4"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
@@ -120,11 +124,9 @@ build_docs_html_full:
       artifacts: false
       optional: true
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
 
@@ -134,11 +136,9 @@ build_docs_html_full_prod:
     - .doc-rules:build:docs-full-prod
   dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
 
@@ -151,11 +151,9 @@ build_docs_html_partial:
       artifacts: false
       optional: true
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
   parallel:
@@ -173,11 +171,10 @@ build_docs_pdf:
     - job: fast_template_app
       artifacts: false
       optional: true
+  allow_failure: true # TODO IDFCI-2216
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/latex/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "latex"
 
@@ -186,11 +183,10 @@ build_docs_pdf_prod:
     - .build_docs_template
     - .doc-rules:build:docs-full-prod
   dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
+  allow_failure: true # TODO IDFCI-2216
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/latex/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "latex"
 
@@ -265,11 +261,9 @@ check_doc_links:
       artifacts: false
   tags: ["build", "amd64", "internet"]
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/linkcheck/*.txt
-    expire_in: 1 week
   allow_failure: true
   script:
     - cd docs

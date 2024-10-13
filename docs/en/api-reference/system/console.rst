@@ -147,7 +147,12 @@ For each command, application provides the following information (in the form of
 - Command name (string without spaces)
 - Help text explaining what the command does
 - Optional hint text listing the arguments of the command. If application uses Argtable3 for argument parsing, hint text can be generated automatically by providing a pointer to argtable argument definitions structure instead.
-- The command handler function.
+- Command handler function (without context), or
+- Command handler function (with context). If this function is given, an additional call to :cpp:func:`esp_console_cmd_set_context` must follow *before* the command may be called to initialize the context.
+
+.. note::
+
+  You can either use a command handler function which takes a context or a command handler function which does not take a context, not both. If you use the command handler function which takes a context, you MUST call :cpp:func:`esp_console_cmd_set_context` to initialize its context, otherwise the function may access the uninitialized context.
 
 A few other functions are provided by the command registration module:
 
@@ -181,13 +186,12 @@ After that, you can register your own commands with :cpp:func:`esp_console_cmd_r
 
     Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. Then call other functions as usual.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Example application illustrating usage of the ``console`` component is available in :example:`system/console` directory. This example shows how to initialize UART and VFS functions, set up linenoise library, read and handle commands from UART, and store command history in Flash. See README.md in the example directory for more details.
+- :example:`system/console/basic` demonstrates how to use the REPL (Read-Eval-Print Loop) APIs of the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, and can serve as a basis for applications requiring a command-line interface.
 
-Besides that, ESP-IDF contains several useful examples which are based on the ``console`` component and can be treated as "tools" when developing applications. For example, :example:`peripherals/i2c/i2c_tools`, :example:`wifi/iperf`.
-
+- :example:`system/console/advanced` demonstrates how to use the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, providing a basis for applications that require a command-line interface.
 
 API Reference
 -------------

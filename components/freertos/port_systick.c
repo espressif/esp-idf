@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,18 +10,18 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
-    /* Required for xTaskIncrementTickOtherCores() */
-    #include "esp_private/freertos_idf_additions_priv.h"
+/* Required for xTaskIncrementTickOtherCores() */
+#include "esp_private/freertos_idf_additions_priv.h"
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
 
 #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-    #if CONFIG_FREERTOS_CORETIMER_0
-        #define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER0_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
-    #else /* CONFIG_FREERTOS_CORETIMER_1 */
-        #define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER1_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
-    #endif
+#if CONFIG_FREERTOS_CORETIMER_0
+#define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER0_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
+#else /* CONFIG_FREERTOS_CORETIMER_1 */
+#define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER1_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
+#endif
 #else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
-        #define SYSTICK_INTR_ID     (ETS_SYSTIMER_TARGET0_INTR_SOURCE)
+#define SYSTICK_INTR_ID     (ETS_SYSTIMER_TARGET0_INTR_SOURCE)
 #endif /* CONFIG_FREERTOS_SYSTICK_USES_CCOUNT */
 
 BaseType_t xPortSysTickHandler(void);
@@ -72,7 +72,12 @@ void vSystimerSetup(void)
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
 
     if (cpuid == 0) {
-        periph_module_enable(PERIPH_SYSTIMER_MODULE);
+        PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_SYSTIMER_MODULE, ref_count) {
+            if (ref_count == 0) {
+                systimer_ll_enable_bus_clock(true);
+                systimer_ll_reset_register();
+            }
+        }
         systimer_hal_init(&systimer_hal);
         systimer_hal_tick_rate_ops_t ops = {
             .ticks_to_us = systimer_ticks_to_us,
@@ -89,7 +94,7 @@ void vSystimerSetup(void)
             systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_ONESHOT);
         }
 
-        for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
+        for (cpuid = 0; cpuid < configNUM_CORES; ++cpuid) {
             uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
 
             /* configure the timer */
@@ -163,15 +168,15 @@ void SysTickIsrHandler(void *arg)
  */
 void vPortSetupTimer(void)
 {
-    #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-        extern void _frxt_tick_timer_init(void);
-        extern void _xt_tick_divisor_init(void);
-        /* Init the tick divisor value */
-        _xt_tick_divisor_init();
-        _frxt_tick_timer_init();
-    #else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
-        vSystimerSetup();
-    #endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+#if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+    extern void _frxt_tick_timer_init(void);
+    extern void _xt_tick_divisor_init(void);
+    /* Init the tick divisor value */
+    _xt_tick_divisor_init();
+    _frxt_tick_timer_init();
+#else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+    vSystimerSetup();
+#endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
 }
 
 /**
@@ -195,39 +200,41 @@ BaseType_t xPortSysTickHandler(void)
 
     // Call FreeRTOS Increment tick function
     BaseType_t xSwitchRequired;
-    #if CONFIG_FREERTOS_SMP
-        // Amazon SMP FreeRTOS requires that only core 0 calls xTaskIncrementTick()
-        #if ( configNUM_CORES > 1 )
-            if (portGET_CORE_ID() == 0) {
-                xSwitchRequired = xTaskIncrementTick();
-            } else {
-                xSwitchRequired = pdFALSE;
-            }
-        #else /* configNUM_CORES > 1 */
-            xSwitchRequired = xTaskIncrementTick();
-        #endif /* configNUM_CORES > 1 */
-    #else /* !CONFIG_FREERTOS_SMP */
-        #if ( configNUM_CORES > 1 )
-            /*
-            Multi-core IDF FreeRTOS requires that...
-                - core 0 calls xTaskIncrementTick()
-                - core 1 calls xTaskIncrementTickOtherCores()
-            */
-            if (xPortGetCoreID() == 0) {
-                xSwitchRequired = xTaskIncrementTick();
-            } else {
-                xSwitchRequired = xTaskIncrementTickOtherCores();
-            }
-        #else /* configNUM_CORES > 1 */
-            /*
-            Vanilla (single core) FreeRTOS expects that xTaskIncrementTick() cannot be interrupted (i.e., no nested
-            interrupts). Thus we have to disable interrupts before calling it.
-            */
-            UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-            xSwitchRequired = xTaskIncrementTick();
-            portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus);
-        #endif /* configNUM_CORES > 1 */
-    #endif /* !CONFIG_FREERTOS_SMP */
+#if CONFIG_FREERTOS_SMP
+    UBaseType_t uxSavedStatus = taskENTER_CRITICAL_FROM_ISR();
+    // Amazon SMP FreeRTOS requires that only core 0 calls xTaskIncrementTick()
+#if ( configNUM_CORES > 1 )
+    if (portGET_CORE_ID() == 0) {
+        xSwitchRequired = xTaskIncrementTick();
+    } else {
+        xSwitchRequired = pdFALSE;
+    }
+#else /* configNUM_CORES > 1 */
+    xSwitchRequired = xTaskIncrementTick();
+#endif /* configNUM_CORES > 1 */
+    taskEXIT_CRITICAL_FROM_ISR(uxSavedStatus);
+#else /* !CONFIG_FREERTOS_SMP */
+#if ( configNUM_CORES > 1 )
+    /*
+    Multi-core IDF FreeRTOS requires that...
+        - core 0 calls xTaskIncrementTick()
+        - core 1 calls xTaskIncrementTickOtherCores()
+    */
+    if (xPortGetCoreID() == 0) {
+        xSwitchRequired = xTaskIncrementTick();
+    } else {
+        xSwitchRequired = xTaskIncrementTickOtherCores();
+    }
+#else /* configNUM_CORES > 1 */
+    /*
+    Vanilla (single core) FreeRTOS expects that xTaskIncrementTick() cannot be interrupted (i.e., no nested
+    interrupts). Thus we have to disable interrupts before calling it.
+    */
+    UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+    xSwitchRequired = xTaskIncrementTick();
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus);
+#endif /* configNUM_CORES > 1 */
+#endif /* !CONFIG_FREERTOS_SMP */
 
     // Check if yield is required
     if (xSwitchRequired != pdFALSE) {

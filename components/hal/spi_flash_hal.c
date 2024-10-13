@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include "soc/soc_caps.h"
+#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
 #include "hal/spi_flash_hal.h"
 #include "hal/assert.h"
 #include "hal/log.h"
@@ -64,7 +65,10 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
     //calculate how many apb clocks a period has
     const int apbclk_n = APB_CLK_FREQ / eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;

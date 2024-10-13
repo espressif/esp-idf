@@ -70,7 +70,7 @@ void modem_clock_module_disable(periph_module_t module);
  */
 void modem_clock_module_mac_reset(periph_module_t module);
 
-#if SOC_PMU_SUPPORTED
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
 /**
  * @brief Enable modem clock domain clock gate to gate it's output
  *

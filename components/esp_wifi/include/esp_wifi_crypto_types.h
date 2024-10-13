@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #ifndef __ESP_WIFI_CRYPTO_TYPES_H__
 #define __ESP_WIFI_CRYPTO_TYPES_H__
@@ -33,7 +32,7 @@ typedef enum {
     ESP_CRYPTO_HASH_ALG_MD5, ESP_CRYPTO_HASH_ALG_SHA1,
     ESP_CRYPTO_HASH_ALG_HMAC_MD5, ESP_CRYPTO_HASH_ALG_HMAC_SHA1,
     ESP_CRYPTO_HASH_ALG_SHA256, ESP_CRYPTO_HASH_ALG_HMAC_SHA256
-}esp_crypto_hash_alg_t;
+} esp_crypto_hash_alg_t;
 
 /*
  * Enumeration for block cipher operations.
@@ -112,7 +111,7 @@ typedef int (*esp_aes_unwrap_t)(const unsigned char *kek, int n, const unsigned 
   *
   */
 typedef int (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, int num_elem,
-			                   const unsigned char *addr[], const int *len, unsigned char *mac);
+                                        const unsigned char *addr[], const int *len, unsigned char *mac);
 
 /**
   * @brief The SHA256 PRF callback function used by esp_wifi.
@@ -127,14 +126,14 @@ typedef int (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, i
   *
   */
 typedef int (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const char *label,
-	                           const unsigned char *data, int data_len, unsigned char *buf, int buf_len);
+                                const unsigned char *data, int data_len, unsigned char *buf, int buf_len);
 
 /**
  * @brief HMAC-MD5 callback function over data buffer (RFC 2104)'
  *
  * @param key Key for HMAC operations
  * @param key_len Length of the key in bytes
- * @param dataPointers to the data area
+ * @param data Pointers to the data area
  * @param data_len Length of the data area
  * @param mac Buffer for the hash (16 bytes)
  * Returns: 0 on success, -1 on failure
@@ -154,7 +153,7 @@ typedef int (*esp_hmac_md5_t)(const unsigned char *key, unsigned int key_len, co
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_hmac_md5_vector_t)(const unsigned char *key, unsigned int key_len, unsigned int num_elem,
-                              const unsigned char *addr[], const unsigned int *len, unsigned char *mac);
+                                     const unsigned char *addr[], const unsigned int *len, unsigned char *mac);
 
 /**
  * @brief HMAC-SHA1 callback function over data buffer (RFC 2104)
@@ -167,7 +166,7 @@ typedef int (*esp_hmac_md5_vector_t)(const unsigned char *key, unsigned int key_
  * Returns: 0 on success, -1 of failure
  */
 typedef int (*esp_hmac_sha1_t)(const unsigned char *key, unsigned int key_len, const unsigned char *data,
-                              unsigned int data_len, unsigned char *mac);
+                               unsigned int data_len, unsigned char *mac);
 
 /**
  * @brief HMAC-SHA1 callback function over data vector (RFC 2104)
@@ -181,7 +180,7 @@ typedef int (*esp_hmac_sha1_t)(const unsigned char *key, unsigned int key_len, c
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_hmac_sha1_vector_t)(const unsigned char *key, unsigned int key_len, unsigned int num_elem,
-                              const unsigned char *addr[], const unsigned int *len, unsigned char *mac);
+                                      const unsigned char *addr[], const unsigned int *len, unsigned char *mac);
 
 /**
  * @brief SHA1-based Pseudo-Random Function (PRF) (IEEE 802.11i, 8.5.1.1) callback function
@@ -211,7 +210,7 @@ typedef int (*esp_sha1_prf_t)(const unsigned char *key, unsigned int key_len, co
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_sha1_vector_t)(unsigned int num_elem, const unsigned char *addr[], const unsigned int *len,
-                              unsigned char *mac);
+                                 unsigned char *mac);
 
 /**
  * @brief SHA1-based key derivation function (PBKDF2) callback function for IEEE 802.11i
@@ -229,7 +228,7 @@ typedef int (*esp_sha1_vector_t)(unsigned int num_elem, const unsigned char *add
  * IEEE Std 802.11-2004, Clause H.4. The main construction is from PKCS#5 v2.0.
  */
 typedef int (*esp_pbkdf2_sha1_t)(const char *passphrase, const char *ssid, unsigned int ssid_len,
-                              int iterations, unsigned char *buf, unsigned int buflen);
+                                 int iterations, unsigned char *buf, unsigned int buflen);
 
 /**
  * @brief XOR RC4 stream callback function to given data with skip-stream-start
@@ -258,7 +257,7 @@ typedef int (*esp_rc4_skip_t)(const unsigned char *key, unsigned int keylen, uns
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_md5_vector_t)(unsigned int num_elem, const unsigned char *addr[], const unsigned int *len,
-                              unsigned char *mac);
+                                unsigned char *mac);
 
 /**
  * @brief Encrypt one AES block callback function
@@ -327,7 +326,7 @@ typedef int (*esp_omac1_aes_128_t)(const uint8_t *key, const uint8_t *data, size
  *        Counter Mode Cipher Block Chaining Message Authentication
  *        Code Protocol) which is used in IEEE 802.11i RSN standard.
  * @param tk 128-bit Temporal Key for obtained during 4-way handshake
- * @param hdr Pointer to IEEE802.11 frame headeri needed for AAD
+ * @param ieee80211_hdr Pointer to IEEE802.11 frame headeri needed for AAD
  * @param data Pointer to encrypted data buffer
  * @param data_len Encrypted data length in bytes
  * @param decrypted_len Length of decrypted data
@@ -373,7 +372,7 @@ typedef int (*esp_aes_gmac_t)(const uint8_t *key, size_t keylen, const uint8_t *
  * @param num_elem Number of elements in the data vector
  * @param addr Pointers to the data areas
  * @param len Lengths of the data blocks
- * @param mac Buffer for the hash
+ * @param buf Buffer for the hash
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_sha256_vector_t)(size_t num_elem, const uint8_t *addr[], const size_t *len, uint8_t *buf);
@@ -393,28 +392,11 @@ typedef uint32_t (*esp_crc32_le_t)(uint32_t crc, uint8_t const *buf, uint32_t le
   *        The structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
   */
-typedef struct {
+typedef struct wpa_crypto_funcs_t {
     uint32_t size;                                   /**< The crypto callback function structure size */
     uint32_t version;                                /**< The crypto callback function structure version */
-    esp_aes_wrap_t aes_wrap;                         /**< The AES wrap callback function used by esp_wifi */
-    esp_aes_unwrap_t aes_unwrap;                     /**< The AES unwrap callback function used by esp_wifi */
     esp_hmac_sha256_vector_t hmac_sha256_vector;     /**< The SHA256 callback function used by esp_wifi */
-    esp_sha256_prf_t sha256_prf;                     /**< The SHA256 PRF callback function used by esp_wifi */
-    esp_hmac_md5_t hmac_md5;                         /**< HMAC-MD5 callback function over data buffer (RFC 2104) */
-    esp_hmac_md5_vector_t hamc_md5_vector;           /**< HMAC-MD5 callback function over data vector (RFC 2104) */
-    esp_hmac_sha1_t hmac_sha1;                       /**< HMAC-SHA1 callback function over data buffer (RFC 2104) */
-    esp_hmac_sha1_vector_t hmac_sha1_vector;         /**< HMAC-SHA1 callback function over data vector (RFC 2104) */
-    esp_sha1_prf_t sha1_prf;                         /**< SHA1-based Pseudo-Random Function (PRF) (IEEE 802.11i, 8.5.1.1) callback function */
-    esp_sha1_vector_t sha1_vector;                   /**< SHA-1 hash callback function for data vector */
-    esp_pbkdf2_sha1_t pbkdf2_sha1;                   /**< SHA1-based key derivation function (PBKDF2) callback function for IEEE 802.11i */
-    esp_rc4_skip_t rc4_skip;                         /**< XOR RC4 stream callback function to given data with skip-stream-start */
-    esp_md5_vector_t md5_vector;                     /**< MD5 hash callback function for data vector */
-    esp_aes_encrypt_t aes_encrypt;                   /**< Encrypt one AES block callback function */
-    esp_aes_encrypt_init_t aes_encrypt_init;         /**< Initialize AES callback function for encryption */
-    esp_aes_encrypt_deinit_t aes_encrypt_deinit;     /**< Deinitialize AES encryption callback function */
-    esp_aes_decrypt_t aes_decrypt;                   /**< Decrypt one AES block callback function */
-    esp_aes_decrypt_init_t aes_decrypt_init;         /**< Initialize AES callback function for decryption */
-    esp_aes_decrypt_deinit_t aes_decrypt_deinit;     /**< Deinitialize AES decryption callback function */
+    esp_pbkdf2_sha1_t pbkdf2_sha1;                   /**< SHA1-based key derivation function (PBKDF2) callback function for IEEE 802.11 */
     esp_aes_128_encrypt_t aes_128_encrypt;           /**< The AES 128 encrypt callback function used by esp_wifi */
     esp_aes_128_decrypt_t aes_128_decrypt;           /**< The AES 128 decrypt callback function used by esp_wifi */
     esp_omac1_aes_128_t omac1_aes_128;               /**< One-Key CBC MAC (OMAC1) hash with AES-128 callback function for MIC computation */
@@ -422,15 +404,14 @@ typedef struct {
     esp_ccmp_encrypt_t ccmp_encrypt;                 /**< Encrypt data callback function using CCMP */
     esp_aes_gmac_t aes_gmac;                         /**< One-Key GMAC hash callback function with AES for MIC computation */
     esp_sha256_vector_t sha256_vector;               /**< SHA256 hash callback function for data vector */
-    esp_crc32_le_t crc32;                            /**< CRC32 value callback function in little endian */
-}wpa_crypto_funcs_t;
+} wpa_crypto_funcs_t;
 
 /**
   * @brief The crypto callback function structure used in mesh vendor IE encryption. The
   *        structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
   */
-typedef struct{
+typedef struct {
     esp_aes_128_encrypt_t aes_128_encrypt;          /**< Callback function used in mesh vendor IE encryption */
     esp_aes_128_decrypt_t aes_128_decrypt;          /**< Callback function used in mesh vendor IE decryption */
 } mesh_crypto_funcs_t;

@@ -651,4 +651,23 @@ BOOLEAN hid_known_hid_device (BD_ADDR bd_addr)
     return FALSE;
 }
 
+BOOLEAN HID_HostConnectOrig(UINT8 dev_handle)
+{
+    BOOLEAN ret = FALSE;
+
+    do {
+        if (!hh_cb.reg_flag) {
+            break;
+        }
+
+        if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
+            break;
+        }
+
+        ret = hidh_conn_is_orig(dev_handle);
+    } while (0);
+
+    return ret;
+}
+
 #endif //HID_HOST_INCLUDED

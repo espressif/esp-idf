@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,12 @@
 #include "esp_bootloader_desc.h"
 #include "sdkconfig.h"
 
-
 // Bootloader version info
-const __attribute__((weak)) __attribute__((section(".data_bootloader_desc"))) esp_bootloader_desc_t esp_bootloader_desc = {
+#if BOOTLOADER_BUILD
+__attribute__((section(".data_bootloader_desc")))
+#endif
+__attribute__((weak))
+const esp_bootloader_desc_t esp_bootloader_desc = {
     .magic_byte = ESP_BOOTLOADER_DESC_MAGIC_BYTE,
     .reserved = { 0 },
     .version = CONFIG_BOOTLOADER_PROJECT_VER,

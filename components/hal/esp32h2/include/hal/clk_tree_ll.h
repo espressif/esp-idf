@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
@@ -44,7 +43,8 @@ Set the frequency division factor of ref_tick
 The FOSC of rtc calibration uses the 32 frequency division clock for ECO2,
 So the frequency division factor of ref_tick must be greater than or equal to 32
 */
-#define REG_FOSC_TICK_NUM  255
+#define CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS        5
+#define REG_FOSC_TICK_NUM                   255
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -305,7 +305,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_32M);
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_32M);
     HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
     uint8_t oc_ref_div;
     uint8_t oc_div;
@@ -656,7 +656,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
@@ -747,7 +747,17 @@ Set the frequency division factor of ref_tick
 */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-    PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_tick_conf, fosc_tick_num, REG_FOSC_TICK_NUM); // enable a division of 32 to the fosc clock
+}
+
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    if (clk_src == CLKOUT_SIG_XTAL) {
+        PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+    }
 }
 
 #ifdef __cplusplus

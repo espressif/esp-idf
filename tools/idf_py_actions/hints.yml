@@ -55,8 +55,8 @@
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
 
 -
-    re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
-    hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and have been made private and are no longer available."
+    re: "error: implicit declaration of function 'esp_secure_boot_verify_rsa_signature_block'"
+    hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
 -
     re: "error: implicit declaration of function '{}'"
@@ -216,7 +216,7 @@
 
 -
     re: "Failed to resolve component '(?!esp_ipc)(\\w+)'"
-    hint: "The component {} could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager or has been removed and refactored into some other component.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
+    hint: "The component '{}' could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager, the component has been removed and refactored into some other component or the component may not be supported by the selected target.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
     match_to_output: True
 
 -
@@ -259,7 +259,7 @@
 
 -
     re: "`iram0_0_seg' overflowed"
-    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduce IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
 
 -
     re: "fatal error: (tinyusb.h): No such file or directory"
@@ -319,6 +319,11 @@
 -
     re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_NOT_FOUND"
     hint: "Device drivers are not correct.\nPlease check configuration of USB drivers: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/configure-ft2232h-jtag.html?highlight=zadig#configure-usb-drivers"
+
+-
+    re: "\\[-Werror=(address-of-packed-member|aggressive-loop-optimizations|attribute-warning|builtin-macro-redefined|cpp|designated-init|deprecated-declarations|discarded-array-qualifiers|discarded-qualifiers|div-by-zero|endif-labels|free-nonheap-object|if-not-aligned|ignored-attributes|incompatible-pointer-types|int-conversion|int-to-pointer-cast|lto-type-mismatch|multichar|overflow|override-init-side-effects|packed-bitfield-compat|pointer-compare|pointer-to-int-cast|return-local-addr|scalar-storage-order|shift-count-negative|shift-count-overflow|sizeof-array-argument|stringop-truncation| switch-bool|switch-outside-range|varargs)\\]"
+    hint: "The error(s) '{}' may appear after IDF upgrade since previous versions were not considering those warnings as errors.\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable errors for default warnings'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
+    match_to_output: True
 
 -
     re: "(-Werror=address|-Werror=use-after-free)"
@@ -422,3 +427,19 @@
     re: "-Werror=(xor-used-as-pow|enum-int-mismatch|self-move|dangling-reference)"
     hint: "The warning(s) '{}' may appear after compiler update above GCC-13\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable new warnings introduced in GCC 13'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
     match_to_output: True
+
+-
+    re: "implicit declaration of function '(opendir|readdir|telldir|seekdir|rewinddir|closedir|readdir_r|scandir|alphasort)'"
+    hint: "Please include <dirent.h> (not <sys/dirent.h>)"
+
+-
+    re: "unplaced orphan section"
+    hint: "Avoid creating custom sections. Please refer to the 'Linker Script Generation' article in the IDF documentation to address this. Or set option CONFIG_COMPILER_ORPHAN_SECTIONS_PLACE (not recommended)."
+
+-
+    re: "the current mclk multiple cannot perform integer division"
+    hint: "Please adjust the mclk multiple to get the accurate sample rate.\nFor example, if you're using 24-bit slot width or enabled 3 slots, then the mclk multiple should be a multiple of 3, otherwise the sample rate will be inaccurate."
+
+-
+    re: "discarded output section: .*\\.got"
+    hint: "Some objects being linked were compiled with the \"-fpic\"/\"-fpie\" options. These options may be suitable for \"linux\" builds, but must not be applied for esp32XX targets."

@@ -241,7 +241,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     case BTA_GATTS_CREATE_EVT:
         blufi_env.handle_srvc = p_data->create.service_id;
 
-        //add the frist blufi characteristic --> write characteristic
+        //add the first blufi characteristic --> write characteristic
         BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_p2e,
                                     (GATT_PERM_WRITE),
                                     (GATT_CHAR_PROP_BIT_WRITE),

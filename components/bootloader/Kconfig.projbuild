@@ -6,7 +6,7 @@ menu "Bootloader config"
         hex
         default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
         # the first 2 sectors are reserved for the key manager with AES-XTS (flash encryption) purpose
-        default 0x2000 if IDF_TARGET_ESP32P4
+        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5
         default 0x0
         help
             Offset address that 2nd bootloader will be flashed to.
@@ -20,51 +20,25 @@ menu "Bootloader config"
             This option sets compiler optimization level (gcc -O argument)
             for the bootloader.
 
-            - The default "Size" setting will add the -0s flag to CFLAGS.
+            - The default "Size" setting will add the -Os (-Oz with clang) flag to CFLAGS.
             - The "Debug" setting will add the -Og flag to CFLAGS.
             - The "Performance" setting will add the -O2 flag to CFLAGS.
-            - The "None" setting will add the -O0 flag to CFLAGS.
 
             Note that custom optimization levels may be unsupported.
 
         config BOOTLOADER_COMPILER_OPTIMIZATION_SIZE
-            bool "Size (-Os)"
+            bool "Size (-Os with GCC, -Oz with Clang)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG
             bool "Debug (-Og)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
             bool "Optimize for performance (-O2)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_NONE
-            bool "Debug without optimization (-O0)"
+            bool "Debug without optimization (-O0) (Deprecated, will be removed in IDF v6.0)"
+            depends on IDF_TARGET_ARCH_XTENSA || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
+
     endchoice
 
-    choice BOOTLOADER_LOG_LEVEL
-        bool "Bootloader log verbosity"
-        default BOOTLOADER_LOG_LEVEL_INFO
-        help
-            Specify how much output to see in bootloader logs.
-
-        config BOOTLOADER_LOG_LEVEL_NONE
-            bool "No output"
-        config BOOTLOADER_LOG_LEVEL_ERROR
-            bool "Error"
-        config BOOTLOADER_LOG_LEVEL_WARN
-            bool "Warning"
-        config BOOTLOADER_LOG_LEVEL_INFO
-            bool "Info"
-        config BOOTLOADER_LOG_LEVEL_DEBUG
-            bool "Debug"
-        config BOOTLOADER_LOG_LEVEL_VERBOSE
-            bool "Verbose"
-    endchoice
-
-    config BOOTLOADER_LOG_LEVEL
-        int
-        default 0 if BOOTLOADER_LOG_LEVEL_NONE
-        default 1 if BOOTLOADER_LOG_LEVEL_ERROR
-        default 2 if BOOTLOADER_LOG_LEVEL_WARN
-        default 3 if BOOTLOADER_LOG_LEVEL_INFO
-        default 4 if BOOTLOADER_LOG_LEVEL_DEBUG
-        default 5 if BOOTLOADER_LOG_LEVEL_VERBOSE
+    orsource "Kconfig.log"
 
     menu "Serial Flash Configurations"
         config BOOTLOADER_SPI_CUSTOM_WP_PIN
@@ -126,9 +100,15 @@ menu "Bootloader config"
             help
                 This is a helper config for 32bits address flash. Invisible for users.
 
+        config BOOTLOADER_FLASH_NEEDS_32BIT_ADDR_QUAD_FLASH
+            bool
+            default y if BOOTLOADER_FLASH_NEEDS_32BIT_FEAT && SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+            help
+                This is a helper config for 32bits address quad flash. Invisible for users.
+
         config BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             bool "Enable cache access to 32-bit-address (over 16MB) range of SPI Flash (READ DOCS FIRST)"
-            depends on BOOTLOADER_FLASH_NEEDS_32BIT_FEAT && IDF_TARGET_ESP32S3 && IDF_EXPERIMENTAL_FEATURES
+            depends on BOOTLOADER_FLASH_NEEDS_32BIT_ADDR_QUAD_FLASH && IDF_EXPERIMENTAL_FEATURES
             default n
             help
                 Enabling this option allows the CPU to access 32-bit-address flash beyond 16M range.
@@ -165,7 +145,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_FACTORY_RESET
         bool "GPIO triggers factory reset"
-        default N
+        default n
         select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             Allows to reset the device to factory settings:
@@ -178,12 +158,22 @@ menu "Bootloader config"
         int "Number of the GPIO input for factory reset"
         depends on BOOTLOADER_FACTORY_RESET
         range 0 39 if IDF_TARGET_ESP32
-        range 0 44 if IDF_TARGET_ESP32S2
+        range 0 46 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 20 if IDF_TARGET_ESP32C2
+        range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
+        range 0 28 if IDF_TARGET_ESP32C5
+        range 0 30 if IDF_TARGET_ESP32C6
+        range 0 27 if IDF_TARGET_ESP32H2
+        range 0 54 if IDF_TARGET_ESP32P4
         default 4
         help
-            The selected GPIO will be configured as an input with internal pull-up enabled (note that on some SoCs.
-            not all pins have an internal pull-up, consult the hardware datasheet for details.) To trigger a factory
+            The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a factory
             reset, this GPIO must be held high or low (as configured) on startup.
+
+            Note that on some SoCs not all pins have an internal pull-up and certain pins are already
+            used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
+            details on the selected SoC.
 
     choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
         bool "Factory reset GPIO level"
@@ -220,7 +210,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_APP_TEST
         bool "GPIO triggers boot from test app partition"
-        default N
+        default n
         depends on !BOOTLOADER_APP_ANTI_ROLLBACK
         help
             Allows to run the test app from "TEST" partition.
@@ -230,14 +220,25 @@ menu "Bootloader config"
     config BOOTLOADER_NUM_PIN_APP_TEST
         int "Number of the GPIO input to boot TEST partition"
         depends on BOOTLOADER_APP_TEST
-        range 0 39
+        range 0 39 if IDF_TARGET_ESP32
+        range 0 46 if IDF_TARGET_ESP32S2
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 20 if IDF_TARGET_ESP32C2
+        range 0 21 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C61
+        range 0 28 if IDF_TARGET_ESP32C5
+        range 0 30 if IDF_TARGET_ESP32C6
+        range 0 27 if IDF_TARGET_ESP32H2
+        range 0 54 if IDF_TARGET_ESP32P4
         default 18
         help
             The selected GPIO will be configured as an input with internal pull-up enabled.
             To trigger a test app, this GPIO must be pulled low on reset.
             After the GPIO input is deactivated and the device reboots, the old application will boot.
             (factory or OTA[x]).
-            Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+            Note that on some SoCs not all pins have an internal pull-up and certain pins are already
+            used by ROM bootloader as bootstrapping. Refer to the technical reference manual for further
+            details on the selected SoC.
 
     choice BOOTLOADER_APP_TEST_PIN_LEVEL
         bool "App test GPIO level"
@@ -268,6 +269,8 @@ menu "Bootloader config"
             Protects the unmapped memory regions of the entire address space from unintended accesses.
             This will ensure that an exception will be triggered whenever the CPU performs a memory
             operation on unmapped regions of the address space.
+            NOTE: Disabling this config on some targets (ESP32-C6, ESP32-H2, ESP32-C5) would not generate
+            an exception when reading from or writing to 0x0.
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
@@ -292,8 +295,11 @@ menu "Bootloader config"
             If this option is not set (default), then rtc_wdt will be disabled by ESP-IDF before calling
             the app_main() function.
 
-            Use function rtc_wdt_feed() for resetting counter of rtc_wdt.
-            Use function rtc_wdt_disable() for disabling rtc_wdt.
+            Use function wdt_hal_feed() for resetting counter of RTC_WDT.
+            For esp32/s2 you can also use rtc_wdt_feed().
+
+            Use function wdt_hal_disable() for disabling RTC_WDT.
+            For esp32/s2 you can also use rtc_wdt_disable().
 
     config BOOTLOADER_WDT_TIME_MS
         int "Timeout for RTC watchdog (ms)"
@@ -366,7 +372,7 @@ menu "Bootloader config"
         select EFUSE_VIRTUAL_KEEP_IN_FLASH
         help
             This option allows to emulate read/write operations with all eFuses and efuse secure version.
-            It allows to test anti-rollback implemention without permanent write eFuse bits.
+            It allows to test anti-rollback implementation without permanent write eFuse bits.
             There should be an entry in partition table with following details: `emul_efuse, data, efuse, , 0x2000`.
 
             This option enables: EFUSE_VIRTUAL and EFUSE_VIRTUAL_KEEP_IN_FLASH.
@@ -377,9 +383,9 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
+        depends on ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
-        select BOOTLOADER_RESERVE_RTC_MEM
+        select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             This option disables the normal validation of an image coming out of
             deep sleep (checksums, SHA256, and signature). This is a trade-off
@@ -454,8 +460,23 @@ menu "Bootloader config"
             this area remains valid when rebooted, except for power loss.
             This memory is located at a fixed address and is available
             for both the bootloader and the application.
-            (The application and bootoloader must be compiled with the same option).
+            (The application and bootloader must be compiled with the same option).
             The RTC FAST memory has access only through PRO_CPU.
+
+    config BOOTLOADER_CUSTOM_RESERVE_RTC_IN_CRC
+        bool "Include custom memory in the CRC calculation"
+        depends on BOOTLOADER_CUSTOM_RESERVE_RTC
+        default n
+        help
+            This option allows the customer to use the legacy bootloader behavior when the
+            RTC FAST memory CRC calculation takes place. When this option is enabled, the
+            allocated user custom data will be taken into account in the CRC calculation.
+            This means that any change to the custom data would need a CRC update to prevent
+            the bootloader from marking this data as corrupted.
+            If this option is disabled, the custom data will not be taken into account when
+            calculating the RTC FAST memory CRC. The user custom data can be changed freely,
+            without the need to update the CRC.
+            THIS OPTION MUST BE THE SAME FOR BOTH THE BOOTLOADER AND THE APPLICATION BUILDS.
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE
         hex "Size in bytes for custom purposes"
@@ -763,7 +784,7 @@ menu "Security features"
     config SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
         bool "Enable Aggressive key revoke strategy"
         depends on SECURE_BOOT && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
-        default N
+        default n
         help
             If this option is set, ROM bootloader will revoke the public key digest burned in efuse block
             if it fails to verify the signature of software bootloader with it.
@@ -776,13 +797,40 @@ menu "Security features"
             This can lead to permanent bricking of the device, in case all keys are revoked
             because of signature verification failure.
 
+    config SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
+        bool "Do not disable the ability to further read protect eFuses"
+        depends on SECURE_BOOT_V2_ENABLED
+        default n
+        help
+            If not set (default, recommended), on first boot the bootloader will burn the WR_DIS_RD_DIS
+            efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
+
+            If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
+            Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
+            BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the secure boot public key digest,
+            causing an immediate denial of service and possibly allowing an additional fault injection attack to
+            bypass the signature protection.
+
+            The option must be set when you need to program any read-protected key type into the efuses,
+            e.g., HMAC, ECDSA etc. after secure boot has already been enabled on the device.
+            Please refer to secure boot V2 documentation guide for more details.
+
+            NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
+
+            NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
+            "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
+            then it is __NOT__ possible to read/write efuses using espefuse.py utility.
+            However, efuse can be read/written from the application
+
+            Please refer to the Secure Boot V2 documentation guide for more information.
+
     config SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
         bool "Flash bootloader along with other artifacts when using the default flash command"
         depends on SECURE_BOOT_V2_ENABLED && SECURE_BOOT_BUILD_SIGNED_BINARIES
-        default N
+        default n
         help
             When Secure Boot V2 is enabled, by default the bootloader is not flashed along with other artifacts
-            like the application and the partition table images, i.e. bootloader has to be seperately flashed
+            like the application and the partition table images, i.e. bootloader has to be separately flashed
             using the command `idf.py bootloader flash`, whereas, the application and partition table can be flashed
             using the command `idf.py flash` itself.
             Enabling this option allows flashing the bootloader along with the other artifacts
@@ -819,7 +867,7 @@ menu "Security features"
     config SECURE_BOOT_INSECURE
         bool "Allow potentially insecure options"
         depends on SECURE_BOOT
-        default N
+        default n
         help
             You can disable some of the default protections offered by secure boot, in order to enable testing or a
             custom combination of security features.
@@ -830,9 +878,8 @@ menu "Security features"
 
     config SECURE_FLASH_ENC_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
-        default N
+        default n
         select SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
-        select NVS_ENCRYPTION
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
@@ -918,7 +965,7 @@ menu "Security features"
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
             depends on (SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT) && IDF_TARGET_ESP32
-            default N
+            default n
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is
                 read from the flash.
@@ -933,7 +980,7 @@ menu "Security features"
             bool "Allow JTAG Debugging"
             depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot
                 when either secure boot or flash encryption is enabled.
@@ -957,41 +1004,29 @@ menu "Security features"
                 image to this length. It is generally not recommended to set this option, unless you have a legacy
                 partitioning scheme which doesn't support 64KB aligned partition lengths.
 
-        config SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
-            bool "Allow additional read protecting of efuses"
-            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
-            help
-                If not set (default, recommended), on first boot the bootloader will burn the WR_DIS_RD_DIS
-                efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
-
-                If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
-                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
-                BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the public key digest, causing an
-                immediate denial of service and possibly allowing an additional fault injection attack to
-                bypass the signature protection.
-
-                NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
-
-                NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
-                "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
-                then it is __NOT__ possible to read/write efuses using espefuse.py utility.
-                However, efuse can be read/written from the application
-
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
             depends on SECURE_BOOT_INSECURE && SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-            default N
+            default n
             help
                 If not set (default), during startup in the app all unused digest slots will be revoked.
                 To revoke unused slot will be called esp_efuse_set_digest_revoke(num_digest) for each digest.
                 Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
                 If set, it means that you have a plan to use unused digests slots later.
 
+                Note that if you plan to enable secure boot during the first boot up, the bootloader will intentionally
+                revoke the unused digest slots while enabling secure boot, even if the above config is enabled because
+                keeping the unused key slots un-revoked would a security hazard.
+                In case for any development workflow if you need to avoid this revocation, you should enable
+                secure boot externally (host based mechanism) rather than enabling it during the boot up,
+                so that the bootloader would not need to enable secure boot and thus you could avoid its revocation
+                strategy.
+
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable UART bootloader encryption access on
                 first boot. If set, the UART bootloader will still be able to access hardware encryption.
@@ -1001,7 +1036,7 @@ menu "Security features"
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
             bool "Leave UART bootloader decryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && IDF_TARGET_ESP32
-            default N
+            default n
             help
                 If not set (default), the bootloader will permanently disable UART bootloader decryption access on
                 first boot. If set, the UART bootloader will still be able to access hardware decryption.
@@ -1013,7 +1048,7 @@ menu "Security features"
             bool "Leave UART bootloader flash cache enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && \
                 (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
-            default N
+            default n
             select SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE if SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
@@ -1024,7 +1059,7 @@ menu "Security features"
         config SECURE_FLASH_REQUIRE_ALREADY_ENABLED
             bool "Require flash encryption to be already enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
-            default N
+            default n
             help
                 If not set (default), and flash encryption is not yet enabled in eFuses, the 2nd stage bootloader
                 will enable flash encryption: generate the flash encryption key and program eFuses.
@@ -1070,6 +1105,22 @@ menu "Security features"
                 DIS_FORCE_DOWNLOAD, DIS_USB_OTG, DIS_TWAI, DIS_APP_CPU, DIS_PAD_JTAG,
                 DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_JTAG, DIS_USB_SERIAL_JTAG, STRAP_JTAG_SEL, USB_PHY_SEL.
     endmenu  # Potentially Insecure
+
+    config SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+        bool "Encrypt only the app image that is present in the partition of type app"
+        depends on SECURE_FLASH_ENC_ENABLED && !SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+        default y
+        help
+            If set (default), optimise encryption time for the partition of type APP,
+            by only encrypting the app image that is present in the partition,
+            instead of the whole partition.
+            The image length used for encryption is derived from the image metadata, which
+            includes the size of the app image, checksum, hash and also the signature sector
+            when secure boot is enabled.
+
+            If not set, the whole partition of type APP would be encrypted,
+            which increases the encryption time but might be useful if there
+            is any custom data appended to the firmware image.
 
     config SECURE_FLASH_CHECK_ENC_EN_IN_APP
         bool "Check Flash Encryption enabled on app startup"

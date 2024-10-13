@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -576,9 +576,9 @@ esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
-        !ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) &&
-        !ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)) {
+    if (!(ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
+        (ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) ||
+        ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)))) {
         return ESP_ERR_INVALID_ARG;
     }
 

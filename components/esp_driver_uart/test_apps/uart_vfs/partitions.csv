@@ -1,0 +1,5 @@
+# Name,     Type, SubType, Offset,   Size, Flags
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+nvs,           data, nvs,      0x9000,  0x6000,
+factory,       0,    0,        0x10000, 1M
+flash_test,    data, fat,      ,        528K

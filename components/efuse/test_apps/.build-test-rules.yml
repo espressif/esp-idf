@@ -1,9 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/efuse/test_apps:
+  enable:
+    - if: (INCLUDE_DEFAULT == 1 and SOC_EFUSE_SUPPORTED == 1) or IDF_TARGET == "linux")
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: eFuse for S2 and S3 is similar to the C3 chip, so we only test for C3.
-  disable:
-    - if: SOC_EFUSE_SUPPORTED != 1

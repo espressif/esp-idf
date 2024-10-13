@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdio.h>
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -22,7 +23,6 @@
 #include "hal/mcpwm_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include <stdio.h>
 #include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
@@ -133,12 +133,31 @@ static inline void mcpwm_ll_reset_register(int group_id)
 #define mcpwm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_reset_register(__VA_ARGS__)
 
 /**
+ * @brief Enable MCPWM function clock
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mcpwm_ll_group_enable_clock(int group_id, bool en)
+{
+    if (group_id == 0) {
+        HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm0_clk_en = en;
+    } else {
+        HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm1_clk_en = en;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_group_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_enable_clock(__VA_ARGS__)
+
+/**
  * @brief Set the clock source for MCPWM
  *
- * @param mcpwm Peripheral instance address
+ * @param group_id Group ID
  * @param clk_src Clock source for the MCPWM peripheral
  */
-static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, soc_module_clk_t clk_src)
+static inline void mcpwm_ll_group_set_clock_source(int group_id, soc_module_clk_t clk_src)
 {
     uint8_t clk_id = 0;
     switch (clk_src) {
@@ -155,9 +174,9 @@ static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, soc_modul
         HAL_ASSERT(false);
         break;
     }
-    if (mcpwm == &MCPWM0) {
+    if (group_id == 0) {
         HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm0_clk_src_sel = clk_id;
-    } else if (mcpwm == &MCPWM1) {
+    } else if (group_id == 1) {
         HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm1_clk_src_sel = clk_id;
     }
 }
@@ -167,37 +186,18 @@ static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, soc_modul
 #define mcpwm_ll_group_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_set_clock_source(__VA_ARGS__)
 
 /**
- * @brief Enable MCPWM module clock
- *
- * @param mcpwm Peripheral instance address
- * @param en true to enable, false to disable
- */
-static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
-{
-    if (mcpwm == &MCPWM0) {
-        HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm0_clk_en = en;
-    } else if (mcpwm == &MCPWM1) {
-        HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm1_clk_en = en;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mcpwm_ll_group_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_enable_clock(__VA_ARGS__)
-
-/**
  * @brief Set the MCPWM group clock prescale
  *
- * @param mcpwm Peripheral instance address
+ * @param group_id Group ID
  * @param prescale Prescale value
  */
-static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int prescale)
+static inline void mcpwm_ll_group_set_clock_prescale(int group_id, int prescale)
 {
     // group clock: PWM_clk = source_clock / (prescale)
     HAL_ASSERT(prescale <= 256 && prescale > 0);
-    if (mcpwm == &MCPWM0) {
+    if (group_id == 0) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm0_clk_div_num, prescale - 1);
-    } else if (mcpwm == &MCPWM1) {
+    } else if (group_id == 1) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm1_clk_div_num, prescale - 1);
     }
 }
@@ -276,7 +276,7 @@ static inline uint32_t mcpwm_ll_intr_get_status(mcpwm_dev_t *mcpwm)
  * @brief Clear MCPWM interrupt status by mask
  *
  * @param mcpwm Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void mcpwm_ll_intr_clear_status(mcpwm_dev_t *mcpwm, uint32_t mask)
@@ -867,7 +867,7 @@ static inline void mcpwm_ll_generator_reset_actions(mcpwm_dev_t *mcpwm, int oper
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_timer_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, mcpwm_timer_event_t event, mcpwm_generator_action_t action)
+                                                                mcpwm_timer_direction_t direction, mcpwm_timer_event_t event, mcpwm_generator_action_t action)
 {
     // empty: 0, full: 1
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // utez, utep
@@ -890,7 +890,7 @@ static inline void mcpwm_ll_generator_set_action_on_timer_event(mcpwm_dev_t *mcp
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_compare_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, int cmp_id, int action)
+                                                                  mcpwm_timer_direction_t direction, int cmp_id, int action)
 {
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // utea, uteb
         mcpwm->operators[operator_id].generator[generator_id].val &= ~(0x03 << (cmp_id * 2 + 4));
@@ -912,7 +912,7 @@ static inline void mcpwm_ll_generator_set_action_on_compare_event(mcpwm_dev_t *m
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_trigger_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, int trig_id, int action)
+                                                                  mcpwm_timer_direction_t direction, int trig_id, int action)
 {
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // ut0, ut1
         mcpwm->operators[operator_id].generator[generator_id].val &= ~(0x03 << (trig_id * 2 + 8));
@@ -934,7 +934,7 @@ static inline void mcpwm_ll_generator_set_action_on_trigger_event(mcpwm_dev_t *m
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_brake_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, mcpwm_operator_brake_mode_t brake_mode, int action)
+                                                                mcpwm_timer_direction_t direction, mcpwm_operator_brake_mode_t brake_mode, int action)
 {
     // the following bit operation is highly depend on the register bit layout.
     // the priority comes: generator ID > brake mode > direction
@@ -1737,22 +1737,6 @@ static inline void mcpwm_ll_etm_enable_evt_comparator_event(mcpwm_dev_t *mcpwm, 
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
-{
-    if (mcpwm == &MCPWM0) {
-        return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm0_clk_div_num) + 1;
-    } else if (mcpwm == &MCPWM1) {
-        return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm1_clk_div_num) + 1;
-    }
-}
-
-static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
-{
-    mcpwm_timer_cfg0_reg_t cfg0;
-    cfg0.val = mcpwm->timer[timer_id].timer_cfg0.val;
-    return cfg0.timer_prescale + 1;
-}
 
 static inline uint32_t mcpwm_ll_timer_get_peak(mcpwm_dev_t *mcpwm, int timer_id, bool symmetric)
 {

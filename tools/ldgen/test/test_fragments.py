@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import os
 import sys
 import tempfile
@@ -72,12 +71,12 @@ entries:
 [sections:test]
 entries:
     value_1
-    if A = y:
+    if PERFORMANCE_A = y:
         value_2
     value_3
-    if A = n:
+    if PERFORMANCE_A = n:
         value_4
-    if B = n:
+    if PERFORMANCE_B = n:
         value_5
 """)
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
@@ -89,11 +88,11 @@ entries:
 [sections:test]
 entries:
     value_1
-    if B = y:
+    if PERFORMANCE_B = y:
         value_2
-    elif C = y:
+    elif PERFORMANCE_C = y:
         value_3
-    elif A = y:
+    elif PERFORMANCE_A = y:
         value_4
     else:
         value_5
@@ -108,13 +107,13 @@ entries:
 [sections:test]
 entries:
     value_1
-    if A = y:
+    if PERFORMANCE_A = y:
         value_2
-        if B = y:
+        if PERFORMANCE_B = y:
             value_3
         else:
             value_4
-            if C = y:
+            if PERFORMANCE_C = y:
                 value_5
             value_6
         value_7
@@ -128,7 +127,7 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    if A = n:
+    if PERFORMANCE_A = n:
         value_2
 """)
         with self.assertRaises(ParseFatalException):
@@ -185,7 +184,7 @@ key_1:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
     else:
         value_1
 """)
@@ -195,9 +194,9 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
         value_1
-    else B = y:
+    else PERFORMANCE_B = y:
 """)
         with self.assertRaises(ParseFatalException):
             parse_fragment_file(test_fragment, self.sdkconfig)
@@ -205,9 +204,9 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
         value_1
-    elif B = y:
+    elif PERFORMANCE_B = y:
     else:
         value_2
 """)
@@ -218,7 +217,7 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    elif B = y:
+    elif PERFORMANCE_B = y:
         value_1
     else:
         value_2
@@ -254,7 +253,7 @@ entries:
 
     def test_whole_conditional_fragment(self):
         test_fragment = self.create_fragment_file(u"""
-if B = y:
+if PERFORMANCE_B = y:
     [sections:test1]
     entries:
         value_1
@@ -263,11 +262,11 @@ else:
     entries:
         value_2
 
-    if A = y:
+    if PERFORMANCE_A = y:
         [sections:test3]
         entries:
             value_3
-            if C = y:
+            if PERFORMANCE_C = y:
                 value_6
 
     [sections:test4]
@@ -292,7 +291,7 @@ entries:
 
     def test_equivalent_conditional_fragment(self):
         test_fragment1 = self.create_fragment_file(u"""
-if A = y:
+if PERFORMANCE_A = y:
     [sections:test1]
     entries:
         value_1
@@ -309,7 +308,7 @@ else:
         test_fragment2 = self.create_fragment_file(u"""
 [sections:test1]
 entries:
-    if A = y:
+    if PERFORMANCE_A = y:
         value_1
     else:
         value_2
@@ -355,7 +354,7 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [sections:test]
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
         .section1
 """)
         with self.assertRaises(ParseFatalException):
@@ -449,7 +448,7 @@ entries:
         test_fragment = self.create_fragment_file(u"""
 [scheme:test]
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
         sections1 -> target1
 """)
         with self.assertRaises(ParseFatalException):
@@ -527,7 +526,7 @@ entries:
 archive:
     lib.a
 entries:
-    if B = y:
+    if PERFORMANCE_B = y:
         * (noflash) # if condition is false, then no 'entries' key value
 """)
 

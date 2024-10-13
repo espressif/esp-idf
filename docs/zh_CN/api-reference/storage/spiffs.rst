@@ -15,17 +15,19 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
  - SPIFFS 并非实时栈，每次写操作耗时不等；
  - 目前，SPIFFS 尚不支持检测或处理已损坏的块。
  - SPIFFS 只能稳定地使用约 75% 的指定分区容量。
- - 当文件系统空间不足时，垃圾收集器会尝试多次扫描文件系统来寻找可用空间。根据所需空间的不同，写操作会被调用多次，每次函数调用将花费几秒。同一操作可能会花费不同时长的问题缘于 SPIFFS 的设计，且已在官方的 `SPIFFS github 仓库 <https://github.com/pellepl/spiffs/issues/>`_ 或是 <https://github.com/espressif/esp-idf/issues/1737>`_ 中被多次报告。这个问题可以通过 `SPIFFS 配置 <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_ 部分缓解。
- - 被删除文件通常不会被完全清除，会在文件系统中遗留下无法使用的部分。
+ - 当文件系统空间不足时，垃圾收集器会尝试多次扫描文件系统来寻找可用空间。根据所需空间的不同，写操作会被调用多次，每次函数调用将花费几秒。同一操作可能会花费不同时长的问题缘于 SPIFFS 的设计，且已在官方的 `SPIFFS github 仓库 <https://github.com/pellepl/spiffs/issues/>`_ 或是 `<https://github.com/espressif/esp-idf/issues/1737>`_ 中被多次报告。这个问题可以通过 `SPIFFS 配置 <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_ 部分缓解。
+ - 当垃圾收集器尝试多次（默认为 10 次）扫描整个文件系统以回收空间时，在每次扫描期间，如果有可用的数据块，则垃圾收集器会释放一个数据块。因此，如果为垃圾收集器设置的最大运行次数为 n（可通过 SPIFFS_GC_MAX_RUNS 选项配置，该选项位于 `SPIFFS 配置 <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_ 中），那么 n 倍数据块大小的空间将可用于写入数据。如果尝试写入超过 n 倍数据块大小的数据，写入操作可能会失败并返回错误。
  - 如果 {IDF_TARGET_NAME} 在文件系统操作期间断电，可能会导致 SPIFFS 损坏。但是仍可通过 ``esp_spiffs_check`` 函数恢复文件系统。详情请参阅官方 SPIFFS `FAQ <https://github.com/pellepl/spiffs/wiki/FAQ>`_。
 
 工具
 -----
 
+.. _spiffs-generator:
+
 ``spiffsgen.py``
 ^^^^^^^^^^^^^^^^
 
-:component_file:`spiffsgen.py<spiffs/spiffsgen.py>`（只写）是 SPIFFS 的一种 Python 实现，可用于从主机文件夹内容生成文件系统镜像。打开终端并运行以下命令即可使用 ``spiffsgen.py``::
+:component_file:`spiffsgen.py<spiffs/spiffsgen.py>` （只写）是 SPIFFS 的一种 Python 实现，可用于从主机文件夹内容生成文件系统镜像。打开终端并运行以下命令即可使用 ``spiffsgen.py``::
 
     python spiffsgen.py <image_size> <base_dir> <output_file>
 
@@ -84,6 +86,10 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 运行以下命令，将镜像烧录到 {IDF_TARGET_NAME}（偏移量：0x110000）::
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
+
+.. note::
+
+    可以使用 ``esptool.py`` 的 ``write_flash`` 命令，通过 ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` 选项 `将 spiffs 数据写入外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_。只需指定分配给外部 flash 的 GPIO 管脚，如 ``python esptool.py write_flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``。
 
 选择合适的 SPIFFS 工具
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

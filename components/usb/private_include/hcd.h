@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,12 +185,13 @@ typedef struct {
  * @note Before calling this function, the Host Controller must already be un-clock gated and reset. The USB PHY
  *       (internal or external, and associated GPIOs) must already be configured.
  *
- * @param config HCD configuration
- * @retval ESP_OK: HCD successfully installed
- * @retval ESP_ERR_NO_MEM: Insufficient memory
- * @retval ESP_ERR_INVALID_STATE: HCD is already installed
- * @retval ESP_ERR_NOT_FOUND: HCD could not allocate interrupt
- * @retval ESP_ERR_INVALID_ARG: Arguments are invalid
+ * @param[in] config HCD configuration
+ *
+ * @return
+ *    - ESP_OK: HCD successfully installed
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_STATE: HCD is already installed
+ *    - ESP_ERR_INVALID_ARG: Arguments are invalid
  */
 esp_err_t hcd_install(const hcd_config_t *config);
 
@@ -203,8 +204,9 @@ esp_err_t hcd_install(const hcd_config_t *config);
  * @note This function will simply free the resources used by the HCD. The underlying Host Controller and USB PHY will
  *       not be disabled.
  *
- * @retval ESP_OK: HCD successfully uninstalled
- * @retval ESP_ERR_INVALID_STATE: HCD is not in the right condition to be uninstalled
+ * @return
+ *    - ESP_OK: HCD successfully uninstalled
+ *    - ESP_ERR_INVALID_STATE: HCD is not in the right condition to be uninstalled
  */
 esp_err_t hcd_uninstall(void);
 
@@ -220,11 +222,13 @@ esp_err_t hcd_uninstall(void);
  * @param[in] port_number Port number
  * @param[in] port_config Port configuration
  * @param[out] port_hdl Port handle
- * @retval ESP_OK: Port enabled
- * @retval ESP_ERR_NO_MEM: Insufficient memory
- * @retval ESP_ERR_INVALID_STATE: The port is already enabled
- * @retval ESP_ERR_NOT_FOUND: Port number not found
- * @retval ESP_ERR_INVALID_ARG: Arguments are invalid
+ *
+ * @return
+ *    - ESP_OK: Port enabled
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_STATE: The port is already enabled
+ *    - ESP_ERR_NOT_FOUND: Port number not found
+ *    - ESP_ERR_INVALID_ARG: Arguments are invalid
  */
 esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, hcd_port_handle_t *port_hdl);
 
@@ -234,9 +238,11 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
  * The port must be placed in the HCD_PORT_STATE_NOT_POWERED or HCD_PORT_STATE_RECOVERY state before it can be
  * deinitialized.
  *
- * @param port_hdl Port handle
- * @retval ESP_OK: Port disabled
- * @retval ESP_ERR_INVALID_STATE: The port is not in a condition to be disabled (not unpowered)
+ * @param[in] port_hdl Port handle
+ *
+ * @return
+ *    - ESP_OK: Port disabled
+ *    - ESP_ERR_INVALID_STATE: The port is not in a condition to be disabled (not unpowered)
  */
 esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl);
 
@@ -254,18 +260,20 @@ esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl);
  * @note For some of the commands that involve a blocking delay (e.g., reset and resume), if the port's state changes
  *       unexpectedly (e.g., a disconnect during a resume), this function will return ESP_ERR_INVALID_RESPONSE.
  *
- * @param port_hdl Port handle
- * @param command Command for the HCD port
- * @retval ESP_OK: Command executed successfully
- * @retval ESP_ERR_INVALID_STATE: Conditions have not been met to call this function
- * @retval ESP_ERR_INVALID_RESPONSE: The command is no longer valid due to a change in the port's state
+ * @param[in] port_hdl Port handle
+ * @param[in] command Command for the HCD port
+ *
+ * @return
+ *    - ESP_OK: Command executed successfully
+ *    - ESP_ERR_INVALID_STATE: Conditions have not been met to call this function
+ *    - ESP_ERR_INVALID_RESPONSE: The command is no longer valid due to a change in the port's state
  */
 esp_err_t hcd_port_command(hcd_port_handle_t port_hdl, hcd_port_cmd_t command);
 
 /**
  * @brief Get the port's current state
  *
- * @param port_hdl Port handle
+ * @param[in] port_hdl Port handle
  * @return hcd_port_state_t Current port state
  */
 hcd_port_state_t hcd_port_get_state(hcd_port_handle_t port_hdl);
@@ -277,11 +285,13 @@ hcd_port_state_t hcd_port_get_state(hcd_port_handle_t port_hdl);
  *
  * @note This function is only valid after a device directly to the port and has been reset
  *
- * @param[in port_hdl Port handle
+ * @param[in] port_hdl Port handle
  * @param[out] speed Speed of the port
- * @retval ESP_OK Device speed obtained
- * @retval ESP_ERR_INVALID_STATE: No valid device connected to the port
- * @retval ESP_ERR_INVALID_ARG: Invalid arguments
+ *
+ * @return
+ *    - ESP_OK Device speed obtained
+ *    - ESP_ERR_INVALID_STATE: No valid device connected to the port
+ *    - ESP_ERR_INVALID_ARG: Invalid arguments
  */
 esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed);
 
@@ -299,8 +309,10 @@ esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed);
  * @note This function is internally protected by a mutex. If multiple threads call this function, this function will
  *       can block.
  *
- * @param port_hdl Port handle
- * @return hcd_port_event_t The port event that was handled
+ * @param[in] port_hdl Port handle
+ *
+ * @return
+ *    - hcd_port_event_t The port event that was handled
  */
 hcd_port_event_t hcd_port_handle_event(hcd_port_handle_t port_hdl);
 
@@ -310,17 +322,21 @@ hcd_port_event_t hcd_port_handle_event(hcd_port_handle_t port_hdl);
  * The port must be in the HCD_PORT_STATE_RECOVERY state to be called. Recovering the port will involve issuing a soft
  * reset on the underlying USB controller. The port will be returned to the HCD_PORT_STATE_NOT_POWERED state.
  *
- * @param port_hdl Port handle
- * @retval ESP_OK Port recovered successfully
- * @retval ESP_ERR_INVALID_STATE Port is not in the HCD_PORT_STATE_RECOVERY state
+ * @param[in] port_hdl Port handle
+ *
+ * @return
+ *    - ESP_OK Port recovered successfully
+ *    - ESP_ERR_INVALID_STATE Port is not in the HCD_PORT_STATE_RECOVERY state
  */
 esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl);
 
 /**
  * @brief Get the context variable of a port
  *
- * @param port_hdl Port handle
- * @return void* Context variable
+ * @param[in] port_hdl Port handle
+ *
+ * @return
+ *    - void* Context variable
  */
 void *hcd_port_get_context(hcd_port_handle_t port_hdl);
 
@@ -332,10 +348,12 @@ void *hcd_port_get_context(hcd_port_handle_t port_hdl);
  *  - Port does not have any pending events
  *  - Port does not have any allocated pipes
  *
- * @param port_hdl Port handle
- * @param bias Fifo bias
- * @retval ESP_OK FIFO sizing successfully set
- * @retval ESP_ERR_INVALID_STATE Incorrect state for FIFO sizes to be set
+ * @param[in] port_hdl Port handle
+ * @param[in] bias Fifo bias
+ *
+ * @return
+ *    - ESP_OK FIFO sizing successfully set
+ *    - ESP_ERR_INVALID_STATE Incorrect state for FIFO sizes to be set
  */
 esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias);
 
@@ -353,13 +371,24 @@ esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_
  * @param[in] pipe_config Pipe configuration
  * @param[out] pipe_hdl Pipe handle
  *
- * @retval ESP_OK: Pipe successfully allocated
- * @retval ESP_ERR_NO_MEM: Insufficient memory
- * @retval ESP_ERR_INVALID_ARG: Arguments are invalid
- * @retval ESP_ERR_INVALID_STATE: Host port is not in the correct state to allocate a pipe
- * @retval ESP_ERR_NOT_SUPPORTED: The pipe's configuration cannot be supported
+ * @return
+ *    - ESP_OK: Pipe successfully allocated
+ *    - ESP_ERR_NO_MEM: Insufficient memory
+ *    - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *    - ESP_ERR_INVALID_STATE: Host port is not in the correct state to allocate a pipe
+ *    - ESP_ERR_NOT_SUPPORTED: The pipe's configuration cannot be supported
  */
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl);
+
+/**
+ * @brief Get maximum packet size (mps) of HCD pipe
+ *
+ * @param[in] port_hdl Pipe handle
+ *
+ * @return
+ *    - HCD pipe mps
+ */
+int hcd_pipe_get_mps(hcd_pipe_handle_t pipe_hdl);
 
 /**
  * @brief Free a pipe
@@ -368,10 +397,11 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
  * must be in following condition before it can be freed:
  * - All URBs have been dequeued
  *
- * @param pipe_hdl Pipe handle
+ * @param[in] pipe_hdl Pipe handle
  *
- * @retval ESP_OK: Pipe successfully freed
- * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be freed
+ * @return
+ *    - ESP_OK: Pipe successfully freed
+ *    - ESP_ERR_INVALID_STATE: Pipe is not in a condition to be freed
  */
 esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
 
@@ -384,11 +414,12 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
  * - Pipe does not have any enqueued URBs
  * - Port cannot be resetting
  *
- * @param pipe_hdl Pipe handle
- * @param mps New Maximum Packet Size
+ * @param[in] pipe_hdl Pipe handle
+ * @param[in] mps New Maximum Packet Size
  *
- * @retval ESP_OK: Pipe successfully updated
- * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
+ * @return
+ *    - ESP_OK: Pipe successfully updated
+ *    - ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
  */
 esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
 
@@ -401,57 +432,32 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
  * - Pipe does not have any enqueued URBs
  * - Port cannot be resetting
  *
- * @param pipe_hdl Pipe handle
- * @param dev_addr New device address
+ * @param[in] pipe_hdl Pipe handle
+ * @param[in] dev_addr New device address
  *
- * @retval ESP_OK: Pipe successfully updated
- * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
+ * @return
+ *    - ESP_OK: Pipe successfully updated
+ *    - ESP_ERR_INVALID_STATE: Pipe is not in a condition to be updated
  */
 esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr);
 
 /**
- * @brief Update a pipe's callback
- *
- * This function is intended to be called on default pipes at the end of enumeration to switch to a callback that
- * handles the completion of regular control transfer.
- * - Pipe is not current processing a command
- * - Pipe does not have any enqueued URBs
- * - Port cannot be resetting
- *
- * @param pipe_hdl Pipe handle
- * @param callback Callback
- * @param user_arg Callback argument
- * @return esp_err_t
- */
-esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback_t callback, void *user_arg);
-
-/**
- * @brief Make a pipe persist through a run time reset
- *
- * Normally when a HCD_PORT_CMD_RESET is called, all pipes should already have been freed. However There may be cases
- * (such as during enumeration) when a pipe must persist through a reset. This function will mark a pipe as
- * persistent allowing it to survive a reset. When HCD_PORT_CMD_RESET is called, the pipe can continue to be used after
- * the reset.
- *
- * @param pipe_hdl Pipe handle
- * @retval ESP_OK: Pipe successfully marked as persistent
- * @retval ESP_ERR_INVALID_STATE: Pipe is not in a condition to be made persistent
- */
-esp_err_t hcd_pipe_set_persist_reset(hcd_pipe_handle_t pipe_hdl);
-
-/**
  * @brief Get the context variable of a pipe from its handle
  *
- * @param pipe_hdl Pipe handle
- * @return void* Context variable
+ * @param[in] pipe_hdl Pipe handle
+ *
+ * @return
+ *    - void* Context variable
  */
 void *hcd_pipe_get_context(hcd_pipe_handle_t pipe_hdl);
 
 /**
  * @brief Get the current state of the pipe
  *
- * @param pipe_hdl Pipe handle
- * @return hcd_pipe_state_t Current state of the pipe
+ * @param[in] pipe_hdl Pipe handle
+ *
+ * @return
+ *    - hcd_pipe_state_t Current state of the pipe
  */
 hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
 
@@ -461,8 +467,10 @@ hcd_pipe_state_t hcd_pipe_get_state(hcd_pipe_handle_t pipe_hdl);
  * Returns the current number of URBs that have been enqueued (via hcd_urb_enqueue()) and have yet to be dequeued (via
  * hcd_urb_dequeue()).
  *
- * @param pipe_hdl Pipe handle
- * @return Number of in-flight URBs
+ * @param[in] pipe_hdl Pipe handle
+ *
+ * @return
+ *    - Number of in-flight URBs
  */
 unsigned int hcd_pipe_get_num_urbs(hcd_pipe_handle_t pipe_hdl);
 
@@ -473,10 +481,12 @@ unsigned int hcd_pipe_get_num_urbs(hcd_pipe_handle_t pipe_hdl);
  *
  * @note This function can block
  *
- * @param pipe_hdl Pipe handle
- * @param command Pipe command
- * @retval ESP_OK: Command executed successfully
- * @retval ESP_ERR_INVALID_STATE: The pipe is not in the correct state/condition too execute the command
+ * @param[in] pipe_hdl Pipe handle
+ * @param[in] command Pipe command
+ *
+ * @return
+ *    - ESP_OK: Command executed successfully
+ *    - ESP_ERR_INVALID_STATE: The pipe is not in the correct state/condition too execute the command
  */
 esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command);
 
@@ -486,8 +496,10 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command);
  * This function allows a pipe to be polled for events (i.e., when callbacks are not used). Once an event has been
  * obtained, this function reset the last event of the pipe to HCD_PIPE_EVENT_NONE.
  *
- * @param pipe_hdl Pipe handle
- * @return hcd_pipe_event_t Last pipe event to occur
+ * @param[in] pipe_hdl Pipe handle
+ *
+ * @return
+ *    - hcd_pipe_event_t Last pipe event to occur
  */
 hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl);
 
@@ -502,10 +514,12 @@ hcd_pipe_event_t hcd_pipe_get_event(hcd_pipe_handle_t pipe_hdl);
  * - The pipe must be in the HCD_PIPE_STATE_ACTIVE state
  * - The pipe cannot be executing a command
  *
- * @param pipe_hdl Pipe handle
- * @param urb URB to enqueue
- * @retval ESP_OK: URB enqueued successfully
- * @retval ESP_ERR_INVALID_STATE: Conditions not met to enqueue URB
+ * @param[in] pipe_hdl Pipe handle
+ * @param[in] urb URB to enqueue
+ *
+ * @return
+ *    - ESP_OK: URB enqueued successfully
+ *    - ESP_ERR_INVALID_STATE: Conditions not met to enqueue URB
  */
 esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb);
 
@@ -516,8 +530,10 @@ esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb);
  * multiple URBs that can be dequeued, this function should be called repeatedly until all URBs are dequeued. If a pipe
  * has no more URBs to dequeue, this function will return NULL.
  *
- * @param pipe_hdl Pipe handle
- * @return urb_t* Dequeued URB, or NULL if no more URBs to dequeue
+ * @param[in] pipe_hdl Pipe handle
+ *
+ * @return
+ *    - urb_t* Dequeued URB, or NULL if no more URBs to dequeue
  */
 urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl);
 
@@ -528,9 +544,11 @@ urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl);
  * "canceled" and can then be dequeued. If the URB is currently in-flight or has already completed, the URB will not be
  * affected by this function.
  *
- * @param urb URB to abort
- * @retval ESP_OK: URB successfully aborted, or was not affected by this function
- * @retval ESP_ERR_INVALID_STATE: URB was never enqueued
+ * @param[in] urb URB to abort
+ *
+ * @return
+ *    - ESP_OK: URB successfully aborted, or was not affected by this function
+ *    - ESP_ERR_INVALID_STATE: URB was never enqueued
  */
 esp_err_t hcd_urb_abort(urb_t *urb);
 

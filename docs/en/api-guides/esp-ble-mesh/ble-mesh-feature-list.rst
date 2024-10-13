@@ -1,5 +1,7 @@
-ESP-BLE-MESH Feature List
-=========================
+Feature List
+=============
+
+:link_to_translation:`zh_CN:[中文]`
 
 Supported Features
 ------------------
@@ -7,7 +9,7 @@ Supported Features
 Mesh Core
 """""""""
 
-* Provisioning:
+* Provisioning
     * PB-ADV, PB-GATT and PB-Remote
     * OOB Authentication
     * Certificate-based Provisioning
@@ -130,8 +132,8 @@ Mesh Models
     * Light LC Server
     * Light LC Setup Server
 
-Mesh Applications
-"""""""""""""""""
+Mesh Examples
+"""""""""""""
 
 * ESP-BLE-MESH Node
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/onoff_models/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
@@ -149,18 +151,3 @@ Mesh Applications
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/wifi_coexist>`
     * `Demo Video <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`__
-
-
-Future Release Features
------------------------
-
-Mesh Core
-"""""""""
-
-* Provisioner NVS Storage
-
-Mesh Applications
-"""""""""""""""""
-
-* Fast OTA
-* Friendship

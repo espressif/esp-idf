@@ -39,6 +39,8 @@ ${PREFIX}ld --unresolved-symbols=ignore-all --entry 0 -o ${ELF_FILE} \
     -u g_esp_wifi_he_md5 \
     -u g_wifi_crypto_funcs_md5 \
     -u g_wifi_type_md5 \
+    -u g_wifi_types_generic_md5 \
+    -u g_wifi_types_native_md5 \
     -u g_wifi_he_type_md5 \
     -u g_wifi_osi_funcs_md5 \
     -u g_wifi_supplicant_funcs_md5 \
@@ -70,6 +72,8 @@ check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_he.h g_esp_wifi_he_md
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_private/wifi_os_adapter.h g_wifi_osi_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_crypto_types.h g_wifi_crypto_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types.h g_wifi_type_md5
+check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types_generic.h g_wifi_types_generic_md5
+check_md5 ${IDF_PATH}/components/esp_wifi/include/local/esp_wifi_types_native.h g_wifi_types_native_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_he_types.h g_wifi_he_type_md5
 check_md5 ${IDF_PATH}/components/wpa_supplicant/esp_supplicant/src/esp_wifi_driver.h g_wifi_supplicant_funcs_md5
 

@@ -51,7 +51,7 @@ typedef enum {
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
-    ETS_TWAI0_INTR_SOURCE,                      /**< interrupt of can0, level*/
+    ETS_TWAI0_INTR_SOURCE,                      /**< interrupt of twai0, level*/
     ETS_USB_SERIAL_JTAG_INTR_SOURCE,            /**< interrupt of USB, level*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller0, level*/
@@ -67,7 +67,8 @@ typedef enum {
     ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET1_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET1_INTR_SOURCE */
     ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET2_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET2_INTR_SOURCE */
     ETS_APB_ADC_INTR_SOURCE = 48,               /**< interrupt of APB ADC, LEVEL*/
-    ETS_MCPWM0_INTR_SOURCE,
+    ETS_TEMPERATURE_SENSOR_INTR_SOURCE = ETS_APB_ADC_INTR_SOURCE,
+    ETS_MCPWM0_INTR_SOURCE = 49,
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_TX_INTR_SOURCE,
     ETS_PARL_IO_RX_INTR_SOURCE,

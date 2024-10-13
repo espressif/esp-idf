@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,12 @@
 extern "C" {
 #endif
 
+/** Call `sdmmc_io_read_bytes`, `sdmmc_io_write_bytes`, `sdmmc_io_read_blocks` or `sdmmc_io_write_bocks` APIs with
+ * address ORed by this flag to send CMD53 with OP Code clear (fixed address) */
+#define SDMMC_IO_FIXED_ADDR BIT(31)
+
 /**
  * Probe and initialize SD/MMC card using given host
- *
- * @note Only SD cards (SDSC and SDHC/SDXC) are supported now.
- *       Support for MMC/eMMC cards will be added later.
  *
  * @param host  pointer to structure defining host controller
  * @param out_card  pointer to structure which will receive information
@@ -196,12 +197,17 @@ esp_err_t sdmmc_io_write_byte(sdmmc_card_t* card, uint32_t function,
  * This function performs read operation using CMD53 in byte mode.
  * For block mode, see sdmmc_io_read_blocks.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where reading starts
- * @param dst  buffer which receives the data read from card
- * @param size  number of bytes to read
+ * @param dst  buffer which receives the data read from card. Aligned to 4 byte boundary unless
+ *             `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set when calling `sdmmc_card_init`. The flag is mandatory
+ *             when the buffer is behind the cache.
+ * @param size  number of bytes to read, 1 to 512.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_SIZE if size exceeds 512 bytes
@@ -216,12 +222,16 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
  * This function performs write operation using CMD53 in byte mode.
  * For block mode, see sdmmc_io_write_blocks.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param src  data to be written
- * @param size  number of bytes to write
+ * @param src  data to be written. Aligned to 4 byte boundary unless `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set
+ *             when calling `sdmmc_card_init`. The flag is mandatory when the buffer is behind the cache.
+ * @param size  number of bytes to write, 1 to 512.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_SIZE if size exceeds 512 bytes
@@ -236,11 +246,15 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
  * This function performs read operation using CMD53 in block mode.
  * For byte mode, see sdmmc_io_read_bytes.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param dst  buffer which receives the data read from card
+ * @param dst  buffer which receives the data read from card. Aligned to 4 byte boundary, and also cache line size if
+ *             the buffer is behind the cache.
  * @param size  number of bytes to read, must be divisible by the card block
  *              size.
  * @return
@@ -257,12 +271,16 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
  * This function performs write operation using CMD53 in block mode.
  * For byte mode, see sdmmc_io_write_bytes.
  *
+ * By default OP Code is set (incrementing address). To send CMD53 without this bit, OR the argument `addr` with
+ * `SDMMC_IO_FIXED_ADDR`.
+ *
  * @param card  pointer to card information structure previously initialized
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param src  data to be written
- * @param size  number of bytes to read, must be divisible by the card block
+ * @param src  data to be written. Aligned to 4 byte boundary, and also cache line size if the buffer is behind the
+ *             cache.
+ * @param size  number of bytes to write, must be divisible by the card block
  *              size.
  * @return
  *      - ESP_OK on success

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -303,9 +303,9 @@ TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc]")
 
 #if SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED
 #if CONFIG_IDF_TARGET_ESP32S2
-#define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#define TEST_ADC_FORMAT_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE1
 #else
-#define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#define TEST_ADC_FORMAT_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE2
 #endif
 bool IRAM_ATTR test_high_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data)
 {
@@ -332,7 +332,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
         .adc_pattern = adc_pattern,
         .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = TEST_ADC_FORMATE_TYPE,
+        .format = TEST_ADC_FORMAT_TYPE,
     };
     TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
 
@@ -450,7 +450,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
         .adc_pattern = adc_pattern,
         .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = TEST_ADC_FORMATE_TYPE,
+        .format = TEST_ADC_FORMAT_TYPE,
     };
     TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
 

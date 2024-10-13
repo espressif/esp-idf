@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#define HP_CALI_DBIAS   17
-#define LP_CALI_DBIAS   18
+#define HP_CALI_DBIAS_DEFAULT   17
+#define LP_CALI_DBIAS_DEFAULT   18
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
@@ -38,13 +38,19 @@ extern "C" {
 #define PMU_HP_DRVB_LIGHTSLEEP      0xFFFFF8
 #define PMU_LP_DRVB_LIGHTSLEEP      0
 
-#define PMU_HP_DBIAS_LIGHTSLEEP_0V6 1
-#define PMU_LP_DBIAS_LIGHTSLEEP_0V7 6
+#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
+#define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      6
+
+#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
+// The current value of this depends on the restoration time overhead of the longest chain in regdma
+#define PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US     390
 
 // FOR DEEPSLEEP
 #define PMU_HP_XPD_DEEPSLEEP    0
 #define PMU_LP_DRVB_DEEPSLEEP   7
-#define PMU_LP_DBIAS_DEEPSLEEP_0V7      PMU_LP_DBIAS_LIGHTSLEEP_0V7
+
+uint32_t get_act_hp_dbias(void);
+uint32_t get_act_lp_dbias(void);
 
 typedef struct {
     pmu_hp_dig_power_reg_t  dig_power;
@@ -329,7 +335,7 @@ typedef struct {
             .pd_cur          = PMU_PD_CUR_SLEEP_DEFAULT,    \
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,   \
             .xpd             = PMU_HP_XPD_LIGHTSLEEP,       \
-            .dbias           = PMU_HP_DBIAS_LIGHTSLEEP_0V6  \
+            .dbias           = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT  \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
@@ -340,7 +346,7 @@ typedef struct {
             .slp_xpd       = PMU_LP_SLP_XPD_SLEEP_DEFAULT,  \
             .slp_dbias     = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,\
             .xpd           = PMU_LP_XPD_SLEEP_DEFAULT,      \
-            .dbias         = PMU_LP_DBIAS_LIGHTSLEEP_0V7    \
+            .dbias         = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT   \
         }                                                   \
     }                                                       \
 }
@@ -362,7 +368,7 @@ typedef struct {
             .slp_xpd       = PMU_LP_SLP_XPD_SLEEP_DEFAULT,  \
             .slp_dbias     = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,\
             .xpd           = PMU_LP_XPD_SLEEP_DEFAULT,      \
-            .dbias         = PMU_LP_DBIAS_DEEPSLEEP_0V7     \
+            .dbias         = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT    \
         }                                                   \
     }                                                       \
 }
@@ -438,7 +444,7 @@ typedef struct pmu_sleep_machine_constant {
         .analog_wait_time_us            = 154,  \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
-        .regdma_s2a_work_time_us        = 0,    \
+        .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US, \
         .regdma_a2s_work_time_us        = 0,    \
         .xtal_wait_stable_time_us       = 250,  \
         .pll_wait_stable_time_us        = 1     \

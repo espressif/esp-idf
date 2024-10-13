@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** TRACE_MEM_START_ADDR_REG register
  *  mem start addr
  */
-#define TRACE_MEM_START_ADDR_REG (DR_REG_TRACE_BASE + 0x0)
+#define TRACE_MEM_START_ADDR_REG(i) (REG_TRACE_BASE(i) + 0x0)
 /** TRACE_MEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The start address of trace memory
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** TRACE_MEM_END_ADDR_REG register
  *  mem end addr
  */
-#define TRACE_MEM_END_ADDR_REG (DR_REG_TRACE_BASE + 0x4)
+#define TRACE_MEM_END_ADDR_REG(i) (REG_TRACE_BASE(i) + 0x4)
 /** TRACE_MEM_END_ADDR : R/W; bitpos: [31:0]; default: 4294967295;
  *  The end address of trace memory
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** TRACE_MEM_CURRENT_ADDR_REG register
  *  mem current addr
  */
-#define TRACE_MEM_CURRENT_ADDR_REG (DR_REG_TRACE_BASE + 0x8)
+#define TRACE_MEM_CURRENT_ADDR_REG(i) (REG_TRACE_BASE(i) + 0x8)
 /** TRACE_MEM_CURRENT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  current_mem_addr,indicate that next writing addr
  */
@@ -50,7 +50,7 @@ extern "C" {
 /** TRACE_MEM_ADDR_UPDATE_REG register
  *  mem addr update
  */
-#define TRACE_MEM_ADDR_UPDATE_REG (DR_REG_TRACE_BASE + 0xc)
+#define TRACE_MEM_ADDR_UPDATE_REG(i) (REG_TRACE_BASE(i) + 0xc)
 /** TRACE_MEM_CURRENT_ADDR_UPDATE : WT; bitpos: [0]; default: 0;
  *  when set, the  will
  *  \hyperref[fielddesc:TRACEMEMCURRENTADDR]{TRACE_MEM_CURRENT_ADDR} update to
@@ -64,7 +64,7 @@ extern "C" {
 /** TRACE_FIFO_STATUS_REG register
  *  fifo status register
  */
-#define TRACE_FIFO_STATUS_REG (DR_REG_TRACE_BASE + 0x10)
+#define TRACE_FIFO_STATUS_REG(i) (REG_TRACE_BASE(i) + 0x10)
 /** TRACE_FIFO_EMPTY : RO; bitpos: [0]; default: 1;
  *  Represent whether the fifo is empty. \\1: empty \\0: not empty
  */
@@ -84,7 +84,7 @@ extern "C" {
 /** TRACE_INTR_ENA_REG register
  *  interrupt enable register
  */
-#define TRACE_INTR_ENA_REG (DR_REG_TRACE_BASE + 0x14)
+#define TRACE_INTR_ENA_REG(i) (REG_TRACE_BASE(i) + 0x14)
 /** TRACE_FIFO_OVERFLOW_INTR_ENA : R/W; bitpos: [0]; default: 0;
  *  Set 1 enable fifo_overflow interrupt
  */
@@ -103,7 +103,7 @@ extern "C" {
 /** TRACE_INTR_RAW_REG register
  *  interrupt status register
  */
-#define TRACE_INTR_RAW_REG (DR_REG_TRACE_BASE + 0x18)
+#define TRACE_INTR_RAW_REG(i) (REG_TRACE_BASE(i) + 0x18)
 /** TRACE_FIFO_OVERFLOW_INTR_RAW : RO; bitpos: [0]; default: 0;
  *  fifo_overflow interrupt status
  */
@@ -122,7 +122,7 @@ extern "C" {
 /** TRACE_INTR_CLR_REG register
  *  interrupt clear register
  */
-#define TRACE_INTR_CLR_REG (DR_REG_TRACE_BASE + 0x1c)
+#define TRACE_INTR_CLR_REG(i) (REG_TRACE_BASE(i) + 0x1c)
 /** TRACE_FIFO_OVERFLOW_INTR_CLR : WT; bitpos: [0]; default: 0;
  *  Set 1 clear fifo overflow interrupt
  */
@@ -141,7 +141,7 @@ extern "C" {
 /** TRACE_TRIGGER_REG register
  *  trigger register
  */
-#define TRACE_TRIGGER_REG (DR_REG_TRACE_BASE + 0x20)
+#define TRACE_TRIGGER_REG(i) (REG_TRACE_BASE(i) + 0x20)
 /** TRACE_TRIGGER_ON : WT; bitpos: [0]; default: 0;
  *  Configure whether or not start trace.\\1: start trace \\0: invalid\\
  */
@@ -157,7 +157,7 @@ extern "C" {
 #define TRACE_TRIGGER_OFF_V  0x00000001U
 #define TRACE_TRIGGER_OFF_S  1
 /** TRACE_MEM_LOOP : R/W; bitpos: [2]; default: 1;
- *  Configure memory loop mode. \\1: trace will loop wrtie trace_mem. \\0: when
+ *  Configure memory loop mode. \\1: trace will loop write trace_mem. \\0: when
  *  mem_current_addr at mem_end_addr, it will stop at the mem_end_addr\\
  */
 #define TRACE_MEM_LOOP    (BIT(2))
@@ -175,7 +175,7 @@ extern "C" {
 /** TRACE_CONFIG_REG register
  *  trace configuration register
  */
-#define TRACE_CONFIG_REG (DR_REG_TRACE_BASE + 0x24)
+#define TRACE_CONFIG_REG(i) (REG_TRACE_BASE(i) + 0x24)
 /** TRACE_DM_TRIGGER_ENA : R/W; bitpos: [0]; default: 0;
  *  Configure whether or not enable cpu trigger action.\\1: enable\\0:disable\\
  */
@@ -184,9 +184,9 @@ extern "C" {
 #define TRACE_DM_TRIGGER_ENA_V  0x00000001U
 #define TRACE_DM_TRIGGER_ENA_S  0
 /** TRACE_RESET_ENA : R/W; bitpos: [1]; default: 0;
- *  Configure whether or not enable trace cpu haverest, when enabeld, if cpu have
+ *  Configure whether or not enable trace cpu haverest, when enabled, if cpu have
  *  reset, the encoder will output a packet to report the address of the last
- *  instruction, and upon reset deassertion, the encoder start again.\\1: enabeld\\0:
+ *  instruction, and upon reset deassertion, the encoder start again.\\1: enabled\\0:
  *  disabled\\
  */
 #define TRACE_RESET_ENA    (BIT(1))
@@ -194,11 +194,11 @@ extern "C" {
 #define TRACE_RESET_ENA_V  0x00000001U
 #define TRACE_RESET_ENA_S  1
 /** TRACE_HALT_ENA : R/W; bitpos: [2]; default: 0;
- *  Configure whether or not enable trace cpu is halted, when enabeld, if the cpu
+ *  Configure whether or not enable trace cpu is halted, when enabled, if the cpu
  *  halted, the encoder will output a packet to report the address of the last
  *  instruction, and upon halted deassertion, the encoder start again.When disabled,
  *  encoder will not report the last address before halted and first address after
- *  halted, cpu halted information will not be tracked. \\1: enabeld\\0: disabled\\
+ *  halted, cpu halted information will not be tracked. \\1: enabled\\0: disabled\\
  */
 #define TRACE_HALT_ENA    (BIT(2))
 #define TRACE_HALT_ENA_M  (TRACE_HALT_ENA_V << TRACE_HALT_ENA_S)
@@ -222,7 +222,7 @@ extern "C" {
 #define TRACE_FULL_ADDRESS_V  0x00000001U
 #define TRACE_FULL_ADDRESS_S  4
 /** TRACE_IMPLICIT_EXCEPT : R/W; bitpos: [5]; default: 0;
- *  Configure whether or not enabel implicit exception mode. When enabled,, do not sent
+ *  Configure whether or not enable implicit exception mode. When enabled,, do not sent
  *  exception address, only exception cause in exception packets.\\1: enabled\\0:
  *  disabled\\
  */
@@ -234,7 +234,7 @@ extern "C" {
 /** TRACE_FILTER_CONTROL_REG register
  *  filter control register
  */
-#define TRACE_FILTER_CONTROL_REG (DR_REG_TRACE_BASE + 0x28)
+#define TRACE_FILTER_CONTROL_REG(i) (REG_TRACE_BASE(i) + 0x28)
 /** TRACE_FILTER_EN : R/W; bitpos: [0]; default: 0;
  *  Configure whether or not enable filter unit. \\1: enable filter.\\ 0: always match
  */
@@ -279,7 +279,7 @@ extern "C" {
 /** TRACE_FILTER_MATCH_CONTROL_REG register
  *  filter match control register
  */
-#define TRACE_FILTER_MATCH_CONTROL_REG (DR_REG_TRACE_BASE + 0x2c)
+#define TRACE_FILTER_MATCH_CONTROL_REG(i) (REG_TRACE_BASE(i) + 0x2c)
 /** TRACE_MATCH_CHOICE_PRIVILEGE : R/W; bitpos: [0]; default: 0;
  *  Select match which privilege level when
  *  \hyperref[fielddesc:TRACEMATCHPRIVILEGE]{TRACE_MATCH_PRIVILEGE} is set. \\1:
@@ -309,7 +309,7 @@ extern "C" {
 /** TRACE_FILTER_COMPARATOR_CONTROL_REG register
  *  filter comparator match control register
  */
-#define TRACE_FILTER_COMPARATOR_CONTROL_REG (DR_REG_TRACE_BASE + 0x30)
+#define TRACE_FILTER_COMPARATOR_CONTROL_REG(i) (REG_TRACE_BASE(i) + 0x30)
 /** TRACE_P_INPUT : R/W; bitpos: [0]; default: 0;
  *  Determines which input to compare against the primary comparator, \\0: iaddr, \\1:
  *  tval.
@@ -374,7 +374,7 @@ extern "C" {
 /** TRACE_FILTER_P_COMPARATOR_MATCH_REG register
  *  primary comparator match value
  */
-#define TRACE_FILTER_P_COMPARATOR_MATCH_REG (DR_REG_TRACE_BASE + 0x34)
+#define TRACE_FILTER_P_COMPARATOR_MATCH_REG(i) (REG_TRACE_BASE(i) + 0x34)
 /** TRACE_P_MATCH : R/W; bitpos: [31:0]; default: 0;
  *  primary comparator match value
  */
@@ -386,7 +386,7 @@ extern "C" {
 /** TRACE_FILTER_S_COMPARATOR_MATCH_REG register
  *  secondary comparator match value
  */
-#define TRACE_FILTER_S_COMPARATOR_MATCH_REG (DR_REG_TRACE_BASE + 0x38)
+#define TRACE_FILTER_S_COMPARATOR_MATCH_REG(i) (REG_TRACE_BASE(i) + 0x38)
 /** TRACE_S_MATCH : R/W; bitpos: [31:0]; default: 0;
  *  secondary comparator match value
  */
@@ -398,7 +398,7 @@ extern "C" {
 /** TRACE_RESYNC_PROLONGED_REG register
  *  resync configuration register
  */
-#define TRACE_RESYNC_PROLONGED_REG (DR_REG_TRACE_BASE + 0x3c)
+#define TRACE_RESYNC_PROLONGED_REG(i) (REG_TRACE_BASE(i) + 0x3c)
 /** TRACE_RESYNC_PROLONGED : R/W; bitpos: [23:0]; default: 128;
  *  count number, when count to this value, send a sync package
  */
@@ -417,7 +417,7 @@ extern "C" {
 /** TRACE_AHB_CONFIG_REG register
  *  AHB config register
  */
-#define TRACE_AHB_CONFIG_REG (DR_REG_TRACE_BASE + 0x40)
+#define TRACE_AHB_CONFIG_REG(i) (REG_TRACE_BASE(i) + 0x40)
 /** TRACE_HBURST : R/W; bitpos: [2:0]; default: 0;
  *  set hburst
  */
@@ -436,7 +436,7 @@ extern "C" {
 /** TRACE_CLOCK_GATE_REG register
  *  Clock gate control register
  */
-#define TRACE_CLOCK_GATE_REG (DR_REG_TRACE_BASE + 0x44)
+#define TRACE_CLOCK_GATE_REG(i) (REG_TRACE_BASE(i) + 0x44)
 /** TRACE_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  The bit is used to enable clock gate when access all registers in this module.
  */
@@ -448,7 +448,7 @@ extern "C" {
 /** TRACE_DATE_REG register
  *  Version control register
  */
-#define TRACE_DATE_REG (DR_REG_TRACE_BASE + 0x3fc)
+#define TRACE_DATE_REG(i) (REG_TRACE_BASE(i) + 0x3fc)
 /** TRACE_DATE : R/W; bitpos: [27:0]; default: 35721984;
  *  version control register. Note that this default value stored is the latest date
  *  when the hardware logic was updated.

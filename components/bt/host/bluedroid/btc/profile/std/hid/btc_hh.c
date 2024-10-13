@@ -189,7 +189,7 @@ static btc_hh_device_t *btc_hh_find_connected_dev_by_bda(BD_ADDR bd_addr)
  *
  * Function         btc_hh_stop_vup_timer
  *
- * Description      stop vitual unplug timer
+ * Description      stop virtual unplug timer
  *
  * Returns          void
  ******************************************************************************/
@@ -316,7 +316,7 @@ void btc_hh_remove_device(BD_ADDR bd_addr)
 
     for (i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
         p_added_dev = &btc_hh_cb.added_devices[i];
-        if (p_added_dev->bd_addr == bd_addr) {
+        if (memcmp(p_added_dev->bd_addr, bd_addr, BD_ADDR_LEN) == 0) {
             BTA_HhRemoveDev(p_added_dev->dev_handle);
             btc_storage_remove_hid_info((bt_bdaddr_t *)p_added_dev->bd_addr);
             memset(p_added_dev->bd_addr, 0, 6);
@@ -544,6 +544,11 @@ static void btc_hh_connect(btc_hidh_args_t *arg)
             BTC_TRACE_ERROR("%s exceeded the maximum supported HID device number %d!", __func__, BTC_HH_MAX_HID);
             ret = ESP_HIDH_ERR_NO_RES;
             break;
+        } else if (dev && dev->dev_status == ESP_HIDH_CONN_STATE_CONNECTED) {
+            BTC_TRACE_WARNING("%s Device[%s] already connected", __func__,
+                              bdaddr_to_string((const bt_bdaddr_t *)arg->connect.bd_addr, bdstr, sizeof(bdstr)));
+            param.open.conn_status = ESP_HIDH_CONN_STATE_CONNECTED;
+            break;
         }
 
         for (int i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
@@ -662,7 +667,7 @@ static void btc_hh_virtual_unplug(btc_hidh_args_t *arg)
             param.unplug.conn_status = ESP_HIDH_CONN_STATE_DISCONNECTING;
             param.unplug.handle = p_dev->dev_handle;
         } else if ((p_dev != NULL) && (p_dev->dev_status == ESP_HIDH_CONN_STATE_CONNECTED)) {
-            BTC_TRACE_WARNING("%s: Virtual unplug not suported, disconnecting device", __func__);
+            BTC_TRACE_WARNING("%s: Virtual unplug not supported, disconnecting device", __func__);
             /* start the timer */
             btc_hh_start_vup_timer(arg->unplug.bd_addr);
             p_dev->local_vup = true;

@@ -6,7 +6,7 @@ Over The Air Updates (OTA)
 OTA Process Overview
 --------------------
 
-The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi or Bluetooth.)
+The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi, Bluetooth or Ethernet).
 
 OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition.
 
@@ -35,6 +35,30 @@ The main purpose of the application rollback is to keep the device working after
 * The application works fine, :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` marks the running application with the state ``ESP_OTA_IMG_VALID``. There are no restrictions on booting this application.
 * The application has critical errors and further work is not possible, a rollback to the previous application is required, :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` marks the running application with the state ``ESP_OTA_IMG_INVALID`` and reset. This application will not be selected by the bootloader for boot and will boot the previously working application.
 * If the :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and a reset occurs without calling either function then the application is rolled back.
+
+The following code serves detect the initial boot for an application after the OTA update. Upon the first boot, the application checks its state and performs diagnostics. If the diagnostics are successful, the application should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` to confirm the operability of the application. If the diagnostics fail, the application should call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` to roll back to the previous working application.
+
+If the application is not able to boot or execute this code due to an abort/reboot/power loss error, the bootloader marks this application as ``ESP_OTA_IMG_INVALID`` in the next booting attempt and rolls back to the previous working application.
+
+.. code:: c
+
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            // run diagnostic function ...
+            bool diagnostic_is_ok = diagnostic();
+            if (diagnostic_is_ok) {
+                ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "Diagnostics failed! Start rollback to the previous version ...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        }
+    }
+
+For the example incorporating the above code snippet, see the :example:`system/ota/native_ota_example` example.
 
 .. note::
 
@@ -153,9 +177,9 @@ If you want to avoid the download/erase overhead in case of the app from the ser
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
                     // check current version with downloading
                     if (esp_efuse_check_secure_version(new_app_info.secure_version) == false) {
-                    	ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
-                    	http_cleanup(client);
-                    	task_fatal_error();
+                      ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
+                      http_cleanup(client);
+                      task_fatal_error();
                     }
 
                     image_header_was_checked = true;
@@ -197,6 +221,21 @@ The verification of signed OTA updates can be performed even without enabling ha
 
   For more information refer to :ref:`signed-app-verify`
 
+Tuning OTA Performance
+----------------------
+
+- Erasing the update partition at once instead of sequential erasing (default mechanism) while write operation might help in reducing the overall time taken for firmware upgrade. To enable this, set :cpp:member:`esp_https_ota_config_t::bulk_flash_erase` to true in :cpp:type:`esp_https_ota_config_t` structure. If the partition to be erased is too large, task watchdog could be triggered. It is advised to increase the watchdog timeout in such cases.
+
+  .. code-block:: c
+
+      esp_https_ota_config_t ota_config = {
+          .bulk_flash_erase = true,
+      }
+
+- Tuning the :cpp:member:`esp_https_ota_config_t::http_config::buffer_size` can also help in improving the OTA performance.
+- :cpp:type:`esp_https_ota_config_t` has a member :cpp:member:`esp_https_ota_config_t::buffer_caps` which can be used to specify the memory type to use when allocating memory to the OTA buffer. Configuring this value to MALLOC_CAP_INTERNAL might help in improving the OTA performance when SPIRAM is enabled.
+- For optimizing network performance, please refer to **Improving Network Speed** section in the :doc:`/api-guides/performance/speed` for more details.
+
 
 OTA Tool ``otatool.py``
 -----------------------
@@ -232,14 +271,14 @@ The starting point for using the tool's Python API to do is create a ``OtatoolTa
 
 .. code-block:: python
 
-  # Create a partool.py target device connected on serial port /dev/ttyUSB1
+  # Create a parttool.py target device connected on serial port /dev/ttyUSB1
   target = OtatoolTarget("/dev/ttyUSB1")
 
 The created object can now be used to perform operations on the target device:
 
 .. code-block:: python
 
-  # Erase otadata, reseting the device to factory app
+  # Erase otadata, resetting the device to factory app
   target.erase_otadata()
 
   # Erase contents of OTA app slot 0
@@ -302,10 +341,12 @@ See Also
 * :doc:`../peripherals/spi_flash/index`
 * :doc:`esp_https_ota`
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-End-to-end example of OTA firmware update workflow: :example:`system/ota`.
+- :example:`system/ota/native_ota_example` demonstrates how to use the `app_update` component's APIs for native Over-the-Air (OTA) updates on {IDF_TARGET_NAME}. For the applicable SoCs, please refer to :example_file:`system/ota/native_ota_example/README.md`.
+
+- :example:`system/ota/otatool` demonstrates how to use the OTA tool to perform operations such as reading, writing, and erasing OTA partitions, switching boot partitions, and switching to factory partition. For more information, please refer to :example_file:`system/ota/otatool/README.md`.
 
 API Reference
 -------------
@@ -322,4 +363,3 @@ Debugging OTA Failure
     :figclass: align-center
 
     How to Debug When OTA Fails (click to enlarge)
-

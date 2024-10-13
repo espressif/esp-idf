@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +11,12 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
 
-#if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #include "tlsf.h"
 #include "tlsf_block_functions.h"
-#endif
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
@@ -109,7 +108,7 @@ void multi_heap_in_rom_init(void)
 #else // CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 /* Check a block is valid for this heap. Used to verify parameters. */
-__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const block_header_t *block)
+__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const multi_heap_block_handle_t block)
 {
     pool_t pool = tlsf_get_pool(heap->heap_data);
     void *ptr = block_to_ptr(block);
@@ -174,22 +173,22 @@ multi_heap_block_handle_t multi_heap_get_first_block(multi_heap_handle_t heap)
 {
     assert(heap != NULL);
     pool_t pool = tlsf_get_pool(heap->heap_data);
-    block_header_t* block = offset_to_block(pool, -(int)block_header_overhead);
+    multi_heap_block_handle_t block = offset_to_block(pool, -(int)block_header_overhead);
 
-    return (multi_heap_block_handle_t)block;
+    return block;
 }
 
 multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, multi_heap_block_handle_t block)
 {
     assert(heap != NULL);
     assert_valid_block(heap, block);
-    block_header_t* next = block_next(block);
+    multi_heap_block_handle_t next = block_next(block);
 
     if(block_size(next) == 0) {
         //Last block:
         return NULL;
     } else {
-        return (multi_heap_block_handle_t)next;
+        return next;
     }
 
 }
@@ -354,13 +353,11 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     return valid;
 }
 
-__attribute__((noinline)) static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static bool multi_heap_dump_tlsf(void *ptr, size_t size, int used, void *user)
 {
     (void)user;
-    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n",
-                            (void *)ptr,
-                            size,
-                            used ? "No" : "Yes");
+    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n", (void *)ptr, size, used ? "No" : "Yes");
+    return true;
 }
 
 void multi_heap_dump(multi_heap_handle_t heap)
@@ -391,7 +388,7 @@ size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-__attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static bool multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
 {
     multi_heap_info_t *info = user;
 
@@ -406,6 +403,7 @@ __attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t
     }
 
     info->total_blocks++;
+    return true;
 }
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
@@ -429,4 +427,31 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
     multi_heap_internal_unlock(heap);
 }
-#endif
+
+void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_func, void *user_data)
+{
+    assert(heap != NULL);
+
+    multi_heap_internal_lock(heap);
+    tlsf_walk_pool(tlsf_get_pool(heap->heap_data), walker_func, user_data);
+    multi_heap_internal_unlock(heap);
+}
+
+#endif // CONFIG_HEAP_TLSF_USE_ROM_IMPL
+
+size_t multi_heap_reset_minimum_free_bytes(multi_heap_handle_t heap)
+{
+    multi_heap_internal_lock(heap);
+    const size_t old_minimum = heap->minimum_free_bytes;
+    heap->minimum_free_bytes = heap->free_bytes;
+    multi_heap_internal_unlock(heap);
+    return old_minimum;
+}
+
+void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_t new_minimum_free_bytes_value)
+{
+    multi_heap_internal_lock(heap);
+    // keep the value of minimum_free_bytes if it is lower than the value passed as parameter
+    heap->minimum_free_bytes = MIN(heap->minimum_free_bytes, new_minimum_free_bytes_value);
+    multi_heap_internal_unlock(heap);
+}

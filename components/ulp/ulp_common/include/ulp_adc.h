@@ -29,6 +29,13 @@ typedef struct {
  */
 esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg);
 
+/**
+ * @brief Deinitialize ADC after use with ULP, allowing it to be reclaimed
+ *
+ * @return esp_err_t    ESP_OK for successful.
+*/
+esp_err_t ulp_adc_deinit(void);
+
 #ifdef __cplusplus
 }
 #endif

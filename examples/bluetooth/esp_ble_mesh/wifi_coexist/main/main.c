@@ -61,22 +61,22 @@ esp_ble_mesh_client_t config_client;
 
 /* Configuration Server Model user_data */
 esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_ENABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_DISABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 /* Fast Prov Client Model user_data */
@@ -90,6 +90,7 @@ example_fast_prov_server_t fast_prov_server = {
     .primary_role  = false,
     .max_node_num  = 6,
     .prov_node_cnt = 0x0,
+    .app_idx       = ESP_BLE_MESH_KEY_UNUSED,
     .unicast_min   = ESP_BLE_MESH_ADDR_UNASSIGNED,
     .unicast_max   = ESP_BLE_MESH_ADDR_UNASSIGNED,
     .unicast_cur   = ESP_BLE_MESH_ADDR_UNASSIGNED,
@@ -97,7 +98,6 @@ example_fast_prov_server_t fast_prov_server = {
     .flags         = 0x0,
     .iv_index      = 0x0,
     .net_idx       = ESP_BLE_MESH_KEY_UNUSED,
-    .app_idx       = ESP_BLE_MESH_KEY_UNUSED,
     .group_addr    = ESP_BLE_MESH_ADDR_UNASSIGNED,
     .prim_prov_addr = ESP_BLE_MESH_ADDR_UNASSIGNED,
     .match_len     = 0x0,
@@ -323,9 +323,9 @@ static void example_recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BLE_M
             }
         }
 
-        add_dev.addr_type = (uint8_t)addr_type;
+        add_dev.addr_type = (esp_ble_mesh_addr_type_t)addr_type;
         add_dev.oob_info = oob_info;
-        add_dev.bearer = (uint8_t)bearer;
+        add_dev.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
         memcpy(add_dev.uuid, dev_uuid, 16);
         memcpy(add_dev.addr, addr, BLE_MESH_ADDR_LEN);
         flag = ADD_DEV_RM_AFTER_PROV_FLAG | ADD_DEV_START_PROV_NOW_FLAG | ADD_DEV_FLUSHABLE_DEV_FLAG;
@@ -466,8 +466,8 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_DELETE: {
             ESP_LOGI(TAG, "%s: Fast prov server receives msg, opcode 0x%04" PRIx32, __func__, opcode);
             struct net_buf_simple buf = {
-                .len = param->model_operation.length,
                 .data = param->model_operation.msg,
+                .len = param->model_operation.length,
             };
             err = example_fast_prov_server_recv_msg(param->model_operation.model,
                                                     param->model_operation.ctx, &buf);

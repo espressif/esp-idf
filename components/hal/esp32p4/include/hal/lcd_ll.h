@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
+#define LCD_LL_FIFO_DEPTH          8   // Async FIFO depth
 
 /**
  * @brief LCD data byte swizzle mode
@@ -42,9 +43,10 @@ typedef enum {
 } lcd_ll_swizzle_mode_t;
 
 /**
- * @brief Enable or disable the bus clock for the LCD module
+ * @brief Enable the bus clock for LCD module
  *
- * @param set_bit True to set bit, false to clear bit
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
  */
 static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 {
@@ -58,6 +60,8 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 
 /**
  * @brief Reset the LCD module
+ *
+ * @param group_id Group ID
  */
 static inline void lcd_ll_reset_register(int group_id)
 {
@@ -503,7 +507,8 @@ static inline void lcd_ll_reverse_wire_bit_order(lcd_cam_dev_t *dev, bool en)
  * @brief Whether to swap adjacent two bytes
  *
  * @note This acts before the YUV-RGB converter, mainly to change the data endian.
- *       {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
+ *       e.g. {B1,B0},{B3,B2} => {B0,B1}{B2,B3}.
+ *       Only valid when `lcd_ll_set_dma_read_stride` set the DMA read stride >= 16 bits
  *
  * @param dev LCD register base address
  * @param en True to swap the byte order, False to not swap
@@ -602,7 +607,7 @@ static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, u
 }
 
 /**
- * @brief Wether to enable RGB interface
+ * @brief Whether to enable RGB interface
  *
  * @param dev LCD register base address
  * @param en True to enable RGB interface, False to disable RGB interface
@@ -625,7 +630,7 @@ static inline void lcd_ll_enable_auto_next_frame(lcd_cam_dev_t *dev, bool en)
 }
 
 /**
- * @brief Wether to output HSYNC signal in porch resion
+ * @brief Whether to output HSYNC signal in porch resion
  *
  * @param dev LCD register base address
  * @param en True to enable, False to disable
@@ -742,7 +747,7 @@ static inline uint32_t lcd_ll_get_interrupt_status(lcd_cam_dev_t *dev)
  * @brief Clear interrupt status by mask
  *
  * @param dev LCD register base address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void lcd_ll_clear_interrupt_status(lcd_cam_dev_t *dev, uint32_t mask)

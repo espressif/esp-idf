@@ -23,6 +23,12 @@
 
 #define OPENTHREAD_IP6_MTU 1280
 
+#if CONFIG_OPENTHREAD_BORDER_ROUTER
+#if CONFIG_LWIP_IPV6_NUM_ADDRESSES != 12
+#error CONFIG_LWIP_IPV6_NUM_ADDRESSES should be set to 12, please configure it using `idf.py menuconfig`
+#endif
+#endif
+
 static err_t openthread_netif_init(struct netif *netif);
 static void openthread_netif_input(void *h, void *buffer, size_t len, void *eb);
 

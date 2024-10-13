@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "sdkconfig.h"
+#include "esp_macros.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
@@ -33,7 +34,7 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
     // Flush any data left in UART FIFOs before reset the UART peripheral
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (uart_ll_is_enabled(i)) {
-            esp_rom_uart_tx_wait_idle(i);
+            esp_rom_output_tx_wait_idle(i);
         }
     }
 
@@ -112,7 +113,6 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset PRO CPU
     esp_rom_software_reset_cpu(0);
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }

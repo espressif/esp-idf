@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -36,34 +36,34 @@ extern "C" {
 #define PAU_TO_MEM_M  (PAU_TO_MEM_V << PAU_TO_MEM_S)
 #define PAU_TO_MEM_V  0x00000001U
 #define PAU_TO_MEM_S  4
-/** PAU_LINK_SEL : R/W; bitpos: [6:5]; default: 0;
+/** PAU_LINK_SEL : R/W; bitpos: [8:5]; default: 0;
  *  Link select
  */
-#define PAU_LINK_SEL    0x00000003U
+#define PAU_LINK_SEL    0x0000000FU
 #define PAU_LINK_SEL_M  (PAU_LINK_SEL_V << PAU_LINK_SEL_S)
-#define PAU_LINK_SEL_V  0x00000003U
+#define PAU_LINK_SEL_V  0x0000000FU
 #define PAU_LINK_SEL_S  5
-/** PAU_START_MAC : WT; bitpos: [7]; default: 0;
+/** PAU_START_MAC : WT; bitpos: [9]; default: 0;
  *  mac sw backup start signal
  */
-#define PAU_START_MAC    (BIT(7))
+#define PAU_START_MAC    (BIT(9))
 #define PAU_START_MAC_M  (PAU_START_MAC_V << PAU_START_MAC_S)
 #define PAU_START_MAC_V  0x00000001U
-#define PAU_START_MAC_S  7
-/** PAU_TO_MEM_MAC : R/W; bitpos: [8]; default: 0;
+#define PAU_START_MAC_S  9
+/** PAU_TO_MEM_MAC : R/W; bitpos: [10]; default: 0;
  *  mac sw backup direction(reg to mem / mem to reg)
  */
-#define PAU_TO_MEM_MAC    (BIT(8))
+#define PAU_TO_MEM_MAC    (BIT(10))
 #define PAU_TO_MEM_MAC_M  (PAU_TO_MEM_MAC_V << PAU_TO_MEM_MAC_S)
 #define PAU_TO_MEM_MAC_V  0x00000001U
-#define PAU_TO_MEM_MAC_S  8
-/** PAU_SEL_MAC : R/W; bitpos: [9]; default: 0;
+#define PAU_TO_MEM_MAC_S  10
+/** PAU_SEL_MAC : R/W; bitpos: [11]; default: 0;
  *  mac hw/sw select
  */
-#define PAU_SEL_MAC    (BIT(9))
+#define PAU_SEL_MAC    (BIT(11))
 #define PAU_SEL_MAC_M  (PAU_SEL_MAC_V << PAU_SEL_MAC_S)
 #define PAU_SEL_MAC_V  0x00000001U
-#define PAU_SEL_MAC_S  9
+#define PAU_SEL_MAC_S  11
 
 /** PAU_REGDMA_CLK_CONF_REG register
  *  Clock control register
@@ -109,71 +109,46 @@ extern "C" {
 #define PAU_ETM_START_3_M  (PAU_ETM_START_3_V << PAU_ETM_START_3_S)
 #define PAU_ETM_START_3_V  0x00000001U
 #define PAU_ETM_START_3_S  3
-
-/** PAU_REGDMA_LINK_0_ADDR_REG register
- *  link_0_addr
+/** PAU_ETM_LINK_SEL_0 : R/W; bitpos: [7:4]; default: 0;
+ *  etm_link sel
  */
-#define PAU_REGDMA_LINK_0_ADDR_REG (DR_REG_PAU_BASE + 0xc)
-/** PAU_LINK_ADDR_0 : R/W; bitpos: [31:0]; default: 0;
- *  link_0_addr reg
+#define PAU_ETM_LINK_SEL_0    0x0000000FU
+#define PAU_ETM_LINK_SEL_0_M  (PAU_ETM_LINK_SEL_0_V << PAU_ETM_LINK_SEL_0_S)
+#define PAU_ETM_LINK_SEL_0_V  0x0000000FU
+#define PAU_ETM_LINK_SEL_0_S  4
+/** PAU_ETM_LINK_SEL_1 : R/W; bitpos: [11:8]; default: 0;
+ *  etm_link sel
  */
-#define PAU_LINK_ADDR_0    0xFFFFFFFFU
-#define PAU_LINK_ADDR_0_M  (PAU_LINK_ADDR_0_V << PAU_LINK_ADDR_0_S)
-#define PAU_LINK_ADDR_0_V  0xFFFFFFFFU
-#define PAU_LINK_ADDR_0_S  0
-
-/** PAU_REGDMA_LINK_1_ADDR_REG register
- *  Link_1_addr
+#define PAU_ETM_LINK_SEL_1    0x0000000FU
+#define PAU_ETM_LINK_SEL_1_M  (PAU_ETM_LINK_SEL_1_V << PAU_ETM_LINK_SEL_1_S)
+#define PAU_ETM_LINK_SEL_1_V  0x0000000FU
+#define PAU_ETM_LINK_SEL_1_S  8
+/** PAU_ETM_LINK_SEL_2 : R/W; bitpos: [15:12]; default: 0;
+ *  etm_link sel
  */
-#define PAU_REGDMA_LINK_1_ADDR_REG (DR_REG_PAU_BASE + 0x10)
-/** PAU_LINK_ADDR_1 : R/W; bitpos: [31:0]; default: 0;
- *  Link_1_addr reg
+#define PAU_ETM_LINK_SEL_2    0x0000000FU
+#define PAU_ETM_LINK_SEL_2_M  (PAU_ETM_LINK_SEL_2_V << PAU_ETM_LINK_SEL_2_S)
+#define PAU_ETM_LINK_SEL_2_V  0x0000000FU
+#define PAU_ETM_LINK_SEL_2_S  12
+/** PAU_ETM_LINK_SEL_3 : R/W; bitpos: [19:16]; default: 0;
+ *  etm_link sel
  */
-#define PAU_LINK_ADDR_1    0xFFFFFFFFU
-#define PAU_LINK_ADDR_1_M  (PAU_LINK_ADDR_1_V << PAU_LINK_ADDR_1_S)
-#define PAU_LINK_ADDR_1_V  0xFFFFFFFFU
-#define PAU_LINK_ADDR_1_S  0
-
-/** PAU_REGDMA_LINK_2_ADDR_REG register
- *  Link_2_addr
+#define PAU_ETM_LINK_SEL_3    0x0000000FU
+#define PAU_ETM_LINK_SEL_3_M  (PAU_ETM_LINK_SEL_3_V << PAU_ETM_LINK_SEL_3_S)
+#define PAU_ETM_LINK_SEL_3_V  0x0000000FU
+#define PAU_ETM_LINK_SEL_3_S  16
+/** PAU_ETM_BUSY_CAUSE : RO; bitpos: [23:20]; default: 0;
+ *  debug
  */
-#define PAU_REGDMA_LINK_2_ADDR_REG (DR_REG_PAU_BASE + 0x14)
-/** PAU_LINK_ADDR_2 : R/W; bitpos: [31:0]; default: 0;
- *  Link_2_addr reg
- */
-#define PAU_LINK_ADDR_2    0xFFFFFFFFU
-#define PAU_LINK_ADDR_2_M  (PAU_LINK_ADDR_2_V << PAU_LINK_ADDR_2_S)
-#define PAU_LINK_ADDR_2_V  0xFFFFFFFFU
-#define PAU_LINK_ADDR_2_S  0
-
-/** PAU_REGDMA_LINK_3_ADDR_REG register
- *  Link_3_addr
- */
-#define PAU_REGDMA_LINK_3_ADDR_REG (DR_REG_PAU_BASE + 0x18)
-/** PAU_LINK_ADDR_3 : R/W; bitpos: [31:0]; default: 0;
- *  Link_3_addr reg
- */
-#define PAU_LINK_ADDR_3    0xFFFFFFFFU
-#define PAU_LINK_ADDR_3_M  (PAU_LINK_ADDR_3_V << PAU_LINK_ADDR_3_S)
-#define PAU_LINK_ADDR_3_V  0xFFFFFFFFU
-#define PAU_LINK_ADDR_3_S  0
-
-/** PAU_REGDMA_LINK_MAC_ADDR_REG register
- *  Link_mac_addr
- */
-#define PAU_REGDMA_LINK_MAC_ADDR_REG (DR_REG_PAU_BASE + 0x1c)
-/** PAU_LINK_ADDR_MAC : R/W; bitpos: [31:0]; default: 0;
- *  Link_mac_addr reg
- */
-#define PAU_LINK_ADDR_MAC    0xFFFFFFFFU
-#define PAU_LINK_ADDR_MAC_M  (PAU_LINK_ADDR_MAC_V << PAU_LINK_ADDR_MAC_S)
-#define PAU_LINK_ADDR_MAC_V  0xFFFFFFFFU
-#define PAU_LINK_ADDR_MAC_S  0
+#define PAU_ETM_BUSY_CAUSE    0x0000000FU
+#define PAU_ETM_BUSY_CAUSE_M  (PAU_ETM_BUSY_CAUSE_V << PAU_ETM_BUSY_CAUSE_S)
+#define PAU_ETM_BUSY_CAUSE_V  0x0000000FU
+#define PAU_ETM_BUSY_CAUSE_S  20
 
 /** PAU_REGDMA_CURRENT_LINK_ADDR_REG register
  *  current link addr
  */
-#define PAU_REGDMA_CURRENT_LINK_ADDR_REG (DR_REG_PAU_BASE + 0x20)
+#define PAU_REGDMA_CURRENT_LINK_ADDR_REG (DR_REG_PAU_BASE + 0xc)
 /** PAU_CURRENT_LINK_ADDR : RO; bitpos: [31:0]; default: 0;
  *  current link addr reg
  */
@@ -182,22 +157,22 @@ extern "C" {
 #define PAU_CURRENT_LINK_ADDR_V  0xFFFFFFFFU
 #define PAU_CURRENT_LINK_ADDR_S  0
 
-/** PAU_REGDMA_BACKUP_ADDR_REG register
+/** PAU_REGDMA_PERI_ADDR_REG register
  *  Backup addr
  */
-#define PAU_REGDMA_BACKUP_ADDR_REG (DR_REG_PAU_BASE + 0x24)
-/** PAU_BACKUP_ADDR : RO; bitpos: [31:0]; default: 0;
- *  backup addr reg
+#define PAU_REGDMA_PERI_ADDR_REG (DR_REG_PAU_BASE + 0x10)
+/** PAU_PERI_ADDR : RO; bitpos: [31:0]; default: 0;
+ *  peri addr reg
  */
-#define PAU_BACKUP_ADDR    0xFFFFFFFFU
-#define PAU_BACKUP_ADDR_M  (PAU_BACKUP_ADDR_V << PAU_BACKUP_ADDR_S)
-#define PAU_BACKUP_ADDR_V  0xFFFFFFFFU
-#define PAU_BACKUP_ADDR_S  0
+#define PAU_PERI_ADDR    0xFFFFFFFFU
+#define PAU_PERI_ADDR_M  (PAU_PERI_ADDR_V << PAU_PERI_ADDR_S)
+#define PAU_PERI_ADDR_V  0xFFFFFFFFU
+#define PAU_PERI_ADDR_S  0
 
 /** PAU_REGDMA_MEM_ADDR_REG register
  *  mem addr
  */
-#define PAU_REGDMA_MEM_ADDR_REG (DR_REG_PAU_BASE + 0x28)
+#define PAU_REGDMA_MEM_ADDR_REG (DR_REG_PAU_BASE + 0x14)
 /** PAU_MEM_ADDR : RO; bitpos: [31:0]; default: 0;
  *  mem addr reg
  */
@@ -206,43 +181,10 @@ extern "C" {
 #define PAU_MEM_ADDR_V  0xFFFFFFFFU
 #define PAU_MEM_ADDR_S  0
 
-/** PAU_REGDMA_BKP_CONF_REG register
- *  backup config
- */
-#define PAU_REGDMA_BKP_CONF_REG (DR_REG_PAU_BASE + 0x2c)
-/** PAU_READ_INTERVAL : R/W; bitpos: [6:0]; default: 32;
- *  Link read_interval
- */
-#define PAU_READ_INTERVAL    0x0000007FU
-#define PAU_READ_INTERVAL_M  (PAU_READ_INTERVAL_V << PAU_READ_INTERVAL_S)
-#define PAU_READ_INTERVAL_V  0x0000007FU
-#define PAU_READ_INTERVAL_S  0
-/** PAU_LINK_TOUT_THRES : R/W; bitpos: [16:7]; default: 50;
- *  link wait timeout threshold
- */
-#define PAU_LINK_TOUT_THRES    0x000003FFU
-#define PAU_LINK_TOUT_THRES_M  (PAU_LINK_TOUT_THRES_V << PAU_LINK_TOUT_THRES_S)
-#define PAU_LINK_TOUT_THRES_V  0x000003FFU
-#define PAU_LINK_TOUT_THRES_S  7
-/** PAU_BURST_LIMIT : R/W; bitpos: [21:17]; default: 8;
- *  burst limit
- */
-#define PAU_BURST_LIMIT    0x0000001FU
-#define PAU_BURST_LIMIT_M  (PAU_BURST_LIMIT_V << PAU_BURST_LIMIT_S)
-#define PAU_BURST_LIMIT_V  0x0000001FU
-#define PAU_BURST_LIMIT_S  17
-/** PAU_BACKUP_TOUT_THRES : R/W; bitpos: [31:22]; default: 500;
- *  Backup timeout threshold
- */
-#define PAU_BACKUP_TOUT_THRES    0x000003FFU
-#define PAU_BACKUP_TOUT_THRES_M  (PAU_BACKUP_TOUT_THRES_V << PAU_BACKUP_TOUT_THRES_S)
-#define PAU_BACKUP_TOUT_THRES_V  0x000003FFU
-#define PAU_BACKUP_TOUT_THRES_S  22
-
 /** PAU_INT_ENA_REG register
  *  Read only register for error and done
  */
-#define PAU_INT_ENA_REG (DR_REG_PAU_BASE + 0x30)
+#define PAU_INT_ENA_REG (DR_REG_PAU_BASE + 0x18)
 /** PAU_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  backup done flag
  */
@@ -261,7 +203,7 @@ extern "C" {
 /** PAU_INT_RAW_REG register
  *  Read only register for error and done
  */
-#define PAU_INT_RAW_REG (DR_REG_PAU_BASE + 0x34)
+#define PAU_INT_RAW_REG (DR_REG_PAU_BASE + 0x1c)
 /** PAU_DONE_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  backup done flag
  */
@@ -280,7 +222,7 @@ extern "C" {
 /** PAU_INT_CLR_REG register
  *  Read only register for error and done
  */
-#define PAU_INT_CLR_REG (DR_REG_PAU_BASE + 0x38)
+#define PAU_INT_CLR_REG (DR_REG_PAU_BASE + 0x20)
 /** PAU_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  backup done flag
  */
@@ -299,7 +241,7 @@ extern "C" {
 /** PAU_INT_ST_REG register
  *  Read only register for error and done
  */
-#define PAU_INT_ST_REG (DR_REG_PAU_BASE + 0x3c)
+#define PAU_INT_ST_REG (DR_REG_PAU_BASE + 0x24)
 /** PAU_DONE_INT_ST : RO; bitpos: [0]; default: 0;
  *  backup done flag
  */
@@ -319,7 +261,7 @@ extern "C" {
  *  Date register.
  */
 #define PAU_DATE_REG (DR_REG_PAU_BASE + 0x3fc)
-/** PAU_DATE : R/W; bitpos: [27:0]; default: 36708608;
+/** PAU_DATE : R/W; bitpos: [27:0]; default: 36737360;
  *  REGDMA date information/ REGDMA version information.
  */
 #define PAU_DATE    0x0FFFFFFFU

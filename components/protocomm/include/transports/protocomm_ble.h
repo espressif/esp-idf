@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ typedef enum {
  * (29 - (BLE device name length) - 2). */
 #define MAX_BLE_MANUFACTURER_DATA_LEN 29
 
+#define BLE_ADDR_LEN 6
 /**
  * @brief   This structure maps handler required by protocomm layer to
  *          UUIDs which are used to uniquely identify BLE characteristics
@@ -137,6 +138,20 @@ typedef struct protocomm_ble_config {
      */
     unsigned ble_link_encryption:1;
 
+    /**
+     * BLE address
+     */
+    uint8_t *ble_addr;
+
+    /**
+     * Flag to keep BLE on
+     */
+    unsigned keep_ble_on:1;
+
+    /**
+     * BLE characteristic notify flag
+     */
+    unsigned ble_notify:1;
 } protocomm_ble_config_t;
 
 /**

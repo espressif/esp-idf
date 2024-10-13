@@ -1,0 +1,14 @@
+[mapping:i2c_driver]
+archive: libesp_driver_i2c.a
+entries:
+    if I2C_ISR_IRAM_SAFE = y:
+        i2c_master: s_i2c_send_command_async (noflash)
+        i2c_master: s_i2c_write_command (noflash)
+        i2c_master: s_i2c_read_command (noflash)
+        i2c_master: s_i2c_start_end_command (noflash)
+
+[mapping:i2c_hal]
+archive: libhal.a
+entries:
+    if I2C_ISR_IRAM_SAFE = y:
+        i2c_hal: i2c_hal_master_trans_start (noflash)

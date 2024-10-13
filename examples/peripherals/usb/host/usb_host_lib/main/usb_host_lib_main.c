@@ -17,6 +17,10 @@
 #define CLASS_TASK_PRIORITY     3
 #define APP_QUIT_PIN                CONFIG_APP_QUIT_PIN
 
+#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define ENABLE_ENUM_FILTER_CALLBACK
+#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+
 extern void class_driver_task(void *arg);
 extern void class_driver_client_deregister(void);
 
@@ -67,6 +71,35 @@ static void gpio_cb(void *arg)
 }
 
 /**
+ * @brief Set configuration callback
+ *
+ * Set the USB device configuration during the enumeration process, must be enabled in the menuconfig
+
+ * @note bConfigurationValue starts at index 1
+ *
+ * @param[in] dev_desc device descriptor of the USB device currently being enumerated
+ * @param[out] bConfigurationValue configuration descriptor index, that will be user for enumeration
+ *
+ * @return bool
+ * - true:  USB device will be enumerated
+ * - false: USB device will not be enumerated
+ */
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+static bool set_config_cb(const usb_device_desc_t *dev_desc, uint8_t *bConfigurationValue)
+{
+    // If the USB device has more than one configuration, set the second configuration
+    if (dev_desc->bNumConfigurations > 1) {
+        *bConfigurationValue = 2;
+    } else {
+        *bConfigurationValue = 1;
+    }
+
+    // Return true to enumerate the USB device
+    return true;
+}
+#endif // ENABLE_ENUM_FILTER_CALLBACK
+
+/**
  * @brief Start USB Host install and handle common USB host library events while app pin not low
  *
  * @param[in] arg  Not used
@@ -77,6 +110,9 @@ static void usb_host_lib_task(void *arg)
     usb_host_config_t host_config = {
         .skip_phy_setup = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
+# ifdef ENABLE_ENUM_FILTER_CALLBACK
+        .enum_filter_cb = set_config_cb,
+# endif // ENABLE_ENUM_FILTER_CALLBACK
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 

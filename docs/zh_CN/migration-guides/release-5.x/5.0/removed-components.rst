@@ -1,12 +1,12 @@
 从 ESP-IDF 中移出或弃用的组件
-================================
+=============================
 
 :link_to_translation:`en:[English]`
 
-移至 ESP-IDF Component Registry 的组件
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+移至乐鑫组件注册表的组件
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-以下组件已经从 ESP-IDF 中迁出至 `ESP-IDF Component Registry <https://components.espressif.com/>`_：
+以下组件已经从 ESP-IDF 中迁出至 `乐鑫组件注册表 <https://components.espressif.com/>`_：
 
 * `libsodium <https://components.espressif.com/component/espressif/libsodium>`_
 * `cbor <https://components.espressif.com/component/espressif/cbor>`_
@@ -47,7 +47,7 @@ ESP-IDF v4.x 版本中已不再使用以下组件，这些组件已弃用：
 
 .. note::
 
-    不再支持 OpenSSL-API 组件。ESP-IDF Component Registry 中也没有该组件。请直接使用 :doc:`ESP-TLS </api-reference/protocols/esp_tls>` 或 :component:`mbedtls` API。
+    不再支持 OpenSSL-API 组件。乐鑫组件注册表中也没有该组件。请直接使用 :doc:`ESP-TLS </api-reference/protocols/esp_tls>` 或 :component:`mbedtls` API。
 
 .. note::
 

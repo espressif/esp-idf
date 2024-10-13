@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -2463,20 +2463,20 @@ extern "C" {
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_M  (SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_V << SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_S)
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_V  0x00000001U
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_S  23
-/** SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST : R/WTC/SS; bitpos: [24]; default: 0;
- *  Represents GPIO_evt_zero_det_pos trigger status.\\0: Not triggered\\1: Triggered
+/** SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST : R/WTC/SS; bitpos: [24]; default: 0;
+ *  Represents GPIO_evt_zero_det_pos0 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST    (BIT(24))
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_M  (SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_V << SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_S)
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_V  0x00000001U
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_S  24
-/** SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST : R/WTC/SS; bitpos: [25]; default: 0;
- *  Represents GPIO_evt_zero_det_neg trigger status.\\0: Not triggered\\1: Triggered
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST    (BIT(24))
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_M  (SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_V << SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_S)
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_V  0x00000001U
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_S  24
+/** SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST : R/WTC/SS; bitpos: [25]; default: 0;
+ *  Represents GPIO_evt_zero_det_neg0 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST    (BIT(25))
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_M  (SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_V << SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_S)
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_V  0x00000001U
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_S  25
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST    (BIT(25))
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_M  (SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_V << SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_S)
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_V  0x00000001U
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_S  25
 /** SOC_ETM_LEDC_EVT_DUTY_CHNG_END_CH0_ST : R/WTC/SS; bitpos: [26]; default: 0;
  *  Represents LEDC_evt_duty_chng_end_ch0 trigger status.\\0: Not triggered\\1:
  *  Triggered
@@ -2722,22 +2722,22 @@ extern "C" {
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_CLR_M  (SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_CLR_V << SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_CLR_S)
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_CLR_V  0x00000001U
 #define SOC_ETM_GPIO_EVT_CH7_ANY_EDGE_ST_CLR_S  23
-/** SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR : WT; bitpos: [24]; default: 0;
- *  Configures whether or not to clear GPIO_evt_zero_det_pos trigger status.\\0:
+/** SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR : WT; bitpos: [24]; default: 0;
+ *  Configures whether or not to clear GPIO_evt_zero_det_pos0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR    (BIT(24))
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR_M  (SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR_V << SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR_S)
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR_V  0x00000001U
-#define SOC_ETM_GPIO_EVT_ZERO_DET_POS_ST_CLR_S  24
-/** SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR : WT; bitpos: [25]; default: 0;
- *  Configures whether or not to clear GPIO_evt_zero_det_neg trigger status.\\0:
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR    (BIT(24))
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR_M  (SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR_V << SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR_S)
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GPIO_EVT_ZERO_DET_POS0_ST_CLR_S  24
+/** SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR : WT; bitpos: [25]; default: 0;
+ *  Configures whether or not to clear GPIO_evt_zero_det_neg0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR    (BIT(25))
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR_M  (SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR_V << SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR_S)
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR_V  0x00000001U
-#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG_ST_CLR_S  25
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR    (BIT(25))
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR_M  (SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR_V << SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR_S)
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GPIO_EVT_ZERO_DET_NEG0_ST_CLR_S  25
 /** SOC_ETM_LEDC_EVT_DUTY_CHNG_END_CH0_ST_CLR : WT; bitpos: [26]; default: 0;
  *  Configures whether or not to clear LEDC_evt_duty_chng_end_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
@@ -3834,175 +3834,170 @@ extern "C" {
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_M  (SOC_ETM_REGDMA_EVT_ERR3_ST_V << SOC_ETM_REGDMA_EVT_ERR3_ST_S)
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_V  0x00000001U
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_S  8
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST : R/WTC/SS; bitpos: [9]; default: 0;
+/** SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST : R/WTC/SS; bitpos: [9]; default: 0;
+ *  Represents TMPSNSR_evt_over_limit trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST    (BIT(9))
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_M  (SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_V << SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_S)
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_V  0x00000001U
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_S  9
+/** SOC_ETM_I2S0_EVT_RX_DONE_ST : R/WTC/SS; bitpos: [10]; default: 0;
+ *  Represents I2S0_evt_rx_done trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST    (BIT(10))
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_M  (SOC_ETM_I2S0_EVT_RX_DONE_ST_V << SOC_ETM_I2S0_EVT_RX_DONE_ST_S)
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_S  10
+/** SOC_ETM_I2S0_EVT_TX_DONE_ST : R/WTC/SS; bitpos: [11]; default: 0;
+ *  Represents I2S0_evt_tx_done trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST    (BIT(11))
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_M  (SOC_ETM_I2S0_EVT_TX_DONE_ST_V << SOC_ETM_I2S0_EVT_TX_DONE_ST_S)
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_S  11
+/** SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST : R/WTC/SS; bitpos: [12]; default: 0;
+ *  Represents I2S0_evt_x_words_received trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST    (BIT(12))
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_M  (SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_V << SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_S)
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_S  12
+/** SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST : R/WTC/SS; bitpos: [13]; default: 0;
+ *  Represents I2S0_evt_x_words_sent trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST    (BIT(13))
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_M  (SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_V << SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_S)
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_S  13
+/** SOC_ETM_ULP_EVT_ERR_INTR_ST : R/WTC/SS; bitpos: [14]; default: 0;
+ *  Represents ULP_evt_err_intr trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST    (BIT(14))
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_M  (SOC_ETM_ULP_EVT_ERR_INTR_ST_V << SOC_ETM_ULP_EVT_ERR_INTR_ST_S)
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_V  0x00000001U
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_S  14
+/** SOC_ETM_ULP_EVT_HALT_ST : R/WTC/SS; bitpos: [15]; default: 0;
+ *  Represents ULP_evt_halt trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_ULP_EVT_HALT_ST    (BIT(15))
+#define SOC_ETM_ULP_EVT_HALT_ST_M  (SOC_ETM_ULP_EVT_HALT_ST_V << SOC_ETM_ULP_EVT_HALT_ST_S)
+#define SOC_ETM_ULP_EVT_HALT_ST_V  0x00000001U
+#define SOC_ETM_ULP_EVT_HALT_ST_S  15
+/** SOC_ETM_ULP_EVT_START_INTR_ST : R/WTC/SS; bitpos: [16]; default: 0;
+ *  Represents ULP_evt_start_intr trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_ULP_EVT_START_INTR_ST    (BIT(16))
+#define SOC_ETM_ULP_EVT_START_INTR_ST_M  (SOC_ETM_ULP_EVT_START_INTR_ST_V << SOC_ETM_ULP_EVT_START_INTR_ST_S)
+#define SOC_ETM_ULP_EVT_START_INTR_ST_V  0x00000001U
+#define SOC_ETM_ULP_EVT_START_INTR_ST_S  16
+/** SOC_ETM_RTC_EVT_TICK_ST : R/WTC/SS; bitpos: [17]; default: 0;
+ *  Represents RTC_evt_tick trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_RTC_EVT_TICK_ST    (BIT(17))
+#define SOC_ETM_RTC_EVT_TICK_ST_M  (SOC_ETM_RTC_EVT_TICK_ST_V << SOC_ETM_RTC_EVT_TICK_ST_S)
+#define SOC_ETM_RTC_EVT_TICK_ST_V  0x00000001U
+#define SOC_ETM_RTC_EVT_TICK_ST_S  17
+/** SOC_ETM_RTC_EVT_OVF_ST : R/WTC/SS; bitpos: [18]; default: 0;
+ *  Represents RTC_evt_ovf trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_RTC_EVT_OVF_ST    (BIT(18))
+#define SOC_ETM_RTC_EVT_OVF_ST_M  (SOC_ETM_RTC_EVT_OVF_ST_V << SOC_ETM_RTC_EVT_OVF_ST_S)
+#define SOC_ETM_RTC_EVT_OVF_ST_V  0x00000001U
+#define SOC_ETM_RTC_EVT_OVF_ST_S  18
+/** SOC_ETM_RTC_EVT_CMP_ST : R/WTC/SS; bitpos: [19]; default: 0;
+ *  Represents RTC_evt_cmp trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_RTC_EVT_CMP_ST    (BIT(19))
+#define SOC_ETM_RTC_EVT_CMP_ST_M  (SOC_ETM_RTC_EVT_CMP_ST_V << SOC_ETM_RTC_EVT_CMP_ST_S)
+#define SOC_ETM_RTC_EVT_CMP_ST_V  0x00000001U
+#define SOC_ETM_RTC_EVT_CMP_ST_S  19
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST : R/WTC/SS; bitpos: [20]; default: 0;
  *  Represents GDMA_evt_in_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST    (BIT(9))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST    (BIT(20))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_V << SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_S  9
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST : R/WTC/SS; bitpos: [10]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_S  20
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST : R/WTC/SS; bitpos: [21]; default: 0;
  *  Represents GDMA_evt_in_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST    (BIT(10))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST    (BIT(21))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_V << SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_S  10
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST : R/WTC/SS; bitpos: [11]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_S  21
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST : R/WTC/SS; bitpos: [22]; default: 0;
  *  Represents GDMA_evt_in_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST    (BIT(11))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST    (BIT(22))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_V << SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_S  11
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST : R/WTC/SS; bitpos: [12]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_S  22
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST : R/WTC/SS; bitpos: [23]; default: 0;
  *  Represents GDMA_evt_in_suc_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST    (BIT(12))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST    (BIT(23))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_S  12
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST : R/WTC/SS; bitpos: [13]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_S  23
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST : R/WTC/SS; bitpos: [24]; default: 0;
  *  Represents GDMA_evt_in_suc_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST    (BIT(13))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST    (BIT(24))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_S  13
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST : R/WTC/SS; bitpos: [14]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_S  24
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST : R/WTC/SS; bitpos: [25]; default: 0;
  *  Represents GDMA_evt_in_suc_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST    (BIT(14))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST    (BIT(25))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_S  14
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST : R/WTC/SS; bitpos: [15]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_S  25
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST : R/WTC/SS; bitpos: [26]; default: 0;
  *  Represents GDMA_evt_in_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST    (BIT(15))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST    (BIT(26))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_S  15
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST : R/WTC/SS; bitpos: [16]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_S  26
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST : R/WTC/SS; bitpos: [27]; default: 0;
  *  Represents GDMA_evt_in_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST    (BIT(16))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST    (BIT(27))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_S  16
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST : R/WTC/SS; bitpos: [17]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_S  27
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST : R/WTC/SS; bitpos: [28]; default: 0;
  *  Represents GDMA_evt_in_fifo_empty_ch2 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST    (BIT(17))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST    (BIT(28))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_S  17
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST : R/WTC/SS; bitpos: [18]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_S  28
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST : R/WTC/SS; bitpos: [29]; default: 0;
  *  Represents GDMA_evt_in_fifo_full_ch0 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST    (BIT(18))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST    (BIT(29))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_S  18
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST : R/WTC/SS; bitpos: [19]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_S  29
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST : R/WTC/SS; bitpos: [30]; default: 0;
  *  Represents GDMA_evt_in_fifo_full_ch1 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST    (BIT(19))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST    (BIT(30))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_S  19
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST : R/WTC/SS; bitpos: [20]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_S  30
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST : R/WTC/SS; bitpos: [31]; default: 0;
  *  Represents GDMA_evt_in_fifo_full_ch2 trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST    (BIT(20))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST    (BIT(31))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_S  20
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST : R/WTC/SS; bitpos: [21]; default: 0;
- *  Represents GDMA_evt_out_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST    (BIT(21))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_S  21
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST : R/WTC/SS; bitpos: [22]; default: 0;
- *  Represents GDMA_evt_out_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST    (BIT(22))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_S  22
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST : R/WTC/SS; bitpos: [23]; default: 0;
- *  Represents GDMA_evt_out_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST    (BIT(23))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_S  23
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST : R/WTC/SS; bitpos: [24]; default: 0;
- *  Represents GDMA_evt_out_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST    (BIT(24))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_S  24
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST : R/WTC/SS; bitpos: [25]; default: 0;
- *  Represents GDMA_evt_out_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST    (BIT(25))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_S  25
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST : R/WTC/SS; bitpos: [26]; default: 0;
- *  Represents GDMA_evt_out_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST    (BIT(26))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_S  26
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST : R/WTC/SS; bitpos: [27]; default: 0;
- *  Represents GDMA_evt_out_total_eof_ch0 trigger status.\\0: Not triggered\\1:
- *  Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST    (BIT(27))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_S  27
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST : R/WTC/SS; bitpos: [28]; default: 0;
- *  Represents GDMA_evt_out_total_eof_ch1 trigger status.\\0: Not triggered\\1:
- *  Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST    (BIT(28))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_S  28
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST : R/WTC/SS; bitpos: [29]; default: 0;
- *  Represents GDMA_evt_out_total_eof_ch2 trigger status.\\0: Not triggered\\1:
- *  Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST    (BIT(29))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_S  29
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST : R/WTC/SS; bitpos: [30]; default: 0;
- *  Represents GDMA_evt_out_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
- *  Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST    (BIT(30))
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_S  30
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST : R/WTC/SS; bitpos: [31]; default: 0;
- *  Represents GDMA_evt_out_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
- *  Triggered
- */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST    (BIT(31))
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_S)
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_S  31
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_S  31
 
 /** SOC_ETM_EVT_ST3_CLR_REG register
  *  Events trigger status clear register
@@ -4080,304 +4075,309 @@ extern "C" {
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_CLR_M  (SOC_ETM_REGDMA_EVT_ERR3_ST_CLR_V << SOC_ETM_REGDMA_EVT_ERR3_ST_CLR_S)
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_CLR_V  0x00000001U
 #define SOC_ETM_REGDMA_EVT_ERR3_ST_CLR_S  8
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR : WT; bitpos: [9]; default: 0;
+/** SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to clear TMPSNSR_evt_over_limit trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR    (BIT(9))
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_M  (SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_V << SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_S)
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_V  0x00000001U
+#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_S  9
+/** SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to clear I2S0_evt_rx_done trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR    (BIT(10))
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_M  (SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_V << SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_S)
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_S  10
+/** SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR : WT; bitpos: [11]; default: 0;
+ *  Configures whether or not to clear I2S0_evt_tx_done trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR    (BIT(11))
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_M  (SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_V << SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_S)
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_S  11
+/** SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR : WT; bitpos: [12]; default: 0;
+ *  Configures whether or not to clear I2S0_evt_x_words_received trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR    (BIT(12))
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_M  (SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_V << SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_S)
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_S  12
+/** SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR : WT; bitpos: [13]; default: 0;
+ *  Configures whether or not to clear I2S0_evt_x_words_sent trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR    (BIT(13))
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_M  (SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_V << SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_S)
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_V  0x00000001U
+#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_S  13
+/** SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to clear ULP_evt_err_intr trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR    (BIT(14))
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_M  (SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_V << SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_S)
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_V  0x00000001U
+#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_S  14
+/** SOC_ETM_ULP_EVT_HALT_ST_CLR : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to clear ULP_evt_halt trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_ULP_EVT_HALT_ST_CLR    (BIT(15))
+#define SOC_ETM_ULP_EVT_HALT_ST_CLR_M  (SOC_ETM_ULP_EVT_HALT_ST_CLR_V << SOC_ETM_ULP_EVT_HALT_ST_CLR_S)
+#define SOC_ETM_ULP_EVT_HALT_ST_CLR_V  0x00000001U
+#define SOC_ETM_ULP_EVT_HALT_ST_CLR_S  15
+/** SOC_ETM_ULP_EVT_START_INTR_ST_CLR : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to clear ULP_evt_start_intr trigger status.\\0: Invalid,
+ *  No effect\\1: Clear
+ */
+#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR    (BIT(16))
+#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_M  (SOC_ETM_ULP_EVT_START_INTR_ST_CLR_V << SOC_ETM_ULP_EVT_START_INTR_ST_CLR_S)
+#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_V  0x00000001U
+#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_S  16
+/** SOC_ETM_RTC_EVT_TICK_ST_CLR : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to clear RTC_evt_tick trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_RTC_EVT_TICK_ST_CLR    (BIT(17))
+#define SOC_ETM_RTC_EVT_TICK_ST_CLR_M  (SOC_ETM_RTC_EVT_TICK_ST_CLR_V << SOC_ETM_RTC_EVT_TICK_ST_CLR_S)
+#define SOC_ETM_RTC_EVT_TICK_ST_CLR_V  0x00000001U
+#define SOC_ETM_RTC_EVT_TICK_ST_CLR_S  17
+/** SOC_ETM_RTC_EVT_OVF_ST_CLR : WT; bitpos: [18]; default: 0;
+ *  Configures whether or not to clear RTC_evt_ovf trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_RTC_EVT_OVF_ST_CLR    (BIT(18))
+#define SOC_ETM_RTC_EVT_OVF_ST_CLR_M  (SOC_ETM_RTC_EVT_OVF_ST_CLR_V << SOC_ETM_RTC_EVT_OVF_ST_CLR_S)
+#define SOC_ETM_RTC_EVT_OVF_ST_CLR_V  0x00000001U
+#define SOC_ETM_RTC_EVT_OVF_ST_CLR_S  18
+/** SOC_ETM_RTC_EVT_CMP_ST_CLR : WT; bitpos: [19]; default: 0;
+ *  Configures whether or not to clear RTC_evt_cmp trigger status.\\0: Invalid, No
+ *  effect\\1: Clear
+ */
+#define SOC_ETM_RTC_EVT_CMP_ST_CLR    (BIT(19))
+#define SOC_ETM_RTC_EVT_CMP_ST_CLR_M  (SOC_ETM_RTC_EVT_CMP_ST_CLR_V << SOC_ETM_RTC_EVT_CMP_ST_CLR_S)
+#define SOC_ETM_RTC_EVT_CMP_ST_CLR_V  0x00000001U
+#define SOC_ETM_RTC_EVT_CMP_ST_CLR_S  19
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR : WT; bitpos: [20]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_done_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR    (BIT(9))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR    (BIT(20))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_S  9
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR : WT; bitpos: [10]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH0_ST_CLR_S  20
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR : WT; bitpos: [21]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_done_ch1 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR    (BIT(10))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR    (BIT(21))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_S  10
-/** SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR : WT; bitpos: [11]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH1_ST_CLR_S  21
+/** SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR : WT; bitpos: [22]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_done_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR    (BIT(11))
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR    (BIT(22))
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_S  11
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR : WT; bitpos: [12]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_DONE_CH2_ST_CLR_S  22
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR : WT; bitpos: [23]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR    (BIT(12))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR    (BIT(23))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_S  12
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR : WT; bitpos: [13]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH0_ST_CLR_S  23
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR : WT; bitpos: [24]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch1 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR    (BIT(13))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR    (BIT(24))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_S  13
-/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR : WT; bitpos: [14]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH1_ST_CLR_S  24
+/** SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR : WT; bitpos: [25]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR    (BIT(14))
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR    (BIT(25))
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_S  14
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR : WT; bitpos: [15]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_SUC_EOF_CH2_ST_CLR_S  25
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR : WT; bitpos: [26]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR    (BIT(15))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR    (BIT(26))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_S  15
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR : WT; bitpos: [16]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH0_ST_CLR_S  26
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR : WT; bitpos: [27]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch1 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR    (BIT(16))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR    (BIT(27))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_S  16
-/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR : WT; bitpos: [17]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH1_ST_CLR_S  27
+/** SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR : WT; bitpos: [28]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR    (BIT(17))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR    (BIT(28))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_S  17
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR : WT; bitpos: [18]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_EMPTY_CH2_ST_CLR_S  28
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR : WT; bitpos: [29]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR    (BIT(18))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR    (BIT(29))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_S  18
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR : WT; bitpos: [19]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH0_ST_CLR_S  29
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR : WT; bitpos: [30]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch1 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR    (BIT(19))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR    (BIT(30))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_S  19
-/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR : WT; bitpos: [20]; default: 0;
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH1_ST_CLR_S  30
+/** SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR : WT; bitpos: [31]; default: 0;
  *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR    (BIT(20))
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR    (BIT(31))
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_S  20
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR : WT; bitpos: [21]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_done_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR    (BIT(21))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_S  21
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR : WT; bitpos: [22]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_done_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR    (BIT(22))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_S  22
-/** SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR : WT; bitpos: [23]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_done_ch2 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR    (BIT(23))
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_S  23
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR : WT; bitpos: [24]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_eof_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR    (BIT(24))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_S  24
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR : WT; bitpos: [25]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_eof_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR    (BIT(25))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_S  25
-/** SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR : WT; bitpos: [26]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_eof_ch2 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR    (BIT(26))
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_S  26
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR : WT; bitpos: [27]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_total_eof_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR    (BIT(27))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_S  27
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR : WT; bitpos: [28]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_total_eof_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR    (BIT(28))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_S  28
-/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR : WT; bitpos: [29]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_total_eof_ch2 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR    (BIT(29))
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_S  29
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR : WT; bitpos: [30]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR    (BIT(30))
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_S  30
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR : WT; bitpos: [31]; default: 0;
- *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR    (BIT(31))
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_S  31
+#define SOC_ETM_GDMA_EVT_IN_FIFO_FULL_CH2_ST_CLR_S  31
 
 /** SOC_ETM_EVT_ST4_REG register
  *  Events trigger status register
  */
 #define SOC_ETM_EVT_ST4_REG (DR_REG_SOC_ETM_BASE + 0x1c8)
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST : R/WTC/SS; bitpos: [0]; default: 0;
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST : R/WTC/SS; bitpos: [0]; default: 0;
+ *  Represents GDMA_evt_out_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST    (BIT(0))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_S  0
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST : R/WTC/SS; bitpos: [1]; default: 0;
+ *  Represents GDMA_evt_out_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST    (BIT(1))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_S  1
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST : R/WTC/SS; bitpos: [2]; default: 0;
+ *  Represents GDMA_evt_out_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST    (BIT(2))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_S  2
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST : R/WTC/SS; bitpos: [3]; default: 0;
+ *  Represents GDMA_evt_out_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST    (BIT(3))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_S  3
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST : R/WTC/SS; bitpos: [4]; default: 0;
+ *  Represents GDMA_evt_out_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST    (BIT(4))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_S  4
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST : R/WTC/SS; bitpos: [5]; default: 0;
+ *  Represents GDMA_evt_out_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST    (BIT(5))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_S  5
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST : R/WTC/SS; bitpos: [6]; default: 0;
+ *  Represents GDMA_evt_out_total_eof_ch0 trigger status.\\0: Not triggered\\1:
+ *  Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST    (BIT(6))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_S  6
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST : R/WTC/SS; bitpos: [7]; default: 0;
+ *  Represents GDMA_evt_out_total_eof_ch1 trigger status.\\0: Not triggered\\1:
+ *  Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST    (BIT(7))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_S  7
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST : R/WTC/SS; bitpos: [8]; default: 0;
+ *  Represents GDMA_evt_out_total_eof_ch2 trigger status.\\0: Not triggered\\1:
+ *  Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST    (BIT(8))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_S  8
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST : R/WTC/SS; bitpos: [9]; default: 0;
+ *  Represents GDMA_evt_out_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
+ *  Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST    (BIT(9))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_S  9
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST : R/WTC/SS; bitpos: [10]; default: 0;
+ *  Represents GDMA_evt_out_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
+ *  Triggered
+ */
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST    (BIT(10))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_S)
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_S  10
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST : R/WTC/SS; bitpos: [11]; default: 0;
  *  Represents GDMA_evt_out_fifo_empty_ch2 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST    (BIT(0))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST    (BIT(11))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_S  0
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST : R/WTC/SS; bitpos: [1]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_S  11
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST : R/WTC/SS; bitpos: [12]; default: 0;
  *  Represents GDMA_evt_out_fifo_full_ch0 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST    (BIT(1))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST    (BIT(12))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_S  1
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST : R/WTC/SS; bitpos: [2]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_S  12
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST : R/WTC/SS; bitpos: [13]; default: 0;
  *  Represents GDMA_evt_out_fifo_full_ch1 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST    (BIT(2))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST    (BIT(13))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_S  2
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST : R/WTC/SS; bitpos: [3]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_S  13
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST : R/WTC/SS; bitpos: [14]; default: 0;
  *  Represents GDMA_evt_out_fifo_full_ch2 trigger status.\\0: Not triggered\\1:
  *  Triggered
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST    (BIT(3))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST    (BIT(14))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_S  3
-/** SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST : R/WTC/SS; bitpos: [4]; default: 0;
- *  Represents TMPSNSR_evt_over_limit trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST    (BIT(4))
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_M  (SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_V << SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_S)
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_V  0x00000001U
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_S  4
-/** SOC_ETM_I2S0_EVT_RX_DONE_ST : R/WTC/SS; bitpos: [5]; default: 0;
- *  Represents I2S0_evt_rx_done trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST    (BIT(5))
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_M  (SOC_ETM_I2S0_EVT_RX_DONE_ST_V << SOC_ETM_I2S0_EVT_RX_DONE_ST_S)
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_S  5
-/** SOC_ETM_I2S0_EVT_TX_DONE_ST : R/WTC/SS; bitpos: [6]; default: 0;
- *  Represents I2S0_evt_tx_done trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST    (BIT(6))
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_M  (SOC_ETM_I2S0_EVT_TX_DONE_ST_V << SOC_ETM_I2S0_EVT_TX_DONE_ST_S)
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_S  6
-/** SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST : R/WTC/SS; bitpos: [7]; default: 0;
- *  Represents I2S0_evt_x_words_received trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST    (BIT(7))
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_M  (SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_V << SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_S)
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_S  7
-/** SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST : R/WTC/SS; bitpos: [8]; default: 0;
- *  Represents I2S0_evt_x_words_sent trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST    (BIT(8))
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_M  (SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_V << SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_S)
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_S  8
-/** SOC_ETM_ULP_EVT_ERR_INTR_ST : R/WTC/SS; bitpos: [9]; default: 0;
- *  Represents ULP_evt_err_intr trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST    (BIT(9))
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_M  (SOC_ETM_ULP_EVT_ERR_INTR_ST_V << SOC_ETM_ULP_EVT_ERR_INTR_ST_S)
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_V  0x00000001U
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_S  9
-/** SOC_ETM_ULP_EVT_HALT_ST : R/WTC/SS; bitpos: [10]; default: 0;
- *  Represents ULP_evt_halt trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_ULP_EVT_HALT_ST    (BIT(10))
-#define SOC_ETM_ULP_EVT_HALT_ST_M  (SOC_ETM_ULP_EVT_HALT_ST_V << SOC_ETM_ULP_EVT_HALT_ST_S)
-#define SOC_ETM_ULP_EVT_HALT_ST_V  0x00000001U
-#define SOC_ETM_ULP_EVT_HALT_ST_S  10
-/** SOC_ETM_ULP_EVT_START_INTR_ST : R/WTC/SS; bitpos: [11]; default: 0;
- *  Represents ULP_evt_start_intr trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_ULP_EVT_START_INTR_ST    (BIT(11))
-#define SOC_ETM_ULP_EVT_START_INTR_ST_M  (SOC_ETM_ULP_EVT_START_INTR_ST_V << SOC_ETM_ULP_EVT_START_INTR_ST_S)
-#define SOC_ETM_ULP_EVT_START_INTR_ST_V  0x00000001U
-#define SOC_ETM_ULP_EVT_START_INTR_ST_S  11
-/** SOC_ETM_RTC_EVT_TICK_ST : R/WTC/SS; bitpos: [12]; default: 0;
- *  Represents RTC_evt_tick trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_RTC_EVT_TICK_ST    (BIT(12))
-#define SOC_ETM_RTC_EVT_TICK_ST_M  (SOC_ETM_RTC_EVT_TICK_ST_V << SOC_ETM_RTC_EVT_TICK_ST_S)
-#define SOC_ETM_RTC_EVT_TICK_ST_V  0x00000001U
-#define SOC_ETM_RTC_EVT_TICK_ST_S  12
-/** SOC_ETM_RTC_EVT_OVF_ST : R/WTC/SS; bitpos: [13]; default: 0;
- *  Represents RTC_evt_ovf trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_RTC_EVT_OVF_ST    (BIT(13))
-#define SOC_ETM_RTC_EVT_OVF_ST_M  (SOC_ETM_RTC_EVT_OVF_ST_V << SOC_ETM_RTC_EVT_OVF_ST_S)
-#define SOC_ETM_RTC_EVT_OVF_ST_V  0x00000001U
-#define SOC_ETM_RTC_EVT_OVF_ST_S  13
-/** SOC_ETM_RTC_EVT_CMP_ST : R/WTC/SS; bitpos: [14]; default: 0;
- *  Represents RTC_evt_cmp trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_RTC_EVT_CMP_ST    (BIT(14))
-#define SOC_ETM_RTC_EVT_CMP_ST_M  (SOC_ETM_RTC_EVT_CMP_ST_V << SOC_ETM_RTC_EVT_CMP_ST_S)
-#define SOC_ETM_RTC_EVT_CMP_ST_V  0x00000001U
-#define SOC_ETM_RTC_EVT_CMP_ST_S  14
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_S  14
 /** SOC_ETM_PMU_EVT_SLEEP_WEEKUP_ST : R/WTC/SS; bitpos: [15]; default: 0;
  *  Represents PMU_evt_sleep_weekup trigger status.\\0: Not triggered\\1: Triggered
  */
@@ -4390,126 +4390,126 @@ extern "C" {
  *  Events trigger status clear register
  */
 #define SOC_ETM_EVT_ST4_CLR_REG (DR_REG_SOC_ETM_BASE + 0x1cc)
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR : WT; bitpos: [0]; default: 0;
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR : WT; bitpos: [0]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_done_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR    (BIT(0))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH0_ST_CLR_S  0
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR : WT; bitpos: [1]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_done_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR    (BIT(1))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH1_ST_CLR_S  1
+/** SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR : WT; bitpos: [2]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_done_ch2 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR    (BIT(2))
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_DONE_CH2_ST_CLR_S  2
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR : WT; bitpos: [3]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_eof_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR    (BIT(3))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH0_ST_CLR_S  3
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR : WT; bitpos: [4]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_eof_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR    (BIT(4))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH1_ST_CLR_S  4
+/** SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR : WT; bitpos: [5]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_eof_ch2 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR    (BIT(5))
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_EOF_CH2_ST_CLR_S  5
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR : WT; bitpos: [6]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_total_eof_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR    (BIT(6))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH0_ST_CLR_S  6
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR : WT; bitpos: [7]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_total_eof_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR    (BIT(7))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH1_ST_CLR_S  7
+/** SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR : WT; bitpos: [8]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_total_eof_ch2 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR    (BIT(8))
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_TOTAL_EOF_CH2_ST_CLR_S  8
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR : WT; bitpos: [9]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR    (BIT(9))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH0_ST_CLR_S  9
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR : WT; bitpos: [10]; default: 0;
+ *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR    (BIT(10))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH1_ST_CLR_S  10
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR : WT; bitpos: [11]; default: 0;
  *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR    (BIT(0))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR    (BIT(11))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_S  0
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR : WT; bitpos: [1]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_EMPTY_CH2_ST_CLR_S  11
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR : WT; bitpos: [12]; default: 0;
  *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch0 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR    (BIT(1))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR    (BIT(12))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_S  1
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR : WT; bitpos: [2]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH0_ST_CLR_S  12
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR : WT; bitpos: [13]; default: 0;
  *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch1 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR    (BIT(2))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR    (BIT(13))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_S  2
-/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR : WT; bitpos: [3]; default: 0;
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH1_ST_CLR_S  13
+/** SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR : WT; bitpos: [14]; default: 0;
  *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch2 trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR    (BIT(3))
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR    (BIT(14))
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_M  (SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_V << SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_S)
 #define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_S  3
-/** SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR : WT; bitpos: [4]; default: 0;
- *  Configures whether or not to clear TMPSNSR_evt_over_limit trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR    (BIT(4))
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_M  (SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_V << SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_S)
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_V  0x00000001U
-#define SOC_ETM_TMPSNSR_EVT_OVER_LIMIT_ST_CLR_S  4
-/** SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR : WT; bitpos: [5]; default: 0;
- *  Configures whether or not to clear I2S0_evt_rx_done trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR    (BIT(5))
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_M  (SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_V << SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_S)
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_RX_DONE_ST_CLR_S  5
-/** SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR : WT; bitpos: [6]; default: 0;
- *  Configures whether or not to clear I2S0_evt_tx_done trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR    (BIT(6))
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_M  (SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_V << SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_S)
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_TX_DONE_ST_CLR_S  6
-/** SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR : WT; bitpos: [7]; default: 0;
- *  Configures whether or not to clear I2S0_evt_x_words_received trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR    (BIT(7))
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_M  (SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_V << SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_S)
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_X_WORDS_RECEIVED_ST_CLR_S  7
-/** SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR : WT; bitpos: [8]; default: 0;
- *  Configures whether or not to clear I2S0_evt_x_words_sent trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR    (BIT(8))
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_M  (SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_V << SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_S)
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_EVT_X_WORDS_SENT_ST_CLR_S  8
-/** SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR : WT; bitpos: [9]; default: 0;
- *  Configures whether or not to clear ULP_evt_err_intr trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR    (BIT(9))
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_M  (SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_V << SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_S)
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_V  0x00000001U
-#define SOC_ETM_ULP_EVT_ERR_INTR_ST_CLR_S  9
-/** SOC_ETM_ULP_EVT_HALT_ST_CLR : WT; bitpos: [10]; default: 0;
- *  Configures whether or not to clear ULP_evt_halt trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_ULP_EVT_HALT_ST_CLR    (BIT(10))
-#define SOC_ETM_ULP_EVT_HALT_ST_CLR_M  (SOC_ETM_ULP_EVT_HALT_ST_CLR_V << SOC_ETM_ULP_EVT_HALT_ST_CLR_S)
-#define SOC_ETM_ULP_EVT_HALT_ST_CLR_V  0x00000001U
-#define SOC_ETM_ULP_EVT_HALT_ST_CLR_S  10
-/** SOC_ETM_ULP_EVT_START_INTR_ST_CLR : WT; bitpos: [11]; default: 0;
- *  Configures whether or not to clear ULP_evt_start_intr trigger status.\\0: Invalid,
- *  No effect\\1: Clear
- */
-#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR    (BIT(11))
-#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_M  (SOC_ETM_ULP_EVT_START_INTR_ST_CLR_V << SOC_ETM_ULP_EVT_START_INTR_ST_CLR_S)
-#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_V  0x00000001U
-#define SOC_ETM_ULP_EVT_START_INTR_ST_CLR_S  11
-/** SOC_ETM_RTC_EVT_TICK_ST_CLR : WT; bitpos: [12]; default: 0;
- *  Configures whether or not to clear RTC_evt_tick trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_RTC_EVT_TICK_ST_CLR    (BIT(12))
-#define SOC_ETM_RTC_EVT_TICK_ST_CLR_M  (SOC_ETM_RTC_EVT_TICK_ST_CLR_V << SOC_ETM_RTC_EVT_TICK_ST_CLR_S)
-#define SOC_ETM_RTC_EVT_TICK_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_EVT_TICK_ST_CLR_S  12
-/** SOC_ETM_RTC_EVT_OVF_ST_CLR : WT; bitpos: [13]; default: 0;
- *  Configures whether or not to clear RTC_evt_ovf trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_RTC_EVT_OVF_ST_CLR    (BIT(13))
-#define SOC_ETM_RTC_EVT_OVF_ST_CLR_M  (SOC_ETM_RTC_EVT_OVF_ST_CLR_V << SOC_ETM_RTC_EVT_OVF_ST_CLR_S)
-#define SOC_ETM_RTC_EVT_OVF_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_EVT_OVF_ST_CLR_S  13
-/** SOC_ETM_RTC_EVT_CMP_ST_CLR : WT; bitpos: [14]; default: 0;
- *  Configures whether or not to clear RTC_evt_cmp trigger status.\\0: Invalid, No
- *  effect\\1: Clear
- */
-#define SOC_ETM_RTC_EVT_CMP_ST_CLR    (BIT(14))
-#define SOC_ETM_RTC_EVT_CMP_ST_CLR_M  (SOC_ETM_RTC_EVT_CMP_ST_CLR_V << SOC_ETM_RTC_EVT_CMP_ST_CLR_S)
-#define SOC_ETM_RTC_EVT_CMP_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_EVT_CMP_ST_CLR_S  14
+#define SOC_ETM_GDMA_EVT_OUT_FIFO_FULL_CH2_ST_CLR_S  14
 /** SOC_ETM_PMU_EVT_SLEEP_WEEKUP_ST_CLR : WT; bitpos: [15]; default: 0;
  *  Configures whether or not to clear PMU_evt_sleep_weekup trigger status.\\0:
  *  Invalid, No effect\\1: Clear
@@ -6530,132 +6530,132 @@ extern "C" {
 #define SOC_ETM_REGDMA_TASK_START3_ST_M  (SOC_ETM_REGDMA_TASK_START3_ST_V << SOC_ETM_REGDMA_TASK_START3_ST_S)
 #define SOC_ETM_REGDMA_TASK_START3_ST_V  0x00000001U
 #define SOC_ETM_REGDMA_TASK_START3_ST_S  1
-/** SOC_ETM_GDMA_TASK_IN_START_CH0_ST : R/WTC/SS; bitpos: [2]; default: 0;
- *  Represents GDMA_task_in_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST    (BIT(2))
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH0_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH0_ST_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_S  2
-/** SOC_ETM_GDMA_TASK_IN_START_CH1_ST : R/WTC/SS; bitpos: [3]; default: 0;
- *  Represents GDMA_task_in_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST    (BIT(3))
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH1_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH1_ST_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_S  3
-/** SOC_ETM_GDMA_TASK_IN_START_CH2_ST : R/WTC/SS; bitpos: [4]; default: 0;
- *  Represents GDMA_task_in_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST    (BIT(4))
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH2_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH2_ST_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_S  4
-/** SOC_ETM_GDMA_TASK_OUT_START_CH0_ST : R/WTC/SS; bitpos: [5]; default: 0;
- *  Represents GDMA_task_out_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST    (BIT(5))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_S  5
-/** SOC_ETM_GDMA_TASK_OUT_START_CH1_ST : R/WTC/SS; bitpos: [6]; default: 0;
- *  Represents GDMA_task_out_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST    (BIT(6))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_S  6
-/** SOC_ETM_GDMA_TASK_OUT_START_CH2_ST : R/WTC/SS; bitpos: [7]; default: 0;
- *  Represents GDMA_task_out_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST    (BIT(7))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_S  7
-/** SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST : R/WTC/SS; bitpos: [8]; default: 0;
+/** SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST : R/WTC/SS; bitpos: [2]; default: 0;
  *  Represents TMPSNSR_task_start_sample trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST    (BIT(8))
+#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST    (BIT(2))
 #define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_M  (SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_V << SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_S)
 #define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_V  0x00000001U
-#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_S  8
-/** SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST : R/WTC/SS; bitpos: [9]; default: 0;
+#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_S  2
+/** SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST : R/WTC/SS; bitpos: [3]; default: 0;
  *  Represents TMPSNSR_task_stop_sample trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST    (BIT(9))
+#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST    (BIT(3))
 #define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_M  (SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_V << SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_S)
 #define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_V  0x00000001U
-#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_S  9
-/** SOC_ETM_I2S0_TASK_START_RX_ST : R/WTC/SS; bitpos: [10]; default: 0;
+#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_S  3
+/** SOC_ETM_I2S0_TASK_START_RX_ST : R/WTC/SS; bitpos: [4]; default: 0;
  *  Represents I2S0_task_start_rx trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_I2S0_TASK_START_RX_ST    (BIT(10))
+#define SOC_ETM_I2S0_TASK_START_RX_ST    (BIT(4))
 #define SOC_ETM_I2S0_TASK_START_RX_ST_M  (SOC_ETM_I2S0_TASK_START_RX_ST_V << SOC_ETM_I2S0_TASK_START_RX_ST_S)
 #define SOC_ETM_I2S0_TASK_START_RX_ST_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_START_RX_ST_S  10
-/** SOC_ETM_I2S0_TASK_START_TX_ST : R/WTC/SS; bitpos: [11]; default: 0;
+#define SOC_ETM_I2S0_TASK_START_RX_ST_S  4
+/** SOC_ETM_I2S0_TASK_START_TX_ST : R/WTC/SS; bitpos: [5]; default: 0;
  *  Represents I2S0_task_start_tx trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_I2S0_TASK_START_TX_ST    (BIT(11))
+#define SOC_ETM_I2S0_TASK_START_TX_ST    (BIT(5))
 #define SOC_ETM_I2S0_TASK_START_TX_ST_M  (SOC_ETM_I2S0_TASK_START_TX_ST_V << SOC_ETM_I2S0_TASK_START_TX_ST_S)
 #define SOC_ETM_I2S0_TASK_START_TX_ST_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_START_TX_ST_S  11
-/** SOC_ETM_I2S0_TASK_STOP_RX_ST : R/WTC/SS; bitpos: [12]; default: 0;
+#define SOC_ETM_I2S0_TASK_START_TX_ST_S  5
+/** SOC_ETM_I2S0_TASK_STOP_RX_ST : R/WTC/SS; bitpos: [6]; default: 0;
  *  Represents I2S0_task_stop_rx trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_I2S0_TASK_STOP_RX_ST    (BIT(12))
+#define SOC_ETM_I2S0_TASK_STOP_RX_ST    (BIT(6))
 #define SOC_ETM_I2S0_TASK_STOP_RX_ST_M  (SOC_ETM_I2S0_TASK_STOP_RX_ST_V << SOC_ETM_I2S0_TASK_STOP_RX_ST_S)
 #define SOC_ETM_I2S0_TASK_STOP_RX_ST_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_STOP_RX_ST_S  12
-/** SOC_ETM_I2S0_TASK_STOP_TX_ST : R/WTC/SS; bitpos: [13]; default: 0;
+#define SOC_ETM_I2S0_TASK_STOP_RX_ST_S  6
+/** SOC_ETM_I2S0_TASK_STOP_TX_ST : R/WTC/SS; bitpos: [7]; default: 0;
  *  Represents I2S0_task_stop_tx trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_I2S0_TASK_STOP_TX_ST    (BIT(13))
+#define SOC_ETM_I2S0_TASK_STOP_TX_ST    (BIT(7))
 #define SOC_ETM_I2S0_TASK_STOP_TX_ST_M  (SOC_ETM_I2S0_TASK_STOP_TX_ST_V << SOC_ETM_I2S0_TASK_STOP_TX_ST_S)
 #define SOC_ETM_I2S0_TASK_STOP_TX_ST_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_STOP_TX_ST_S  13
-/** SOC_ETM_ULP_TASK_WAKEUP_CPU_ST : R/WTC/SS; bitpos: [14]; default: 0;
+#define SOC_ETM_I2S0_TASK_STOP_TX_ST_S  7
+/** SOC_ETM_ULP_TASK_WAKEUP_CPU_ST : R/WTC/SS; bitpos: [8]; default: 0;
  *  Represents ULP_task_wakeup_cpu trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST    (BIT(14))
+#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST    (BIT(8))
 #define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_M  (SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_V << SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_S)
 #define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_V  0x00000001U
-#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_S  14
-/** SOC_ETM_ULP_TASK_INT_CPU_ST : R/WTC/SS; bitpos: [15]; default: 0;
+#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_S  8
+/** SOC_ETM_ULP_TASK_INT_CPU_ST : R/WTC/SS; bitpos: [9]; default: 0;
  *  Represents ULP_task_int_cpu trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_ULP_TASK_INT_CPU_ST    (BIT(15))
+#define SOC_ETM_ULP_TASK_INT_CPU_ST    (BIT(9))
 #define SOC_ETM_ULP_TASK_INT_CPU_ST_M  (SOC_ETM_ULP_TASK_INT_CPU_ST_V << SOC_ETM_ULP_TASK_INT_CPU_ST_S)
 #define SOC_ETM_ULP_TASK_INT_CPU_ST_V  0x00000001U
-#define SOC_ETM_ULP_TASK_INT_CPU_ST_S  15
-/** SOC_ETM_RTC_TASK_START_ST : R/WTC/SS; bitpos: [16]; default: 0;
+#define SOC_ETM_ULP_TASK_INT_CPU_ST_S  9
+/** SOC_ETM_RTC_TASK_START_ST : R/WTC/SS; bitpos: [10]; default: 0;
  *  Represents RTC_task_start trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_RTC_TASK_START_ST    (BIT(16))
+#define SOC_ETM_RTC_TASK_START_ST    (BIT(10))
 #define SOC_ETM_RTC_TASK_START_ST_M  (SOC_ETM_RTC_TASK_START_ST_V << SOC_ETM_RTC_TASK_START_ST_S)
 #define SOC_ETM_RTC_TASK_START_ST_V  0x00000001U
-#define SOC_ETM_RTC_TASK_START_ST_S  16
-/** SOC_ETM_RTC_TASK_STOP_ST : R/WTC/SS; bitpos: [17]; default: 0;
+#define SOC_ETM_RTC_TASK_START_ST_S  10
+/** SOC_ETM_RTC_TASK_STOP_ST : R/WTC/SS; bitpos: [11]; default: 0;
  *  Represents RTC_task_stop trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_RTC_TASK_STOP_ST    (BIT(17))
+#define SOC_ETM_RTC_TASK_STOP_ST    (BIT(11))
 #define SOC_ETM_RTC_TASK_STOP_ST_M  (SOC_ETM_RTC_TASK_STOP_ST_V << SOC_ETM_RTC_TASK_STOP_ST_S)
 #define SOC_ETM_RTC_TASK_STOP_ST_V  0x00000001U
-#define SOC_ETM_RTC_TASK_STOP_ST_S  17
-/** SOC_ETM_RTC_TASK_CLR_ST : R/WTC/SS; bitpos: [18]; default: 0;
+#define SOC_ETM_RTC_TASK_STOP_ST_S  11
+/** SOC_ETM_RTC_TASK_CLR_ST : R/WTC/SS; bitpos: [12]; default: 0;
  *  Represents RTC_task_clr trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_RTC_TASK_CLR_ST    (BIT(18))
+#define SOC_ETM_RTC_TASK_CLR_ST    (BIT(12))
 #define SOC_ETM_RTC_TASK_CLR_ST_M  (SOC_ETM_RTC_TASK_CLR_ST_V << SOC_ETM_RTC_TASK_CLR_ST_S)
 #define SOC_ETM_RTC_TASK_CLR_ST_V  0x00000001U
-#define SOC_ETM_RTC_TASK_CLR_ST_S  18
-/** SOC_ETM_RTC_TASK_TRIGGERFLW_ST : R/WTC/SS; bitpos: [19]; default: 0;
+#define SOC_ETM_RTC_TASK_CLR_ST_S  12
+/** SOC_ETM_RTC_TASK_TRIGGERFLW_ST : R/WTC/SS; bitpos: [13]; default: 0;
  *  Represents RTC_task_triggerflw trigger status.\\0: Not triggered\\1: Triggered
  */
-#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST    (BIT(19))
+#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST    (BIT(13))
 #define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_M  (SOC_ETM_RTC_TASK_TRIGGERFLW_ST_V << SOC_ETM_RTC_TASK_TRIGGERFLW_ST_S)
 #define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_V  0x00000001U
-#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_S  19
+#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_S  13
+/** SOC_ETM_GDMA_TASK_IN_START_CH0_ST : R/WTC/SS; bitpos: [14]; default: 0;
+ *  Represents GDMA_task_in_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST    (BIT(14))
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH0_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH0_ST_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_S  14
+/** SOC_ETM_GDMA_TASK_IN_START_CH1_ST : R/WTC/SS; bitpos: [15]; default: 0;
+ *  Represents GDMA_task_in_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST    (BIT(15))
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH1_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH1_ST_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_S  15
+/** SOC_ETM_GDMA_TASK_IN_START_CH2_ST : R/WTC/SS; bitpos: [16]; default: 0;
+ *  Represents GDMA_task_in_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST    (BIT(16))
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_M  (SOC_ETM_GDMA_TASK_IN_START_CH2_ST_V << SOC_ETM_GDMA_TASK_IN_START_CH2_ST_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_S  16
+/** SOC_ETM_GDMA_TASK_OUT_START_CH0_ST : R/WTC/SS; bitpos: [17]; default: 0;
+ *  Represents GDMA_task_out_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST    (BIT(17))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_S  17
+/** SOC_ETM_GDMA_TASK_OUT_START_CH1_ST : R/WTC/SS; bitpos: [18]; default: 0;
+ *  Represents GDMA_task_out_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST    (BIT(18))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_S  18
+/** SOC_ETM_GDMA_TASK_OUT_START_CH2_ST : R/WTC/SS; bitpos: [19]; default: 0;
+ *  Represents GDMA_task_out_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST    (BIT(19))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_M  (SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_V << SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_S  19
 /** SOC_ETM_PMU_TASK_SLEEP_REQ_ST : R/WTC/SS; bitpos: [20]; default: 0;
  *  Represents PMU_task_sleep_req trigger status.\\0: Not triggered\\1: Triggered
  */
@@ -6684,150 +6684,150 @@ extern "C" {
 #define SOC_ETM_REGDMA_TASK_START3_ST_CLR_M  (SOC_ETM_REGDMA_TASK_START3_ST_CLR_V << SOC_ETM_REGDMA_TASK_START3_ST_CLR_S)
 #define SOC_ETM_REGDMA_TASK_START3_ST_CLR_V  0x00000001U
 #define SOC_ETM_REGDMA_TASK_START3_ST_CLR_S  1
-/** SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR : WT; bitpos: [2]; default: 0;
- *  Configures whether or not to clear GDMA_task_in_start_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR    (BIT(2))
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_S  2
-/** SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR : WT; bitpos: [3]; default: 0;
- *  Configures whether or not to clear GDMA_task_in_start_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR    (BIT(3))
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_S  3
-/** SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR : WT; bitpos: [4]; default: 0;
- *  Configures whether or not to clear GDMA_task_in_start_ch2 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR    (BIT(4))
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_S  4
-/** SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR : WT; bitpos: [5]; default: 0;
- *  Configures whether or not to clear GDMA_task_out_start_ch0 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR    (BIT(5))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_S  5
-/** SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR : WT; bitpos: [6]; default: 0;
- *  Configures whether or not to clear GDMA_task_out_start_ch1 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR    (BIT(6))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_S  6
-/** SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR : WT; bitpos: [7]; default: 0;
- *  Configures whether or not to clear GDMA_task_out_start_ch2 trigger status.\\0:
- *  Invalid, No effect\\1: Clear
- */
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR    (BIT(7))
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_S)
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_V  0x00000001U
-#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_S  7
-/** SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR : WT; bitpos: [8]; default: 0;
+/** SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR : WT; bitpos: [2]; default: 0;
  *  Configures whether or not to clear TMPSNSR_task_start_sample trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR    (BIT(8))
+#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR    (BIT(2))
 #define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_M  (SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_V << SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_S)
 #define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_V  0x00000001U
-#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_S  8
-/** SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR : WT; bitpos: [9]; default: 0;
+#define SOC_ETM_TMPSNSR_TASK_START_SAMPLE_ST_CLR_S  2
+/** SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR : WT; bitpos: [3]; default: 0;
  *  Configures whether or not to clear TMPSNSR_task_stop_sample trigger status.\\0:
  *  Invalid, No effect\\1: Clear
  */
-#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR    (BIT(9))
+#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR    (BIT(3))
 #define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_M  (SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_V << SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_S)
 #define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_V  0x00000001U
-#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_S  9
-/** SOC_ETM_I2S0_TASK_START_RX_ST_CLR : WT; bitpos: [10]; default: 0;
+#define SOC_ETM_TMPSNSR_TASK_STOP_SAMPLE_ST_CLR_S  3
+/** SOC_ETM_I2S0_TASK_START_RX_ST_CLR : WT; bitpos: [4]; default: 0;
  *  Configures whether or not to clear I2S0_task_start_rx trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_I2S0_TASK_START_RX_ST_CLR    (BIT(10))
+#define SOC_ETM_I2S0_TASK_START_RX_ST_CLR    (BIT(4))
 #define SOC_ETM_I2S0_TASK_START_RX_ST_CLR_M  (SOC_ETM_I2S0_TASK_START_RX_ST_CLR_V << SOC_ETM_I2S0_TASK_START_RX_ST_CLR_S)
 #define SOC_ETM_I2S0_TASK_START_RX_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_START_RX_ST_CLR_S  10
-/** SOC_ETM_I2S0_TASK_START_TX_ST_CLR : WT; bitpos: [11]; default: 0;
+#define SOC_ETM_I2S0_TASK_START_RX_ST_CLR_S  4
+/** SOC_ETM_I2S0_TASK_START_TX_ST_CLR : WT; bitpos: [5]; default: 0;
  *  Configures whether or not to clear I2S0_task_start_tx trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_I2S0_TASK_START_TX_ST_CLR    (BIT(11))
+#define SOC_ETM_I2S0_TASK_START_TX_ST_CLR    (BIT(5))
 #define SOC_ETM_I2S0_TASK_START_TX_ST_CLR_M  (SOC_ETM_I2S0_TASK_START_TX_ST_CLR_V << SOC_ETM_I2S0_TASK_START_TX_ST_CLR_S)
 #define SOC_ETM_I2S0_TASK_START_TX_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_START_TX_ST_CLR_S  11
-/** SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR : WT; bitpos: [12]; default: 0;
+#define SOC_ETM_I2S0_TASK_START_TX_ST_CLR_S  5
+/** SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR : WT; bitpos: [6]; default: 0;
  *  Configures whether or not to clear I2S0_task_stop_rx trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR    (BIT(12))
+#define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR    (BIT(6))
 #define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_M  (SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_V << SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_S)
 #define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_S  12
-/** SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR : WT; bitpos: [13]; default: 0;
+#define SOC_ETM_I2S0_TASK_STOP_RX_ST_CLR_S  6
+/** SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR : WT; bitpos: [7]; default: 0;
  *  Configures whether or not to clear I2S0_task_stop_tx trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR    (BIT(13))
+#define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR    (BIT(7))
 #define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_M  (SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_V << SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_S)
 #define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_V  0x00000001U
-#define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_S  13
-/** SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR : WT; bitpos: [14]; default: 0;
+#define SOC_ETM_I2S0_TASK_STOP_TX_ST_CLR_S  7
+/** SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR : WT; bitpos: [8]; default: 0;
  *  Configures whether or not to clear ULP_task_wakeup_cpu trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR    (BIT(14))
+#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR    (BIT(8))
 #define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_M  (SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_V << SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_S)
 #define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_V  0x00000001U
-#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_S  14
-/** SOC_ETM_ULP_TASK_INT_CPU_ST_CLR : WT; bitpos: [15]; default: 0;
+#define SOC_ETM_ULP_TASK_WAKEUP_CPU_ST_CLR_S  8
+/** SOC_ETM_ULP_TASK_INT_CPU_ST_CLR : WT; bitpos: [9]; default: 0;
  *  Configures whether or not to clear ULP_task_int_cpu trigger status.\\0: Invalid, No
  *  effect\\1: Clear
  */
-#define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR    (BIT(15))
+#define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR    (BIT(9))
 #define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_M  (SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_V << SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_S)
 #define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_V  0x00000001U
-#define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_S  15
-/** SOC_ETM_RTC_TASK_START_ST_CLR : WT; bitpos: [16]; default: 0;
+#define SOC_ETM_ULP_TASK_INT_CPU_ST_CLR_S  9
+/** SOC_ETM_RTC_TASK_START_ST_CLR : WT; bitpos: [10]; default: 0;
  *  Configures whether or not to clear RTC_task_start trigger status.\\0: Invalid, No
  *  effect\\1: Clear
  */
-#define SOC_ETM_RTC_TASK_START_ST_CLR    (BIT(16))
+#define SOC_ETM_RTC_TASK_START_ST_CLR    (BIT(10))
 #define SOC_ETM_RTC_TASK_START_ST_CLR_M  (SOC_ETM_RTC_TASK_START_ST_CLR_V << SOC_ETM_RTC_TASK_START_ST_CLR_S)
 #define SOC_ETM_RTC_TASK_START_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_TASK_START_ST_CLR_S  16
-/** SOC_ETM_RTC_TASK_STOP_ST_CLR : WT; bitpos: [17]; default: 0;
+#define SOC_ETM_RTC_TASK_START_ST_CLR_S  10
+/** SOC_ETM_RTC_TASK_STOP_ST_CLR : WT; bitpos: [11]; default: 0;
  *  Configures whether or not to clear RTC_task_stop trigger status.\\0: Invalid, No
  *  effect\\1: Clear
  */
-#define SOC_ETM_RTC_TASK_STOP_ST_CLR    (BIT(17))
+#define SOC_ETM_RTC_TASK_STOP_ST_CLR    (BIT(11))
 #define SOC_ETM_RTC_TASK_STOP_ST_CLR_M  (SOC_ETM_RTC_TASK_STOP_ST_CLR_V << SOC_ETM_RTC_TASK_STOP_ST_CLR_S)
 #define SOC_ETM_RTC_TASK_STOP_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_TASK_STOP_ST_CLR_S  17
-/** SOC_ETM_RTC_TASK_CLR_ST_CLR : WT; bitpos: [18]; default: 0;
+#define SOC_ETM_RTC_TASK_STOP_ST_CLR_S  11
+/** SOC_ETM_RTC_TASK_CLR_ST_CLR : WT; bitpos: [12]; default: 0;
  *  Configures whether or not to clear RTC_task_clr trigger status.\\0: Invalid, No
  *  effect\\1: Clear
  */
-#define SOC_ETM_RTC_TASK_CLR_ST_CLR    (BIT(18))
+#define SOC_ETM_RTC_TASK_CLR_ST_CLR    (BIT(12))
 #define SOC_ETM_RTC_TASK_CLR_ST_CLR_M  (SOC_ETM_RTC_TASK_CLR_ST_CLR_V << SOC_ETM_RTC_TASK_CLR_ST_CLR_S)
 #define SOC_ETM_RTC_TASK_CLR_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_TASK_CLR_ST_CLR_S  18
-/** SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR : WT; bitpos: [19]; default: 0;
+#define SOC_ETM_RTC_TASK_CLR_ST_CLR_S  12
+/** SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR : WT; bitpos: [13]; default: 0;
  *  Configures whether or not to clear RTC_task_triggerflw trigger status.\\0: Invalid,
  *  No effect\\1: Clear
  */
-#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR    (BIT(19))
+#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR    (BIT(13))
 #define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_M  (SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_V << SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_S)
 #define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_V  0x00000001U
-#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_S  19
+#define SOC_ETM_RTC_TASK_TRIGGERFLW_ST_CLR_S  13
+/** SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR : WT; bitpos: [14]; default: 0;
+ *  Configures whether or not to clear GDMA_task_in_start_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR    (BIT(14))
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH0_ST_CLR_S  14
+/** SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR : WT; bitpos: [15]; default: 0;
+ *  Configures whether or not to clear GDMA_task_in_start_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR    (BIT(15))
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH1_ST_CLR_S  15
+/** SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR : WT; bitpos: [16]; default: 0;
+ *  Configures whether or not to clear GDMA_task_in_start_ch2 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR    (BIT(16))
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_M  (SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_V << SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_IN_START_CH2_ST_CLR_S  16
+/** SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR : WT; bitpos: [17]; default: 0;
+ *  Configures whether or not to clear GDMA_task_out_start_ch0 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR    (BIT(17))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH0_ST_CLR_S  17
+/** SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR : WT; bitpos: [18]; default: 0;
+ *  Configures whether or not to clear GDMA_task_out_start_ch1 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR    (BIT(18))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH1_ST_CLR_S  18
+/** SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR : WT; bitpos: [19]; default: 0;
+ *  Configures whether or not to clear GDMA_task_out_start_ch2 trigger status.\\0:
+ *  Invalid, No effect\\1: Clear
+ */
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR    (BIT(19))
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_M  (SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_V << SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_S)
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_V  0x00000001U
+#define SOC_ETM_GDMA_TASK_OUT_START_CH2_ST_CLR_S  19
 /** SOC_ETM_PMU_TASK_SLEEP_REQ_ST_CLR : WT; bitpos: [20]; default: 0;
  *  Configures whether or not to clear PMU_task_sleep_req trigger status.\\0: Invalid,
  *  No effect\\1: Clear
@@ -6854,7 +6854,7 @@ extern "C" {
  *  ETM date register
  */
 #define SOC_ETM_DATE_REG (DR_REG_SOC_ETM_BASE + 0x1fc)
-/** SOC_ETM_DATE : R/W; bitpos: [27:0]; default: 36716929;
+/** SOC_ETM_DATE : R/W; bitpos: [27:0]; default: 36770433;
  *  Configures the version.
  */
 #define SOC_ETM_DATE    0x0FFFFFFFU

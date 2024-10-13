@@ -60,7 +60,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
         }
     }
 
-    const int select_ret = select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL: &tv);
+    const int select_ret = select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL : &tv);
 
     if (select_ret > 0) {
         ret += select_ret;

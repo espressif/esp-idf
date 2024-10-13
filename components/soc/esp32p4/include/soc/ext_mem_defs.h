@@ -43,6 +43,9 @@ extern "C" {
 #define SOC_DRAM_PSRAM_ADDRESS_LOW                   SOC_IRAM_PSRAM_ADDRESS_LOW
 #define SOC_DRAM_PSRAM_ADDRESS_HIGH                  SOC_IRAM_PSRAM_ADDRESS_HIGH
 
+#define SOC_IRAM_FLASH_PSRAM_OFFSET                  (SOC_IRAM_PSRAM_ADDRESS_LOW - SOC_IRAM_FLASH_ADDRESS_LOW)
+#define SOC_DRAM_FLASH_PSRAM_OFFSET                  SOC_IRAM_FLASH_PSRAM_OFFSET
+
 #define SOC_BUS_SIZE(bus_name)                       (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)          ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 

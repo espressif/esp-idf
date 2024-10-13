@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,11 +40,9 @@ static esp_err_t gdma_del_etm_task(esp_etm_task_t *task)
     gdma_channel_t *dma_chan = gdma_task->chan;
     gdma_pair_t *pair = dma_chan->pair;
     gdma_group_t *group = pair->group;
-    if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
-        gdma_ll_rx_enable_etm_task(group->hal.dev, pair->pair_id, false);
-    } else {
-        gdma_ll_tx_enable_etm_task(group->hal.dev, pair->pair_id, false);
-    }
+    gdma_hal_context_t* hal = &group->hal;
+
+    gdma_hal_enable_etm_task(hal, pair->pair_id, dma_chan->direction, false);
     free(gdma_task);
     dma_chan->flags.start_stop_by_etm = false;
     return ESP_OK;
@@ -95,14 +93,14 @@ esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_
 
     gdma_pair_t *pair = dma_chan->pair;
     gdma_group_t *group = pair->group;
+    gdma_hal_context_t* hal = &group->hal;
     uint32_t task_id = 0;
 
+    gdma_hal_enable_etm_task(hal, pair->pair_id, dma_chan->direction, true);
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
         task_id = GDMA_LL_RX_ETM_TASK_TABLE(group->group_id, pair->pair_id, config->task_type);
-        gdma_ll_rx_enable_etm_task(group->hal.dev, pair->pair_id, true);
     } else {
         task_id = GDMA_LL_TX_ETM_TASK_TABLE(group->group_id, pair->pair_id, config->task_type);
-        gdma_ll_tx_enable_etm_task(group->hal.dev, pair->pair_id, true);
     }
     ESP_GOTO_ON_FALSE(task_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported task type");
 

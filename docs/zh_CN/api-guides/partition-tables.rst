@@ -17,7 +17,7 @@
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
 
-在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 `idf.py partition-table` ，即可以打印当前使用分区表的信息摘要。
+在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 ``idf.py partition-table``，即可以打印当前使用分区表的信息摘要。
 
 内置分区表
 ------------
@@ -89,7 +89,7 @@ Type 字段可以指定为 app (0x00) 或者 data (0x01)，也可以直接使用
 
 SubType 字段
 ~~~~~~~~~~~~
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4 = "NOT UPDATED YET"}
+{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5, esp32c61 = "NOT UPDATED YET"}
 
 SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp-idf 仅仅规定了 “app” 和 “data” 两种分区类型的子类型含义。
 
@@ -150,16 +150,19 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 
 组件可以通过设置 ``EXTRA_PARTITION_SUBTYPES`` 属性来定义额外的分区子类型。 ``EXTRA_PARTITION_SUBTYPES`` 是一个 CMake 列表，其中的每个条目由字符串组成，以逗号为分隔，格式为 ``<type>, <subtype>, <value>``。构建系统通过该属性会自动添加额外的子类型，并在 :cpp:type:`esp_partition_subtype_t` 中插入名为 ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` 的字段。项目可以使用这个子类型来定义分区表 CSV 文件中的分区，并使用 :cpp:type:`esp_partition_subtype_t` 中的新字段。
 
-偏移地址 (Offset) 和 Size 字段
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _partition-offset-and-size:
 
-偏移地址表示 SPI flash 中的分区地址，扇区大小为 0x1000 (4 KB)。 因此，偏移地址必须是 4 KB 的倍数。
+偏移地址 (Offset) 和 大小 (Size) 字段
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-分区若偏移地址为空，则会紧跟着前一个分区之后开始；若为首个分区，则将紧跟着分区表开始。
+.. list::
 
-app 分区的偏移地址必须要与 0x10000 (64 K) 对齐，如果将偏移字段留空，``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 app 分区的偏移地址没有与 0x10000 (64 K) 对齐，则该工具会报错。
-
-app 分区的大小和偏移地址可以采用十进制数、以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（分别代表 1024 和 1024*1024 字节）。
+   - 偏移地址表示 SPI flash 中的分区地址，扇区大小为 0x1000 (4 KB)。因此，偏移地址必须是 4 KB 的倍数。
+   - 若 CSV 文件中的分区偏移地址为空，则该分区会接在前一个分区之后；若为首个分区，则将接在分区表之后。
+   - ``app`` 分区的偏移地址必须与 0x10000 (64 KB) 对齐。如果偏移字段留空，则 ``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 ``app`` 分区的偏移地址没有与 0x10000 (64 KB) 对齐，则该工具会报错。
+   - ``app`` 分区的大小必须与 flash 扇区大小对齐。为 ``app`` 分区指定未对齐的大小将返回错误。
+   :SOC_SECURE_BOOT_V1: - 若启用了安全启动 V1，则 ``app`` 分区的大小需与 0x10000 (64 KB) 对齐。
+   - ``app`` 分区的大小和偏移地址可以采用十进制数或是以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（K 和 M 分别代表 1024 和 1024*1024 字节）。
 
 如果你希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果你更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果你之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
 
@@ -274,7 +277,7 @@ Python API
 
 .. code-block:: python
 
-  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  # 创建 parttool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
   target = ParttoolTarget("/dev/ttyUSB1")
 
 现在，可使用创建的 `ParttoolTarget` 在目标设备上完成操作：
@@ -324,6 +327,25 @@ Python API
 
   # 打印默认启动分区的大小
   parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
+
+.. note::
+  如果设备启用了 ``Flash Encryption`` 或 ``Secure Boot``，尝试使用修改 flash 内容的命令（如 ``erase_partition`` 或 ``write_partition``）会导致错误。这是因为 ``esptool.py`` 的擦除命令会在写入之前先被调用。这个“错误”实际上是一个用来防止设备变砖的安全措施。
+
+  ::
+
+    A fatal error occurred: Active security features detected, erasing flash is disabled as a safety measure. Use --force to override, please use with caution, otherwise it may brick your device!
+
+  要解决此问题，需在运行 ``esptool.py`` 时使用 ``--force`` 参数。具体而言，``parttool.py`` 提供了 ``--esptool-erase-args`` 参数，用来将 ``--force`` 参数传递给 ``esptool.py``。
+
+  .. code-block:: bash
+
+    # 擦除名为 'storage' 的分区
+    # 如果启用了 Flash Encryption 或 Secure Boot，则添加 "--esptool-erase-args=force"
+    parttool.py --port "/dev/ttyUSB1" --esptool-erase-args=force erase_partition --partition-name=storage
+
+    # 将名为 'factory.bin' 的文件内容写入 'factory' 分区
+    # 如果启用了 Flash Encryption 或 Secure Boot，则添加 "--esptool-erase-args=force"
+    parttool.py --port "/dev/ttyUSB1" --esptool-erase-args=force write_partition --partition-name=factory --input "factory.bin"
 
 更多信息可用 `--help` 指令查看：
 

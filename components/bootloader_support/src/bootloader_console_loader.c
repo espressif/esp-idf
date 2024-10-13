@@ -67,7 +67,7 @@ void bootloader_console_deinit(void)
 {
 #ifdef CONFIG_ESP_CONSOLE_UART
     /* Ensure any buffered log output is displayed */
-    esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_output_flush_tx(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC

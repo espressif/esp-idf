@@ -30,7 +30,7 @@
     .global _interrupt_handler
     .global _panic_handler
 
-    .section .exception_vectors_table.text
+    .section .exception_vectors_table.text, "ax"
 
     /* This is the vector table. MTVEC points here.
      *

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +14,18 @@
 #include "esp_heap_caps_init.h"
 #include "heap_memory_layout.h"
 
+#include "esp_private/startup_internal.h"
+
 static const char *TAG = "heap_init";
 
 /* Linked-list of registered heaps */
 struct registered_heap_ll registered_heaps;
+
+ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
+{
+    heap_caps_init();
+    return ESP_OK;
+}
 
 static void register_heap(heap_t *region)
 {
@@ -61,7 +69,7 @@ void heap_caps_init(void)
     num_regions = soc_get_available_memory_regions(regions);
 
     // the following for loop will calculate the number of possible heaps
-    // based on how many regions were coalesed.
+    // based on how many regions were coalesced.
     size_t num_heaps = num_regions;
 
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
@@ -75,7 +83,7 @@ void heap_caps_init(void)
             b->size += a->size;
 
             // remove one heap from the number of heaps as
-            // 2 regions just got coalesed.
+            // 2 regions just got coalesced.
             num_heaps--;
         }
     }
@@ -93,6 +101,7 @@ void heap_caps_init(void)
         const soc_memory_type_desc_t *type = &soc_memory_types[region->type];
         heap_t *heap = &temp_heaps[heap_idx];
         if (region->type == -1) {
+            memset(heap, 0, sizeof(*heap));
             continue;
         }
         heap_idx++;
@@ -124,14 +133,19 @@ void heap_caps_init(void)
     heap_t *heaps_array = NULL;
     for (size_t i = 0; i < num_heaps; i++) {
         if (heap_caps_match(&temp_heaps[i], MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL)) {
-            /* use the first DRAM heap which can fit the data */
-            heaps_array = multi_heap_malloc(temp_heaps[i].heap, sizeof(heap_t) * num_heaps);
+            /* use the first DRAM heap which can fit the data.
+             * the allocated block won't include the block owner bytes since this operation
+             * is done by the top level API heap_caps_malloc(). So we need to add it manually
+             * after successful allocation. Allocate extra 4 bytes for that purpose. */
+            heaps_array = multi_heap_malloc(temp_heaps[i].heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(sizeof(heap_t) * num_heaps));
             if (heaps_array != NULL) {
                 break;
             }
         }
     }
     assert(heaps_array != NULL); /* if NULL, there's not enough free startup heap space */
+    MULTI_HEAP_SET_BLOCK_OWNER(heaps_array);
+    heaps_array = (heap_t *)MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(heaps_array);
 
     memcpy(heaps_array, temp_heaps, sizeof(heap_t)*num_heaps);
 
@@ -178,7 +192,7 @@ bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, 
      *  cannot be added twice. In fact, registering the same memory region as a heap twice
      *  would cause a corruption and then an exception at runtime.
      *
-     *  the existing heap region                                  s(tart)                e(nd)
+     *  the existing heap region                                  start                  end
      *                                                            |----------------------|
      *
      *  1.add region  (e1<s)                                |-----|                                      correct: bool condition_1 = end < heap_start;

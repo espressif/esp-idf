@@ -194,9 +194,7 @@ void gatt_free(void)
 #endif /* #if (GATTS_INCLUDED == TRUE) */
     }
     list_free(gatt_cb.p_tcb_list);
-#if (GATTC_INCLUDED == TRUE)
     list_free(gatt_cb.p_clcb_list);
-#endif //(GATTC_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
     for (int i = 0; i < GATT_MAX_SR_PROFILES; i++) {
@@ -1231,6 +1229,22 @@ uint16_t gatt_get_local_mtu(void)
 void gatt_set_local_mtu(uint16_t mtu)
 {
     gatt_default.local_mtu = mtu;
+}
+
+uint8_t gatt_tcb_active_count(void)
+{
+    tGATT_TCB   *p_tcb  = NULL;
+    list_node_t *p_node = NULL;
+    uint8_t count = 0;
+
+    for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+        p_tcb = list_node(p_node);
+        if (p_tcb && p_tcb->in_use && (p_tcb->ch_state != GATT_CH_CLOSE)) {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 #endif /* BLE_INCLUDED */

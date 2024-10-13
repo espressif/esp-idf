@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,9 +23,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_SW:
     case RESET_REASON_CORE_SW:
         if (reset_reason_hint == ESP_RST_PANIC ||
-            reset_reason_hint == ESP_RST_BROWNOUT ||
-            reset_reason_hint == ESP_RST_TASK_WDT ||
-            reset_reason_hint == ESP_RST_INT_WDT) {
+                reset_reason_hint == ESP_RST_BROWNOUT ||
+                reset_reason_hint == ESP_RST_TASK_WDT ||
+                reset_reason_hint == ESP_RST_INT_WDT) {
             return reset_reason_hint;
         }
         return ESP_RST_SW;
@@ -53,6 +53,15 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CORE_USB_UART:
     case RESET_REASON_CORE_USB_JTAG:
         return ESP_RST_USB;
+
+    case RESET_REASON_CORE_EFUSE_CRC:
+        return ESP_RST_EFUSE;
+
+    case RESET_REASON_CPU0_JTAG:
+        return ESP_RST_JTAG;
+
+    case RESET_REASON_CORE_SDIO:
+        return ESP_RST_SDIO;
 
     default:
         return ESP_RST_UNKNOWN;

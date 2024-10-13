@@ -35,6 +35,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_WIFI_SUPPORTED
     bool
     default y
@@ -56,6 +60,14 @@ config SOC_GPTIMER_SUPPORTED
     default y
 
 config SOC_LCDCAM_SUPPORTED
+    bool
+    default y
+
+config SOC_LCDCAM_I80_LCD_SUPPORTED
+    bool
+    default y
+
+config SOC_LCDCAM_RGB_LCD_SUPPORTED
     bool
     default y
 
@@ -231,6 +243,26 @@ config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
 
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_PERIPH_SHARE_INTERRUPT
+    bool
+    default y
+
+config SOC_PM_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -363,6 +395,10 @@ config SOC_CPU_HAS_FPU
     bool
     default y
 
+config SOC_HP_CPU_HAS_MULTIPLE_CORES
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -394,6 +430,10 @@ config SOC_AHB_GDMA_VERSION
 config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
+
+config SOC_GDMA_PAIRS_PER_GROUP
+    int
+    default 5
 
 config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
@@ -447,6 +487,14 @@ config SOC_GPIO_CLOCKOUT_BY_IO_MUX
     bool
     default y
 
+config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
+    int
+    default 3
+
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -460,6 +508,10 @@ config SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     default y
 
 config SOC_I2C_NUM
+    int
+    default 2
+
+config SOC_HP_I2C_NUM
     int
     default 2
 
@@ -723,6 +775,22 @@ config SOC_LCD_SUPPORT_RGB_YUV_CONV
     bool
     default y
 
+config SOC_LCDCAM_I80_NUM_BUSES
+    int
+    default 1
+
+config SOC_LCDCAM_I80_BUS_WIDTH
+    int
+    default 16
+
+config SOC_LCDCAM_RGB_NUM_PANELS
+    int
+    default 1
+
+config SOC_LCDCAM_RGB_DATA_WIDTH
+    int
+    default 16
+
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int
     default 128
@@ -819,6 +887,22 @@ config SOC_SPI_SUPPORT_OCT
     bool
     default y
 
+config SOC_SPI_SCT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_SCT_REG_NUM
+    int
+    default 14
+
+config SOC_SPI_SCT_BUFFER_NUM_MAX
+    bool
+    default y
+
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
+
 config SOC_MEMSPI_SRC_FREQ_120M
     bool
     default y
@@ -903,6 +987,18 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 15
 
+config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
+    bool
+    default y
+
+config SOC_TOUCH_SUPPORT_WATERPROOF
+    bool
+    default y
+
+config SOC_TOUCH_SUPPORT_PROX_SENSING
+    bool
+    default y
+
 config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
     int
     default 3
@@ -911,7 +1007,7 @@ config SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
     bool
     default y
 
-config SOC_TOUCH_SAMPLER_NUM
+config SOC_TOUCH_SAMPLE_CFG_NUM
     int
     default 1
 
@@ -1119,6 +1215,10 @@ config SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     bool
     default y
 
+config SOC_PM_MODEM_PD_BY_SW
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_D256_SUPPORTED
     bool
     default y
@@ -1263,6 +1363,10 @@ config SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+    bool
+    default y
+
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -1320,6 +1424,10 @@ config SOC_WIFI_MESH_SUPPORT
     default y
 
 config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+    bool
+    default y
+
+config SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
     bool
     default y
 

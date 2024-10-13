@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,16 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
  *                      - OTHERS (>=0) The number of bytes read from the Rx FIFO
  */
 int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int32_t timeout);
+
+/**
+ * @brief Flush LP UART Tx FIFO
+ *
+ * This function is automatically called before the LP core powers down once the main() function returns.
+ * It can also be called manually in the application to flush the Tx FIFO.
+ *
+ * @param lp_uart_num   LP UART port number
+ */
+void lp_core_uart_tx_flush(uart_port_t lp_uart_num);
 
 #ifdef __cplusplus
 }

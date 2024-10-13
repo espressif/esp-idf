@@ -104,7 +104,7 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 
 .. _mesh-initialize-mesh:
 
-初始化 Mesh 
+初始化 Mesh
 ^^^^^^^^^^^^^^^
 
 下方代码片段展示如何初始化 ESP-WIFI-MESH。
@@ -126,28 +126,28 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 ESP-WIFI-MESH 可通过 :cpp:func:`esp_mesh_set_config` 进行配置，并使用 :cpp:type:`mesh_cfg_t` 结构体传递参数。该结构体包含以下 ESP-WIFI-MESH 的配置参数：
 
 
-.. list-table::         
-   :header-rows: 1          
-   :widths: 15 25           
-            
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25
+
    * - 参数
      - 描述
-          
+
    * - Channel（信道）
      - 1 到 14 信道
-          
+
    * - Mesh ID
-     - ESP-WIFI-MESH 网络的 ID，见 :cpp:type:`mesh_addr_t`。 
-          
+     - ESP-WIFI-MESH 网络的 ID，见 :cpp:type:`mesh_addr_t`。
+
    * - Router（路由器）
-     - 路由器配置，见 :cpp:type:`mesh_router_t`。  
-          
+     - 路由器配置，见 :cpp:type:`mesh_router_t`。
+
    * - Mesh AP
-     - Mesh AP 配置，见 :cpp:type:`mesh_ap_cfg_t` 
+     - Mesh AP 配置，见 :cpp:type:`mesh_ap_cfg_t`
 
    * - Crypto Functions（加密函数）
-     - Mesh IE 的加密函数，见 :cpp:type:`mesh_crypto_funcs_t`。 
-          
+     - Mesh IE 的加密函数，见 :cpp:type:`mesh_crypto_funcs_t`。
+
 
 下方代码片段展示如何配置 ESP-WIFI-MESH。
 
@@ -299,15 +299,14 @@ ESP-WIFI-MESH 将尝试在启用自组网时保持节点的当前 Wi-Fi 状态�
 
 .. _mesh-application-examples:
 
-应用实例
+应用示例
 --------------------
 
-ESP-IDF 包含以下 ESP-WIFI-MESH 示例项目：
+- :example:`mesh/internal_communication` 展示了如何使用 mesh API 建立 mesh 网络、进行配置、启动、处理事件，并在网络中发送和接收消息。
 
-:example:`内部通信示例 <mesh/internal_communication>` 展示了如何搭建 ESP-WIFI-MESH 网络，并让根节点向网络中的每个节点发送数据包。
+- :example:`mesh/ip_internal_network` 展示了如何使用 mesh 创建一个支持 IP 的子网络，在这个子网络中，所有节点都会将它们的 IP 和内部 mesh 层信息发布到 MQTT broker，同时进行内部通信。
 
-:example:`手动连网示例 <mesh/manual_networking>` 展示了如何在禁用自组网功能的情况下使用 ESP-WIFI-MESH。此示例展示了如何对节点进行编程，以手动扫描潜在父节点的列表，并根据自定义标准选择父节点。
-
+- :example:`mesh/manual_networking` 演示了如何使用 ESP-MESH 手动配置 mesh 网络，包括扫描父节点候选项、为节点选择合适的父节点，以及配置网络设置。
 
 .. -------------------------ESP-WIFI-MESH API 参考 ---------------------------
 

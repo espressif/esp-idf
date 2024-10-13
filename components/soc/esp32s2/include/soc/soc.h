@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 
@@ -144,7 +144,6 @@
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  CPU_CLK_FREQ_MHZ_BTLD                       (80)                 // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
@@ -153,7 +152,6 @@
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            40              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */
@@ -208,50 +206,8 @@
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x3fffe70c
 
-//interrupt cpu using table, Please see the core-isa.h
-/*************************************************************************************************************
- *      Intr num                Level           Type                    PRO CPU usage
- *      0                       1               extern level            WMAC
- *      1                       1               extern level            BT/BLE Host HCI DMA
- *      2                       1               extern level
- *      3                       1               extern level
- *      4                       1               extern level            WBB
- *      5                       1               extern level            BT/BLE Controller
- *      6                       1               timer                   FreeRTOS Tick(L1)
- *      7                       1               software                BT/BLE VHCI
- *      8                       1               extern level            BT/BLE BB(RX/TX)
- *      9                       1               extern level
- *      10                      1               extern edge
- *      11                      3               profiling
- *      12                      1               extern level
- *      13                      1               extern level
- *      14                      7               nmi                     Reserved
- *      15                      3               timer                   FreeRTOS Tick(L3)
- *      16                      5               timer
- *      17                      1               extern level
- *      18                      1               extern level
- *      19                      2               extern level
- *      20                      2               extern level
- *      21                      2               extern level
- *      22                      3               extern edge
- *      23                      3               extern level
- *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            CACHEERR
- *      26                      5               extern level
- *      27                      3               extern level            Reserved
- *      28                      4               extern edge             Reserved
- *      29                      3               software                Reserved
- *      30                      4               extern edge             Reserved
- *      31                      5               extern level
- *************************************************************************************************************
- */
-
-//CPU0 Interrupt number reserved, not touch this.
 #define ETS_WMAC_INUM                           0
-#define ETS_BT_HOST_INUM                        1
 #define ETS_WBB_INUM                            4
-#define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
-#define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_MEMACCESS_ERR_INUM                  25
 

@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
 #include "error.h"
@@ -51,7 +52,7 @@ typedef struct {
 typedef struct {
     uint8_t head;
     uint8_t tail;
-    uint8_t used;
+    atomic_uint_fast8_t used;
 } esp_openthread_circular_queue_info_t;
 
 static otRadioFrame s_transmit_frame;
@@ -63,9 +64,12 @@ static otRadioFrame s_ack_frame;
 static int s_ed_power;
 static esp_ieee802154_tx_error_t s_tx_error;
 static int s_radio_event_fd = -1;
-static bool s_diag_mode = false;
 static const char *s_radio_workflow = "radio";
 static uint8_t s_txrx_events;
+
+#if CONFIG_OPENTHREAD_DIAG
+static bool s_diag_mode = false;
+#endif
 
 #if OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT
 static otRadioIeInfo s_transmit_ie_info;
@@ -112,7 +116,7 @@ static inline bool get_event(uint8_t event)
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_FALSE(s_radio_event_fd == -1, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
-                        "Radio was initalized already!");
+                        "Radio was initialized already!");
 
     s_radio_event_fd = eventfd(0, EFD_SUPPORT_ISR);
 
@@ -164,7 +168,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     if (get_event(EVENT_TX_DONE)) {
         clr_event(EVENT_TX_DONE);
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
         if (otPlatDiagModeGet()) {
             otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_NONE);
         } else
@@ -174,6 +178,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
             } else {
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
+                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
                 s_ack_frame.mPsdu = NULL;
             }
         }
@@ -181,7 +186,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     if (get_event(EVENT_TX_FAILED)) {
         clr_event(EVENT_TX_FAILED);
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
         if (otPlatDiagModeGet()) {
             otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_CHANNEL_ACCESS_FAILURE);
         } else
@@ -215,9 +220,9 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
         otPlatRadioEnergyScanDone(aInstance, s_ed_power);
     }
 
-    while (s_recv_queue.used) {
+    while (atomic_load(&s_recv_queue.used)) {
         if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
             if (otPlatDiagModeGet()) {
                 otPlatDiagRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             } else
@@ -225,9 +230,10 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             {
                 otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             }
+            esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-            s_recv_queue.used--;
+            atomic_fetch_sub(&s_recv_queue.used, 1);
         }
     }
 
@@ -299,7 +305,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 {
     esp_ieee802154_set_channel(aFrame->mChannel);
 
-    aFrame->mPsdu[-1] = aFrame->mLength; // lenth locates one byte before the psdu (esp_openthread_radio_tx_psdu);
+    aFrame->mPsdu[-1] = aFrame->mLength; // length locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
     if (otMacFrameIsSecurityEnabled(aFrame) && !aFrame->mInfo.mTxInfo.mIsSecurityProcessed) {
         if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx) {
@@ -341,7 +347,11 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
+//  FIXME: Remove `CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE` when JIRA: TZ-609 fixed.
     return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN |
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+                        OT_RADIO_CAPS_RX_ON_WHEN_IDLE |
+#endif
                         OT_RADIO_CAPS_TRANSMIT_SEC | OT_RADIO_CAPS_RECEIVE_TIMING | OT_RADIO_CAPS_TRANSMIT_TIMING |
                         OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX);
 }
@@ -440,6 +450,15 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
     return ESP_RECEIVE_SENSITIVITY;
 }
 
+#if CONFIG_OPENTHREAD_DIAG
+
+void otPlatDiagSetOutputCallback(otInstance *aInstance, otPlatDiagOutputCallback aCallback, void *aContext)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aCallback);
+    OT_UNUSED_VARIABLE(aContext);
+}
+
 void otPlatDiagModeSet(bool mode)
 {
     s_diag_mode = mode;
@@ -471,6 +490,8 @@ void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 }
+
+#endif // CONFIG_OPENTHREAD_DIAG
 
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId, const otMacKeyMaterial *aPrevKey,
@@ -675,7 +696,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     otRadioFrame ot_frame;
     ot_frame.mPsdu = data + 1;
 
-    if (s_recv_queue.used == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    if (atomic_load(&s_recv_queue.used) == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
         return;
     }
@@ -693,7 +714,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     s_with_security_enh_ack = false;
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
     s_recv_queue.tail = (s_recv_queue.tail + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-    s_recv_queue.used++;
+    atomic_fetch_add(&s_recv_queue.used, 1);
     set_event(EVENT_RX_DONE);
 }
 
@@ -768,3 +789,11 @@ otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aCh
 
     return OT_ERROR_NONE;
 }
+
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    esp_ieee802154_set_rx_when_idle(aEnable);
+}
+#endif

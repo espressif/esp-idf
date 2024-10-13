@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@ iram_dram_offset = 0x6f0000;
 /* These lengths can be adjusted, if necessary: */
 bootloader_usable_dram_end = 0x3fce9700;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0x4000;
+bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
 bootloader_iram_seg_len = 0x3000;
 
@@ -49,7 +49,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_IRAM_END in components/esp_system/ld/esp32s3/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x403cc700, "bootloader_iram_loader_seg_start inconsistent with SRAM_IRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x403CB700, "bootloader_iram_loader_seg_start inconsistent with SRAM_IRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
@@ -142,6 +142,7 @@ SECTIONS
 
   .dram0.data :
   {
+    *(.dram1 .dram1.*) /* catch stray DRAM_ATTR */
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -167,6 +168,7 @@ SECTIONS
     *(.gcc_except_table)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
+    *(.eh_frame_hdr)
     *(.eh_frame)
     . = (. + 3) & ~ 3;
     /* C++ constructor and destructor tables, properly ordered: */
@@ -238,6 +240,50 @@ SECTIONS
   {
     KEEP (*(.xt.lit .gnu.linkonce.p.*))
   }
+
+  .xtensa.info 0: { *(.xtensa.info) }
+
+  /* DWARF 1 */
+  .debug              0 : { *(.debug) }
+  .line               0 : { *(.line) }
+  /* GNU DWARF 1 extensions */
+  .debug_srcinfo      0 : { *(.debug_srcinfo) }
+  .debug_sfnames      0 : { *(.debug_sfnames) }
+  /* DWARF 1.1 and DWARF 2 */
+  .debug_aranges      0 : { *(.debug_aranges) }
+  .debug_pubnames     0 : { *(.debug_pubnames) }
+  /* DWARF 2 */
+  .debug_info         0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev       0 : { *(.debug_abbrev) }
+  .debug_line         0 : { *(.debug_line) }
+  .debug_frame        0 : { *(.debug_frame) }
+  .debug_str          0 : { *(.debug_str) }
+  .debug_loc          0 : { *(.debug_loc) }
+  .debug_macinfo      0 : { *(.debug_macinfo) }
+  .debug_pubtypes     0 : { *(.debug_pubtypes) }
+  /* DWARF 3 */
+  .debug_ranges       0 : { *(.debug_ranges) }
+  /* SGI/MIPS DWARF 2 extensions */
+  .debug_weaknames    0 : { *(.debug_weaknames) }
+  .debug_funcnames    0 : { *(.debug_funcnames) }
+  .debug_typenames    0 : { *(.debug_typenames) }
+  .debug_varnames     0 : { *(.debug_varnames) }
+  /* GNU DWARF 2 extensions */
+  .debug_gnu_pubnames 0 : { *(.debug_gnu_pubnames) }
+  .debug_gnu_pubtypes 0 : { *(.debug_gnu_pubtypes) }
+  /* DWARF 4 */
+  .debug_types        0 : { *(.debug_types) }
+  /* DWARF 5 */
+  .debug_addr         0 : { *(.debug_addr) }
+  .debug_line_str     0 : { *(.debug_line_str) }
+  .debug_loclists     0 : { *(.debug_loclists) }
+  .debug_macro        0 : { *(.debug_macro) }
+  .debug_names        0 : { *(.debug_names) }
+  .debug_rnglists     0 : { *(.debug_rnglists) }
+  .debug_str_offsets  0 : { *(.debug_str_offsets) }
+
+  .comment 0 : { *(.comment) }
+  .note.GNU-stack 0: { *(.note.GNU-stack) }
 
 }
 

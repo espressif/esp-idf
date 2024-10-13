@@ -11,3 +11,8 @@ set(EXTRA_COMPONENT_DIRS
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(sdio)
+
+message(STATUS "Checking sdio registers are not read-write by half-word")
+include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
+check_register_rw_half_word(SOC_MODULES "host" "hinf" "slc" "pcr"
+                            HAL_MODULES "sdio")

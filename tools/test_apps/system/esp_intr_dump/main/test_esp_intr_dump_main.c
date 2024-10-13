@@ -27,6 +27,10 @@ static void start_console(void)
 {
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+
+    /* Pin repl task to ensure all interrupts are allocated on the same core */
+    repl_config.task_core_id = 0;
+
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
@@ -136,6 +140,9 @@ static int cmd_intr_alloc(int argc, char **argv)
         printf("Failed to allocate interrupt (source: %d, flags: 0x%x): %s\n", source_num, flags, esp_err_to_name(ret));
         return 1;
     }
+
+    printf("Allocated %s %s\n", source_str, flags_str);
+
     return 0;
 }
 

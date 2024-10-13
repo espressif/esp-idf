@@ -2,7 +2,7 @@ menu "IEEE 802.15.4"
     visible if SOC_IEEE802154_SUPPORTED
 
     config IEEE802154_ENABLED
-        bool
+        bool "IEEE802154 Enable"
         default "y" if SOC_IEEE802154_SUPPORTED
 
     config IEEE802154_RX_BUFFER_SIZE
@@ -14,6 +14,7 @@ menu "IEEE 802.15.4"
             The number of 802.15.4 receive buffers
 
     choice IEEE802154_CCA_MODE
+        depends on IEEE802154_ENABLED
         prompt "Clear Channel Assessment (CCA) mode"
         default IEEE802154_CCA_ED
         help
@@ -41,6 +42,7 @@ menu "IEEE 802.15.4"
     endchoice
 
     config IEEE802154_CCA_MODE
+        depends on IEEE802154_ENABLED
         int
         default 0 if IEEE802154_CCA_CARRIER
         default 1 if IEEE802154_CCA_ED
@@ -49,6 +51,7 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_CCA_THRESHOLD
         int "CCA detection threshold"
+        depends on IEEE802154_ENABLED
         range -120 0
         default -60
         help
@@ -56,6 +59,7 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_PENDING_TABLE_SIZE
         int "Pending table size"
+        depends on IEEE802154_ENABLED
         range 1 100
         default 20
         help
@@ -63,12 +67,14 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_MULTI_PAN_ENABLE
         bool "Enable multi-pan feature for frame filter"
+        depends on IEEE802154_ENABLED
         default n
         help
             Enable IEEE802154 multi-pan
 
     config IEEE802154_TIMING_OPTIMIZATION
         bool "Enable throughput optimization"
+        depends on IEEE802154_ENABLED
         default n
         help
             Enabling this option increases throughput by ~5% at the expense of ~2.1k
@@ -77,7 +83,7 @@ menu "IEEE 802.15.4"
     config IEEE802154_SLEEP_ENABLE
         # Todo: Remove when support safe power-down of the power domain (IDF-7317)
         bool "Enable IEEE802154 light sleep"
-        depends on PM_ENABLE
+        depends on PM_ENABLE && IEEE802154_ENABLED
         default n
         help
             Enabling this option allows the IEEE802.15.4 module to be powered down during automatic light sleep,
@@ -85,6 +91,7 @@ menu "IEEE 802.15.4"
 
     menuconfig IEEE802154_DEBUG
         bool "Enable IEEE802154 Debug"
+        depends on IEEE802154_ENABLED
         default n
         help
             Enabling this option allows different kinds of IEEE802154 debug output.
@@ -159,4 +166,11 @@ menu "IEEE 802.15.4"
         default 10
         help
             set the record abort table size
+
+    config IEEE802154_TXRX_STATISTIC
+        bool "Enable record tx/rx packets information for debugging"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to record the tx and rx
 endmenu  # IEEE 802.15.4

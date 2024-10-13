@@ -13,7 +13,7 @@
 #include "esp_check.h"
 
 #define BUF_SIZE (1024)
-#define ECHO_TASK_STACK_SIZE (2048)
+#define ECHO_TASK_STACK_SIZE (4096)
 
 static void echo_task(void *arg)
 {

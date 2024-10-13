@@ -122,7 +122,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg);
  * @note  This function will specify the clock cycles of each measurement
  *        and the clock is sourced from SOC_MOD_CLK_RTC_FAST, its default frequency is SOC_CLK_RC_FAST_FREQ_APPROX
  *        The touch sensor will record the charge and discharge times during these clock cycles as the final result (raw value)
- * @note  If clock cyles is too small, it may lead to inaccurate results.
+ * @note  If clock cycles is too small, it may lead to inaccurate results.
  *
  * @param clock_cycle   The clock cycles of each measurement
  *                      measure_time = clock_cycle / SOC_CLK_RC_FAST_FREQ_APPROX, the maximum measure time is 0xffff / SOC_CLK_RC_FAST_FREQ_APPROX
@@ -143,7 +143,7 @@ esp_err_t touch_pad_get_measurement_clock_cycles(uint16_t *clock_cycle);
 
 /**
  * @brief Set the interval between two measurements
- * @note  The touch sensor will sleep between two mesurements
+ * @note  The touch sensor will sleep between two measurements
  *        This function is to set the interval cycle
  *        And the interval is clocked from SOC_MOD_CLK_RTC_SLOW, its default frequency is SOC_CLK_RC_SLOW_FREQ_APPROX
  *

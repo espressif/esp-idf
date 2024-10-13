@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +85,7 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
 {
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
-        esp_log_buffer_hex(TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        ESP_LOG_BUFFER_HEX(TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     } else {
         ESP_LOGI(TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
@@ -99,43 +99,59 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
+
+    // Check if a response is needed
     if (param->write.need_rsp) {
+        // Check if the write operation is a prepared write
         if (param->write.is_prep) {
-            if (prepare_write_env->prepare_buf == NULL) {
+            // Check for invalid offset or attribute length
+            if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_OFFSET;
+            } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_ATTR_LEN;
+            }
+            // Allocate memory for the prepare buffer if not already allocated
+            if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
                 prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
                 prepare_write_env->prepare_len = 0;
+
+                // Check for allocation failure
                 if (prepare_write_env->prepare_buf == NULL) {
                     ESP_LOGE(TAG, "Gatt_server prep no mem");
                     status = ESP_GATT_NO_RESOURCES;
                 }
-            } else {
-                if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
-                    status = ESP_GATT_INVALID_OFFSET;
-                } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-                    status = ESP_GATT_INVALID_ATTR_LEN;
-                }
             }
 
+            // Allocate and configure the GATT response
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
-            gatt_rsp->attr_value.len = param->write.len;
-            gatt_rsp->attr_value.handle = param->write.handle;
-            gatt_rsp->attr_value.offset = param->write.offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
-            if (response_err != ESP_OK) {
-                ESP_LOGE(TAG, "Send response error");
+            if (gatt_rsp != NULL) {
+                gatt_rsp->attr_value.len = param->write.len;
+                gatt_rsp->attr_value.handle = param->write.handle;
+                gatt_rsp->attr_value.offset = param->write.offset;
+                gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
+                if (response_err != ESP_OK) {
+                    ESP_LOGE(TAG, "Send response error");
+                }
+                free(gatt_rsp);
+            } else {
+                ESP_LOGE(TAG, "%s, malloc failed, and no resource to send response", __func__);
+                status = ESP_GATT_NO_RESOURCES;
             }
-            free(gatt_rsp);
+
             if (status != ESP_GATT_OK) {
                 return;
             }
+
+            // Update the prepare buffer with the received data
             memcpy(prepare_write_env->prepare_buf + param->write.offset,
                    param->write.value,
                    param->write.len);
             prepare_write_env->prepare_len += param->write.len;
 
         } else {
+            // Send a response for non-prepared write
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, NULL);
         }
     }
@@ -188,7 +204,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gat
         ESP_LOGI(TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep) {
             ESP_LOGI(TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            esp_log_buffer_hex(TAG, param->write.value, param->write.len);
+            ESP_LOG_BUFFER_HEX(TAG, param->write.value, param->write.len);
             if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
                 uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
                 if (descr_value == 0x0001) {
@@ -217,7 +233,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gat
                     ESP_LOGI(TAG, "notify/indicate disable ");
                 } else {
                     ESP_LOGE(TAG, "unknown descr value");
-                    esp_log_buffer_hex(TAG, param->write.value, param->write.len);
+                    ESP_LOG_BUFFER_HEX(TAG, param->write.value, param->write.len);
                 }
 
             }
@@ -315,7 +331,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gat
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
         if (param->conf.status != ESP_GATT_OK) {
-            esp_log_buffer_hex(TAG, param->conf.value, param->conf.len);
+            ESP_LOG_BUFFER_HEX(TAG, param->conf.value, param->conf.len);
         }
         break;
     case ESP_GATTS_OPEN_EVT:
@@ -360,10 +376,8 @@ void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         }
         break;
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-        ESP_LOGI(TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+        ESP_LOGI(TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
                  param->update_conn_params.status,
-                 param->update_conn_params.min_int,
-                 param->update_conn_params.max_int,
                  param->update_conn_params.conn_int,
                  param->update_conn_params.latency,
                  param->update_conn_params.timeout);

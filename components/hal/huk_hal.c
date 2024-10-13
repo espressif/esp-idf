@@ -12,6 +12,7 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "rom/km.h"
+#include "esp_err.h"
 
 esp_huk_state_t huk_hal_get_state(void)
 {

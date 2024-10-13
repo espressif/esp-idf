@@ -125,14 +125,14 @@ JTAG 调试
 
 终端会输出以下信息（实际版本号可能会更新）::
 
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
+    Open On-Chip Debugger v0.12.0-esp32-20240318 (2024-03-18-18:25)
     Licensed under GNU GPL v2
     For bug reports, read
-        https://openocd.org/doc/doxygen/bugs.html
+            http://openocd.org/doc/doxygen/bugs.html
 
 你还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值，以确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端输出了有效路径，则表明已经正确安装 OpenOCD。
 
-如果无法执行上述步骤，请再次阅读快速入门手册，参考 :ref:`设置安装工具 <get-started-set-up-tools>` 章节。
+如果无法执行上述步骤，请再次阅读快速入门手册，Linux 和 macOS 用户请参考 :ref:`设置安装工具 <get-started-set-up-tools>` 章节，Windows 用户请参考 :ref:`ESP-IDF 工具安装器 <get-started-windows-tools-installer>`。
 
 .. note::
 
@@ -180,7 +180,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
     :start-after: run-openocd
     :end-before: ---
 
-{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg"}
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg", esp32p4="board/esp32p4-ftdi.cfg", esp32c5="board/esp32c5-ftdi.cfg", esp32c61="board/esp32c61-ftdi.cfg"}
 
 .. note::
 
@@ -226,6 +226,8 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 -  ``exit`` - 烧写完成后退出 OpenOCD（可选）
 - ``compress`` - 烧写开始前压缩镜像文件（可选）
 - ``encrypt`` - 烧写到 flash 前加密二进制文件，与 ``idf.py encrypted-flash`` 功能相同（可选）
+- ``no_clock_boost`` - 禁用在烧写前将目标时钟频率设置为其最大可能值（可选）。默认情况下禁用该选项，即默认启用时钟提升。
+- ``restore_clock`` - 可选。烧写完成后将时钟频率恢复到初始值。默认情况下不启用。
 
 现在可以调试应用程序了，请按照以下章节中的步骤进行操作。
 

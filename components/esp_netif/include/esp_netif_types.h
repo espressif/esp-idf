@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,10 +34,12 @@ extern "C" {
 #define ESP_ERR_ESP_NETIF_MLD6_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x0B
 #define ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED       ESP_ERR_ESP_NETIF_BASE + 0x0C
 #define ESP_ERR_ESP_NETIF_DHCPS_START_FAILED    ESP_ERR_ESP_NETIF_BASE + 0x0D
+#define ESP_ERR_ESP_NETIF_TX_FAILED             ESP_ERR_ESP_NETIF_BASE + 0x0E
+
 
 
 /**
- * @brief Definition of ESP-NETIF bridge controll
+ * @brief Definition of ESP-NETIF bridge control
  */
 #define ESP_NETIF_BR_FLOOD      -1
 #define ESP_NETIF_BR_DROP        0
@@ -89,6 +91,7 @@ typedef enum{
     ESP_NETIF_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
     ESP_NETIF_VENDOR_CLASS_IDENTIFIER       = 60,   /**< Vendor Class Identifier of a DHCP client */
     ESP_NETIF_VENDOR_SPECIFIC_INFO          = 43,   /**< Vendor Specific Information of a DHCP server */
+    ESP_NETIF_CAPTIVEPORTAL_URI             = 114,  /**< Captive Portal Identification */
 } esp_netif_dhcp_option_id_t;
 
 /** IP event declarations */
@@ -101,6 +104,7 @@ typedef enum {
     IP_EVENT_ETH_LOST_IP,              /*!< ethernet lost IP and the IP is reset to 0 */
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
+    IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -127,7 +131,7 @@ typedef struct {
  */
 typedef struct {
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
-    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gatway IP address */
+    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gateway IP address */
     bool ip_changed;                 /*!< Whether the assigned IP has changed or not */
 } ip_event_got_ip_t;
 
@@ -151,6 +155,19 @@ typedef struct {
     uint8_t mac[6];    /*!< MAC address of the connected client */
 } ip_event_ap_staipassigned_t;
 
+typedef enum {
+    ESP_NETIF_TX = 0,  // Data is being transmitted.
+    ESP_NETIF_RX = 1,  // Data is being received.
+} esp_netif_tx_rx_direction_t;
+
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+/** Event structure for IP_EVENT_TRANSMIT and IP_EVENT_RECEIVE */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+    size_t len;             /*!< Length of the data */
+    esp_netif_tx_rx_direction_t dir; /*!< Directions for data transfer >*/
+} ip_event_tx_rx_t;
+#endif
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,
@@ -161,6 +178,7 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_IS_PPP = 1 << 5,
     ESP_NETIF_FLAG_IS_BRIDGE = 1 << 6,
     ESP_NETIF_FLAG_MLDV6_REPORT = 1 << 7,
+    ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED = 1 << 8,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {

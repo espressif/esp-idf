@@ -397,10 +397,6 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 
     bta_sys_conn_close(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
-    /* call close call-out */
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
-    bta_ag_sco_co_close();
-#endif
     /* call close cback */
     (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG *) &close);
 

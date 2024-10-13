@@ -64,6 +64,10 @@ static bool rpl_check_and_store(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **
                 return false;
             }
 
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+            rx->replay_msg = 1;
+#endif
+
             return true;
         }
     }

@@ -22,6 +22,14 @@ Overview
 
     The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 4 core local interrupt sources (CLINT). See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
+.. only:: esp32p4
+
+    The {IDF_TARGET_NAME} has two cores, with 32 external asynchronous interrupts each. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT) on each core. See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
+
+.. only:: esp32c5 or esp32c61
+
+    The {IDF_TARGET_NAME} has one core, with 32 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT). For details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **High-Performance CPU** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
+
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
 A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc` (or :cpp:func:`esp_intr_alloc_intrstatus`). It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
@@ -30,7 +38,7 @@ The interrupt allocator presents two different types of interrupts, namely share
 
 Non-shared interrupts can be either level- or edge-triggered. Shared interrupts can only be level interrupts due to the chance of missed interrupts when edge interrupts are used.
 
-To illustrate why shard interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
+To illustrate why shared interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
 
 
 .. only:: esp32 or esp32s3
@@ -61,9 +69,18 @@ To illustrate why shard interrupts can only be level-triggered, take the scenari
     External Peripheral Interrupts
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The remaining interrupt sources are from external peripherals. These are defined in ``soc/soc.h`` as ``ETS_*_INTR_SOURCE``.
+    The remaining interrupt sources are from external peripherals.
 
-    Non-internal interrupt slots in both CPU cores are wired to an interrupt matrix, which can be used to route any external interrupt source to any of these interrupt slots.
+.. only:: esp32p4
+
+    Multicore Considerations
+    ------------------------
+
+    Each core on {IDF_TARGET_NAME} provides internal interrupts that are triggered by the core itself and external interrupts that are triggered by peripherals. However, ESP-IDF only makes use of the external interrupts on {IDF_TARGET_NAME}. Most {IDF_TARGET_NAME} interrupt sources are external interrupts.
+
+    Each external interrupt slot of each core is wired to the interrupt matrix. The interrupt matrix allows any interrupt slot to be connected to any external interrupt source. Mapping multiple external interrupts sources to a single slot is also supported. These external interrupt sources are defined in ``soc/interrupts.h`` as ``ETS_*_INTR_SOURCE``.
+
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     - Allocating an external interrupt will always allocate it on the core that does the allocation.
     - Freeing an external interrupt must always happen on the same core it was allocated on.
@@ -72,17 +89,45 @@ To illustrate why shard interrupts can only be level-triggered, take the scenari
 
     Care should be taken when calling :cpp:func:`esp_intr_alloc` from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use :cpp:func:`xTaskCreatePinnedToCore` with a specific CoreID argument to create tasks that allocate interrupts. In the case of internal interrupt sources, this is required.
 
+.. _iram_safe_interrupts_handlers:
 
 IRAM-Safe Interrupt Handlers
 ----------------------------
 
-The ``ESP_INTR_FLAG_IRAM`` flag registers an interrupt handler that always runs from IRAM (and reads all its data from DRAM), and therefore does not need to be disabled during flash erase and write operations.
+When performing write and erase operations on SPI flash, {IDF_TARGET_NAME} will disable the cache, making SPI flash and SPIRAM inaccessible for interrupt handlers. This is why there are two types of interrupt handlers in ESP-IDF, which have their advantages and disadvantages:
 
-This is useful for interrupts which need a guaranteed minimum execution latency, as flash write and erase operations can be slow (erases can take tens or hundreds of milliseconds to complete).
+**IRAM-safe interrupt handlers** - only access code and data in internal memory (IRAM for code, DRAM for data).
 
-It can also be useful to keep an interrupt handler in IRAM if it is called very frequently, to avoid flash cache misses.
+.. list::
 
-Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+    - **+** **Latency**: They execute relatively fast and with low latency, since they are not blocked by slow flash write and erase operations (erases can take tens or hundreds of milliseconds to complete). This is useful for interrupts which need a guaranteed minimum execution latency.
+    - **-** **Internal memory use**: They consume precious internal memory that could otherwise be used for something else.
+    - **+** **Cache misses**: They do not rely on the cache with potential cache misses since the code and data are in internal memory already.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+**Non-IRAM-safe interrupt handlers** - may access code and (read-only) data in flash.
+
+.. list::
+
+    - **-** **Latency**: In case of flash operations, these interrupt handlers are postponed, which makes their average latency longer and less predictable.
+    - **+** **Internal memory use**: They do not use any or not as much memory in internal RAM as IRAM-safe interrupts.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, do *not* use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+*Note that there is nothing that explicitly marks an interrupt handler as IRAM-safe.* An interrupt handler is IRAM-safe implicitly if and only if the code and data it may access are placed in internal memory. The term "IRAM-safe" is actually a bit misleading, since there are more requirements than just placing the handler's code in IRAM memory. Examples of interrupt handlers that are **not** IRAM-safe include:
+
+.. list::
+
+    - A handler that has some of its code placed in flash memory.
+    - A handler that is placed in IRAM but calls functions placed in flash memory.
+    - A handler that accesses a read-only variable placed in flash, even though the handler's code is actually placed in IRAM.
+
+For details on placing code and data in IRAM or DRAM, see :ref:`how-to-place-code-in-iram`.
+
+For more details about SPI flash operations and their interactions with interrupt handlers, see the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>`.
+
+.. note::
+
+    Never register an interrupt handler with ``ESP_INTR_FLAG_IRAM`` flag if you are not 100% sure that all the code and data that the interrupt ever accesses are in IRAM (code) or DRAM (data). Disregarding this will lead to (sometimes spurious) :ref:`cache errors <cache_error>`. This must also be true for code and data accessed indirectly through function calls.
 
 .. _intr-alloc-shared-interrupts:
 
@@ -143,7 +188,7 @@ If you have confirmed that the application is indeed running out of interrupts, 
 
 .. list::
 
-    :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - On multi-core SoCs, try initializing some of the peripheral drivers from a task pinned to the second core. Interrupts are typically allocated on the same core where the peripheral driver initialization function runs. Therefore by running the initialization function on the second core, more interrupt inputs can be used.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - On multi-core targets, try initializing some of the peripheral drivers from a task pinned to the second core. Interrupts are typically allocated on the same core where the peripheral driver initialization function runs. Therefore by running the initialization function on the second core, more interrupt inputs can be used.
     - Determine the interrupts which can tolerate higher latency, and allocate them using ``ESP_INTR_FLAG_SHARED`` flag (optionally ORed with ``ESP_INTR_FLAG_LOWMED``). Using this flag for two or more peripherals will let them use a single interrupt input, and therefore save interrupt inputs for other peripherals. See :ref:`intr-alloc-shared-interrupts` above.
     :not SOC_CPU_HAS_FLEXIBLE_INTC: - Some peripheral driver may default to allocating interrupts with ``ESP_INTR_FLAG_LEVEL1`` flag, so priority 2 and 3 interrupts do not get used by default. If :cpp:func:`esp_intr_dump` shows that some priority 2 or 3 interrupts are available, try changing the interrupt allocation flags when initializing the driver to ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3``.
     - Check if some of the peripheral drivers do not need to be used all the time, and initialize or deinitialize them on demand. This can reduce the number of simultaneously allocated interrupts.

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -389,19 +389,19 @@ typedef union {
     uint32_t val;
 } interrupt_core0_cpu_intr_from_cpu_3_map_reg_t;
 
-/** Type of assist_debug_intr_map register
- *  ASSIST_DEBUG_INTR mapping register
+/** Type of bus_monitor_intr_map register
+ *  BUS_MONITOR_INTR mapping register
  */
 typedef union {
     struct {
-        /** assist_debug_intr_map : R/W; bitpos: [5:0]; default: 0;
+        /** bus_monitor_intr_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t assist_debug_intr_map:6;
+        uint32_t bus_monitor_intr_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_assist_debug_intr_map_reg_t;
+} interrupt_core0_bus_monitor_intr_map_reg_t;
 
 /** Type of trace_intr_map register
  *  TRACE_INTR mapping register
@@ -459,33 +459,19 @@ typedef union {
     uint32_t val;
 } interrupt_core0_gpio_interrupt_pro_map_reg_t;
 
-/** Type of gpio_interrupt_pro_nmi_map register
- *  GPIO_INTERRUPT_PRO_NMI mapping register
+/** Type of gpio_interrupt_ext_map register
+ *  GPIO_INTERRUPT_EXT mapping register
  */
 typedef union {
     struct {
-        /** gpio_interrupt_pro_nmi_map : R/W; bitpos: [5:0]; default: 0;
+        /** gpio_interrupt_ext_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t gpio_interrupt_pro_nmi_map:6;
+        uint32_t gpio_interrupt_ext_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_gpio_interrupt_pro_nmi_map_reg_t;
-
-/** Type of gpio_interrupt_sd_map register
- *  GPIO_INTERRUPT_SD mapping register
- */
-typedef union {
-    struct {
-        /** gpio_interrupt_sd_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t gpio_interrupt_sd_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_gpio_interrupt_sd_map_reg_t;
+} interrupt_core0_gpio_interrupt_ext_map_reg_t;
 
 /** Type of pau_intr_map register
  *  PAU_INTR mapping register
@@ -585,6 +571,20 @@ typedef union {
     uint32_t val;
 } interrupt_core0_hp_apm_m3_intr_map_reg_t;
 
+/** Type of hp_apm_m4_intr_map register
+ *  HP_APM_M4_INTR mapping register
+ */
+typedef union {
+    struct {
+        /** hp_apm_m4_intr_map : R/W; bitpos: [5:0]; default: 0;
+         *  Configures the interrupt source into one CPU interrupt.
+         */
+        uint32_t hp_apm_m4_intr_map:6;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} interrupt_core0_hp_apm_m4_intr_map_reg_t;
+
 /** Type of lp_apm0_intr_map register
  *  LP_APM0_INTR mapping register
  */
@@ -613,19 +613,19 @@ typedef union {
     uint32_t val;
 } interrupt_core0_mspi_intr_map_reg_t;
 
-/** Type of i2s1_intr_map register
- *  I2S1_INTR mapping register
+/** Type of i2s_intr_map register
+ *  I2S_INTR mapping register
  */
 typedef union {
     struct {
-        /** i2s1_intr_map : R/W; bitpos: [5:0]; default: 0;
+        /** i2s_intr_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t i2s1_intr_map:6;
+        uint32_t i2s_intr_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_i2s1_intr_map_reg_t;
+} interrupt_core0_i2s_intr_map_reg_t;
 
 /** Type of uhci0_intr_map register
  *  UHCI0_INTR mapping register
@@ -683,47 +683,75 @@ typedef union {
     uint32_t val;
 } interrupt_core0_ledc_intr_map_reg_t;
 
-/** Type of can0_intr_map register
- *  CAN0_INTR mapping register
+/** Type of twai0_intr_map register
+ *  TWAI0_INTR mapping register
  */
 typedef union {
     struct {
-        /** can0_intr_map : R/W; bitpos: [5:0]; default: 0;
+        /** twai0_intr_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t can0_intr_map:6;
+        uint32_t twai0_intr_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_can0_intr_map_reg_t;
+} interrupt_core0_twai0_intr_map_reg_t;
 
-/** Type of can1_intr_map register
- *  CAN1_INTR mapping register
+/** Type of twai0_timer_intr_map register
+ *  TWAI0_TIMER_INTR mapping register
  */
 typedef union {
     struct {
-        /** can1_intr_map : R/W; bitpos: [5:0]; default: 0;
+        /** twai0_timer_intr_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t can1_intr_map:6;
+        uint32_t twai0_timer_intr_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_can1_intr_map_reg_t;
+} interrupt_core0_twai0_timer_intr_map_reg_t;
 
-/** Type of usb_intr_map register
- *  USB_INTR mapping register
+/** Type of twai1_intr_map register
+ *  TWAI1_INTR mapping register
  */
 typedef union {
     struct {
-        /** usb_intr_map : R/W; bitpos: [5:0]; default: 0;
+        /** twai1_intr_map : R/W; bitpos: [5:0]; default: 0;
          *  Configures the interrupt source into one CPU interrupt.
          */
-        uint32_t usb_intr_map:6;
+        uint32_t twai1_intr_map:6;
         uint32_t reserved_6:26;
     };
     uint32_t val;
-} interrupt_core0_usb_intr_map_reg_t;
+} interrupt_core0_twai1_intr_map_reg_t;
+
+/** Type of twai1_timer_intr_map register
+ *  TWAI1_TIMER_INTR mapping register
+ */
+typedef union {
+    struct {
+        /** twai1_timer_intr_map : R/W; bitpos: [5:0]; default: 0;
+         *  Configures the interrupt source into one CPU interrupt.
+         */
+        uint32_t twai1_timer_intr_map:6;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} interrupt_core0_twai1_timer_intr_map_reg_t;
+
+/** Type of usb_serial_jtag_intr_map register
+ *  USB_SERIAL_JTAG_INTR mapping register
+ */
+typedef union {
+    struct {
+        /** usb_serial_jtag_intr_map : R/W; bitpos: [5:0]; default: 0;
+         *  Configures the interrupt source into one CPU interrupt.
+         */
+        uint32_t usb_serial_jtag_intr_map:6;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} interrupt_core0_usb_serial_jtag_intr_map_reg_t;
 
 /** Type of rmt_intr_map register
  *  RMT_INTR mapping register
@@ -767,20 +795,6 @@ typedef union {
     uint32_t val;
 } interrupt_core0_tg0_t0_intr_map_reg_t;
 
-/** Type of tg0_t1_intr_map register
- *  TG0_T1_INTR mapping register
- */
-typedef union {
-    struct {
-        /** tg0_t1_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t tg0_t1_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_tg0_t1_intr_map_reg_t;
-
 /** Type of tg0_wdt_intr_map register
  *  TG0_WDT_INTR mapping register
  */
@@ -808,20 +822,6 @@ typedef union {
     };
     uint32_t val;
 } interrupt_core0_tg1_t0_intr_map_reg_t;
-
-/** Type of tg1_t1_intr_map register
- *  TG1_T1_INTR mapping register
- */
-typedef union {
-    struct {
-        /** tg1_t1_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t tg1_t1_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_tg1_t1_intr_map_reg_t;
 
 /** Type of tg1_wdt_intr_map register
  *  TG1_WDT_INTR mapping register
@@ -948,76 +948,6 @@ typedef union {
     };
     uint32_t val;
 } interrupt_core0_parl_io_rx_intr_map_reg_t;
-
-/** Type of slc0_intr_map register
- *  SLC0_INTR mapping register
- */
-typedef union {
-    struct {
-        /** slc0_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t slc0_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_slc0_intr_map_reg_t;
-
-/** Type of slc1_intr_map register
- *  SLC1_INTR mapping register
- */
-typedef union {
-    struct {
-        /** slc1_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t slc1_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_slc1_intr_map_reg_t;
-
-/** Type of usb_otg20_intr_map register
- *  USB_OTG20_INTR mapping register
- */
-typedef union {
-    struct {
-        /** usb_otg20_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t usb_otg20_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_usb_otg20_intr_map_reg_t;
-
-/** Type of usb_otg20_multi_proc_intr_map register
- *  USB_OTG20_MULTI_PROC_INTR mapping register
- */
-typedef union {
-    struct {
-        /** usb_otg20_multi_proc_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t usb_otg20_multi_proc_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_usb_otg20_multi_proc_intr_map_reg_t;
-
-/** Type of usb_otg20_misc_intr_map register
- *  USB_OTG20_MISC_INTR mapping register
- */
-typedef union {
-    struct {
-        /** usb_otg20_misc_intr_map : R/W; bitpos: [5:0]; default: 0;
-         *  Configures the interrupt source into one CPU interrupt.
-         */
-        uint32_t usb_otg20_misc_intr_map:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} interrupt_core0_usb_otg20_misc_intr_map_reg_t;
 
 /** Type of dma_in_ch0_intr_map register
  *  DMA_IN_CH0_INTR mapping register
@@ -1201,7 +1131,7 @@ typedef union {
     uint32_t val;
 } interrupt_core0_km_intr_map_reg_t;
 
-/** Type of int_status_reg_0 register
+/** Type of int_status_0 register
  *  Status register for interrupt sources 0 ~ 31
  */
 typedef union {
@@ -1215,9 +1145,9 @@ typedef union {
         uint32_t int_status_0:32;
     };
     uint32_t val;
-} interrupt_core0_int_status_reg_0_reg_t;
+} interrupt_core0_int_status_0_reg_t;
 
-/** Type of int_status_reg_1 register
+/** Type of int_status_1 register
  *  Status register for interrupt sources 32 ~ 63
  */
 typedef union {
@@ -1231,9 +1161,9 @@ typedef union {
         uint32_t int_status_1:32;
     };
     uint32_t val;
-} interrupt_core0_int_status_reg_1_reg_t;
+} interrupt_core0_int_status_1_reg_t;
 
-/** Type of int_status_reg_2 register
+/** Type of int_status_2 register
  *  Status register for interrupt sources 64 ~ 95
  */
 typedef union {
@@ -1247,7 +1177,7 @@ typedef union {
         uint32_t int_status_2:32;
     };
     uint32_t val;
-} interrupt_core0_int_status_reg_2_reg_t;
+} interrupt_core0_int_status_2_reg_t;
 
 /** Type of clock_gate register
  *  Interrupt clock gating configure register
@@ -1270,7 +1200,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** interrupt_date : R/W; bitpos: [27:0]; default: 36717104;
+        /** interrupt_date : R/W; bitpos: [27:0]; default: 36773985;
          *  Version control register
          */
         uint32_t interrupt_date:28;
@@ -1280,7 +1210,7 @@ typedef union {
 } interrupt_core0_interrupt_date_reg_t;
 
 
-typedef struct intmtx_core0_dev_t {
+typedef struct {
     volatile interrupt_core0_wifi_mac_intr_map_reg_t wifi_mac_intr_map;
     volatile interrupt_core0_wifi_mac_nmi_map_reg_t wifi_mac_nmi_map;
     volatile interrupt_core0_wifi_pwr_intr_map_reg_t wifi_pwr_intr_map;
@@ -1308,13 +1238,12 @@ typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_cpu_intr_from_cpu_1_map_reg_t cpu_intr_from_cpu_1_map;
     volatile interrupt_core0_cpu_intr_from_cpu_2_map_reg_t cpu_intr_from_cpu_2_map;
     volatile interrupt_core0_cpu_intr_from_cpu_3_map_reg_t cpu_intr_from_cpu_3_map;
-    volatile interrupt_core0_assist_debug_intr_map_reg_t assist_debug_intr_map;
+    volatile interrupt_core0_bus_monitor_intr_map_reg_t bus_monitor_intr_map;
     volatile interrupt_core0_trace_intr_map_reg_t trace_intr_map;
     volatile interrupt_core0_cache_intr_map_reg_t cache_intr_map;
     volatile interrupt_core0_cpu_peri_timeout_intr_map_reg_t cpu_peri_timeout_intr_map;
     volatile interrupt_core0_gpio_interrupt_pro_map_reg_t gpio_interrupt_pro_map;
-    volatile interrupt_core0_gpio_interrupt_pro_nmi_map_reg_t gpio_interrupt_pro_nmi_map;
-    volatile interrupt_core0_gpio_interrupt_sd_map_reg_t gpio_interrupt_sd_map;
+    volatile interrupt_core0_gpio_interrupt_ext_map_reg_t gpio_interrupt_ext_map;
     volatile interrupt_core0_pau_intr_map_reg_t pau_intr_map;
     volatile interrupt_core0_hp_peri_timeout_intr_map_reg_t hp_peri_timeout_intr_map;
     volatile interrupt_core0_modem_peri_timeout_intr_map_reg_t modem_peri_timeout_intr_map;
@@ -1322,23 +1251,24 @@ typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_hp_apm_m1_intr_map_reg_t hp_apm_m1_intr_map;
     volatile interrupt_core0_hp_apm_m2_intr_map_reg_t hp_apm_m2_intr_map;
     volatile interrupt_core0_hp_apm_m3_intr_map_reg_t hp_apm_m3_intr_map;
+    volatile interrupt_core0_hp_apm_m4_intr_map_reg_t hp_apm_m4_intr_map;
     volatile interrupt_core0_lp_apm0_intr_map_reg_t lp_apm0_intr_map;
     volatile interrupt_core0_mspi_intr_map_reg_t mspi_intr_map;
-    volatile interrupt_core0_i2s1_intr_map_reg_t i2s1_intr_map;
+    volatile interrupt_core0_i2s_intr_map_reg_t i2s_intr_map;
     volatile interrupt_core0_uhci0_intr_map_reg_t uhci0_intr_map;
     volatile interrupt_core0_uart0_intr_map_reg_t uart0_intr_map;
     volatile interrupt_core0_uart1_intr_map_reg_t uart1_intr_map;
     volatile interrupt_core0_ledc_intr_map_reg_t ledc_intr_map;
-    volatile interrupt_core0_can0_intr_map_reg_t can0_intr_map;
-    volatile interrupt_core0_can1_intr_map_reg_t can1_intr_map;
-    volatile interrupt_core0_usb_intr_map_reg_t usb_intr_map;
+    volatile interrupt_core0_twai0_intr_map_reg_t twai0_intr_map;
+    volatile interrupt_core0_twai0_timer_intr_map_reg_t twai0_timer_intr_map;
+    volatile interrupt_core0_twai1_intr_map_reg_t twai1_intr_map;
+    volatile interrupt_core0_twai1_timer_intr_map_reg_t twai1_timer_intr_map;
+    volatile interrupt_core0_usb_serial_jtag_intr_map_reg_t usb_serial_jtag_intr_map;
     volatile interrupt_core0_rmt_intr_map_reg_t rmt_intr_map;
     volatile interrupt_core0_i2c_ext0_intr_map_reg_t i2c_ext0_intr_map;
     volatile interrupt_core0_tg0_t0_intr_map_reg_t tg0_t0_intr_map;
-    volatile interrupt_core0_tg0_t1_intr_map_reg_t tg0_t1_intr_map;
     volatile interrupt_core0_tg0_wdt_intr_map_reg_t tg0_wdt_intr_map;
     volatile interrupt_core0_tg1_t0_intr_map_reg_t tg1_t0_intr_map;
-    volatile interrupt_core0_tg1_t1_intr_map_reg_t tg1_t1_intr_map;
     volatile interrupt_core0_tg1_wdt_intr_map_reg_t tg1_wdt_intr_map;
     volatile interrupt_core0_systimer_target0_intr_map_reg_t systimer_target0_intr_map;
     volatile interrupt_core0_systimer_target1_intr_map_reg_t systimer_target1_intr_map;
@@ -1348,11 +1278,6 @@ typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_pcnt_intr_map_reg_t pcnt_intr_map;
     volatile interrupt_core0_parl_io_tx_intr_map_reg_t parl_io_tx_intr_map;
     volatile interrupt_core0_parl_io_rx_intr_map_reg_t parl_io_rx_intr_map;
-    volatile interrupt_core0_slc0_intr_map_reg_t slc0_intr_map;
-    volatile interrupt_core0_slc1_intr_map_reg_t slc1_intr_map;
-    volatile interrupt_core0_usb_otg20_intr_map_reg_t usb_otg20_intr_map;
-    volatile interrupt_core0_usb_otg20_multi_proc_intr_map_reg_t usb_otg20_multi_proc_intr_map;
-    volatile interrupt_core0_usb_otg20_misc_intr_map_reg_t usb_otg20_misc_intr_map;
     volatile interrupt_core0_dma_in_ch0_intr_map_reg_t dma_in_ch0_intr_map;
     volatile interrupt_core0_dma_in_ch1_intr_map_reg_t dma_in_ch1_intr_map;
     volatile interrupt_core0_dma_in_ch2_intr_map_reg_t dma_in_ch2_intr_map;
@@ -1366,15 +1291,15 @@ typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_ecc_intr_map_reg_t ecc_intr_map;
     volatile interrupt_core0_ecdsa_intr_map_reg_t ecdsa_intr_map;
     volatile interrupt_core0_km_intr_map_reg_t km_intr_map;
-    volatile interrupt_core0_int_status_reg_0_reg_t int_status_reg_0;
-    volatile interrupt_core0_int_status_reg_1_reg_t int_status_reg_1;
-    volatile interrupt_core0_int_status_reg_2_reg_t int_status_reg_2;
+    volatile interrupt_core0_int_status_0_reg_t int_status_0;
+    volatile interrupt_core0_int_status_1_reg_t int_status_1;
+    volatile interrupt_core0_int_status_2_reg_t int_status_2;
     volatile interrupt_core0_clock_gate_reg_t clock_gate;
-    uint32_t reserved_164[422];
+    uint32_t reserved_150[427];
     volatile interrupt_core0_interrupt_date_reg_t interrupt_date;
 } interrupt_core0_dev_t;
 
-extern intmtx_core0_dev_t INTMTX;
+extern interrupt_core0_dev_t INTMTX;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(interrupt_core0_dev_t) == 0x800, "Invalid size of interrupt_core0_dev_t structure");

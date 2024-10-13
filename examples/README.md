@@ -14,6 +14,7 @@ The examples are grouped into subdirectories by category. Each category director
 - `cxx` C++ language utilization examples and experimental components.
 - `ethernet` Ethernet network examples.
 - `get-started` Simple examples with minimal functionality. Good start point for beginners.
+- `ieee802154` IEEE802.15.4 examples.
 - `mesh` Wi-Fi Mesh examples.
 - `network` Examples related to general network environment, test & analysis.
 - `openthread` OpenThread examples.
@@ -30,15 +31,56 @@ In addition to these examples, `commmon_components` directory contains code shar
 
 ## Using Examples
 
-Before building an example, be sure to follow the [ESP-IDF Getting Started Guide](https://idf.espressif.com/) to ensure you have the required development environment.
+Before building an example, follow the [ESP-IDF Getting Started](https://idf.espressif.com/) to ensure you have the required development environment.
 
-Building an example is the same as building any other project:
+### Set Chip Target
 
-- Change into the directory of the new example you'd like to build.
-- Run `idf.py set-target TARGET` to select the correct chip target to build before opening the project configuration menu. By default the target is `esp32`. For all options see `idf.py set-target --help`
-- Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
-- `idf.py build` to build the example.
-- Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
+First of all, your target must be supported by both:
+
+- **By your ESP-IDF version**: For the full list of supported targets, run:
+  ```
+  idf.py --list-targets
+  ```
+- **By this example**: For the full list of supported targets,  refer to the supported targets table at the top of this README.
+
+After you make sure that your target is supported, go to your example project directory and [set the chip target](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-py.html#select-the-target-chip-set-target):
+
+```
+idf.py set-target <target>
+```
+
+For example, to set esp32 as the chip target, run:
+
+```
+idf.py set-target esp32
+```
+
+
+### Configure the Project
+
+For information about Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html).
+
+To conveniently check or modify Kconfig options for this example in a project configuration menu, run:
+
+```
+idf.py menuconfig
+```
+
+
+### Build and Flash
+
+Execute the following command to build the project, flash it to your development board, and run the monitor tool to view the serial output:
+
+```
+idf.py build flash monitor
+```
+
+This command can be reduced to `idf.py flash monitor`.
+
+If the above command fails, check the log on the serial monitor which usually provides information on the possible cause of the issue.
+
+To exit the serial monitor, use `Ctrl` + `]`.
+
 
 ## Running Test Python Script (pytest)
 
@@ -53,6 +95,18 @@ Each example is a standalone project. The examples _do not have to be inside the
 The `IDF_PATH` environment variable is the only thing that connects the example to the rest of ESP-IDF.
 
 If you're looking for a more bare-bones project to start from, try [esp-idf-template](https://github.com/espressif/esp-idf-template).
+
+## Further Development
+
+For further steps on how to develop a project, see the following:
+
+- Managing the project:
+  - [IDF Frontend](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project) document
+  - ESP-IDF Getting Started video ([YouTube](https://youtu.be/J8zc8mMNKtc?t=340), [bilibili](https://www.bilibili.com/video/BV1114y1r7du/?t=336))
+  - [Overview](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#example-project) of an example project
+  - [Build System](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/build-system.html) document
+- Writing code:
+  - Write your own code following the [API references](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/index.html)
 
 ## Contributing Examples
 

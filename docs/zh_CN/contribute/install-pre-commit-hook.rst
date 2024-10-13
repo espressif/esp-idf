@@ -1,14 +1,7 @@
 为 ESP-IDF 安装 pre-commit 钩子
-==========================================
+===================================
 
 :link_to_translation:`en:[English]`
-
-环境依赖
----------------
-
-我们向 IDF 开发人员推荐 Python 3.8.* 及以上版本。
-
-如果你已安装了不兼容的 Python 版本，应在安装 pre-commit 工具前进行更新。
 
 安装 ``pre-commit`` 工具
 ---------------------------
@@ -29,7 +22,7 @@
 
 运行 ``pre-commit uninstall`` 。
 
-更多
+相关文档
 ---------
 
 更多详细使用方法，请参考 pre-commit_ 文档。
@@ -37,7 +30,7 @@
 .. _pre-commit: https://pre-commit.com/
 
 Windows 用户常见问题
---------------------------------
+-----------------------
 
 ``/usr/bin/env: python: Permission denied.``
 

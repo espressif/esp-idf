@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -35,7 +36,6 @@
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "sdkconfig.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -43,6 +43,20 @@
 #include "openthread/error.h"
 #include "openthread/logging.h"
 #include "openthread/tasklet.h"
+
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+#include "ot_led_strip.h"
+#endif
+
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+#include "example_common_private.h"
+#include "protocol_examples_common.h"
+#endif
+
+#if !CONFIG_OPENTHREAD_BR_AUTO_START && CONFIG_EXAMPLE_CONNECT_ETHERNET
+// TZ-1109: Add a menchanism for connecting ETH manually.
+#error Currently we do not support a manual way to connect ETH, if you want to use ETH, please enable OPENTHREAD_BR_AUTO_START.
+#endif
 
 #define TAG "esp_ot_br"
 
@@ -69,32 +83,83 @@ static void ot_task_worker(void *aContext)
 
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&config));
-
-    // Initialize border routing features
-    esp_openthread_lock_acquire(portMAX_DELAY);
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
-
+    esp_openthread_lock_acquire(portMAX_DELAY);
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     esp_openthread_cli_init();
-
-#if CONFIG_OPENTHREAD_BR_AUTO_START
-    ESP_ERROR_CHECK(esp_openthread_border_router_init());
-    otOperationalDatasetTlvs dataset;
-    otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
-    ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
-#endif // CONFIG_OPENTHREAD_BR_AUTO_START
-
     esp_cli_custom_command_init();
+    esp_openthread_cli_create_task();
     esp_openthread_lock_release();
 
     // Run the main loop
-    esp_openthread_cli_create_task();
     esp_openthread_launch_mainloop();
 
     // Clean up
-    esp_netif_destroy(openthread_netif);
     esp_openthread_netif_glue_deinit();
+    esp_netif_destroy(openthread_netif);
     esp_vfs_eventfd_unregister();
+    vTaskDelete(NULL);
+}
+
+void ot_br_init(void *ctx)
+{
+#if CONFIG_OPENTHREAD_CLI_WIFI
+    ESP_ERROR_CHECK(esp_ot_wifi_config_init());
+#endif
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+#if CONFIG_EXAMPLE_CONNECT_WIFI || CONFIG_EXAMPLE_CONNECT_ETHERNET
+    bool wifi_or_ethernet_connected = false;
+#else
+#error No backbone netif!
+#endif
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    char wifi_ssid[32] = "";
+    char wifi_password[64] = "";
+    if (esp_ot_wifi_config_get_ssid(wifi_ssid) == ESP_OK) {
+        ESP_LOGI(TAG, "use the Wi-Fi config from NVS");
+        esp_ot_wifi_config_get_password(wifi_password);
+    } else {
+        ESP_LOGI(TAG, "use the Wi-Fi config from Kconfig");
+        strcpy(wifi_ssid, CONFIG_EXAMPLE_WIFI_SSID);
+        strcpy(wifi_password, CONFIG_EXAMPLE_WIFI_PASSWORD);
+    }
+    if (esp_ot_wifi_connect(wifi_ssid, wifi_password) == ESP_OK) {
+        wifi_or_ethernet_connected = true;
+    } else {
+        ESP_LOGE(TAG, "Fail to connect to Wi-Fi, please try again manually");
+    }
+#endif
+#if CONFIG_EXAMPLE_CONNECT_ETHERNET
+    ESP_ERROR_CHECK(example_ethernet_connect());
+    wifi_or_ethernet_connected = true;
+#endif
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    ot_br_external_coexist_init();
+#endif // CONFIG_EXTERNAL_COEX_ENABLE
+    ESP_ERROR_CHECK(mdns_init());
+    ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
+
+    esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
+#endif
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+    if (wifi_or_ethernet_connected) {
+        esp_openthread_set_backbone_netif(get_example_netif());
+        ESP_ERROR_CHECK(esp_openthread_border_router_init());
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+        esp_ot_wifi_border_router_init_flag_set(true);
+#endif
+        otOperationalDatasetTlvs dataset;
+        otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
+        ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
+    } else {
+        ESP_LOGE(TAG, "Auto-start mode failed, please try to start manually");
+    }
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
+    esp_openthread_lock_release();
     vTaskDelete(NULL);
 }
 
@@ -115,38 +180,9 @@ void app_main(void)
 #endif
     };
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
-
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-#if CONFIG_EXAMPLE_CONNECT_WIFI
-#if CONFIG_OPENTHREAD_BR_AUTO_START
-    ESP_ERROR_CHECK(example_connect());
-#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_OPENTHREAD_RADIO_NATIVE
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
-    ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
-#else
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
-#if CONFIG_EXTERNAL_COEX_ENABLE
-    ot_br_external_coexist_init();
-#endif // CONFIG_EXTERNAL_COEX_ENABLE
-
-#endif
-    esp_openthread_set_backbone_netif(get_example_netif());
-#else
-    esp_ot_wifi_netif_init();
-    esp_openthread_set_backbone_netif(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
-#endif // CONFIG_OPENTHREAD_BR_AUTO_START
-#elif CONFIG_EXAMPLE_CONNECT_ETHERNET
-    ESP_ERROR_CHECK(example_connect());
-    esp_openthread_set_backbone_netif(get_example_netif());
-#else
-    ESP_LOGE(TAG, "ESP-Openthread has not set backbone netif");
-#endif // CONFIG_EXAMPLE_CONNECT_WIFI
-
-    ESP_ERROR_CHECK(mdns_init());
-    ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
-    xTaskCreate(ot_task_worker, "ot_br_main", 20480, xTaskGetCurrentTaskHandle(), 5, NULL);
+    xTaskCreate(ot_task_worker, "ot_br_main", 8192, xTaskGetCurrentTaskHandle(), 5, NULL);
+    xTaskCreate(ot_br_init, "ot_br_init", 6144, NULL, 4, NULL);
 }

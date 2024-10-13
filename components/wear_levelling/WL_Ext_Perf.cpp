@@ -128,7 +128,7 @@ esp_err_t WL_Ext_Perf::erase_range(size_t start_address, size_t size)
     // |0|0|x|x|x|x|x|x|x|x|x|x|x|x|0|0|
     // | pre   | rest  | rest  | post  |  <- check ranges
     //
-    // Pre check  - the data that does not fit in the full sector at the begining of the erased block
+    // Pre check  - the data that does not fit in the full sector at the beginning of the erased block
     // Post check - the data that does not fit in the full sector at the end of the erased block
     // rest check - the data that fits in the full sector at the middle of the erased block
     //

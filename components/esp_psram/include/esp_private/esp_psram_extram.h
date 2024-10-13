@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,11 @@ esp_err_t esp_psram_extram_reserve_dma_pool(size_t size);
  * @return true on success, false on failed memory test
  */
 bool esp_psram_extram_test(void);
+
+/**
+ * @brief Init .bss on psram
+ */
+void esp_psram_bss_init(void);
 
 #if CONFIG_IDF_TARGET_ESP32
 /**

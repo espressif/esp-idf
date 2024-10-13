@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,40 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Enable the bus clock for SHA peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void sha_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_SHA_CLK_EN);
+    } else {
+        CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_SHA_CLK_EN);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the SHA peripheral module
+ */
+static inline void sha_ll_reset_register(void)
+{
+    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_SHA_RST);
+    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_SHA_RST);
+
+    // Clear reset on digital signature and hmac also, otherwise SHA is held in reset
+    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_DS_RST);
+    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_HMAC_RST);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Start a new SHA block conversions (no initial hash in HW)

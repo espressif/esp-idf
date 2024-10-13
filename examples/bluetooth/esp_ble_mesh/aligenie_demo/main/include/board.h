@@ -9,13 +9,12 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
-#include "driver/gpio.h"
-
-#include "light_driver.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif /**< __cplusplus */
+
+#include "driver/gpio.h"
+#include "lightbulb.h"
 
 #define LED_ON    1
 #define LED_OFF   0
@@ -81,4 +80,4 @@ uint8_t *mac_str2hex(const char *mac_str, uint8_t *mac_hex);
 }
 #endif /**< __cplusplus */
 
-#endif
+#endif /* _BOARD_H_ */

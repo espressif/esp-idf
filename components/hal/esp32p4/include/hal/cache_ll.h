@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include "soc/cache_reg.h"
+#include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
@@ -23,7 +24,13 @@ extern "C" {
  * @brief Given a L2MEM cached address, get the corresponding non-cacheable address
  * @example 0x4FF0_0000 => 0x8FF0_0000
  */
-#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((intptr_t)(addr) + SOC_NON_CACHEABLE_OFFSET)
+#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((uintptr_t)(addr) + SOC_NON_CACHEABLE_OFFSET)
+
+/**
+ * @brief Given a non-cacheable address, get the corresponding L2MEM cached address
+ * @example 0x8FF0_0000 => 0x4FF0_0000
+ */
+#define CACHE_LL_L2MEM_CACHE_ADDR(non_cache_addr) ((uintptr_t)(non_cache_addr) - SOC_NON_CACHEABLE_OFFSET)
 
 /**
  * Cache capabilities
@@ -41,9 +48,10 @@ extern "C" {
 #define CACHE_LL_DEFAULT_IBUS_MASK                  (CACHE_BUS_IBUS0 | CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2)
 #define CACHE_LL_DEFAULT_DBUS_MASK                  (CACHE_BUS_DBUS0 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)
 
-//TODO: IDF-7515
-#define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x3f)
-
+#define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x1f)
+#define CACHE_LL_L2_ACCESS_EVENT_MASK               (1<<6)
+#define CACHE_LL_L1_CORE0_EVENT_MASK                (1<<0)
+#define CACHE_LL_L1_CORE1_EVENT_MASK                (1<<1)
 
 /*------------------------------------------------------------------------------
  * Autoload
@@ -673,12 +681,12 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_freeze_icache(uint32_t cache_id)
 {
     if (cache_id == 0) {
-        Cache_Freeze_L1_ICache0_Enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l1_icache0_enable(CACHE_FREEZE_ACK_BUSY);
     } else if (cache_id == 1) {
-        Cache_Freeze_L1_ICache1_Enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l1_icache1_enable(CACHE_FREEZE_ACK_BUSY);
     } else if (cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L1_ICache0_Enable(CACHE_FREEZE_ACK_BUSY);
-        Cache_Freeze_L1_ICache1_Enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l1_icache0_enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l1_icache1_enable(CACHE_FREEZE_ACK_BUSY);
     }
 }
 
@@ -691,7 +699,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_freeze_dcache(uint32_t cache_id)
 {
     if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L1_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l1_dcache_enable(CACHE_FREEZE_ACK_BUSY);
     }
 }
 
@@ -704,7 +712,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l2_freeze_cache(uint32_t cache_id)
 {
     if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L2_Cache_Enable(CACHE_FREEZE_ACK_BUSY);
+        rom_cache_internal_table_ptr->freeze_l2_cache_enable(CACHE_FREEZE_ACK_BUSY);
     }
 }
 
@@ -750,12 +758,12 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_unfreeze_icache(uint32_t cache_id)
 {
     if (cache_id == 0) {
-        Cache_Freeze_L1_ICache0_Disable();
+        rom_cache_internal_table_ptr->freeze_l1_icache0_disable();
     } else if (cache_id == 1) {
-        Cache_Freeze_L1_ICache1_Disable();
+        rom_cache_internal_table_ptr->freeze_l1_icache1_disable();
     } else if (cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L1_ICache1_Disable();
-        Cache_Freeze_L1_ICache0_Disable();
+        rom_cache_internal_table_ptr->freeze_l1_icache1_disable();
+        rom_cache_internal_table_ptr->freeze_l1_icache0_disable();
     }
 }
 
@@ -768,7 +776,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_unfreeze_dcache(uint32_t cache_id)
 {
     if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L1_DCache_Disable();
+        rom_cache_internal_table_ptr->freeze_l1_dcache_disable();
     }
 }
 
@@ -781,7 +789,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l2_unfreeze_cache(uint32_t cache_id)
 {
     if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
-        Cache_Freeze_L2_Cache_Disable();
+        rom_cache_internal_table_ptr->freeze_l2_cache_disable();
     }
 }
 
@@ -1014,27 +1022,29 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
  * Interrupt
  *----------------------------------------------------------------------------*/
 /**
- * @brief Enable Cache access error interrupt
+ * @brief Enable L1 Cache access error interrupt
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    CACHE.l1_cache_acs_fail_int_ena.val |= mask;
 }
 
 /**
- * @brief Clear Cache access error interrupt status
+ * @brief Clear L1 Cache access error interrupt status
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
  */
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
+    CACHE.l1_cache_acs_fail_int_clr.val = mask;
 }
 
 /**
- * @brief Get Cache access error interrupt status
+ * @brief Get L1 Cache access error interrupt status
  *
  * @param cache_id    Cache ID
  * @param mask        Interrupt mask
@@ -1043,7 +1053,42 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
  */
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
-    return 0;
+    return CACHE.l1_cache_acs_fail_int_st.val & mask;
+}
+
+/**
+ * @brief Enable L2 Cache access error interrupt
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l2_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    CACHE.l2_cache_acs_fail_int_ena.val |= mask;
+}
+
+/**
+ * @brief Clear L2 Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l2_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    CACHE.l2_cache_acs_fail_int_clr.val = mask;
+}
+
+/**
+ * @brief Get L2 Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ *
+ * @return            Status mask
+ */
+static inline uint32_t cache_ll_l2_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
+{
+    return CACHE.l2_cache_acs_fail_int_st.val & mask;
 }
 
 #ifdef __cplusplus

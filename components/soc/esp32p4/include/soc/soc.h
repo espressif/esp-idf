@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,13 +19,14 @@
 #define REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE)                      // only one UHCI on C6
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)        // UART0 and UART1
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)         // only one I2S on C6
+#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)       // TWAI0 and TWAI1
+#define REG_TRACE_BASE(i)                       (DR_REG_TRACE_BASE + (i) * 0x1000)
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -134,18 +135,13 @@
 #endif /* !__ASSEMBLER__ */
 //}}
 
-//TODO: IDF-7526
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ
-#define  APB_CLK_FREQ                                ( 40*1000000 )
-#define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
+#define  APB_CLK_FREQ_ROM                            ( 10*1000000 )
+#define  CPU_CLK_FREQ_ROM                            ( 40*1000000 )
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (90)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
+#define  APB_CLK_FREQ                                ( 90*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  XTAL_CLK_FREQ                               (40*1000000)
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */
@@ -193,6 +189,9 @@
 #define SOC_DIRAM_DRAM_HIGH   0x4ffc0000
 #define SOC_DIRAM_ROM_RESERVE_HIGH 0x4ff40000
 
+#define MAP_DRAM_TO_IRAM(addr) (addr)
+#define MAP_IRAM_TO_DRAM(addr) (addr)
+
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x4ff00000
 #define SOC_DMA_HIGH 0x4ffc0000
@@ -220,13 +219,17 @@
 #define SOC_LP_PERIPH_LOW  0x50110000
 #define SOC_LP_PERIPH_HIGH 0x50130000
 
-// Debug region, not used by software
-#define SOC_DEBUG_LOW 0x20000000
-#define SOC_DEBUG_HIGH 0x28000000
+// CPU sub-system region, contains interrupt config registers
+#define SOC_CPU_SUBSYSTEM_LOW 0x20000000
+#define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
+
+#define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
+#define LP_RAM_END        0x50110000
+#define LP_ROM_DRAM_SIZE  (LP_RAM_END - LP_ROM_DRAM_START)
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
@@ -235,6 +238,7 @@
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
+#define ETS_ASSIST_DEBUG_INUM                   27  // Note: this interrupt can be combined with others (e.g., CACHEERR), as we can identify its trigger is activated
 #define ETS_IPC_ISR_INUM                        28
 //CPU0 Max valid interrupt number
 #define ETS_MAX_INUM                            31

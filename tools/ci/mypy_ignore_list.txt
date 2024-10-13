@@ -4,7 +4,6 @@ components/efuse/test_efuse_host/efuse_tests.py
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
-components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py

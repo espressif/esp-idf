@@ -22,7 +22,7 @@ choice RTC_CLK_SRC
             the internal 150kHz oscillator. It does not require external components.
 
     config RTC_CLK_SRC_INT_RC
-        bool "Internal 150kHz RC oscillator"
+        bool "Internal 150 kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
         bool "External 32kHz crystal"
         select ESP_SYSTEM_RTC_EXT_XTAL

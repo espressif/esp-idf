@@ -1,14 +1,23 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Union
 
 import pexpect
-from panic_utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
+from panic_utils import attach_logger
+from panic_utils import NoGdbProcessError
+from panic_utils import quote_string
+from panic_utils import sha256
+from panic_utils import verify_valid_gdb_subprocess
 from pygdbmi.gdbcontroller import GdbController
 from pytest_embedded_idf.app import IdfApp
 from pytest_embedded_idf.dut import IdfDut
@@ -51,6 +60,10 @@ class PanicTestDut(IdfDut):
     def is_xtensa(self) -> bool:
         return self.target in self.XTENSA_TARGETS
 
+    @property
+    def is_multi_core(self) -> bool:
+        return self.target in ['esp32', 'esp32s3', 'esp32p4']
+
     def run_test_func(self, test_func_name: str) -> None:
         self.expect_exact('Enter test name:')
         self.write(test_func_name)
@@ -67,15 +80,13 @@ class PanicTestDut(IdfDut):
         except pexpect.TIMEOUT:
             pass
 
-    def expect_backtrace(self) -> None:
+    def expect_backtrace(self, corrupted: bool = False) -> None:
         assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
         match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
-        assert not match.group('corrupted')
-
-    def expect_corrupted_backtrace(self) -> None:
-        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
-        self.expect_exact('Backtrace:')
-        self.expect_exact('CORRUPTED')
+        if corrupted:
+            assert match.group('corrupted')
+        else:
+            assert match
 
     def expect_stack_dump(self) -> None:
         assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
@@ -93,13 +104,13 @@ class PanicTestDut(IdfDut):
         # no digital system reset for panic handling restarts (see IDF-7255)
         self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)')
 
-    def expect_elf_sha256(self) -> None:
+    def expect_elf_sha256(self, caption: str = 'ELF file SHA256: ') -> None:
         """Expect method for ELF SHA256 line"""
         elf_sha256 = sha256(self.app.elf_file)
         elf_sha256_len = int(
             self.app.sdkconfig.get('CONFIG_APP_RETRIEVE_LEN_ELF_SHA', '9')
         )
-        self.expect_exact('ELF file SHA256: ' + elf_sha256[0:elf_sha256_len])
+        self.expect_exact(caption + elf_sha256[0:elf_sha256_len])
 
     def expect_coredump(self, output_file_name: str, patterns: List[Union[str, re.Pattern]]) -> None:
         with open(output_file_name, 'r') as file:
@@ -107,15 +118,15 @@ class PanicTestDut(IdfDut):
             for pattern in patterns:
                 if isinstance(pattern, str):
                     position = coredump.find(pattern)
-                    assert position != -1, f"'{pattern}' not found in the coredump output"
+                    assert position != -1, f"'{pattern}' not in the coredump output"
                 elif isinstance(pattern, re.Pattern):
                     match = pattern.findall(coredump)
-                    assert match, f"'{pattern.pattern}' not found in the coredump output"
+                    assert match, f"'{pattern.pattern}' not in the coredump output"
                 else:
                     raise ValueError(f'Unsupported input type: {type(pattern).__name__}')
 
     def _call_espcoredump(
-        self, extra_args: List[str], coredump_file_name: str, output_file_name: str
+        self, extra_args: List[str], output_file_name: str
     ) -> None:
         # no "with" here, since we need the file to be open for later inspection by the test case
         if not self.coredump_output:
@@ -127,57 +138,60 @@ class PanicTestDut(IdfDut):
         espcoredump_args = [
             sys.executable,
             espcoredump_script,
+            '-b115200',
             'info_corefile',
-            '--core',
-            coredump_file_name,
         ]
         espcoredump_args += extra_args
         espcoredump_args.append(self.app.elf_file)
         logging.info('Running %s', ' '.join(espcoredump_args))
         logging.info('espcoredump output is written to %s', self.coredump_output.name)
 
+        self.serial.close()
         subprocess.check_call(espcoredump_args, stdout=self.coredump_output)
         self.coredump_output.flush()
         self.coredump_output.seek(0)
 
-    def process_coredump_uart(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> None:
+    def process_coredump_uart(
+        self, expected: Optional[List[Union[str, re.Pattern]]] = None, wait_reboot: bool = True
+    ) -> None:
         """Extract the core dump from UART output of the test, run espcoredump on it"""
         self.expect(self.COREDUMP_UART_START)
-        res = self.expect('(.+)' + self.COREDUMP_UART_END)
-        coredump_base64 = res.group(1).decode('utf8')
+        uart_data = self.expect('(.+)' + self.COREDUMP_UART_END)
+        self.expect(re.compile(r"Coredump checksum='([a-fA-F0-9]+)'"))
+        if wait_reboot:
+            self.expect('Rebooting...')
+        coredump_base64 = uart_data.group(1).decode('utf8')
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
 
         output_file_name = os.path.join(self.logdir, 'coredump_uart_result.txt')
         self._call_espcoredump(
-            ['--core-format', 'b64'], coredump_file.name, output_file_name
+            ['--core-format', 'b64', '--core', coredump_file.name], output_file_name
         )
         if expected:
             self.expect_coredump(output_file_name, expected)
 
-    def process_coredump_flash(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> None:
-        """Extract the core dump from flash, run espcoredump on it"""
+    def process_coredump_flash(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> Any:
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')
         logging.info('Writing flash binary core dump to %s', coredump_file_name)
-        self.serial.dump_flash(partition='coredump', output=coredump_file_name)
-
         output_file_name = os.path.join(self.logdir, 'coredump_flash_result.txt')
         self._call_espcoredump(
-            ['--core-format', 'raw'], coredump_file_name, output_file_name
+            ['--core-format', 'raw', '--save-core', coredump_file_name], output_file_name
         )
         if expected:
             self.expect_coredump(output_file_name, expected)
+        return coredump_file_name
 
     def gdb_write(self, command: str) -> Any:
         """
         Wrapper to write to gdb with a longer timeout, as test runner
         host can be slow sometimes
         """
-        assert self.gdbmi, 'This function should be called only after start_gdb'
+        assert self.gdbmi, 'This function should be called only after run_gdb'
         return self.gdbmi.write(command, timeout_sec=10)
 
-    def start_gdb(self) -> None:
+    def run_gdb(self) -> None:
         """
         Runs GDB and connects it to the "serial" port of the DUT.
         After this, the DUT expect methods can no longer be used to capture output.
@@ -248,6 +262,11 @@ class PanicTestDut(IdfDut):
         # Load the ELF file
         self.gdb_write('-file-exec-and-symbols {}'.format(self.app.elf_file))
 
+    # Prepare gdb for the gdb stub
+    def start_gdb_for_gdbstub(self) -> None:
+
+        self.run_gdb()
+
         # Connect GDB to UART
         self.serial.close()
         logging.info('Connecting to GDB Stub...')
@@ -276,7 +295,14 @@ class PanicTestDut(IdfDut):
         logging.info('Stopped in {func} at {addr} ({file}:{line})'.format(**frame))
 
         # Drain remaining responses
-        self.gdbmi.get_gdb_response(raise_error_on_timeout=False)
+        if self.gdbmi:
+            self.gdbmi.get_gdb_response(raise_error_on_timeout=False)
+
+    # Prepare gdb to debug coredump file
+    def start_gdb_for_coredump(self, elf_file: str) -> None:
+
+        self.run_gdb()
+        self.gdb_write('core {}'.format(elf_file))
 
     def gdb_backtrace(self) -> Any:
         """
@@ -287,6 +313,10 @@ class PanicTestDut(IdfDut):
 
         responses = self.gdb_write('-stack-list-frames')
         return self.find_gdb_response('done', 'result', responses)['payload']['stack']
+
+    def gdb_data_eval_expr(self, expr: str) -> Any:
+        responses = self.gdb_write('-data-evaluate-expression "%s"' % expr)
+        return self.find_gdb_response('done', 'result', responses)['payload']['value']
 
     @staticmethod
     def verify_gdb_backtrace(

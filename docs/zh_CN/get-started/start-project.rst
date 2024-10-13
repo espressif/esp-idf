@@ -1,6 +1,6 @@
-{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash", esp32p4="silicon revision v0.0, 2 MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256"}
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848"}
 
 编译工程
 =========================
@@ -72,7 +72,9 @@
 
 可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 工程的运行情况。注意，不要忘记将 PORT 替换为自己的串口名称。
 
-运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动：::
+运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动。
+
+.. code-block:: bash
 
     $ idf.py -p <PORT> monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
@@ -113,14 +115,13 @@
 
     1. 退出监视器。
     2. 返回 ``menuconfig``。
-    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ_SEL` 设置为 26 MHz。
+    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ` 设置为 26 MHz。
     4. 重新 ``编译和烧录`` 应用程序。
 
     在当前的 ESP-IDF 版本中，{IDF_TARGET_NAME} 支持的主晶振频率如下：
 
     .. list::
 
-        :SOC_XTAL_SUPPORT_24M: - 24 MHz
         :SOC_XTAL_SUPPORT_26M: - 26 MHz
         :SOC_XTAL_SUPPORT_32M: - 32 MHz
         :SOC_XTAL_SUPPORT_40M: - 40 MHz
@@ -142,9 +143,9 @@
 
 .. 重要::
 
-	一些示例程序不支持 {IDF_TARGET_NAME}，因为 {IDF_TARGET_NAME} 中不包含所需的硬件。
+    一些示例程序不支持 {IDF_TARGET_NAME}，因为 {IDF_TARGET_NAME} 中不包含所需的硬件。
 
-	在编译示例程序前请查看 README 文件中 ``Supported Targets`` 表格。如果表格中包含 {IDF_TARGET_NAME}， 或者不存在这个表格，那么即表示 {IDF_TARGET_NAME} 支持这个示例程序。
+    在编译示例程序前请查看 README 文件中 ``Supported Targets`` 表格。如果表格中包含 {IDF_TARGET_NAME}， 或者不存在这个表格，那么即表示 {IDF_TARGET_NAME} 支持这个示例程序。
 
 
 
@@ -174,7 +175,7 @@ ESP-IDF 支持 Python 3.8 及以上版本，建议升级操作系统到最新版
 
     一般来说，BSP 支持开发板上所有硬件组件。除了管脚定义和初始化功能外，BSP 还附带如传感器、显示器、音频编解码器等外部元件的驱动程序。
 
-    BSP 通过 :doc:`IDF 组件管理器 </api-guides/tools/idf-component-manager>` 发布，可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
+    BSP 通过 :doc:`IDF 组件管理器 </api-guides/tools/idf-component-manager>` 发布，可以前往 `乐鑫组件注册表 <https://components.espressif.com>`_ 进行下载。
 
     .. only:: esp32
 

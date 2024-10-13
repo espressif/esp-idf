@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "hal/sha_types.h"
+#include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
 #include "soc/dport_access.h"
 #include "hal/misc.h"
@@ -16,6 +17,40 @@ extern "C" {
 #endif
 
 #define SHA_LL_TYPE_OFFSET 0x10
+
+/**
+ * @brief Enable the bus clock for SHA peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void sha_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the SHA peripheral module
+ */
+static inline void sha_ll_reset_register(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
+
+    // Clear reset on secure boot also, otherwise SHA is held in reset
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SECUREBOOT);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Returns the LOAD_REG register address for the given sha type

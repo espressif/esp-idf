@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1357,7 +1357,7 @@ typedef struct {
     ahb_dma_rx_crc_data_en_addr_chn_reg_t crc_data_en_addr;
     ahb_dma_rx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
     ahb_dma_rx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
-} ahb_dma_in_crc_chn_reg_t;
+} ahb_dma_in_crc_arb_chn_reg_t;
 
 typedef struct {
     ahb_dma_out_crc_init_data_chn_reg_t crc_init_data;
@@ -1370,7 +1370,7 @@ typedef struct {
     ahb_dma_tx_crc_data_en_addr_chn_reg_t crc_data_en_addr;
     ahb_dma_tx_ch_arb_weigh_chn_reg_t ch_arb_weigh;
     ahb_dma_tx_arb_weigh_opt_dir_chn_reg_t arb_weigh_opt;
-} ahb_dma_out_crc_chn_reg_t;
+} ahb_dma_out_crc_arb_chn_reg_t;
 
 typedef struct {
     volatile ahb_dma_in_chn_reg_t in;
@@ -1388,8 +1388,8 @@ typedef struct {
     uint32_t reserved_06c;
     volatile ahb_dma_chn_reg_t channel[3];
     uint32_t reserved_2b0[3];
-    volatile ahb_dma_out_crc_chn_reg_t out_crc[3];
-    volatile ahb_dma_in_crc_chn_reg_t in_crc[3];
+    volatile ahb_dma_out_crc_arb_chn_reg_t out_crc_arb[3];
+    volatile ahb_dma_in_crc_arb_chn_reg_t in_crc_arb[3];
     volatile ahb_dma_in_link_addr_chn_reg_t in_link_addr[3];
     volatile ahb_dma_out_link_addr_chn_reg_t out_link_addr[3];
     volatile ahb_dma_intr_mem_start_addr_reg_t intr_mem_start_addr;

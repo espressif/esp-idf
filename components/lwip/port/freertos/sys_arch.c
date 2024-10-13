@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 /* lwIP includes. */
@@ -219,10 +219,6 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
     return ERR_MEM;
   }
 
-#if ESP_THREAD_SAFE
-  (*mbox)->owner = NULL;
-#endif
-
   LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (*mbox)->os_mbox));
   return ERR_OK;
 }
@@ -352,15 +348,6 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
   return 0;
 }
 
-void
-sys_mbox_set_owner(sys_mbox_t *mbox, void* owner)
-{
-  if (mbox && *mbox) {
-    (*mbox)->owner = owner;
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("set mbox=%p owner=%p", *mbox, owner));
-  }
-}
-
 /**
  * @brief Delete a mailbox
  *
@@ -444,7 +431,7 @@ sys_jiffies(void)
 }
 
 /**
- * @brief Get current time, in miliseconds
+ * @brief Get current time, in milliseconds
  *
  * @return current time
  */

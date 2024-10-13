@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -216,7 +216,7 @@ extern "C" {
 #define BITSCRAMBLER_TX_COND_MODE_S  4
 /** BITSCRAMBLER_TX_FETCH_MODE : R/W; bitpos: [5]; default: 0;
  *  write this bit to set the bitscrambler tx core fetch instruction mode, 0: prefetch
- *  by reset, 1: fetch by instrutions
+ *  by reset, 1: fetch by instructions
  */
 #define BITSCRAMBLER_TX_FETCH_MODE    (BIT(5))
 #define BITSCRAMBLER_TX_FETCH_MODE_M  (BITSCRAMBLER_TX_FETCH_MODE_V << BITSCRAMBLER_TX_FETCH_MODE_S)
@@ -291,7 +291,7 @@ extern "C" {
 #define BITSCRAMBLER_RX_COND_MODE_S  4
 /** BITSCRAMBLER_RX_FETCH_MODE : R/W; bitpos: [5]; default: 0;
  *  write this bit to set the bitscrambler rx core fetch instruction mode, 0: prefetch
- *  by reset, 1: fetch by instrutions
+ *  by reset, 1: fetch by instructions
  */
 #define BITSCRAMBLER_RX_FETCH_MODE    (BIT(5))
 #define BITSCRAMBLER_RX_FETCH_MODE_M  (BITSCRAMBLER_RX_FETCH_MODE_V << BITSCRAMBLER_RX_FETCH_MODE_S)
@@ -353,7 +353,7 @@ extern "C" {
 #define BITSCRAMBLER_TX_IN_PAUSE_M  (BITSCRAMBLER_TX_IN_PAUSE_V << BITSCRAMBLER_TX_IN_PAUSE_S)
 #define BITSCRAMBLER_TX_IN_PAUSE_V  0x00000001U
 #define BITSCRAMBLER_TX_IN_PAUSE_S  3
-/** BITSCRAMBLER_TX_FIFO_EMPTY : RO; bitpos: [4]; default: 0;
+/** BITSCRAMBLER_TX_FIFO_EMPTY : RO; bitpos: [4]; default: 1;
  *  represents the bitscrambler tx fifo in empty state
  */
 #define BITSCRAMBLER_TX_FIFO_EMPTY    (BIT(4))
@@ -468,7 +468,7 @@ extern "C" {
  *  Control and configuration registers
  */
 #define BITSCRAMBLER_VERSION_REG (DR_REG_BITSCRAMBLER_BASE + 0xfc)
-/** BITSCRAMBLER_BITSCRAMBLER_VER : R/W; bitpos: [27:0]; default: 36713024;
+/** BITSCRAMBLER_BITSCRAMBLER_VER : R/W; bitpos: [27:0]; default: 36766257;
  *  Reserved
  */
 #define BITSCRAMBLER_BITSCRAMBLER_VER    0x0FFFFFFFU

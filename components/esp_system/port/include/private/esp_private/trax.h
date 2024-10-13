@@ -53,7 +53,6 @@ int trax_enable(trax_ena_select_t ena);
  */
 int trax_start_trace(trax_downcount_unit_t units_until_stop);
 
-
 /**
  * @brief  Trigger a Trax trace stop after the indicated delay. If this is called
  *         before and the previous delay hasn't ended yet, this will overwrite

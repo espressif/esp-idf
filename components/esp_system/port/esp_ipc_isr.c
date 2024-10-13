@@ -30,10 +30,9 @@ typedef enum {
 } stall_state_t;
 
 static stall_state_t volatile s_stall_state = STALL_STATE_IDLE;
-static int32_t volatile s_count_of_nested_calls[portNUM_PROCESSORS] = { 0 };
+static int32_t volatile s_count_of_nested_calls[CONFIG_FREERTOS_NUMBER_OF_CORES] = { 0 };
 static BaseType_t s_stored_interrupt_level;
 static uint32_t volatile esp_ipc_isr_finish_cmd;
-
 
 /**
  * @brief Type of calling
@@ -48,7 +47,6 @@ typedef enum {
 
 static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ipc_isr_wait_t wait_for);
 
-
 /* Initializing IPC_ISR */
 
 void esp_ipc_isr_init(void)
@@ -62,7 +60,6 @@ void esp_ipc_isr_init(void)
 }
 
 /* End initializing IPC_ISR */
-
 
 /* Public API functions */
 
@@ -174,7 +171,6 @@ void IRAM_ATTR esp_ipc_isr_stall_resume(void)
 }
 
 /* End public API functions */
-
 
 /* Private functions*/
 

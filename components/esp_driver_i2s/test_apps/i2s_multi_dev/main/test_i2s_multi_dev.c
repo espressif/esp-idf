@@ -23,12 +23,12 @@ static const char *TAG = "i2s_multi_dev_test";
 
 #define TEST_I2S_FRAME_SIZE             (128)       // Frame numbers in every writing / reading
 #define TEST_I2S_ARRAY_LENGTH           (1024)      // The loop data length for verification
-#define TEST_I2S_MAX_DATA               (256)       // The maximum data value in the data buffer
+#define TEST_I2S_MAX_DATA               (128)       // The maximum data value in the data buffer
 #define TEST_I2S_MAX_FAIL_CNT           (3)         // Max broken packet count
 #define TEST_I2S_FRAME_TIMEOUT_SEC      (10.0f)     // Timeout seconds of waiting for a correct frame
 
 #define TEST_I2S_NUM            (I2S_NUM_0) // ESP32-C3 has only I2S0
-#define TEST_I2S_MCK_IO         (GPIO_NUM_0)
+#define TEST_I2S_MCK_IO         (GPIO_NUM_1)
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
 #define TEST_I2S_WS_IO          (GPIO_NUM_5)
 #if CONFIG_IDF_TARGET_ESP32H2

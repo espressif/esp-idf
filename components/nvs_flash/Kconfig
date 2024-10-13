@@ -35,4 +35,14 @@ menu "NVS"
             in the NVS remains active and the new value is just stored, actually not accessible through
             corresponding nvs_get() call for the key given. Use this option only when your application
             relies on such NVS API behaviour.
+
+    config NVS_ALLOCATE_CACHE_IN_SPIRAM
+        bool "Prefers allocation of in-memory cache structures in SPI connected PSRAM"
+        depends on SPIRAM && (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
+        default n
+        help
+            Enabling this option lets NVS library try to allocate page cache and key hash list in SPIRAM
+            instead of internal RAM. It can help applications using large nvs partitions or large number
+            of keys to save heap space in internal RAM. SPIRAM heap allocation negatively impacts speed
+            of NVS operations as the CPU accesses NVS cache via SPI instead of direct access to the internal RAM.
 endmenu

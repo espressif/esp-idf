@@ -15,7 +15,7 @@ TEST_CASE("Test effect of rtc clk calibration compensation on system time", "[es
     int64_t t1 = esp_system_get_time();
 
     // Modify calibration value
-    esp_clk_slowclk_cal_set(prev_cal/2);
+    esp_clk_slowclk_cal_set(prev_cal / 2);
 
     // Internally, the origin point of rtc clk has been adjusted
     // so that t2 > t1 remains true

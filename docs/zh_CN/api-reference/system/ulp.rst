@@ -176,14 +176,16 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 应用示例
 --------------------
 
-* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器对 IO 脉冲进行计数：:example:`system/ulp/ulp_fsm/ulp`。
-* 主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器轮询 ADC：:example:`system/ulp/ulp_fsm/ulp_adc`。
+* :example:`system/ulp/ulp_fsm/ulp` 展示了主处理器运行其他代码或处于 Deep-sleep 状态时，使用 ULP FSM 协处理器对 IO 脉冲进行计数，脉冲计数会在唤醒时保存到 NVS 中。
+
+.. only:: esp32 or esp32s3
+
+    * :example:`system/ulp/ulp_fsm/ulp_adc` 展示了主处理器处于 Deep-sleep 状态时，ULP FSM 协处理器测量特定 ADC 通道上的输入电压，将其与设定的阈值进行比较，电压超出阈值时唤醒系统。
 
 API 参考
 -------------
 
 .. include-build-file:: inc/ulp_fsm_common.inc
 .. include-build-file:: inc/ulp_common.inc
-.. include-build-file:: inc/ulp_common_defs.inc
 
 .. _binutils-esp32ulp 工具链: https://github.com/espressif/binutils-gdb

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,8 @@ extern const uint8_t ulp_test_app_bin_end[]   asm("_binary_ulp_test_app_bin_end"
 
 #define HEX_DUMP_DEBUG 0
 
-static void hexdump(const uint32_t* src, size_t count) {
+static void hexdump(const uint32_t* src, size_t count)
+{
 #if HEX_DUMP_DEBUG
     for (size_t i = 0; i < count; ++i) {
         printf("%08x ", *src);
@@ -68,7 +69,7 @@ TEST_CASE("ULP FSM addition test", "[ulp]")
     RTC_SLOW_MEM[17] = 11;
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
 
@@ -107,7 +108,7 @@ TEST_CASE("ULP FSM subtraction and branch test", "[ulp]")
     RTC_SLOW_MEM[33] = 18;
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
     printf("\n\n");
@@ -131,7 +132,7 @@ TEST_CASE("ULP FSM JUMPS instruction test", "[ulp]")
      * This ULP program is written in assembly. Please refer associated .S file.
      */
     esp_err_t err = ulp_load_binary(0, ulp_test_app_bin_start,
-            (ulp_test_app_bin_end - ulp_test_app_bin_start) / sizeof(uint32_t));
+                                    (ulp_test_app_bin_end - ulp_test_app_bin_start) / sizeof(uint32_t));
     TEST_ESP_OK(err);
 
     /* Clear ULP FSM raw interrupt */
@@ -178,7 +179,7 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
     };
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
 
@@ -223,7 +224,7 @@ static void ulp_fsm_deepsleep_wakeup_test(void)
     };
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
 
@@ -246,7 +247,6 @@ TEST_CASE_MULTIPLE_STAGES("ULP FSM deep-sleep wakeup test", "[deepsleep][reset=D
                           ulp_fsm_deepsleep_wakeup_test,
                           check_sleep_reset)
 
-
 TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
@@ -261,36 +261,36 @@ TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
 
     /* ULP co-processor program to read from and write to peripheral registers */
     const ulp_insn_t program[] = {
-            I_MOVI(R1, 64),                                 // r1 = 64
-            I_RD_REG(RTC_CNTL_STORE1_REG, 0, 15),           // r0 = REG_READ(RTC_CNTL_STORE1_REG[15:0])
-            I_ST(R0, R1, 0),                                // mem[r1 + 0] = r0
-            I_RD_REG(RTC_CNTL_STORE1_REG, 4, 11),           // r0 = REG_READ(RTC_CNTL_STORE1_REG[11:4])
-            I_ST(R0, R1, 1),                                // mem[r1 + 1] = r0
-            I_RD_REG(RTC_CNTL_STORE1_REG, 16, 31),          // r0 = REG_READ(RTC_CNTL_STORE1_REG[31:16])
-            I_ST(R0, R1, 2),                                // mem[r1 + 2] = r0
-            I_RD_REG(RTC_CNTL_STORE1_REG, 20, 27),          // r0 = REG_READ(RTC_CNTL_STORE1_REG[27:20])
-            I_ST(R0, R1, 3),                                // mem[r1 + 3] = r0
-            I_WR_REG(RTC_CNTL_STORE0_REG, 0, 7, 0x89),      // REG_WRITE(RTC_CNTL_STORE0_REG[7:0], 0x89)
-            I_WR_REG(RTC_CNTL_STORE0_REG, 8, 15, 0xab),     // REG_WRITE(RTC_CNTL_STORE0_REG[15:8], 0xab)
-            I_WR_REG(RTC_CNTL_STORE0_REG, 16, 23, 0xcd),    // REG_WRITE(RTC_CNTL_STORE0_REG[23:16], 0xcd)
-            I_WR_REG(RTC_CNTL_STORE0_REG, 24, 31, 0xef),    // REG_WRITE(RTC_CNTL_STORE0_REG[31:24], 0xef)
-            I_LD(R0, R1, 4),                                // r0 = mem[r1 + 4]
-            I_ADDI(R0, R0, 1),                              // r0 = r0 + 1
-            I_ST(R0, R1, 4),                                // mem[r1 + 4] = r0
-            I_END(),                                        // stop ULP timer
-            I_HALT()                                        // halt
+        I_MOVI(R1, 64),                                 // r1 = 64
+        I_RD_REG(RTC_CNTL_STORE1_REG, 0, 15),           // r0 = REG_READ(RTC_CNTL_STORE1_REG[15:0])
+        I_ST(R0, R1, 0),                                // mem[r1 + 0] = r0
+        I_RD_REG(RTC_CNTL_STORE1_REG, 4, 11),           // r0 = REG_READ(RTC_CNTL_STORE1_REG[11:4])
+        I_ST(R0, R1, 1),                                // mem[r1 + 1] = r0
+        I_RD_REG(RTC_CNTL_STORE1_REG, 16, 31),          // r0 = REG_READ(RTC_CNTL_STORE1_REG[31:16])
+        I_ST(R0, R1, 2),                                // mem[r1 + 2] = r0
+        I_RD_REG(RTC_CNTL_STORE1_REG, 20, 27),          // r0 = REG_READ(RTC_CNTL_STORE1_REG[27:20])
+        I_ST(R0, R1, 3),                                // mem[r1 + 3] = r0
+        I_WR_REG(RTC_CNTL_STORE0_REG, 0, 7, 0x89),      // REG_WRITE(RTC_CNTL_STORE0_REG[7:0], 0x89)
+        I_WR_REG(RTC_CNTL_STORE0_REG, 8, 15, 0xab),     // REG_WRITE(RTC_CNTL_STORE0_REG[15:8], 0xab)
+        I_WR_REG(RTC_CNTL_STORE0_REG, 16, 23, 0xcd),    // REG_WRITE(RTC_CNTL_STORE0_REG[23:16], 0xcd)
+        I_WR_REG(RTC_CNTL_STORE0_REG, 24, 31, 0xef),    // REG_WRITE(RTC_CNTL_STORE0_REG[31:24], 0xef)
+        I_LD(R0, R1, 4),                                // r0 = mem[r1 + 4]
+        I_ADDI(R0, R0, 1),                              // r0 = r0 + 1
+        I_ST(R0, R1, 4),                                // mem[r1 + 4] = r0
+        I_END(),                                        // stop ULP timer
+        I_HALT()                                        // halt
     };
 
     /* Set data in the peripheral register to be read by the ULP co-processor */
     REG_WRITE(RTC_CNTL_STORE1_REG, 0x89abcdef);
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
     TEST_ESP_OK(ulp_run(0));
 
     /* Wait for the ULP co-processor to finish up */
-    vTaskDelay(100/portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     /* Verify the test results */
     TEST_ASSERT_EQUAL_HEX32(0xefcdab89, REG_READ(RTC_CNTL_STORE0_REG));
@@ -328,13 +328,13 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
     };
 
     const size_t test_items_count =
-            sizeof(test_items)/sizeof(test_items[0]);
+        sizeof(test_items) / sizeof(test_items[0]);
     for (size_t i = 0; i < test_items_count; ++i) {
-        const uint32_t mask = (uint32_t) (((1ULL << test_items[i].width) - 1) << test_items[i].low);
+        const uint32_t mask = (uint32_t)(((1ULL << test_items[i].width) - 1) << test_items[i].low);
         const uint32_t not_mask = ~mask;
         printf("#%2d: low: %2d width: %2d mask: %08" PRIx32 " expected: %08" PRIx32 " ", i,
-                test_items[i].low, test_items[i].width,
-                mask, not_mask);
+               test_items[i].low, test_items[i].width,
+               mask, not_mask);
 
         /* Set all bits in RTC_CNTL_STORE0_REG and reset all bits in RTC_CNTL_STORE1_REG */
         uint32_t rtc_store0 = REG_READ(RTC_CNTL_STORE0_REG);
@@ -345,24 +345,24 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
         /* ULP co-processor program to write to peripheral registers */
         const ulp_insn_t program[] = {
             I_WR_REG(RTC_CNTL_STORE0_REG,
-                    test_items[i].low,
-                    test_items[i].low + test_items[i].width - 1,
-                    0),
+                     test_items[i].low,
+                     test_items[i].low + test_items[i].width - 1,
+                     0),
             I_WR_REG(RTC_CNTL_STORE1_REG,
-                    test_items[i].low,
-                    test_items[i].low + test_items[i].width - 1,
-                    0xff & ((1 << test_items[i].width) - 1)),
+                     test_items[i].low,
+                     test_items[i].low + test_items[i].width - 1,
+                     0xff & ((1 << test_items[i].width) - 1)),
             I_END(),
             I_HALT()
         };
 
         /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-        size_t size = sizeof(program)/sizeof(ulp_insn_t);
+        size_t size = sizeof(program) / sizeof(ulp_insn_t);
         TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
         TEST_ESP_OK(ulp_run(0));
 
         /* Wait for the ULP co-processor to finish up */
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
 
         /* Verify the test results */
         uint32_t clear = REG_READ(RTC_CNTL_STORE0_REG);
@@ -377,9 +377,6 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
         TEST_ASSERT_EQUAL_HEX32(mask, set);
     }
 }
-
-
-
 
 TEST_CASE("ULP FSM timer setting", "[ulp]")
 {
@@ -403,7 +400,7 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
     };
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
     assert(offset >= size && "data offset needs to be greater or equal to program size");
     TEST_ESP_OK(ulp_run(0));
@@ -418,7 +415,8 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
                                         100000,     // 100 ms
                                         200000,     // 200 ms
                                         500000,     // 500 ms
-                                        1000000 };  // 1 sec
+                                        1000000
+                                      };  // 1 sec
     const size_t tests_count = sizeof(cycles_to_test) / sizeof(cycles_to_test[0]);
 
     for (size_t i = 0; i < tests_count; ++i) {
@@ -474,7 +472,7 @@ TEST_CASE("ULP FSM interrupt signal can be handled via ISRs on the main core", "
     TEST_ASSERT_EQUAL(ESP_OK, ulp_isr_register(ulp_isr, (void *)ulp_isr_sem));
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
 
@@ -482,7 +480,7 @@ TEST_CASE("ULP FSM interrupt signal can be handled via ISRs on the main core", "
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(ulp_isr_sem, portMAX_DELAY));
 
     /* Deregister the ISR */
-    TEST_ASSERT_EQUAL(ESP_OK, ulp_isr_deregister(ulp_isr, (void *)ulp_isr_sem ));
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_isr_deregister(ulp_isr, (void *)ulp_isr_sem));
 
     /* Delete test semaphore */
     vSemaphoreDelete(ulp_isr_sem);

@@ -97,9 +97,9 @@ ESP-IDF 环形 buffer 是一个典型的 FIFO buffer，支持任意大小的数�
 
         //为 DMA 描述符和相应的数据 buffer 检索空间
         //此步骤必须通过 SendAcquire 完成，否则，复制时地址可能会不同
-        dma_item_t item;
+        dma_item_t *item;
         UBaseType_t res =  xRingbufferSendAcquire(buf_handle,
-                            &item, DMA_ITEM_SIZE(buffer_size), pdMS_TO_TICKS(1000));
+                           (void**) &item, DMA_ITEM_SIZE(buffer_size), pdMS_TO_TICKS(1000));
         if (res != pdTRUE) {
             printf("Failed to acquire memory for item\n");
         }
@@ -108,7 +108,7 @@ ESP-IDF 环形 buffer 是一个典型的 FIFO buffer，支持任意大小的数�
             .length = buffer_size,
             .eof = 0,
             .owner = 1,
-            .buf = &item->buf,
+            .buf = item->buf,
         };
         //实际发送到环形 buffer 以供使用
         res = xRingbufferSendComplete(buf_handle, &item);

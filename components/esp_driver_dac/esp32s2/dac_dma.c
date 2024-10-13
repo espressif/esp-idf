@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "sdkconfig.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/spi_ll.h"
 #include "hal/dac_ll.h"
 #include "hal/adc_ll.h"
@@ -38,6 +39,7 @@
 typedef struct {
     void                *periph_dev;    /* DMA peripheral device address */
     uint32_t            dma_chan;
+    spi_dma_ctx_t       *spi_dma_ctx;   /* spi_dma context */
     intr_handle_t       intr_handle;    /* Interrupt handle */
     bool                use_apll;       /* Whether use APLL as digital controller clock source */
 } dac_dma_periph_spi_t;
@@ -129,7 +131,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
     ESP_RETURN_ON_FALSE(spicommon_periph_claim(DAC_DMA_PERIPH_SPI_HOST, "dac_dma"), ESP_ERR_NOT_FOUND, TAG, "Failed to acquire DAC DMA peripheral");
-    periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
     /* Allocate DAC DMA peripheral object */
     s_ddp = (dac_dma_periph_spi_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_spi_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
@@ -142,9 +144,10 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     /* When transmit alternately, twice frequency is needed to guarantee the convert frequency in one channel */
     uint32_t trans_freq_hz = freq_hz * (is_alternate ? 2 : 1);
     ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(trans_freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
-    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, &s_ddp->dma_chan, &s_ddp->dma_chan),
+    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, &s_ddp->spi_dma_ctx),
                       err, TAG, "Failed to allocate dma peripheral channel");
 
+    s_ddp->dma_chan = s_ddp->spi_dma_ctx->rx_dma_chan.chan_id;
     spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
     dac_ll_digi_set_convert_mode(is_alternate);
     return ret;
@@ -155,13 +158,14 @@ err:
 
 esp_err_t dac_dma_periph_deinit(void)
 {
+    ESP_RETURN_ON_FALSE(s_ddp != NULL, ESP_ERR_INVALID_STATE, TAG, "DAC DMA peripheral is not initialized");
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
     if (s_ddp->dma_chan) {
-        ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(DAC_DMA_PERIPH_SPI_HOST), TAG, "Failed to free dma peripheral channel");
+        ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(s_ddp->spi_dma_ctx), TAG, "Failed to free dma peripheral channel");
     }
     ESP_RETURN_ON_FALSE(spicommon_periph_free(DAC_DMA_PERIPH_SPI_HOST), ESP_FAIL, TAG, "Failed to release DAC DMA peripheral");
     spi_ll_disable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
     if (s_ddp) {
         if (s_ddp->use_apll) {
             periph_rtc_apll_release();

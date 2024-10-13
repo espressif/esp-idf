@@ -141,12 +141,12 @@ GPIO Matrix and IO_MUX
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4"}
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -246,10 +246,14 @@ Restrictions and Known Issues
     If DMA is enabled, a Device's launch edge is half of an SPI clock cycle ahead of the normal time, shifting to the Master's actual latch edge. In this case, if the GPIO matrix is bypassed, the hold time for data sampling is 68.75 ns and no longer a half of an SPI clock cycle. If the GPIO matrix is used, the hold time will increase to 93.75 ns. The Host should sample the data immediately at the latch edge or communicate in SPI modes 1 or 3. If your Host cannot meet these timing requirements, initialize your Device without DMA.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
 The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave` directory of ESP-IDF examples.
+
+- :example: `peripherals/spi_slave/receiver` demonstrates how to configure an SPI slave to receive data from an SPI master and implement handshaking to manage data transfer readiness.
+
+- :example: `peripherals/spi_slave/sender` demonstrate how to configure an SPI master to send data to an SPI slave and use handshaking to ensure proper timing for data transmission.
 
 
 API Reference

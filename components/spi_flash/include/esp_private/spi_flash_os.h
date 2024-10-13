@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,11 @@ esp_err_t spi_flash_init_chip_state(void);
 void esp_mspi_pin_init(void);
 
 /**
+ * @brief Reserve MSPI IOs
+ */
+void esp_mspi_pin_reserve(void);
+
+/**
  * @brief Get the number of the GPIO corresponding to the given MSPI io
  *
  * @param[in] io  MSPI io
@@ -83,9 +88,9 @@ esp_err_t esp_flash_init_main(esp_flash_t *chip);
 void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config);
 
 /**
- * @brief Get the knowledge if the MSPI timing is tuned or not
+ * @brief Get the knowledge if the Flash timing is tuned or not
  */
-bool spi_timing_is_tuned(void);
+bool spi_flash_timing_is_tuned(void);
 
 /**
  * @brief Set Flash chip specifically required MSPI register settings here
@@ -113,6 +118,13 @@ void spi_flash_set_erasing_flag(bool status);
  * @return true if need reset, otherwise false.
  */
 bool spi_flash_brownout_need_reset(void);
+
+/**
+ * @brief Check whether esp-chip supports 32bit address properly
+ *
+ * @return ESP_OK for supported, ESP_ERR_NOT_SUPPORTED for not supported
+*/
+esp_err_t esp_mspi_32bit_address_flash_feature_check(void);
 
 #if CONFIG_SPI_FLASH_HPM_ON
 /**

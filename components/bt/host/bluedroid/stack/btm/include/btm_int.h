@@ -50,6 +50,7 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 #endif
 
 #define  BTM_ACL_IS_CONNECTED(bda)   (btm_bda_to_acl (bda, BT_TRANSPORT_BR_EDR) != NULL)
+#define  BTM_LE_ACL_IS_CONNECTED(bda)   (btm_bda_to_acl (bda, BT_TRANSPORT_LE) != NULL)
 
 /* Definitions for Server Channel Number (SCN) management
 */
@@ -221,6 +222,8 @@ tBTM_CMPL_CB         *p_page_to_set_cmpl_cb; /* Callback function to be called w
 TIMER_LIST_ENT       set_acl_pkt_types_timer;
 tBTM_CMPL_CB         *p_set_acl_pkt_types_cmpl_cb; /* Callback function to be called when */
 /* set ACL packet types is completed */
+tBTM_CMPL_CB         *p_set_min_enc_key_size_cmpl_cb; /* Callback function to be called when */
+/* set min encryption key size is completed */
 #endif
 
 DEV_CLASS            dev_class;         /* Local device class                   */
@@ -230,6 +233,13 @@ DEV_CLASS            dev_class;         /* Local device class                   
 TIMER_LIST_ENT       ble_channels_timer;
 tBTM_CMPL_CB        *p_ble_channels_cmpl_cb; /* Callback function to be called  When
                                                 ble set host channels is completed   */
+
+tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_ble_set_rpa_timeout_cmpl_cb; /* Callback function to be called  When
+                                                ble set rpa timeout is completed   */
+
+tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_cmpl_cb;
+
+tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_set_privacy_mode_cmpl_cb;
 
 tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
@@ -355,7 +365,7 @@ typedef struct {
     UINT8            inqfilt_type;          /* Contains the inquiry filter type (BD ADDR, COD, or Clear) */
 
 #define BTM_INQ_INACTIVE_STATE      0
-#define BTM_INQ_CLR_FILT_STATE      1   /* Currently clearing the inquiry filter preceeding the inquiry request */
+#define BTM_INQ_CLR_FILT_STATE      1   /* Currently clearing the inquiry filter preceding the inquiry request */
     /* (bypassed if filtering is not used)                                  */
 #define BTM_INQ_SET_FILT_STATE      2   /* Sets the new filter (or turns off filtering) in this state */
 #define BTM_INQ_ACTIVE_STATE        3   /* Actual inquiry or periodic inquiry is in progress */
@@ -668,6 +678,9 @@ struct tBTM_SEC_DEV_REC{
     secure connection. This will be helpful to know when peer device downgrades it's security. */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
+
+#define BTM_ENC_MODE_UNKNOWN  0xff
+    UINT8               enc_mode;               /* encryption mode of current link */
     UINT8               enc_key_size;           /* current link encryption key size */
     tBT_DEVICE_TYPE     device_type;
     BOOLEAN             new_encryption_key_is_p256; /* Set to TRUE when the newly generated LK
@@ -712,7 +725,8 @@ struct tBTM_SEC_DEV_REC{
 */
 typedef struct {
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
-    tBTM_LOC_BD_NAME bd_name;                    /* local Bluetooth device name */
+    tBTM_LOC_BD_NAME bredr_bd_name;                 /* local BREDR device name */
+    tBTM_LOC_BD_NAME ble_bd_name;                   /* local BLE device name */
 #endif
     BOOLEAN          pin_type;                   /* TRUE if PIN type is fixed */
     UINT8            pin_code_len;               /* Bonding information */
@@ -872,6 +886,7 @@ typedef struct {
     UINT16                  ediv;       /* received ediv value from LTK request */
     UINT8                   key_size;
     tBTM_BLE_VSC_CB         cmn_ble_vsc_cb;
+    BOOLEAN                 addr_res_en;   /* internal use for test: address resolution enable/disable */
 #endif
 
     /* Packet types supported by the local device */
@@ -946,8 +961,8 @@ typedef struct {
     UINT8                   acl_disc_reason;
     UINT8                   trace_level;
     UINT8                   busy_level; /* the current busy level */
-    BOOLEAN                 is_paging;  /* TRUE, if paging is in progess */
-    BOOLEAN                 is_inquiry; /* TRUE, if inquiry is in progess */
+    BOOLEAN                 is_paging;  /* TRUE, if paging is in progress */
+    BOOLEAN                 is_inquiry; /* TRUE, if inquiry is in progress */
     fixed_queue_t           *page_queue;
     BOOLEAN                 paging;
     BOOLEAN                 discing;
@@ -960,9 +975,11 @@ typedef struct {
 typedef struct{
   //connection parameters update callback
   tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
+  // setting packet data length callback
+  tBTM_SET_PKT_DATA_LENGTH_CBACK *set_pkt_data_length_cb;
 }tBTM_CallbackFunc;
 
-extern tBTM_CallbackFunc conn_param_update_cb;
+extern tBTM_CallbackFunc conn_callback_func;
 /* security action for L2CAP COC channels */
 #define BTM_SEC_OK                1
 #define BTM_SEC_ENCRYPT           2    /* encrypt the link with current key */
@@ -1145,6 +1162,9 @@ void btm_delete_stored_link_key_complete (UINT8 *p);
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
 void btm_ble_set_channels_complete (UINT8 *p);
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+void btm_set_min_enc_key_size_complete(const UINT8 *p);
+#endif
 void btm_set_page_timeout_complete (const UINT8 *p);
 void btm_page_to_setup_timeout (void *p_tle);
 

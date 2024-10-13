@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,7 +51,6 @@ typedef void (*esp_ipc_func_t)(void* arg);
  *      - ESP_OK otherwise
  */
 esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
-
 
 /**
  * @brief Execute a callback on a given CPU until and block until it completes

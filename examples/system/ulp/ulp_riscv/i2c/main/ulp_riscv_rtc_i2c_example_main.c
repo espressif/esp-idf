@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -38,6 +38,13 @@ static void init_i2c(void);
 
 void app_main(void)
 {
+    /* If user is using USB-serial-jtag then idf monitor needs some time to
+    *  re-connect to the USB port. We wait 1 sec here to allow for it to make the reconnection
+    *  before we print anything. Otherwise the chip will go back to sleep again before the user
+    *  has time to monitor any output.
+    */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     uint8_t data_rd = 0;
     int16_t ut_data = 0;
     int32_t up_data = 0;

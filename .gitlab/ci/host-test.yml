@@ -14,12 +14,25 @@
       optional: true
       artifacts: false
     - pipeline_variables
+  artifacts:
+    expire_in: 1 week
+    when: always
 
-test_nvs_on_host:
-  extends: .host_test_template
+check_public_headers:
+  extends:
+    - .host_test_template
+    - .rules:build:check
   script:
-    - cd components/nvs_flash/test_nvs_host
-    - make test
+    - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
+    - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
+    - IDF_TARGET=esp32s3 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s3-elf-
+    - IDF_TARGET=esp32c3 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c6 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c5 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32h2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
 test_nvs_coverage:
   extends:
@@ -27,11 +40,10 @@ test_nvs_coverage:
     - .rules:labels:nvs_coverage
   artifacts:
     paths:
-      - components/nvs_flash/test_nvs_host/coverage_report
-    expire_in: 1 week
+      - components/nvs_flash/host_test/nvs_host_test/coverage_report
   script:
-    - cd components/nvs_flash/test_nvs_host
-    - make coverage_report
+    - cd components/nvs_flash/host_test/nvs_host_test
+    - idf.py build coverage
   # the 'long' host tests take approx 11 hours on our current runners. Adding some margin here for possible CPU contention
   timeout: 18 hours
 
@@ -49,23 +61,6 @@ test_ldgen_on_host:
     - python -m unittest
   variables:
     LC_ALL: C.UTF-8
-
-test_reproducible_build:
-  extends: .host_test_template
-  script:
-    - ./tools/ci/test_reproducible_build.sh
-  artifacts:
-    when: on_failure
-    paths:
-      - "**/sdkconfig"
-      - "**/build*/*.bin"
-      - "**/build*/*.elf"
-      - "**/build*/*.map"
-      - "**/build*/flasher_args.json"
-      - "**/build*/*.bin"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-    expire_in: 1 week
 
 test_spiffs_on_host:
   extends: .host_test_template
@@ -110,17 +105,19 @@ test_cli_installer:
     paths:
       - tools/tools.new.json
       - tools/test_idf_tools/test_python_env_logs.txt
-    expire_in: 1 week
   image:
     name: $ESP_ENV_IMAGE
     entrypoint: [""]  # use system python3. no extra pip package installed
   script:
     # Tools must be downloaded for testing
-    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa
+    # We could use "idf_tools.py download all", but we don't want to install clang because of its huge size
+    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
+    # It runs at the end because it modifies dependencies
+    - IDF_TEST_MAY_BREAK_DEPENDENCIES=1 python3 ./test_idf_tools.py -v TestSystemDependencies.test_commands_when_nodeps
 
 .test_efuse_table_on_host_template:
   extends: .host_test_template
@@ -130,7 +127,6 @@ test_cli_installer:
     when: on_failure
     paths:
       - components/efuse/${IDF_TARGET}/esp_efuse_table.c
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/components/efuse/
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
@@ -173,7 +169,6 @@ test_logtrace_proc:
     paths:
       - tools/esp_app_trace/test/logtrace/output
       - tools/esp_app_trace/test/logtrace/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
     - ./test.sh
@@ -185,7 +180,6 @@ test_sysviewtrace_proc:
     paths:
       - tools/esp_app_trace/test/sysview/output
       - tools/esp_app_trace/test/sysview/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ./test.sh
@@ -194,13 +188,11 @@ test_tools:
   extends:
     - .host_test_template
   artifacts:
-    when: always
     paths:
       - ${IDF_PATH}/*.out
       - ${IDF_PATH}/XUNIT_*.xml
     reports:
       junit: ${IDF_PATH}/XUNIT_*.xml
-    expire_in: 1 week
   variables:
     LC_ALL: C.UTF-8
     INSTALL_QEMU: 1  # for test_idf_qemu.py
@@ -214,8 +206,8 @@ test_tools:
     - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
     - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest                                   --junitxml=${IDF_PATH}/XUNIT_SBOM.xml                      || stat=1
+    - cd ${IDF_PATH}/tools/test_idf_size
+    - pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml                  || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
@@ -282,61 +274,143 @@ test_pytest_qemu:
     - .host_test_template
     - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
+      - "**/build*/*.bin"
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
-  allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
   variables:
     INSTALL_QEMU: 1
   script:
-    - run_cmd python tools/ci/ci_build_apps.py . -vv
+    - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
       --pytest-apps
       -m qemu
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+    - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target $IDF_TARGET
+      --log-cli-level DEBUG
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
+      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
   extends:
     - .host_test_template
     - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
       - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
       -m host_test
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+    - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target linux
       -m host_test
+      --embedded-services idf
       --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
+
+test_pytest_macos:
+  extends:
+    - .host_test_template
+    - .before_script:build:macos
+  tags:
+    - macos_shell
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest-embedded/
+      - "**/build*/build_log.txt"
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
+  script:
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+      --target linux
+      --pytest-apps
+      -m \"host_test and macos_shell\"
+      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd pytest
+      --target linux
+      -m \"host_test and macos_shell\"
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --app-info-filepattern \"list_job_*.txt\"
+
+test_idf_pytest_plugin:
+  extends:
+    - .host_test_template
+    - .rules:patterns:idf-pytest-plugin
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests/test_report_generator
+    - python -m unittest test_report_generator.py
+    - cd ${IDF_PATH}/tools/ci/idf_pytest
+    - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+
+test_idf_build_apps_load_soc_caps:
+  extends: .host_test_template
+  script:
+    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
+
+test_nvs_gen_check:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - components/nvs_flash/nvs_partition_tool
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
+    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+
+make_sure_soc_caps_compatible_in_idf_build_apps:
+    extends:
+      - .host_test_template
+      - .rules:dev-push
+    artifacts:
+      paths:
+        - new.json
+        - base.json
+      when: always
+    when: manual
+    script:
+      - python tools/ci/idf_build_apps_dump_soc_caps.py new.json
+      - git fetch --depth=1 origin $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout -f $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
+      - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
+      - diff new.json base.json

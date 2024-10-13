@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ TEST_CASE("Test efuse API blocks burning XTS and ECDSA keys into BLOCK9", "[efus
     purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
 #endif
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
     purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
 #endif
@@ -90,12 +90,15 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
+#if SOC_KEY_MANAGER_SUPPORTED
+            purpose == ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
         TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(num_key));
 #if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
@@ -166,7 +169,7 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
                 purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY)) {
@@ -201,7 +204,7 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 
     esp_efuse_purpose_t purpose [] = {
         ESP_EFUSE_KEY_PURPOSE_USER,
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
         ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY,
 #else
         ESP_EFUSE_KEY_PURPOSE_RESERVED,
@@ -383,7 +386,11 @@ TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
 TEST_CASE("Test revocation APIs", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));
@@ -419,7 +426,11 @@ TEST_CASE("Test revocation APIs", "[efuse]")
 TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));

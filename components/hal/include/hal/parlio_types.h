@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,9 +58,12 @@ typedef soc_periph_parlio_clk_src_t parlio_clock_source_t;
 
 /// Maximum data width of TX unit
 #define PARLIO_TX_UNIT_MAX_DATA_WIDTH SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
+/// Maximum data width of RX unit
+#define PARLIO_RX_UNIT_MAX_DATA_WIDTH SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
 #else
 typedef int parlio_clock_source_t;
 #define PARLIO_TX_UNIT_MAX_DATA_WIDTH 0
+#define PARLIO_RX_UNIT_MAX_DATA_WIDTH 0
 #endif // SOC_PARLIO_SUPPORTED
 
 #ifdef __cplusplus

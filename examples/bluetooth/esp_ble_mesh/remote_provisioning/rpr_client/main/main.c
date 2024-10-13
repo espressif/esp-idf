@@ -65,13 +65,7 @@ typedef struct {
     uint32_t **vnd_models;
 } esp_ble_mesh_node_info_t;
 
-static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {
-    [0 ... (CONFIG_BLE_MESH_MAX_PROV_NODES - 1)] = {
-        .unicast = ESP_BLE_MESH_ADDR_UNASSIGNED,
-        .elem_num = 0,
-        .onoff = LED_OFF,
-    }
-};
+static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {0};
 
 static struct esp_ble_mesh_key {
     uint16_t net_idx;
@@ -86,22 +80,22 @@ static esp_ble_mesh_client_t config_client;
 static esp_ble_mesh_client_t onoff_client;
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 static esp_ble_mesh_model_t root_models[] = {
@@ -119,8 +113,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t composition = {
     .cid = CID_ESP,
-    .elements = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements = elements,
 };
 
 static esp_ble_mesh_prov_t provision = {
@@ -281,10 +275,10 @@ static void recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BD_ADDR_LEN],
     ESP_LOGI(TAG, "oob info: %d, bearer: %s", oob_info, (bearer & ESP_BLE_MESH_PROV_ADV) ? "PB-ADV" : "PB-GATT");
 
     memcpy(add_dev.addr, addr, BD_ADDR_LEN);
-    add_dev.addr_type = (uint8_t)addr_type;
+    add_dev.addr_type = (esp_ble_mesh_addr_type_t)addr_type;
     memcpy(add_dev.uuid, dev_uuid, 16);
     add_dev.oob_info = oob_info;
-    add_dev.bearer = (uint8_t)bearer;
+    add_dev.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
     /* Note: If unprovisioned device adv packets have not been received, we should not add
              device with ADD_DEV_START_PROV_NOW_FLAG set. */
     err = esp_ble_mesh_provisioner_add_unprov_dev(&add_dev,
@@ -967,7 +961,7 @@ static void example_ble_mesh_remote_prov_client_callback(esp_ble_mesh_rpr_client
                 if (param->recv.val.link_report.status == ESP_BLE_MESH_RPR_STATUS_SUCCESS) {
                     switch (param->recv.val.link_report.rpr_state)
                     {
-                    case ESP_BLE_MESH_RPR_LINK_ACTIVE:
+                    case ESP_BLE_MESH_RPR_LINK_ACTIVE: {
                         ESP_LOGI(TAG, "Remote Provisioning Server(addr: 0x%04x) Link Open Success", addr);
                         esp_ble_mesh_rpr_client_act_param_t param = {0};
                         param.start_rpr.model = remote_prov_client.model;
@@ -981,6 +975,7 @@ static void example_ble_mesh_remote_prov_client_callback(esp_ble_mesh_rpr_client
                         }
                         board_led_operation(LED_OFF, LED_ON, LED_OFF);
                         break;
+                    }
                     default:
                         ESP_LOGI(TAG, "Remote Provisioning Server(addr: 0x%04x) Status error", addr);
                         break;
@@ -1096,7 +1091,7 @@ static esp_err_t ble_mesh_init(void)
         return err;
     }
 
-    err = esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_provisioner_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh provisioner (err %d)", err);
         return err;

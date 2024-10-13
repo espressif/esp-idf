@@ -66,7 +66,7 @@ The signal integrity talking about in this chapter is mainly about is in time do
 - Voltage level switching needs time, and this is influenced by the pin load, connected capacitors and resistors, and other noises.
 - Clock signal rises and falls will be measured by the eMMC by its minimum input high voltage (VIH) and maximum input low voltage (VIL).
 - Input CMD and Data signals' rises and falls will be measured by the eMMC by its minimum input high voltage (VIH) and maximum input low voltage (VIL).
-- Output CMD and Data signals' rises and falls will be measured by the eMMC by its mininum output high voltage (VOH) and maximum output low voltage (VOL).
+- Output CMD and Data signals' rises and falls will be measured by the eMMC by its minimum output high voltage (VOH) and maximum output low voltage (VOL).
 
 Therefore when using cables to connect your eMMC and the ESP chip, the time that a pin voltage level increases to the VIL / VOL, or the time that a pin voltage level decreases to the VIH / VOH will be longer.
 

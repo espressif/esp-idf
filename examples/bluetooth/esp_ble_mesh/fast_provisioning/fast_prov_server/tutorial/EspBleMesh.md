@@ -12,7 +12,7 @@ A video of this example can be seen from [here](https://dl.espressif.com/BLE/pub
 
 > Note:
 > 
-> 1. Please flash the [`fast_prov_server`](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server) to the development boards first;
+> 1. Please flash the [`fast_prov_server`](../../) to the development boards first;
 > 2. To have a better understanding of the performance of the BLE Mesh network, we recommend that at least 3 devices should be added in your network.
 > 3. We recommend that you solder LED indicators if your development board does not come with lights. 
 > 4. Please check the type of board and LED pin definition enabled in `Example BLE Mesh Config` by running `idf.py menuconfig`

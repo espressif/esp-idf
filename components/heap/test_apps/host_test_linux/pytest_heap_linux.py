@@ -7,6 +7,4 @@ from pytest_embedded import Dut
 @pytest.mark.linux
 @pytest.mark.host_test
 def test_heap_linux(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests.')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=60)
+    dut.run_all_single_board_cases(timeout=60)

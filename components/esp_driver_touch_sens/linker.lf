@@ -1,0 +1,10 @@
+[mapping:touch_sens_driver]
+archive: libesp_driver_touch_sens.a
+entries:
+    if TOUCH_CTRL_FUNC_IN_IRAM = y:
+        touch_sens_common: touch_sensor_start_continuous_scanning (noflash)
+        touch_sens_common: touch_sensor_stop_continuous_scanning (noflash)
+        touch_sens_common: touch_channel_read_data (noflash)
+        touch_sens_common: touch_channel_config_benchmark (noflash)
+        touch_sens_version_specific: touch_priv_channel_read_data (noflash)
+        touch_sens_version_specific: touch_priv_config_benchmark (noflash)

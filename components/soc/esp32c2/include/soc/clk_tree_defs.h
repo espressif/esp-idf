@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,6 +86,18 @@ typedef enum {
     SOC_RTC_FAST_CLK_SRC_RC_FAST = 1,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_INVALID,          /*!< Invalid RTC_FAST_CLK source */
 } soc_rtc_fast_clk_src_t;
+
+/**
+ * @brief Possible main XTAL frequency options on the target
+ * @note Enum values equal to the frequency value in MHz
+ * @note Not all frequency values listed here are supported in IDF. Please check SOC_XTAL_SUPPORT_XXX in soc_caps.h for
+ *       the supported ones.
+ */
+typedef enum {
+    SOC_XTAL_FREQ_26M = 26,                /*!< 26MHz XTAL */
+    SOC_XTAL_FREQ_32M = 32,                /*!< 32MHz XTAL */
+    SOC_XTAL_FREQ_40M = 40,                /*!< 40MHz XTAL */
+} soc_xtal_freq_t;
 
 // Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
 // {[upstream]clock_name}: (BB)PLL etc.
@@ -176,6 +188,11 @@ typedef enum {
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**
+ * @brief Array initializer for all supported clock sources of UART
+ */
+#define SOC_UART_CLKS {SOC_MOD_CLK_PLL_F40M, SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
  * @brief Type of UART clock source, reserved for the legacy UART driver
  */
 typedef enum {
@@ -184,9 +201,6 @@ typedef enum {
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,         /*!< UART source clock is XTAL */
     UART_SCLK_DEFAULT = SOC_MOD_CLK_PLL_F40M,  /*!< UART source clock default choice is PLL_F40M */
 } soc_periph_uart_clk_src_legacy_t;
-
-/////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
-
 
 /////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
 
@@ -203,6 +217,8 @@ typedef enum {
     SPI_CLK_SRC_PLL_F40M = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL_40M as SPI source clock */
     SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
 } soc_periph_spi_clk_src_t;
+
+/////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of I2C

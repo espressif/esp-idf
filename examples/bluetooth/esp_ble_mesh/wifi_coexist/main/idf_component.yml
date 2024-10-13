@@ -3,5 +3,5 @@ dependencies:
     path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/fast_prov
   example_init:
     path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_init
-  iperf:
-    path: ${IDF_PATH}/examples/common_components/iperf
+  espressif/iperf:
+    version: "~0.1.1"

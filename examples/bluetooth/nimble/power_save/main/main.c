@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,28 @@
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
 
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
+#endif
+#endif
+
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
     0x02, 0x01, 0x06,
@@ -28,7 +50,7 @@ static uint8_t ext_adv_pattern_1[] = {
 
 static const char *tag = "NimBLE_BLE_PRPH";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
-#if CONFIG_EXAMPLE_RANDOM_ADDR
+#if CONFIG_EXAMPLE_RANDOM_ADDR || CONFIG_EXAMPLE_USE_CI_ADDRESS
 static uint8_t own_addr_type = BLE_OWN_ADDR_RANDOM;
 #else
 static uint8_t own_addr_type;
@@ -93,7 +115,7 @@ ext_bleprph_advertise(void)
     params.connectable = 1;
 
     /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -262,7 +284,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
@@ -462,13 +484,26 @@ bleprph_on_sync(void)
     ble_app_set_addr();
 #endif
 
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+    if (strlen(CONFIG_EXAMPLE_CI_ADDRESS_OFFSET)) {
+        uint8_t addr[6] = {0};
+        uint32_t *offset = (uint32_t *)&addr[1];
+        *offset = atoi(CONFIG_EXAMPLE_CI_ADDRESS_OFFSET);
+        addr[5] = 0xC3;
+        addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        rc = ble_hs_id_set_rnd(addr);
+        assert(rc == 0);
+    }
+#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
+
     /* Make sure we have proper identity address set (public preferred) */
-#if CONFIG_EXAMPLE_RANDOM_ADDR
+#if CONFIG_EXAMPLE_RANDOM_ADDR || CONFIG_EXAMPLE_USE_CI_ADDRESS
     rc = ble_hs_util_ensure_addr(1);
 #else
     rc = ble_hs_util_ensure_addr(0);
 #endif
     assert(rc == 0);
+
 
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);

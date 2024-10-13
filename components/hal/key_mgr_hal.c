@@ -59,7 +59,7 @@ void key_mgr_hal_write_assist_info(const uint8_t *assist_info_buf, const size_t 
     key_mgr_ll_write_assist_info(assist_info_buf, data_len);
 }
 
-void key_mgr_hal_assist_assist_info(uint8_t *assist_info_buf)
+void key_mgr_hal_read_assist_info(uint8_t *assist_info_buf)
 {
     key_mgr_ll_read_assist_info(assist_info_buf);
 }
@@ -79,14 +79,14 @@ bool key_mgr_hal_is_huk_valid(void)
     return key_mgr_ll_is_huk_valid();
 }
 
-void key_mgr_hal_set_aes_xts_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
 {
-    key_mgr_ll_set_aes_xts_key_len(key_len);
+    key_mgr_ll_set_xts_aes_key_len(key_len);
 }
 
-esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_aes_xts_key_len(void)
+esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_xts_aes_key_len(void)
 {
-    return key_mgr_ll_get_aes_xts_key_len();
+    return key_mgr_ll_get_xts_aes_key_len();
 }
 
 void key_mgr_hal_continue(void)

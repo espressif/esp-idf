@@ -235,7 +235,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",
@@ -391,6 +391,16 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
             ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         }
+        return 0;
+
+    case BLE_GAP_EVENT_AUTHORIZE:
+        MODLOG_DFLT(INFO, "authorize event: conn_handle=%d attr_handle=%d is_read=%d",
+                    event->authorize.conn_handle,
+                    event->authorize.attr_handle,
+                    event->authorize.is_read);
+
+        /* The default behaviour for the event is to reject authorize request */
+        event->authorize.out_response = BLE_GAP_AUTHORIZE_REJECT;
         return 0;
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)

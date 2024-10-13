@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include "esp_timer.h"
+#include "esp_cache.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_sd";
@@ -90,7 +91,9 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
      */
     uint32_t* sd_ssr = NULL;
     size_t actual_size = 0;
-    err = esp_dma_calloc(1, SD_SSR_SIZE, 0, (void *)&sd_ssr, &actual_size);
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    err = esp_dma_capable_calloc(1, SD_SSR_SIZE, &dma_mem_info, (void *)&sd_ssr, &actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
         return err;
@@ -116,7 +119,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
 
     err = sdmmc_decode_ssr(sd_ssr, &card->ssr);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: error sdmmc_decode_scr returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: error sdmmc_decode_ssr returned 0x%x", __func__, err);
     }
     free(sd_ssr);
     return err;
@@ -191,12 +194,14 @@ esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
     uint32_t other_func_mask = (0x00ffffff & ~(0xf << group_shift));
     uint32_t func_val = (function << group_shift) | other_func_mask;
 
+    size_t datalen = sizeof(sdmmc_switch_func_rsp_t);
     sdmmc_command_t cmd = {
             .opcode = MMC_SWITCH,
             .flags = SCF_CMD_ADTC | SCF_CMD_READ | SCF_RSP_R1,
             .blklen = sizeof(sdmmc_switch_func_rsp_t),
             .data = resp->data,
-            .datalen = sizeof(sdmmc_switch_func_rsp_t),
+            .datalen = datalen,
+            .buflen = datalen,
             .arg = (!!mode << 31) | func_val
     };
 
@@ -233,13 +238,18 @@ esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card)
         ((card->csd.card_command_class & SD_CSD_CCC_SWITCH) == 0)) {
             return ESP_ERR_NOT_SUPPORTED;
     }
-    sdmmc_switch_func_rsp_t* response = (sdmmc_switch_func_rsp_t*)
-            heap_caps_malloc(sizeof(*response), MALLOC_CAP_DMA);
-    if (response == NULL) {
-        return ESP_ERR_NO_MEM;
+
+    size_t actual_size = 0;
+    sdmmc_switch_func_rsp_t *response = NULL;
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    esp_err_t err = esp_dma_capable_malloc(sizeof(*response), &dma_mem_info, (void *)&response, &actual_size);
+    assert(actual_size == sizeof(*response));
+    if (err != ESP_OK) {
+        return err;
     }
 
-    esp_err_t err = sdmmc_send_cmd_switch_func(card, 0, SD_ACCESS_MODE, 0, response);
+    err = sdmmc_send_cmd_switch_func(card, 0, SD_ACCESS_MODE, 0, response);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (1) returned 0x%x", __func__, err);
         goto out;

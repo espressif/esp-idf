@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -26,7 +27,7 @@ TEST_CASE("FreeRTOS xTaskGetHandle()", "[freertos]")
 {
     vTaskDelay(10); //Small delay to let init/daemon tasks finish running
 
-    for (int core = 0; core < configNUM_CORES; core++) {
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
         TaskHandle_t test_task_hdl;
         TaskHandle_t ret_task_hdl;
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_task_get_handle, "test0", 1024, NULL, UNITY_FREERTOS_PRIORITY + 1, &test_task_hdl, core));
@@ -85,7 +86,7 @@ TEST_CASE("FreeRTOS xTaskAbortDelay()", "[freertos]")
     test_objs.stream_buffer = xStreamBufferCreate(STREAM_BUFFER_LEN, 1);
     test_objs.evt_grp = xEventGroupCreate();
 
-    for (int core = 0; core < configNUM_CORES; core++) {
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
         //Take the MUX so that test task will block on it
         TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_objs.mux, 0));
 

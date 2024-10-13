@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition,
     if (src_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (src_offset + size > partition->size) {
+    if (size > partition->size - src_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -70,7 +70,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition,
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (dst_offset + size > partition->size) {
+    if (size > partition->size - dst_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     dst_offset = partition->address + dst_offset;
@@ -95,7 +95,7 @@ esp_err_t esp_partition_read_raw(const esp_partition_t *partition,
     if (src_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (src_offset + size > partition->size) {
+    if (size > partition->size - src_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -112,7 +112,7 @@ esp_err_t esp_partition_write_raw(const esp_partition_t *partition,
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (dst_offset + size > partition->size) {
+    if (size > partition->size - dst_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     dst_offset = partition->address + dst_offset;
@@ -130,7 +130,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
     if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size) {
+    if (size > partition->size - offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (size % SPI_FLASH_SEC_SIZE != 0) {
@@ -145,11 +145,11 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
 
 /*
  * Note: current implementation ignores the possibility of multiple regions in the same partition being
- * mapped. Reference counting and address space re-use is delegated to spi_flash_mmap.
+ * mapped. Reference counting and address space reuse is delegated to spi_flash_mmap.
  *
  * If this becomes a performance issue (i.e. if we need to map multiple regions within the partition),
  * we can add esp_partition_mmapv which will accept an array of offsets and sizes, and return array of
- * mmaped pointers, and a single handle for all these regions.
+ * mapped pointers, and a single handle for all these regions.
  */
 esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, size_t size,
                              esp_partition_mmap_memory_t memory,
@@ -159,7 +159,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size) {
+    if (size > partition->size - offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (partition->flash_chip != esp_flash_default_chip) {
@@ -232,4 +232,9 @@ bool esp_partition_main_flash_region_safe(size_t addr, size_t size)
         return false;
     }
     return true;
+}
+
+uint32_t esp_partition_get_main_flash_sector_size(void)
+{
+    return SPI_FLASH_SEC_SIZE;
 }

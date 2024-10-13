@@ -1090,9 +1090,9 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
             p_tcb->transport = transport;
         }
         memcpy(p_tcb->peer_bda, bda, BD_ADDR_LEN);
-#if (GATTS_INCLUDED == TRUE)
+#if GATTS_ROBUST_CACHING_ENABLED
         gatt_sr_init_cl_status(p_tcb);
-#endif  ///GATTS_INCLUDED == TRUE
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
     }
     return p_tcb;
 }

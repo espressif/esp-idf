@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,6 +116,20 @@ extern "C" {
         #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (8)
     #endif
 
+    #if defined (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (CONFIG_BT_LE_HCI_UART_FLOWCTRL)
+        #if DEFAULT_BT_LE_HCI_UART_FLOW_CTRL
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (CONFIG_BT_LE_HCI_UART_CTS_PIN)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (CONFIG_BT_LE_HCI_UART_RTS_PIN)
+        #else
+            #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+            #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
+        #endif
+    #else
+        #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
+        #define DEFAULT_BT_LE_HCI_UART_CTS_PIN (-1)
+        #define DEFAULT_BT_LE_HCI_UART_RTS_PIN (-1)
+    #endif
 #endif
 
 #define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
@@ -156,8 +170,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (UART_DATA_8_BITS)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (UART_STOP_BITS_1)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (CONFIG_BT_LE_HCI_UART_TASK_STACK_SIZE)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #else
     #define DEFAULT_BT_LE_HCI_UART_TX_PIN (0)
     #define DEFAULT_BT_LE_HCI_UART_RX_PIN (0)
@@ -166,8 +178,6 @@ extern "C" {
     #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (0)
     #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (0)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
 #endif
 
 /* Unchanged configuration */

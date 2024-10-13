@@ -1,16 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "hal/i2c_hal.h"
-
-void i2c_hal_master_trans_start(i2c_hal_context_t *hal)
-{
-    i2c_ll_update(hal->dev);
-    i2c_ll_master_trans_start(hal->dev);
-}
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////

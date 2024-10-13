@@ -1,13 +1,17 @@
 Security
 ========
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA", esp32c5="RSA or ECDSA", esp32c61="ECDSA"}
 
-{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS or ECDSA", esp32p4="DS or ECDSA"}
+{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS or ECDSA", esp32p4="DS or ECDSA", esp32c5="DS or ECDSA"}
 
 :link_to_translation:`zh_CN:[中文]`
 
 This guide provides an overview of the overall security features available in various Espressif solutions. It is highly recommended to consider this guide while designing the products with the Espressif platform and the ESP-IDF software stack from the **security** perspective.
+
+.. note::
+
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
 
 Goals
 -----
@@ -45,7 +49,7 @@ Secure Boot Best Practices
 
 * Generate the signing key on a system with a quality source of entropy.
 * Always keep the signing key private. A leak of this key will compromise the Secure Boot system.
-* Do not allow any third party to observe any aspects of the key generation or signing process using ``espsecure.py``. Both processes are vulnerable to timing or other side-channel attacks.
+* Do not allow any third party to observe any aspects of the key generation or signing process using ``idf.py secure-`` or ``espsecure.py`` commands. Both processes are vulnerable to timing or other side-channel attacks.
 * Ensure that all security eFuses have been correctly programmed, including disabling of the debug interfaces, non-required boot mediums (e.g., UART DL mode), etc.
 
 
@@ -79,7 +83,7 @@ Flash Encryption Best Practices
 
     .. only:: SOC_ECDSA_SUPPORTED
 
-        {IDF_TARGET_NAME} also supportes ECDSA peripheral for generating hardware-accelerated ECDSA digital signatures. ECDSA private key can be directly programmed in an eFuse block and marked as read protected from the software.
+        {IDF_TARGET_NAME} also supports ECDSA peripheral for generating hardware-accelerated ECDSA digital signatures. ECDSA private key can be directly programmed in an eFuse block and marked as read protected from the software.
 
     {IDF_TARGET_SIG_PERI} peripheral can help to establish the **Secure Device Identity** to the remote endpoint, e.g., in the case of TLS mutual authentication based on the {IDF_TARGET_CIPHER_SCHEME} cipher scheme.
 
@@ -241,7 +245,7 @@ Anti-Rollback Protection
 
 Anti-rollback protection feature ensures that device only executes the application that meets the security version criteria as stored in its eFuse. So even though the application is trusted and signed by legitimate key, it may contain some revoked security feature or credential. Hence, device must reject any such application.
 
-ESP-IDF allows this feature for the application only and it is managed through 2nd stage bootloader. The security version is stored in the device eFuse and it is compared against the application image header during both bootup and over-the-air updates.
+ESP-IDF allows this feature for the application only and it is managed through 2nd stage bootloader. The security version is stored in the device eFuse and it is compared against the application image header during both boot-up and over-the-air updates.
 
 Please see more information to enable this feature in the :ref:`anti-rollback` guide.
 
@@ -268,7 +272,7 @@ Please refer to the :ref:`nvs_encryption` for detailed documentation on the work
 Secure Device Control
 ~~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF provides capability to control an ESP device over ``Wi-Fi + HTTP`` or ``BLE`` in a secure manner using ESP Local Control component.
+ESP-IDF provides capability to control an ESP device over ``Wi-Fi/Ethernet + HTTP`` or ``BLE`` in a secure manner using ESP Local Control component.
 
 Please refer to the :doc:`../api-reference/protocols/esp_local_ctrl` for detailed documentation about this feature.
 

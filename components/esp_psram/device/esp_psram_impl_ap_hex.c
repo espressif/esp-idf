@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,11 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "../esp_psram_impl.h"
-#include "rom/opi_flash.h"
 #include "hal/psram_ctrlr_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
+#include "clk_ctrl_os.h"
 
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
 #define PSRAM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -25,14 +27,31 @@
 #define AP_HEX_PSRAM_RD_CMD_BITLEN         16
 #define AP_HEX_PSRAM_WR_CMD_BITLEN         16
 #define AP_HEX_PSRAM_ADDR_BITLEN           32
+
+#if CONFIG_SPIRAM_SPEED_250M
+#define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(18-1))
+#define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(9-1))
+#define AP_HEX_PSRAM_RD_LATENCY            6
+#define AP_HEX_PSRAM_WR_LATENCY            3
+#elif CONFIG_SPIRAM_SPEED_200M
+#define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(14-1))
+#define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(7-1))
+#define AP_HEX_PSRAM_RD_LATENCY            4
+#define AP_HEX_PSRAM_WR_LATENCY            1
+#else
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
-#define AP_HEX_PSRAM_VENDOR_ID             0xD
+#define AP_HEX_PSRAM_RD_LATENCY            2
+#define AP_HEX_PSRAM_WR_LATENCY            2
+#endif
 
+#define AP_HEX_PSRAM_VENDOR_ID             0xD
 #define AP_HEX_PSRAM_CS_SETUP_TIME         4
 #define AP_HEX_PSRAM_CS_HOLD_TIME          4
 #define AP_HEX_PSRAM_CS_ECC_HOLD_TIME      4
 #define AP_HEX_PSRAM_CS_HOLD_DELAY         3
+
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
 
 typedef struct {
     union {
@@ -122,7 +141,7 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
     hex_psram_mode_reg_t mode_reg = {0};
     int data_bit_len = 16;
 
-    //read
+    //read MR0 and MR1
     s_psram_common_transaction(spi_num,
                                AP_HEX_PSRAM_REG_READ, cmd_len,
                                addr, addr_bit_len,
@@ -131,12 +150,24 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
                                &mode_reg.mr0.val, data_bit_len,
                                false);
 
+    addr = 0x4;
+    //read MR4 and MR8
+    s_psram_common_transaction(spi_num,
+                               AP_HEX_PSRAM_REG_READ, cmd_len,
+                               addr, addr_bit_len,
+                               dummy,
+                               NULL, 0,
+                               &mode_reg.mr4.val, data_bit_len,
+                               false);
+
     //modify
     mode_reg.mr0.lt = mode_reg_config->mr0.lt;
     mode_reg.mr0.read_latency = mode_reg_config->mr0.read_latency;
     mode_reg.mr0.drive_str = mode_reg_config->mr0.drive_str;
+    mode_reg.mr4.wr_latency = mode_reg_config->mr4.wr_latency;
 
     //write
+    addr = 0x0;
     s_psram_common_transaction(spi_num,
                                AP_HEX_PSRAM_REG_WRITE, cmd_len,
                                addr, addr_bit_len,
@@ -145,9 +176,18 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
                                NULL, 0,
                                false);
 
+    addr = 0x4;
+    s_psram_common_transaction(spi_num,
+                               AP_HEX_PSRAM_REG_WRITE, cmd_len,
+                               addr, addr_bit_len,
+                               0,
+                               &mode_reg.mr4.val, 16,
+                               NULL, 0,
+                               false);
+
+    //read
     addr = 0x8;
     data_bit_len = 8;
-    //read
     s_psram_common_transaction(spi_num,
                                AP_HEX_PSRAM_REG_READ, cmd_len,
                                addr, addr_bit_len,
@@ -242,10 +282,10 @@ static void s_print_psram_info(hex_psram_mode_reg_t *reg_val)
 static void s_config_mspi_for_psram(void)
 {
     //Config Write CMD phase for SPI0 to access PSRAM
-    psram_ctrlr_ll_set_wr_cmd(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_WR_CMD_BITLEN, AP_HEX_PSRAM_BURST_WRITE);
+    psram_ctrlr_ll_set_wr_cmd(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_WR_CMD_BITLEN, AP_HEX_PSRAM_SYNC_WRITE);
 
     //Config Read CMD phase for SPI0 to access PSRAM
-    psram_ctrlr_ll_set_rd_cmd(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_RD_CMD_BITLEN, AP_HEX_PSRAM_BURST_READ);
+    psram_ctrlr_ll_set_rd_cmd(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_RD_CMD_BITLEN, AP_HEX_PSRAM_SYNC_READ);
 
     //Config ADDR phase
     psram_ctrlr_ll_set_addr_bitlen(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_ADDR_BITLEN);
@@ -324,25 +364,36 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
+#if SOC_CLK_MPLL_SUPPORTED
+    periph_rtc_mpll_acquire();
+    periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, NULL);
+#endif
+
     PSRAM_RCC_ATOMIC() {
         psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
         psram_ctrlr_ll_reset_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2);
-        psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
+        psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_MPLL);
+        psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_MPLL);
     }
+
+    mspi_timing_ll_pin_drv_set(2);
+    mspi_timing_ll_enable_dqs(true);
 
     s_set_psram_cs_timing();
 #if CONFIG_SPIRAM_ECC_ENABLE
     s_configure_psram_ecc();
 #endif
     //enter MSPI slow mode to init PSRAM device registers
-    psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_2, 2);
+    psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_2, AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ / CONFIG_SPIRAM_SPEED);
+    psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_3, AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ / CONFIG_SPIRAM_SPEED);
     psram_ctrlr_ll_enable_dll(PSRAM_CTRLR_LL_MSPI_ID_2, true);
     psram_ctrlr_ll_enable_dll(PSRAM_CTRLR_LL_MSPI_ID_3, true);
 
     static hex_psram_mode_reg_t mode_reg = {};
     mode_reg.mr0.lt = 1;
-    mode_reg.mr0.read_latency = 2;
+    mode_reg.mr0.read_latency = AP_HEX_PSRAM_RD_LATENCY;
     mode_reg.mr0.drive_str = 0;
+    mode_reg.mr4.wr_latency = AP_HEX_PSRAM_WR_LATENCY;
     mode_reg.mr8.bl = 3;
     mode_reg.mr8.bt = 0;
     mode_reg.mr8.rbx = 1;
@@ -364,7 +415,18 @@ esp_err_t esp_psram_impl_enable(void)
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB :
                    mode_reg.mr2.density == 0x6 ? PSRAM_SIZE_64MB : 0;
 
+#if CONFIG_SPIRAM_SPEED_250M
+    if (mode_reg.mr2.density == 0x7) {
+        ESP_EARLY_LOGE(TAG, "PSRAM Not support 250MHz speed");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
     s_config_mspi_for_psram();
+    mspi_timing_psram_tuning();
+    psram_ctrlr_ll_enable_variable_dummy(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+    psram_ctrlr_ll_enable_variable_dummy(PSRAM_CTRLR_LL_MSPI_ID_3, true);
+
     return ESP_OK;
 }
 

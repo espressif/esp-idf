@@ -35,7 +35,7 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
 
     printf("install mcpwm capture channels\r\n");
     mcpwm_capture_channel_config_t cap_chan_config = {
-        .gpio_num = 0,
+        .gpio_num = TEST_CAP_GPIO,
         .prescale = 2,
         .flags.pos_edge = true,
         .flags.pull_up = true,
@@ -80,7 +80,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
-    const int cap_gpio = 0;
+    const int cap_gpio = TEST_CAP_GPIO;
     // put the GPIO into a preset state
     gpio_set_level(cap_gpio, 0);
 
@@ -184,7 +184,7 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     // check user data
     TEST_ASSERT_EQUAL(2, test_callback_data.cap_data_index);
     uint32_t delta = test_callback_data.cap_data[1] - test_callback_data.cap_data[0];
-    esp_rom_printf("duration=%u ticks\r\n", delta);
+    esp_rom_printf("duration=%" PRIu32 " ticks\r\n", delta);
     uint32_t clk_src_res;
     TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
     clk_src_res /= 1000; // convert to kHz

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,32 +33,32 @@ static void task_should_never_run(void *arg)
 }
 
 static BaseType_t create_task(TaskFunction_t function,
-        size_t stack_size,
-        void *task_arg,
-        int core_num,
-        UBaseType_t heap_caps,
-        TaskHandle_t *task_handle)
+                              size_t stack_size,
+                              void *task_arg,
+                              int core_num,
+                              UBaseType_t heap_caps,
+                              TaskHandle_t *task_handle)
 {
 #if CONFIG_FREERTOS_SMP
     UBaseType_t core_affinity_mask = (core_num == -1) ? tskNO_AFFINITY : 1 << core_num;
     return prvTaskCreateDynamicAffinitySetWithCaps(function,
-                "self_delete",
-                stack_size,
-                task_arg,
-                UNITY_FREERTOS_PRIORITY + 1,
-                core_affinity_mask,
-                heap_caps,
-                task_handle);
+                                                   "self_delete",
+                                                   stack_size,
+                                                   task_arg,
+                                                   UNITY_FREERTOS_PRIORITY + 1,
+                                                   core_affinity_mask,
+                                                   heap_caps,
+                                                   task_handle);
 #else
     const BaseType_t task_core_num = (core_num == -1) ? tskNO_AFFINITY : core_num;
     return prvTaskCreateDynamicPinnedToCoreWithCaps(function,
-                "self_delete",
-                stack_size,
-                task_arg,
-                UNITY_FREERTOS_PRIORITY + 1,
-                task_core_num,
-                heap_caps,
-                task_handle);
+                                                    "self_delete",
+                                                    stack_size,
+                                                    task_arg,
+                                                    UNITY_FREERTOS_PRIORITY + 1,
+                                                    task_core_num,
+                                                    heap_caps,
+                                                    task_handle);
 #endif
 }
 
@@ -69,11 +69,11 @@ TEST_CASE("Out of memory failure", "[freertos][psram]")
     UBaseType_t HEAP_CAPS = (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
     BaseType_t result = create_task(task_should_never_run,
-                STACK_SIZE,
-                (void *)xTaskGetCurrentTaskHandle(),
-                -1,
-                HEAP_CAPS,
-                &task_handle);
+                                    STACK_SIZE,
+                                    (void *)xTaskGetCurrentTaskHandle(),
+                                    -1,
+                                    HEAP_CAPS,
+                                    &task_handle);
     TEST_ASSERT_EQUAL(errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY, result);
     (void)task_handle;
 }
@@ -85,11 +85,11 @@ TEST_CASE("Task with stack memory in PSRAM", "[freertos][psram]")
     UBaseType_t HEAP_CAPS = (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
     BaseType_t result = create_task(task_delete_itself,
-                STACK_SIZE,
-                (void *)xTaskGetCurrentTaskHandle(),
-                -1,
-                HEAP_CAPS,
-                &task_handle);
+                                    STACK_SIZE,
+                                    (void *)xTaskGetCurrentTaskHandle(),
+                                    -1,
+                                    HEAP_CAPS,
+                                    &task_handle);
     TEST_ASSERT_EQUAL(pdPASS, result);
 
     // synchronize with the task to make sure we don't return too early, thus giving it enough time
@@ -126,11 +126,11 @@ TEST_CASE("Task on specific core works", "[freertos][psram]")
         corenum_info.parent_handle = xTaskGetCurrentTaskHandle();
         UBaseType_t HEAP_CAPS = (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         BaseType_t result = create_task(task_report_corenum,
-                STACK_SIZE,
-                (void *) &(corenum_info),
-                corenum,
-                HEAP_CAPS,
-                &task_handle);
+                                        STACK_SIZE,
+                                        (void *) & (corenum_info),
+                                        corenum,
+                                        HEAP_CAPS,
+                                        &task_handle);
 
         TEST_ASSERT_EQUAL(pdPASS, result);
 

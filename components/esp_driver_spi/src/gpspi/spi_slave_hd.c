@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"
@@ -36,15 +37,12 @@ typedef struct {
 
 typedef struct {
     bool dma_enabled;
+    spi_dma_ctx_t   *dma_ctx;
     uint16_t internal_mem_align_size;
     int max_transfer_sz;
     uint32_t flags;
     portMUX_TYPE int_spinlock;
     intr_handle_t intr;
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t gdma_handle_tx;   //varible for storge gdma handle
-    gdma_channel_handle_t gdma_handle_rx;
-#endif
     intr_handle_t intr_dma;
     spi_slave_hd_callback_config_t callback;
     spi_slave_hd_hal_context_t hal;
@@ -54,8 +52,8 @@ typedef struct {
     QueueHandle_t tx_ret_queue;
     QueueHandle_t rx_trans_queue;
     QueueHandle_t rx_ret_queue;
-    QueueHandle_t tx_cnting_sem;
-    QueueHandle_t rx_cnting_sem;
+    SemaphoreHandle_t tx_cnting_sem;
+    SemaphoreHandle_t rx_cnting_sem;
 
     spi_slave_hd_trans_priv_t tx_curr_trans;
     spi_slave_hd_trans_priv_t rx_curr_trans;
@@ -68,19 +66,23 @@ static spi_slave_hd_slot_t *spihost[SOC_SPI_PERIPH_NUM];
 static const char TAG[] = "slave_hd";
 
 #if SOC_GDMA_SUPPORTED
-static bool spi_gdma_tx_channel_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+// for which dma is provided by gdma driver
+#define spi_dma_reset               gdma_reset
+#define spi_dma_start(chan, addr)   gdma_start(chan, (intptr_t)(addr))
+#define spi_dma_append              gdma_append
+
+static bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+#else
+// by spi_dma, mainly esp32s2
+static void s_spi_slave_hd_append_legacy_isr(void *arg);
 #endif // SOC_GDMA_SUPPORTED
 
-static void spi_slave_hd_intr_append(void *arg);
-static void spi_slave_hd_intr_segment(void *arg);
+static void s_spi_slave_hd_segment_isr(void *arg);
 
-esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config,
-                            const spi_slave_hd_slot_config_t *config)
+esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config, const spi_slave_hd_slot_config_t *config)
 {
     bool spi_chan_claimed;
     bool append_mode = (config->flags & SPI_SLAVE_HD_APPEND_MODE);
-    uint32_t actual_tx_dma_chan = 0;
-    uint32_t actual_rx_dma_chan = 0;
     esp_err_t ret = ESP_OK;
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
@@ -104,37 +106,41 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->append_mode = append_mode;
 
     if (host->dma_enabled) {
-        ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &host->dma_ctx);
+        if (ret != ESP_OK) {
+            goto cleanup;
+        }
+#if SOC_GDMA_SUPPORTED
+        gdma_strategy_config_t dma_strategy = {
+            .auto_update_desc = true,
+            .eof_till_data_popped = true,
+        };
+        gdma_apply_strategy(host->dma_ctx->tx_dma_chan, &dma_strategy);
+#else
+        spi_dma_ll_enable_out_auto_wrback(SPI_LL_GET_HW(host->dma_ctx->tx_dma_chan.host_id), host->dma_ctx->tx_dma_chan.chan_id, 1);
+        spi_dma_ll_set_out_eof_generation(SPI_LL_GET_HW(host->dma_ctx->tx_dma_chan.host_id), host->dma_ctx->tx_dma_chan.chan_id, 1);
+#endif
+        ret = spicommon_dma_desc_alloc(host->dma_ctx, bus_config->max_transfer_sz, &host->max_transfer_sz);
         if (ret != ESP_OK) {
             goto cleanup;
         }
 
-        //Malloc for all the DMA descriptors
-        int dma_desc_ct = (bus_config->max_transfer_sz + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-        if (dma_desc_ct == 0) {
-            dma_desc_ct = 1; //default to 4k when max is not given
-        }
-        host->hal.dma_desc_num = dma_desc_ct;
-        spi_dma_desc_t *orig_dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-        spi_dma_desc_t *orig_dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-
-        host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
-        host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
-        if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx && orig_dmadesc_tx && orig_dmadesc_rx)) {
+        host->hal.dma_desc_num = host->dma_ctx->dma_desc_num;
+        host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
+        host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
+        if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx)) {
             ret = ESP_ERR_NO_MEM;
             goto cleanup;
         }
         //Pair each desc to each possible trans
-        for (int i = 0; i < dma_desc_ct; i ++) {
-            host->hal.dmadesc_tx[i].desc = &orig_dmadesc_tx[i];
-            host->hal.dmadesc_rx[i].desc = &orig_dmadesc_rx[i];
+        for (int i = 0; i < host->hal.dma_desc_num; i ++) {
+            host->hal.dmadesc_tx[i].desc = &host->dma_ctx->dmadesc_tx[i];
+            host->hal.dmadesc_rx[i].desc = &host->dma_ctx->dmadesc_rx[i];
         }
 
-        //Get the actual SPI bus transaction size in bytes.
-        host->max_transfer_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         size_t alignment;
-        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &alignment);
+        esp_cache_get_alignment(MALLOC_CAP_DMA, &alignment);
         host->internal_mem_align_size = alignment;
 #else
         host->internal_mem_align_size = 4;
@@ -153,11 +159,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
-        .dma_in = SPI_LL_GET_HW(host_id),
-        .dma_out = SPI_LL_GET_HW(host_id),
         .dma_enabled = host->dma_enabled,
-        .tx_dma_chan = actual_tx_dma_chan,
-        .rx_dma_chan = actual_rx_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
@@ -197,35 +199,28 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     //Alloc intr
     if (!host->append_mode) {
-        //Seg mode
-        ret = esp_intr_alloc(spicommon_irqsource_for_host(host_id), 0, spi_slave_hd_intr_segment,
+        ret = esp_intr_alloc(spicommon_irqsource_for_host(host_id), 0, s_spi_slave_hd_segment_isr,
                              (void *)host, &host->intr);
         if (ret != ESP_OK) {
             goto cleanup;
         }
-        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, spi_slave_hd_intr_segment,
+        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, s_spi_slave_hd_segment_isr,
                              (void *)host, &host->intr_dma);
         if (ret != ESP_OK) {
             goto cleanup;
         }
     } else {
         //Append mode
-        //On ESP32S2, `cmd7` and `cmd8` interrupts registered as spi rx & tx interrupt are from SPI DMA interrupt source.
-        //although the `cmd7` and `cmd8` interrupt on spi are registered independently here
-        ret = esp_intr_alloc(spicommon_irqsource_for_host(host_id), 0, spi_slave_hd_intr_append,
-                             (void *)host, &host->intr);
-        if (ret != ESP_OK) {
-            goto cleanup;
-        }
 #if SOC_GDMA_SUPPORTED
-        // config gmda and ISR callback for gdma supported chip
-        spicommon_gdma_get_handle(host_id, &host->gdma_handle_tx, GDMA_CHANNEL_DIRECTION_TX);
-        gdma_tx_event_callbacks_t tx_cbs = {
-            .on_trans_eof = spi_gdma_tx_channel_callback
+        // config gmda event callback for gdma supported chip
+        gdma_rx_event_callbacks_t txrx_cbs = {
+            .on_recv_eof = s_spi_slave_hd_append_gdma_isr,
         };
-        gdma_register_tx_event_callbacks(host->gdma_handle_tx, &tx_cbs, host);
+        gdma_register_tx_event_callbacks(host->dma_ctx->tx_dma_chan, (gdma_tx_event_callbacks_t *)&txrx_cbs, host);
+        gdma_register_rx_event_callbacks(host->dma_ctx->rx_dma_chan, &txrx_cbs, host);
 #else
-        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, spi_slave_hd_intr_append,
+        //On ESP32S2, `cmd7` and `cmd8` are designed as all `spi_dma` events, so use `dma_src` only
+        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, s_spi_slave_hd_append_legacy_isr,
                              (void *)host, &host->intr_dma);
         if (ret != ESP_OK) {
             goto cleanup;
@@ -293,11 +288,11 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_periph_free(host_id);
     if (host->dma_enabled) {
-        free(host->hal.dmadesc_tx->desc);
-        free(host->hal.dmadesc_rx->desc);
+        free(host->dma_ctx->dmadesc_tx);
+        free(host->dma_ctx->dmadesc_rx);
         free(host->hal.dmadesc_tx);
         free(host->hal.dmadesc_rx);
-        spicommon_dma_chan_free(host_id);
+        spicommon_dma_chan_free(host->dma_ctx);
     }
     free(host);
     spihost[host_id] = NULL;
@@ -327,8 +322,7 @@ static inline IRAM_ATTR BaseType_t intr_check_clear_callback(spi_slave_hd_slot_t
     }
     return cb_awoken;
 }
-
-static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
+static IRAM_ATTR void s_spi_slave_hd_segment_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t *)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
@@ -341,16 +335,14 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
     awoken |= intr_check_clear_callback(host, SPI_EV_CMD9,   callback->cb_cmd9);
     awoken |= intr_check_clear_callback(host, SPI_EV_CMDA,   callback->cb_cmdA);
 
-    bool tx_done = false;
-    bool rx_done = false;
+    bool tx_done = false, rx_done = false;
+    bool tx_event = false, rx_event = false;
 
     portENTER_CRITICAL_ISR(&host->int_spinlock);
-    if (host->tx_curr_trans.trans && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND)) {
-        tx_done = true;
-    }
-    if (host->rx_curr_trans.trans && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV)) {
-        rx_done = true;
-    }
+    tx_event = spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND);
+    rx_event = spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV);
+    tx_done = host->tx_curr_trans.trans && tx_event;
+    rx_done = host->rx_curr_trans.trans && rx_event;
     portEXIT_CRITICAL_ISR(&host->int_spinlock);
 
     if (tx_done) {
@@ -366,7 +358,7 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         }
         if (ret_queue) {
             ret = xQueueSendFromISR(host->tx_ret_queue, &host->tx_curr_trans, &awoken);
-            // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
+            // The return queue is full. All the data remain in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
         host->tx_curr_trans.trans = NULL;
@@ -391,7 +383,7 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         }
         if (ret_queue) {
             ret = xQueueSendFromISR(host->rx_ret_queue, &host->rx_curr_trans, &awoken);
-            // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
+            // The return queue is full. All the data remain in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
         host->rx_curr_trans.trans = NULL;
@@ -402,7 +394,10 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
     if (!host->tx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_curr_trans, &awoken);
         if (ret == pdTRUE) {
-            spi_slave_hd_hal_txdma(hal, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len);
+            spicommon_dma_desc_setup_link(hal->dmadesc_tx->desc, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false);
+            spi_dma_reset(host->dma_ctx->tx_dma_chan);
+            spi_slave_hd_hal_txdma(hal);
+            spi_dma_start(host->dma_ctx->tx_dma_chan, host->dma_ctx->dmadesc_tx);
             tx_sent = true;
             if (callback->cb_send_dma_ready) {
                 spi_slave_hd_event_t ev = {
@@ -418,7 +413,10 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
     if (!host->rx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_curr_trans, &awoken);
         if (ret == pdTRUE) {
-            spi_slave_hd_hal_rxdma(hal, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len);
+            spicommon_dma_desc_setup_link(hal->dmadesc_rx->desc, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true);
+            spi_dma_reset(host->dma_ctx->rx_dma_chan);
+            spi_slave_hd_hal_rxdma(hal);
+            spi_dma_start(host->dma_ctx->rx_dma_chan, host->dma_ctx->dmadesc_rx);
             rx_sent = true;
             if (callback->cb_recv_dma_ready) {
                 spi_slave_hd_event_t ev = {
@@ -534,31 +532,35 @@ static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
 }
 
 #if SOC_GDMA_SUPPORTED
-// 'spi_gdma_tx_channel_callback' used as spi tx interrupt of append mode on gdma supported target
-static IRAM_ATTR bool spi_gdma_tx_channel_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static IRAM_ATTR bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     assert(event_data);
-    spi_slave_hd_append_tx_isr(user_data);
+    spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)user_data;
+
+    host->hal.current_eof_addr = event_data->tx_eof_desc_addr;
+    if (host->dma_ctx->tx_dma_chan == dma_chan) {
+        spi_slave_hd_append_tx_isr(user_data);
+    } else {
+        spi_slave_hd_append_rx_isr(user_data);
+    }
     return true;
 }
-#endif // SOC_GDMA_SUPPORTED
 
-// SPI slave hd append isr entrance
-static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
+#else
+static IRAM_ATTR void s_spi_slave_hd_append_legacy_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t *)arg;
     spi_slave_hd_hal_context_t *hal = &host->hal;
     bool rx_done = false;
     bool tx_done = false;
 
-    // Append Mode
     portENTER_CRITICAL_ISR(&host->int_spinlock);
     if (spi_slave_hd_hal_check_clear_event(hal, SPI_EV_RECV)) {
+        hal->current_eof_addr = spi_dma_get_eof_desc(host->dma_ctx->rx_dma_chan);
         rx_done = true;
     }
     if (spi_slave_hd_hal_check_clear_event(hal, SPI_EV_SEND)) {
-        // NOTE: on gdma supported chips, this flag should NOT checked out, handle entrance is only `spi_gdma_tx_channel_callback`,
-        // otherwise, here should be target limited.
+        hal->current_eof_addr = spi_dma_get_eof_desc(host->dma_ctx->tx_dma_chan);
         tx_done = true;
     }
     portEXIT_CRITICAL_ISR(&host->int_spinlock);
@@ -570,6 +572,7 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
         spi_slave_hd_append_tx_isr(arg);
     }
 }
+#endif // SOC_GDMA_SUPPORTED
 
 static void s_spi_slave_hd_destroy_priv_trans(spi_host_device_t host, spi_slave_hd_trans_priv_t *priv_trans, spi_slave_chan_t chan)
 {
@@ -597,16 +600,21 @@ static esp_err_t s_spi_slave_hd_setup_priv_trans(spi_host_device_t host, spi_sla
     if (((uint32_t)orig_trans->data) | (byte_len & (alignment - 1))) {
         ESP_RETURN_ON_FALSE(orig_trans->flags & SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, TAG, "data buffer addr&len not align to %d, or not dma_capable", alignment);
         byte_len = (byte_len + alignment - 1) & (~(alignment - 1));  // up align to alignment
-        ESP_LOGD(TAG, "Re-allocate %s buffer of len %ld for DMA", (chan == SPI_SLAVE_CHAN_TX) ? "TX" : "RX", byte_len);
+        ESP_LOGD(TAG, "Re-allocate %s buffer of len %" PRIu32 " for DMA", (chan == SPI_SLAVE_CHAN_TX) ? "TX" : "RX", byte_len);
         priv_trans->aligned_buffer = heap_caps_aligned_alloc(64, byte_len, MALLOC_CAP_DMA);
         if (priv_trans->aligned_buffer == NULL) {
             return ESP_ERR_NO_MEM;
         }
     }
     if (chan == SPI_SLAVE_CHAN_TX) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-overlapping-buffers") // TODO IDF-11086
         memcpy(priv_trans->aligned_buffer, orig_trans->data, orig_trans->len);
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-overlapping-buffers")
         esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync c2m(writeback) fail");
+    } else {
+        esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync m2c(invalid) fail");
     }
 #endif  //SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     return ESP_OK;
@@ -629,6 +637,88 @@ static esp_err_t get_ret_queue_result(spi_host_device_t host_id, spi_slave_chan_
 
     s_spi_slave_hd_destroy_priv_trans(host_id, &hd_priv_trans, chan);
     *out_trans = hd_priv_trans.trans;
+    return ESP_OK;
+}
+
+esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, size_t len, void *arg)
+{
+    spi_slave_hd_hal_context_t *hal = &host->hal;
+
+    //Check if there are enough available DMA descriptors for software to use
+    int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    int not_recycled_desc_num = hal->tx_used_desc_cnt - hal->tx_recycled_desc_cnt;
+    int available_desc_num = hal->dma_desc_num - not_recycled_desc_num;
+    if (num_required > available_desc_num) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    spicommon_dma_desc_setup_link(hal->tx_cur_desc->desc, data, len, false);
+    hal->tx_cur_desc->arg = arg;
+
+    if (!hal->tx_dma_started) {
+        hal->tx_dma_started = true;
+        //start a link
+        hal->tx_dma_tail = hal->tx_cur_desc;
+        spi_dma_reset(host->dma_ctx->tx_dma_chan);
+        spi_slave_hd_hal_hw_prepare_tx(hal);
+        spi_dma_start(host->dma_ctx->tx_dma_chan, hal->tx_cur_desc->desc);
+    } else {
+        //there is already a consecutive link
+        ADDR_DMA_2_CPU(hal->tx_dma_tail->desc)->next = hal->tx_cur_desc->desc;
+        hal->tx_dma_tail = hal->tx_cur_desc;
+        spi_dma_append(host->dma_ctx->tx_dma_chan);
+    }
+
+    //Move the current descriptor pointer according to the number of the linked descriptors
+    for (int i = 0; i < num_required; i++) {
+        hal->tx_used_desc_cnt++;
+        hal->tx_cur_desc++;
+        if (hal->tx_cur_desc == hal->dmadesc_tx + hal->dma_desc_num) {
+            hal->tx_cur_desc = hal->dmadesc_tx;
+        }
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, size_t len, void *arg)
+{
+    spi_slave_hd_hal_context_t *hal = &host->hal;
+
+    //Check if there are enough available dma descriptors for software to use
+    int num_required = (len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    int not_recycled_desc_num = hal->rx_used_desc_cnt - hal->rx_recycled_desc_cnt;
+    int available_desc_num = hal->dma_desc_num - not_recycled_desc_num;
+    if (num_required > available_desc_num) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, false);
+    hal->rx_cur_desc->arg = arg;
+
+    if (!hal->rx_dma_started) {
+        hal->rx_dma_started = true;
+        //start a link
+        hal->rx_dma_tail = hal->rx_cur_desc;
+        spi_dma_reset(host->dma_ctx->rx_dma_chan);
+        spi_slave_hd_hal_hw_prepare_rx(hal);
+        spi_dma_start(host->dma_ctx->rx_dma_chan, hal->rx_cur_desc->desc);
+    } else {
+        //there is already a consecutive link
+        ADDR_DMA_2_CPU(hal->rx_dma_tail->desc)->next = hal->rx_cur_desc->desc;
+        hal->rx_dma_tail = hal->rx_cur_desc;
+        spi_dma_append(host->dma_ctx->rx_dma_chan);
+    }
+
+    //Move the current descriptor pointer according to the number of the linked descriptors
+    for (int i = 0; i < num_required; i++) {
+        hal->rx_used_desc_cnt++;
+        hal->rx_cur_desc++;
+        if (hal->rx_cur_desc == hal->dmadesc_rx + hal->dma_desc_num) {
+            hal->rx_cur_desc = hal->dmadesc_rx;
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -688,7 +778,6 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
 {
     esp_err_t err;
     spi_slave_hd_slot_t *host = spihost[host_id];
-    spi_slave_hd_hal_context_t *hal = &host->hal;
 
     SPIHD_CHECK(trans->len <= SPI_MAX_DMA_LEN, "Currently we only support transaction with data length within 4092 bytes", ESP_ERR_INVALID_ARG);
     SPIHD_CHECK(host->append_mode == 1, "This API should be used for SPI Slave HD Append Mode", ESP_ERR_INVALID_STATE);
@@ -704,13 +793,13 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        err = spi_slave_hd_hal_txdma_append(hal, hd_priv_trans.aligned_buffer, trans->len, trans);
+        err = s_spi_slave_hd_append_txdma(host, hd_priv_trans.aligned_buffer, trans->len, trans);
     } else {
         BaseType_t ret = xSemaphoreTake(host->rx_cnting_sem, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        err = spi_slave_hd_hal_rxdma_append(hal, hd_priv_trans.aligned_buffer, trans->len, trans);
+        err = s_spi_slave_hd_append_rxdma(host, hd_priv_trans.aligned_buffer, trans->len, trans);
     }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Wait until the DMA finishes its transaction");

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,13 +106,17 @@ static esp_err_t event_start_select(int                  nfds,
 
     for (int i = 0; i < nfds; i++) {
         _lock_acquire_recursive(&s_events[i].lock);
-        if (s_events[i].fd == i) {
+        if (s_events[i].fd == i && (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds))) {
+            event_select_args_t *event_select_args =
+                (event_select_args_t *)malloc(sizeof(event_select_args_t));
+            if (!event_select_args) {
+                _lock_release_recursive(&s_events[i].lock);
+                return ESP_ERR_NO_MEM;
+            }
             if (s_events[i].support_isr) {
                 portENTER_CRITICAL(&s_events[i].data_spin_lock);
             }
 
-            event_select_args_t *event_select_args =
-                (event_select_args_t *)malloc(sizeof(event_select_args_t));
             event_select_args->fd = i;
             event_select_args->signal_sem = signal_sem;
 

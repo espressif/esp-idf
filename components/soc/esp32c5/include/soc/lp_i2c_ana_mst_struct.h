@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -128,7 +128,7 @@ typedef union {
 } lp_i2c_ana_mst_date_reg_t;
 
 
-typedef struct lp_i2c_ana_mst_dev_t {
+typedef struct {
     volatile lp_i2c_ana_mst_i2c0_ctrl_reg_t i2c0_ctrl;
     volatile lp_i2c_ana_mst_i2c0_conf_reg_t i2c0_conf;
     volatile lp_i2c_ana_mst_i2c0_data_reg_t i2c0_data;

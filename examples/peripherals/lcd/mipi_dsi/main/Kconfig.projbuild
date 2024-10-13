@@ -1,0 +1,27 @@
+menu "Example Configuration"
+    config EXAMPLE_USE_DMA2D_COPY_FRAME
+        bool "Use DMA2D to copy draw buffer to frame buffer"
+        default y
+        help
+            Enable this option, DMA2D will be used to copy the LVGL draw buffer to the target frame buffer.
+            This can save some CPU time and improve the performance.
+
+    config EXAMPLE_MONITOR_REFRESH_BY_GPIO
+        bool "Monitor Refresh Rate by GPIO"
+        default y
+        help
+            Enable this option, you can visualize the refresh rate by attaching a logic analyzer to a specific GPIO.
+            The GPIO will output a square wave with the frequency equals to half of the refresh rate.
+
+    choice
+        prompt "Select MIPI LCD model"
+        default EXAMPLE_LCD_EK79007_SUPPORT
+        help
+            Select LCD controller model.
+
+        config EXAMPLE_LCD_USE_EK79007
+            bool "EK79007"
+        config EXAMPLE_LCD_USE_ILI9881C
+            bool "ILI9881C"
+    endchoice
+endmenu

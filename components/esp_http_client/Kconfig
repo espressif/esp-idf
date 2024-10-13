@@ -29,4 +29,10 @@ menu "ESP HTTP client"
             This option will enable injection of a custom tcp_transport handle, so the http operation
             will be performed on top of the user defined transport abstraction (if configured)
 
+    config ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
 endmenu

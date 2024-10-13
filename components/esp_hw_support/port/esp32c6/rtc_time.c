@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "esp32c6/rom/ets_sys.h"
 #include "soc/rtc.h"
-#include "soc/lp_timer_reg.h"
+#include "soc/pcr_reg.h"
 #include "hal/lp_timer_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/timer_ll.h"
@@ -18,7 +18,7 @@
 #include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "rtc_time";
+__attribute__((unused)) static const char *TAG = "rtc_time";
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -81,7 +81,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     /* Enable requested clock (150k clock is always on) */
     // All clocks on/off takes time to be stable, so we shouldn't frequently enable/disable the clock
-    // Only enable if orignally was disabled, and set back to the disable state after calibration is done
+    // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
@@ -125,6 +125,9 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cali_clk_sel);
+    if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
+        clk_ll_rc_fast_tick_conf();
+    }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING);
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
@@ -137,6 +140,9 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     } else if (cali_clk_sel == TIMG_RTC_CALI_CLK_SEL_RC_FAST) {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
+        if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+            expected_freq = expected_freq >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
+        }
     } else {
         REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
         expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX;
@@ -155,10 +161,13 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
             /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
               So we need to multiply the frequency of the Fosc for ECO1 and above chips by 32 times.
-              And ensure that this modification will not affect ECO0.*/
+              And ensure that this modification will not affect ECO0.
+              And the 32-divider belongs to REF_TICK module, so we need to enable its clock during
+              calibration. */
             if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
                 if (cal_clk == RTC_CAL_RC_FAST) {
-                    cal_val = cal_val >> 5;
+                    cal_val = cal_val >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
+                    CLEAR_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
                 }
             }
             break;
@@ -201,7 +210,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     return cal_val;
 }
 
-static bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
+static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
 {
     uint64_t expected_xtal_cycles = (xtal_freq * 1000000ULL * slowclk_cycles) >> 15; // xtal_freq(hz) * slowclk_cycles / 32768
     uint64_t delta = expected_xtal_cycles / 2000;                                    // 5/10000 = 0.05% error range
@@ -210,20 +219,22 @@ static bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cy
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    assert(slowclk_cycles);
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
 
     /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
       So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
       avoid excessive calibration time.*/
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
         if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> 5;
+            slowclk_cycles = slowclk_cycles >> CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS;
+            SET_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
         }
     }
 
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 
-    if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid(xtal_freq, slowclk_cycles, xtal_cycles)) {
+    if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 
@@ -235,6 +246,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint64_t rtc_time_us_to_slowclk(uint64_t time_in_us, uint32_t period)
 {
+    assert(period);
     /* Overflow will happen in this function if time_in_us >= 2^45, which is about 400 days.
      * TODO: fix overflow.
      */
@@ -251,12 +263,6 @@ uint64_t rtc_time_get(void)
     return lp_timer_hal_get_cycle_count();
 }
 
-void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more
-{
-    // TODO: IDF-5781
-    ESP_EARLY_LOGW(TAG, "rtc_clk_wait_for_slow_cycle() has not been implemented yet");
-}
-
 uint32_t rtc_clk_freq_cal(uint32_t cal_val)
 {
     if (cal_val == 0) {
@@ -269,10 +275,15 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
 __attribute__((constructor))
 static void enable_timer_group0_for_calibration(void)
 {
+#ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
             timer_ll_enable_bus_clock(0, true);
             timer_ll_reset_register(0);
         }
     }
+#else
+    _timer_ll_enable_bus_clock(0, true);
+    _timer_ll_reset_register(0);
+#endif
 }

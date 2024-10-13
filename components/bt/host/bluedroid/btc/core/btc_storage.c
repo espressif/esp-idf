@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,8 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
 
         // delete config info
         if (btc_config_remove_section(remove_section)) {
-            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %s\n", remove_section);
+            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
         }
     }
 
@@ -131,6 +132,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
     bt_status_t status = BT_STATUS_FAIL;
     uint16_t dev_cnt = 0;
     const btc_config_section_iter_t *remove_iter = NULL;
+    bt_bdaddr_t bd_addr;
 
     btc_config_lock();
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end(); iter = btc_config_section_next(iter)) {
@@ -157,6 +159,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             remove_iter = iter;
             while (remove_iter != btc_config_section_end()) {
                 const char *remove_section = btc_config_section_name(remove_iter);
+                string_to_bdaddr(remove_section, &bd_addr);
                 if (!string_is_bdaddr(remove_section)) {
                     remove_iter = btc_config_section_next(remove_iter);
                     continue;
@@ -164,7 +167,8 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                 remove_iter = btc_config_section_next(remove_iter);
                 /* delete config info */
                 if (btc_config_remove_section(remove_section)) {
-                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %s", remove_section);
+                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
                 }
             }
             /* write into nvs */
@@ -195,6 +199,32 @@ bt_status_t btc_storage_load_bonded_devices(void)
     status = btc_in_fetch_bonded_devices(1);
     BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device, The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    bool ret = false;
+    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
+
+    btc_config_lock();
+    ret = btc_config_update_newest_section(bdstr);
+    btc_config_unlock();
+
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 #endif  ///SMP_INCLUDED == TRUE
 
@@ -306,32 +336,6 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *d
     btc_config_unlock();
 
     return BT_STATUS_SUCCESS;
-}
-
-/*******************************************************************************
-**
-** Function         btc_storage_update_active_device
-**
-** Description      BTC storage API - Once an ACL link is established and remote
-**                  bd_addr is already stored in NVRAM, update the config and update
-**                  the remote device to be the newest active device, The updates will
-**                  not be stored into NVRAM immediately.
-**
-** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
-**
-*******************************************************************************/
-bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
-{
-    bdstr_t bdstr;
-    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    bool ret = false;
-    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
-
-    btc_config_lock();
-    ret = btc_config_update_newest_section(bdstr);
-    btc_config_unlock();
-
-    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -12,41 +12,57 @@ extern "C" {
 
 /** Group: configure_register */
 /** Type of clk_en register
- *  need_des
+ *  configure peri in lp system clk enable
  */
 typedef union {
     struct {
         uint32_t reserved_0:24;
         /** rng_ck_en : R/W; bitpos: [24]; default: 1;
-         *  need_des
+         *  lp rng clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t rng_ck_en:1;
         /** otp_dbg_ck_en : R/W; bitpos: [25]; default: 1;
-         *  need_des
+         *  lp optdebug clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t otp_dbg_ck_en:1;
         /** lp_uart_ck_en : R/W; bitpos: [26]; default: 1;
-         *  need_des
+         *  lp uart clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t lp_uart_ck_en:1;
         /** lp_io_ck_en : R/W; bitpos: [27]; default: 1;
-         *  need_des
+         *  lp io clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t lp_io_ck_en:1;
         /** lp_ext_i2c_ck_en : R/W; bitpos: [28]; default: 1;
-         *  need_des
+         *  lp ext i2c clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t lp_ext_i2c_ck_en:1;
         /** lp_ana_i2c_ck_en : R/W; bitpos: [29]; default: 1;
-         *  need_des
+         *  lp analog peri clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t lp_ana_i2c_ck_en:1;
         /** efuse_ck_en : R/W; bitpos: [30]; default: 1;
-         *  need_des
+         *  efuse core clk enable
+         *  1: enable clock
+         *  0: disable clock
          */
         uint32_t efuse_ck_en:1;
         /** lp_cpu_ck_en : R/W; bitpos: [31]; default: 0;
-         *  need_des
+         *  force on lp cpu clk enable
+         *  1: enable cpu clock
+         *  0: cpu clock is controlled by pmu
          */
         uint32_t lp_cpu_ck_en:1;
     };
@@ -54,42 +70,63 @@ typedef union {
 } lpperi_clk_en_reg_t;
 
 /** Type of reset_en register
- *  need_des
+ *  configure peri in lp system reset enable
  */
 typedef union {
     struct {
         uint32_t reserved_0:23;
         /** bus_reset_en : WT; bitpos: [23]; default: 0;
-         *  need_des
+         *  lp bus reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t bus_reset_en:1;
-        uint32_t reserved_24:1;
+        /** lp_rng_reset_en : R/W; bitpos: [24]; default: 0;
+         *  lp rng reset enable
+         *  1: enable reset
+         *  0: disable reset
+         */
+        uint32_t lp_rng_reset_en:1;
         /** otp_dbg_reset_en : R/W; bitpos: [25]; default: 0;
-         *  need_des
+         *  lp optdebug reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t otp_dbg_reset_en:1;
         /** lp_uart_reset_en : R/W; bitpos: [26]; default: 0;
-         *  need_des
+         *  lp uart reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t lp_uart_reset_en:1;
         /** lp_io_reset_en : R/W; bitpos: [27]; default: 0;
-         *  need_des
+         *  lp io reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t lp_io_reset_en:1;
         /** lp_ext_i2c_reset_en : R/W; bitpos: [28]; default: 0;
-         *  need_des
+         *  lp ext i2c reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t lp_ext_i2c_reset_en:1;
         /** lp_ana_i2c_reset_en : R/W; bitpos: [29]; default: 0;
-         *  need_des
+         *  lp analog peri reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t lp_ana_i2c_reset_en:1;
         /** efuse_reset_en : R/W; bitpos: [30]; default: 0;
-         *  need_des
+         *  efuse core reset enable
+         *  1: enable reset
+         *  0: disable reset
          */
         uint32_t efuse_reset_en:1;
         /** lp_cpu_reset_en : WT; bitpos: [31]; default: 0;
-         *  need_des
+         *  force on lp cpu reset enable
+         *  1: enable cpu reset
+         *  0: cpu reset is controlled by pmu
          */
         uint32_t lp_cpu_reset_en:1;
     };
@@ -97,12 +134,12 @@ typedef union {
 } lpperi_reset_en_reg_t;
 
 /** Type of rng_data register
- *  need_des
+ *  RNG result register
  */
 typedef union {
     struct {
         /** rnd_data : RO; bitpos: [31:0]; default: 0;
-         *  need_des
+         *  get rng data
          */
         uint32_t rnd_data:32;
     };
@@ -110,13 +147,15 @@ typedef union {
 } lpperi_rng_data_reg_t;
 
 /** Type of cpu register
- *  need_des
+ *  configure lp cpu dbg enable
  */
 typedef union {
     struct {
         uint32_t reserved_0:31;
         /** lpcore_dbgm_unavaliable : R/W; bitpos: [31]; default: 1;
-         *  need_des
+         *  disable lp cpu dbg bus
+         *  1: disable
+         *  0: enable
          */
         uint32_t lpcore_dbgm_unavaliable:1;
     };
@@ -124,21 +163,23 @@ typedef union {
 } lpperi_cpu_reg_t;
 
 /** Type of bus_timeout register
- *  need_des
+ *  configure lp bus timeout
  */
 typedef union {
     struct {
         uint32_t reserved_0:14;
         /** lp_peri_timeout_thres : R/W; bitpos: [29:14]; default: 65535;
-         *  need_des
+         *  the timeout thres which bus access time, the timeout clk is lp_aon_fast
          */
         uint32_t lp_peri_timeout_thres:16;
         /** lp_peri_timeout_int_clear : WT; bitpos: [30]; default: 0;
-         *  need_des
+         *  clear lp bus timeout interrupt
          */
         uint32_t lp_peri_timeout_int_clear:1;
         /** lp_peri_timeout_protect_en : R/W; bitpos: [31]; default: 1;
-         *  need_des
+         *  enable lp bus timeout or not,when bus timeout, the ready will been force high by fsm
+         *  1: enable
+         *  0: disable
          */
         uint32_t lp_peri_timeout_protect_en:1;
     };
@@ -146,12 +187,12 @@ typedef union {
 } lpperi_bus_timeout_reg_t;
 
 /** Type of bus_timeout_addr register
- *  need_des
+ *  the timeout address register
  */
 typedef union {
     struct {
         /** lp_peri_timeout_addr : RO; bitpos: [31:0]; default: 0;
-         *  need_des
+         *  when bus timeout, this register will record the timeout address
          */
         uint32_t lp_peri_timeout_addr:32;
     };
@@ -159,12 +200,12 @@ typedef union {
 } lpperi_bus_timeout_addr_reg_t;
 
 /** Type of bus_timeout_uid register
- *  need_des
+ *  the timeout master id register
  */
 typedef union {
     struct {
         /** lp_peri_timeout_uid : RO; bitpos: [6:0]; default: 0;
-         *  need_des
+         *  when bus timeout, this register will record the timeout master device
          */
         uint32_t lp_peri_timeout_uid:7;
         uint32_t reserved_7:25;
@@ -173,29 +214,31 @@ typedef union {
 } lpperi_bus_timeout_uid_reg_t;
 
 /** Type of mem_ctrl register
- *  need_des
+ *  configure uart memory power mode
  */
 typedef union {
     struct {
         /** uart_wakeup_flag_clr : WT; bitpos: [0]; default: 0;
-         *  need_des
+         *  clear uart wakeup latch
+         *  1: clear
+         *  0: no operation
          */
         uint32_t uart_wakeup_flag_clr:1;
         /** uart_wakeup_flag : R/WTC/SS; bitpos: [1]; default: 0;
-         *  need_des
+         *  latch uart wakeup event
          */
         uint32_t uart_wakeup_flag:1;
         uint32_t reserved_2:27;
         /** uart_wakeup_en : R/W; bitpos: [29]; default: 0;
-         *  need_des
+         *  enable uart wakeup not not
          */
         uint32_t uart_wakeup_en:1;
         /** uart_mem_force_pd : R/W; bitpos: [30]; default: 0;
-         *  need_des
+         *  force off uart memory
          */
         uint32_t uart_mem_force_pd:1;
         /** uart_mem_force_pu : R/W; bitpos: [31]; default: 1;
-         *  need_des
+         *  force on uart memory
          */
         uint32_t uart_mem_force_pu:1;
     };
@@ -203,7 +246,7 @@ typedef union {
 } lpperi_mem_ctrl_reg_t;
 
 /** Type of interrupt_source register
- *  need_des
+ *  record the lp cpu interrupt
  */
 typedef union {
     struct {
@@ -218,44 +261,65 @@ typedef union {
 } lpperi_interrupt_source_reg_t;
 
 /** Type of rng_cfg register
- *  need_des
+ *  configure rng register
  */
 typedef union {
     struct {
         /** rng_sample_enable : R/W; bitpos: [0]; default: 0;
-         *  need des
+         *  enable rng RO
+         *  1: enable RO
+         *  0: disable RO
          */
         uint32_t rng_sample_enable:1;
         /** rng_timer_pscale : R/W; bitpos: [8:1]; default: 255;
-         *  need des
+         *  configure rng timer clk div
          */
         uint32_t rng_timer_pscale:8;
         /** rng_timer_en : R/W; bitpos: [9]; default: 1;
-         *  need des
+         *  enable rng xor async rng timer
          */
         uint32_t rng_timer_en:1;
-        uint32_t reserved_10:14;
+        /** rtc_timer_en : R/W; bitpos: [11:10]; default: 3;
+         *  enable rng xor rtc timer:
+         *  bit(0) : enable rtc timer before crc
+         *  Bit(1): enable rtc timer after crc
+         */
+        uint32_t rtc_timer_en:2;
+        uint32_t reserved_12:12;
         /** rng_sample_cnt : RO; bitpos: [31:24]; default: 0;
-         *  need des
+         *  get rng RO sample cnt
          */
         uint32_t rng_sample_cnt:8;
     };
     uint32_t val;
 } lpperi_rng_cfg_reg_t;
 
-
-/** Group: Version register */
-/** Type of date register
- *  need_des
+/** Type of rng_data_sync register
+ *  rng result sync register
  */
 typedef union {
     struct {
-        /** lpperi_date : R/W; bitpos: [30:0]; default: 36720720;
-         *  need_des
+        /** rnd_sync_data : RO; bitpos: [31:0]; default: 0;
+         *  get rng sync result
+         */
+        uint32_t rnd_sync_data:32;
+    };
+    uint32_t val;
+} lpperi_rng_data_sync_reg_t;
+
+
+/** Group: Version register */
+/** Type of date register
+ *  version register
+ */
+typedef union {
+    struct {
+        /** lpperi_date : R/W; bitpos: [30:0]; default: 36774256;
+         *  version register
          */
         uint32_t lpperi_date:31;
         /** clk_en : R/W; bitpos: [31]; default: 0;
-         *  need_des
+         *  force on reg clk
          */
         uint32_t clk_en:1;
     };
@@ -263,7 +327,7 @@ typedef union {
 } lpperi_date_reg_t;
 
 
-typedef struct lpperi_dev_t {
+typedef struct {
     volatile lpperi_clk_en_reg_t clk_en;
     volatile lpperi_reset_en_reg_t reset_en;
     volatile lpperi_rng_data_reg_t rng_data;
@@ -274,7 +338,8 @@ typedef struct lpperi_dev_t {
     volatile lpperi_mem_ctrl_reg_t mem_ctrl;
     volatile lpperi_interrupt_source_reg_t interrupt_source;
     volatile lpperi_rng_cfg_reg_t rng_cfg;
-    uint32_t reserved_028[245];
+    volatile lpperi_rng_data_sync_reg_t rng_data_sync;
+    uint32_t reserved_02c[244];
     volatile lpperi_date_reg_t date;
 } lpperi_dev_t;
 

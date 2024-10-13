@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -29,18 +29,8 @@
 
 static const char *TAG = "cmd_system_sleep";
 
-static void register_deep_sleep(void);
-static void register_light_sleep(void);
-
-void register_system_sleep(void)
-{
-    register_deep_sleep();
-    register_light_sleep();
-}
-
-
+#if SOC_DEEP_SLEEP_SUPPORTED
 /** 'deep_sleep' command puts the chip into deep sleep mode */
-
 static struct {
     struct arg_int *wakeup_time;
 #if SOC_PM_SUPPORT_EXT0_WAKEUP || SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -90,12 +80,11 @@ static int deep_sleep(int argc, char **argv)
 #if CONFIG_IDF_TARGET_ESP32
     rtc_gpio_isolate(GPIO_NUM_12);
 #endif //CONFIG_IDF_TARGET_ESP32
-
     esp_deep_sleep_start();
     return 1;
 }
 
-static void register_deep_sleep(void)
+void register_system_deep_sleep(void)
 {
     int num_args = 1;
     deep_sleep_args.wakeup_time =
@@ -125,9 +114,10 @@ static void register_deep_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_DEEP_SLEEP_SUPPORTED
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 /** 'light_sleep' command puts the chip into light sleep mode */
-
 static struct {
     struct arg_int *wakeup_time;
     struct arg_int *wakeup_gpio_num;
@@ -177,6 +167,7 @@ static int light_sleep(int argc, char **argv)
     fsync(fileno(stdout));
     esp_light_sleep_start();
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+
     const char *cause_str;
     switch (cause) {
     case ESP_SLEEP_WAKEUP_GPIO:
@@ -196,7 +187,7 @@ static int light_sleep(int argc, char **argv)
     return 0;
 }
 
-static void register_light_sleep(void)
+void register_system_light_sleep(void)
 {
     light_sleep_args.wakeup_time =
         arg_int0("t", "time", "<t>", "Wake up time, ms");
@@ -220,3 +211,4 @@ static void register_light_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_LIGHT_SLEEP_SUPPORTED

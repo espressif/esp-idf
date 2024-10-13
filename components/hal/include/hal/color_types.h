@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,12 +17,17 @@ extern "C" {
 ---------------------------------------------------------------*/
 /**
  * @brief Color Space
+ *
+ * @note Save enum 0 for special purpose
  */
 typedef enum {
-    COLOR_SPACE_RAW,     ///< Color space raw
-    COLOR_SPACE_RGB,     ///< Color space rgb
-    COLOR_SPACE_YUV,     ///< Color space yuv
-    COLOR_SPACE_GRAY,    ///< Color space gray
+    COLOR_SPACE_RAW = 1,     ///< Color space raw
+    COLOR_SPACE_RGB,         ///< Color space rgb
+    COLOR_SPACE_YUV,         ///< Color space yuv
+    COLOR_SPACE_GRAY,        ///< Color space gray
+    COLOR_SPACE_ARGB,        ///< Color space argb
+    COLOR_SPACE_ALPHA,       ///< Color space alpha (A)
+    COLOR_SPACE_CLUT,        ///< Color look-up table (L)
 } color_space_t;
 
 /*---------------------------------------------------------------
@@ -42,6 +47,7 @@ typedef enum {
  */
 typedef enum {
     COLOR_PIXEL_RGB888,      ///< 24 bits, 8 bits per R/G/B value
+    COLOR_PIXEL_RGB666,      ///< 18 bits, 6 bits per R/G/B value
     COLOR_PIXEL_RGB565,      ///< 16 bits, 5 bits per R/B value, 6 bits for G value
 } color_pixel_rgb_format_t;
 
@@ -62,6 +68,29 @@ typedef enum {
     COLOR_PIXEL_GRAY4,    ///< 4 bits, grayscale
     COLOR_PIXEL_GRAY8,    ///< 8 bits, grayscale
 } color_pixel_gray_format_t;
+
+/**
+ * @brief ARGB Format
+ */
+typedef enum {
+    COLOR_PIXEL_ARGB8888,   ///< 32 bits, 8 bits per A(alpha)/R/G/B value
+} color_pixel_argb_format_t;
+
+/**
+ * @brief Alpha(A) Format
+ */
+typedef enum {
+    COLOR_PIXEL_A4,   ///< 4 bits, opacity only
+    COLOR_PIXEL_A8,   ///< 8 bits, opacity only
+} color_pixel_alpha_format_t;
+
+/**
+ * @brief CLUT(L) Format
+ */
+typedef enum {
+    COLOR_PIXEL_L4,   ///< 4 bits, color look-up table
+    COLOR_PIXEL_L8,   ///< 8 bits, color look-up table
+} color_pixel_clut_format_t;
 
 /*---------------------------------------------------------------
                 Color Space Pixel Struct Type
@@ -108,6 +137,70 @@ typedef enum {
     COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
     COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
 } color_conv_std_rgb_yuv_t;
+
+/*---------------------------------------------------------------
+                      Color Endian
+---------------------------------------------------------------*/
+
+/**
+ * @brief RGB element order
+ */
+typedef enum {
+    COLOR_RGB_ELEMENT_ORDER_RGB, /*!< RGB element order: RGB */
+    COLOR_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
+} color_rgb_element_order_t;
+
+/*---------------------------------------------------------------
+                Data Structure for Color Pixel Unit
+---------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for ARGB8888 pixel unit
+ */
+typedef union {
+    struct {
+        uint32_t b: 8;      /*!< B component [0, 255] */
+        uint32_t g: 8;      /*!< G component [0, 255] */
+        uint32_t r: 8;      /*!< R component [0, 255] */
+        uint32_t a: 8;      /*!< A component [0, 255] */
+    };
+    uint32_t val;           /*!< 32-bit ARGB8888 value */
+} color_pixel_argb8888_data_t;
+
+/**
+ * @brief Data structure for RGB888 pixel unit
+ */
+typedef struct {
+    uint8_t b;      /*!< B component [0, 255] */
+    uint8_t g;      /*!< G component [0, 255] */
+    uint8_t r;      /*!< R component [0, 255] */
+} color_pixel_rgb888_data_t;
+
+/**
+ * @brief Data structure for RGB565 pixel unit
+ */
+typedef union {
+    struct {
+        uint16_t b: 5;      /*!< B component [0, 31] */
+        uint16_t g: 6;      /*!< G component [0, 63] */
+        uint16_t r: 5;      /*!< R component [0, 31] */
+    };
+    uint16_t val;           /*!< 16-bit RGB565 value */
+} color_pixel_rgb565_data_t;
+
+/*---------------------------------------------------------------
+                        Color Components
+---------------------------------------------------------------*/
+
+/**
+ * @brief Color component
+ */
+typedef enum {
+    COLOR_COMPONENT_R,          /*!< R component */
+    COLOR_COMPONENT_G,          /*!< G component */
+    COLOR_COMPONENT_B,          /*!< B component */
+    COLOR_COMPONENT_INVALID,    /*!< Invalid color component */
+} color_component_t;
 
 #ifdef __cplusplus
 }

@@ -42,7 +42,6 @@ typedef struct {
     bool fast_pac_format_binary;  /**< Set to true for binary format PAC, false for ASCII format PAC */
 } esp_eap_fast_config;
 
-
 /**
  * @brief Enable EAP authentication(WiFi Enterprise) for the station mode.
  *
@@ -60,7 +59,6 @@ typedef struct {
  *    - ESP_ERR_NO_MEM: Failed to enable EAP authentication due to memory allocation failure.
  */
 esp_err_t esp_wifi_sta_enterprise_enable(void);
-
 
 /**
  * @brief Disable EAP authentication(WiFi Enterprise) for the station mode.

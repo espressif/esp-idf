@@ -29,7 +29,6 @@ void test_fill_random_to_buffer(uint32_t seed, uint8_t *buffer, size_t buffer_si
     }
 }
 
-
 /*---------------------------------------------------------------
     Create a pool with random numbers, get buffer from pool
 ---------------------------------------------------------------*/

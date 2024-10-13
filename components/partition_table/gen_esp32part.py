@@ -98,14 +98,18 @@ def get_alignment_offset_for_type(ptype):
 
 
 def get_alignment_size_for_type(ptype):
-    if ptype == APP_TYPE and secure == SECURE_V1:
-        # For secure boot v1 case, app partition must be 64K aligned
-        # signature block (68 bytes) lies at the very end of 64K block
-        return 0x10000
-    if ptype == APP_TYPE and secure == SECURE_V2:
-        # For secure boot v2 case, app partition must be 4K aligned
-        # signature block (4K) is kept after padding the unsigned image to 64K boundary
-        return 0x1000
+    if ptype == APP_TYPE:
+        if secure == SECURE_V1:
+            # For secure boot v1 case, app partition must be 64K aligned
+            # signature block (68 bytes) lies at the very end of 64K block
+            return 0x10000
+        elif secure == SECURE_V2:
+            # For secure boot v2 case, app partition must be 4K aligned
+            # signature block (4K) is kept after padding the unsigned image to 64K boundary
+            return 0x1000
+        else:
+            # For no secure boot enabled case, app partition must be 4K aligned (min. flash erase size)
+            return 0x1000
     # No specific size alignement requirement as such
     return 0x1
 
@@ -441,7 +445,7 @@ class PartitionDefinition(object):
         offset_align = get_alignment_offset_for_type(self.type)
         if self.offset % offset_align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, offset_align))
-        if self.type == APP_TYPE and secure is not SECURE_NONE:
+        if self.type == APP_TYPE:
             size_align = get_alignment_size_for_type(self.type)
             if self.size % size_align:
                 raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, size_align))

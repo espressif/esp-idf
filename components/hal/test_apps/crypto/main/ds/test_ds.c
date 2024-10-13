@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,47 +12,40 @@
 #include "unity_fixture.h"
 
 #include "soc/soc_caps.h"
-typedef enum {
-	HMAC_KEY0 = 0,
-	HMAC_KEY1,
-	HMAC_KEY2,
-	HMAC_KEY3,
-	HMAC_KEY4,
-	HMAC_KEY5,
-	HMAC_KEY_MAX
-} hmac_key_id_t;
+#include "esp_log.h"
 
+const static char *TAG = "test_ds";
+
+#include "rom/efuse.h"
 #if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/efuse.h"
 #include "esp32s2/rom/digital_signature.h"
 #include "esp32s2/rom/aes.h"
 #include "esp32s2/rom/sha.h"
 #include "esp32s2/rom/hmac.h"
 #include "soc/soc_memory_layout.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/digital_signature.h"
 #include "esp32c3/rom/hmac.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/efuse.h"
 #include "esp32s3/rom/digital_signature.h"
 #include "esp32s3/rom/aes.h"
 #include "esp32s3/rom/sha.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/efuse.h"
 #include "esp32c6/rom/digital_signature.h"
 #include "esp32c6/rom/aes.h"
 #include "esp32c6/rom/sha.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/digital_signature.h"
 #include "esp32h2/rom/aes.h"
 #include "esp32h2/rom/sha.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/efuse.h"
 #include "esp32p4/rom/digital_signature.h"
 #include "esp32p4/rom/aes.h"
 #include "esp32p4/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/digital_signature.h"
+#include "esp32c5/rom/aes.h"
+#include "esp32c5/rom/sha.h"
 #endif
 
 #define ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL           (0x1) /*!< HMAC peripheral problem */
@@ -125,10 +118,12 @@ _Static_assert(NUM_RESULTS == NUM_MESSAGES, "expected_results size should be the
 #if !CONFIG_IDF_TARGET_ESP32S2
 
 #include "esp_private/periph_ctrl.h"
+#include "hal/aes_ll.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
+#include "hal/sha_ll.h"
 
 
 static void ds_acquire_enable(void)
@@ -138,7 +133,10 @@ static void ds_acquire_enable(void)
         hmac_ll_reset_register();
     }
 
-    periph_module_enable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+        sha_ll_reset_register();
+    }
 
     DS_RCC_ATOMIC() {
         ds_ll_enable_bus_clock(true);
@@ -156,7 +154,9 @@ static void ds_disable_release(void)
         ds_ll_enable_bus_clock(false);
     }
 
-    periph_module_disable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+    }
 
     HMAC_RCC_ATOMIC() {
         hmac_ll_enable_bus_clock(false);
@@ -164,7 +164,7 @@ static void ds_disable_release(void)
 }
 
 
-static esp_err_t esp_ds_start_sign(const void *message, const esp_ds_data_t *data, hmac_key_id_t key_id)
+static esp_err_t esp_ds_start_sign(const void *message, const esp_ds_data_t *data, uint32_t key_id)
 {
     ds_acquire_enable();
 
@@ -215,7 +215,7 @@ static esp_err_t esp_ds_finish_sign(void *signature, const esp_ds_data_t *data)
 
 static esp_err_t esp_ds_sign(const void *message,
                       const esp_ds_data_t *data,
-                      hmac_key_id_t key_id,
+                      uint32_t key_id,
                       void *signature)
 {
     esp_err_t result = esp_ds_start_sign(message, data, key_id);
@@ -239,8 +239,15 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
     esp_err_t result = ESP_OK;
 
-    periph_module_enable(PERIPH_AES_MODULE);
-    periph_module_enable(PERIPH_SHA_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(true);
+        aes_ll_reset_register();
+    }
+
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+        sha_ll_reset_register();
+    }
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
     const ets_ds_p_data_t *ds_plain_data = (const ets_ds_p_data_t *) p_data;
@@ -251,8 +258,13 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
         result = ESP_ERR_INVALID_ARG;
     }
 
-    periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_AES_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+    }
+
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(false);
+    }
 
     return result;
 }
@@ -272,7 +284,7 @@ static void ds_disable_release(void)
 
 static esp_err_t esp_ds_start_sign(const void *message,
                             const esp_ds_data_t *data,
-                            hmac_key_id_t key_id)
+                            uint32_t key_id)
 {
     ds_acquire_enable();
 
@@ -325,7 +337,7 @@ esp_err_t esp_ds_finish_sign(void *signature, const esp_ds_data_t *data)
 
 static esp_err_t esp_ds_sign(const void *message,
                       const esp_ds_data_t *data,
-                      hmac_key_id_t key_id,
+                      uint32_t key_id,
                       void *signature)
 {
     esp_err_t result = esp_ds_start_sign(message, data, key_id);
@@ -384,7 +396,7 @@ TEST_TEAR_DOWN(ds)
 TEST(ds, digital_signature_parameter_encryption)
 {
     for (int i = 0; i < NUM_CASES; i++) {
-        printf("Encrypting test case %d...\n", i);
+        ESP_LOGI(TAG, "Encrypting test case %d.", i);
         const encrypt_testcase_t *t = &test_cases[i];
         esp_ds_data_t result = { };
         esp_ds_p_data_t p_data;
@@ -397,7 +409,7 @@ TEST(ds, digital_signature_parameter_encryption)
 
         esp_err_t r = esp_ds_encrypt_params(&result, t->iv, &p_data,
                                             test_hmac_keys[t->hmac_key_idx]);
-        printf("Encrypting test case %d done\n", i);
+        ESP_LOGI(TAG, "Encrypting test case %d done", i);
         TEST_ASSERT_EQUAL(ESP_OK, r);
         TEST_ASSERT_EQUAL(t->p_data.length, result.rsa_length);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(t->iv, result.iv, ETS_DS_IV_LEN);
@@ -405,8 +417,8 @@ TEST(ds, digital_signature_parameter_encryption)
     }
 }
 
-// This test uses the HMAC_KEY0 eFuse key which hasn't been burned by burn_hmac_keys().
-// HMAC_KEY0 is usually used for HMAC upstream (user access) tests.
+// This test uses the HMAC_KEY_BLOCK_1 eFuse key which hasn't been burned by burn_hmac_keys().
+// HMAC_KEY_BLOCK_1 is usually used for HMAC upstream (user access) tests.
 TEST(ds, digital_signature_wrong_hmac_key_purpose)
 {
     esp_ds_data_t ds_data = {};
@@ -414,11 +426,11 @@ TEST(ds, digital_signature_wrong_hmac_key_purpose)
     const char *message = "test";
 
     // HMAC fails in that case because it checks for the correct purpose
-    TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0));
+    TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY_BLOCK_1));
 }
 
-// This test uses the HMAC_KEY0 eFuse key which hasn't been burned by burn_hmac_keys().
-// HMAC_KEY0 is usually used for HMAC upstream (user access) tests.
+// This test uses the HMAC_KEY_BLOCK_1 eFuse key which hasn't been burned by burn_hmac_keys().
+// HMAC_KEY_BLOCK_1 is usually used for HMAC upstream (user access) tests.
 TEST(ds, digital_signature_blocking_wrong_hmac_key_purpose)
 {
     esp_ds_data_t ds_data = {};
@@ -427,13 +439,13 @@ TEST(ds, digital_signature_blocking_wrong_hmac_key_purpose)
     uint8_t signature_data [128 * 4];
 
     // HMAC fails in that case because it checks for the correct purpose
-    TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
+    TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY_BLOCK_1, signature_data));
 }
 
 TEST(ds, digital_signature_operation)
 {
     for (int i = 0; i < NUM_CASES; i++) {
-        printf("Running test case %d...\n", i);
+        ESP_LOGI(TAG, "Running test case %d.", i);
         const encrypt_testcase_t *t = &test_cases[i];
 
         // copy encrypt parameter test case into ds_data structure
@@ -444,11 +456,11 @@ TEST(ds, digital_signature_operation)
 
         for (int j = 0; j < NUM_MESSAGES; j++) {
             uint8_t signature[DS_MAX_BITS / 8] = { 0 };
-            printf(" ... message %d\n", j);
+            ESP_LOGD(TAG, " ... message %d", j);
 
             esp_err_t ds_r = esp_ds_start_sign(test_messages[j],
                                                &ds_data,
-                                               t->hmac_key_idx + 1);
+                                               t->hmac_key_idx);
             TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
             ds_r = esp_ds_finish_sign(signature, &ds_data);
@@ -465,7 +477,7 @@ TEST(ds, digital_signature_operation)
 TEST(ds, digital_signature_blocking_operation)
 {
     for (int i = 0; i < NUM_CASES; i++) {
-        printf("Running test case %d...\n", i);
+        ESP_LOGI(TAG, "Running test case %d.", i);
         const encrypt_testcase_t *t = &test_cases[i];
 
         // copy encrypt parameter test case into ds_data structure
@@ -479,7 +491,7 @@ TEST(ds, digital_signature_blocking_operation)
 
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0],
                                            &ds_data,
-                                           t->hmac_key_idx + 1);
+                                           t->hmac_key_idx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
         ds_r = esp_ds_finish_sign(signature, &ds_data);
@@ -487,7 +499,7 @@ TEST(ds, digital_signature_blocking_operation)
 #else
         esp_err_t ds_r = esp_ds_sign(test_messages[0],
                                      &ds_data,
-                                     t->hmac_key_idx + 1,
+                                     t->hmac_key_idx,
                                      signature);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 #endif
@@ -510,10 +522,10 @@ TEST(ds, digital_signature_invalid_data)
 
     // Corrupt the IV one bit at a time, rerun and expect failure
     for (int bit = 0; bit < 128; bit++) {
-        printf("Corrupting IV bit %d...\n", bit);
+        ESP_LOGD(TAG, "Corrupting IV bit %d.", bit);
         ds_data.iv[bit / 8] ^= 1 << (bit % 8);
 
-        esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1);
+        esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
         ds_r = esp_ds_finish_sign(signature, &ds_data);
@@ -524,12 +536,12 @@ TEST(ds, digital_signature_invalid_data)
     }
 
     // Corrupt encrypted key data one bit at a time, rerun and expect failure
-    printf("Corrupting C...\n");
+    ESP_LOGD(TAG, "Corrupting C.");
     for (int bit = 0; bit < ETS_DS_C_LEN * 8; bit++) {
-        printf("Corrupting C bit %d...\n", bit);
+        ESP_LOGD(TAG, "Corrupting C bit %d.", bit);
         ds_data.c[bit / 8] ^= 1 << (bit % 8);
 
-        esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1);
+        esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
 
         ds_r = esp_ds_finish_sign(signature, &ds_data);

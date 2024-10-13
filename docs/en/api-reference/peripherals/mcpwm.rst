@@ -111,7 +111,7 @@ The :cpp:func:`mcpwm_new_comparator` will return a pointer to the allocated comp
 
 On the contrary, calling the :cpp:func:`mcpwm_del_comparator` function will free the allocated comparator object.
 
-.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR and SOC_MCPWM_SUPPORT_ETM
 
     There's another kind of comparator called "Event Comparator", which **can not** control the final PWM directly but only generates the ETM events at a configurable time stamp. You can allocate an event comparator by calling the :cpp:func:`mcpwm_new_event_comparator` function. This function will return the same handle type as :cpp:func:`mcpwm_new_comparator`, but with a different configuration structure :cpp:type:`mcpwm_event_comparator_config_t`. For more information, please refer to :ref:`mcpwm-etm-event-and-task`.
 
@@ -204,11 +204,11 @@ Next, to allocate a capture channel, you can call the :cpp:func:`mcpwm_new_captu
 - :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` sets the GPIO number used by the capture channel.
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` sets the prescaler of the input signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::neg_edge` set whether to capture on the positive and/or falling edge of the input signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_up` and :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_down` set whether to pull up and/or pull down the GPIO internally.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::invert_cap_signal` sets whether to invert the capture signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::keep_io_conf_at_exit` sets whether to keep the GPIO configuration when the capture channel is deleted.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::neg_edge` set whether to capture on the positive and/or falling edge of the input signal.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_up` and :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_down` set whether to pull up and/or pull down the GPIO internally.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::invert_cap_signal` sets whether to invert the capture signal.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::keep_io_conf_at_exit` sets whether to keep the GPIO configuration when the capture channel is deleted.
 
 The :cpp:func:`mcpwm_new_capture_channel` will return a pointer to the allocated capture channel object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture channel left in the capture timer, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error.
 
@@ -856,6 +856,10 @@ When a sync signal is taken by the MCPWM timer, the timer will be forced into a 
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` sets the count value to load when the sync signal is taken.
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` sets the count direction when the sync signal is taken.
 
+.. note::
+
+    When the MCPWM timer is working in :cpp:enumerator:`MCPWM_TIMER_COUNT_MODE_UP_DOWN` mode, special attention needs to be taken. In this mode, counter range ``[0 -> peak-1]`` belongs to the **increment** phase, and counter range ``[peak -> 1]`` belongs to the **decrement** phase. Thus if you set the :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` to zero, you may also want to set the :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` to :cpp:enumerator:`MCPWM_TIMER_DIRECTION_UP`. Otherwise, the timer will be continue with the decrement phase, and the count value underflows to ``peak``.
+
 Likewise, the `MCPWM Capture Timer <#mcpwm-capture-timer-and-channels>`__ can be synced as well. You can set the sync phase for the capture timer by calling :cpp:func:`mcpwm_capture_timer_set_phase_on_sync`. The sync phase configuration is defined in :cpp:type:`mcpwm_capture_timer_sync_phase_config_t` structure:
 
 - :cpp:member:`mcpwm_capture_timer_sync_phase_config_t::sync_src` sets the sync signal source. See `MCPWM Sync Sources <#mcpwm-sync-sources>`__ for how to create a sync source object. Specifically, if this is set to ``NULL``, the driver will disable the sync feature for the MCPWM capture timer.
@@ -974,9 +978,9 @@ Power Management
 
 When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the PLL and APB frequency before going into Light-sleep, thus potentially changing the period of an MCPWM timers' counting step and leading to inaccurate time-keeping.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates an MCPWM timer instance that has selected :cpp:enumerator:`MCPWM_TIMER_CLK_SRC_PLL160M` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
+However, the driver can prevent the system from going into Light-sleep by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP`. Whenever the driver creates an MCPWM timer instance that has selected PLL as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_timer_enable`. On the contrary, the driver releases the lock when :cpp:func:`mcpwm_timer_disable` is called for that timer.
 
-Likewise, whenever the driver creates an MCPWM capture timer instance that has selected :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB` as its clock source, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
+Likewise, whenever the driver creates an MCPWM capture timer instance, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
 
 
 .. _mcpwm-iram-safe:
@@ -1027,11 +1031,12 @@ Kconfig Options
 Application Examples
 --------------------
 
-* Brushed DC motor speed control by PID algorithm: :example:`peripherals/mcpwm/mcpwm_bdc_speed_control`
-* BLDC motor control with hall sensor feedback: :example:`peripherals/mcpwm/mcpwm_bldc_hall_control`
-* Ultrasonic sensor (HC-SR04) distance measurement: :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04`
-* Servo motor angle control: :example:`peripherals/mcpwm/mcpwm_servo_control`
-* MCPWM synchronization between timers: :example:`peripherals/mcpwm/mcpwm_sync`
+* :example:`peripherals/mcpwm/mcpwm_bdc_speed_control` demonstrates how to drive a brushed DC motor using two specific PWM signals, measure the motor speed with a photoelectric encoder, and maintain a stable motor speed using a simple PID algorithm.
+* :example:`peripherals/mcpwm/mcpwm_bldc_hall_control` demonstrates how to use the MCPWM peripheral to control a BLDC motor using a six-step commutation scheme, with the motor's spin direction and speed being adjusted based on the readings from a Hall sensor.
+* :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04` demonstrates how to use the MCPWM peripheral's capture module to decode the pulse width signals from an HC-SR04 sonar sensor, which can measure distance based on the width of the pulse.
+* :example:`peripherals/mcpwm/mcpwm_foc_svpwm_open_loop` demonstrates how to use the MCPWM peripheral to generate three pairs of PWM signals for Field-Oriented Control (FOC), which can be used to drive a BLDC or PMSM motor, or a three-phase power inverter, using an open-loop FOC algorithm.
+* :example:`peripherals/mcpwm/mcpwm_servo_control` demonstrates how to control a typical RC Servo by sending a PWM signal using the MCPWM driver, with the servo rotating from -60° to 60° and then turning back again.
+* :example:`peripherals/mcpwm/mcpwm_sync` demonstrates how to generate three PWMs in perfect synchronization using MCPWM timers, with options to synchronize the timers via GPIO, Timer TEZ, or software.
 
 
 API Reference

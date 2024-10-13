@@ -1,4 +1,8 @@
 # Python package requirements for ESP-IDF. These are the so called core features which are installed in all systems.
+#
+# This file lists Python packages without version specifiers. Version details
+# are stored in a separate constraints file. For more information, visit:
+# https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html
 
 setuptools
 packaging
@@ -14,10 +18,13 @@ esp-coredump
 esptool
 esp-idf-kconfig
 esp-idf-monitor
+esp-idf-nvs-partition-gen
 esp-idf-size
 esp-idf-panic-decoder
 pyclang
 construct
+rich
+psutil
 
 # gdb extensions dependencies
 freertos_gdb

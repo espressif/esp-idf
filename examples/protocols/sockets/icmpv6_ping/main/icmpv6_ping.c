@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,9 +15,7 @@
 #include "protocol_examples_common.h"
 #include "sdkconfig.h"
 
-
 #define MSG_BUFF_SIZE   (256)
-
 
 static const char *TAG = "icmpv6_ping";
 
@@ -30,7 +28,6 @@ static const char *s_ipv6_addr_types[] = {
     "ESP_IP6_ADDR_IS_UNIQUE_LOCAL",
     "ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6"
 };
-
 
 /**
  * @brief Resolves an IPv6 address in string format or an url.
@@ -64,7 +61,6 @@ static socklen_t resolve_v6addr(char *addr_str_i, struct sockaddr_in6 *addr_o)
 
     return addrlen;
 }
-
 
 /**
  * @brief Send a ICMPv6 ping request to the destination address over the given interface and wait for a response.
@@ -224,70 +220,153 @@ static void send_ping(char *src_addr_str, char *dst_addr_str, char *interface)
 typedef struct src_iface_api {
     char *interface;
     char *src_addr_str;
+    esp_ip6_addr_type_t dst_addr_type;
 } src_iface_api_t;
 
+static bool is_matching_ip6_type(esp_ip6_addr_type_t ipv6_type, esp_ip6_addr_type_t dst_addr_type) {
+    switch (dst_addr_type) {
+    case ESP_IP6_ADDR_IS_GLOBAL:
+        return ipv6_type == ESP_IP6_ADDR_IS_GLOBAL;
+    case ESP_IP6_ADDR_IS_UNIQUE_LOCAL:
+        return ipv6_type == ESP_IP6_ADDR_IS_UNIQUE_LOCAL || ipv6_type == ESP_IP6_ADDR_IS_GLOBAL;
+    case ESP_IP6_ADDR_IS_LINK_LOCAL:
+        // Any scope is acceptable for link-local destinations
+        return true;
+    default:
+        return false;
+    }
+}
+
 /**
- * @brief Goes over each interface and searches for one Global/Unique local IPv6 address.
- *        Returns the interface name and IPv6 address of the interface in case of success.
+ * @brief Get the best IPv6 address for a given destination address type.
+ *
+ * This function selects the most appropriate IPv6 address from the network interface
+ * based on the destination address type.
+ *
+ * @param netif Pointer to the network interface structure.
+ * @param dst_addr_type The type of destination IPv6 address.
+ * @param best_ip6_o Pointer to store the best IPv6 address found.
  *
  * @return
- *          ESP_OK : Successfully found an interface with Global/Unique local IPv6 address.
- *          ESP_FAIL : Unable to to find a valid interface with Global/Unique local  IPv6 address.
+ *     - ESP_OK if a suitable address is found.
+ *     - ESP_FAIL if no suitable address is found or on error.
+ *
+ * @note The function prioritizes addresses based on the following rules:
+ *       - For global destinations, it returns the first global address.
+ *       - For unique local destinations, it returns the first unique local or global address.
+ *       - For link-local destinations, it returns the first available address of any scope.
+ */
+static esp_err_t get_best_ip6(esp_netif_t *netif, esp_ip6_addr_type_t dst_addr_type, esp_ip6_addr_t *best_ip6_o)
+{
+    int ip6_addrs_count = 0;
+    esp_ip6_addr_t ip6_addr_list[LWIP_IPV6_NUM_ADDRESSES];
+
+    ip6_addrs_count = esp_netif_get_all_ip6(netif, ip6_addr_list);
+    for (int i = 0; i < ip6_addrs_count; ++i) {
+        esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6_addr_list[i]));
+
+        if (is_matching_ip6_type(ipv6_type, dst_addr_type)) {
+            *best_ip6_o = ip6_addr_list[i];
+            return ESP_OK;
+        }
+    }
+    ESP_LOGW(TAG, "No suitable IPv6 address found");
+
+    return ESP_FAIL;
+}
+
+/**
+ * @brief Finds the best source interface and IPv6 address for a given destination address type.
+ *
+ * This function attempts to find a suitable source interface and IPv6 address for communication
+ * based on the destination address type. It first checks the default network interface, and if
+ * unsuccessful, it searches through all available interfaces.
+ *
+ * @param ctx A pointer to a src_iface_api_t structure containing input parameters and output fields.
+ *
+ * @return
+ *     - ESP_OK if a suitable interface and IPv6 address are found.
+ *     - ESP_FAIL if no suitable interface or IPv6 address is available.
+ *
+ * @note The function populates the following fields in the src_iface_api_t structure:
+ *     - interface: The name of the selected network interface.
+ *     - src_addr_str: A string representation of the selected IPv6 address.
  */
 static esp_err_t get_src_iface(void* ctx)
 {
+    esp_err_t ret;
     src_iface_api_t *api = ctx;
-    esp_netif_t *netif = NULL;
-    int ip6_addrs_count = 0;
-    esp_ip6_addr_t ip6[LWIP_IPV6_NUM_ADDRESSES];
+    esp_netif_t *netif = NULL, *def_netif = NULL;
+    esp_ip6_addr_t best_ip6;
 
-    // Get interface details and own global ipv6 address
-    while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
-        esp_err_t ret = esp_netif_get_netif_impl_name(netif, api->interface);
+    // First check in default interface
+    def_netif = esp_netif_get_default_netif();
+    if (NULL == def_netif) {
+        ESP_LOGE(TAG, "Default interface not available");
+        return ESP_FAIL;
+    }
 
-        if ((ESP_FAIL == ret) || (NULL == netif)) {
-            ESP_LOGE(TAG, "No interface available");
+    if (get_best_ip6(def_netif, api->dst_addr_type, &best_ip6) == ESP_OK) {
+        ret = esp_netif_get_netif_impl_name(def_netif, api->interface);
+        if (ESP_FAIL == ret) {
+            ESP_LOGE(TAG, "Default interface name error");
             return ESP_FAIL;
         }
         ESP_LOGI(TAG, "Interface: %s", api->interface);
+        sprintf(api->src_addr_str, IPV6STR, IPV62STR(best_ip6));
+        return ESP_OK;
+    }
 
-        ip6_addrs_count = esp_netif_get_all_ip6(netif, ip6);
-        for (int j = 0; j < ip6_addrs_count; ++j) {
-            esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
+    // If we have reach here there's no good ipv6 address in default interface
+    // check in all other interfaces
+    while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
+        // Skip default netif as it has already been checked
+        if (netif == def_netif) {
+            continue;
+        }
 
-            ESP_LOGI(TAG, "IPv6 address: " IPV6STR ", type: %s", IPV62STR(ip6[j]), s_ipv6_addr_types[ipv6_type]);
-            if ((ESP_IP6_ADDR_IS_GLOBAL == ipv6_type) ||
-                    (ESP_IP6_ADDR_IS_UNIQUE_LOCAL == ipv6_type)) {
-                // Break as we have the source address
-                sprintf(api->src_addr_str, IPV6STR, IPV62STR(ip6[j]));
-                return ESP_OK;
+        if (get_best_ip6(netif, api->dst_addr_type, &best_ip6) == ESP_OK) {
+            ret = esp_netif_get_netif_impl_name(netif, api->interface);
+            if (ESP_FAIL == ret) {
+                ESP_LOGE(TAG, "Default interface name error");
+                return ESP_FAIL;
             }
+            ESP_LOGI(TAG, "Interface: %s", api->interface);
+            sprintf(api->src_addr_str, IPV6STR, IPV62STR(best_ip6));
+            ESP_LOGI(TAG, "IPv6 address: " IPV6STR ", type: %s", IPV62STR(best_ip6),
+                     s_ipv6_addr_types[esp_netif_ip6_get_addr_type(&best_ip6)]);
+            return ESP_OK;
         }
     }
 
     return ESP_FAIL;
 }
 
-
 static void ping6_test_task(void *pvParameters)
 {
     char src_addr_str[50];
     char interface[10];
-    char dst_addr_str[] = CONFIG_EXAMPLE_DST_IPV6_ADDR;
+    ip6_addr_t dst_addr;
 
-    src_iface_api_t api = { .interface = interface, .src_addr_str = src_addr_str };
-    if (esp_netif_tcpip_exec(get_src_iface, &api) == ESP_OK) {
-        ESP_LOGI(TAG, "Source address: %s", src_addr_str);
-        ESP_LOGI(TAG, "Destination address: %s", dst_addr_str);
-        ESP_LOGI(TAG, "Interface name: %s", interface);
+    if (ip6addr_aton(CONFIG_EXAMPLE_DST_IPV6_ADDR, &dst_addr)) {
+        src_iface_api_t api = { .interface = interface,
+                                .src_addr_str = src_addr_str,
+                                .dst_addr_type = esp_netif_ip6_get_addr_type((esp_ip6_addr_t *)&dst_addr)
+                              };
+        if (esp_netif_tcpip_exec(get_src_iface, &api) == ESP_OK) {
+            ESP_LOGI(TAG, "Source address: %s", src_addr_str);
+            ESP_LOGI(TAG, "Destination address: %s", CONFIG_EXAMPLE_DST_IPV6_ADDR);
+            ESP_LOGI(TAG, "Interface name: %s", interface);
 
-        // send one single ping
-        send_ping(src_addr_str, dst_addr_str, interface);
+            // send one single ping
+            send_ping(src_addr_str, CONFIG_EXAMPLE_DST_IPV6_ADDR, interface);
+        }
+    } else {
+        ESP_LOGE(TAG, "Error: Invalid destination address");
     }
 
     vTaskDelete(NULL);
 }
-
 
 void app_main(void)
 {

@@ -16,6 +16,10 @@ if(NOT CONFIG_SOC_RTC_MEM_SUPPORTED)
     set(args "--no-rtc")
 endif()
 
+if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
+    set(args "--non-contiguous-sram")
+endif()
+
 add_custom_command(
     TARGET ${elf}
     POST_BUILD

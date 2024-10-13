@@ -74,13 +74,17 @@ Clock Source
 
 - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`: Default PLL clock.
 
-.. only:: not esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F160M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
 
-.. only:: esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F96M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
+
+.. only:: SOC_I2S_SUPPORTS_PLL_F240M
+
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
@@ -117,12 +121,13 @@ ESP32-C6    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 ESP32-H2    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    none       none
+ESP32-C5    I2S 0     I2S 0     none      I2S 0     none       none
 =========  ========  ========  ========  ========  ========  ==========
 
 Standard Mode
 ^^^^^^^^^^^^^
 
-In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 8/16/24/32-bit width sample data. The communication format for the slots mainly includes the followings:
+In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 8/16/24/32-bit width sample data. The communication format for the slots mainly includes the following:
 
 - **Philips Format**: Data signal has one-bit shift comparing to the WS signal, and the duty of WS signal is 50%.
 
@@ -197,7 +202,7 @@ In standard mode, there are always two sound channels, i.e., the left and right 
     LCD/Camera Mode
     ^^^^^^^^^^^^^^^
 
-    LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
+    LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd/i80_lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
 
 .. only:: SOC_I2S_SUPPORTS_ADC_DAC
 
@@ -228,6 +233,15 @@ Power Management
 When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2S before entering Light-sleep, thus potentially changing the I2S signals and leading to transmitting or receiving invalid data.
 
 The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the user is reading or writing via I2S (i.e., calling :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`), the driver guarantees that the power management lock is acquired. Likewise, the driver releases the lock after the reading or writing finishes.
+
+.. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    """""""""""""""
+
+    {IDF_TARGET_NAME} supports to retain the I2S register context before entering **light sleep** and restore them after woke up. Which means you don't have to re-init the I2S driver even the peripheral is power off during the light sleep.
+
+    This feature can be enabled by setting the flag :cpp:member:`i2s_chan_config_t::allow_pd`. It will allow the system to power down the I2S in light sleep, meanwhile save the I2S register context. It can help to save more power consumption with some extra cost of the memory.
 
 Finite State Machine
 ^^^^^^^^^^^^^^^^^^^^
@@ -286,6 +300,9 @@ The examples of the I2S driver can be found in the directory :example:`periphera
 
 Standard TX/RX Usage
 ^^^^^^^^^^^^^^^^^^^^
+
+- :example:`peripherals/i2s/i2s_codec/i2s_es8311` demonstrates how to use the I2S ES8311 audio codec with {IDF_TARGET_NAME} to play music or echo sounds, featuring high performance and low power multi-bit delta-sigma audio ADC and DAC, with options to customize music and adjust mic gain and volume.
+- :example:`peripherals/i2s/i2s_basic/i2s_std` demonstrates how to use the I2S standard mode in either simplex or full-duplex mode on {IDF_TARGET_NAME}.
 
 Different slot communication formats can be generated by the following helper macros for standard mode. As described above, there are three formats in standard mode, and their helper macros are:
 
@@ -543,6 +560,8 @@ Here is the table of the data received in the buffer with different :cpp:member:
     PDM TX Usage
     ^^^^^^^^^^^^
 
+    - :example:`peripherals/i2s/i2s_basic/i2s_pdm` demonstrates how to use the PDM TX mode on {IDF_TARGET_NAME}, including the necessary hardware setup and configuration.
+
     For PDM mode in TX channel, the slot configuration helper macro is:
 
     - :c:macro:`I2S_PDM_TX_SLOT_DEFAULT_CONFIG`
@@ -639,6 +658,9 @@ Here is the table of the data received in the buffer with different :cpp:member:
     PDM RX Usage
     ^^^^^^^^^^^^
 
+    - :example:`peripherals/i2s/i2s_recorder` demonstrates how to record audio from a digital MEMS microphone using the I2S peripheral in PDM data format and save it to an SD card in ``.wav`` file format on {IDF_TARGET_NAME} development boards.
+    - :example:`peripherals/i2s/i2s_basic/i2s_pdm` demonstrates how to use the PDM RX mode on {IDF_TARGET_NAME}, including the necessary hardware setup and configuration.
+
     For PDM mode in RX channel, the slot configuration helper macro is:
 
     - :c:macro:`I2S_PDM_RX_SLOT_DEFAULT_CONFIG`
@@ -721,6 +743,9 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
     TDM TX/RX Usage
     ^^^^^^^^^^^^^^^
+
+    - :example:`peripherals/i2s/i2s_codec/i2s_es7210_tdm` demonstrates how to use the I2S TDM mode on {IDF_TARGET_NAME} to record four MICs connected to ES7210 codec, with the recorded voice saved to an SD card in ``wav`` format.
+    - :example:`peripherals/i2s/i2s_basic/i2s_tdm` demonstrates how to use the TDM mode in simplex or full-duplex mode on {IDF_TARGET_NAME}.
 
     Different slot communication formats can be generated by the following helper macros for TDM mode. As described above, there are four formats in TDM mode, and their helper macros are:
 
@@ -974,6 +999,79 @@ Here is an example of how to allocate a pair of full-duplex channels:
         i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
         i2s_channel_enable(rx_handle);
 
+.. only:: SOC_I2S_SUPPORTS_ETM
+
+    I2S ETM Usage
+    ^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports I2S ETM (Event Task Matrix), which allows to trigger other ETM tasks via I2S ETM events, or to control the start/stop by I2S ETM tasks.
+
+    The I2S ETM APIs can be found in ``driver/i2s_etm.h``, the following example shows how to use GPIO to start/stop I2S channel via ETM:
+
+    .. code-block:: c
+
+        #include "driver/i2s_etm.h"
+        // ...
+        i2s_chan_handle_t tx_handle;
+        // Initialize I2S channel
+        // ......
+        int ctrl_gpio = 4;
+        // Initialize GPIO
+        // ......
+        /* Register GPIO ETM events */
+        gpio_etm_event_config_t gpio_event_cfg = {
+            .edges = {GPIO_ETM_EVENT_EDGE_POS, GPIO_ETM_EVENT_EDGE_NEG},
+        };
+        esp_etm_event_handle_t gpio_pos_event_handle;
+        esp_etm_event_handle_t gpio_neg_event_handle;
+        gpio_new_etm_event(&gpio_event_cfg, &gpio_pos_event_handle, &gpio_neg_event_handle);
+        gpio_etm_event_bind_gpio(gpio_pos_event_handle, ctrl_gpio);
+        gpio_etm_event_bind_gpio(gpio_neg_event_handle, ctrl_gpio);
+        /* Register I2S ETM tasks */
+        i2s_etm_task_config_t i2s_start_task_cfg = {
+            .task_type = I2S_ETM_TASK_START,
+        };
+        esp_etm_task_handle_t i2s_start_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_start_task_cfg, &i2s_start_task_handle);
+        i2s_etm_task_config_t i2s_stop_task_cfg = {
+            .task_type = I2S_ETM_TASK_STOP,
+        };
+        esp_etm_task_handle_t i2s_stop_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_stop_task_cfg, &i2s_stop_task_handle);
+        /* Bind GPIO events to I2S ETM tasks */
+        esp_etm_channel_config_t etm_config = {};
+        esp_etm_channel_handle_t i2s_etm_start_chan = NULL;
+        esp_etm_channel_handle_t i2s_etm_stop_chan = NULL;
+        esp_etm_new_channel(&etm_config, &i2s_etm_start_chan);
+        esp_etm_new_channel(&etm_config, &i2s_etm_stop_chan);
+        esp_etm_channel_connect(i2s_etm_start_chan, gpio_pos_event_handle, i2s_start_task_handle);
+        esp_etm_channel_connect(i2s_etm_stop_chan, gpio_neg_event_handle, i2s_stop_task_handle);
+        esp_etm_channel_enable(i2s_etm_start_chan);
+        esp_etm_channel_enable(i2s_etm_stop_chan);
+        /* Enable I2S channel first before starting I2S channel */
+        i2s_channel_enable(tx_handle);
+        // (Optional) Able to load the data into the internal DMA buffer here,
+        // but tx_channel does not start yet, will timeout when the internal buffer is full
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 0);
+        /* Start I2S channel by setting the GPIO to high */
+        gpio_set_level(ctrl_gpio, 1);
+        // Write data ......
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 1000);
+        /* Stop I2S channel by setting the GPIO to low */
+        gpio_set_level(ctrl_gpio, 0);
+
+        /* Free resources */
+        i2s_channel_disable(tx_handle);
+        esp_etm_channel_disable(i2s_etm_start_chan);
+        esp_etm_channel_disable(i2s_etm_stop_chan);
+        esp_etm_del_event(gpio_pos_event_handle);
+        esp_etm_del_event(gpio_neg_event_handle);
+        esp_etm_del_task(i2s_start_task_handle);
+        esp_etm_del_task(i2s_stop_task_handle);
+        esp_etm_del_channel(i2s_etm_start_chan);
+        esp_etm_del_channel(i2s_etm_stop_chan);
+        // De-initialize I2S and GPIO
+        // ......
 
 Application Notes
 -----------------

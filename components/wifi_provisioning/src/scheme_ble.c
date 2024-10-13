@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,21 @@ static const char *TAG = "wifi_prov_scheme_ble";
 extern const wifi_prov_scheme_t wifi_prov_scheme_ble;
 
 static uint8_t *custom_service_uuid;
+static uint8_t *custom_ble_addr;
+static uint8_t custom_keep_ble_on;
 
 static uint8_t *custom_manufacturer_data;
 static size_t custom_manufacturer_data_len;
+
+esp_err_t wifi_prov_mgr_keep_ble_on(uint8_t is_on_after_ble_stop)
+{
+    if (!is_on_after_ble_stop) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    custom_keep_ble_on = is_on_after_ble_stop;
+    return ESP_OK;
+}
 
 static esp_err_t prov_start(protocomm_t *pc, void *config)
 {
@@ -40,8 +52,10 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
 
     protocomm_ble_config_t *ble_config = (protocomm_ble_config_t *) config;
 
+    ble_config->keep_ble_on = custom_keep_ble_on;
+
 #if defined(CONFIG_WIFI_PROV_BLE_BONDING)
-   	ble_config->ble_bonding = 1;
+    ble_config->ble_bonding = 1;
 #endif
 
 #if defined(CONFIG_WIFI_PROV_BLE_SEC_CONN) || defined(CONFIG_BT_BLUEDROID_ENABLED)
@@ -51,11 +65,32 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
 #if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
     ble_config->ble_link_encryption = 1;
 #endif
+
+#if defined(CONFIG_WIFI_PROV_BLE_NOTIFY)
+    ble_config->ble_notify = 1;
+#endif
+
     /* Start protocomm as BLE service */
     if (protocomm_ble_start(pc, ble_config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start protocomm BLE service");
         return ESP_FAIL;
     }
+    return ESP_OK;
+}
+
+esp_err_t wifi_prov_scheme_ble_set_random_addr(const uint8_t *addr)
+{
+    if (!addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    custom_ble_addr = (uint8_t *) malloc(BLE_ADDR_LEN);
+    if (custom_ble_addr == NULL) {
+         ESP_LOGE(TAG, "Error allocating memory for random address");
+         return ESP_ERR_NO_MEM;
+    }
+
+    memcpy(custom_ble_addr, addr, BLE_ADDR_LEN);
     return ESP_OK;
 }
 
@@ -159,6 +194,12 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
         ble_config->manufacturer_data_len = 0;
     }
 
+    if (custom_ble_addr){
+        ble_config->ble_addr = custom_ble_addr;
+    } else {
+        ble_config->ble_addr = NULL;
+    }
+
     return ESP_OK;
 }
 
@@ -183,7 +224,7 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
     }
 
     protocomm_ble_name_uuid_t *lookup_table = (
-                realloc(ble_config->nu_lookup, (ble_config->nu_lookup_count + 1) * sizeof(protocomm_ble_name_uuid_t)));
+                                                  realloc(ble_config->nu_lookup, (ble_config->nu_lookup_count + 1) * sizeof(protocomm_ble_name_uuid_t)));
     if (!lookup_table) {
         ESP_LOGE(TAG, "Error allocating memory for EP-UUID lookup table");
         return ESP_ERR_NO_MEM;
@@ -200,35 +241,34 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
 void wifi_prov_scheme_ble_event_cb_free_btdm(void *user_data, wifi_prov_cb_event_t event, void *event_data)
 {
     switch (event) {
-        case WIFI_PROV_INIT:
+    case WIFI_PROV_INIT: {
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-            esp_err_t err;
-            /* Release BT memory, as we need only BLE */
-            err = esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "bt_mem_release of classic BT failed %d", err);
-            } else {
-                ESP_LOGI(TAG, "BT memory released");
-            }
+        /* Release BT memory, as we need only BLE */
+        esp_err_t err = esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "bt_mem_release of classic BT failed %d", err);
+        } else {
+            ESP_LOGI(TAG, "BT memory released");
+        }
 #endif
-            break;
-
-        case WIFI_PROV_DEINIT:
+        break;
+    }
+    case WIFI_PROV_DEINIT: {
 #ifndef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-            /* Release memory used by BLE and Bluedroid host stack */
-            err = esp_bt_mem_release(ESP_BT_MODE_BTDM);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "bt_mem_release of BTDM failed %d", err);
-            } else {
-                ESP_LOGI(TAG, "BTDM memory released");
-            }
+        /* Release memory used by BLE and Bluedroid host stack */
+        esp_err_t err = esp_bt_mem_release(ESP_BT_MODE_BTDM);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "bt_mem_release of BTDM failed %d", err);
+        } else {
+            ESP_LOGI(TAG, "BTDM memory released");
+        }
 #endif
 #endif
-            break;
-
-        default:
-            break;
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -236,21 +276,21 @@ void wifi_prov_scheme_ble_event_cb_free_btdm(void *user_data, wifi_prov_cb_event
 void wifi_prov_scheme_ble_event_cb_free_bt(void *user_data, wifi_prov_cb_event_t event, void *event_data)
 {
     switch (event) {
-        case WIFI_PROV_INIT:
+    case WIFI_PROV_INIT: {
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-            esp_err_t err;
-            /* Release BT memory, as we need only BLE */
-            err = esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "bt_mem_release of classic BT failed %d", err);
-            } else {
-                ESP_LOGI(TAG, "BT memory released");
-            }
+        esp_err_t err;
+        /* Release BT memory, as we need only BLE */
+        err = esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "bt_mem_release of classic BT failed %d", err);
+        } else {
+            ESP_LOGI(TAG, "BT memory released");
+        }
 #endif
-            break;
-
-        default:
-            break;
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -258,23 +298,23 @@ void wifi_prov_scheme_ble_event_cb_free_bt(void *user_data, wifi_prov_cb_event_t
 void wifi_prov_scheme_ble_event_cb_free_ble(void *user_data, wifi_prov_cb_event_t event, void *event_data)
 {
     switch (event) {
-        case WIFI_PROV_DEINIT:
+    case WIFI_PROV_DEINIT: {
 #ifndef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
 #ifdef CONFIG_BT_CONTROLLER_ENABLED
-            esp_err_t err;
-            /* Release memory used by BLE stack */
-            err = esp_bt_mem_release(ESP_BT_MODE_BLE);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "bt_mem_release of BLE failed %d", err);
-            } else {
-                ESP_LOGI(TAG, "BLE memory released");
-            }
+        esp_err_t err;
+        /* Release memory used by BLE stack */
+        err = esp_bt_mem_release(ESP_BT_MODE_BLE);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "bt_mem_release of BLE failed %d", err);
+        } else {
+            ESP_LOGI(TAG, "BLE memory released");
+        }
 #endif
 #endif
-            break;
-
-        default:
-            break;
+        break;
+    }
+    default:
+        break;
     }
 }
 

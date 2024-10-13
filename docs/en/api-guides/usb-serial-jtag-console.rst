@@ -19,8 +19,8 @@ Generally, ESP chips implement a serial port using UART and can be connected to 
 Hardware Requirements
 =====================
 
-{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27"}
-{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26"}
+{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13"}
+{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12"}
 
 Connect {IDF_TARGET_NAME} to the USB port as follows:
 
@@ -91,30 +91,30 @@ For data transmitted from the PC Terminal to {IDF_TARGET_NAME} (e.g., console co
 
 .. note::
 
-    In rare cases it's possible that data sent from the {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
+    In rare cases, it is possible that data sent from {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
 
 Sleep Mode Considerations
 -------------------------
 
 The USB Serial/JTAG controller and its associated USB PHY are driven by particular clocks (e.g., APB and USB PHY clock) and belong to a particular power domain (e.g., digital power domain). Thus, any change to the clock and power domains associated with the USB Serial/JTAG controller, such as entering different sleep modes, can affect the controller's operation.
 
-Deep Sleep
+Deep-sleep
 ^^^^^^^^^^
 
-When entering deep sleep, both the USB Serial/JTAG controller and the USB PHY are powered off, leading to the USB PHY's D+ line no longer being pulled up. As a result:
+When entering Deep-sleep, both the USB Serial/JTAG controller and the USB PHY are powered off, leading to the USB PHY's D+ line no longer being pulled up. As a result:
 
-- When entering deep sleep, the USB Serial/JTAG device appears disconnected from the host/PC (even if the USB cable is still physically connected).
-- When exiting deep sleep, the USB Serial/JTAG device reconnects to the host/PC.
+- When entering Deep-sleep, the USB Serial/JTAG device appears disconnected from the host/PC (even if the USB cable is still physically connected).
+- When exiting Deep-sleep, the USB Serial/JTAG device reconnects to the host/PC.
 
-Light Sleep
+Light-sleep
 ^^^^^^^^^^^
 
 .. only:: not SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
 
-When entering light sleep, the APB and USB PHY clock are gated. Thus, the USB Serial/JTAG controller is no longer able to receive or respond to any USB transactions from the connected host (including periodic CDC Data IN transactions). As a result:
+When entering Light-sleep, the APB and USB PHY clock are gated. Thus, the USB Serial/JTAG controller is no longer able to receive or respond to any USB transactions from the connected host (including periodic CDC Data IN transactions). As a result:
 
-- when entering light sleep, the USB Serial/JTAG device is unresponsive to the host/PC's USB CDC driver. The host/PC may then report the USB Serial/JTAG device as disconnected or erroneous (even if the USB cable is still physically connected).
-- when exiting light sleep, it is possible that the host/PC does not re-enumerate (i.e., reconnect) the USB Serial/JTAG device given that the USB PHY's D+ line remains pulled up state during light sleep. Users may need to physically disconnect and then reconnect the USB cable.
+- when entering Light-sleep, the USB Serial/JTAG device is unresponsive to the host/PC's USB CDC driver. The host/PC may then report the USB Serial/JTAG device as disconnected or erroneous (even if the USB cable is still physically connected).
+- when exiting Light-sleep, it is possible that the host/PC does not re-enumerate (i.e., reconnect) the USB Serial/JTAG device given that the USB PHY's D+ line remains pulled up state during Light-sleep. Users may need to physically disconnect and then reconnect the USB cable.
 
 Automatic and Manual Sleep Entry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -122,3 +122,9 @@ Automatic and Manual Sleep Entry
 If users enter sleep manually (via :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start`), users should be cognizant of the fact that USB Serial/JTAG controller does not work during sleep. ESP-IDF **does not add any safety check to reject entry to sleep** even if the USB Serial/JTAG controller is connected. In the case where sleep is entered while the USB Serial/JTAG controller is connected, the connection can be re-established by unplugging and re-plugging the USB cable.
 
 If users enter sleep automatically (via :cpp:func:`esp_pm_configure`), enabling the :ref:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` option allows the {IDF_TARGET_NAME} to automatically detect whether the USB Serial/JTAG controller is currently connected to a host, and prevent automatic entry to sleep as long as the connection persists. However, note that this option increases power consumption.
+
+
+Application Examples
+====================
+
+- :example:`peripherals/usb_serial_jtag/usb_serial_jtag_echo` demonstrates how to use the USB_SERIAL_JTAG interfaces to echo back any data received on it.

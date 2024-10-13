@@ -3,23 +3,33 @@
     - esp_mm  # for cache
     - esp_driver_spi
     - esp_driver_gpio
+  depends_filepatterns:
+    - components/driver/test_apps/components/test_driver_utils/**/*
 
-components/esp_driver_spi/test_apps/spi/master:
+components/esp_driver_spi/test_apps/master:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: no multi-dev runner  # TODO: [ESP32C61] IDF-10949
+  <<: *spi_depends_default
+
+components/esp_driver_spi/test_apps/param:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: no multi-dev runner  # TODO: [ESP32P4] IDF-9517
+  <<: *spi_depends_default
+
+components/esp_driver_spi/test_apps/slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   <<: *spi_depends_default
 
-components/esp_driver_spi/test_apps/spi/param:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-  <<: *spi_depends_default
-
-components/esp_driver_spi/test_apps/spi/slave:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-  <<: *spi_depends_default
-
-components/esp_driver_spi/test_apps/spi/slave_hd:
+components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1

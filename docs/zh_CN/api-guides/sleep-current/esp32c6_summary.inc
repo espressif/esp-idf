@@ -3,10 +3,10 @@
   :widths: 20  20 30 20 20
 
   * - 项目
-    - Modem Sleep
-    - Modem Sleep+DFS
-    - auto light Sleep
-    - Deep Sleep
+    - Modem-sleep
+    - Modem-sleep+DFS
+    - Auto Light-sleep
+    - Deep-sleep
 
   * - 休眠
     - 自动
@@ -45,25 +45,25 @@
     - 关
 
   * - DTIM1
-    - /
-    - /
-    - /
+    - 27.48 mA
+    - 14.37 mA
+    - 0.919 mA
     - /
 
   * - DTIM3
-    - /
-    - /
-    - /
+    - 27.08 mA
+    - 13.9 mA
+    - 0.368 mA
     - /
 
   * - DTIM10
-    - /
-    - /
-    - /
+    - 26.85 mA
+    - 13.71 mA
+    - 0.172 mA
     - /
 
   * - 平均电流
     - /
     - /
     - /
-    - /
+    - 6.7 μA

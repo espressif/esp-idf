@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -20,7 +12,6 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 /* HID Report Map Values */
@@ -184,6 +175,14 @@ typedef struct {
     esp_hid_raw_report_map_t *report_maps;  /*!< Array of the raw HID report maps */
     uint8_t report_maps_len;                /*!< number of raw report maps in the array */
 } esp_hid_device_config_t;
+
+/**
+ * @brief HID device address
+ */
+typedef union {
+    uint8_t bda[6];   /*!< Bluetooth device address */
+    uint8_t usb_addr; /*!< USB address */
+} esp_hid_address_t;
 
 /*
  * @brief Parse RAW HID report map

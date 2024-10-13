@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ extern "C" {
 #include "sdkconfig.h"
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
+#include "ulp_riscv_interrupt.h"
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.
@@ -66,7 +67,6 @@ void __attribute__((__noreturn__)) ulp_riscv_halt(void);
  */
 void ulp_riscv_timer_stop(void);
 
-
 /**
  * @brief Resumes the ULP timer
  *
@@ -75,10 +75,9 @@ void ulp_riscv_timer_stop(void);
  */
 void ulp_riscv_timer_resume(void);
 
-#define ULP_RISCV_GET_CCOUNT()	({ int __ccount; \
-				asm volatile("rdcycle %0;" : "=r"(__ccount)); \
-				__ccount; })
-
+#define ULP_RISCV_GET_CCOUNT()  ({ int __ccount; \
+                asm volatile("rdcycle %0;" : "=r"(__ccount)); \
+                __ccount; })
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /* These are only approximate default numbers, the default frequency
@@ -98,7 +97,7 @@ void ulp_riscv_timer_resume(void);
 void static inline ulp_riscv_delay_cycles(uint32_t cycles)
 {
     uint32_t start = ULP_RISCV_GET_CCOUNT();
-	/* Off with an estimate of cycles in this function to improve accuracy */
+    /* Off with an estimate of cycles in this function to improve accuracy */
     uint32_t end = start + cycles - 20;
 
     while (ULP_RISCV_GET_CCOUNT()  < end) {
@@ -111,6 +110,55 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
  *
  */
 void ulp_riscv_gpio_wakeup_clear(void);
+
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
+/**
+ * @brief Enable ULP RISC-V SW Interrupt
+ *
+ * @param handler       Interrupt handler
+ * @param arg           Interrupt handler argument
+ */
+void ulp_riscv_enable_sw_intr(intr_handler_t handler, void *arg);
+
+/**
+ * @brief Disable ULP RISC-V SW Interrupt
+ */
+void ulp_riscv_disable_sw_intr(void);
+
+/**
+ * @brief Trigger ULP RISC-V SW Interrupt
+ *
+ * @note The SW interrupt will only trigger if it has been enabled previously using ulp_riscv_enable_sw_intr().
+ */
+void ulp_riscv_trigger_sw_intr(void);
+
+/**
+ * @brief Enter a critical section by disabling all interrupts
+ *        This inline assembly construct uses the t0 register and is equivalent to:
+ *
+ *        li t0, 0x80000007
+ *        maskirq_insn(zero, t0)    // Mask all interrupt bits
+ */
+#define ULP_RISCV_ENTER_CRITICAL()  \
+    asm volatile (                  \
+        "li t0, 0x80000007\n"       \
+        ".word 0x0602e00b"          \
+    );                              \
+
+/**
+ * @brief Exit a critical section by enabling all interrupts
+ *        This inline assembly construct is equivalent to:
+ *
+ *        maskirq_insn(zero, zero)  // Unmask all interrupt bits
+ */
+#define ULP_RISCV_EXIT_CRITICAL()   asm volatile (".word 0x0600600b");
+
+#else /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
+
+#define ULP_RISCV_ENTER_CRITICAL()
+#define ULP_RISCV_EXIT_CRITICAL()
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
 
 #ifdef __cplusplus
 }

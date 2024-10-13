@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -9,19 +9,29 @@ import subprocess
 import sys
 import threading
 import time
-from base64 import b64decode
 from textwrap import indent
 from threading import Thread
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from click import INT
 from click.core import Context
 from esp_coredump import CoreDump
-from idf_py_actions.constants import OPENOCD_TAGET_CONFIG, OPENOCD_TAGET_CONFIG_DEFAULT
+from idf_py_actions.constants import OPENOCD_TAGET_CONFIG
+from idf_py_actions.constants import OPENOCD_TAGET_CONFIG_DEFAULT
 from idf_py_actions.errors import FatalError
-from idf_py_actions.serial_ext import BAUD_RATE, PORT
-from idf_py_actions.tools import (PropertyDict, ensure_build_directory, generate_hints, get_default_serial_port,
-                                  get_sdkconfig_value, yellow_print)
+from idf_py_actions.serial_ext import BAUD_RATE
+from idf_py_actions.serial_ext import PORT
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_default_serial_port
+from idf_py_actions.tools import get_sdkconfig_value
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import yellow_print
 
 PYTHON = sys.executable
 ESP_ROM_INFO_FILE = 'roms.json'
@@ -52,6 +62,7 @@ file {app_elf}
 '''
 GDBINIT_CONNECT = '''
 # Connect to the default openocd-esp port and break on app_main()
+set remotetimeout 10
 target remote :3333
 monitor reset halt
 maintenance flush register-cache
@@ -147,10 +158,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
     def _get_espcoredump_instance(ctx: Context,
                                   args: PropertyDict,
-                                  gdb_timeout_sec: int = None,
-                                  core: str = None,
-                                  chip_rev: str = None,
-                                  save_core: str = None) -> CoreDump:
+                                  gdb_timeout_sec: Optional[int] = None,
+                                  core: Optional[str] = None,
+                                  chip_rev: Optional[str] = None,
+                                  save_core: Optional[str] = None) -> CoreDump:
 
         ensure_build_directory(args, ctx.info_name)
         project_desc = get_project_desc(args, ctx)
@@ -172,12 +183,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
 
-        core_format = None
-
         if core:
             espcoredump_kwargs['core'] = core
+            espcoredump_kwargs['core_format'] = 'auto'
             espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
-            core_format = get_core_file_format(core)
         elif coredump_to_flash:
             #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
             #  The format will be determined automatically
@@ -190,9 +199,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'],
                                                                   'CONFIG_PARTITION_TABLE_OFFSET')
-
-        if core_format:
-            espcoredump_kwargs['core_format'] = core_format
 
         if save_core:
             espcoredump_kwargs['save_core'] = save_core
@@ -211,34 +217,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             else:
                 raise
         return coredump
-
-    def get_core_file_format(core_file: str) -> str:
-        bin_v1 = 1
-        bin_v2 = 2
-        elf_crc32 = 256
-        elf_sha256 = 257
-
-        with open(core_file, 'rb') as f:
-            coredump_bytes = f.read(16)
-
-            if coredump_bytes.startswith(b'\x7fELF'):
-                return 'elf'
-
-            core_version = int.from_bytes(coredump_bytes[4:7], 'little')
-            if core_version in [bin_v1, bin_v2, elf_crc32, elf_sha256]:
-                #  esp-coredump will determine automatically the core format (ELF or BIN)
-                return 'raw'
-        with open(core_file) as c:
-            coredump_str = c.read()
-            try:
-                b64decode(coredump_str)
-            except Exception:
-                print('The format of the provided core-file is not recognized. '
-                      'Please ensure that the core-format matches one of the following: ELF (“elf”), '
-                      'raw (raw) or base64-encoded (b64) binary')
-                sys.exit(1)
-            else:
-                return 'b64'
 
     def is_gdb_with_python(gdb: str) -> bool:
         # execute simple python command to check is it supported
@@ -266,7 +244,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ESP_ROM_INFO_FILE), 'r') as f:
             roms = json.load(f)
             if target not in roms:
-                msg_body = f'Target "{target}" was not found in "{ESP_ROM_INFO_FILE}". Please check IDF integrity.'
+                msg_body = f'Target "{target}" was not found in "{ESP_ROM_INFO_FILE}". Please check IDF integrity.'  # noqa: E713
                 if os.getenv('ESP_IDF_GDB_TESTING'):
                     raise FatalError(msg_body)
                 print(f'Warning: {msg_body}')
@@ -429,6 +407,24 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             args.append('-ix={}'.format(debug_prefix_gdbinit))
         return args
 
+    def _get_gdbgui_version(ctx: Context) -> Tuple[int, ...]:
+        completed_process = subprocess.run(['gdbgui', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        captured_output = completed_process.stdout.decode('utf-8', 'ignore')
+
+        if completed_process.returncode != 0:
+            if sys.version_info[:2] >= (3, 11) and sys.platform == 'win32':
+                raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
+                                 'See: https://github.com/espressif/esp-idf/issues/10116. '
+                                 'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
+            raise FatalError('Error starting gdbgui. Please make sure gdbgui has been installed with '
+                             '"install.{sh,bat,ps1,fish} --enable-gdbgui" and can be started. '
+                             f'Error: {captured_output}', ctx)
+
+        v = re.search(r'(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?', captured_output)
+        if not v:
+            raise SystemExit(f'Error: "gdbgui --version" returned "{captured_output}"')
+        return tuple(int(i) if i else 0 for i in (v[1], v[2], v[3], v[4]))
+
     def gdbui(action: str, ctx: Context, args: PropertyDict, gdbgui_port: Optional[str], gdbinit: Optional[str],
               require_openocd: bool) -> None:
         """
@@ -439,15 +435,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
         generate_gdbinit_files(gdb, gdbinit, project_desc)
 
-        # this is a workaround for gdbgui
-        # gdbgui is using shlex.split for the --gdb-args option. When the input is:
-        # - '"-x=foo -x=bar"', would return ['foo bar']
-        # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
-        # so for one item, use extra double quotes. for more items, use no extra double quotes.
+        gdbgui_version = _get_gdbgui_version(ctx)
         gdb_args_list = get_gdb_args(project_desc)
-        gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
-        args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
-        print(args)
+        if gdbgui_version >= (0, 14, 0, 0):
+            # See breaking changes https://github.com/cs01/gdbgui/blob/master/CHANGELOG.md#01400, especially the
+            # replacement of command line arguments.
+            gdb_args = ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', ' '.join((gdb, gdb_args))]
+        else:
+            # this is a workaround for gdbgui
+            # gdbgui is using shlex.split for the --gdb-args option. When the input is:
+            # - '"-x=foo -x=bar"', would return ['foo bar']
+            # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
+            # so for one item, use extra double quotes. for more items, use no extra double quotes.
+            gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
 
         if gdbgui_port is not None:
             args += ['--port', gdbgui_port]
@@ -459,15 +461,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # pygdbmi).
         env['PURE_PYTHON'] = '1'
         try:
+            print('Running: ', args)
             process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
         except (OSError, subprocess.CalledProcessError) as e:
             print(e)
-            if sys.version_info[:2] >= (3, 11):
-                raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
-                                 'See: https://github.com/espressif/esp-idf/issues/10116. '
-                                 'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
-            raise FatalError('Error starting gdbgui. Please make sure gdbgui has been installed with '
-                             '"install.{sh,bat,ps1,fish} --enable-gdbgui" and can be started.', ctx)
+            raise FatalError('Error starting gdbgui', ctx)
 
         processes['gdbgui'] = process
         processes['gdbgui_outfile'] = gdbgui_out
@@ -545,9 +543,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                       ctx: Context,
                       args: PropertyDict,
                       gdb_timeout_sec: int,
-                      core: str = None,
-                      chip_rev: str = None,
-                      save_core: str = None) -> None:
+                      core: Optional[str] = None,
+                      chip_rev: Optional[str] = None,
+                      save_core: Optional[str] = None) -> None:
         espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, gdb_timeout_sec=gdb_timeout_sec, core=core,
                                                 chip_rev=chip_rev,
                                                 save_core=save_core)
@@ -557,9 +555,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     def coredump_debug(action: str,
                        ctx: Context,
                        args: PropertyDict,
-                       core: str = None,
-                       chip_rev: str = None,
-                       save_core: str = None) -> None:
+                       core: Optional[str] = None,
+                       chip_rev: Optional[str] = None,
+                       save_core: Optional[str] = None) -> None:
         espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, core=core, chip_rev=chip_rev, save_core=save_core)
 
         espcoredump.dbg_corefile()

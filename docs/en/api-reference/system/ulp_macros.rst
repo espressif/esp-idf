@@ -1,6 +1,8 @@
 Programming ULP FSM Coprocessor Using C Macros (Legacy)
 =======================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 In addition to the existing binutils port for the {IDF_TARGET_NAME} ULP coprocessor, it is possible to generate programs for the ULP FSM coprocessor by embedding assembly-like macros into an {IDF_TARGET_NAME} application. Here is an example how this can be done::
 
     const ulp_insn_t program[] = {
@@ -23,13 +25,13 @@ The ``program`` array is an array of ``ulp_insn_t``, i.e., ULP coprocessor instr
     Because some of the instruction macros expand to inline function calls, defining such array in global scope will cause the compiler to produce an "initializer element is not constant" error. To fix this error, move the definition of instructions array into local scope.
 
 .. note::
-    
+
     Load, store and move instructions use **addresses expressed in 32-bit words**. Address 0 corresponds to the first word of ``RTC_SLOW_MEM``.
-    This is different to how address arguments are handled in assembly code of the same instructions. See the section :ref:`ulp-fsm-addressing` for more details for reference.
+    This is different from how address arguments are handled in assembly code of the same instructions. See the section :ref:`ulp-fsm-addressing` for more details for reference.
 
 To generate branch instructions, special ``M_`` preprocessor defines are used. ``M_LABEL`` define can be used to define a branch target. Label identifier is a 16-bit integer. ``M_Bxxx`` defines can be used to generate branch instructions with target set to a particular label.
 
-Implementation note: these ``M_`` preprocessor defines will be translated into two ulp_insn_t values: one is a token value which contains label number, and the other is the actual instruction. ``ulp_process_macros_and_load`` function resolves the label number to the address, modifies the branch instruction to use the correct address, and removes the extra ``ulp_insn_t`` token which contains the label numer.
+Implementation note: these ``M_`` preprocessor defines will be translated into two ulp_insn_t values: one is a token value which contains label number, and the other is the actual instruction. ``ulp_process_macros_and_load`` function resolves the label number to the address, modifies the branch instruction to use the correct address, and removes the extra ``ulp_insn_t`` token which contains the label number.
 
 Here is an example of using labels and branches::
 

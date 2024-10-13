@@ -38,7 +38,7 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_PANIC_GDBSTUB
             bool "GDBStub on panic"
-            select ESP_GDBSTUB_ENABLED
+            depends on ESP_GDBSTUB_ENABLED
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
@@ -99,6 +99,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C6
         default n if IDF_TARGET_ESP32H2 # IDF-5667
         default y if IDF_TARGET_ESP32P4
+        default y if IDF_TARGET_ESP32C5
         depends on SOC_RTC_FAST_MEM_SUPPORTED
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -136,6 +137,16 @@ menu "ESP System Settings"
                 for the instruction part (below given splitting address) and Read/Write permissions
                 for the data part (above the splitting address). The memory protection is effective
                 on all access through the IRAM0 and DRAM0 buses.
+
+        config ESP_SYSTEM_PMP_LP_CORE_RESERVE_MEM_EXECUTABLE
+            bool "Make LP core reserved memory executable from HP core"
+            depends on IDF_TARGET_ARCH_RISCV && SOC_LP_CORE_SUPPORTED && ESP_SYSTEM_PMP_IDRAM_SPLIT
+            default "n"
+            help
+                If enabled, user can run code available in LP Core image.
+
+                Warning: on ESP32-P4 this will also mark the memory area used for BOOTLOADER_RESERVE_RTC_MEM
+                as executable. If you consider this a security risk then do not activate this option.
 
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"
@@ -269,6 +280,7 @@ menu "ESP System Settings"
         # Internal option, indicates that console USB SERIAL JTAG is used
         bool
         default y if ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+        select USJ_ENABLE_USB_SERIAL_JTAG
 
     config ESP_CONSOLE_UART
         # Internal option, indicates that console UART is used (and not USB, for example)
@@ -301,38 +313,55 @@ menu "ESP System Settings"
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
         default -1 if !ESP_CONSOLE_UART
 
+    config ESP_CONSOLE_ROM_SERIAL_PORT_NUM
+        # This config is used for the correct serial number used in ROM uart function.
+        int
+        default 0 if ESP_CONSOLE_UART_DEFAULT
+        default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
+        default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        # Can be extended if we have more uarts.
+        default ESP_ROM_USB_SERIAL_DEVICE_NUM if ESP_CONSOLE_USB_SERIAL_JTAG
+        default ESP_ROM_USB_OTG_NUM if ESP_CONSOLE_USB_CDC
+        default -1 if ESP_CONSOLE_NONE
+
     config ESP_CONSOLE_UART_TX_GPIO
-        int "UART TX on GPIO#"
+        int "UART TX on GPIO<num>"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 SOC_GPIO_OUT_RANGE_MAX
+        range -1 SOC_GPIO_OUT_RANGE_MAX
+        # Specific value for old targets for compatibility. No need to add for new targets.
         default 1 if IDF_TARGET_ESP32
+        default 43 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
         default 16 if IDF_TARGET_ESP32C6
         default 37 if IDF_TARGET_ESP32P4
         default 24 if IDF_TARGET_ESP32H2
-        default 43
+        default -1
         help
              This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
-             boot log output and default standard output and standard error of the app).
+             boot log output and default standard output and standard error of the app). Value -1 means to
+             continue using the default console UART TX pin.
 
              If the configuration is different in the Bootloader binary compared to the app binary, UART
              is reconfigured after the bootloader exits and the app starts.
 
     config ESP_CONSOLE_UART_RX_GPIO
-        int "UART RX on GPIO#"
+        int "UART RX on GPIO<num>"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 SOC_GPIO_IN_RANGE_MAX
+        range -1 SOC_GPIO_IN_RANGE_MAX
+        # Specific value for old targets for compatibility. No need to add for new targets.
         default 3 if IDF_TARGET_ESP32
+        default 44 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
         default 17 if IDF_TARGET_ESP32C6
         default 38 if IDF_TARGET_ESP32P4
         default 23 if IDF_TARGET_ESP32H2
-        default 44
+        default -1
         help
-            This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
-            default default standard input of the app).
+            This GPIO is used for console UART RX input in the ESP-IDF Bootloader and the app (including
+            default standard input of the app). Value -1 means to continue using the default console UART
+            RX pin.
 
             Note: The default ESP-IDF Bootloader configures this pin but doesn't read anything from the UART.
 
@@ -394,7 +423,7 @@ menu "ESP System Settings"
         default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
-            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
+            The timeout of the watchdog, in milliseconds. Make this higher than the FreeRTOS tick rate.
 
     config ESP_INT_WDT_CHECK_CPU1
         bool "Also watch CPU1 tick interrupt"
@@ -468,7 +497,7 @@ menu "ESP System Settings"
 
     config ESP_XT_WDT
         bool "Initialize XTAL32K watchdog timer on startup"
-        depends on !IDF_TARGET_ESP32 && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        depends on SOC_XT_WDT_SUPPORTED && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
         default n
         help
             This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
@@ -563,6 +592,23 @@ menu "ESP System Settings"
             This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack
             memory bounds.
 
+    config ESP_SYSTEM_BBPLL_RECALIB
+        bool "Re-calibration BBPLL at startup"
+        depends on IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default y
+        help
+            This configuration helps to address an BBPLL inaccurate issue when boot from certain bootloader version,
+            which may increase about the boot-up time by about 200 us. Disable this when your bootloader is built with
+            ESP-IDF version v5.2 and above.
+
+    config ESP_SYSTEM_HW_PC_RECORD
+        bool "Hardware PC recording"
+        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        default y
+        help
+            This option will enable the PC recording function of assist_debug module. The PC value of the CPU will be
+            recorded to PC record register in assist_debug module in real time. When an exception occurs and the CPU
+            is reset, this register will be kept, then we can use the recorded PC to debug the causes of the reset.
 endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"

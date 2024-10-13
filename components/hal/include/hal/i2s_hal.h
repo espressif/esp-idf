@@ -40,7 +40,7 @@ typedef struct {
             i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
             uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
-            bool                    bit_shift;          /*!< Set to enbale bit shift in Philips mode */
+            bool                    bit_shift;          /*!< Set to enable bit shift in Philips mode */
 #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
             bool                    msb_right;          /*!< Set to place right channel data at the MSB in the FIFO */
 #else
@@ -139,6 +139,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
  */
 void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_clk_div_t *mclk_div);
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
 /**
  * @brief Set tx channel clock
  *
@@ -147,14 +148,19 @@ void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_
  * @param clk_src clock source
  */
 void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define i2s_hal_set_tx_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_hal_set_tx_clock(__VA_ARGS__)
 #else
-#define i2s_hal_set_tx_clock(...)   _i2s_hal_set_tx_clock(__VA_ARGS__)
-#endif
+/**
+ * @brief Set tx channel clock
+ *
+ * @param hal Context of the HAL layer
+ * @param clk_info clock information, if it is NULL, only set the clock source
+ * @param clk_src clock source
+ */
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+#endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /**
  * @brief Set rx channel clock
@@ -344,7 +350,7 @@ void i2s_hal_tdm_enable_rx_channel(i2s_hal_context_t *hal);
 #define i2s_hal_rx_reset_fifo(hal)              i2s_ll_rx_reset_fifo((hal)->dev)
 
 
-#if !SOC_I2S_SUPPORTS_GDMA
+#if !SOC_GDMA_SUPPORTED
 /**
  * @brief Enable I2S TX DMA
  *

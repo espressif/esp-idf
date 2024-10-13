@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/sens_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +28,7 @@ extern "C" {
 #define RTCIO_LL_PIN_FUNC     0
 
 typedef enum {
-    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
+    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 
@@ -155,7 +156,12 @@ static inline uint32_t rtcio_ll_get_level(int rtcio_num)
 static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strength)
 {
     if (rtc_io_desc[rtcio_num].drv_v) {
-        SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, strength, rtc_io_desc[rtcio_num].drv_s);
+        uint32_t drv_cap = strength;
+        // DRV = 1 and DRV = 2 register bits are flipped for IO17, IO18 on the target
+        if (rtcio_num == RTCIO_GPIO17_CHANNEL || rtcio_num == RTCIO_GPIO18_CHANNEL) {
+            drv_cap = ((drv_cap & 0x1) << 1) | ((drv_cap & 0x2) >> 1); // swap bit0 and bit1
+        }
+        SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, drv_cap, rtc_io_desc[rtcio_num].drv_s);
     }
 }
 
@@ -167,7 +173,12 @@ static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strengt
  */
 static inline uint32_t rtcio_ll_get_drive_capability(int rtcio_num)
 {
-    return GET_PERI_REG_BITS2(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, rtc_io_desc[rtcio_num].drv_s);
+    uint32_t strength = GET_PERI_REG_BITS2(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, rtc_io_desc[rtcio_num].drv_s);
+    // DRV = 1 and DRV = 2 register bits are flipped for IO17, IO18 on the target
+    if (rtcio_num == RTCIO_GPIO17_CHANNEL || rtcio_num == RTCIO_GPIO18_CHANNEL) {
+        strength = ((strength & 0x1) << 1) | ((strength & 0x2) >> 1); // swap bit0 and bit1
+    }
+    return strength;
 }
 
 /**
@@ -298,7 +309,7 @@ static inline void rtcio_ll_force_unhold_all(void)
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
     SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
-    RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
+    RTCIO.pin[rtcio_num].wakeup_enable = 1;
     RTCIO.pin[rtcio_num].int_type = type;
 }
 

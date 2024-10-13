@@ -28,6 +28,7 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
+#define LCD_LL_FIFO_DEPTH          16  // Async FIFO depth
 
 /**
  * @brief LCD data byte swizzle mode
@@ -37,9 +38,10 @@ typedef enum {
 } lcd_ll_swizzle_mode_t;
 
 /**
- * @brief Enable or disable the bus clock for the LCD module
+ * @brief Enable the bus clock for LCD module
  *
- * @param set_bit True to set bit, false to clear bit
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
  */
 static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 {
@@ -53,6 +55,8 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 
 /**
  * @brief Reset the LCD module
+ *
+ * @param group_id Group ID
  */
 static inline void lcd_ll_reset_register(int group_id)
 {

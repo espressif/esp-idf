@@ -1,12 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdmmc_test_board.h"
 #include "sdkconfig.h"
+#include "unity.h"
 #include "soc/soc_caps.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#include "sd_pwr_ctrl.h"
 
 const sdmmc_test_board_slot_info_t* sdmmc_test_board_get_slot_info(int slot_index)
 {

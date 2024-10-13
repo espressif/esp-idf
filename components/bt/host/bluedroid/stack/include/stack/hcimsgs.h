@@ -583,6 +583,10 @@ BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels);
 BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels);
 #define HCIC_PARAM_SIZE_BLE_SET_CHANNELS    5
 
+/* set minimum encryption key size */
+BOOLEAN btsnd_hcic_set_min_enc_key_size (UINT8 size);
+#define HCIC_PARAM_SIZE_SET_MIN_ENC_KEY_SIZE    1
+
 BOOLEAN btsnd_hcic_write_pin_type(UINT8 type);                   /* Write PIN Type */
 BOOLEAN btsnd_hcic_write_auto_accept(UINT8 flag);                /* Write Auto Accept */
 BOOLEAN btsnd_hcic_read_name (void);                             /* Read Local Name */
@@ -621,7 +625,7 @@ BOOLEAN btsnd_hcic_write_voice_settings(UINT16 flags);            /* Write Voice
 
 
 BOOLEAN btsnd_hcic_write_auto_flush_tout(UINT16 handle,
-        UINT16 timeout);    /* Write Retransmit Timout */
+        UINT16 timeout);    /* Write Retransmit Timeout */
 
 #define HCIC_PARAM_SIZE_WRITE_AUTO_FLUSH_TOUT    4
 
@@ -754,6 +758,7 @@ void btsnd_hcic_vendor_spec_cmd (BT_HDR *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM   11
 #define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL     2
 #define HCIC_PARAM_SIZE_BLE_CLEAR_ADV                   0
+#define HCIC_PARAM_SIZE_SET_PRIVACY_MODE                8
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_BLE_READ_PHY                   2
 #define HCIC_PARAM_SIZE_BLE_SET_DEF_PHY                3
@@ -1036,6 +1041,8 @@ UINT8 btsnd_hcic_ble_read_rf_path_compensation(void);
 UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path);
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+UINT8 btsnd_hcic_ble_set_privacy_mode(UINT8 addr_type, BD_ADDR addr, UINT8 privacy_mode);
 
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT  4
 

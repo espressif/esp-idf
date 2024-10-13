@@ -61,7 +61,7 @@ args, unknown_args = parser.parse_known_args()
 if args.exclude_submodules:
     ignore_dirs = ignore_dirs + tuple(get_submodule_dirs(full_path=True))
 
-files_to_check: list = []
+files_to_check: list = args.files
 
 # if the deprecated argument '--includes' is used all valid paths are checked for KConfigs
 # except IGNORE_DIRS and submodules (if exclude is given)

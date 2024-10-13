@@ -56,7 +56,7 @@ typedef struct {
     .enable_log = false, \
     .esp_touch_v2_enable_crypt = false,\
     .esp_touch_v2_key = NULL \
-};
+}
 
 /**
   * @brief  Get the version of SmartConfig.

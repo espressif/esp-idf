@@ -16,7 +16,6 @@ components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 components/log/include/esp_log_internal.h
 
-components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 
 # LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
@@ -24,14 +23,9 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/include/lwip/sockets.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
-
-## Header produced non-zero object:
-components/esp_phy/esp32/include/phy_init_data.h
-components/esp_phy/esp32s2/include/phy_init_data.h
-components/esp_phy/esp32s3/include/phy_init_data.h
-components/esp_phy/esp32c3/include/phy_init_data.h
-components/esp_phy/esp32c2/include/phy_init_data.h
-components/esp_phy/esp32c6/include/phy_init_data.h
+components/lwip/lwip/src/include/netif/ppp/
+components/lwip/lwip/src/include/lwip/apps/tftp_server.h
+components/lwip/lwip/src/include/lwip/apps/tftp_client.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
@@ -43,7 +37,6 @@ components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
 
-components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
@@ -56,7 +49,7 @@ components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
 components/esp-tls/private_include/
 
 components/protobuf-c/
-
+components/protocomm/proto-c/
 
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
@@ -68,7 +61,6 @@ components/json/cJSON/
 components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
-components/unity/unity/extras/
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
@@ -78,6 +70,11 @@ components/cmock/CMock/src/cmock_internals.h
 
 components/openthread/openthread/
 
+# The following TLSF headers contain object definitions but have to be
+# made public to be used in esp_rom to help patching the TLSF in ROM.
+components/heap/tlsf/tlsf_block_functions.h
+components/heap/tlsf/tlsf_control_functions.h
+
 ### Here are the files that do not compile for some reason
 #
 components/app_trace/include/esp_sysview_trace.h
@@ -85,29 +82,15 @@ components/esp_gdbstub/include/esp_gdbstub.h
 
 components/esp_hw_support/include/esp_memprot.h
 components/esp_hw_support/include/esp_private/esp_memprot_internal.h
+components/esp_hw_support/include/esp_private/esp_riscv_intr.h
 
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
 components/esp_coex/include/private/esp_coexist_adapter.h
 components/esp_coex/include/esp_coex_i154.h
+
 ### To be fixed: headers that rely on implicit inclusion
 #
-components/esp_rom/include/esp32/rom/rtc.h
-components/esp_rom/include/esp32c3/rom/rtc.h
-components/esp_rom/include/esp32s2/rom/rtc.h
-components/esp_rom/include/esp32s3/rom/rtc.h
-components/esp_rom/include/esp32c2/rom/rtc.h
-components/esp_rom/include/esp32c6/rom/rtc.h
-components/esp_rom/include/esp32h2/rom/rtc.h
-components/esp_rom/include/esp32p4/rom/rtc.h
-components/esp_rom/include/esp32/rom/sha.h
-components/esp_rom/include/esp32/rom/secure_boot.h
-components/esp_rom/include/esp32c3/rom/spi_flash.h
-components/esp_rom/include/esp32s2/rom/spi_flash.h
-components/esp_rom/include/esp32s2/rom/cache.h
-components/esp_rom/include/esp32s2/rom/secure_boot.h
-components/esp_rom/include/esp32s2/rom/opi_flash.h
-components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
@@ -130,8 +113,6 @@ components/spi_flash/include/esp_private/spi_flash_os.h
 ### To be fixed: files which don't compile for esp32s2 target:
 
 components/esp_psram/include/esp32/himem.h
-components/esp_rom/include/esp32/rom/ets_sys.h
-components/esp_rom/include/esp32/rom/uart.h
 
 
 ### To be fixed: files which don't compile for esp32s3 target:
@@ -144,4 +125,8 @@ components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
 components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
-components/riscv/include/riscv/rvsleep-frames.h
+
+# should be private include, but 'private_include' is a subdir of public includes
+components/console/private_include/console_private.h
+
+# Missing extern "C"

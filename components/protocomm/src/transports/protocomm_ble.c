@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,8 @@ static const uint16_t primary_service_uuid       = ESP_GATT_UUID_PRI_SERVICE;
 static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
 static const uint16_t character_user_description = ESP_GATT_UUID_CHAR_DESCRIPTION;
 static const uint8_t  character_prop_read_write  = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint8_t  character_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | \
+                                                         ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 
 typedef struct {
     uint8_t type;
@@ -64,6 +66,7 @@ typedef struct _protocomm_ble {
     uint16_t gatt_mtu;
     uint8_t *service_uuid;
     unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -103,6 +106,7 @@ static esp_ble_adv_params_t adv_params = {
 static char *protocomm_ble_device_name = NULL;
 static uint8_t *protocomm_ble_mfg_data = NULL;
 static size_t protocomm_ble_mfg_data_len;
+static uint8_t *protocomm_ble_addr = NULL;
 
 static void hexdump(const char *msg, uint8_t *buf, int len)
 {
@@ -449,7 +453,12 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
             (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_declaration_uuid;
             (*gatt_db_generated)[i].att_desc.max_length   = sizeof(uint8_t);
             (*gatt_db_generated)[i].att_desc.length       = sizeof(uint8_t);
-            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) &character_prop_read_write;
+
+	    if (protoble_internal->ble_notify) {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write_notify;
+	    } else {
+                (*gatt_db_generated)[i].att_desc.value    = (uint8_t *) &character_prop_read_write;
+	    }
         } else if (i % 3 == 2) {
             /* Characteristic Value */
             (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE ;
@@ -524,6 +533,10 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         protocomm_ble_mfg_data_len = config->manufacturer_data_len;
     }
 
+    if (config->ble_addr != NULL) {
+        protocomm_ble_addr = config->ble_addr;
+    }
+
     protoble_internal = (_protocomm_ble_internal_t *) calloc(1, sizeof(_protocomm_ble_internal_t));
     if (protoble_internal == NULL) {
         ESP_LOGE(TAG, "Error allocating internal protocomm structure");
@@ -557,6 +570,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
     protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
 
     // Config adv data
     adv_config.service_uuid_len = ESP_UUID_LEN_128;
@@ -594,6 +608,13 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->ble_bonding = config->ble_bonding;
     ble_config->ble_sm_sc   = config->ble_sm_sc;
 
+   /* Set parameter to keep BLE on */
+    ble_config->keep_ble_on = config->keep_ble_on;
+
+    if (config->ble_addr != NULL) {
+        ble_config->ble_addr = protocomm_ble_addr;
+    }
+
     if (ble_config->gatt_db_count == -1) {
         ESP_LOGE(TAG, "Invalid GATT database count");
         simple_ble_deinit();
@@ -621,23 +642,26 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
             (pc == protoble_internal->pc_ble)) {
         esp_err_t ret = ESP_OK;
 
-#ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    uint8_t protocomm_keep_ble_on = get_keep_ble_on();
+    if (protocomm_keep_ble_on) {
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
         /* Keep BT stack on, but terminate the connection after provisioning */
-	ret = simple_ble_disconnect();
-	if (ret) {
-	    ESP_LOGE(TAG, "BLE disconnect failed");
-	}
-	simple_ble_deinit();
+	    ret = simple_ble_disconnect();
+        if (ret) {
+            ESP_LOGE(TAG, "BLE disconnect failed");
+	    }
+	    simple_ble_deinit();
 #endif  // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-#else
+    }
+    else {
+
 	/* If flag is not enabled, stop the stack. */
         ret = simple_ble_stop();
         if (ret) {
             ESP_LOGE(TAG, "BLE stop failed");
         }
         simple_ble_deinit();
-#endif  // CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    }
 
         protocomm_ble_cleanup();
         return ret;

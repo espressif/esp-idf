@@ -13,6 +13,10 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 
+#ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
+#include "esp_system.h"
+#endif
+
 static esp_alloc_failed_hook_t alloc_failed_callback;
 
 static const uint32_t MAGIC_HEAP_SIZE = UINT32_MAX;

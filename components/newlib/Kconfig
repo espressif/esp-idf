@@ -12,7 +12,7 @@ menu "Newlib"
 
             LF: no modification is applied, stdout is sent as is
 
-            CR: each occurence of LF is replaced with CR
+            CR: each occurrence of LF is replaced with CR
 
             This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
@@ -36,7 +36,7 @@ menu "Newlib"
 
             LF: no modification is applied, input is sent to stdin as is
 
-            CR: each occurence of CR is replaced with LF
+            CR: each occurrence of CR is replaced with LF
 
             This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
@@ -59,7 +59,7 @@ menu "Newlib"
 
             For more details about "nano" formatting option, please see newlib readme file,
             search for '--enable-newlib-nano-formatted-io':
-            https://sourceware.org/newlib/README
+            https://sourceware.org/git/?p=newlib-cygwin.git;a=blob_plain;f=newlib/README;hb=HEAD
 
             If this option is enabled and the ROM contains functions from newlib-nano, the build system
             will use functions available in ROM, reducing the application binary size.
@@ -93,7 +93,12 @@ menu "Newlib"
                 resolution. Also the gettimeofday function itself may take
                 longer to run.
             - If no timers are used, gettimeofday and time functions
-                return -1 and set errno to ENOSYS.
+                return -1 and set errno to ENOSYS; they are defined as weak,
+                so they could be overridden.
+                If you want to customize gettimeofday() and other time functions,
+                please choose this option and refer to the 'time.c' source file
+                for the exact prototypes of these functions.
+
             - When RTC is used for timekeeping, two RTC_STORE registers are
                 used to keep time in deep sleep mode.
 
@@ -113,3 +118,7 @@ menu "Newlib"
     endchoice
 
 endmenu # Newlib
+
+config STDATOMIC_S32C1I_SPIRAM_WORKAROUND
+    bool
+    default SPIRAM && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3) && !IDF_TOOLCHAIN_CLANG # TODO IDF-9032

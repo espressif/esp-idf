@@ -20,12 +20,3 @@ idf_component_register(SRCS "src/httpd_main.c"
                     PRIV_INCLUDE_DIRS ${priv_inc_dir}
                     REQUIRES ${requires}
                     PRIV_REQUIRES ${priv_req})
-
-if(${IDF_TARGET} STREQUAL "linux")
-    find_library(LIB_BSD bsd)
-    if(LIB_BSD)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
-    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
-    endif()
-endif()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
  * Unit tests for FreeRTOS task yielding
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -74,7 +75,7 @@ static void yield_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -271,7 +272,7 @@ static void test_critical_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -445,7 +446,7 @@ TEST_CASE("Task yield must happed when a task raises the priority of another pri
     TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 }
 
-#if (portNUM_PROCESSORS > 1) && !(CONFIG_FREERTOS_UNICORE)
+#if (CONFIG_FREERTOS_NUMBER_OF_CORES > 1) && !(CONFIG_FREERTOS_UNICORE)
 /*
  * Test yielding behavior when a task on one core forces an yield on the other core
  *
@@ -473,7 +474,7 @@ static void other_core_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -593,7 +594,7 @@ static void other_core_critical_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -655,4 +656,4 @@ TEST_CASE("Task yield on other core must not happen when scheduler is suspended"
     TEST_ASSERT_EQUAL(2, task_yield_sequence[idx1++]);
 }
 #endif // !CONFIG_FREERTOS_SMP
-#endif // (portNUM_PROCESSORS > 1) && !(CONFIG_FREERTOS_UNICORE)
+#endif // (CONFIG_FREERTOS_NUMBER_OF_CORES > 1) && !(CONFIG_FREERTOS_UNICORE)

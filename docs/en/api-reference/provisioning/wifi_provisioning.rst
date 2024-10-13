@@ -264,7 +264,7 @@ The client can also control the provisioning state of the device using ``wifi_ct
 Additional Endpoints
 ^^^^^^^^^^^^^^^^^^^^
 
-In case users want to have some additional protocomm endpoints customized to their requirements, this is done in two steps. First is creation of an endpoint with a specific name, and the second step is the registration of a handler for this endpoint. See :doc:`protocomm` for the function signature of an endpoint handler. A custom endpoint must be created after initialization and before starting the provisioning service. Whereas, the protocomm handler is registered for this endpoint only after starting the provisioning service.
+In case users want to have some additional protocomm endpoints customized to their requirements, this is done in two steps. First is creation of an endpoint with a specific name, and the second step is the registration of a handler for this endpoint. See :doc:`protocomm` for the function signature of an endpoint handler. A custom endpoint must be created after initialization and before starting the provisioning service. Whereas, the protocomm handler is registered for this endpoint only after starting the provisioning service. Note that in the custom endpoint handler function, memory for the response of such protocomm endpoints should be allocated using heap as it gets freed by the protocomm layer once it has been sent by the transport layer.
 
     .. code-block:: c
 
@@ -292,7 +292,7 @@ The customized behavior is useful for applications which want the provisioning s
 Application Examples
 --------------------
 
-For complete example implementation see :example:`provisioning/wifi_prov_mgr`.
+- :example:`provisioning/wifi_prov_mgr` demonstrates how to use the `wifi_provisioning` manager component to configure {IDF_TARGET_NAME} as a Wi-Fi station with specified credentials, using Bluetooth LE as the default transport for provisioning.
 
 Provisioning Tools
 --------------------

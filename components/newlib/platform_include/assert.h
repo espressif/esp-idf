@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /* This header file wraps newlib's own unmodified assert.h and adds
    support for silent assertion failure.
 */
@@ -31,7 +30,11 @@
 
 #if defined(NDEBUG)
 
+#if CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE
 #define assert(__e) ((void)(__e))
+#else
+#define assert(__e) ((void)0)
+#endif //CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE
 
 #elif CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
 

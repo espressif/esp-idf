@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -46,6 +46,7 @@
 #include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
+#include "hal/crosscore_int_ll.h"
 #include "esp_attr.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
@@ -57,6 +58,11 @@
 #include "esp_memory_utils.h"
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "soc/hp_system_reg.h"
+#endif
+
+#if SOC_CPU_HAS_HWLOOP
+#include "riscv/csr.h"
+#include "riscv/csr_hwlp.h"
 #endif
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
@@ -124,9 +130,23 @@ StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
 BaseType_t xPortStartScheduler(void)
 {
 #if ( SOC_CPU_COPROC_NUM > 0 )
+
+#if SOC_CPU_HAS_FPU
     /* Disable FPU so that the first task to use it will trigger an exception */
     rv_utils_disable_fpu();
-#endif
+#endif /* SOC_CPU_HAS_FPU */
+
+#if SOC_CPU_HAS_PIE
+    /* Similarly, disable PIE */
+    rv_utils_disable_pie();
+#endif /* SOC_CPU_HAS_FPU */
+
+#if SOC_CPU_HAS_HWLOOP
+    /* Initialize the Hardware loop feature */
+    RV_WRITE_CSR(CSR_HWLP_STATE_REG, HWLP_INITIAL_STATE);
+#endif /* SOC_CPU_HAS_HWLOOP */
+#endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
+
     /* Initialize all kernel state tracking variables */
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
@@ -144,11 +164,7 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-#if !SOC_INT_CLIC_SUPPORTED
-    esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-#else
-    esprv_intc_int_set_threshold(0); /* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-#endif /* !SOC_INT_CLIC_SUPPORTED */
+    esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
     rv_utils_intr_global_enable();
 
     vPortYield();
@@ -192,64 +208,48 @@ void vPortEndScheduler(void)
 FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
 {
     /*
-    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
-
     LOW ADDRESS
             |---------------------------|   Linker Symbols
             | Section                   |   --------------
-            | .flash.rodata             |
-         0x0|---------------------------| <- _flash_rodata_start
-          ^ | Other Data                |
-          | |---------------------------| <- _thread_local_start
-          | | .tbss                     | ^
-          V |                           | |
-      0xNNN | int example;              | | tls_area_size
-            |                           | |
-            | .tdata                    | V
-            |---------------------------| <- _thread_local_end
+            | .flash.tdata              |
+         0x0|---------------------------| <- _thread_local_data_start  ^
+            | .flash.tdata              |                              |
+            | int var_1 = 1;            |                              |
+            |                           | <- _thread_local_data_end    |
+            |                           | <- _thread_local_bss_start   | tls_area_size
+            |                           |                              |
+            | .flash.tbss (NOLOAD)      |                              |
+            | int var_2;                |                              |
+            |---------------------------| <- _thread_local_bss_end     V
             | Other data                |
             | ...                       |
             |---------------------------|
     HIGH ADDRESS
     */
     // Calculate TLS area size and round up to multiple of 16 bytes.
-    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
-    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    extern char _thread_local_data_start, _thread_local_data_end;
+    extern char _thread_local_bss_start, _thread_local_bss_end;
+    const uint32_t tls_data_size = (uint32_t)&_thread_local_data_end - (uint32_t)&_thread_local_data_start;
+    const uint32_t tls_bss_size = (uint32_t)&_thread_local_bss_end - (uint32_t)&_thread_local_bss_start;
+    const uint32_t tls_area_size = ALIGNUP(16, tls_data_size + tls_bss_size);
     // TODO: check that TLS area fits the stack
 
     // Allocate space for the TLS area on the stack. The area must be aligned to 16-bytes
     uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
-    // Initialize the TLS area with the initialization values of each TLS variable
-    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
+    // Initialize the TLS data with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_data_start, tls_data_size);
+    // Initialize the TLS bss with zeroes
+    memset((void *)(uxStackPointer + tls_data_size), 0, tls_bss_size);
 
-    /*
-    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
-    the stack.
-
-    HIGH ADDRESS
-            |---------------------------|
-            | .tdata (*)                |
-          ^ | int example;              |
-          | |                           |
-          | | .tbss (*)                 |
-          | |---------------------------| <- uxStackPointer (start of TLS area)
-    0xNNN | |                           | ^
-          | |                           | |
-          |             ...               | _thread_local_start - _rodata_start
-          | |                           | |
-          | |                           | V
-          V |                           | <- threadptr register's value
-
-    LOW ADDRESS
-    */
-    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start);
+    // Save tls start address
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer;
     return uxStackPointer;
 }
 
 #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
-    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (inital) frame
+    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (initial) frame
     extern void __attribute__((noreturn)) panic_abort(const char *details);
     static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
     pxCode(pvParameters);
@@ -300,6 +300,9 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     /* If the Task used any coprocessor, check if it is the actual owner of any.
      * If yes, reset the owner. */
     if (sa->sa_enable != 0) {
+        /* Restore the original lowest address of the stack in the TCB */
+        task->pxDummy6 = sa->sa_tcbstack;
+
         /* Get the core the task is pinned on */
         #if ( configNUM_CORES > 1 )
             const BaseType_t coreID = task->xDummyCoreID;
@@ -372,7 +375,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -390,7 +393,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     | Coproc. Save Area         | <- RvCoprocSaveArea
     | ------------------------- |
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -446,7 +449,7 @@ BaseType_t xPortInIsrContext(void)
     /* Disable interrupts to fetch the coreID atomically */
     irqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 
-    /* Return the interrupt nexting counter for this core */
+    /* Return the interrupt nesting counter for this core */
     ret = port_uxInterruptNesting[xPortGetCoreID()];
 
     /* Restore interrupts */
@@ -459,46 +462,34 @@ BaseType_t xPortInIsrContext(void)
 #endif /* (configNUM_CORES > 1) */
 }
 
+void vPortAssertIfInISR(void)
+{
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
+}
+
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
-    /* Return the interrupt nexting counter for this core */
+    /* Return the interrupt nesting counter for this core */
     return port_uxInterruptNesting[xPortGetCoreID()];
 }
 
 UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
-    UBaseType_t prev_int_level = 0;
-
+    UBaseType_t prev_int_level = 0, int_level = 0;
 #if !SOC_INT_CLIC_SUPPORTED
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    prev_int_level = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    int_level = RVHAL_EXCM_LEVEL;
 #else
-    /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-    prev_int_level = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
-#endif /* !SOC_INIT_CLIC_SUPPORTED */
-    /**
-     * In theory, this function should not return immediately as there is a
-     * delay between the moment we mask the interrupt threshold register and
-     * the moment a potential lower-priority interrupt is triggered (as said
-     * above), it should have a delay of 2 machine cycles/instructions.
-     *
-     * However, in practice, this function has an epilogue of one instruction,
-     * thus the instruction masking the interrupt threshold register is
-     * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
-     * That's why we don't need any additional nop instructions here.
-     */
+    int_level = RVHAL_EXCM_LEVEL_CLIC;
+#endif
+
+    prev_int_level = rv_utils_set_intlevel_regval(int_level);
     return prev_int_level;
 }
 
 void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 {
-#if !SOC_INT_CLIC_SUPPORTED
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, prev_int_level);
-#else
-    rv_utils_restore_intlevel(prev_int_level);
-#endif /* SOC_INIT_CLIC_SUPPORTED */
+    rv_utils_restore_intlevel_regval(prev_int_level);
     /**
      * The delay between the moment we unmask the interrupt threshold register
      * and the moment the potential requested interrupt is triggered is not
@@ -552,16 +543,20 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 void __attribute__((optimize("-O3"))) vPortExitCriticalMultiCore(portMUX_TYPE *mux)
 {
     /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
+     * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
     spinlock_release(mux);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNesting[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
@@ -614,8 +609,13 @@ void vPortExitCritical(void)
         esp_rom_printf("vPortExitCritical(void) is not supported on single-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
+
+    /* Critical section nesting count must never be negative */
+    configASSERT( port_uxCriticalNesting[0] > 0 );
+
     if (port_uxCriticalNesting[0] > 0) {
         port_uxCriticalNesting[0]--;
+
         if (port_uxCriticalNesting[0] == 0) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[0]);
         }
@@ -627,13 +627,6 @@ void vPortExitCritical(void)
 void vPortYield(void)
 {
     BaseType_t coreID = xPortGetCoreID();
-    int system_cpu_int_reg;
-
-#if !CONFIG_IDF_TARGET_ESP32P4
-    system_cpu_int_reg = SYSTEM_CPU_INTR_FROM_CPU_0_REG;
-#else
-    system_cpu_int_reg = HP_SYSTEM_CPU_INT_FROM_CPU_0_REG;
-#endif /* !CONFIG_IDF_TARGET_ESP32P4 */
 
     if (port_uxInterruptNesting[coreID]) {
         vPortYieldFromISR();
@@ -649,7 +642,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && REG_READ(system_cpu_int_reg + 4 * coreID) != 0) {}
+        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && crosscore_int_ll_get_state(coreID) != 0) {}
     }
 }
 
@@ -778,30 +771,61 @@ void vPortTaskPinToCore(StaticTask_t* task, int coreid)
 }
 #endif /* configNUM_CORES > 1 */
 
+
+/**
+ * @brief Function to call to simulate an `abort()` occurring in a different context than the one it's called from.
+ */
+extern void xt_unhandled_exception(void *frame);
+
 /**
  * @brief Get coprocessor save area out of the given task. If the coprocessor area is not created,
  *        it shall be allocated.
+ *
+ * @param task Task to get the coprocessor save area of
+ * @param allocate When true, memory will be allocated for the coprocessor if it hasn't been allocated yet.
+ *                 When false, the coprocessor memory will be left as NULL if not allocated.
+ * @param coproc Coprocessor number to allocate memory for
  */
-RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, int coproc)
+RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int coproc)
 {
+    assert(coproc < SOC_CPU_COPROC_NUM);
+
     const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
     RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
     /* Check if the allocator is NULL. Since we don't have a way to get the end of the stack
      * during its initialization, we have to do this here */
     if (sa->sa_allocator == 0) {
+        /* Since the lowest stack address shall not be used as `sp` anymore, we will modify it */
+        sa->sa_tcbstack = task->pxDummy6;
         sa->sa_allocator = (UBaseType_t) task->pxDummy6;
     }
 
     /* Check if coprocessor area is allocated */
-    if (sa->sa_coprocs[coproc] == NULL) {
+    if (allocate && sa->sa_coprocs[coproc] == NULL) {
         const uint32_t coproc_sa_sizes[] = {
-            RV_COPROC0_SIZE, RV_COPROC1_SIZE
+            RV_COPROC0_SIZE, RV_COPROC1_SIZE, RV_COPROC2_SIZE
         };
-        /* Allocate the save area at end of the allocator */
-        UBaseType_t allocated = sa->sa_allocator + coproc_sa_sizes[coproc];
-        sa->sa_coprocs[coproc] = (void*) allocated;
-        /* Update the allocator address for next use */
-        sa->sa_allocator = allocated;
+        const uint32_t coproc_sa_align[] = {
+            RV_COPROC0_ALIGN, RV_COPROC1_ALIGN, RV_COPROC2_ALIGN
+        };
+        /* The allocator points to a usable part of the stack, use it for the coprocessor.
+         * Align it up to the coprocessor save area requirement */
+        sa->sa_allocator = (sa->sa_allocator + coproc_sa_align[coproc] - 1) & ~(coproc_sa_align[coproc] - 1);
+        sa->sa_coprocs[coproc] = (void*) (sa->sa_allocator);
+        sa->sa_allocator += coproc_sa_sizes[coproc];
+        /* Update the lowest address of the stack to prevent FreeRTOS performing overflow/watermark checks on the coprocessors contexts */
+        task->pxDummy6 = (void*) (sa->sa_allocator);
+        /* Make sure the Task stack pointer is not pointing to the coprocessor context area, in other words, make
+         * sure we don't have a stack overflow */
+        void* task_sp = task->pxDummy1;
+        if (task_sp <= task->pxDummy6) {
+            /* In theory we need to call vApplicationStackOverflowHook to trigger the stack overflow callback,
+             * but in practice, since we are already in an exception handler, this won't work, so let's manually
+             * trigger an exception with the previous coprocessor owner's TCB */
+            g_panic_abort = true;
+            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving coprocessor context!\n";
+            xt_unhandled_exception(task_sp);
+        }
     }
     return sa;
 }
@@ -818,7 +842,8 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, int coproc)
  * @param coreid    Current core
  * @param coproc    Coprocessor to save context of
  *
- * @returns Coprocessor former owner's save area
+ * @returns Coprocessor former owner's save area, can be NULL if there was no owner yet, can be -1 if
+ *          the former owner is the same as the new owner.
  */
 RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)
 {
@@ -827,9 +852,13 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
     StaticTask_t** owner_addr = &port_uxCoprocOwner[ coreid ][ coproc ];
     /* Atomically exchange former owner with the new one */
     StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
-    /* Get the save area of former owner */
-    if (former != NULL) {
-        sa = pxPortGetCoprocArea(former, coproc);
+    /* Get the save area of former owner. small optimization here, if the former owner is the new owner,
+     * return -1. This will simplify the assembly code while making it faster. */
+    if (former == owner) {
+        sa = (void*) -1;
+    } else if (former != NULL) {
+        /* Allocate coprocessor memory if not available yet */
+        sa = pxPortGetCoprocArea(former, true, coproc);
     }
     return sa;
 }
@@ -840,7 +869,6 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
  */
 void vPortCoprocUsedInISR(void* frame)
 {
-    extern void xt_unhandled_exception(void*);
     /* Since this function is called from an exception handler, the interrupts are disabled,
      * as such, it is not possible to trigger another exception as would `abort` do.
      * Simulate an abort without actually triggering an exception. */

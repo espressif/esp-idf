@@ -293,7 +293,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
                 cback_data.conn.status  = BTA_HH_ERR_DB_FULL;
                 cback_data.conn.handle  = BTA_HH_INVALID_HANDLE;
                 /* check if host initiate the connection*/
-                cback_data.conn.is_orig = !p_cb->incoming_conn;
+                cback_data.conn.is_orig = TRUE;
                 break;
             /* DB full, BTA_HhAddDev */
             case BTA_HH_API_MAINT_DEV_EVT:

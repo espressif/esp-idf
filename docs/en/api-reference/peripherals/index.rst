@@ -10,7 +10,8 @@ Peripherals API
     :SOC_ADC_DMA_SUPPORTED: adc_continuous
     :SOC_ADC_SUPPORTED: adc_calibration
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
-    clk_tree
+    :SOC_MIPI_CSI_SUPPORTED: camera_driver
+    :SOC_CLK_TREE_SUPPORTED: clk_tree
     :SOC_DAC_SUPPORTED: dac
     :SOC_ECDSA_SUPPORTED: ecdsa
     :SOC_ETM_SUPPORTED: etm
@@ -19,26 +20,30 @@ Peripherals API
     :SOC_DEDICATED_GPIO_SUPPORTED: dedic_gpio
     :SOC_HMAC_SUPPORTED: hmac
     :SOC_DIG_SIGN_SUPPORTED: ds
-    i2c
+    :SOC_I2C_SUPPORTED: i2c
     :SOC_I2S_SUPPORTED: i2s
-    lcd
+    :SOC_ISP_SUPPORTED: isp
+    :SOC_JPEG_CODEC_SUPPORTED: jpeg
+    lcd/index
+    :SOC_GP_LDO_SUPPORTED: ldo_regulator
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PARLIO_SUPPORTED: parlio
     :SOC_PCNT_SUPPORTED: pcnt
+    :SOC_PPA_SUPPORTED: ppa
     :SOC_RMT_SUPPORTED: rmt
     :SOC_SDMMC_HOST_SUPPORTED or SOC_SDIO_SLAVE_SUPPORTED: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
-    sdspi_host
+    :SOC_GPSPI_SUPPORTED: sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
     :SOC_SDM_SUPPORTED: sdm
-    spi_flash/index
-    spi_master
-    spi_slave
-    :esp32: secure_element
+    :SOC_SPI_FLASH_SUPPORTED: spi_flash/index
+    :SOC_GPSPI_SUPPORTED: spi_master
+    :SOC_GPSPI_SUPPORTED: spi_slave
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
-    :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
+    :SOC_TOUCH_SENSOR_SUPPORTED and not esp32p4: touch_pad
+    :esp32p4: cap_touch_sens
     :esp32s2: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart

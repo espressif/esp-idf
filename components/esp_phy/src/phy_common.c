@@ -1,13 +1,23 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <string.h>
 #include "esp_timer.h"
+#include "esp_log.h"
+#include "esp_private/esp_gpio_reserve.h"
+#include "soc/gpio_sig_map.h"
+#include "driver/gpio.h"
+#include "esp_rom_gpio.h"
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
-#include <stdint.h>
+#include "esp_phy.h"
+#include "esp_attr.h"
+
+static const char* TAG = "phy_comm";
 
 static volatile uint16_t s_phy_modem_flag = 0;
 
@@ -20,6 +30,10 @@ static volatile int64_t s_wifi_prev_timestamp;
 static volatile int64_t s_bt_154_prev_timestamp;
 #endif
 #define PHY_TRACK_PLL_PERIOD_IN_US 1000000
+static void phy_track_pll_internal(void);
+
+static esp_phy_ant_gpio_config_t s_phy_ant_gpio_config = { 0 };
+static esp_phy_ant_config_t s_phy_ant_config = { 0 };
 
 #if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED || CONFIG_ESP_WIFI_ENABLED
 bool phy_enabled_modem_contains(esp_phy_modem_t modem)
@@ -28,7 +42,28 @@ bool phy_enabled_modem_contains(esp_phy_modem_t modem)
 }
 #endif
 
-static void phy_track_pll(void)
+void phy_track_pll(void)
+{
+    // Light sleep scenario: enabling and disabling PHY frequently, the timer will not get triggered.
+    // Using a variable to record the previously tracked time when PLL was last called.
+    // If the duration is larger than PHY_TRACK_PLL_PERIOD_IN_US, then track PLL.
+    bool need_track_pll = false;
+#if CONFIG_ESP_WIFI_ENABLED
+    if (phy_enabled_modem_contains(PHY_MODEM_WIFI)) {
+        need_track_pll = need_track_pll || ((esp_timer_get_time() - s_wifi_prev_timestamp) > PHY_TRACK_PLL_PERIOD_IN_US);
+    }
+#endif
+#if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
+    if (phy_enabled_modem_contains(PHY_MODEM_BT | PHY_MODEM_IEEE802154)) {
+        need_track_pll = need_track_pll || ((esp_timer_get_time() - s_bt_154_prev_timestamp) > PHY_TRACK_PLL_PERIOD_IN_US);
+    }
+#endif
+    if (need_track_pll) {
+        phy_track_pll_internal();
+    }
+}
+
+static void phy_track_pll_internal(void)
 {
     bool wifi_track_pll = false;
     bool ble_154_track_pll = false;
@@ -46,6 +81,14 @@ static void phy_track_pll(void)
     }
 #endif
     if (wifi_track_pll || ble_154_track_pll) {
+#if CONFIG_ESP_PHY_PLL_TRACK_DEBUG
+#if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
+        ESP_LOGI("PLL_TRACK", "BT or IEEE802154 tracks PLL: %s", ble_154_track_pll ? "True" : "False");
+#endif
+#if CONFIG_ESP_WIFI_ENABLED
+        ESP_LOGI("PLL_TRACK", "Wi-Fi tracks PLL: %s", wifi_track_pll ? "True" : "False");
+#endif
+#endif
         phy_param_track_tot(wifi_track_pll, ble_154_track_pll);
     }
 }
@@ -54,26 +97,12 @@ static void phy_track_pll_timer_callback(void* arg)
 {
     _lock_t phy_lock = phy_get_lock();
     _lock_acquire(&phy_lock);
-    phy_track_pll();
+    phy_track_pll_internal();
     _lock_release(&phy_lock);
 }
 
 void phy_track_pll_init(void)
 {
-    // Light sleep scenario: enabling and disabling PHY frequently, the timer will not get triggered.
-    // Using a variable to record the previously tracked time when PLL was last called.
-    // If the duration is larger than PHY_TRACK_PLL_PERIOD_IN_US, then track PLL.
-    bool need_track_pll = false;
-#if CONFIG_ESP_WIFI_ENABLED
-    need_track_pll = need_track_pll || ((esp_timer_get_time() - s_wifi_prev_timestamp) > PHY_TRACK_PLL_PERIOD_IN_US);
-#endif
-#if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
-    need_track_pll = need_track_pll || ((esp_timer_get_time() - s_bt_154_prev_timestamp) > PHY_TRACK_PLL_PERIOD_IN_US);
-#endif
-    if (need_track_pll) {
-        phy_track_pll();
-    }
-
     const esp_timer_create_args_t phy_track_pll_timer_args = {
             .callback = &phy_track_pll_timer_callback,
             .name = "phy-track-pll-timer"
@@ -102,3 +131,220 @@ esp_phy_modem_t phy_get_modem_flag(void)
 {
     return s_phy_modem_flag;
 }
+
+static DRAM_ATTR bool s_phy_ant_need_update_flag = false;
+
+IRAM_ATTR bool phy_ant_need_update(void)
+{
+    return s_phy_ant_need_update_flag;
+}
+
+void phy_ant_clr_update_flag(void)
+{
+    s_phy_ant_need_update_flag = false;
+}
+
+static void phy_ant_set_gpio_output(uint32_t io_num)
+{
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << io_num);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    gpio_config(&io_conf);
+}
+
+esp_err_t esp_phy_set_ant_gpio(esp_phy_ant_gpio_config_t *config)
+{
+    if (config == NULL) {
+        ESP_LOGE(TAG, "Invalid configuration");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (config->gpio_cfg[i].gpio_select == 1) {
+            if(esp_gpio_is_reserved(config->gpio_cfg[i].gpio_num)) {
+                ESP_LOGE(TAG, "gpio[%d] number: %d is reserved\n", i, config->gpio_cfg[i].gpio_num);
+                return ESP_ERR_INVALID_ARG;
+            }
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (config->gpio_cfg[i].gpio_select == 1) {
+            phy_ant_set_gpio_output(config->gpio_cfg[i].gpio_num);
+            esp_rom_gpio_connect_out_signal(config->gpio_cfg[i].gpio_num, ANT_SEL0_IDX + i, 0, 0);
+        }
+    }
+
+    memcpy(&s_phy_ant_gpio_config, config, sizeof(esp_phy_ant_gpio_config_t));
+
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_get_ant_gpio(esp_phy_ant_gpio_config_t *config)
+{
+    if (config == NULL) {
+        ESP_LOGE(TAG, "Invalid configuration");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(config, &s_phy_ant_gpio_config, sizeof(esp_phy_ant_gpio_config_t));
+
+    return ESP_OK;
+}
+
+static bool phy_ant_config_check(esp_phy_ant_config_t *config)
+{
+    if ((config->rx_ant_mode >= ESP_PHY_ANT_MODE_MAX)
+        ||(config->tx_ant_mode >= ESP_PHY_ANT_MODE_MAX)
+        ||(config->rx_ant_default >= ESP_PHY_ANT_MAX)) {
+        ESP_LOGE(TAG, "Invalid antenna: rx=%d, tx=%d, default=%d",
+            config->rx_ant_mode, config->tx_ant_mode, config->rx_ant_default);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if ((config->tx_ant_mode == ESP_PHY_ANT_MODE_AUTO) && (config->rx_ant_mode != ESP_PHY_ANT_MODE_AUTO)) {
+        ESP_LOGE(TAG, "If tx ant is AUTO, also need to set rx ant to AUTO");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
+void phy_ant_update(void)
+{
+    uint8_t rx_ant0 = 0, rx_ant1 = 0, tx_ant0 = 0;
+    esp_phy_ant_config_t *config = &s_phy_ant_config;
+    uint8_t ant0 = config->enabled_ant0;
+    uint8_t ant1 = config->enabled_ant1;
+    bool rx_auto = false;
+    uint8_t def_ant = 0;
+    switch (config->rx_ant_mode) {
+        case ESP_PHY_ANT_MODE_ANT0:
+            rx_ant0 = ant0;
+            rx_ant1 = ant0;
+            break;
+        case ESP_PHY_ANT_MODE_ANT1:
+            rx_ant0 = ant1;
+            rx_ant1 = ant1;
+            break;
+        case ESP_PHY_ANT_MODE_AUTO:
+            rx_ant0 = ant0;
+            rx_ant1 = ant1;
+            rx_auto = true;
+            break;
+        default:
+            rx_ant0 = ant0;
+            rx_ant1 = ant0;
+    }
+
+    switch (config->tx_ant_mode) {
+        case ESP_PHY_ANT_MODE_ANT0:
+            tx_ant0 = ant0;
+            break;
+        case ESP_PHY_ANT_MODE_ANT1:
+            tx_ant0 = ant1;
+            break;
+        default:
+            tx_ant0 = ant0;
+    }
+
+    switch (config->rx_ant_default) {
+        case ESP_PHY_ANT_ANT0:
+            def_ant = 0;
+            break;
+        case ESP_PHY_ANT_ANT1:
+            def_ant = 1;
+            break;
+        default:
+            def_ant = 0;
+    }
+
+    ant_dft_cfg(def_ant);
+    ant_tx_cfg(tx_ant0);
+    ant_rx_cfg(rx_auto, rx_ant0, rx_ant1);
+}
+
+esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
+{
+    if (!config || (phy_ant_config_check(config) != ESP_OK)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(&s_phy_ant_config, config, sizeof(esp_phy_ant_config_t));
+    if ( phy_get_modem_flag() == 0 ) {
+        // Set flag and will be updated when PHY enable
+        s_phy_ant_need_update_flag = true;
+    } else {
+        // Update immediately when PHY is enabled
+        phy_ant_update();
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_get_ant(esp_phy_ant_config_t *config)
+{
+    if (config == NULL) {
+        ESP_LOGE(TAG, "Invalid args");
+        return ESP_ERR_INVALID_ARG;
+    }
+    memcpy(config, &s_phy_ant_config, sizeof(esp_phy_ant_config_t));
+    return ESP_OK;
+}
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+typedef enum {
+    PHY_I2C_MST_CMD_TYPE_RF_OFF = 0,
+    PHY_I2C_MST_CMD_TYPE_RF_ON,
+    PHY_I2C_MST_CMD_TYPE_BBPLL_CFG,
+    PHY_I2C_MST_CMD_TYPE_MAX
+} phy_i2c_master_command_type_t;
+
+static uint32_t phy_ana_i2c_master_burst_config(phy_i2c_master_command_attribute_t *attr, int size, phy_i2c_master_command_type_t type)
+{
+    #define I2C1_BURST_VAL(en, start, end) (((en) << 31) | ((end) << 22) | ((start) << 16))
+    #define I2C0_BURST_VAL(en, start, end) (((en) << 15) | ((end) <<  6) | ((start) <<  0))
+
+    uint32_t brust = 0;
+    for (int i = 0; i < size; i++) {
+        if (attr[i].config.start == 0xff || attr[i].config.end == 0xff) /* ignore invalid configure */
+            continue;
+
+        if (attr[i].cmd_type == type) {
+            if (attr[i].config.host_id) {
+                brust |= I2C1_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            } else {
+                brust |= I2C0_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            }
+        }
+    }
+    return brust;
+}
+
+uint32_t phy_ana_i2c_master_burst_bbpll_config(void)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, PHY_I2C_MST_CMD_TYPE_BBPLL_CFG);
+}
+
+uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, on ? PHY_I2C_MST_CMD_TYPE_RF_ON : PHY_I2C_MST_CMD_TYPE_RF_OFF);
+}
+#endif

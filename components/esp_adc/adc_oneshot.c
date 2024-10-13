@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,11 +24,13 @@
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
 #include "soc/adc_periph.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM
 #define ADC_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -100,22 +102,29 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     unit->unit_id = init_config->unit_id;
     unit->ulp_mode = init_config->ulp_mode;
 
-    adc_oneshot_clk_src_t clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
-    if (init_config->clk_src) {
-        clk_src = init_config->clk_src;
+    adc_oneshot_clk_src_t clk_src;
+#if SOC_LP_ADC_SUPPORTED
+    if (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) {
+        clk_src = LP_ADC_CLK_SRC_LP_DYN_FAST;
+    } else
+#endif /* CONFIG_SOC_LP_ADC_SUPPORTED */
+    {
+        clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
+        if (init_config->clk_src) {
+            clk_src = init_config->clk_src;
+        }
     }
     uint32_t clk_src_freq_hz = 0;
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz), err, TAG, "clock source not supported");
 
     adc_oneshot_hal_cfg_t config = {
         .unit = init_config->unit_id,
-        .work_mode = (init_config->ulp_mode == ADC_ULP_MODE_FSM) ? ADC_HAL_ULP_FSM_MODE : ADC_HAL_SINGLE_READ_MODE,
+        .work_mode = (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) ? ADC_HAL_LP_MODE : ADC_HAL_SINGLE_READ_MODE,
         .clk_src = clk_src,
         .clk_src_freq_hz = clk_src_freq_hz,
     };
     adc_oneshot_hal_init(&(unit->hal), &config);
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To enable the APB_SARADC periph if needed
     _lock_acquire(&s_ctx.mutex);
     s_ctx.apb_periph_ref_cnts++;
@@ -123,12 +132,13 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         adc_apb_periph_claim();
     }
     _lock_release(&s_ctx.mutex);
-#endif
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
     } else {
-        esp_sleep_enable_adc_tsens_monitor(true);
+#if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
+        esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
+#endif
     }
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
@@ -159,6 +169,9 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
     portENTER_CRITICAL(&rtc_spinlock);
     adc_oneshot_hal_channel_config(hal, &cfg, channel);
     if (handle->ulp_mode) {
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+        esp_clk_tree_enable_src((soc_module_clk_t)(hal->clk_src), true);
+#endif
         adc_oneshot_hal_setup(hal, channel);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -176,6 +189,9 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     }
     portENTER_CRITICAL(&rtc_spinlock);
 
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
+#endif
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
@@ -199,6 +215,9 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
 
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), true);
+#endif
     adc_oneshot_hal_setup(&(handle->hal), chan);
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_atten_t atten = adc_ll_get_atten(handle->unit_id, chan);
@@ -229,7 +248,9 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     if (ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_release();
     } else {
-        esp_sleep_enable_adc_tsens_monitor(false);
+#if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
+        esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, false);
+#endif
     }
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
@@ -262,7 +283,7 @@ static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if !ADC_LL_RTC_GPIO_SUPPORTED
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     gpio_config_t cfg = {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,9 @@
 #include "esp_image_format.h"
 #include "flash_qio_mode.h"
 #include "esp_rom_gpio.h"
-#include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
-#include "soc/efuse_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/assist_debug_reg.h"
@@ -26,7 +24,6 @@
 #include "soc/io_mux_reg.h"
 #include "soc/system_reg.h"
 #include "soc/chip_revision.h"
-#include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
@@ -45,6 +42,7 @@
 #include "hal/cache_hal.h"
 #include "hal/efuse_hal.h"
 #include "hal/rwdt_ll.h"
+#include "hal/brownout_ll.h"
 
 static const char *TAG = "boot.esp32c3";
 
@@ -109,18 +107,18 @@ static inline void bootloader_ana_reset_config(void)
         case 0:
         case 1:
             //Disable BOD and GLITCH reset
-            bootloader_ana_bod_reset_config(false);
+            brownout_ll_ana_reset_enable(false);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 2:
             //Enable BOD reset. Disable GLITCH reset
-            bootloader_ana_bod_reset_config(true);
+            brownout_ll_ana_reset_enable(true);
             bootloader_ana_clock_glitch_reset_config(false);
             break;
         case 3:
         default:
             //Enable BOD, and GLITCH reset
-            bootloader_ana_bod_reset_config(true);
+            brownout_ll_ana_reset_enable(true);
             bootloader_ana_clock_glitch_reset_config(true);
             break;
     }
@@ -185,7 +183,7 @@ esp_err_t bootloader_init(void)
     }
 #endif  //#if !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
+    // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();

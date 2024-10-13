@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,18 @@ extern "C" {
 }
 
 /* Security Setting Mask
-Use these three mask mode:
+Use these three mask modes on both sides:
 1. ESP_SPP_SEC_NONE
 2. ESP_SPP_SEC_AUTHENTICATE
-3. (ESP_SPP_SEC_ENCRYPT|ESP_SPP_SEC_AUTHENTICATE)
+3. (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)
+Use these three mask modes only on acceptor side:
+1. ESP_SPP_SEC_IN_16_DIGITS
+2. (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE)
+3. (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)
+Due to certain limitations, do not use these mask modes:
+1. ESP_SPP_SEC_AUTHORIZE
+2. ESP_SPP_SEC_MODE4_LEVEL4
+3. ESP_SPP_SEC_MITM
 */
 #define ESP_SPP_SEC_NONE            0x0000    /*!< No security. relate to BTA_SEC_NONE in bta/bta_api.h */
 #define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) relate to BTA_SEC_AUTHORIZE in bta/bta_api.h*/

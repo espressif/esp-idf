@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,13 +18,15 @@
 extern "C" {
 #endif
 
+#define ETM_LL_SUPPORT_STATUS          1   // Support to get and clear the status of the ETM event and task
+
 /**
  * @brief Enable the bus clock for ETM module
  *
  * @param group_id Group ID
  * @param enable true to enable, false to disable
  */
-static inline void etm_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _etm_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl3.reg_etm_apb_clk_en = enable;
@@ -33,7 +35,7 @@ static inline void etm_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define etm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; etm_ll_enable_bus_clock(__VA_ARGS__)
+#define etm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _etm_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the ETM module
@@ -106,7 +108,7 @@ static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
  */
 static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, uint32_t event)
 {
-    hw->channel[chan].evt_id.evt_id = event;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, evt_id, event);
 }
 
 /**
@@ -118,7 +120,7 @@ static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, ui
  */
 static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uint32_t task)
 {
-    hw->channel[chan].task_id.task_id = task;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, task_id, task);
 }
 
 #ifdef __cplusplus

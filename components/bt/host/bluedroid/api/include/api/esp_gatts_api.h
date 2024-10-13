@@ -242,6 +242,7 @@ typedef union {
      */
     struct gatts_rsp_evt_param {
         esp_gatt_status_t status;       /*!< Operation status */
+        uint16_t conn_id;               /*!< Connection id */
         uint16_t handle;                /*!< Attribute handle which send response */
     } rsp;                              /*!< Gatt server callback param of ESP_GATTS_RESPONSE_EVT */
 
@@ -294,6 +295,16 @@ typedef void (* esp_gatts_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
  *
  */
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback);
+
+/**
+ * @brief           This function is called to get the current application callbacks
+ *                  with BTA GATTS module.
+ *
+ * @return
+ *                  - esp_gatts_cb_t : current callback
+ *
+ */
+esp_gatts_cb_t esp_ble_gatts_get_callback(void);
 
 /**
  * @brief           This function is called to register application identifier

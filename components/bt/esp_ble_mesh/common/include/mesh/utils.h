@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include "esp_bit_defs.h"
 #include "mesh/types.h"
+#include "utils_loops.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -179,6 +180,40 @@ extern "C" {
  * where the value is defined to 1, and 0 if not:
  */
 #define Z_IS_ENABLED3(ignore_this, val, ...) val
+
+/* Used to remove brackets from around a single argument. */
+#define __DEBRACKET(...) __VA_ARGS__
+
+#define UTIL_CAT(a, ...) UTIL_PRIMITIVE_CAT(a, __VA_ARGS__)
+#define UTIL_PRIMITIVE_CAT(a, ...) a##__VA_ARGS__
+
+/**
+ * @brief Generates a sequence of code with configurable separator.
+ *
+ * Example:
+ *
+ *     #define FOO(i, _) MY_PWM ## i
+ *     { LISTIFY(PWM_COUNT, FOO, (,)) }
+ *
+ * The above two lines expand to:
+ *
+ *    { MY_PWM0 , MY_PWM1 }
+ *
+ * @param LEN The length of the sequence. Must be an integer literal less
+ *            than 255.
+ * @param F A macro function that accepts at least two arguments:
+ *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
+ *          Its first argument @p i is the index in the sequence, and
+ *          the variable list of arguments passed to LISTIFY are passed
+ *          through to @p F.
+ *
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @note Calling LISTIFY with undefined arguments has undefined
+ * behavior.
+ */
+#define LISTIFY(LEN, F, sep, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, sep, __VA_ARGS__)
 
 const char *bt_hex(const void *buf, size_t len);
 

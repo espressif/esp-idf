@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -78,84 +78,140 @@ extern "C" {
  *  ECDSA interrupt raw register, valid in level.
  */
 #define ECDSA_INT_RAW_REG (DR_REG_ECDSA_BASE + 0xc)
-/** ECDSA_CALC_DONE_INT_RAW : RO/WTC/SS; bitpos: [0]; default: 0;
- *  The raw interrupt status bit  for the ecdsa_calc_done_int interrupt
+/** ECDSA_PREP_DONE_INT_RAW : RO/WTC/SS; bitpos: [0]; default: 0;
+ *  The raw interrupt status bit  for the ecdsa_prep_done_int interrupt
  */
-#define ECDSA_CALC_DONE_INT_RAW    (BIT(0))
-#define ECDSA_CALC_DONE_INT_RAW_M  (ECDSA_CALC_DONE_INT_RAW_V << ECDSA_CALC_DONE_INT_RAW_S)
-#define ECDSA_CALC_DONE_INT_RAW_V  0x00000001U
-#define ECDSA_CALC_DONE_INT_RAW_S  0
-/** ECDSA_SHA_RELEASE_INT_RAW : RO/WTC/SS; bitpos: [1]; default: 0;
+#define ECDSA_PREP_DONE_INT_RAW    (BIT(0))
+#define ECDSA_PREP_DONE_INT_RAW_M  (ECDSA_PREP_DONE_INT_RAW_V << ECDSA_PREP_DONE_INT_RAW_S)
+#define ECDSA_PREP_DONE_INT_RAW_V  0x00000001U
+#define ECDSA_PREP_DONE_INT_RAW_S  0
+/** ECDSA_PROC_DONE_INT_RAW : RO/WTC/SS; bitpos: [1]; default: 0;
+ *  The raw interrupt status bit  for the ecdsa_proc_done_int interrupt
+ */
+#define ECDSA_PROC_DONE_INT_RAW    (BIT(1))
+#define ECDSA_PROC_DONE_INT_RAW_M  (ECDSA_PROC_DONE_INT_RAW_V << ECDSA_PROC_DONE_INT_RAW_S)
+#define ECDSA_PROC_DONE_INT_RAW_V  0x00000001U
+#define ECDSA_PROC_DONE_INT_RAW_S  1
+/** ECDSA_POST_DONE_INT_RAW : RO/WTC/SS; bitpos: [2]; default: 0;
+ *  The raw interrupt status bit  for the ecdsa_post_done_int interrupt
+ */
+#define ECDSA_POST_DONE_INT_RAW    (BIT(2))
+#define ECDSA_POST_DONE_INT_RAW_M  (ECDSA_POST_DONE_INT_RAW_V << ECDSA_POST_DONE_INT_RAW_S)
+#define ECDSA_POST_DONE_INT_RAW_V  0x00000001U
+#define ECDSA_POST_DONE_INT_RAW_S  2
+/** ECDSA_SHA_RELEASE_INT_RAW : RO/WTC/SS; bitpos: [3]; default: 0;
  *  The raw interrupt status bit  for the ecdsa_sha_release_int interrupt
  */
-#define ECDSA_SHA_RELEASE_INT_RAW    (BIT(1))
+#define ECDSA_SHA_RELEASE_INT_RAW    (BIT(3))
 #define ECDSA_SHA_RELEASE_INT_RAW_M  (ECDSA_SHA_RELEASE_INT_RAW_V << ECDSA_SHA_RELEASE_INT_RAW_S)
 #define ECDSA_SHA_RELEASE_INT_RAW_V  0x00000001U
-#define ECDSA_SHA_RELEASE_INT_RAW_S  1
+#define ECDSA_SHA_RELEASE_INT_RAW_S  3
 
 /** ECDSA_INT_ST_REG register
  *  ECDSA interrupt status register.
  */
 #define ECDSA_INT_ST_REG (DR_REG_ECDSA_BASE + 0x10)
-/** ECDSA_CALC_DONE_INT_ST : RO; bitpos: [0]; default: 0;
- *  The masked interrupt status bit  for the ecdsa_calc_done_int interrupt
+/** ECDSA_PREP_DONE_INT_ST : RO; bitpos: [0]; default: 0;
+ *  The masked interrupt status bit  for the ecdsa_prep_done_int interrupt
  */
-#define ECDSA_CALC_DONE_INT_ST    (BIT(0))
-#define ECDSA_CALC_DONE_INT_ST_M  (ECDSA_CALC_DONE_INT_ST_V << ECDSA_CALC_DONE_INT_ST_S)
-#define ECDSA_CALC_DONE_INT_ST_V  0x00000001U
-#define ECDSA_CALC_DONE_INT_ST_S  0
-/** ECDSA_SHA_RELEASE_INT_ST : RO; bitpos: [1]; default: 0;
+#define ECDSA_PREP_DONE_INT_ST    (BIT(0))
+#define ECDSA_PREP_DONE_INT_ST_M  (ECDSA_PREP_DONE_INT_ST_V << ECDSA_PREP_DONE_INT_ST_S)
+#define ECDSA_PREP_DONE_INT_ST_V  0x00000001U
+#define ECDSA_PREP_DONE_INT_ST_S  0
+/** ECDSA_PROC_DONE_INT_ST : RO; bitpos: [1]; default: 0;
+ *  The masked interrupt status bit  for the ecdsa_proc_done_int interrupt
+ */
+#define ECDSA_PROC_DONE_INT_ST    (BIT(1))
+#define ECDSA_PROC_DONE_INT_ST_M  (ECDSA_PROC_DONE_INT_ST_V << ECDSA_PROC_DONE_INT_ST_S)
+#define ECDSA_PROC_DONE_INT_ST_V  0x00000001U
+#define ECDSA_PROC_DONE_INT_ST_S  1
+/** ECDSA_POST_DONE_INT_ST : RO; bitpos: [2]; default: 0;
+ *  The masked interrupt status bit  for the ecdsa_post_done_int interrupt
+ */
+#define ECDSA_POST_DONE_INT_ST    (BIT(2))
+#define ECDSA_POST_DONE_INT_ST_M  (ECDSA_POST_DONE_INT_ST_V << ECDSA_POST_DONE_INT_ST_S)
+#define ECDSA_POST_DONE_INT_ST_V  0x00000001U
+#define ECDSA_POST_DONE_INT_ST_S  2
+/** ECDSA_SHA_RELEASE_INT_ST : RO; bitpos: [3]; default: 0;
  *  The masked interrupt status bit  for the ecdsa_sha_release_int interrupt
  */
-#define ECDSA_SHA_RELEASE_INT_ST    (BIT(1))
+#define ECDSA_SHA_RELEASE_INT_ST    (BIT(3))
 #define ECDSA_SHA_RELEASE_INT_ST_M  (ECDSA_SHA_RELEASE_INT_ST_V << ECDSA_SHA_RELEASE_INT_ST_S)
 #define ECDSA_SHA_RELEASE_INT_ST_V  0x00000001U
-#define ECDSA_SHA_RELEASE_INT_ST_S  1
+#define ECDSA_SHA_RELEASE_INT_ST_S  3
 
 /** ECDSA_INT_ENA_REG register
  *  ECDSA interrupt enable register.
  */
 #define ECDSA_INT_ENA_REG (DR_REG_ECDSA_BASE + 0x14)
-/** ECDSA_CALC_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
- *  The interrupt enable bit  for the ecdsa_calc_done_int interrupt
+/** ECDSA_PREP_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
+ *  The interrupt enable bit  for the ecdsa_prep_done_int interrupt
  */
-#define ECDSA_CALC_DONE_INT_ENA    (BIT(0))
-#define ECDSA_CALC_DONE_INT_ENA_M  (ECDSA_CALC_DONE_INT_ENA_V << ECDSA_CALC_DONE_INT_ENA_S)
-#define ECDSA_CALC_DONE_INT_ENA_V  0x00000001U
-#define ECDSA_CALC_DONE_INT_ENA_S  0
-/** ECDSA_SHA_RELEASE_INT_ENA : R/W; bitpos: [1]; default: 0;
+#define ECDSA_PREP_DONE_INT_ENA    (BIT(0))
+#define ECDSA_PREP_DONE_INT_ENA_M  (ECDSA_PREP_DONE_INT_ENA_V << ECDSA_PREP_DONE_INT_ENA_S)
+#define ECDSA_PREP_DONE_INT_ENA_V  0x00000001U
+#define ECDSA_PREP_DONE_INT_ENA_S  0
+/** ECDSA_PROC_DONE_INT_ENA : R/W; bitpos: [1]; default: 0;
+ *  The interrupt enable bit  for the ecdsa_proc_done_int interrupt
+ */
+#define ECDSA_PROC_DONE_INT_ENA    (BIT(1))
+#define ECDSA_PROC_DONE_INT_ENA_M  (ECDSA_PROC_DONE_INT_ENA_V << ECDSA_PROC_DONE_INT_ENA_S)
+#define ECDSA_PROC_DONE_INT_ENA_V  0x00000001U
+#define ECDSA_PROC_DONE_INT_ENA_S  1
+/** ECDSA_POST_DONE_INT_ENA : R/W; bitpos: [2]; default: 0;
+ *  The interrupt enable bit  for the ecdsa_post_done_int interrupt
+ */
+#define ECDSA_POST_DONE_INT_ENA    (BIT(2))
+#define ECDSA_POST_DONE_INT_ENA_M  (ECDSA_POST_DONE_INT_ENA_V << ECDSA_POST_DONE_INT_ENA_S)
+#define ECDSA_POST_DONE_INT_ENA_V  0x00000001U
+#define ECDSA_POST_DONE_INT_ENA_S  2
+/** ECDSA_SHA_RELEASE_INT_ENA : R/W; bitpos: [3]; default: 0;
  *  The interrupt enable bit  for the ecdsa_sha_release_int interrupt
  */
-#define ECDSA_SHA_RELEASE_INT_ENA    (BIT(1))
+#define ECDSA_SHA_RELEASE_INT_ENA    (BIT(3))
 #define ECDSA_SHA_RELEASE_INT_ENA_M  (ECDSA_SHA_RELEASE_INT_ENA_V << ECDSA_SHA_RELEASE_INT_ENA_S)
 #define ECDSA_SHA_RELEASE_INT_ENA_V  0x00000001U
-#define ECDSA_SHA_RELEASE_INT_ENA_S  1
+#define ECDSA_SHA_RELEASE_INT_ENA_S  3
 
 /** ECDSA_INT_CLR_REG register
  *  ECDSA interrupt clear register.
  */
 #define ECDSA_INT_CLR_REG (DR_REG_ECDSA_BASE + 0x18)
-/** ECDSA_CALC_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
- *  Set this bit to clear the ecdsa_calc_done_int interrupt
+/** ECDSA_PREP_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
+ *  Set this bit to clear the ecdsa_prep_done_int interrupt
  */
-#define ECDSA_CALC_DONE_INT_CLR    (BIT(0))
-#define ECDSA_CALC_DONE_INT_CLR_M  (ECDSA_CALC_DONE_INT_CLR_V << ECDSA_CALC_DONE_INT_CLR_S)
-#define ECDSA_CALC_DONE_INT_CLR_V  0x00000001U
-#define ECDSA_CALC_DONE_INT_CLR_S  0
-/** ECDSA_SHA_RELEASE_INT_CLR : WT; bitpos: [1]; default: 0;
+#define ECDSA_PREP_DONE_INT_CLR    (BIT(0))
+#define ECDSA_PREP_DONE_INT_CLR_M  (ECDSA_PREP_DONE_INT_CLR_V << ECDSA_PREP_DONE_INT_CLR_S)
+#define ECDSA_PREP_DONE_INT_CLR_V  0x00000001U
+#define ECDSA_PREP_DONE_INT_CLR_S  0
+/** ECDSA_PROC_DONE_INT_CLR : WT; bitpos: [1]; default: 0;
+ *  Set this bit to clear the ecdsa_proc_done_int interrupt
+ */
+#define ECDSA_PROC_DONE_INT_CLR    (BIT(1))
+#define ECDSA_PROC_DONE_INT_CLR_M  (ECDSA_PROC_DONE_INT_CLR_V << ECDSA_PROC_DONE_INT_CLR_S)
+#define ECDSA_PROC_DONE_INT_CLR_V  0x00000001U
+#define ECDSA_PROC_DONE_INT_CLR_S  1
+/** ECDSA_POST_DONE_INT_CLR : WT; bitpos: [2]; default: 0;
+ *  Set this bit to clear the ecdsa_post_done_int interrupt
+ */
+#define ECDSA_POST_DONE_INT_CLR    (BIT(2))
+#define ECDSA_POST_DONE_INT_CLR_M  (ECDSA_POST_DONE_INT_CLR_V << ECDSA_POST_DONE_INT_CLR_S)
+#define ECDSA_POST_DONE_INT_CLR_V  0x00000001U
+#define ECDSA_POST_DONE_INT_CLR_S  2
+/** ECDSA_SHA_RELEASE_INT_CLR : WT; bitpos: [3]; default: 0;
  *  Set this bit to clear the ecdsa_sha_release_int interrupt
  */
-#define ECDSA_SHA_RELEASE_INT_CLR    (BIT(1))
+#define ECDSA_SHA_RELEASE_INT_CLR    (BIT(3))
 #define ECDSA_SHA_RELEASE_INT_CLR_M  (ECDSA_SHA_RELEASE_INT_CLR_V << ECDSA_SHA_RELEASE_INT_CLR_S)
 #define ECDSA_SHA_RELEASE_INT_CLR_V  0x00000001U
-#define ECDSA_SHA_RELEASE_INT_CLR_S  1
+#define ECDSA_SHA_RELEASE_INT_CLR_S  3
 
 /** ECDSA_START_REG register
  *  ECDSA start register
  */
 #define ECDSA_START_REG (DR_REG_ECDSA_BASE + 0x1c)
 /** ECDSA_START : WT; bitpos: [0]; default: 0;
- *  Write 1 to start caculation of ECDSA Accelerator. This bit will be self-cleared
+ *  Write 1 to start calculation of ECDSA Accelerator. This bit will be self-cleared
  *  after configuration.
  */
 #define ECDSA_START    (BIT(0))
@@ -217,7 +273,7 @@ extern "C" {
  *  Version control register
  */
 #define ECDSA_DATE_REG (DR_REG_ECDSA_BASE + 0xfc)
-/** ECDSA_DATE : R/W; bitpos: [27:0]; default: 36716656;
+/** ECDSA_DATE : R/W; bitpos: [27:0]; default: 36725040;
  *  ECDSA version control register
  */
 #define ECDSA_DATE    0x0FFFFFFFU
@@ -243,7 +299,7 @@ extern "C" {
  */
 #define ECDSA_SHA_START_REG (DR_REG_ECDSA_BASE + 0x210)
 /** ECDSA_SHA_START : WT; bitpos: [0]; default: 0;
- *  Write 1 to start the first caculation of SHA Calculator in ECDSA Accelerator. This
+ *  Write 1 to start the first calculation of SHA Calculator in ECDSA Accelerator. This
  *  bit will be self-cleared after configuration.
  */
 #define ECDSA_SHA_START    (BIT(0))
@@ -256,7 +312,7 @@ extern "C" {
  */
 #define ECDSA_SHA_CONTINUE_REG (DR_REG_ECDSA_BASE + 0x214)
 /** ECDSA_SHA_CONTINUE : WT; bitpos: [0]; default: 0;
- *  Write 1 to start the latter caculation of SHA Calculator in ECDSA Accelerator. This
+ *  Write 1 to start the latter calculation of SHA Calculator in ECDSA Accelerator. This
  *  bit will be self-cleared after configuration.
  */
 #define ECDSA_SHA_CONTINUE    (BIT(0))
@@ -286,31 +342,31 @@ extern "C" {
 /** ECDSA_R_MEM register
  *  The memory that stores r.
  */
-#define ECDSA_R_MEM (DR_REG_ECDSA_BASE + 0xa00)
+#define ECDSA_R_MEM (DR_REG_ECDSA_BASE + 0x340)
 #define ECDSA_R_MEM_SIZE_BYTES 32
 
 /** ECDSA_S_MEM register
  *  The memory that stores s.
  */
-#define ECDSA_S_MEM (DR_REG_ECDSA_BASE + 0xa20)
+#define ECDSA_S_MEM (DR_REG_ECDSA_BASE + 0x360)
 #define ECDSA_S_MEM_SIZE_BYTES 32
 
 /** ECDSA_Z_MEM register
  *  The memory that stores software written z.
  */
-#define ECDSA_Z_MEM (DR_REG_ECDSA_BASE + 0xa40)
+#define ECDSA_Z_MEM (DR_REG_ECDSA_BASE + 0x380)
 #define ECDSA_Z_MEM_SIZE_BYTES 32
 
 /** ECDSA_QAX_MEM register
  *  The memory that stores x coordinates of QA or software written k.
  */
-#define ECDSA_QAX_MEM (DR_REG_ECDSA_BASE + 0xa60)
+#define ECDSA_QAX_MEM (DR_REG_ECDSA_BASE + 0x3a0)
 #define ECDSA_QAX_MEM_SIZE_BYTES 32
 
 /** ECDSA_QAY_MEM register
  *  The memory that stores y coordinates of QA.
  */
-#define ECDSA_QAY_MEM (DR_REG_ECDSA_BASE + 0xa80)
+#define ECDSA_QAY_MEM (DR_REG_ECDSA_BASE + 0x3c0)
 #define ECDSA_QAY_MEM_SIZE_BYTES 32
 
 #ifdef __cplusplus

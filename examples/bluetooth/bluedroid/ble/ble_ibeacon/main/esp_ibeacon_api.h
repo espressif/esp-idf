@@ -23,9 +23,6 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
 
-
-/* Because current ESP IDF version doesn't support scan and adv simultaneously,
- * so iBeacon sender and receiver should not run simultaneously */
 #define IBEACON_SENDER      0
 #define IBEACON_RECEIVER    1
 #define IBEACON_MODE CONFIG_IBEACON_MODE

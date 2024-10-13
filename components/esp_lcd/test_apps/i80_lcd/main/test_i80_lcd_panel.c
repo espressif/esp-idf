@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -18,7 +18,7 @@
 #include "driver/gpio.h"
 #include "test_i80_board.h"
 
-#if SOC_I2S_LCD_I80_VARIANT
+#if SOC_I2S_SUPPORTS_LCD_CAMERA
 #include "driver/i2s_std.h"
 
 TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
@@ -49,9 +49,9 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
-#endif // SOC_I2S_LCD_I80_VARIANT
+#endif // SOC_I2S_SUPPORTS_LCD_CAMERA
 
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_LCDCAM_I80_LCD_SUPPORTED
 TEST_CASE("lcd_i80_device_swap_color_bytes", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
@@ -173,11 +173,16 @@ TEST_CASE("lcd_i80_device_clock_mode", "[lcd]")
     }
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
-#endif // SOC_LCDCAM_SUPPORTED
+#endif // SOC_LCDCAM_I80_LCD_SUPPORTED
 
 TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
 {
-    esp_lcd_i80_bus_handle_t i80_buses[SOC_LCD_I80_BUSES] = {};
+#if SOC_I2S_SUPPORTS_LCD_CAMERA
+#define TEST_NUM_LCD_I80_BUSES SOC_LCD_I80_BUSES
+#elif SOC_LCDCAM_I80_LCD_SUPPORTED
+#define TEST_NUM_LCD_I80_BUSES SOC_LCDCAM_I80_NUM_BUSES
+#endif
+    esp_lcd_i80_bus_handle_t i80_buses[TEST_NUM_LCD_I80_BUSES] = {};
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
@@ -195,7 +200,7 @@ TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
         .bus_width = 8,
         .max_transfer_bytes = TEST_LCD_H_RES * 40 * sizeof(uint16_t)
     };
-    for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+    for (int i = 0; i < TEST_NUM_LCD_I80_BUSES; i++) {
         TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_buses[i]));
     }
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, esp_lcd_new_i80_bus(&bus_config, &i80_buses[0]));
@@ -215,7 +220,7 @@ TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
     for (int i = 0; i < 10; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_del(io_handles[i]));
     }
-    for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+    for (int i = 0; i < TEST_NUM_LCD_I80_BUSES; i++) {
         TEST_ESP_OK(esp_lcd_del_i80_bus(i80_buses[i]));
     }
 }
@@ -455,7 +460,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 }
 
 // TODO: support the test on I2S LCD (IDF-7202)
-#if !SOC_I2S_LCD_I80_VARIANT
+#if !SOC_I2S_SUPPORTS_LCD_CAMERA
 TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
 {
     int x_start = 100;

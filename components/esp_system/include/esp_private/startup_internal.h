@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,9 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_bit_defs.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_cpu.h"
+#endif
 
 #include "soc/soc_caps.h"
 
@@ -18,7 +20,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 // Port layer defines the entry point. It then transfer control to a `sys_startup_fn_t`, stored in this
 // array, one per core.
@@ -87,8 +88,8 @@ typedef struct {
 #endif
 
 extern uint64_t g_startup_time;   // Startup time that serves as the point of origin for system time. Should be set by the entry
-                                  // function in the port layer. May be 0 as well if this is not backed by a persistent counter, in which case
-                                  // startup time = system time = 0 at the point the entry function sets this variable.
+// function in the port layer. May be 0 as well if this is not backed by a persistent counter, in which case
+// startup time = system time = 0 at the point the entry function sets this variable.
 
 #ifdef __cplusplus
 }

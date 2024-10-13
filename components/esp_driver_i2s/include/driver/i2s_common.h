@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,9 @@ extern "C" {
     .role = i2s_role, \
     .dma_desc_num = 6, \
     .dma_frame_num = 240, \
-    .auto_clear = false, \
+    .auto_clear_after_cb = false, \
+    .auto_clear_before_cb = false, \
+    .allow_pd = false, \
     .intr_priority = 0, \
 }
 
@@ -63,7 +65,19 @@ typedef struct {
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
                                              *   it should be the multiple of `3` when the data bit width is 24.
                                              */
-    bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, I2S will always send zero automatically if no data to send */
+    union {
+        bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` */
+        bool            auto_clear_after_cb; /*!< Set to auto clear DMA TX buffer after `on_sent` callback, I2S will always send zero automatically if no data to send.
+                                             *   So that user can assign the data to the DMA buffers directly in the callback, and the data won't be cleared after quit the callback.
+                                             */
+    };
+    bool                auto_clear_before_cb; /*!< Set to auto clear DMA TX buffer before `on_sent` callback, I2S will always send zero automatically if no data to send
+                                             *   So that user can access data in the callback that just finished to send.
+                                             */
+    bool                allow_pd;           /*!< Set to allow power down. When this flag set, the driver will backup/restore the I2S registers before/after entering/exist sleep mode.
+                                             * By this approach, the system can power off I2S's power domain.
+                                             * This can save power, but at the expense of more RAM being consumed.
+                                             */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } i2s_chan_config_t;
 
@@ -76,6 +90,10 @@ typedef struct {
     i2s_dir_t           dir;                /*!< I2S channel direction */
     i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */
     i2s_chan_handle_t   pair_chan;          /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
+    uint32_t            total_dma_buf_size; /*!< Total size of all the allocated DMA buffers
+                                             *   - 0 if the channel has not been initialized
+                                             *   - non-zero if the channel has been initialized
+                                             */
 } i2s_chan_info_t;
 
 /**

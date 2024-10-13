@@ -169,16 +169,17 @@ TEST_CASE("Task snapshot: Iterate", "[freertos]")
     UBaseType_t old_priority;
     setup(task_list, &num_tasks, &old_priority);
 
-    // Get task snapshots using pxTaskGetNext() and vTaskGetSnapshot()
+    // Get task snapshots using xTaskGetNext() and vTaskGetSnapshot()
     TaskSnapshot_t task_snapshots[TEST_MAX_TASKS_NUM];
     UBaseType_t num_snapshots = 0;
-    TaskHandle_t cur_task_handle = pxTaskGetNext(NULL);
-    while (cur_task_handle != NULL) {
-        // Get the task's snapshot
-        BaseType_t Result = vTaskGetSnapshot(cur_task_handle, &task_snapshots[num_snapshots]);
-        TEST_ASSERT_EQUAL(pdTRUE, Result);
-        num_snapshots++;
-        cur_task_handle = pxTaskGetNext(cur_task_handle);
+    TaskIterator_t task_iterator = {0};
+    while (xTaskGetNext(&task_iterator) != -1) {
+        if (task_iterator.pxTaskHandle != NULL) {
+            // Get the task's snapshot
+            BaseType_t Result = vTaskGetSnapshot(task_iterator.pxTaskHandle, &task_snapshots[num_snapshots]);
+            TEST_ASSERT_EQUAL(pdTRUE, Result);
+            num_snapshots++;
+        }
     }
     TEST_ASSERT_LESS_OR_EQUAL(TEST_MAX_TASKS_NUM, num_snapshots);
 

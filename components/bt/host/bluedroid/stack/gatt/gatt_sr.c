@@ -1448,8 +1448,9 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     }
 
     if ((prepare_record->error_code_app == GATT_SUCCESS)
-            && ((status == GATT_INVALID_OFFSET) || (status == GATT_INVALID_ATTR_LEN))){
-            prepare_record->error_code_app = status;
+        // update prepare write status for excute write request
+        && (status == GATT_INVALID_OFFSET || status == GATT_INVALID_ATTR_LEN || status == GATT_REQ_NOT_SUPPORTED)) {
+        prepare_record->error_code_app = status;
     }
 
 }
@@ -1680,9 +1681,10 @@ static BOOLEAN gatts_proc_ind_ack(tGATT_TCB *p_tcb, UINT16 ack_handle)
         gatts_proc_srv_chg_ind_ack(p_tcb);
         /* there is no need to inform the application since srv chg is handled internally by GATT */
         continue_processing = FALSE;
-
+#if GATTS_ROBUST_CACHING_ENABLED
         /* after receiving ack of svc_chg_ind, reset client status */
         gatt_sr_update_cl_status(p_tcb, true);
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
     }
 
     gatts_chk_pending_ind(p_tcb);
@@ -1729,6 +1731,7 @@ void gatts_process_value_conf(tGATT_TCB *p_tcb, UINT8 op_code)
     }
 }
 
+#if GATTS_ROBUST_CACHING_ENABLED
 static BOOLEAN gatts_handle_db_out_of_sync(tGATT_TCB *p_tcb, UINT8 op_code,
                                     UINT16 len, UINT8 *p_data)
 {
@@ -1808,6 +1811,7 @@ static BOOLEAN gatts_handle_db_out_of_sync(tGATT_TCB *p_tcb, UINT8 op_code,
     return should_ignore;
 }
 
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
 /*******************************************************************************
 **
 ** Function         gatt_server_handle_client_req
@@ -1839,11 +1843,12 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
         }
         /* otherwise, ignore the pkt */
     } else {
+#if GATTS_ROBUST_CACHING_ENABLED
         // handle database out of sync
         if (gatts_handle_db_out_of_sync(p_tcb, op_code, len, p_data)) {
             return;
         }
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
         switch (op_code) {
         case GATT_REQ_READ_BY_GRP_TYPE:         /* discover primary services */
         case GATT_REQ_FIND_TYPE_VALUE:          /* discover service by UUID */

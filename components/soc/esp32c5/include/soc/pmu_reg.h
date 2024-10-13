@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,13 @@ extern "C" {
 #define PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_M  (PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_V << PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_S)
 #define PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_S  27
+/** PMU_HP_ACTIVE_PD_HP_PERI_PD_EN : R/W; bitpos: [28]; default: 0;
+ *  need_des
+ */
+#define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN    (BIT(28))
+#define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_M  (PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_V << PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_S)
+#define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_V  0x00000001U
+#define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_ACTIVE_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
  */
@@ -274,19 +281,19 @@ extern "C" {
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_M  (PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_V << PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_S)
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_S  16
-/** PMU_HP_SLEEP2ACTIVE_BACKUP_MODE : R/W; bitpos: [22:20]; default: 0;
+/** PMU_HP_SLEEP2ACTIVE_BACKUP_MODE : R/W; bitpos: [22:18]; default: 0;
  *  need_des
  */
-#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE    0x00000007U
+#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE    0x0000001FU
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_M  (PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_V << PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_S)
-#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_V  0x00000007U
-#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_S  20
-/** PMU_HP_MODEM2ACTIVE_BACKUP_MODE : R/W; bitpos: [25:23]; default: 0;
+#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_V  0x0000001FU
+#define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_S  18
+/** PMU_HP_MODEM2ACTIVE_BACKUP_MODE : R/W; bitpos: [27:23]; default: 0;
  *  need_des
  */
-#define PMU_HP_MODEM2ACTIVE_BACKUP_MODE    0x00000007U
+#define PMU_HP_MODEM2ACTIVE_BACKUP_MODE    0x0000001FU
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_M  (PMU_HP_MODEM2ACTIVE_BACKUP_MODE_V << PMU_HP_MODEM2ACTIVE_BACKUP_MODE_S)
-#define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_V  0x00000007U
+#define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_V  0x0000001FU
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_S  23
 /** PMU_HP_SLEEP2ACTIVE_BACKUP_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
@@ -359,6 +366,13 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x28)
+/** PMU_DIG_DBIAS_INIT : WT; bitpos: [3]; default: 0;
+ *  need_des
+ */
+#define PMU_DIG_DBIAS_INIT    (BIT(3))
+#define PMU_DIG_DBIAS_INIT_M  (PMU_DIG_DBIAS_INIT_V << PMU_DIG_DBIAS_INIT_S)
+#define PMU_DIG_DBIAS_INIT_V  0x00000001U
+#define PMU_DIG_DBIAS_INIT_S  3
 /** PMU_LP_DBIAS_VOL : RO; bitpos: [8:4]; default: 24;
  *  need_des
  */
@@ -380,13 +394,13 @@ extern "C" {
 #define PMU_DIG_REGULATOR0_DBIAS_SEL_M  (PMU_DIG_REGULATOR0_DBIAS_SEL_V << PMU_DIG_REGULATOR0_DBIAS_SEL_S)
 #define PMU_DIG_REGULATOR0_DBIAS_SEL_V  0x00000001U
 #define PMU_DIG_REGULATOR0_DBIAS_SEL_S  14
-/** PMU_DIG_DBIAS_INIT : WT; bitpos: [15]; default: 0;
+/** PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [15]; default: 1;
  *  need_des
  */
-#define PMU_DIG_DBIAS_INIT    (BIT(15))
-#define PMU_DIG_DBIAS_INIT_M  (PMU_DIG_DBIAS_INIT_V << PMU_DIG_DBIAS_INIT_S)
-#define PMU_DIG_DBIAS_INIT_V  0x00000001U
-#define PMU_DIG_DBIAS_INIT_S  15
+#define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN    (BIT(15))
+#define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_M  (PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_V << PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_S)
+#define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
+#define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_S  15
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
  *  need_des
  */
@@ -486,6 +500,13 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_M  (PMU_HP_MODEM_PD_HP_WIFI_PD_EN_V << PMU_HP_MODEM_PD_HP_WIFI_PD_EN_S)
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_V  0x00000001U
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_S  27
+/** PMU_HP_MODEM_PD_HP_PERI_PD_EN : R/W; bitpos: [28]; default: 0;
+ *  need_des
+ */
+#define PMU_HP_MODEM_PD_HP_PERI_PD_EN    (BIT(28))
+#define PMU_HP_MODEM_PD_HP_PERI_PD_EN_M  (PMU_HP_MODEM_PD_HP_PERI_PD_EN_V << PMU_HP_MODEM_PD_HP_PERI_PD_EN_S)
+#define PMU_HP_MODEM_PD_HP_PERI_PD_EN_V  0x00000001U
+#define PMU_HP_MODEM_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_MODEM_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
  */
@@ -696,12 +717,12 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_M  (PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_V << PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S)
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S  14
-/** PMU_HP_SLEEP2MODEM_BACKUP_MODE : R/W; bitpos: [22:20]; default: 0;
+/** PMU_HP_SLEEP2MODEM_BACKUP_MODE : R/W; bitpos: [24:20]; default: 0;
  *  need_des
  */
-#define PMU_HP_SLEEP2MODEM_BACKUP_MODE    0x00000007U
+#define PMU_HP_SLEEP2MODEM_BACKUP_MODE    0x0000001FU
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_M  (PMU_HP_SLEEP2MODEM_BACKUP_MODE_V << PMU_HP_SLEEP2MODEM_BACKUP_MODE_S)
-#define PMU_HP_SLEEP2MODEM_BACKUP_MODE_V  0x00000007U
+#define PMU_HP_SLEEP2MODEM_BACKUP_MODE_V  0x0000001FU
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_S  20
 /** PMU_HP_SLEEP2MODEM_BACKUP_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
@@ -767,6 +788,13 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_MODEM_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x5c)
+/** PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [15]; default: 1;
+ *  need_des
+ */
+#define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN    (BIT(15))
+#define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_V << PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_S)
+#define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
+#define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_S  15
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
  *  need_des
  */
@@ -866,6 +894,13 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_M  (PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_V << PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_S)
 #define PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_V  0x00000001U
 #define PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_S  27
+/** PMU_HP_SLEEP_PD_HP_PERI_PD_EN : R/W; bitpos: [28]; default: 0;
+ *  need_des
+ */
+#define PMU_HP_SLEEP_PD_HP_PERI_PD_EN    (BIT(28))
+#define PMU_HP_SLEEP_PD_HP_PERI_PD_EN_M  (PMU_HP_SLEEP_PD_HP_PERI_PD_EN_V << PMU_HP_SLEEP_PD_HP_PERI_PD_EN_S)
+#define PMU_HP_SLEEP_PD_HP_PERI_PD_EN_V  0x00000001U
+#define PMU_HP_SLEEP_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_SLEEP_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
  *  need_des
  */
@@ -1097,20 +1132,20 @@ extern "C" {
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_V << PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_S)
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_S  18
-/** PMU_HP_MODEM2SLEEP_BACKUP_MODE : R/W; bitpos: [25:23]; default: 0;
+/** PMU_HP_MODEM2SLEEP_BACKUP_MODE : R/W; bitpos: [24:20]; default: 0;
  *  need_des
  */
-#define PMU_HP_MODEM2SLEEP_BACKUP_MODE    0x00000007U
+#define PMU_HP_MODEM2SLEEP_BACKUP_MODE    0x0000001FU
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODE_M  (PMU_HP_MODEM2SLEEP_BACKUP_MODE_V << PMU_HP_MODEM2SLEEP_BACKUP_MODE_S)
-#define PMU_HP_MODEM2SLEEP_BACKUP_MODE_V  0x00000007U
-#define PMU_HP_MODEM2SLEEP_BACKUP_MODE_S  23
-/** PMU_HP_ACTIVE2SLEEP_BACKUP_MODE : R/W; bitpos: [28:26]; default: 0;
+#define PMU_HP_MODEM2SLEEP_BACKUP_MODE_V  0x0000001FU
+#define PMU_HP_MODEM2SLEEP_BACKUP_MODE_S  20
+/** PMU_HP_ACTIVE2SLEEP_BACKUP_MODE : R/W; bitpos: [29:25]; default: 0;
  *  need_des
  */
-#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE    0x00000007U
+#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE    0x0000001FU
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_V << PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_S)
-#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_V  0x00000007U
-#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_S  26
+#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_V  0x0000001FU
+#define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_S  25
 /** PMU_HP_MODEM2SLEEP_BACKUP_EN : R/W; bitpos: [30]; default: 0;
  *  need_des
  */
@@ -1182,6 +1217,13 @@ extern "C" {
  *  need_des
  */
 #define PMU_HP_SLEEP_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x90)
+/** PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [15]; default: 1;
+ *  need_des
+ */
+#define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN    (BIT(15))
+#define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_M  (PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_V << PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_S)
+#define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
+#define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_S  15
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
  *  need_des
  */
@@ -1294,6 +1336,18 @@ extern "C" {
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_V  0x0000000FU
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_S  28
 
+/** PMU_HP_SLEEP_LP_DCDC_RESERVE_REG register
+ *  need_des
+ */
+#define PMU_HP_SLEEP_LP_DCDC_RESERVE_REG (DR_REG_PMU_BASE + 0xa4)
+/** PMU_HP_SLEEP_LP_DCDC_RESERVE : WT; bitpos: [31:0]; default: 0;
+ *  need_des
+ */
+#define PMU_HP_SLEEP_LP_DCDC_RESERVE    0xFFFFFFFFU
+#define PMU_HP_SLEEP_LP_DCDC_RESERVE_M  (PMU_HP_SLEEP_LP_DCDC_RESERVE_V << PMU_HP_SLEEP_LP_DCDC_RESERVE_S)
+#define PMU_HP_SLEEP_LP_DCDC_RESERVE_V  0xFFFFFFFFU
+#define PMU_HP_SLEEP_LP_DCDC_RESERVE_S  0
+
 /** PMU_HP_SLEEP_LP_DIG_POWER_REG register
  *  need_des
  */
@@ -1345,6 +1399,18 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_OSC_CLK_M  (PMU_HP_SLEEP_PD_OSC_CLK_V << PMU_HP_SLEEP_PD_OSC_CLK_S)
 #define PMU_HP_SLEEP_PD_OSC_CLK_V  0x00000001U
 #define PMU_HP_SLEEP_PD_OSC_CLK_S  31
+
+/** PMU_LP_SLEEP_LP_BIAS_RESERVE_REG register
+ *  need_des
+ */
+#define PMU_LP_SLEEP_LP_BIAS_RESERVE_REG (DR_REG_PMU_BASE + 0xb0)
+/** PMU_LP_SLEEP_LP_BIAS_RESERVE : WT; bitpos: [31:0]; default: 0;
+ *  need_des
+ */
+#define PMU_LP_SLEEP_LP_BIAS_RESERVE    0xFFFFFFFFU
+#define PMU_LP_SLEEP_LP_BIAS_RESERVE_M  (PMU_LP_SLEEP_LP_BIAS_RESERVE_V << PMU_LP_SLEEP_LP_BIAS_RESERVE_S)
+#define PMU_LP_SLEEP_LP_BIAS_RESERVE_V  0xFFFFFFFFU
+#define PMU_LP_SLEEP_LP_BIAS_RESERVE_S  0
 
 /** PMU_LP_SLEEP_LP_REGULATOR0_REG register
  *  need_des
@@ -1749,44 +1815,77 @@ extern "C" {
 #define PMU_DG_HP_POWERUP_TIMER_M  (PMU_DG_HP_POWERUP_TIMER_V << PMU_DG_HP_POWERUP_TIMER_S)
 #define PMU_DG_HP_POWERUP_TIMER_V  0x000001FFU
 #define PMU_DG_HP_POWERUP_TIMER_S  14
-/** PMU_DG_HP_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
+/** PMU_DG_HP_PD_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
  *  need_des
  */
-#define PMU_DG_HP_WAIT_TIMER    0x000001FFU
-#define PMU_DG_HP_WAIT_TIMER_M  (PMU_DG_HP_WAIT_TIMER_V << PMU_DG_HP_WAIT_TIMER_S)
-#define PMU_DG_HP_WAIT_TIMER_V  0x000001FFU
-#define PMU_DG_HP_WAIT_TIMER_S  23
+#define PMU_DG_HP_PD_WAIT_TIMER    0x000001FFU
+#define PMU_DG_HP_PD_WAIT_TIMER_M  (PMU_DG_HP_PD_WAIT_TIMER_V << PMU_DG_HP_PD_WAIT_TIMER_S)
+#define PMU_DG_HP_PD_WAIT_TIMER_V  0x000001FFU
+#define PMU_DG_HP_PD_WAIT_TIMER_S  23
 
 /** PMU_POWER_WAIT_TIMER1_REG register
  *  need_des
  */
 #define PMU_POWER_WAIT_TIMER1_REG (DR_REG_PMU_BASE + 0xf0)
-/** PMU_DG_LP_POWERDOWN_TIMER : R/W; bitpos: [15:9]; default: 255;
+/** PMU_DG_LP_POWERDOWN_TIMER : R/W; bitpos: [15:9]; default: 63;
  *  need_des
  */
 #define PMU_DG_LP_POWERDOWN_TIMER    0x0000007FU
 #define PMU_DG_LP_POWERDOWN_TIMER_M  (PMU_DG_LP_POWERDOWN_TIMER_V << PMU_DG_LP_POWERDOWN_TIMER_S)
 #define PMU_DG_LP_POWERDOWN_TIMER_V  0x0000007FU
 #define PMU_DG_LP_POWERDOWN_TIMER_S  9
-/** PMU_DG_LP_POWERUP_TIMER : R/W; bitpos: [22:16]; default: 255;
+/** PMU_DG_LP_POWERUP_TIMER : R/W; bitpos: [22:16]; default: 63;
  *  need_des
  */
 #define PMU_DG_LP_POWERUP_TIMER    0x0000007FU
 #define PMU_DG_LP_POWERUP_TIMER_M  (PMU_DG_LP_POWERUP_TIMER_V << PMU_DG_LP_POWERUP_TIMER_S)
 #define PMU_DG_LP_POWERUP_TIMER_V  0x0000007FU
 #define PMU_DG_LP_POWERUP_TIMER_S  16
-/** PMU_DG_LP_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
+/** PMU_DG_LP_PD_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
  *  need_des
  */
-#define PMU_DG_LP_WAIT_TIMER    0x000001FFU
-#define PMU_DG_LP_WAIT_TIMER_M  (PMU_DG_LP_WAIT_TIMER_V << PMU_DG_LP_WAIT_TIMER_S)
-#define PMU_DG_LP_WAIT_TIMER_V  0x000001FFU
-#define PMU_DG_LP_WAIT_TIMER_S  23
+#define PMU_DG_LP_PD_WAIT_TIMER    0x000001FFU
+#define PMU_DG_LP_PD_WAIT_TIMER_M  (PMU_DG_LP_PD_WAIT_TIMER_V << PMU_DG_LP_PD_WAIT_TIMER_S)
+#define PMU_DG_LP_PD_WAIT_TIMER_V  0x000001FFU
+#define PMU_DG_LP_PD_WAIT_TIMER_S  23
+
+/** PMU_POWER_WAIT_TIMER2_REG register
+ *  need_des
+ */
+#define PMU_POWER_WAIT_TIMER2_REG (DR_REG_PMU_BASE + 0xf4)
+/** PMU_DG_LP_ISO_WAIT_TIMER : R/W; bitpos: [7:0]; default: 255;
+ *  need_des
+ */
+#define PMU_DG_LP_ISO_WAIT_TIMER    0x000000FFU
+#define PMU_DG_LP_ISO_WAIT_TIMER_M  (PMU_DG_LP_ISO_WAIT_TIMER_V << PMU_DG_LP_ISO_WAIT_TIMER_S)
+#define PMU_DG_LP_ISO_WAIT_TIMER_V  0x000000FFU
+#define PMU_DG_LP_ISO_WAIT_TIMER_S  0
+/** PMU_DG_LP_RST_WAIT_TIMER : R/W; bitpos: [15:8]; default: 255;
+ *  need_des
+ */
+#define PMU_DG_LP_RST_WAIT_TIMER    0x000000FFU
+#define PMU_DG_LP_RST_WAIT_TIMER_M  (PMU_DG_LP_RST_WAIT_TIMER_V << PMU_DG_LP_RST_WAIT_TIMER_S)
+#define PMU_DG_LP_RST_WAIT_TIMER_V  0x000000FFU
+#define PMU_DG_LP_RST_WAIT_TIMER_S  8
+/** PMU_DG_HP_ISO_WAIT_TIMER : R/W; bitpos: [23:16]; default: 255;
+ *  need_des
+ */
+#define PMU_DG_HP_ISO_WAIT_TIMER    0x000000FFU
+#define PMU_DG_HP_ISO_WAIT_TIMER_M  (PMU_DG_HP_ISO_WAIT_TIMER_V << PMU_DG_HP_ISO_WAIT_TIMER_S)
+#define PMU_DG_HP_ISO_WAIT_TIMER_V  0x000000FFU
+#define PMU_DG_HP_ISO_WAIT_TIMER_S  16
+/** PMU_DG_HP_RST_WAIT_TIMER : R/W; bitpos: [31:24]; default: 255;
+ *  need_des
+ */
+#define PMU_DG_HP_RST_WAIT_TIMER    0x000000FFU
+#define PMU_DG_HP_RST_WAIT_TIMER_M  (PMU_DG_HP_RST_WAIT_TIMER_V << PMU_DG_HP_RST_WAIT_TIMER_S)
+#define PMU_DG_HP_RST_WAIT_TIMER_V  0x000000FFU
+#define PMU_DG_HP_RST_WAIT_TIMER_S  24
 
 /** PMU_POWER_PD_TOP_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_TOP_CNTL_REG (DR_REG_PMU_BASE + 0xf4)
+#define PMU_POWER_PD_TOP_CNTL_REG (DR_REG_PMU_BASE + 0xf8)
 /** PMU_FORCE_TOP_RESET : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -1847,7 +1946,7 @@ extern "C" {
 /** PMU_POWER_PD_HPAON_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_HPAON_CNTL_REG (DR_REG_PMU_BASE + 0xf8)
+#define PMU_POWER_PD_HPAON_CNTL_REG (DR_REG_PMU_BASE + 0xfc)
 /** PMU_FORCE_HP_AON_RESET : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -1908,7 +2007,7 @@ extern "C" {
 /** PMU_POWER_PD_HPCPU_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_HPCPU_CNTL_REG (DR_REG_PMU_BASE + 0xfc)
+#define PMU_POWER_PD_HPCPU_CNTL_REG (DR_REG_PMU_BASE + 0x100)
 /** PMU_FORCE_HP_CPU_RESET : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -1966,10 +2065,71 @@ extern "C" {
 #define PMU_PD_HP_CPU_PD_MASK_V  0x0000001FU
 #define PMU_PD_HP_CPU_PD_MASK_S  27
 
+/** PMU_POWER_PD_HPPERI_CNTL_REG register
+ *  need_des
+ */
+#define PMU_POWER_PD_HPPERI_CNTL_REG (DR_REG_PMU_BASE + 0x104)
+/** PMU_FORCE_HP_PERI_RESET : R/W; bitpos: [0]; default: 0;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_RESET    (BIT(0))
+#define PMU_FORCE_HP_PERI_RESET_M  (PMU_FORCE_HP_PERI_RESET_V << PMU_FORCE_HP_PERI_RESET_S)
+#define PMU_FORCE_HP_PERI_RESET_V  0x00000001U
+#define PMU_FORCE_HP_PERI_RESET_S  0
+/** PMU_FORCE_HP_PERI_ISO : R/W; bitpos: [1]; default: 0;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_ISO    (BIT(1))
+#define PMU_FORCE_HP_PERI_ISO_M  (PMU_FORCE_HP_PERI_ISO_V << PMU_FORCE_HP_PERI_ISO_S)
+#define PMU_FORCE_HP_PERI_ISO_V  0x00000001U
+#define PMU_FORCE_HP_PERI_ISO_S  1
+/** PMU_FORCE_HP_PERI_PU : R/W; bitpos: [2]; default: 1;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_PU    (BIT(2))
+#define PMU_FORCE_HP_PERI_PU_M  (PMU_FORCE_HP_PERI_PU_V << PMU_FORCE_HP_PERI_PU_S)
+#define PMU_FORCE_HP_PERI_PU_V  0x00000001U
+#define PMU_FORCE_HP_PERI_PU_S  2
+/** PMU_FORCE_HP_PERI_NO_RESET : R/W; bitpos: [3]; default: 1;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_NO_RESET    (BIT(3))
+#define PMU_FORCE_HP_PERI_NO_RESET_M  (PMU_FORCE_HP_PERI_NO_RESET_V << PMU_FORCE_HP_PERI_NO_RESET_S)
+#define PMU_FORCE_HP_PERI_NO_RESET_V  0x00000001U
+#define PMU_FORCE_HP_PERI_NO_RESET_S  3
+/** PMU_FORCE_HP_PERI_NO_ISO : R/W; bitpos: [4]; default: 1;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_NO_ISO    (BIT(4))
+#define PMU_FORCE_HP_PERI_NO_ISO_M  (PMU_FORCE_HP_PERI_NO_ISO_V << PMU_FORCE_HP_PERI_NO_ISO_S)
+#define PMU_FORCE_HP_PERI_NO_ISO_V  0x00000001U
+#define PMU_FORCE_HP_PERI_NO_ISO_S  4
+/** PMU_FORCE_HP_PERI_PD : R/W; bitpos: [5]; default: 0;
+ *  need_des
+ */
+#define PMU_FORCE_HP_PERI_PD    (BIT(5))
+#define PMU_FORCE_HP_PERI_PD_M  (PMU_FORCE_HP_PERI_PD_V << PMU_FORCE_HP_PERI_PD_S)
+#define PMU_FORCE_HP_PERI_PD_V  0x00000001U
+#define PMU_FORCE_HP_PERI_PD_S  5
+/** PMU_PD_HP_PERI_MASK : R/W; bitpos: [10:6]; default: 0;
+ *  need_des
+ */
+#define PMU_PD_HP_PERI_MASK    0x0000001FU
+#define PMU_PD_HP_PERI_MASK_M  (PMU_PD_HP_PERI_MASK_V << PMU_PD_HP_PERI_MASK_S)
+#define PMU_PD_HP_PERI_MASK_V  0x0000001FU
+#define PMU_PD_HP_PERI_MASK_S  6
+/** PMU_PD_HP_PERI_PD_MASK : R/W; bitpos: [31:27]; default: 0;
+ *  need_des
+ */
+#define PMU_PD_HP_PERI_PD_MASK    0x0000001FU
+#define PMU_PD_HP_PERI_PD_MASK_M  (PMU_PD_HP_PERI_PD_MASK_V << PMU_PD_HP_PERI_PD_MASK_S)
+#define PMU_PD_HP_PERI_PD_MASK_V  0x0000001FU
+#define PMU_PD_HP_PERI_PD_MASK_S  27
+
 /** PMU_POWER_PD_HPWIFI_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_HPWIFI_CNTL_REG (DR_REG_PMU_BASE + 0x104)
+#define PMU_POWER_PD_HPWIFI_CNTL_REG (DR_REG_PMU_BASE + 0x108)
 /** PMU_FORCE_HP_WIFI_RESET : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -2030,7 +2190,7 @@ extern "C" {
 /** PMU_POWER_PD_LPPERI_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_LPPERI_CNTL_REG (DR_REG_PMU_BASE + 0x108)
+#define PMU_POWER_PD_LPPERI_CNTL_REG (DR_REG_PMU_BASE + 0x10c)
 /** PMU_FORCE_LP_PERI_RESET : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -2077,7 +2237,7 @@ extern "C" {
 /** PMU_POWER_PD_MEM_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_PD_MEM_CNTL_REG (DR_REG_PMU_BASE + 0x10c)
+#define PMU_POWER_PD_MEM_CNTL_REG (DR_REG_PMU_BASE + 0x110)
 /** PMU_FORCE_HP_MEM_ISO : R/W; bitpos: [3:0]; default: 0;
  *  need_des
  */
@@ -2110,7 +2270,7 @@ extern "C" {
 /** PMU_POWER_PD_MEM_MASK_REG register
  *  need_des
  */
-#define PMU_POWER_PD_MEM_MASK_REG (DR_REG_PMU_BASE + 0x110)
+#define PMU_POWER_PD_MEM_MASK_REG (DR_REG_PMU_BASE + 0x114)
 /** PMU_PD_HP_MEM2_PD_MASK : R/W; bitpos: [4:0]; default: 0;
  *  need_des
  */
@@ -2157,7 +2317,7 @@ extern "C" {
 /** PMU_POWER_HP_PAD_REG register
  *  need_des
  */
-#define PMU_POWER_HP_PAD_REG (DR_REG_PMU_BASE + 0x114)
+#define PMU_POWER_HP_PAD_REG (DR_REG_PMU_BASE + 0x118)
 /** PMU_FORCE_HP_PAD_NO_ISO_ALL : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -2176,7 +2336,7 @@ extern "C" {
 /** PMU_POWER_VDD_SPI_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_VDD_SPI_CNTL_REG (DR_REG_PMU_BASE + 0x118)
+#define PMU_POWER_VDD_SPI_CNTL_REG (DR_REG_PMU_BASE + 0x11c)
 /** PMU_VDD_SPI_PWR_WAIT : R/W; bitpos: [28:18]; default: 255;
  *  need_des
  */
@@ -2202,7 +2362,7 @@ extern "C" {
 /** PMU_POWER_CK_WAIT_CNTL_REG register
  *  need_des
  */
-#define PMU_POWER_CK_WAIT_CNTL_REG (DR_REG_PMU_BASE + 0x11c)
+#define PMU_POWER_CK_WAIT_CNTL_REG (DR_REG_PMU_BASE + 0x120)
 /** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 256;
  *  need_des
  */
@@ -2221,7 +2381,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL0_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL0_REG (DR_REG_PMU_BASE + 0x120)
+#define PMU_SLP_WAKEUP_CNTL0_REG (DR_REG_PMU_BASE + 0x124)
 /** PMU_SLEEP_REQ : WT; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -2233,7 +2393,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL1_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL1_REG (DR_REG_PMU_BASE + 0x124)
+#define PMU_SLP_WAKEUP_CNTL1_REG (DR_REG_PMU_BASE + 0x128)
 /** PMU_SLEEP_REJECT_ENA : R/W; bitpos: [30:0]; default: 0;
  *  need_des
  */
@@ -2252,7 +2412,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL2_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL2_REG (DR_REG_PMU_BASE + 0x128)
+#define PMU_SLP_WAKEUP_CNTL2_REG (DR_REG_PMU_BASE + 0x12c)
 /** PMU_WAKEUP_ENA : R/W; bitpos: [31:0]; default: 0;
  *  need_des
  */
@@ -2264,7 +2424,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL3_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL3_REG (DR_REG_PMU_BASE + 0x12c)
+#define PMU_SLP_WAKEUP_CNTL3_REG (DR_REG_PMU_BASE + 0x130)
 /** PMU_LP_MIN_SLP_VAL : R/W; bitpos: [7:0]; default: 0;
  *  need_des
  */
@@ -2290,7 +2450,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL4_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL4_REG (DR_REG_PMU_BASE + 0x130)
+#define PMU_SLP_WAKEUP_CNTL4_REG (DR_REG_PMU_BASE + 0x134)
 /** PMU_SLP_REJECT_CAUSE_CLR : WT; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -2302,7 +2462,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL5_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL5_REG (DR_REG_PMU_BASE + 0x134)
+#define PMU_SLP_WAKEUP_CNTL5_REG (DR_REG_PMU_BASE + 0x138)
 /** PMU_MODEM_WAIT_TARGET : R/W; bitpos: [19:0]; default: 128;
  *  need_des
  */
@@ -2321,7 +2481,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL6_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL6_REG (DR_REG_PMU_BASE + 0x138)
+#define PMU_SLP_WAKEUP_CNTL6_REG (DR_REG_PMU_BASE + 0x13c)
 /** PMU_SOC_WAKEUP_WAIT : R/W; bitpos: [19:0]; default: 128;
  *  need_des
  */
@@ -2340,7 +2500,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_CNTL7_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_CNTL7_REG (DR_REG_PMU_BASE + 0x13c)
+#define PMU_SLP_WAKEUP_CNTL7_REG (DR_REG_PMU_BASE + 0x140)
 /** PMU_ANA_WAIT_TARGET : R/W; bitpos: [31:16]; default: 1;
  *  need_des
  */
@@ -2352,7 +2512,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_STATUS0_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_STATUS0_REG (DR_REG_PMU_BASE + 0x140)
+#define PMU_SLP_WAKEUP_STATUS0_REG (DR_REG_PMU_BASE + 0x144)
 /** PMU_WAKEUP_CAUSE : RO; bitpos: [31:0]; default: 0;
  *  need_des
  */
@@ -2364,7 +2524,7 @@ extern "C" {
 /** PMU_SLP_WAKEUP_STATUS1_REG register
  *  need_des
  */
-#define PMU_SLP_WAKEUP_STATUS1_REG (DR_REG_PMU_BASE + 0x144)
+#define PMU_SLP_WAKEUP_STATUS1_REG (DR_REG_PMU_BASE + 0x148)
 /** PMU_REJECT_CAUSE : RO; bitpos: [31:0]; default: 0;
  *  need_des
  */
@@ -2376,7 +2536,7 @@ extern "C" {
 /** PMU_HP_CK_POWERON_REG register
  *  need_des
  */
-#define PMU_HP_CK_POWERON_REG (DR_REG_PMU_BASE + 0x148)
+#define PMU_HP_CK_POWERON_REG (DR_REG_PMU_BASE + 0x14c)
 /** PMU_I2C_POR_WAIT_TARGET : R/W; bitpos: [7:0]; default: 50;
  *  need_des
  */
@@ -2388,7 +2548,7 @@ extern "C" {
 /** PMU_HP_CK_CNTL_REG register
  *  need_des
  */
-#define PMU_HP_CK_CNTL_REG (DR_REG_PMU_BASE + 0x14c)
+#define PMU_HP_CK_CNTL_REG (DR_REG_PMU_BASE + 0x150)
 /** PMU_MODIFY_ICG_CNTL_WAIT : R/W; bitpos: [7:0]; default: 10;
  *  need_des
  */
@@ -2407,7 +2567,7 @@ extern "C" {
 /** PMU_POR_STATUS_REG register
  *  need_des
  */
-#define PMU_POR_STATUS_REG (DR_REG_PMU_BASE + 0x150)
+#define PMU_POR_STATUS_REG (DR_REG_PMU_BASE + 0x154)
 /** PMU_POR_DONE : RO; bitpos: [31]; default: 1;
  *  need_des
  */
@@ -2419,7 +2579,14 @@ extern "C" {
 /** PMU_RF_PWC_REG register
  *  need_des
  */
-#define PMU_RF_PWC_REG (DR_REG_PMU_BASE + 0x154)
+#define PMU_RF_PWC_REG (DR_REG_PMU_BASE + 0x158)
+/** PMU_XPD_CKGEN5G : R/W; bitpos: [23]; default: 0;
+ *  need_des
+ */
+#define PMU_XPD_CKGEN5G    (BIT(23))
+#define PMU_XPD_CKGEN5G_M  (PMU_XPD_CKGEN5G_V << PMU_XPD_CKGEN5G_S)
+#define PMU_XPD_CKGEN5G_V  0x00000001U
+#define PMU_XPD_CKGEN5G_S  23
 /** PMU_XPD_TC5G_I2C : R/W; bitpos: [24]; default: 0;
  *  need_des
  */
@@ -2480,7 +2647,7 @@ extern "C" {
 /** PMU_BACKUP_CFG_REG register
  *  need_des
  */
-#define PMU_BACKUP_CFG_REG (DR_REG_PMU_BASE + 0x158)
+#define PMU_BACKUP_CFG_REG (DR_REG_PMU_BASE + 0x15c)
 /** PMU_BACKUP_SYS_CLK_NO_DIV : R/W; bitpos: [31]; default: 1;
  *  need_des
  */
@@ -2492,7 +2659,7 @@ extern "C" {
 /** PMU_INT_RAW_REG register
  *  need_des
  */
-#define PMU_INT_RAW_REG (DR_REG_PMU_BASE + 0x15c)
+#define PMU_INT_RAW_REG (DR_REG_PMU_BASE + 0x160)
 /** PMU_LP_CPU_EXC_INT_RAW : R/WTC/SS; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -2532,7 +2699,7 @@ extern "C" {
 /** PMU_HP_INT_ST_REG register
  *  need_des
  */
-#define PMU_HP_INT_ST_REG (DR_REG_PMU_BASE + 0x160)
+#define PMU_HP_INT_ST_REG (DR_REG_PMU_BASE + 0x164)
 /** PMU_LP_CPU_EXC_INT_ST : RO; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -2572,7 +2739,7 @@ extern "C" {
 /** PMU_HP_INT_ENA_REG register
  *  need_des
  */
-#define PMU_HP_INT_ENA_REG (DR_REG_PMU_BASE + 0x164)
+#define PMU_HP_INT_ENA_REG (DR_REG_PMU_BASE + 0x168)
 /** PMU_LP_CPU_EXC_INT_ENA : R/W; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -2612,7 +2779,7 @@ extern "C" {
 /** PMU_HP_INT_CLR_REG register
  *  need_des
  */
-#define PMU_HP_INT_CLR_REG (DR_REG_PMU_BASE + 0x168)
+#define PMU_HP_INT_CLR_REG (DR_REG_PMU_BASE + 0x16c)
 /** PMU_LP_CPU_EXC_INT_CLR : WT; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -2652,7 +2819,7 @@ extern "C" {
 /** PMU_LP_INT_RAW_REG register
  *  need_des
  */
-#define PMU_LP_INT_RAW_REG (DR_REG_PMU_BASE + 0x16c)
+#define PMU_LP_INT_RAW_REG (DR_REG_PMU_BASE + 0x170)
 /** PMU_LP_CPU_WAKEUP_INT_RAW : R/WTC/SS; bitpos: [20]; default: 0;
  *  need_des
  */
@@ -2741,7 +2908,7 @@ extern "C" {
 /** PMU_LP_INT_ST_REG register
  *  need_des
  */
-#define PMU_LP_INT_ST_REG (DR_REG_PMU_BASE + 0x170)
+#define PMU_LP_INT_ST_REG (DR_REG_PMU_BASE + 0x174)
 /** PMU_LP_CPU_WAKEUP_INT_ST : RO; bitpos: [20]; default: 0;
  *  need_des
  */
@@ -2830,7 +2997,7 @@ extern "C" {
 /** PMU_LP_INT_ENA_REG register
  *  need_des
  */
-#define PMU_LP_INT_ENA_REG (DR_REG_PMU_BASE + 0x174)
+#define PMU_LP_INT_ENA_REG (DR_REG_PMU_BASE + 0x178)
 /** PMU_LP_CPU_WAKEUP_INT_ENA : R/W; bitpos: [20]; default: 0;
  *  need_des
  */
@@ -2919,7 +3086,7 @@ extern "C" {
 /** PMU_LP_INT_CLR_REG register
  *  need_des
  */
-#define PMU_LP_INT_CLR_REG (DR_REG_PMU_BASE + 0x178)
+#define PMU_LP_INT_CLR_REG (DR_REG_PMU_BASE + 0x17c)
 /** PMU_LP_CPU_WAKEUP_INT_CLR : WT; bitpos: [20]; default: 0;
  *  need_des
  */
@@ -3008,7 +3175,7 @@ extern "C" {
 /** PMU_LP_CPU_PWR0_REG register
  *  need_des
  */
-#define PMU_LP_CPU_PWR0_REG (DR_REG_PMU_BASE + 0x17c)
+#define PMU_LP_CPU_PWR0_REG (DR_REG_PMU_BASE + 0x180)
 /** PMU_LP_CPU_WAITI_RDY : RO; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -3076,7 +3243,7 @@ extern "C" {
 /** PMU_LP_CPU_PWR1_REG register
  *  need_des
  */
-#define PMU_LP_CPU_PWR1_REG (DR_REG_PMU_BASE + 0x180)
+#define PMU_LP_CPU_PWR1_REG (DR_REG_PMU_BASE + 0x184)
 /** PMU_LP_CPU_WAKEUP_EN : R/W; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -3095,7 +3262,7 @@ extern "C" {
 /** PMU_HP_LP_CPU_COMM_REG register
  *  need_des
  */
-#define PMU_HP_LP_CPU_COMM_REG (DR_REG_PMU_BASE + 0x184)
+#define PMU_HP_LP_CPU_COMM_REG (DR_REG_PMU_BASE + 0x188)
 /** PMU_LP_TRIGGER_HP : WT; bitpos: [30]; default: 0;
  *  need_des
  */
@@ -3114,7 +3281,7 @@ extern "C" {
 /** PMU_HP_REGULATOR_CFG_REG register
  *  need_des
  */
-#define PMU_HP_REGULATOR_CFG_REG (DR_REG_PMU_BASE + 0x188)
+#define PMU_HP_REGULATOR_CFG_REG (DR_REG_PMU_BASE + 0x18c)
 /** PMU_DIG_REGULATOR_EN_CAL : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -3126,7 +3293,7 @@ extern "C" {
 /** PMU_MAIN_STATE_REG register
  *  need_des
  */
-#define PMU_MAIN_STATE_REG (DR_REG_PMU_BASE + 0x18c)
+#define PMU_MAIN_STATE_REG (DR_REG_PMU_BASE + 0x190)
 /** PMU_MAIN_LAST_ST_STATE : RO; bitpos: [17:11]; default: 1;
  *  need_des
  */
@@ -3152,7 +3319,7 @@ extern "C" {
 /** PMU_PWR_STATE_REG register
  *  need_des
  */
-#define PMU_PWR_STATE_REG (DR_REG_PMU_BASE + 0x190)
+#define PMU_PWR_STATE_REG (DR_REG_PMU_BASE + 0x194)
 /** PMU_BACKUP_ST_STATE : RO; bitpos: [17:13]; default: 1;
  *  need_des
  */
@@ -3178,7 +3345,7 @@ extern "C" {
 /** PMU_CLK_STATE0_REG register
  *  need_des
  */
-#define PMU_CLK_STATE0_REG (DR_REG_PMU_BASE + 0x194)
+#define PMU_CLK_STATE0_REG (DR_REG_PMU_BASE + 0x198)
 /** PMU_STABLE_XPD_BBPLL_STATE : RO; bitpos: [0]; default: 1;
  *  need_des
  */
@@ -3302,7 +3469,7 @@ extern "C" {
 /** PMU_CLK_STATE1_REG register
  *  need_des
  */
-#define PMU_CLK_STATE1_REG (DR_REG_PMU_BASE + 0x198)
+#define PMU_CLK_STATE1_REG (DR_REG_PMU_BASE + 0x19c)
 /** PMU_ICG_FUNC_EN_STATE : RO; bitpos: [31:0]; default: 4294967295;
  *  need_des
  */
@@ -3314,7 +3481,7 @@ extern "C" {
 /** PMU_CLK_STATE2_REG register
  *  need_des
  */
-#define PMU_CLK_STATE2_REG (DR_REG_PMU_BASE + 0x19c)
+#define PMU_CLK_STATE2_REG (DR_REG_PMU_BASE + 0x1a0)
 /** PMU_ICG_APB_EN_STATE : RO; bitpos: [31:0]; default: 4294967295;
  *  need_des
  */
@@ -3326,7 +3493,7 @@ extern "C" {
 /** PMU_VDD_SPI_STATUS_REG register
  *  need_des
  */
-#define PMU_VDD_SPI_STATUS_REG (DR_REG_PMU_BASE + 0x1a0)
+#define PMU_VDD_SPI_STATUS_REG (DR_REG_PMU_BASE + 0x1a4)
 /** PMU_STABLE_VDD_SPI_PWR_DRV : RO; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -3338,8 +3505,8 @@ extern "C" {
 /** PMU_DATE_REG register
  *  need_des
  */
-#define PMU_DATE_REG (DR_REG_PMU_BASE + 0x3fc)
-/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 35664432;
+#define PMU_DATE_REG (DR_REG_PMU_BASE + 0x1a8)
+/** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 36770448;
  *  need_des
  */
 #define PMU_PMU_DATE    0x7FFFFFFFU

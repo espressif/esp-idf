@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
  vTaskNotifyGiveFromISR(), whereas the receiver task will test
  xTaskNotifyWait() and ulTaskNotifyTake().
 */
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -28,7 +29,7 @@ static uint32_t send_core_message = 0;
 static TaskHandle_t recv_task_handle;
 static bool isr_give = false;
 static bool test_start = false;
-static gptimer_handle_t gptimers[portNUM_PROCESSORS];
+static gptimer_handle_t gptimers[CONFIG_FREERTOS_NUMBER_OF_CORES];
 static SemaphoreHandle_t trigger_send_semphr;
 static SemaphoreHandle_t task_delete_semphr;
 
@@ -155,7 +156,7 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     test_start = false;
     trigger_send_semphr = xSemaphoreCreateBinary();
     task_delete_semphr = xQueueCreateCountingSemaphore(10, 0);
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         xTaskCreatePinnedToCore(install_gptimer_on_core, "install_gptimer", 4096, (void *const)i, UNITY_FREERTOS_PRIORITY + 1, NULL, i);
         TEST_ASSERT(xSemaphoreTake(task_delete_semphr, pdMS_TO_TICKS(1000)));
     }
@@ -163,8 +164,8 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     vTaskDelay(10);
     // test start
     test_start = true;
-    for (int i = 0; i < portNUM_PROCESSORS; i++) { //Sending Core
-        for (int j = 0; j < portNUM_PROCESSORS; j++) { //Receiving Core
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) { //Sending Core
+        for (int j = 0; j < CONFIG_FREERTOS_NUMBER_OF_CORES; j++) { //Receiving Core
             //Reset Values
             notifs_sent = 0;
             notifs_rec = 0;
@@ -190,7 +191,7 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     //Delete Semaphroes and timer ISRs
     vSemaphoreDelete(trigger_send_semphr);
     vSemaphoreDelete(task_delete_semphr);
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         TEST_ESP_OK(gptimer_disable(gptimers[i]));
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }

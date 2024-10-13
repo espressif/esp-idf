@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 #include "esp_partition.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "core/common/instance.hpp"
+#include "core/instance/instance.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "openthread/cli.h"
@@ -34,7 +34,7 @@ static esp_openthread_platform_workflow_t *s_workflow_list = NULL;
 esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func update_func,
                                                     esp_openthread_process_func process_func, const char *name)
 {
-    uint8_t name_len = strnlen(name, WORKFLOW_MAX_NAMELEN);
+    uint8_t name_len = strnlen(name, WORKFLOW_MAX_NAMELEN - 1);
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     esp_openthread_platform_workflow_t *before_workflow = NULL;
     esp_openthread_platform_workflow_t *add_workflow =
@@ -42,6 +42,7 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
     ESP_RETURN_ON_FALSE(add_workflow != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
                         "Failed to alloc memory for esp_openthread_workflow");
     strncpy(add_workflow->name, name, name_len);
+    add_workflow->name[name_len] = '\0';
     add_workflow->update_func = update_func;
     add_workflow->process_func = process_func;
     add_workflow->next = NULL;
@@ -93,14 +94,18 @@ static esp_err_t esp_openthread_host_interface_init(const esp_openthread_platfor
 {
     esp_openthread_host_connection_mode_t host_mode = get_host_connection_mode();
     switch (host_mode) {
+#if CONFIG_OPENTHREAD_RCP_SPI
     case HOST_CONNECTION_MODE_RCP_SPI:
         ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_spi_init(config), OT_PLAT_LOG_TAG,
                           "esp_openthread_host_rcp_spi_init failed");
         break;
+#endif
+#if CONFIG_OPENTHREAD_RCP_UART
     case HOST_CONNECTION_MODE_RCP_UART:
         ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_uart_init(config), OT_PLAT_LOG_TAG,
                           "esp_openthread_host_rcp_uart_init failed");
         break;
+#endif
 #if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
     case HOST_CONNECTION_MODE_CLI_UART:
         ESP_RETURN_ON_ERROR(esp_openthread_host_cli_uart_init(config), OT_PLAT_LOG_TAG,

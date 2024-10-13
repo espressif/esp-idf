@@ -7,7 +7,7 @@
 #include "soc/lcd_periph.h"
 #include "soc/gpio_sig_map.h"
 
-const lcd_signal_conn_t lcd_periph_signals = {
+const lcd_i2s_signal_conn_t lcd_periph_i2s_signals = {
     .buses = {
         [0] = {
             .module = PERIPH_I2S0_MODULE,

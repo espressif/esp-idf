@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -243,6 +243,12 @@ static inline void modem_syscon_ll_reset_zbmac(modem_syscon_dev_t *hw)
 }
 
 __attribute__((always_inline))
+static inline void modem_syscon_ll_reset_zbmac_apb(modem_syscon_dev_t *hw)
+{
+    // ESP32C6 Not Support
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_reset_modem_sec(modem_syscon_dev_t *hw)
 {
     hw->modem_rst_conf.rst_modem_ecb = 1;
@@ -410,6 +416,11 @@ __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_bt_apb_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_bt_apb_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_bt_mac_clock(modem_syscon_dev_t *hw, bool en)
+{
 }
 
 __attribute__((always_inline))

@@ -256,12 +256,12 @@ static void bt_app_gap_start_up(void)
     esp_bt_gap_register_callback(bt_app_gap_cb);
 
     char *dev_name = "ESP_GAP_INQRUIY";
-    esp_bt_dev_set_device_name(dev_name);
+    esp_bt_gap_set_device_name(dev_name);
 
     /* set discoverable and connectable mode, wait to be connected */
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
 
-    /* inititialize device information and status */
+    /* initialize device information and status */
     bt_app_gap_init();
 
     /* start to discover nearby Bluetooth devices */
@@ -272,6 +272,7 @@ static void bt_app_gap_start_up(void)
 
 void app_main(void)
 {
+    char bda_str[18] = {0};
     /* Initialize NVS — it is used to store PHY calibration data and save key-value pairs in flash memory*/
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -304,5 +305,6 @@ void app_main(void)
         return;
     }
 
+    ESP_LOGI(GAP_TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
     bt_app_gap_start_up();
 }

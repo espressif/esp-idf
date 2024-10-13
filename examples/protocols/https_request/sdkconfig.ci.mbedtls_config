@@ -3,11 +3,11 @@
 # If any component using mbedtls does not select respective configurations,
 # then this should fail at build stage.
 
-# Few example dependancies need to be enabled by default for the build to succeed
+# Few example dependencies need to be enabled by default for the build to succeed
 ##############
 CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
 CONFIG_MBEDTLS_KEY_EXCHANGE_RSA=y
-CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED=y
+CONFIG_MBEDTLS_AES_C=y
 ##############
 
 CONFIG_MBEDTLS_HARDWARE_AES=n
@@ -46,7 +46,6 @@ CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS=n
 #
 # Symmetric Ciphers
 #
-CONFIG_MBEDTLS_AES_C=n
 CONFIG_MBEDTLS_CAMELLIA_C=n
 CONFIG_MBEDTLS_DES_C=n
 CONFIG_MBEDTLS_BLOWFISH_C=n
@@ -73,6 +72,7 @@ CONFIG_MBEDTLS_ECDSA_C=n
 CONFIG_MBEDTLS_ECJPAKE_C=n
 CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED=n
 CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED=n
+CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED=n
 CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED=n
 CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED=n
 CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED=n

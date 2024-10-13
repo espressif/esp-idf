@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,28 @@
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
 #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+/*
+pxTopOfStack (4) +
+xStateListItem (28) +
+xEventListItem (28) +
+uxPriority (4)
+*/
 #define PORT_OFFSET_PX_STACK 0x40
 #else
+/*
+pxTopOfStack (4) +
+xStateListItem (20) +
+xEventListItem (20) +
+uxPriority (4)
+*/
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
-#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
-                                     /* void * pxDummy6 */ 4 + \
-                                     /* BaseType_t xDummy23[ 2 ] */ 8 + \
-                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
-                                     /* BaseType_t xDummy24 */ 4)
+
+#define PORT_OFFSET_PX_END_OF_STACK ( \
+    PORT_OFFSET_PX_STACK \
+    + 4                                 /* StackType_t * pxStack */ \
+    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+)
 
 #ifndef __ASSEMBLER__
 
@@ -100,17 +113,25 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
 
 BaseType_t xPortCheckIfInISR(void);
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortCheckIfInISR() internally
+ */
+void vPortAssertIfInISR(void);
+
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 /*
 These are always called with interrupts already disabled. We simply need to get/release the spinlocks
 */
-
 extern portMUX_TYPE port_xTaskLock;
 extern portMUX_TYPE port_xISRLock;
 
 void vPortTakeLock( portMUX_TYPE *lock );
 void vPortReleaseLock( portMUX_TYPE *lock );
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ---------------------- Yielding -------------------------
 
@@ -173,13 +194,23 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(1)
 #define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * TODO: Enable once ISR safe version of vTaskEnter/ExitCritical() is implemented
+ * for single-core SMP FreeRTOS Kernel. (IDF-10540)
+ */
+// #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
+
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 #define portGET_TASK_LOCK()                         vPortTakeLock(&port_xTaskLock)
 #define portRELEASE_TASK_LOCK()                     vPortReleaseLock(&port_xTaskLock)
 #define portGET_ISR_LOCK()                          vPortTakeLock(&port_xISRLock)
 #define portRELEASE_ISR_LOCK()                      vPortReleaseLock(&port_xISRLock)
-
+#endif /* configNUMBER_OF_CORES > 1 */
 
 //Critical sections used by FreeRTOS SMP
 extern void vTaskEnterCritical( void );
@@ -224,11 +255,11 @@ extern void vTaskExitCritical( void );
 // ------------------- Run Time Stats ----------------------
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE()            0
 #ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-/* Coarse resolution time (us) */
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       do {x = (uint32_t)esp_timer_get_time();} while(0)
-#endif
+#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) esp_timer_get_time())
+#else
+#define portGET_RUN_TIME_COUNTER_VALUE()        0
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 
 // --------------------- TCB Cleanup -----------------------
 
@@ -314,14 +345,25 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     return (threshold <= 1);
 }
 
-// Added for backward compatibility with IDF
-#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+// Defined even for configNUMBER_OF_CORES > 1 for IDF compatibility
+#define portYIELD_WITHIN_API()                      esp_crosscore_int_send_yield(xPortGetCoreID())
 
 // ----------------------- System --------------------------
 
 void vPortSetStackWatchpoint(void *pxStackStart);
 
 // -------------------- Heap Related -----------------------
+
+/**
+ * @brief Checks if a given piece of memory can be used to store a FreeRTOS list
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a List
+ * @return false Otherwise
+ */
+bool xPortCheckValidListMem(const void *ptr);
 
 /**
  * @brief Checks if a given piece of memory can be used to store a task's TCB
@@ -345,6 +387,7 @@ bool xPortCheckValidTCBMem(const void *ptr);
  */
 bool xPortcheckValidStackMem(const void *ptr);
 
+#define portVALID_LIST_MEM(ptr)     xPortCheckValidListMem(ptr)
 #define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 

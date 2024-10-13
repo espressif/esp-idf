@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "esp_private/mcpwm.h"
 #include "test_mcpwm_utils.h"
 #include "driver/mcpwm_prelude.h"
+#include "test_mcpwm_utils.h"
 
 TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
 {
@@ -69,7 +70,7 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_comparator_register_event_callbacks(comparator2, &comparator_cbs, NULL));
 
     printf("install gpio fault\r\n");
-    const int fault_gpio = 0;
+    const int fault_gpio = TEST_FAULT_GPIO;
     mcpwm_fault_handle_t fault = NULL;
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
@@ -145,7 +146,7 @@ TEST_CASE("mcpwm_group_set_prescale_dynamically", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
 
     mcpwm_generator_config_t generator_config = {
-        .gen_gpio_num = 0,
+        .gen_gpio_num = TEST_PWMA_GPIO,
     };
     mcpwm_gen_handle_t generator = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));

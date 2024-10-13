@@ -27,7 +27,7 @@ First, let’s take a look at the include
 #include "sdkconfig.h"
 ```
 
-These includes are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
+These includes are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
 
  * `esp_bt.h`: implements BT controller and VHCI configuration procedures from the host side.
  * `esp_bt_main.h`: implements initialization and enabling of the Bluedroid stack.
@@ -65,8 +65,8 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -145,8 +145,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+ret = esp_bluedroid_init();
 ret = esp_bluedroid_enable();
 ```
 The Bluetooth stack is up and running at this point in the program flow, however the functionality of the application has not been defined yet. The functionality is defined by reacting to events
@@ -174,7 +173,7 @@ typedef struct {
     uint32_t interval_min;              /*!< ext adv minimum interval */
     uint32_t interval_max;              /*!< ext adv maximum interval */
     esp_ble_adv_channel_t channel_map;  /*!< ext adv channel map */
-    esp_ble_addr_type_t own_addr_type;  /*!< ext adv own addresss type */
+    esp_ble_addr_type_t own_addr_type;  /*!< ext adv own address type */
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */

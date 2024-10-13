@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import hashlib
 import os
 
@@ -9,6 +8,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 def test_spiffsgen_example(dut: Dut) -> None:
     # Test with default build configurations
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spiffs_image')

@@ -278,9 +278,9 @@ SDIO 从机驱动程序的相关术语如下：
 
 
 应用示例
--------------------
+--------
 
-从机/主机通信的相关应用示例请参阅 :example:`peripherals/sdio`。
+- :example:`peripherals/sdio/host` 和 :example:`peripherals/sdio/slave` 演示了如何使用主机与 ESP SDIO 从机进行通信。
 
 API 参考
 -------------

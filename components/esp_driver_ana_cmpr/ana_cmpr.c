@@ -226,7 +226,7 @@ esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr
     analog_cmpr_ll_set_internal_ref_voltage(cmpr->dev, ref_cfg->ref_volt);
     portEXIT_CRITICAL_SAFE(&s_spinlock);
 
-    ESP_EARLY_LOGD(TAG, "unit %d internal voltage level %"PRIu32, (int)cmpr->unit, ref_cfg->ref_volt);
+    ESP_EARLY_LOGD(TAG, "unit %d internal voltage level %" PRIu32, (int)cmpr->unit, (uint32_t)ref_cfg->ref_volt);
 
     return ESP_OK;
 }

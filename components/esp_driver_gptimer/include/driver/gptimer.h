@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,9 @@ typedef struct {
                                               if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
+        uint32_t allow_pd: 1;            /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                              This can save power, but at the expense of more RAM being consumed to save register context. */
+        uint32_t backup_before_sleep: 1; /*!< @deprecated, same meaning as allow_pd */
     } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
 
@@ -114,7 +117,8 @@ esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolutio
 /**
  * @brief Get GPTimer captured count value
  *
- * @note The capture action can be issued either by ETM event or by software (see also `gptimer_get_raw_count`).
+ * @note Different from `gptimer_get_raw_count`, this function won't trigger a software capture event. It just returns the last captured count value.
+ *       It's especially useful when the capture has already been triggered by an external event and you want to read the captured value.
  * @note This function is allowed to run within ISR context
  * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
  *       makes it possible to execute even when the Flash Cache is disabled.
@@ -169,9 +173,11 @@ typedef struct {
 /**
  * @brief Set alarm event actions for GPTimer.
  *
- * @note This function is allowed to run within ISR context, so that user can set new alarm action immediately in the ISR callback.
+ * @note This function is allowed to run within ISR context, so you can update new alarm action immediately in any ISR callback.
  * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
  *       makes it possible to execute even when the Flash Cache is disabled.
+ *       In this case, please also ensure the `gptimer_alarm_config_t` instance is placed in the static data section
+ *       instead of in the read-only data section. e.g.: `static gptimer_alarm_config_t alarm_config = { ... };`
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[in] config Alarm configuration, especially, set config to NULL means disabling the alarm function

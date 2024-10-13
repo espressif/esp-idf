@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,12 +171,9 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions]")
     void **p, **pprev = NULL;
     int thrown_value = 0;
     // throw first exception to ensure that all initial allocations are made
-    try
-    {
+    try {
         throw 33;
-    }
-    catch (int e)
-    {
+    } catch (int e) {
         thrown_value = e;
     }
     TEST_ASSERT_EQUAL(33, thrown_value);
@@ -189,12 +186,9 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions]")
         }
         pprev = p;
     }
-    try
-    {
+    try {
         throw 20;
-    }
-    catch (int e)
-    {
+    } catch (int e) {
         thrown_value = e;
     }
 #if CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0

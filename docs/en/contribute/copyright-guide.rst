@@ -33,7 +33,7 @@ The simplest case is when the code is not based on any licensed previous work, e
 Less Restrictive Parts of ESP-IDF
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Some parts of ESP-IDF are deliberately under less restrictive licenses in order to ease their re-use in commercial closed source projects. This is the case for :project:`ESP-IDF examples <examples>` which are in Public domain or under the Creative Commons Zero Universal (CC0) license. The following header can be used in such source files::
+Some parts of ESP-IDF are deliberately under less restrictive licenses in order to ease their reuse in commercial closed source projects. This is the case for :project:`ESP-IDF examples <examples>` which are in Public domain or under the Creative Commons Zero Universal (CC0) license. The following header can be used in such source files::
 
     /*
      * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -331,14 +331,14 @@ typedef union {
          *  Represents GPIO_evt_ch7_any_edge trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gpio_evt_ch7_any_edge_st:1;
-        /** gpio_evt_zero_det_pos_st : R/WTC/SS; bitpos: [24]; default: 0;
-         *  Represents GPIO_evt_zero_det_pos trigger status.\\0: Not triggered\\1: Triggered
+        /** gpio_evt_zero_det_pos0_st : R/WTC/SS; bitpos: [24]; default: 0;
+         *  Represents GPIO_evt_zero_det_pos0 trigger status.\\0: Not triggered\\1: Triggered
          */
-        uint32_t gpio_evt_zero_det_pos_st:1;
-        /** gpio_evt_zero_det_neg_st : R/WTC/SS; bitpos: [25]; default: 0;
-         *  Represents GPIO_evt_zero_det_neg trigger status.\\0: Not triggered\\1: Triggered
+        uint32_t gpio_evt_zero_det_pos0_st:1;
+        /** gpio_evt_zero_det_neg0_st : R/WTC/SS; bitpos: [25]; default: 0;
+         *  Represents GPIO_evt_zero_det_neg0 trigger status.\\0: Not triggered\\1: Triggered
          */
-        uint32_t gpio_evt_zero_det_neg_st:1;
+        uint32_t gpio_evt_zero_det_neg0_st:1;
         /** ledc_evt_duty_chng_end_ch0_st : R/WTC/SS; bitpos: [26]; default: 0;
          *  Represents LEDC_evt_duty_chng_end_ch0 trigger status.\\0: Not triggered\\1:
          *  Triggered
@@ -688,106 +688,101 @@ typedef union {
          *  Represents REGDMA_evt_err3 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t regdma_evt_err3_st:1;
-        /** gdma_evt_in_done_ch0_st : R/WTC/SS; bitpos: [9]; default: 0;
+        /** tmpsnsr_evt_over_limit_st : R/WTC/SS; bitpos: [9]; default: 0;
+         *  Represents TMPSNSR_evt_over_limit trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t tmpsnsr_evt_over_limit_st:1;
+        /** i2s0_evt_rx_done_st : R/WTC/SS; bitpos: [10]; default: 0;
+         *  Represents I2S0_evt_rx_done trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t i2s0_evt_rx_done_st:1;
+        /** i2s0_evt_tx_done_st : R/WTC/SS; bitpos: [11]; default: 0;
+         *  Represents I2S0_evt_tx_done trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t i2s0_evt_tx_done_st:1;
+        /** i2s0_evt_x_words_received_st : R/WTC/SS; bitpos: [12]; default: 0;
+         *  Represents I2S0_evt_x_words_received trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t i2s0_evt_x_words_received_st:1;
+        /** i2s0_evt_x_words_sent_st : R/WTC/SS; bitpos: [13]; default: 0;
+         *  Represents I2S0_evt_x_words_sent trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t i2s0_evt_x_words_sent_st:1;
+        /** ulp_evt_err_intr_st : R/WTC/SS; bitpos: [14]; default: 0;
+         *  Represents ULP_evt_err_intr trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t ulp_evt_err_intr_st:1;
+        /** ulp_evt_halt_st : R/WTC/SS; bitpos: [15]; default: 0;
+         *  Represents ULP_evt_halt trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t ulp_evt_halt_st:1;
+        /** ulp_evt_start_intr_st : R/WTC/SS; bitpos: [16]; default: 0;
+         *  Represents ULP_evt_start_intr trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t ulp_evt_start_intr_st:1;
+        /** rtc_evt_tick_st : R/WTC/SS; bitpos: [17]; default: 0;
+         *  Represents RTC_evt_tick trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t rtc_evt_tick_st:1;
+        /** rtc_evt_ovf_st : R/WTC/SS; bitpos: [18]; default: 0;
+         *  Represents RTC_evt_ovf trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t rtc_evt_ovf_st:1;
+        /** rtc_evt_cmp_st : R/WTC/SS; bitpos: [19]; default: 0;
+         *  Represents RTC_evt_cmp trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t rtc_evt_cmp_st:1;
+        /** gdma_evt_in_done_ch0_st : R/WTC/SS; bitpos: [20]; default: 0;
          *  Represents GDMA_evt_in_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_done_ch0_st:1;
-        /** gdma_evt_in_done_ch1_st : R/WTC/SS; bitpos: [10]; default: 0;
+        /** gdma_evt_in_done_ch1_st : R/WTC/SS; bitpos: [21]; default: 0;
          *  Represents GDMA_evt_in_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_done_ch1_st:1;
-        /** gdma_evt_in_done_ch2_st : R/WTC/SS; bitpos: [11]; default: 0;
+        /** gdma_evt_in_done_ch2_st : R/WTC/SS; bitpos: [22]; default: 0;
          *  Represents GDMA_evt_in_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_done_ch2_st:1;
-        /** gdma_evt_in_suc_eof_ch0_st : R/WTC/SS; bitpos: [12]; default: 0;
+        /** gdma_evt_in_suc_eof_ch0_st : R/WTC/SS; bitpos: [23]; default: 0;
          *  Represents GDMA_evt_in_suc_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_suc_eof_ch0_st:1;
-        /** gdma_evt_in_suc_eof_ch1_st : R/WTC/SS; bitpos: [13]; default: 0;
+        /** gdma_evt_in_suc_eof_ch1_st : R/WTC/SS; bitpos: [24]; default: 0;
          *  Represents GDMA_evt_in_suc_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_suc_eof_ch1_st:1;
-        /** gdma_evt_in_suc_eof_ch2_st : R/WTC/SS; bitpos: [14]; default: 0;
+        /** gdma_evt_in_suc_eof_ch2_st : R/WTC/SS; bitpos: [25]; default: 0;
          *  Represents GDMA_evt_in_suc_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_suc_eof_ch2_st:1;
-        /** gdma_evt_in_fifo_empty_ch0_st : R/WTC/SS; bitpos: [15]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch0_st : R/WTC/SS; bitpos: [26]; default: 0;
          *  Represents GDMA_evt_in_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_in_fifo_empty_ch0_st:1;
-        /** gdma_evt_in_fifo_empty_ch1_st : R/WTC/SS; bitpos: [16]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch1_st : R/WTC/SS; bitpos: [27]; default: 0;
          *  Represents GDMA_evt_in_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_in_fifo_empty_ch1_st:1;
-        /** gdma_evt_in_fifo_empty_ch2_st : R/WTC/SS; bitpos: [17]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch2_st : R/WTC/SS; bitpos: [28]; default: 0;
          *  Represents GDMA_evt_in_fifo_empty_ch2 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_in_fifo_empty_ch2_st:1;
-        /** gdma_evt_in_fifo_full_ch0_st : R/WTC/SS; bitpos: [18]; default: 0;
+        /** gdma_evt_in_fifo_full_ch0_st : R/WTC/SS; bitpos: [29]; default: 0;
          *  Represents GDMA_evt_in_fifo_full_ch0 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_fifo_full_ch0_st:1;
-        /** gdma_evt_in_fifo_full_ch1_st : R/WTC/SS; bitpos: [19]; default: 0;
+        /** gdma_evt_in_fifo_full_ch1_st : R/WTC/SS; bitpos: [30]; default: 0;
          *  Represents GDMA_evt_in_fifo_full_ch1 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_fifo_full_ch1_st:1;
-        /** gdma_evt_in_fifo_full_ch2_st : R/WTC/SS; bitpos: [20]; default: 0;
+        /** gdma_evt_in_fifo_full_ch2_st : R/WTC/SS; bitpos: [31]; default: 0;
          *  Represents GDMA_evt_in_fifo_full_ch2 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t gdma_evt_in_fifo_full_ch2_st:1;
-        /** gdma_evt_out_done_ch0_st : R/WTC/SS; bitpos: [21]; default: 0;
-         *  Represents GDMA_evt_out_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_done_ch0_st:1;
-        /** gdma_evt_out_done_ch1_st : R/WTC/SS; bitpos: [22]; default: 0;
-         *  Represents GDMA_evt_out_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_done_ch1_st:1;
-        /** gdma_evt_out_done_ch2_st : R/WTC/SS; bitpos: [23]; default: 0;
-         *  Represents GDMA_evt_out_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_done_ch2_st:1;
-        /** gdma_evt_out_eof_ch0_st : R/WTC/SS; bitpos: [24]; default: 0;
-         *  Represents GDMA_evt_out_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_eof_ch0_st:1;
-        /** gdma_evt_out_eof_ch1_st : R/WTC/SS; bitpos: [25]; default: 0;
-         *  Represents GDMA_evt_out_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_eof_ch1_st:1;
-        /** gdma_evt_out_eof_ch2_st : R/WTC/SS; bitpos: [26]; default: 0;
-         *  Represents GDMA_evt_out_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_evt_out_eof_ch2_st:1;
-        /** gdma_evt_out_total_eof_ch0_st : R/WTC/SS; bitpos: [27]; default: 0;
-         *  Represents GDMA_evt_out_total_eof_ch0 trigger status.\\0: Not triggered\\1:
-         *  Triggered
-         */
-        uint32_t gdma_evt_out_total_eof_ch0_st:1;
-        /** gdma_evt_out_total_eof_ch1_st : R/WTC/SS; bitpos: [28]; default: 0;
-         *  Represents GDMA_evt_out_total_eof_ch1 trigger status.\\0: Not triggered\\1:
-         *  Triggered
-         */
-        uint32_t gdma_evt_out_total_eof_ch1_st:1;
-        /** gdma_evt_out_total_eof_ch2_st : R/WTC/SS; bitpos: [29]; default: 0;
-         *  Represents GDMA_evt_out_total_eof_ch2 trigger status.\\0: Not triggered\\1:
-         *  Triggered
-         */
-        uint32_t gdma_evt_out_total_eof_ch2_st:1;
-        /** gdma_evt_out_fifo_empty_ch0_st : R/WTC/SS; bitpos: [30]; default: 0;
-         *  Represents GDMA_evt_out_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
-         *  Triggered
-         */
-        uint32_t gdma_evt_out_fifo_empty_ch0_st:1;
-        /** gdma_evt_out_fifo_empty_ch1_st : R/WTC/SS; bitpos: [31]; default: 0;
-         *  Represents GDMA_evt_out_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
-         *  Triggered
-         */
-        uint32_t gdma_evt_out_fifo_empty_ch1_st:1;
     };
     uint32_t val;
 } soc_etm_evt_st3_reg_t;
@@ -797,70 +792,75 @@ typedef union {
  */
 typedef union {
     struct {
-        /** gdma_evt_out_fifo_empty_ch2_st : R/WTC/SS; bitpos: [0]; default: 0;
+        /** gdma_evt_out_done_ch0_st : R/WTC/SS; bitpos: [0]; default: 0;
+         *  Represents GDMA_evt_out_done_ch0 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_done_ch0_st:1;
+        /** gdma_evt_out_done_ch1_st : R/WTC/SS; bitpos: [1]; default: 0;
+         *  Represents GDMA_evt_out_done_ch1 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_done_ch1_st:1;
+        /** gdma_evt_out_done_ch2_st : R/WTC/SS; bitpos: [2]; default: 0;
+         *  Represents GDMA_evt_out_done_ch2 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_done_ch2_st:1;
+        /** gdma_evt_out_eof_ch0_st : R/WTC/SS; bitpos: [3]; default: 0;
+         *  Represents GDMA_evt_out_eof_ch0 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_eof_ch0_st:1;
+        /** gdma_evt_out_eof_ch1_st : R/WTC/SS; bitpos: [4]; default: 0;
+         *  Represents GDMA_evt_out_eof_ch1 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_eof_ch1_st:1;
+        /** gdma_evt_out_eof_ch2_st : R/WTC/SS; bitpos: [5]; default: 0;
+         *  Represents GDMA_evt_out_eof_ch2 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_evt_out_eof_ch2_st:1;
+        /** gdma_evt_out_total_eof_ch0_st : R/WTC/SS; bitpos: [6]; default: 0;
+         *  Represents GDMA_evt_out_total_eof_ch0 trigger status.\\0: Not triggered\\1:
+         *  Triggered
+         */
+        uint32_t gdma_evt_out_total_eof_ch0_st:1;
+        /** gdma_evt_out_total_eof_ch1_st : R/WTC/SS; bitpos: [7]; default: 0;
+         *  Represents GDMA_evt_out_total_eof_ch1 trigger status.\\0: Not triggered\\1:
+         *  Triggered
+         */
+        uint32_t gdma_evt_out_total_eof_ch1_st:1;
+        /** gdma_evt_out_total_eof_ch2_st : R/WTC/SS; bitpos: [8]; default: 0;
+         *  Represents GDMA_evt_out_total_eof_ch2 trigger status.\\0: Not triggered\\1:
+         *  Triggered
+         */
+        uint32_t gdma_evt_out_total_eof_ch2_st:1;
+        /** gdma_evt_out_fifo_empty_ch0_st : R/WTC/SS; bitpos: [9]; default: 0;
+         *  Represents GDMA_evt_out_fifo_empty_ch0 trigger status.\\0: Not triggered\\1:
+         *  Triggered
+         */
+        uint32_t gdma_evt_out_fifo_empty_ch0_st:1;
+        /** gdma_evt_out_fifo_empty_ch1_st : R/WTC/SS; bitpos: [10]; default: 0;
+         *  Represents GDMA_evt_out_fifo_empty_ch1 trigger status.\\0: Not triggered\\1:
+         *  Triggered
+         */
+        uint32_t gdma_evt_out_fifo_empty_ch1_st:1;
+        /** gdma_evt_out_fifo_empty_ch2_st : R/WTC/SS; bitpos: [11]; default: 0;
          *  Represents GDMA_evt_out_fifo_empty_ch2 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_out_fifo_empty_ch2_st:1;
-        /** gdma_evt_out_fifo_full_ch0_st : R/WTC/SS; bitpos: [1]; default: 0;
+        /** gdma_evt_out_fifo_full_ch0_st : R/WTC/SS; bitpos: [12]; default: 0;
          *  Represents GDMA_evt_out_fifo_full_ch0 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_out_fifo_full_ch0_st:1;
-        /** gdma_evt_out_fifo_full_ch1_st : R/WTC/SS; bitpos: [2]; default: 0;
+        /** gdma_evt_out_fifo_full_ch1_st : R/WTC/SS; bitpos: [13]; default: 0;
          *  Represents GDMA_evt_out_fifo_full_ch1 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_out_fifo_full_ch1_st:1;
-        /** gdma_evt_out_fifo_full_ch2_st : R/WTC/SS; bitpos: [3]; default: 0;
+        /** gdma_evt_out_fifo_full_ch2_st : R/WTC/SS; bitpos: [14]; default: 0;
          *  Represents GDMA_evt_out_fifo_full_ch2 trigger status.\\0: Not triggered\\1:
          *  Triggered
          */
         uint32_t gdma_evt_out_fifo_full_ch2_st:1;
-        /** tmpsnsr_evt_over_limit_st : R/WTC/SS; bitpos: [4]; default: 0;
-         *  Represents TMPSNSR_evt_over_limit trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t tmpsnsr_evt_over_limit_st:1;
-        /** i2s0_evt_rx_done_st : R/WTC/SS; bitpos: [5]; default: 0;
-         *  Represents I2S0_evt_rx_done trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t i2s0_evt_rx_done_st:1;
-        /** i2s0_evt_tx_done_st : R/WTC/SS; bitpos: [6]; default: 0;
-         *  Represents I2S0_evt_tx_done trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t i2s0_evt_tx_done_st:1;
-        /** i2s0_evt_x_words_received_st : R/WTC/SS; bitpos: [7]; default: 0;
-         *  Represents I2S0_evt_x_words_received trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t i2s0_evt_x_words_received_st:1;
-        /** i2s0_evt_x_words_sent_st : R/WTC/SS; bitpos: [8]; default: 0;
-         *  Represents I2S0_evt_x_words_sent trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t i2s0_evt_x_words_sent_st:1;
-        /** ulp_evt_err_intr_st : R/WTC/SS; bitpos: [9]; default: 0;
-         *  Represents ULP_evt_err_intr trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t ulp_evt_err_intr_st:1;
-        /** ulp_evt_halt_st : R/WTC/SS; bitpos: [10]; default: 0;
-         *  Represents ULP_evt_halt trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t ulp_evt_halt_st:1;
-        /** ulp_evt_start_intr_st : R/WTC/SS; bitpos: [11]; default: 0;
-         *  Represents ULP_evt_start_intr trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t ulp_evt_start_intr_st:1;
-        /** rtc_evt_tick_st : R/WTC/SS; bitpos: [12]; default: 0;
-         *  Represents RTC_evt_tick trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t rtc_evt_tick_st:1;
-        /** rtc_evt_ovf_st : R/WTC/SS; bitpos: [13]; default: 0;
-         *  Represents RTC_evt_ovf trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t rtc_evt_ovf_st:1;
-        /** rtc_evt_cmp_st : R/WTC/SS; bitpos: [14]; default: 0;
-         *  Represents RTC_evt_cmp trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t rtc_evt_cmp_st:1;
         /** pmu_evt_sleep_weekup_st : R/WTC/SS; bitpos: [15]; default: 0;
          *  Represents PMU_evt_sleep_weekup trigger status.\\0: Not triggered\\1: Triggered
          */
@@ -1464,78 +1464,78 @@ typedef union {
          *  Represents REGDMA_task_start3 trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t regdma_task_start3_st:1;
-        /** gdma_task_in_start_ch0_st : R/WTC/SS; bitpos: [2]; default: 0;
-         *  Represents GDMA_task_in_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_in_start_ch0_st:1;
-        /** gdma_task_in_start_ch1_st : R/WTC/SS; bitpos: [3]; default: 0;
-         *  Represents GDMA_task_in_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_in_start_ch1_st:1;
-        /** gdma_task_in_start_ch2_st : R/WTC/SS; bitpos: [4]; default: 0;
-         *  Represents GDMA_task_in_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_in_start_ch2_st:1;
-        /** gdma_task_out_start_ch0_st : R/WTC/SS; bitpos: [5]; default: 0;
-         *  Represents GDMA_task_out_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_out_start_ch0_st:1;
-        /** gdma_task_out_start_ch1_st : R/WTC/SS; bitpos: [6]; default: 0;
-         *  Represents GDMA_task_out_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_out_start_ch1_st:1;
-        /** gdma_task_out_start_ch2_st : R/WTC/SS; bitpos: [7]; default: 0;
-         *  Represents GDMA_task_out_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
-         */
-        uint32_t gdma_task_out_start_ch2_st:1;
-        /** tmpsnsr_task_start_sample_st : R/WTC/SS; bitpos: [8]; default: 0;
+        /** tmpsnsr_task_start_sample_st : R/WTC/SS; bitpos: [2]; default: 0;
          *  Represents TMPSNSR_task_start_sample trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t tmpsnsr_task_start_sample_st:1;
-        /** tmpsnsr_task_stop_sample_st : R/WTC/SS; bitpos: [9]; default: 0;
+        /** tmpsnsr_task_stop_sample_st : R/WTC/SS; bitpos: [3]; default: 0;
          *  Represents TMPSNSR_task_stop_sample trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t tmpsnsr_task_stop_sample_st:1;
-        /** i2s0_task_start_rx_st : R/WTC/SS; bitpos: [10]; default: 0;
+        /** i2s0_task_start_rx_st : R/WTC/SS; bitpos: [4]; default: 0;
          *  Represents I2S0_task_start_rx trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t i2s0_task_start_rx_st:1;
-        /** i2s0_task_start_tx_st : R/WTC/SS; bitpos: [11]; default: 0;
+        /** i2s0_task_start_tx_st : R/WTC/SS; bitpos: [5]; default: 0;
          *  Represents I2S0_task_start_tx trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t i2s0_task_start_tx_st:1;
-        /** i2s0_task_stop_rx_st : R/WTC/SS; bitpos: [12]; default: 0;
+        /** i2s0_task_stop_rx_st : R/WTC/SS; bitpos: [6]; default: 0;
          *  Represents I2S0_task_stop_rx trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t i2s0_task_stop_rx_st:1;
-        /** i2s0_task_stop_tx_st : R/WTC/SS; bitpos: [13]; default: 0;
+        /** i2s0_task_stop_tx_st : R/WTC/SS; bitpos: [7]; default: 0;
          *  Represents I2S0_task_stop_tx trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t i2s0_task_stop_tx_st:1;
-        /** ulp_task_wakeup_cpu_st : R/WTC/SS; bitpos: [14]; default: 0;
+        /** ulp_task_wakeup_cpu_st : R/WTC/SS; bitpos: [8]; default: 0;
          *  Represents ULP_task_wakeup_cpu trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t ulp_task_wakeup_cpu_st:1;
-        /** ulp_task_int_cpu_st : R/WTC/SS; bitpos: [15]; default: 0;
+        /** ulp_task_int_cpu_st : R/WTC/SS; bitpos: [9]; default: 0;
          *  Represents ULP_task_int_cpu trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t ulp_task_int_cpu_st:1;
-        /** rtc_task_start_st : R/WTC/SS; bitpos: [16]; default: 0;
+        /** rtc_task_start_st : R/WTC/SS; bitpos: [10]; default: 0;
          *  Represents RTC_task_start trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t rtc_task_start_st:1;
-        /** rtc_task_stop_st : R/WTC/SS; bitpos: [17]; default: 0;
+        /** rtc_task_stop_st : R/WTC/SS; bitpos: [11]; default: 0;
          *  Represents RTC_task_stop trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t rtc_task_stop_st:1;
-        /** rtc_task_clr_st : R/WTC/SS; bitpos: [18]; default: 0;
+        /** rtc_task_clr_st : R/WTC/SS; bitpos: [12]; default: 0;
          *  Represents RTC_task_clr trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t rtc_task_clr_st:1;
-        /** rtc_task_triggerflw_st : R/WTC/SS; bitpos: [19]; default: 0;
+        /** rtc_task_triggerflw_st : R/WTC/SS; bitpos: [13]; default: 0;
          *  Represents RTC_task_triggerflw trigger status.\\0: Not triggered\\1: Triggered
          */
         uint32_t rtc_task_triggerflw_st:1;
+        /** gdma_task_in_start_ch0_st : R/WTC/SS; bitpos: [14]; default: 0;
+         *  Represents GDMA_task_in_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_in_start_ch0_st:1;
+        /** gdma_task_in_start_ch1_st : R/WTC/SS; bitpos: [15]; default: 0;
+         *  Represents GDMA_task_in_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_in_start_ch1_st:1;
+        /** gdma_task_in_start_ch2_st : R/WTC/SS; bitpos: [16]; default: 0;
+         *  Represents GDMA_task_in_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_in_start_ch2_st:1;
+        /** gdma_task_out_start_ch0_st : R/WTC/SS; bitpos: [17]; default: 0;
+         *  Represents GDMA_task_out_start_ch0 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_out_start_ch0_st:1;
+        /** gdma_task_out_start_ch1_st : R/WTC/SS; bitpos: [18]; default: 0;
+         *  Represents GDMA_task_out_start_ch1 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_out_start_ch1_st:1;
+        /** gdma_task_out_start_ch2_st : R/WTC/SS; bitpos: [19]; default: 0;
+         *  Represents GDMA_task_out_start_ch2 trigger status.\\0: Not triggered\\1: Triggered
+         */
+        uint32_t gdma_task_out_start_ch2_st:1;
         /** pmu_task_sleep_req_st : R/WTC/SS; bitpos: [20]; default: 0;
          *  Represents PMU_task_sleep_req trigger status.\\0: Not triggered\\1: Triggered
          */
@@ -1985,34 +1985,33 @@ typedef union {
     uint32_t val;
 } soc_etm_ch_ena_ad1_clr_reg_t;
 
-/** Type of evt_id register
- *  Channel event id register
+/** Type of chn_evt_id register
+ *  Channeln event id register
  */
 typedef union {
     struct {
-        /** evt_id : R/W; bitpos: [7:0]; default: 0;
-         *  Configures ch0_evt_id
+        /** chn_evt_id : R/W; bitpos: [7:0]; default: 0;
+         *  Configures chn_evt_id
          */
-        uint32_t evt_id:8;
+        uint32_t chn_evt_id:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} soc_etm_ch_evt_id_reg_t;
+} soc_etm_chn_evt_id_reg_t;
 
-/** Type of task_id register
- *  Channel task id register
+/** Type of chn_task_id register
+ *  Channeln task id register
  */
 typedef union {
     struct {
-        /** task_id : R/W; bitpos: [7:0]; default: 0;
-         *  Configures task_id
+        /** chn_task_id : R/W; bitpos: [7:0]; default: 0;
+         *  Configures chn_task_id
          */
-        uint32_t task_id:8;
+        uint32_t chn_task_id:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} soc_etm_ch_task_id_reg_t;
-
+} soc_etm_chn_task_id_reg_t;
 
 /** Type of evt_st0_clr register
  *  Events trigger status clear register
@@ -2139,16 +2138,16 @@ typedef union {
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gpio_evt_ch7_any_edge_st_clr:1;
-        /** gpio_evt_zero_det_pos_st_clr : WT; bitpos: [24]; default: 0;
-         *  Configures whether or not to clear GPIO_evt_zero_det_pos trigger status.\\0:
+        /** gpio_evt_zero_det_pos0_st_clr : WT; bitpos: [24]; default: 0;
+         *  Configures whether or not to clear GPIO_evt_zero_det_pos0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
-        uint32_t gpio_evt_zero_det_pos_st_clr:1;
-        /** gpio_evt_zero_det_neg_st_clr : WT; bitpos: [25]; default: 0;
-         *  Configures whether or not to clear GPIO_evt_zero_det_neg trigger status.\\0:
+        uint32_t gpio_evt_zero_det_pos0_st_clr:1;
+        /** gpio_evt_zero_det_neg0_st_clr : WT; bitpos: [25]; default: 0;
+         *  Configures whether or not to clear GPIO_evt_zero_det_neg0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
-        uint32_t gpio_evt_zero_det_neg_st_clr:1;
+        uint32_t gpio_evt_zero_det_neg0_st_clr:1;
         /** ledc_evt_duty_chng_end_ch0_st_clr : WT; bitpos: [26]; default: 0;
          *  Configures whether or not to clear LEDC_evt_duty_chng_end_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
@@ -2571,121 +2570,121 @@ typedef union {
          *  effect\\1: Clear
          */
         uint32_t regdma_evt_err3_st_clr:1;
-        /** gdma_evt_in_done_ch0_st_clr : WT; bitpos: [9]; default: 0;
+        /** tmpsnsr_evt_over_limit_st_clr : WT; bitpos: [9]; default: 0;
+         *  Configures whether or not to clear TMPSNSR_evt_over_limit trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t tmpsnsr_evt_over_limit_st_clr:1;
+        /** i2s0_evt_rx_done_st_clr : WT; bitpos: [10]; default: 0;
+         *  Configures whether or not to clear I2S0_evt_rx_done trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t i2s0_evt_rx_done_st_clr:1;
+        /** i2s0_evt_tx_done_st_clr : WT; bitpos: [11]; default: 0;
+         *  Configures whether or not to clear I2S0_evt_tx_done trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t i2s0_evt_tx_done_st_clr:1;
+        /** i2s0_evt_x_words_received_st_clr : WT; bitpos: [12]; default: 0;
+         *  Configures whether or not to clear I2S0_evt_x_words_received trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t i2s0_evt_x_words_received_st_clr:1;
+        /** i2s0_evt_x_words_sent_st_clr : WT; bitpos: [13]; default: 0;
+         *  Configures whether or not to clear I2S0_evt_x_words_sent trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t i2s0_evt_x_words_sent_st_clr:1;
+        /** ulp_evt_err_intr_st_clr : WT; bitpos: [14]; default: 0;
+         *  Configures whether or not to clear ULP_evt_err_intr trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t ulp_evt_err_intr_st_clr:1;
+        /** ulp_evt_halt_st_clr : WT; bitpos: [15]; default: 0;
+         *  Configures whether or not to clear ULP_evt_halt trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t ulp_evt_halt_st_clr:1;
+        /** ulp_evt_start_intr_st_clr : WT; bitpos: [16]; default: 0;
+         *  Configures whether or not to clear ULP_evt_start_intr trigger status.\\0: Invalid,
+         *  No effect\\1: Clear
+         */
+        uint32_t ulp_evt_start_intr_st_clr:1;
+        /** rtc_evt_tick_st_clr : WT; bitpos: [17]; default: 0;
+         *  Configures whether or not to clear RTC_evt_tick trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t rtc_evt_tick_st_clr:1;
+        /** rtc_evt_ovf_st_clr : WT; bitpos: [18]; default: 0;
+         *  Configures whether or not to clear RTC_evt_ovf trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t rtc_evt_ovf_st_clr:1;
+        /** rtc_evt_cmp_st_clr : WT; bitpos: [19]; default: 0;
+         *  Configures whether or not to clear RTC_evt_cmp trigger status.\\0: Invalid, No
+         *  effect\\1: Clear
+         */
+        uint32_t rtc_evt_cmp_st_clr:1;
+        /** gdma_evt_in_done_ch0_st_clr : WT; bitpos: [20]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_done_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_done_ch0_st_clr:1;
-        /** gdma_evt_in_done_ch1_st_clr : WT; bitpos: [10]; default: 0;
+        /** gdma_evt_in_done_ch1_st_clr : WT; bitpos: [21]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_done_ch1 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_done_ch1_st_clr:1;
-        /** gdma_evt_in_done_ch2_st_clr : WT; bitpos: [11]; default: 0;
+        /** gdma_evt_in_done_ch2_st_clr : WT; bitpos: [22]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_done_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_done_ch2_st_clr:1;
-        /** gdma_evt_in_suc_eof_ch0_st_clr : WT; bitpos: [12]; default: 0;
+        /** gdma_evt_in_suc_eof_ch0_st_clr : WT; bitpos: [23]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_suc_eof_ch0_st_clr:1;
-        /** gdma_evt_in_suc_eof_ch1_st_clr : WT; bitpos: [13]; default: 0;
+        /** gdma_evt_in_suc_eof_ch1_st_clr : WT; bitpos: [24]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch1 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_suc_eof_ch1_st_clr:1;
-        /** gdma_evt_in_suc_eof_ch2_st_clr : WT; bitpos: [14]; default: 0;
+        /** gdma_evt_in_suc_eof_ch2_st_clr : WT; bitpos: [25]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_suc_eof_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_suc_eof_ch2_st_clr:1;
-        /** gdma_evt_in_fifo_empty_ch0_st_clr : WT; bitpos: [15]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch0_st_clr : WT; bitpos: [26]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_empty_ch0_st_clr:1;
-        /** gdma_evt_in_fifo_empty_ch1_st_clr : WT; bitpos: [16]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch1_st_clr : WT; bitpos: [27]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch1 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_empty_ch1_st_clr:1;
-        /** gdma_evt_in_fifo_empty_ch2_st_clr : WT; bitpos: [17]; default: 0;
+        /** gdma_evt_in_fifo_empty_ch2_st_clr : WT; bitpos: [28]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_empty_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_empty_ch2_st_clr:1;
-        /** gdma_evt_in_fifo_full_ch0_st_clr : WT; bitpos: [18]; default: 0;
+        /** gdma_evt_in_fifo_full_ch0_st_clr : WT; bitpos: [29]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_full_ch0_st_clr:1;
-        /** gdma_evt_in_fifo_full_ch1_st_clr : WT; bitpos: [19]; default: 0;
+        /** gdma_evt_in_fifo_full_ch1_st_clr : WT; bitpos: [30]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch1 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_full_ch1_st_clr:1;
-        /** gdma_evt_in_fifo_full_ch2_st_clr : WT; bitpos: [20]; default: 0;
+        /** gdma_evt_in_fifo_full_ch2_st_clr : WT; bitpos: [31]; default: 0;
          *  Configures whether or not to clear GDMA_evt_in_fifo_full_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_in_fifo_full_ch2_st_clr:1;
-        /** gdma_evt_out_done_ch0_st_clr : WT; bitpos: [21]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_done_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_done_ch0_st_clr:1;
-        /** gdma_evt_out_done_ch1_st_clr : WT; bitpos: [22]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_done_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_done_ch1_st_clr:1;
-        /** gdma_evt_out_done_ch2_st_clr : WT; bitpos: [23]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_done_ch2 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_done_ch2_st_clr:1;
-        /** gdma_evt_out_eof_ch0_st_clr : WT; bitpos: [24]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_eof_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_eof_ch0_st_clr:1;
-        /** gdma_evt_out_eof_ch1_st_clr : WT; bitpos: [25]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_eof_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_eof_ch1_st_clr:1;
-        /** gdma_evt_out_eof_ch2_st_clr : WT; bitpos: [26]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_eof_ch2 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_eof_ch2_st_clr:1;
-        /** gdma_evt_out_total_eof_ch0_st_clr : WT; bitpos: [27]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_total_eof_ch0_st_clr:1;
-        /** gdma_evt_out_total_eof_ch1_st_clr : WT; bitpos: [28]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_total_eof_ch1_st_clr:1;
-        /** gdma_evt_out_total_eof_ch2_st_clr : WT; bitpos: [29]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch2 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_total_eof_ch2_st_clr:1;
-        /** gdma_evt_out_fifo_empty_ch0_st_clr : WT; bitpos: [30]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_fifo_empty_ch0_st_clr:1;
-        /** gdma_evt_out_fifo_empty_ch1_st_clr : WT; bitpos: [31]; default: 0;
-         *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_evt_out_fifo_empty_ch1_st_clr:1;
     };
     uint32_t val;
 } soc_etm_evt_st3_clr_reg_t;
@@ -2695,81 +2694,81 @@ typedef union {
  */
 typedef union {
     struct {
-        /** gdma_evt_out_fifo_empty_ch2_st_clr : WT; bitpos: [0]; default: 0;
+        /** gdma_evt_out_done_ch0_st_clr : WT; bitpos: [0]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_done_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_done_ch0_st_clr:1;
+        /** gdma_evt_out_done_ch1_st_clr : WT; bitpos: [1]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_done_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_done_ch1_st_clr:1;
+        /** gdma_evt_out_done_ch2_st_clr : WT; bitpos: [2]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_done_ch2 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_done_ch2_st_clr:1;
+        /** gdma_evt_out_eof_ch0_st_clr : WT; bitpos: [3]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_eof_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_eof_ch0_st_clr:1;
+        /** gdma_evt_out_eof_ch1_st_clr : WT; bitpos: [4]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_eof_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_eof_ch1_st_clr:1;
+        /** gdma_evt_out_eof_ch2_st_clr : WT; bitpos: [5]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_eof_ch2 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_eof_ch2_st_clr:1;
+        /** gdma_evt_out_total_eof_ch0_st_clr : WT; bitpos: [6]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_total_eof_ch0_st_clr:1;
+        /** gdma_evt_out_total_eof_ch1_st_clr : WT; bitpos: [7]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_total_eof_ch1_st_clr:1;
+        /** gdma_evt_out_total_eof_ch2_st_clr : WT; bitpos: [8]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_total_eof_ch2 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_total_eof_ch2_st_clr:1;
+        /** gdma_evt_out_fifo_empty_ch0_st_clr : WT; bitpos: [9]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_fifo_empty_ch0_st_clr:1;
+        /** gdma_evt_out_fifo_empty_ch1_st_clr : WT; bitpos: [10]; default: 0;
+         *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_evt_out_fifo_empty_ch1_st_clr:1;
+        /** gdma_evt_out_fifo_empty_ch2_st_clr : WT; bitpos: [11]; default: 0;
          *  Configures whether or not to clear GDMA_evt_out_fifo_empty_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_out_fifo_empty_ch2_st_clr:1;
-        /** gdma_evt_out_fifo_full_ch0_st_clr : WT; bitpos: [1]; default: 0;
+        /** gdma_evt_out_fifo_full_ch0_st_clr : WT; bitpos: [12]; default: 0;
          *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch0 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_out_fifo_full_ch0_st_clr:1;
-        /** gdma_evt_out_fifo_full_ch1_st_clr : WT; bitpos: [2]; default: 0;
+        /** gdma_evt_out_fifo_full_ch1_st_clr : WT; bitpos: [13]; default: 0;
          *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch1 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_out_fifo_full_ch1_st_clr:1;
-        /** gdma_evt_out_fifo_full_ch2_st_clr : WT; bitpos: [3]; default: 0;
+        /** gdma_evt_out_fifo_full_ch2_st_clr : WT; bitpos: [14]; default: 0;
          *  Configures whether or not to clear GDMA_evt_out_fifo_full_ch2 trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t gdma_evt_out_fifo_full_ch2_st_clr:1;
-        /** tmpsnsr_evt_over_limit_st_clr : WT; bitpos: [4]; default: 0;
-         *  Configures whether or not to clear TMPSNSR_evt_over_limit trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t tmpsnsr_evt_over_limit_st_clr:1;
-        /** i2s0_evt_rx_done_st_clr : WT; bitpos: [5]; default: 0;
-         *  Configures whether or not to clear I2S0_evt_rx_done trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t i2s0_evt_rx_done_st_clr:1;
-        /** i2s0_evt_tx_done_st_clr : WT; bitpos: [6]; default: 0;
-         *  Configures whether or not to clear I2S0_evt_tx_done trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t i2s0_evt_tx_done_st_clr:1;
-        /** i2s0_evt_x_words_received_st_clr : WT; bitpos: [7]; default: 0;
-         *  Configures whether or not to clear I2S0_evt_x_words_received trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t i2s0_evt_x_words_received_st_clr:1;
-        /** i2s0_evt_x_words_sent_st_clr : WT; bitpos: [8]; default: 0;
-         *  Configures whether or not to clear I2S0_evt_x_words_sent trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t i2s0_evt_x_words_sent_st_clr:1;
-        /** ulp_evt_err_intr_st_clr : WT; bitpos: [9]; default: 0;
-         *  Configures whether or not to clear ULP_evt_err_intr trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t ulp_evt_err_intr_st_clr:1;
-        /** ulp_evt_halt_st_clr : WT; bitpos: [10]; default: 0;
-         *  Configures whether or not to clear ULP_evt_halt trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t ulp_evt_halt_st_clr:1;
-        /** ulp_evt_start_intr_st_clr : WT; bitpos: [11]; default: 0;
-         *  Configures whether or not to clear ULP_evt_start_intr trigger status.\\0: Invalid,
-         *  No effect\\1: Clear
-         */
-        uint32_t ulp_evt_start_intr_st_clr:1;
-        /** rtc_evt_tick_st_clr : WT; bitpos: [12]; default: 0;
-         *  Configures whether or not to clear RTC_evt_tick trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t rtc_evt_tick_st_clr:1;
-        /** rtc_evt_ovf_st_clr : WT; bitpos: [13]; default: 0;
-         *  Configures whether or not to clear RTC_evt_ovf trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t rtc_evt_ovf_st_clr:1;
-        /** rtc_evt_cmp_st_clr : WT; bitpos: [14]; default: 0;
-         *  Configures whether or not to clear RTC_evt_cmp trigger status.\\0: Invalid, No
-         *  effect\\1: Clear
-         */
-        uint32_t rtc_evt_cmp_st_clr:1;
         /** pmu_evt_sleep_weekup_st_clr : WT; bitpos: [15]; default: 0;
          *  Configures whether or not to clear PMU_evt_sleep_weekup trigger status.\\0:
          *  Invalid, No effect\\1: Clear
@@ -3471,96 +3470,96 @@ typedef union {
          *  No effect\\1: Clear
          */
         uint32_t regdma_task_start3_st_clr:1;
-        /** gdma_task_in_start_ch0_st_clr : WT; bitpos: [2]; default: 0;
-         *  Configures whether or not to clear GDMA_task_in_start_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_in_start_ch0_st_clr:1;
-        /** gdma_task_in_start_ch1_st_clr : WT; bitpos: [3]; default: 0;
-         *  Configures whether or not to clear GDMA_task_in_start_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_in_start_ch1_st_clr:1;
-        /** gdma_task_in_start_ch2_st_clr : WT; bitpos: [4]; default: 0;
-         *  Configures whether or not to clear GDMA_task_in_start_ch2 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_in_start_ch2_st_clr:1;
-        /** gdma_task_out_start_ch0_st_clr : WT; bitpos: [5]; default: 0;
-         *  Configures whether or not to clear GDMA_task_out_start_ch0 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_out_start_ch0_st_clr:1;
-        /** gdma_task_out_start_ch1_st_clr : WT; bitpos: [6]; default: 0;
-         *  Configures whether or not to clear GDMA_task_out_start_ch1 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_out_start_ch1_st_clr:1;
-        /** gdma_task_out_start_ch2_st_clr : WT; bitpos: [7]; default: 0;
-         *  Configures whether or not to clear GDMA_task_out_start_ch2 trigger status.\\0:
-         *  Invalid, No effect\\1: Clear
-         */
-        uint32_t gdma_task_out_start_ch2_st_clr:1;
-        /** tmpsnsr_task_start_sample_st_clr : WT; bitpos: [8]; default: 0;
+        /** tmpsnsr_task_start_sample_st_clr : WT; bitpos: [2]; default: 0;
          *  Configures whether or not to clear TMPSNSR_task_start_sample trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t tmpsnsr_task_start_sample_st_clr:1;
-        /** tmpsnsr_task_stop_sample_st_clr : WT; bitpos: [9]; default: 0;
+        /** tmpsnsr_task_stop_sample_st_clr : WT; bitpos: [3]; default: 0;
          *  Configures whether or not to clear TMPSNSR_task_stop_sample trigger status.\\0:
          *  Invalid, No effect\\1: Clear
          */
         uint32_t tmpsnsr_task_stop_sample_st_clr:1;
-        /** i2s0_task_start_rx_st_clr : WT; bitpos: [10]; default: 0;
+        /** i2s0_task_start_rx_st_clr : WT; bitpos: [4]; default: 0;
          *  Configures whether or not to clear I2S0_task_start_rx trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t i2s0_task_start_rx_st_clr:1;
-        /** i2s0_task_start_tx_st_clr : WT; bitpos: [11]; default: 0;
+        /** i2s0_task_start_tx_st_clr : WT; bitpos: [5]; default: 0;
          *  Configures whether or not to clear I2S0_task_start_tx trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t i2s0_task_start_tx_st_clr:1;
-        /** i2s0_task_stop_rx_st_clr : WT; bitpos: [12]; default: 0;
+        /** i2s0_task_stop_rx_st_clr : WT; bitpos: [6]; default: 0;
          *  Configures whether or not to clear I2S0_task_stop_rx trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t i2s0_task_stop_rx_st_clr:1;
-        /** i2s0_task_stop_tx_st_clr : WT; bitpos: [13]; default: 0;
+        /** i2s0_task_stop_tx_st_clr : WT; bitpos: [7]; default: 0;
          *  Configures whether or not to clear I2S0_task_stop_tx trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t i2s0_task_stop_tx_st_clr:1;
-        /** ulp_task_wakeup_cpu_st_clr : WT; bitpos: [14]; default: 0;
+        /** ulp_task_wakeup_cpu_st_clr : WT; bitpos: [8]; default: 0;
          *  Configures whether or not to clear ULP_task_wakeup_cpu trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t ulp_task_wakeup_cpu_st_clr:1;
-        /** ulp_task_int_cpu_st_clr : WT; bitpos: [15]; default: 0;
+        /** ulp_task_int_cpu_st_clr : WT; bitpos: [9]; default: 0;
          *  Configures whether or not to clear ULP_task_int_cpu trigger status.\\0: Invalid, No
          *  effect\\1: Clear
          */
         uint32_t ulp_task_int_cpu_st_clr:1;
-        /** rtc_task_start_st_clr : WT; bitpos: [16]; default: 0;
+        /** rtc_task_start_st_clr : WT; bitpos: [10]; default: 0;
          *  Configures whether or not to clear RTC_task_start trigger status.\\0: Invalid, No
          *  effect\\1: Clear
          */
         uint32_t rtc_task_start_st_clr:1;
-        /** rtc_task_stop_st_clr : WT; bitpos: [17]; default: 0;
+        /** rtc_task_stop_st_clr : WT; bitpos: [11]; default: 0;
          *  Configures whether or not to clear RTC_task_stop trigger status.\\0: Invalid, No
          *  effect\\1: Clear
          */
         uint32_t rtc_task_stop_st_clr:1;
-        /** rtc_task_clr_st_clr : WT; bitpos: [18]; default: 0;
+        /** rtc_task_clr_st_clr : WT; bitpos: [12]; default: 0;
          *  Configures whether or not to clear RTC_task_clr trigger status.\\0: Invalid, No
          *  effect\\1: Clear
          */
         uint32_t rtc_task_clr_st_clr:1;
-        /** rtc_task_triggerflw_st_clr : WT; bitpos: [19]; default: 0;
+        /** rtc_task_triggerflw_st_clr : WT; bitpos: [13]; default: 0;
          *  Configures whether or not to clear RTC_task_triggerflw trigger status.\\0: Invalid,
          *  No effect\\1: Clear
          */
         uint32_t rtc_task_triggerflw_st_clr:1;
+        /** gdma_task_in_start_ch0_st_clr : WT; bitpos: [14]; default: 0;
+         *  Configures whether or not to clear GDMA_task_in_start_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_in_start_ch0_st_clr:1;
+        /** gdma_task_in_start_ch1_st_clr : WT; bitpos: [15]; default: 0;
+         *  Configures whether or not to clear GDMA_task_in_start_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_in_start_ch1_st_clr:1;
+        /** gdma_task_in_start_ch2_st_clr : WT; bitpos: [16]; default: 0;
+         *  Configures whether or not to clear GDMA_task_in_start_ch2 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_in_start_ch2_st_clr:1;
+        /** gdma_task_out_start_ch0_st_clr : WT; bitpos: [17]; default: 0;
+         *  Configures whether or not to clear GDMA_task_out_start_ch0 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_out_start_ch0_st_clr:1;
+        /** gdma_task_out_start_ch1_st_clr : WT; bitpos: [18]; default: 0;
+         *  Configures whether or not to clear GDMA_task_out_start_ch1 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_out_start_ch1_st_clr:1;
+        /** gdma_task_out_start_ch2_st_clr : WT; bitpos: [19]; default: 0;
+         *  Configures whether or not to clear GDMA_task_out_start_ch2 trigger status.\\0:
+         *  Invalid, No effect\\1: Clear
+         */
+        uint32_t gdma_task_out_start_ch2_st_clr:1;
         /** pmu_task_sleep_req_st_clr : WT; bitpos: [20]; default: 0;
          *  Configures whether or not to clear PMU_task_sleep_req trigger status.\\0: Invalid,
          *  No effect\\1: Clear
@@ -3593,7 +3592,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36716929;
+        /** date : R/W; bitpos: [27:0]; default: 36770433;
          *  Configures the version.
          */
         uint32_t date:28;
@@ -3611,8 +3610,8 @@ typedef struct soc_etm_dev_t {
     volatile soc_etm_ch_ena_ad1_set_reg_t ch_ena_ad1_set;
     volatile soc_etm_ch_ena_ad1_clr_reg_t ch_ena_ad1_clr;
     volatile struct {
-        soc_etm_chn_evt_id_reg_t evt_id;
-        soc_etm_chn_task_id_reg_t task_id;
+        soc_etm_chn_evt_id_reg_t eid;
+        soc_etm_chn_task_id_reg_t tid;
     } channel[50];
     volatile soc_etm_evt_st0_reg_t evt_st0;
     volatile soc_etm_evt_st0_clr_reg_t evt_st0_clr;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +16,14 @@ const static char *TAG = "stack_chk";
 
 void *__stack_chk_guard = NULL;
 
-static void __attribute__ ((constructor))
-__esp_stack_guard_setup (void)
+static void __attribute__((constructor))
+__esp_stack_guard_setup(void)
 {
     ESP_LOGD(TAG, "Intialize random stack guard");
     __stack_chk_guard = (void *)esp_random();
 }
 
-IRAM_ATTR void __stack_chk_fail (void)
+IRAM_ATTR void __stack_chk_fail(void)
 {
     esp_system_abort(DRAM_STR("Stack smashing protect failure!"));
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +85,7 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_EXT_DISC:
         rc = ble_hs_adv_parse_fields(&fields, event->ext_disc.data, event->ext_disc.length_data);
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         if ((rc == 0) && fields.name && (fields.name_len >= strlen(BLE_PEER_NAME)) &&
             !strncmp((const char *)fields.name, BLE_PEER_NAME, strlen(BLE_PEER_NAME))) {
             ble_cent_connect(&event->ext_disc);
@@ -93,7 +93,7 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
 
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         if (event->connect.status == 0) {
             ESP_LOGI(TAG, "Connection established. Handle:%d, Total:%d", event->connect.conn_handle,
                      ++s_ble_multi_conn_num);
@@ -174,7 +174,7 @@ static int
 ble_cent_server_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* The connectable adv has been established. We will act as the peripheral. */
         if (event->connect.status == 0) {
             ESP_LOGI(TAG, "Peripheral connected to central. Handle:%d", event->connect.conn_handle);
@@ -319,12 +319,14 @@ ble_cent_connect(void *disc)
         return;
     }
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* We won't connect to the same device. Change our static random address to simulate
      * multi-connection with only one central and one peripheral.

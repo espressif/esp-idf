@@ -6,5 +6,10 @@
 .. toctree::
     :maxdepth: 1
 
+    bluetooth-classic
+    gcc
     peripherals
+    protocols
+    security
+    storage
     system

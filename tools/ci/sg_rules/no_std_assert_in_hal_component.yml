@@ -1,0 +1,35 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-std-assert-call-in-hal-component
+message: Don't use standard assert function in the hal component
+severity: error # error, warning, info, hint
+note: The standard assert function depends on newlib(G1) component, but hal is a G0 component
+language: C
+files:
+  - "./components/hal/**/*"
+ignores:
+  - "./components/hal/test_apps/**/*"
+rule:
+  kind: expression_statement
+  pattern: assert($$$ARGS);
+fix: HAL_ASSERT($$$ARGS);
+
+---
+
+id: no-std-assert-include-in-hal-component
+message: Don't include assert.h in the hal component
+severity: error # error, warning, info, hint
+note: Please use hal/assert.h to replace assert.h
+language: C
+files:
+  - "./components/hal/**/*"
+ignores:
+  - "./components/hal/test_apps/**/*"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    pattern: $N
+constraints:
+  N:
+   regex: '^["<]assert' # match "assert.h" or <assert.h>
+fix: ''

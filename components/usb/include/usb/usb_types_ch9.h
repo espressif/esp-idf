@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,10 +96,25 @@ typedef union {
         uint16_t wValue;                    /**< Word-sized field that varies according to request */
         uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
         uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
-    } __attribute__((packed));
+    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
     uint8_t val[USB_SETUP_PACKET_SIZE];     /**< Descriptor value */
 } usb_setup_packet_t;
 ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb_setup_packet_t incorrect");
+
+/**
+ * @brief Structure representing a USB device status
+ *
+ * See Figures 9-4 Information Returned by a GetStatus() Request to a Device of USB2.0 specification for more details
+ */
+typedef union {
+    struct {
+        uint16_t self_powered: 1;           /**< 1 - Device is currently self-powered, 0 - bus powered */
+        uint16_t remote_wakeup: 1;          /**< 1 - the ability of the device to signal remote wakeup is enabled, 0 - the ability of the device to signal remote wakeup is disabled. */
+        uint16_t reserved: 14;              /**< reserved */
+    } USB_DESC_ATTR;                        /**< Packed */
+    uint16_t val;                           /**< Device status value */
+} usb_device_status_t;
+ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_device_status_t incorrect");
 
 /**
  * @brief Bit masks belonging to the bmRequestType field of a setup packet
@@ -143,6 +158,19 @@ ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of 
 #define USB_W_VALUE_DT_DEVICE_QUALIFIER     0x06
 #define USB_W_VALUE_DT_OTHER_SPEED_CONFIG   0x07
 #define USB_W_VALUE_DT_INTERFACE_POWER      0x08
+
+/**
+ * @brief Initializer for a GET_STATUS request
+ *
+ * Sets the address of a connected device
+ */
+#define USB_SETUP_PACKET_INIT_GET_STATUS(setup_pkt_ptr) ({  \
+    (setup_pkt_ptr)->bmRequestType = USB_BM_REQUEST_TYPE_DIR_IN | USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIP_DEVICE;   \
+    (setup_pkt_ptr)->bRequest = USB_B_REQUEST_GET_STATUS;  \
+    (setup_pkt_ptr)->wValue = 0;   \
+    (setup_pkt_ptr)->wIndex = 0;    \
+    (setup_pkt_ptr)->wLength = 2;   \
+})
 
 /**
  * @brief Initializer for a SET_ADDRESS request
@@ -436,6 +464,12 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 #define USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK              0x80
 
 /**
+ * @brief Bit masks belonging to the wMaxPacketSize field of endpoint descriptor
+ */
+#define USB_W_MAX_PACKET_SIZE_MPS_MASK                  0x07ff
+#define USB_W_MAX_PACKET_SIZE_MULT_MASK                 0x1800
+
+/**
  * @brief Bit masks belonging to the bmAttributes field of an endpoint descriptor
  */
 #define USB_BM_ATTRIBUTES_XFERTYPE_MASK                 0x03
@@ -459,7 +493,10 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 #define USB_EP_DESC_GET_XFERTYPE(desc_ptr) ((usb_transfer_type_t) ((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_XFERTYPE_MASK))
 #define USB_EP_DESC_GET_EP_NUM(desc_ptr) ((desc_ptr)->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK)
 #define USB_EP_DESC_GET_EP_DIR(desc_ptr) (((desc_ptr)->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK) ? 1 : 0)
-#define USB_EP_DESC_GET_MPS(desc_ptr) ((desc_ptr)->wMaxPacketSize & 0x7FF)
+#define USB_EP_DESC_GET_MPS(desc_ptr) ((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MPS_MASK)
+#define USB_EP_DESC_GET_MULT(desc_ptr) (((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MULT_MASK) >> 11)
+#define USB_EP_DESC_GET_SYNCTYPE(desc_ptr) (((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_SYNCTYPE_MASK) >> 2)
+#define USB_EP_DESC_GET_USAGETYPE(desc_ptr) (((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_USAGETYPE_MASK) >> 4)
 
 // ------------------ String Descriptor --------------------
 

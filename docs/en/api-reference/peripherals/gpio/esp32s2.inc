@@ -239,7 +239,7 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO0, GPIO45 and GPIO46 are strapping pins. For more infomation, please refer to `ESP32-S2 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_
+    - Strapping pin: GPIO0, GPIO45 and GPIO46 are strapping pins. For more information, please refer to `ESP32-S2 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_
     - SPI0/1: GPIO26-32 are usually used for SPI flash and PSRAM and not recommended for other uses.
     - JTAG: GPIO39-42 are usually used for inline debug.
     - GPI: GPIO46 is fixed to pull-down and is input only.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,23 @@
 #include <stdint.h>
 #include "hal/ecdsa_types.h"
 #include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if CONFIG_HAL_ECDSA_GEN_SIG_CM
+
+#define ECDSA_SIGN_MAX_DUMMY_OP_COUNT 0x7
+
+/* This value defines the maximum dummy operation count for the ECDSA signature countermeasure.
+   Higher the number, better the countermeasure's effectiveness against attacks.
+   At the same time higher number leads to slower performance.
+   After the countermeasure is enabled, hardware ECDSA signature operation
+   shall take time approximately equal to original time multiplied by this number.
+   If you observe that the reduced performance is affecting your use-case then you may try reducing this time to the minimum. */
+#endif /* CONFIG_HAL_ECDSA_GEN_SIG_CM */
 /*
  * ECDSA peripheral config structure
  */
@@ -30,6 +42,11 @@ typedef struct {
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
     int efuse_key_blk;              /* Efuse block to use as ECDSA key (The purpose of the efuse block must be ECDSA_KEY) */
     bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
+    ecdsa_sign_type_t sign_type;    /* Type of signature generation */
+    uint16_t loop_number;           /* Determines the loop number value in deterministic derivation algorithm to derive K.
+                                     * When using mbedtls APIs, this member of the config does not need any explicit
+                                     * initialisation as it is used and handled internally by the port layer (ECDSA_SIGN_ALT).
+                                     */
 } ecdsa_hal_config_t;
 
 /**
@@ -72,6 +89,25 @@ int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, co
  */
 void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *pub_y, uint16_t len);
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+
+/**
+ * @brief Check if the ECDSA operation is successful
+ *
+ * @return - true, if the ECDSA operation is successful
+ *         - false, if the ECDSA operation fails
+ */
+bool ecdsa_hal_get_operation_result(void);
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+/**
+ * @brief Check if the K value derived by the peripheral during deterministic signature generation is valid
+ *
+ * @return true, if the derived K value is valid
+ * @return false, if the derived K value is invalid
+ */
+bool ecdsa_hal_det_signature_k_check(void);
+
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
 #ifdef __cplusplus
 }

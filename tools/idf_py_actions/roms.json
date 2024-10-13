@@ -57,5 +57,12 @@
       "build_date_str_addr": "0x4001c7dc",
       "build_date_str": "Nov  1 2022"
     }
+  ],
+  "esp32p4": [
+    {
+      "rev": 0,
+      "build_date_str_addr": "0x4fc1d1ac",
+      "build_date_str": "Aug 11 2023"
+    }
   ]
 }

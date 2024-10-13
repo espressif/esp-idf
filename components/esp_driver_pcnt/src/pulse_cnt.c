@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,8 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
+#include "hal/gpio_ll.h" // for io_loop_back flag only
 #include "driver/pulse_cnt.h"
 #include "esp_memory_utils.h"
 
@@ -93,8 +95,10 @@ struct pcnt_unit_t {
     int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
-    int clear_signal_gpio_num;                              // which gpio clear signal input
+    int step_limit;                                       // step limit value
+    int clear_signal_gpio_num;                            // which gpio clear signal input
     int accum_value;                                      // accumulated count value
+    int step_interval;                             // PCNT step notify interval value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
@@ -107,6 +111,10 @@ struct pcnt_unit_t {
     void *user_data;          // user data registered by user, which would be passed to the right callback function
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+        uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction*/
+        uint32_t en_step_notify_down: 1; /*!< Enable step notify in the negative direction*/
+#endif
     } flags;
 };
 
@@ -194,7 +202,15 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & PCNT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
-
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    ESP_GOTO_ON_FALSE(!(config->flags.en_step_notify_up && config->flags.en_step_notify_down), ESP_ERR_NOT_SUPPORTED, err, TAG, CONFIG_IDF_TARGET " can't trigger step notify in both direction");
+    if (config->flags.en_step_notify_up) {
+        ESP_LOGW(TAG, "can't overflow at low limit: %d due to hardware limitation", config->low_limit);
+    }
+    if (config->flags.en_step_notify_down) {
+        ESP_LOGW(TAG, "can't overflow at high limit: %d due to hardware limitation", config->high_limit);
+    }
+#endif
     unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
     // register unit to the group (because one group can have several units)
@@ -243,6 +259,19 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     unit->accum_value = 0;
     unit->clear_signal_gpio_num = -1;
     unit->flags.accum_count = config->flags.accum_count;
+
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+    unit->flags.en_step_notify_down = config->flags.en_step_notify_down;
+    unit->flags.en_step_notify_up = config->flags.en_step_notify_up;
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    if (config->flags.en_step_notify_up) {
+        unit->step_limit = config->high_limit;
+    } else if (config->flags.en_step_notify_down) {
+        unit->step_limit = config->low_limit;
+    }
+    pcnt_ll_set_step_limit_value(group->hal.dev, unit_id, unit->step_limit);
+#endif
+#endif
 
     // clear/pause register is shared by all units, so using group's spinlock
     portENTER_CRITICAL(&group->spinlock);
@@ -302,27 +331,33 @@ esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_s
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
+    uint32_t clear_signal_idx = pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig;
 
     if (config) {
-        gpio_config_t gpio_conf = {
-            .intr_type = GPIO_INTR_DISABLE,
-            .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-            .pull_down_en = true,
-            .pull_up_en = false,
-        };
-        if (config->flags.invert_clear_signal) {
-            gpio_conf.pull_down_en = false;
-            gpio_conf.pull_up_en = true;
+        int io_num = config->clear_signal_gpio_num;
+        ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(io_num), ESP_ERR_INVALID_ARG, TAG, "gpio num is invalid");
+
+        if (!config->flags.invert_clear_signal) {
+            gpio_pulldown_en(io_num);
+            gpio_pullup_dis(io_num);
+        } else {
+            gpio_pullup_en(io_num);
+            gpio_pulldown_dis(io_num);
         }
-        gpio_conf.pin_bit_mask = 1ULL << config->clear_signal_gpio_num;
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config zero signal GPIO failed");
-        esp_rom_gpio_connect_in_signal(config->clear_signal_gpio_num,
-                                       pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig,
-                                       config->flags.invert_clear_signal);
+        gpio_func_sel(io_num, PIN_FUNC_GPIO);
+        gpio_input_enable(io_num);
+        esp_rom_gpio_connect_in_signal(io_num, clear_signal_idx, config->flags.invert_clear_signal);
         unit->clear_signal_gpio_num = config->clear_signal_gpio_num;
+
+        // io_loop_back is a deprecated flag, workaround for compatibility
+        if (config->flags.io_loop_back) {
+            gpio_ll_output_enable(&GPIO, io_num);
+        }
     } else {
         ESP_RETURN_ON_FALSE(unit->clear_signal_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG, "zero signal not set yet");
-        gpio_reset_pin(unit->clear_signal_gpio_num);
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
+        gpio_pullup_dis(unit->clear_signal_gpio_num);
+        gpio_pulldown_dis(unit->clear_signal_gpio_num);
         unit->clear_signal_gpio_num = -1;
     }
     return ESP_OK;
@@ -622,6 +657,47 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
     return ESP_OK;
 }
 
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
+{
+    pcnt_group_t *group = NULL;
+
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE((step_interval > 0 && unit->flags.en_step_notify_up) || (step_interval < 0 && unit->flags.en_step_notify_down),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
+    ESP_RETURN_ON_FALSE(step_interval >= unit->low_limit && step_interval <= unit->high_limit,
+                        ESP_ERR_INVALID_ARG, TAG, "step interval out of range [%d,%d]", unit->low_limit, unit->high_limit);
+    ESP_RETURN_ON_FALSE(unit->step_interval == 0,
+                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
+
+    group = unit->group;
+    unit->step_interval = step_interval;
+    pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval);
+    // different units are mixing in the same register, so we use the group's spinlock here
+    portENTER_CRITICAL(&group->spinlock);
+    pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, true);
+    portEXIT_CRITICAL(&group->spinlock);
+
+    return ESP_OK;
+}
+
+esp_err_t pcnt_unit_remove_watch_step(pcnt_unit_handle_t unit)
+{
+    pcnt_group_t *group = NULL;
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    group = unit->group;
+    ESP_RETURN_ON_FALSE(unit->step_interval != 0, ESP_ERR_INVALID_STATE, TAG, "watch step not added yet");
+
+    unit->step_interval = 0;
+
+    portENTER_CRITICAL(&group->spinlock);
+    pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, false);
+    portEXIT_CRITICAL(&group->spinlock);
+
+    return ESP_OK;
+}
+#endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
+
 esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *config, pcnt_channel_handle_t *ret_chan)
 {
     esp_err_t ret = ESP_OK;
@@ -650,18 +726,19 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     ESP_GOTO_ON_FALSE(channel_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no free channel in unit (%d,%d)", group_id, unit_id);
 
     // GPIO configuration
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-        .pull_down_en = false,
-        .pull_up_en = true,
-    };
     if (config->edge_gpio_num >= 0) {
-        gpio_conf.pin_bit_mask = 1ULL << config->edge_gpio_num;
-        ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config edge GPIO failed");
+        gpio_pullup_en(config->edge_gpio_num);
+        gpio_pulldown_dis(config->edge_gpio_num);
+        gpio_func_sel(config->edge_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->edge_gpio_num);
         esp_rom_gpio_connect_in_signal(config->edge_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
                                        config->flags.invert_edge_input);
+
+        // io_loop_back is a deprecated flag, workaround for compatibility
+        if (config->flags.io_loop_back) {
+            gpio_ll_output_enable(&GPIO, config->edge_gpio_num);
+        }
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_edge_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
@@ -670,11 +747,18 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
     }
 
     if (config->level_gpio_num >= 0) {
-        gpio_conf.pin_bit_mask = 1ULL << config->level_gpio_num;
-        ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config level GPIO failed");
+        gpio_pullup_en(config->level_gpio_num);
+        gpio_pulldown_dis(config->level_gpio_num);
+        gpio_func_sel(config->level_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->level_gpio_num);
         esp_rom_gpio_connect_in_signal(config->level_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
                                        config->flags.invert_level_input);
+
+        // io_loop_back is a deprecated flag, workaround for compatibility
+        if (config->flags.io_loop_back) {
+            gpio_ll_output_enable(&GPIO, config->level_gpio_num);
+        }
     } else {
         // using virtual IO
         esp_rom_gpio_connect_in_signal(config->flags.virt_level_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
@@ -711,10 +795,18 @@ esp_err_t pcnt_del_channel(pcnt_channel_handle_t chan)
     portEXIT_CRITICAL(&unit->spinlock);
 
     if (chan->level_gpio_num >= 0) {
-        gpio_reset_pin(chan->level_gpio_num);
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       0);
+        gpio_pullup_dis(chan->level_gpio_num);
+        gpio_pulldown_dis(chan->level_gpio_num);
     }
     if (chan->edge_gpio_num >= 0) {
-        gpio_reset_pin(chan->edge_gpio_num);
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       0);
+        gpio_pullup_dis(chan->edge_gpio_num);
+        gpio_pulldown_dis(chan->edge_gpio_num);
     }
 
     free(chan);
@@ -827,28 +919,74 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
     if (intr_status & PCNT_LL_UNIT_WATCH_EVENT(unit_id)) {
         pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
 
-        // points watcher event
+        // event status word contains information about the real watch event type
         uint32_t event_status = pcnt_ll_get_event_status(group->hal.dev, unit_id);
-        // iter on each event_id
-        while (event_status) {
-            int event_id = __builtin_ffs(event_status) - 1;
-            event_status &= (event_status - 1); // clear the right most bit
 
-            portENTER_CRITICAL_ISR(&unit->spinlock);
-            if (unit->flags.accum_count) {
-                if (event_id == PCNT_LL_WATCH_EVENT_LOW_LIMIT) {
-                    unit->accum_value += unit->low_limit;
-                } else if (event_id == PCNT_LL_WATCH_EVENT_HIGH_LIMIT) {
-                    unit->accum_value += unit->high_limit;
+        int count_value = 0;
+        pcnt_unit_zero_cross_mode_t zc_mode = PCNT_UNIT_ZERO_CROSS_INVALID;
+
+        // using while loop so that we don't miss any event
+        while (event_status) {
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+            // step event has higher priority than pointer event
+            if (event_status & (BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL) | BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT))) {
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL);
+                    // align current count value to the step interval
+                    count_value = pcnt_ll_get_count(group->hal.dev, unit_id);
                 }
-            }
-            portEXIT_CRITICAL_ISR(&unit->spinlock);
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT);
+                    // adjust current count value to the step limit
+                    count_value = unit->step_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->step_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
+                }
+                // step event may happen with other pointer event at the same time, we don't need to process them again
+                event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT) | BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT) |
+                                  BIT(PCNT_LL_WATCH_EVENT_THRES0) | BIT(PCNT_LL_WATCH_EVENT_THRES1));
+            } else
+#endif // SOC_PCNT_SUPPORT_STEP_NOTIFY
+                if (event_status & BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = unit->low_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->low_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = unit->high_limit;
+                    if (unit->flags.accum_count) {
+                        portENTER_CRITICAL_ISR(&unit->spinlock);
+                        unit->accum_value += unit->high_limit;
+                        portEXIT_CRITICAL_ISR(&unit->spinlock);
+                    }
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES0)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES0));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = pcnt_ll_get_thres_value(group->hal.dev, unit_id, 0);
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_THRES1)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_THRES1));
+                    // adjust the count value to reflect the actual watch point value
+                    count_value = pcnt_ll_get_thres_value(group->hal.dev, unit_id, 1);
+                } else if (event_status & BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS)) {
+                    event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_ZERO_CROSS));
+                    count_value = 0;
+                    zc_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id);
+                }
 
             // invoked user registered callback
             if (on_reach) {
                 pcnt_watch_event_data_t edata = {
-                    .watch_point_value = unit->watchers[event_id].watch_point_value,
-                    .zero_cross_mode = pcnt_ll_get_zero_cross_mode(group->hal.dev, unit_id),
+                    .watch_point_value = count_value,
+                    .zero_cross_mode = zc_mode,
                 };
                 if (on_reach(unit, &edata, unit->user_data)) {
                     // check if we need to yield for high priority task

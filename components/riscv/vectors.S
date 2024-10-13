@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,15 +21,22 @@
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
+#ifdef __clang__
+    /* Clang does not support constant declared via `equ` as operand for csrrw
+    * TODO: LLVM-369
+    */
+    #define EXT_ILL_CSR 0x7F0
+#else
     .equ EXT_ILL_CSR, 0x7F0
+#endif
 
     /* EXT_ILL CSR reasons are stored as follows:
      * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
-     * - Bit 1: Low-power core
+     * - Bit 1: Hardware Loop instructions
      * - Bit 2: PIE core */
-    .equ EXT_ILL_RSN_FPU, 1
-    .equ EXT_ILL_RSN_LP, 2
-    .equ EXT_ILL_RSN_PIE, 4
+    .equ EXT_ILL_RSN_FPU,  1
+    .equ EXT_ILL_RSN_HWLP, 2
+    .equ EXT_ILL_RSN_PIE,  4
 #endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* Macro which first allocates space on the stack to save general
@@ -124,7 +131,7 @@
     .global gdbstub_handle_debug_int
 #endif
 
-    .section .exception_vectors.text
+    .section .exception_vectors.text, "ax"
 
     /* Exception handler.*/
     .type _panic_handler, @function
@@ -166,12 +173,18 @@ _panic_handler:
     /* In case this is due to a coprocessor, set ra right now to simplify the logic below */
     la    ra, _return_from_exception
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
-    csrr  a0, EXT_ILL_CSR
-    mv    a2, a0
+    csrrw a0, EXT_ILL_CSR, zero
+    /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
+#if SOC_CPU_HAS_PIE
+    /* Check if the PIE bit is set. */
+    andi a1, a0, EXT_ILL_RSN_PIE
+    bnez a1, rtos_save_pie_coproc
+#endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_FPU
     /* Check if the FPU bit is set. When targets have the FPU reason bug (SOC_CPU_HAS_FPU_EXT_ILL_BUG),
      * it is possible that another bit is set even if the reason is an FPU instruction.
      * For example, bit 1 can be set and bit 0 won't, even if the reason is an FPU instruction. */
-#if SOC_CPU_HAS_FPU
     andi  a1, a0, EXT_ILL_RSN_FPU
     bnez  a1, rtos_save_fpu_coproc
 #if SOC_CPU_HAS_FPU_EXT_ILL_BUG
@@ -202,8 +215,6 @@ _panic_handler_not_fpu:
 #endif /* SOC_CPU_HAS_FPU_EXT_ILL_BUG */
 #endif /* SOC_CPU_HAS_FPU */
 
-    /* Need to check the other coprocessors reason now, instruction is in register a2 */
-    /* Ignore LP and PIE for now, continue the exception */
 _panic_handler_not_coproc:
 
 #endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
@@ -298,9 +309,11 @@ _interrupt_handler:
     /* Save SP former value */
     sw      a0, RV_STK_SP(sp)
 
-    /* Notify the RTOS that an interrupt ocurred, it will save the current stack pointer
-     * in the running TCB, no need to pass it as a parameter */
+    /* Notify the RTOS that an interrupt occurred, it will save the current stack pointer
+     * in the running TCB, no need to pass it as a parameter
+     * Returns an abstract context in a0, needs to be passed to `rtos_int_exit` */
     call    rtos_int_enter
+    mv      s4, a0
     /* If this is a non-nested interrupt, SP now points to the interrupt stack */
 
     /* Before dispatch c handler, restore interrupt to enable nested intr */
@@ -316,9 +329,9 @@ _interrupt_handler:
     li      t2, VECTORS_MCAUSE_REASON_MASK
     and     t1, s1, t2       /* t1 = mcause & mask */
     slli    t1, t1, 2        /* t1 = mcause * 4 */
-    li      t2, INTC_INT_PRIO_REG(0)
-    add     t1, t2, t1       /* t1 = INTC_INT_PRIO_REG + 4 * mcause */
-    lw      t2, 0(t1)        /* t2 = INTC_INT_PRIO_REG[mcause] */
+    li      t2, INTERRUPT_PRIO_REG(0)
+    add     t1, t2, t1       /* t1 = INTERRUPT_PRIO_REG + 4 * mcause */
+    lw      t2, 0(t1)        /* t2 = INTERRUPT_PRIO_REG[mcause] */
     addi    t2, t2, 1        /* t2 = t2 +1 */
     sw      t2, 0(t0)        /* INTERRUPT_CURRENT_CORE_INT_THRESH_REG = t2 */
     fence
@@ -366,6 +379,7 @@ _interrupt_handler:
     /* The RTOS will restore the current TCB stack pointer. This routine will preserve s1 and s2.
      * Returns the new `mstatus` value. */
     mv      a0, s2      /* a0 = mstatus */
+    mv      a1, s4      /* a1 = abstract context returned by `rtos_int_enter` */
     call    rtos_int_exit
 
     /* Restore the rest of the registers.

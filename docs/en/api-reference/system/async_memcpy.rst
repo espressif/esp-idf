@@ -36,8 +36,7 @@ There are several ways to install the async memcpy driver, depending on the unde
 Driver configuration is described in :cpp:type:`async_memcpy_config_t`:
 
 * :cpp:member:`backlog`: This is used to configure the maximum number of memory copy transactions that can be queued up before the first one is completed. If this field is set to zero, then the default value 4 will be applied.
-* :cpp:member:`sram_trans_align`: Declare SRAM alignment for both data address and copy size, set to zero if the data has no restriction in alignment. If set to a quadruple value (i.e., 4X), the driver will enable the burst mode internally, which is helpful for some performance related application.
-* :cpp:member:`psram_trans_align`: Declare PSRAM alignment for both data address and copy size. User has to give it a valid value (only 16, 32, 64 are supported) if the destination of memcpy is located in PSRAM. The default alignment (i.e., 16) will be applied if it is set to zero. Internally, the driver configures the size of block used by DMA to access PSRAM, according to the alignment.
+* :cpp:member:`dma_burst_size`: Set the burst size in a DMA burst transfer.
 * :cpp:member:`flags`: This is used to enable some special driver features.
 
 .. code-block:: c

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,14 @@
 #include "esp_nimble_hci.h"
 #include "esp_nimble_mem.h"
 #include "bt_osi_mem.h"
+#if CONFIG_BT_CONTROLLER_ENABLED
 #include "esp_bt.h"
+#endif
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
 #include "soc/soc_caps.h"
+#include "bt_common.h"
+#include "hci_log/bt_hci_log.h"
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -59,6 +63,13 @@ void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
     ble_hci_rx_acl_hs_arg = acl_arg;
 }
 
+void esp_vhci_host_send_packet_wrapper(uint8_t *data, uint16_t len)
+{
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
+#endif
+    esp_vhci_host_send_packet(data, len);
+}
 
 int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
 {
@@ -73,7 +84,7 @@ int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
     }
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-        esp_vhci_host_send_packet(cmd, len);
+        esp_vhci_host_send_packet_wrapper(cmd, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
     }
@@ -110,7 +121,7 @@ int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
     len += OS_MBUF_PKTLEN(om);
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-        esp_vhci_host_send_packet(data, len);
+        esp_vhci_host_send_packet_wrapper(data, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
     }
@@ -168,7 +179,6 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
     OS_EXIT_CRITICAL(sr);
 }
 
-
 /*
  * @brief: BT controller callback function, used to notify the upper layer that
  *         controller is ready to receive command
@@ -180,11 +190,37 @@ static void controller_rcv_pkt_ready(void)
     }
 }
 
+static void dummy_controller_rcv_pkt_ready(void)
+{
+  /* Dummy function */
+}
+
+void bt_record_hci_data(uint8_t *data, uint16_t len)
+{
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    if ((data[0] == BLE_HCI_UART_H4_EVT) && (data[1] == BLE_HCI_EVCODE_LE_META) && ((data[3] ==  BLE_HCI_LE_SUBEV_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_DIRECT_ADV_RPT)
+        || (data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_PERIODIC_ADV_RPT))) {
+        bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+    } else {
+        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+    }
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
+}
+
+static int dummy_host_rcv_pkt(uint8_t *data, uint16_t len)
+{
+    /* Dummy function */
+    return 0;
+}
+
 /*
  * @brief: BT controller callback function, to transfer data packet to the host
  */
 static int host_rcv_pkt(uint8_t *data, uint16_t len)
 {
+    bt_record_hci_data(data, len);
+
     if(!ble_hs_enabled_state) {
         /* If host is not enabled, drop the packet */
         ESP_LOGE(TAG, "Host not enabled. Dropping the packet!");
@@ -239,6 +275,11 @@ static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_recv = host_rcv_pkt,
 };
 
+static const esp_vhci_host_callback_t dummy_vhci_host_cb = {
+    .notify_host_send_available = dummy_controller_rcv_pkt_ready,
+    .notify_host_recv = dummy_host_rcv_pkt,
+};
+
 
 extern void ble_transport_init(void);
 extern esp_err_t ble_buf_alloc(void);
@@ -287,6 +328,8 @@ esp_err_t esp_nimble_hci_deinit(void)
         vhci_send_sem = NULL;
     }
     ble_transport_deinit();
+
+    esp_vhci_host_register_callback(&dummy_vhci_host_cb);
 
     ble_buf_free();
 

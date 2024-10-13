@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,21 +7,19 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "test_usb_common.h"
-#include "test_usb_mock_msc.h"
+#include "dev_msc.h"
 #include "usb/usb_host.h"
 
 void setUp(void)
 {
-    mock_msc_scsi_init_reference_descriptors();
     unity_utils_record_free_mem();
-    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
-    //Install USB Host
+    dev_msc_init();
+    // Install USB Host
     usb_host_config_t host_config = {
-        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
+        .skip_phy_setup = false,
+        .root_port_unpowered = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -30,11 +28,13 @@ void setUp(void)
 
 void tearDown(void)
 {
-    //Short delay to allow task to be cleaned up
+    // Short delay to allow task to be cleaned up
     vTaskDelay(10);
-    //Clean up USB Host
+    // Clean up USB Host
+    printf("USB Host uninstall\n");
     ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
+    // Short delay to allow task to be cleaned up after client uninstall
+    vTaskDelay(10);
     unity_utils_evaluate_leaks();
 }
 

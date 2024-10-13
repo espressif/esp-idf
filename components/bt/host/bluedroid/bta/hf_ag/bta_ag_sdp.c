@@ -243,12 +243,15 @@ void bta_ag_del_records(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     UNUSED(p_data);
 
     /* get services of all other registered servers */
-    for (i = 0; i < BTA_AG_NUM_IDX; i++, p++) {
+    for (i = 0; i < BTA_AG_NUM_IDX; i++) {
         if (p_scb == p) {
             continue;
         }
         if (p->in_use && p->dealloc == FALSE) {
             others |= p->reg_services;
+        }
+        if (i < BTA_AG_NUM_SCB) {
+            p++;
         }
     }
     others >>= BTA_HSP_SERVICE_ID;

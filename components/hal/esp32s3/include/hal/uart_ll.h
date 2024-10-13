@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (((num) == UART_NUM_1) ? (&UART1) : (&UART2)))
 
-#define UART_LL_MIN_WAKEUP_THRESH (2)
+#define UART_LL_MIN_WAKEUP_THRESH (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE          (0x0)
@@ -136,6 +136,26 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief  Enable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
+{
+    (void)hw;
+}
+
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
+{
+    (void)hw;
+}
 
 /**
  * @brief  Set the UART source clock.
@@ -326,14 +346,17 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  buf The data buffer.
- * @param  wr_len The data length needs to be writen.
+ * @param  wr_len The data length needs to be written.
  *
  * @return None
  */
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
+    // Write to the FIFO should make sure only involve write operation, any read operation would cause data lost.
+    // Non-32-bit access would lead to a read-modify-write operation to the register, which is undesired.
+    // Therefore, use 32-bit access to avoid any potential problem.
     for (int i = 0; i < (int)wr_len; i++) {
-        hw->fifo.rxfifo_rd_byte = buf[i];
+        hw->fifo.val = (int)buf[i];
     }
 }
 
@@ -502,7 +525,7 @@ FORCE_INLINE_ATTR void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num
 }
 
 /**
- * @brief  Configure the transmiter to send break chars.
+ * @brief  Configure the transmitter to send break chars.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  break_num The number of the break chars need to be send.
@@ -566,7 +589,7 @@ FORCE_INLINE_ATTR void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
  * @brief  Configure the software flow control.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  flow_ctrl The UART sofware flow control settings.
+ * @param  flow_ctrl The UART software flow control settings.
  * @param  sw_flow_ctrl_en Set true to enable software flow control, otherwise set it false.
  *
  * @return None.
@@ -658,8 +681,22 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
+    // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
     hw->sleep_conf.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
+
+/**
+ * @brief   Enable/disable the UART pad clock in sleep_state
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable enable or disable
+ */
+FORCE_INLINE_ATTR void _uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
+{
+    (void)hw; (void)enable;
+}
+
+#define uart_ll_enable_pad_sleep_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_enable_pad_sleep_clock(__VA_ARGS__)
 
 /**
  * @brief  Configure the UART work in normal mode.
@@ -856,7 +893,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_hw_cts_en(uart_dev_t *hw)
  * @brief Configure TX signal loop back to RX module, just for the testing purposes
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  loop_back_en Set ture to enable the loop back function, else set it false.
+ * @param  loop_back_en Set true to enable the loop back function, else set it false.
  *
  * @return None
  */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "sdkconfig.h"
 #include "esp_tls.h"
 #include "esp_tls_private.h"
+#include "esp_tls_platform_port.h"
 #include "esp_tls_error_capture_internal.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -24,8 +25,15 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <linux/if.h>
 #include <sys/time.h>
+
+#ifdef __linux__
+#include <linux/if.h>
+#endif
+
+#ifdef __APPLE__
+#include <net/if.h>
+#endif
 
 typedef struct in_addr ip_addr_t;
 typedef struct in6_addr ip6_addr_t;
@@ -124,14 +132,18 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
 {
+    if (!tls) {
+        return -1;
+    }
     return tls->read(tls, (char *)data, datalen);
-
 }
 
 ssize_t esp_tls_conn_write(esp_tls_t *tls, const void  *data, size_t datalen)
 {
+    if (!tls || !data) {
+        return -1;
+    }
     return tls->write(tls, (char *)data, datalen);
-
 }
 
 /**
@@ -147,6 +159,7 @@ int esp_tls_conn_destroy(esp_tls_t *tls)
         }
         esp_tls_internal_event_tracker_destroy(tls->error_handle);
         free(tls);
+        tls = NULL;
         return ret;
     }
     return -1; // invalid argument
@@ -278,6 +291,7 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 ESP_LOGE(TAG, "Fail to setsockopt SO_KEEPALIVE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
+#ifndef __APPLE__
             if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPIDLE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
@@ -290,11 +304,22 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPCNT");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
+#else // __APPLE__
+            if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
+                ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPALIVE");
+                return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            }
+#endif // __APPLE__
         }
         if (cfg->if_name) {
             if (cfg->if_name->ifr_name[0] != 0) {
                 ESP_LOGD(TAG, "Bind [sock=%d] to interface %s", fd, cfg->if_name->ifr_name);
+#ifndef __APPLE__
                 if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,  cfg->if_name, sizeof(struct ifreq)) != 0) {
+#else
+                int idx = if_nametoindex(cfg->if_name->ifr_name);
+                if (setsockopt(fd, IPPROTO_IP, IP_BOUND_IF, &idx, sizeof(idx)) != 0) {
+#endif
                     ESP_LOGE(TAG, "Bind [sock=%d] to interface %s fail", fd, cfg->if_name->ifr_name);
                     return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
                 }
@@ -417,10 +442,7 @@ err:
 
 static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-    if (!tls) {
-        ESP_LOGE(TAG, "empty esp_tls parameter");
-        return -1;
-    }
+
     esp_err_t esp_ret;
     /* These states are used to keep a tab on connection progress in case of non-blocking connect,
     and in case of blocking connect these cases will get executed one after the other */
@@ -513,9 +535,11 @@ esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, con
 
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-    struct timeval time = {};
-    gettimeofday(&time, NULL);
-    uint32_t start_time_ms = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+    if (!cfg || !tls || !hostname || hostlen < 0) {
+        return -1;
+    }
+    uint64_t start_time_us;
+    start_time_us = esp_tls_get_platform_time();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -524,10 +548,8 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
             ESP_LOGE(TAG, "Failed to open new connection");
             return -1;
         } else if (ret == 0 && cfg->timeout_ms >= 0) {
-            gettimeofday(&time, NULL);
-            uint32_t current_time_ms = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-            uint32_t elapsed_time_ms = current_time_ms - start_time_ms;
-            if (elapsed_time_ms >= cfg->timeout_ms) {
+            uint64_t elapsed_time_us = esp_tls_get_platform_time() - start_time_us;
+            if ((elapsed_time_us / 1000) >= cfg->timeout_ms) {
                 ESP_LOGW(TAG, "Failed to open new connection in specified timeout");
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
                 return 0;
@@ -542,6 +564,9 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
  */
 int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
+    if (!cfg || !tls || !hostname || hostlen < 0) {
+        return -1;
+    }
     return esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
 }
 
@@ -561,6 +586,10 @@ static int get_port(const char *url, struct http_parser_url *u)
 
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
 {
+    if (!url || !cfg) {
+        return NULL;
+    }
+
     /* Parse URI */
     struct http_parser_url u;
     http_parser_url_init(&u);
@@ -583,6 +612,10 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
  */
 int esp_tls_conn_http_new_sync(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
+    if (!url || !cfg || !tls) {
+        return -1;
+    }
+
     /* Parse URI */
     struct http_parser_url u;
     http_parser_url_init(&u);

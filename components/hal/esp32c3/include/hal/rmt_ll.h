@@ -87,15 +87,36 @@ static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
 }
 
 /**
- * @brief Power down memory
+ * @brief Force power on the RMT memory block, regardless of the outside PMU logic
  *
  * @param dev Peripheral instance address
- * @param enable True to power down, False to power up
  */
-static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, bool enable)
+static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 {
-    dev->sys_conf.mem_force_pu = !enable;
-    dev->sys_conf.mem_force_pd = enable;
+    dev->sys_conf.mem_force_pu = 1;
+    dev->sys_conf.mem_force_pd = 0;
+}
+
+/**
+ * @brief Force power off the RMT memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
+{
+    dev->sys_conf.mem_force_pd = 1;
+    dev->sys_conf.mem_force_pu = 0;
+}
+
+/**
+ * @brief Power control the RMT memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
+{
+    dev->sys_conf.mem_force_pd = 0;
+    dev->sys_conf.mem_force_pu = 0;
 }
 
 /**
@@ -427,7 +448,7 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  *
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
- * @param enable True to output carrier signal in all RMT state, False to only ouput carrier signal for effective data
+ * @param enable True to output carrier signal in all RMT state, False to only output carrier signal for effective data
  */
 static inline void rmt_ll_tx_enable_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
@@ -658,7 +679,7 @@ static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool e
  * @brief Clear RMT interrupt status by mask
  *
  * @param dev Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void rmt_ll_clear_interrupt_status(rmt_dev_t *dev, uint32_t mask)
@@ -812,12 +833,9 @@ static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel
     return dev->tx_conf[channel].idle_out_lv;
 }
 
-static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
+static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
 {
-    // the RTC domain can also power down RMT memory
-    // so it's probably not enough to detect whether it's powered down or not
-    // mem_force_pd has higher priority than mem_force_pu
-    return (dev->sys_conf.mem_force_pd) || !(dev->sys_conf.mem_force_pu);
+    return dev->sys_conf.mem_force_pd;
 }
 
 __attribute__((always_inline))

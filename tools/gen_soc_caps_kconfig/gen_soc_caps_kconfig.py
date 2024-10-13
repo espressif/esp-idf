@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Generate Kconfig.soc_caps.in with defines from soc_caps.h
 """
-
 import argparse
 import inspect
 import io
@@ -18,8 +16,21 @@ from pathlib import Path
 from string import Template
 
 import pyparsing
-from pyparsing import (CaselessLiteral, Char, Combine, Group, Literal, OneOrMore,  # pylint: disable=unused-import
-                       Optional, ParserElement, QuotedString, Word, alphas, hexnums, nums)
+from pyparsing import alphas
+from pyparsing import CaselessLiteral
+from pyparsing import Char
+from pyparsing import Combine
+from pyparsing import Group
+from pyparsing import hexnums
+from pyparsing import Literal
+from pyparsing import nums
+from pyparsing import OneOrMore
+from pyparsing import Optional
+from pyparsing import ParserElement
+from pyparsing import QuotedString
+from pyparsing import restOfLine
+from pyparsing import Suppress
+from pyparsing import Word
 
 pyparsing.usePackrat = True
 
@@ -42,6 +53,12 @@ class KconfigWriter():
             config $name
                 $entry_type
                 default $value
+            '''))
+    KCONFIG_CONDITION_SOURCE_TEMPLATE = Template(
+        inspect.cleandoc('''
+            if $condition
+                source "$source_path"
+            endif
             '''))
 
     def __init__(self):  # type: () -> None
@@ -67,6 +84,14 @@ class KconfigWriter():
 
         entry = self.KCONFIG_ENTRY_TEMPLATE.substitute(name=name, entry_type=entry_type, value=value)
         self.kconfig_text.write(entry)
+
+    def add_source(self, source_path, condition):  # type: (str, str) -> None
+        self.kconfig_text.write('\n\n')
+        if condition:
+            source = self.KCONFIG_CONDITION_SOURCE_TEMPLATE.substitute(source_path=source_path, condition=condition)
+            self.kconfig_text.write(source)
+        else:
+            self.kconfig_text.write('source "' + source_path + '"')
 
     def update_file(self, kconfig_path, always_write):  # type: (Path, bool) -> bool
 
@@ -96,6 +121,22 @@ class KconfigWriter():
         return file_needs_update
 
 
+def parse_include(inc_line):  # type: (str) -> typing.Any[typing.Type[ParserElement]]
+    # Comment with recursive pattern
+    recursive_deli = OneOrMore(Group(Literal(' ') | Literal(',') | Literal('.')))
+    recursive = CaselessLiteral('// recursive')('recursive') + Optional(recursive_deli)
+
+    # Comment with condition pattern
+    condition_deli = OneOrMore(Group(Literal(' ') | Literal(':')))
+    condition = CaselessLiteral('condition') + Optional(condition_deli) + restOfLine('condition')
+
+    # Parse the include line
+    # e.g. #include "../../beta3/include/soc/soc_caps.h"  // recursive, condition: IDF_TARGET_ESP32C5_VERSION_BETA3
+    expr = Suppress('#include') + QuotedString('"')('inc_path') + recursive + Optional(condition)
+    res = expr.parseString(inc_line)
+    return res
+
+
 def parse_define(define_line):  # type: (str) -> typing.Any[typing.Type[ParserElement]]
 
     # Group for parsing literal suffix of a numbers, e.g. 100UL
@@ -107,7 +148,7 @@ def parse_define(define_line):  # type: (str) -> typing.Any[typing.Type[ParserEl
 
     # Define value, either a hex, int or a string
     hex_value = Combine(Literal('0x') + Word(hexnums) + Optional(literal_suffix).suppress())('hex_value')
-    int_value = Word(nums)('int_value') + ~Char('.') + Optional(literal_suffix)('literal_suffix')
+    int_value = Combine(Optional('-') + Word(nums))('int_value') + ~Char('.') + Optional(literal_suffix)('literal_suffix')
     str_value = QuotedString('"')('str_value')
 
     # Remove optional parenthesis around values
@@ -135,6 +176,17 @@ def generate_defines(soc_caps_dir, filename, always_write):  # type: (Path, str,
     writer = KconfigWriter()
 
     for line in defines:
+        try:
+            inc = parse_include(line)
+            if 'inc_path' in inc and 'recursive' in inc and inc['inc_path'][-6:] == 'caps.h':
+                source_path = path.join('$IDF_PATH', str(soc_caps_dir), path.dirname(inc['inc_path']), 'Kconfig.soc_caps.in')
+                condition = inc['condition'].strip(' ') if 'condition' in inc else ''
+                writer.add_source(source_path, condition)
+                sub_soc_cap_dir = soc_caps_dir.joinpath(str(inc['inc_path'])).parent
+                generate_defines(sub_soc_cap_dir, filename, always_write)
+                continue
+        except pyparsing.ParseException:
+            pass
 
         try:
             res = parse_define(line)

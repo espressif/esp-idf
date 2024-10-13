@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,10 +144,13 @@ typedef struct sdmmc_dev_t {
         uint32_t val;
     } ctype;
 
-    volatile struct {
-        uint32_t blksiz: 16;        ///< block size, default 0x200
-        uint32_t reserved: 16;
-    };
+    volatile union {
+        struct {
+            uint32_t block_size: 16;        ///< block size, default 0x200
+            uint32_t reserved: 16;
+        };
+        uint32_t val;
+    } blksiz;
 
     volatile uint32_t bytcnt;            ///< number of bytes to be transferred
 
@@ -300,7 +303,7 @@ typedef struct sdmmc_dev_t {
              */
             uint32_t bus_type_reg:1;
             /** data_width_reg : RO; bitpos: [9:7]; default: 1;
-             *  Regisger data widht is 32.
+             *  Regisger data width is 32.
              */
             uint32_t data_width_reg:3;
             /** addr_width_reg : RO; bitpos: [15:10]; default: 19;
@@ -309,7 +312,7 @@ typedef struct sdmmc_dev_t {
             uint32_t addr_width_reg:6;
             uint32_t reserved_16:2;
             /** dma_width_reg : RO; bitpos: [20:18]; default: 1;
-             *  DMA data witdth is 32.
+             *  DMA data width is 32.
              */
             uint32_t dma_width_reg:3;
             /** ram_indise_reg : RO; bitpos: [21]; default: 0;
@@ -317,7 +320,7 @@ typedef struct sdmmc_dev_t {
              */
             uint32_t ram_indise_reg:1;
             /** hold_reg : RO; bitpos: [22]; default: 1;
-             *  Have a hold regiser in data path .
+             *  Have a hold register in data path .
              */
             uint32_t hold_reg:1;
             uint32_t reserved_23:1;
@@ -335,6 +338,7 @@ typedef struct sdmmc_dev_t {
             uint32_t voltage: 16;           ///< voltage control for slots; no-op on ESP32.
             uint32_t ddr: 16;                ///< bit N enables DDR mode for card N
         };
+        uint32_t val;
     } uhs;              ///< UHS related settings
 
     volatile union {

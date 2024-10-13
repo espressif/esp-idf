@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "soc/clk_tree_defs.h"
+#include "soc/clkout_channel.h"
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -29,13 +30,6 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src);
  * @return CPU clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.
  */
 uint32_t clk_hal_cpu_get_freq_hz(void);
-
-/**
- * @brief Get AHB_CLK frequency
- *
- * @return AHB clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.
- */
-uint32_t clk_hal_ahb_get_freq_hz(void);
 
 /**
  * @brief Get APB_CLK frequency
@@ -66,6 +60,28 @@ uint32_t clk_hal_xtal_get_freq_mhz(void);
  */
 uint32_t clk_hal_apll_get_freq_hz(void);
 #endif //SOC_CLK_APLL_SUPPORTED
+
+/**
+ * @brief Set up clock output channel
+ * @param clk_sig    The clock signal source to be mapped to GPIOs
+ * @param channel_id The clock output channel to setup
+ */
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id);
+
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+/**
+ * @brief Output the mapped clock after frequency division
+ * @param channel_id channel id that need to be configured with frequency division
+ * @param div_num  clock frequency division value
+ */
+void clk_hal_clock_output_set_divider(clock_out_channel_t channel_id, uint32_t div_num);
+#endif
+
+/**
+ * @brief Teardown clock output channel configuration
+ * @param channel_id The clock output channel to teardown
+ */
+void clk_hal_clock_output_teardown(clock_out_channel_t channel_id);
 
 #ifdef __cplusplus
 }

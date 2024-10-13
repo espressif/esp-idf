@@ -1,12 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-
-
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,13 +18,36 @@ extern "C" {
 #if SOC_EMAC_SUPPORTED
 #include "hal/emac_ll.h"
 
-
-
 /**
- * @brief Indicate to ::emac_hal_receive_frame that receive frame buffer was allocated by ::emac_hal_alloc_recv_buf
- *
- */
-#define EMAC_HAL_BUF_SIZE_AUTO 0
+ * @brief Macros to check descriptors datatype size
+*/
+#define STR(s) #s
+#define TYPE_SIZE_ERR_MSG(DATATYPE, SIZE)  #DATATYPE " should occupy " STR(SIZE) " bytes in memory"
+#define ASSERT_TYPE_SIZE(DATATYPE, SIZE) ESP_STATIC_ASSERT(sizeof(DATATYPE) == SIZE, TYPE_SIZE_ERR_MSG(DATATYPE, SIZE))
+
+#if CONFIG_IDF_TARGET_ESP32P4
+// Descriptor must be 64B aligned for ESP32P4 due to cache arrangement
+#define EMAC_HAL_DMA_DESC_SIZE                              (64)
+#else
+#define EMAC_HAL_DMA_DESC_SIZE                              (32)
+#endif
+
+
+/* DMA descriptor control bits */
+#define EMAC_HAL_TDES0_INTR_ON_COMPLET                      (1 << 30)
+#define EMAC_HAL_TDES0_CRC_APPEND_DISABLE                   (1 << 27)
+#define EMAC_HAL_TDES0_PAD_DISABLE                          (1 << 26)
+#define EMAC_HAL_TDES0_TX_TS_ENABLE                         (1 << 25)
+#define EMAC_HAL_TDES0_CRC_REPLACE_CTRL                     (1 << 24)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR                    (1 << 22)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR_PAYLOAD            (2 << 22)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR_PAYLOAD_PSEUDO     (3 << 22)
+#define EMAC_HAL_TDES0_VLAN_REMOVE                          (1 << 18)
+#define EMAC_HAL_TDES0_VLAN_INSERT                          (2 << 18)
+#define EMAC_HAL_TDES0_VLAN_REPLACE                         (3 << 18)
+
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_DISABLE_MASK           (3 << 22)
+#define EMAC_HAL_TDES0_VLAN_INSERT_DISABLE_MASK             (3 << 18)
 
 /**
 * @brief Ethernet DMA TX Descriptor
@@ -55,7 +76,7 @@ typedef struct {
             uint32_t TransmitEndRing : 1;         /*!< Descriptor list reached its final descriptor */
             uint32_t ChecksumInsertControl : 2;   /*!< Control checksum calculation and insertion */
             uint32_t CRCReplacementControl : 1;   /*!< Control CRC replace */
-            uint32_t TransmitTimestampEnable : 1; /*!< Enable IEEE1588 harware timestamping */
+            uint32_t TransmitTimestampEnable : 1; /*!< Enable IEEE1588 hardware timestamping */
             uint32_t DisablePad : 1;              /*!< Control add padding when frame short than 64 bytes */
             uint32_t DisableCRC : 1;              /*!< Control append CRC to the end of frame */
             uint32_t FirstSegment : 1;            /*!< Buffer contains the first segment of a frame */
@@ -80,13 +101,13 @@ typedef struct {
     uint32_t Reserved2;           /*!< Reserved */
     uint32_t TimeStampLow;        /*!< Transmit Frame Timestamp Low */
     uint32_t TimeStampHigh;       /*!< Transmit Frame Timestamp High */
-} eth_dma_tx_descriptor_t;
-#define EMAC_DMATXDESC_CHECKSUM_BYPASS 0            /*!< Checksum engine bypass */
-#define EMAC_DMATXDESC_CHECKSUM_IPV4HEADER 1        /*!< IPv4 header checksum insertion  */
-#define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPSEGMENT 2 /*!< TCP/UDP/ICMP Checksum Insertion calculated over segment only */
-#define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPFULL 3    /*!< TCP/UDP/ICMP Checksum Insertion fully calculated */
 
-ESP_STATIC_ASSERT(sizeof(eth_dma_tx_descriptor_t) == 32, "eth_dma_tx_descriptor_t should occupy 32 bytes in memory");
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // descriptor must be aligned (due to cache arrangement)
+    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
+#endif
+} eth_dma_tx_descriptor_t;
+ASSERT_TYPE_SIZE(eth_dma_tx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
 
 /**
 * @brief Ethernet DMA RX Descriptor
@@ -158,24 +179,27 @@ typedef struct {
     uint32_t Reserved;      /*!< Reserved */
     uint32_t TimeStampLow;  /*!< Receive frame timestamp low */
     uint32_t TimeStampHigh; /*!< Receive frame timestamp high */
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // descriptor must be aligned (due to cache arrangement)
+    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
+#endif
 } eth_dma_rx_descriptor_t;
 
-ESP_STATIC_ASSERT(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
+ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
 
 typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
 typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
+#if CONFIG_IDF_TARGET_ESP32
 typedef struct emac_ext_dev_s *emac_ext_soc_regs_t;
+#else
+typedef void *emac_ext_soc_regs_t;
+#endif
 
 typedef struct {
     emac_mac_soc_regs_t mac_regs;
     emac_dma_soc_regs_t dma_regs;
     emac_ext_soc_regs_t ext_regs;
-    uint8_t **rx_buf;
-    uint8_t **tx_buf;
-    void *descriptors;
-    eth_dma_rx_descriptor_t *rx_desc;
-    eth_dma_tx_descriptor_t *tx_desc;
-
 } emac_hal_context_t;
 
 /**
@@ -185,52 +209,23 @@ typedef struct {
     eth_mac_dma_burst_len_t dma_burst_len;  /*!< eth-type enum of chosen dma burst-len */
 } emac_hal_dma_config_t;
 
-void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
-                   uint8_t **rx_buf, uint8_t **tx_buf);
+void emac_hal_init(emac_hal_context_t *hal);
 
-void emac_hal_iomux_init_mii(void);
+#define emac_hal_get_phy_intf(hal) emac_ll_get_phy_intf((hal)->ext_regs)
 
-void emac_hal_iomux_init_rmii(void);
+#define emac_hal_clock_enable_mii(hal) emac_ll_clock_enable_mii((hal)->ext_regs)
 
-void emac_hal_iomux_rmii_clk_input(void);
+#define emac_hal_clock_enable_rmii_input(hal) emac_ll_clock_enable_rmii_input((hal)->ext_regs)
 
-void emac_hal_iomux_rmii_clk_ouput(int num);
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+#define emac_hal_clock_rmii_rx_tx_div(hal, div) emac_ll_clock_rmii_rx_tx_div((hal)->ext_regs, div)
+#endif // CONFIG_IDF_TARGET_ESP32P4
 
-void emac_hal_iomux_init_tx_er(void);
+#define emac_hal_clock_enable_rmii_output(hal) emac_ll_clock_enable_rmii_output((hal)->ext_regs)
 
-void emac_hal_iomux_init_rx_er(void);
+#define emac_hal_reset(hal) emac_ll_reset((hal)->dma_regs)
 
-static inline void emac_hal_clock_enable_mii(emac_hal_context_t *hal)
-{
-    emac_ll_clock_enable_mii(hal->ext_regs);
-}
-
-static inline void emac_hal_clock_enable_rmii_input(emac_hal_context_t *hal)
-{
-    emac_ll_clock_enable_rmii_input(hal->ext_regs);
-}
-
-static inline void emac_hal_clock_enable_rmii_output(emac_hal_context_t *hal)
-{
-    emac_ll_clock_enable_rmii_output(hal->ext_regs);
-}
-
-void emac_hal_reset_desc_chain(emac_hal_context_t *hal);
-
-static inline void *emac_hal_get_desc_chain(emac_hal_context_t *hal)
-{
-    return hal->descriptors;
-}
-
-static inline void emac_hal_reset(emac_hal_context_t *hal)
-{
-    emac_ll_reset(hal->dma_regs);
-}
-
-static inline bool emac_hal_is_reset_done(emac_hal_context_t *hal)
-{
-    return emac_ll_is_reset_done(hal->dma_regs);
-}
+#define emac_hal_is_reset_done(hal) emac_ll_is_reset_done((hal)->dma_regs)
 
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
@@ -238,45 +233,24 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
 void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config);
 
-static inline void emac_hal_set_speed(emac_hal_context_t *hal, eth_speed_t speed)
-{
-    emac_ll_set_port_speed(hal->mac_regs, speed);
-}
+#define emac_hal_set_speed(hal, speed) emac_ll_set_port_speed((hal)->mac_regs, speed)
 
-static inline void emac_hal_set_duplex(emac_hal_context_t *hal, eth_duplex_t duplex)
-{
-    emac_ll_set_duplex(hal->mac_regs, duplex);
-}
+#define emac_hal_set_duplex(hal, duplex) emac_ll_set_duplex((hal)->mac_regs, duplex)
 
-static inline void emac_hal_set_promiscuous(emac_hal_context_t *hal, bool enable)
-{
-    emac_ll_promiscuous_mode_enable(hal->mac_regs, enable);
-}
+#define emac_hal_set_promiscuous(hal, enable) emac_ll_promiscuous_mode_enable((hal)->mac_regs, enable)
 
 /**
  * @brief Send MAC-CTRL frames to peer (EtherType=0x8808, opcode=0x0001, dest_addr=MAC-specific-ctrl-proto-01 (01:80:c2:00:00:01))
  */
-static inline void emac_hal_send_pause_frame(emac_hal_context_t *hal, bool enable)
-{
-    emac_ll_pause_frame_enable(hal->ext_regs, enable);
-}
+#define emac_hal_send_pause_frame(hal, enable) emac_ll_pause_frame_enable((hal)->ext_regs, enable)
 
-static inline bool emac_hal_is_mii_busy(emac_hal_context_t *hal)
-{
-    return emac_ll_is_mii_busy(hal->mac_regs);
-}
+#define emac_hal_is_mii_busy(hal) emac_ll_is_mii_busy((hal)->mac_regs)
 
 void emac_hal_set_phy_cmd(emac_hal_context_t *hal, uint32_t phy_addr, uint32_t phy_reg, bool write);
 
-static inline void emac_hal_set_phy_data(emac_hal_context_t *hal, uint32_t reg_value)
-{
-    emac_ll_set_phy_data(hal->mac_regs, reg_value);
-}
+#define emac_hal_set_phy_data(hal, reg_value) emac_ll_set_phy_data((hal)->mac_regs, reg_value)
 
-static inline uint32_t emac_hal_get_phy_data(emac_hal_context_t *hal)
-{
-    return emac_ll_get_phy_data(hal->mac_regs);
-}
+#define emac_hal_get_phy_data(hal) emac_ll_get_phy_data((hal)->mac_regs)
 
 void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr);
 
@@ -294,93 +268,25 @@ void emac_hal_start(emac_hal_context_t *hal);
  * @return
  *     - ESP_OK: succeed
   *    - ESP_ERR_INVALID_STATE: previous frame transmission/reception is not completed. When this error occurs,
-  *      wait and reapeat the EMAC stop again.
+  *      wait and repeat the EMAC stop again.
  */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
 
-/**
- * @brief Transmit data from buffer over EMAC
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buf buffer to be transmitted
- * @param[in] length length of the buffer
- * @return number of transmitted bytes when success
- */
-uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
-
-/**
- * @brief Transmit data from multiple buffers over EMAC in single Ethernet frame. Data will be joint into
- *        single frame in order in which the buffers are stored in input array.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buffs array of pointers to buffers to be transmitted
- * @param[in] lengths array of lengths of the buffers
- * @param[in] inbuffs_cnt number of buffers (i.e. input arrays size)
- * @return number of transmitted bytes when success
- *
- * @pre @p lengths array must have the same size as @p buffs array and their elements need to be stored in the same
- *      order, i.e. lengths[1] is a length assocaited with data buffer referenced at buffs[1] position.
- */
-uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t inbuffs_cnt);
-
-/**
- * @brief Allocate buffer with size equal to actually received Ethernet frame size.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in, out] size as an input defines maximum size of buffer to be allocated. As an output, indicates actual size of received
- *                      Ethernet frame which is waiting to be processed. Returned size may be 0 when there is no waiting frame.
- *
- * @note If maximum allowed size of buffer to be allocated is less than actual size of received Ethernet frame, the buffer
- *       is allocated with that limit and the frame will be truncated by emac_hal_receive_frame.
- *
- * @return Pointer to allocated buffer
- *         NULL when allocation fails or when there is no waiting Ethernet frame
- */
-uint8_t *emac_hal_alloc_recv_buf(emac_hal_context_t *hal, uint32_t *size);
-
-/**
- * @brief Copy received Ethernet frame from EMAC DMA memory space to application.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buf buffer into which the Ethernet frame is to be copied
- * @param[in] size buffer size. When buffer was allocated by ::emac_hal_alloc_recv_buf, this parameter needs to be set
- *                 to EMAC_HAL_BUF_SIZE_AUTO
- * @param[out] frames_remain number of frames remaining to be processed
- * @param[out] free_desc muber of free DMA Rx descriptors
- *
- * @return number of copied bytes when success
- *         0 when there is no waiting Ethernet frame or on error
- *
- * @note FCS field is never copied
- * @note If buffer size is less than actual size of received Ethernet frame, the frame will be truncated.
- * @note When this function is called with EMAC_HAL_BUF_SIZE_AUTO size parameter, buffer needs to be allocated by
- *       ::emac_hal_alloc_recv_buf function at first.
- */
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc);
-
-uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_remain, uint32_t *free_desc);
-
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
-static inline uint32_t emac_hal_get_intr_enable_status(emac_hal_context_t *hal)
-{
-    return emac_ll_get_intr_enable_status(hal->dma_regs);
-}
+#define emac_hal_get_intr_enable_status(hal) emac_ll_get_intr_enable_status((hal)->dma_regs)
 
-static inline uint32_t emac_hal_get_intr_status(emac_hal_context_t *hal)
-{
-    return emac_ll_get_intr_status(hal->dma_regs);
-}
+#define emac_hal_get_intr_status(hal) emac_ll_get_intr_status((hal)->dma_regs)
 
-static inline void emac_hal_clear_corresponding_intr(emac_hal_context_t *hal, uint32_t bits)
-{
-    emac_ll_clear_corresponding_intr(hal->dma_regs, bits);
-}
+#define emac_hal_clear_corresponding_intr(hal, bits) emac_ll_clear_corresponding_intr((hal)->dma_regs, bits)
 
-static inline void emac_hal_clear_all_intr(emac_hal_context_t *hal)
-{
-    emac_ll_clear_all_pending_intr(hal->dma_regs);
-}
+#define emac_hal_clear_all_intr(hal) emac_ll_clear_all_pending_intr((hal)->dma_regs)
+
+void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor_t *rx_desc, eth_dma_tx_descriptor_t *tx_desc);
+
+#define emac_hal_receive_poll_demand(hal) emac_ll_receive_poll_demand((hal)->dma_regs, 0)
+
+#define emac_hal_transmit_poll_demand(hal) emac_ll_transmit_poll_demand((hal)->dma_regs, 0)
 
 #endif  // SOC_EMAC_SUPPORTED
 

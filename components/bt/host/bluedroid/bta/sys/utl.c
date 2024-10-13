@@ -170,11 +170,12 @@ void utl_freebuf(void **p)
 **                  p_cod   - Pointer to the device class to set to
 **
 **                  cmd     - the fields of the device class to update.
+**                            BTA_UTL_SET_COD_RESERVED_2 - overwrite the two least significant bits reserved_2
 **                            BTA_UTL_SET_COD_MAJOR_MINOR, - overwrite major, minor class
 **                            BTA_UTL_SET_COD_SERVICE_CLASS - set the bits in the input
 **                            BTA_UTL_CLR_COD_SERVICE_CLASS - clear the bits in the input
-**                            BTA_UTL_SET_COD_ALL - overwrite major, minor, set the bits in service class
-**                            BTA_UTL_INIT_COD - overwrite major, minor, and service class
+**                            BTA_UTL_SET_COD_ALL - overwrite major, minor, set the bits in service class, reserved_2 remain unchanged
+**                            BTA_UTL_INIT_COD - overwrite major, minor, and service class, reserved_2 remain unchanged
 **
 ** Returns          TRUE if successful, Otherwise FALSE
 **
@@ -183,15 +184,19 @@ BOOLEAN utl_set_device_class(tBTA_UTL_COD *p_cod, UINT8 cmd)
 {
     UINT8 *dev;
     UINT16 service;
-    UINT8  minor, major;
+    UINT8  minor, major, reserved_2;
     DEV_CLASS dev_class;
 
     dev = BTM_ReadDeviceClass();
     BTM_COD_SERVICE_CLASS( service, dev );
     BTM_COD_MINOR_CLASS(minor, dev );
     BTM_COD_MAJOR_CLASS(major, dev );
+    BTM_COD_RESERVED_2(reserved_2, dev);
 
     switch (cmd) {
+    case BTA_UTL_SET_COD_RESERVED_2:
+        reserved_2 = p_cod->reserved_2 & BTM_COD_RESERVED_2_MASK;
+        break;
     case BTA_UTL_SET_COD_MAJOR_MINOR:
         minor = p_cod->minor & BTM_COD_MINOR_CLASS_MASK;
         major = p_cod->major & BTM_COD_MAJOR_CLASS_MASK;
@@ -226,7 +231,7 @@ BOOLEAN utl_set_device_class(tBTA_UTL_COD *p_cod, UINT8 cmd)
     }
 
     /* convert the fields into the device class type */
-    FIELDS_TO_COD(dev_class, minor, major, service);
+    FIELDS_TO_COD(dev_class, reserved_2, minor, major, service);
 
     if (BTM_SetDeviceClass(dev_class) == BTM_SUCCESS) {
         return TRUE;
@@ -252,16 +257,18 @@ BOOLEAN utl_get_device_class(tBTA_UTL_COD *p_cod)
 {
     UINT8 *dev;
     UINT16 service;
-    UINT8  minor, major;
+    UINT8  minor, major, reserved_2;
 
     dev = BTM_ReadDeviceClass();
     BTM_COD_SERVICE_CLASS( service, dev );
     BTM_COD_MINOR_CLASS(minor, dev );
     BTM_COD_MAJOR_CLASS(major, dev );
+    BTM_COD_RESERVED_2(reserved_2, dev );
 
     p_cod->minor = minor;
     p_cod->major = major;
     p_cod->service = service;
+    p_cod->reserved_2 = reserved_2;
 
     return TRUE;
 }

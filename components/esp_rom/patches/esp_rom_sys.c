@@ -1,26 +1,65 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
-#include "esp_attr.h"
+#include <stddef.h>
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
+#include "esp_rom_uart.h"
+#include "rom/ets_sys.h"
+#include "sdkconfig.h"
 
-IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
+#if !ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+void esp_rom_output_putc(char c)
 {
-    extern void ets_install_putc1(void (*p)(char c));
-    extern void ets_install_putc2(void (*p)(char c));
+    if (c == '\n') {
+        esp_rom_output_tx_one_char('\r');
+        esp_rom_output_tx_one_char('\n');
+    } else if (c == '\r') {
+    } else {
+      esp_rom_output_tx_one_char(c);
+    }
+}
+#endif // !ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+
+#if !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+void (* _putc1)(char c) = esp_rom_output_putc;
+void (* _putc2)(char c) = NULL;
+
+void esp_rom_output_to_channels(char c)
+{
+    if (_putc1) {
+        _putc1(c);
+    }
+
+    if (_putc2) {
+        _putc2(c);
+    }
+}
+#endif // !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+
+void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
+{
     switch (channel) {
     case 1:
+#if !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+        _putc1 = putc;
+#endif
+#if !CONFIG_IDF_TARGET_LINUX
         ets_install_putc1(putc);
+#endif
         break;
     case 2:
+#if !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+        _putc2 = putc;
+#endif
+#if !CONFIG_IDF_TARGET_LINUX
         ets_install_putc2(putc);
+#endif
         break;
     default:
         break;
@@ -28,8 +67,12 @@ IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
 }
 
 #if ESP_ROM_HAS_ETS_PRINTF_BUG
-IRAM_ATTR void esp_rom_install_uart_printf(void)
+void esp_rom_install_uart_printf(void)
 {
+#if !ESP_ROM_HAS_OUTPUT_TO_CHANNELS_FUNC
+    _putc1 = esp_rom_output_putc;
+#endif
+#if !CONFIG_IDF_TARGET_LINUX
     extern void ets_install_uart_printf(void);
     extern bool g_uart_print;
     extern bool g_usb_print;
@@ -38,6 +81,7 @@ IRAM_ATTR void esp_rom_install_uart_printf(void)
     g_uart_print = true;
     g_usb_print = true;
     ets_install_uart_printf();
+#endif // !CONFIG_IDF_TARGET_LINUX
 }
 #endif
 
@@ -48,7 +92,7 @@ extern uint32_t g_ticks_per_us_pro;
 extern uint32_t g_ticks_per_us_app;
 #endif
 #endif
-IRAM_ATTR void esp_rom_set_cpu_ticks_per_us(uint32_t ticks_per_us)
+void esp_rom_set_cpu_ticks_per_us(uint32_t ticks_per_us)
 {
     /* Update scale factors used by esp_rom_delay_us */
     g_ticks_per_us_pro = ticks_per_us;

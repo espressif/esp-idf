@@ -23,7 +23,7 @@ config BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB
     default 0
     help
         BLE ACL buffer have two methods to be allocated. One is persistent allocating
-        (alloate when controller initialise, never free until controller de-initialise)
+        (allocate when controller initialise, never free until controller de-initialise)
         another is dynamically allocating (allocate before TX and free after TX).
 
 choice BT_CTRL_PINNED_TO_CORE_CHOICE
@@ -72,11 +72,11 @@ config BT_CTRL_HCI_TL
         HCI mode as VHCI or UART(H4)
 
 config BT_CTRL_ADV_DUP_FILT_MAX
-    int "The maxinum number of 5.0 extend duplicate scan filter"
+    int "The maximum number of 5.0 extend duplicate scan filter"
     range 1 500
     default 30
     help
-        The maxinum number of suplicate scan filter
+        The maximum number of suplicate scan filter
 
 choice BT_BLE_CCA_MODE
     prompt "BLE CCA mode"
@@ -200,8 +200,8 @@ choice BT_CTRL_DFT_TX_POWER_LEVEL
         bool "+15dBm"
     config BT_CTRL_DFT_TX_POWER_LEVEL_P18
         bool "+18dBm"
-    config BT_CTRL_DFT_TX_POWER_LEVEL_P21
-        bool "+21dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P20
+        bool "+20dBm"
 endchoice
 
 config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
@@ -221,7 +221,7 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
     default 12 if BT_CTRL_DFT_TX_POWER_LEVEL_P12
     default 13 if BT_CTRL_DFT_TX_POWER_LEVEL_P15
     default 14 if BT_CTRL_DFT_TX_POWER_LEVEL_P18
-    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P21
+    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P20
     default 0
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
@@ -467,3 +467,25 @@ config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
         Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
         minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
+
+config BT_BLE_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero"
+    default n
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.
+
+config BT_CTRL_CHAN_ASS_EN
+    bool "Enable channel assessment"
+    default y
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BT_CTRL_LE_PING_EN
+    bool "Enable LE Ping procedure"
+    default y
+    help
+        If this option is disabled, The Controller will not start the LE authenticated payload timer.
+        This option is used for some compatibility problems related to LE ping procedure.

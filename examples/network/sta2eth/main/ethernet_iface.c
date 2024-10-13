@@ -118,6 +118,10 @@ static void update_udp_checksum(uint16_t *udp_header, uint16_t* ip_header)
     for (int i = 0; i < payload_len/2; i++) {
         sum += htons(*ptr++);
     }
+    // add the padding if the packet length is odd
+    if (payload_len & 1) {
+        sum += (*((uint8_t *)ptr) << 8);
+    }
     // add some IP header data
     ptr = ip_header + 6;
     for (int i = 0; i < 4; i++) {       // IP addresses

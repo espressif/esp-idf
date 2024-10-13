@@ -15,7 +15,7 @@ The examples are grouped into sub-directories by category. Each category directo
 * `getting_started` contains the basic examples for using Wi-Fi in STA and AP mode.
 * `iperf` shows the common performance measurements for two ESP running this example.
 * `power_save` contains a how to use power save mode of Wi-Fi.
-* `roaming` contains a example using 802.11k and 802.11v APIs.
+* `roaming` contains 2 examples that demonstrate roaming capabilities.
 * `scan` shows how to scan for all the available APs.
 * `smart_config` shows how ESP connects to a target AP with ESPTOUCH.
 * `wifi_eap_fast` shows how ESP connects to AP with Wi-Fi enterprise encryption using the EAP-FAST method.

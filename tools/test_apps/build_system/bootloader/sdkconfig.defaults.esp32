@@ -1,0 +1,3 @@
+# Change revision to use secure boot version 2
+CONFIG_ESP32_REV_MIN_3=y
+CONFIG_ESP32_REV_MIN=3

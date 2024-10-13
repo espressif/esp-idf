@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 # MCPWM Brushed DC Motor Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -90,6 +90,6 @@ To help tune the PID parameters (i.e. `Kp`, `Ki` and `Kd` in the example), this 
 ## Troubleshooting
 
 * Make sure your ESP board and H-bridge module have been connected to the same GND panel.
-* The PID parameter set in ths example might not work well in all kinds of motors, because it's not adaptive. You need to fine tune the parameters again by yourself.
+* The PID parameter set in this example might not work well in all kinds of motors, because it's not adaptive. You need to fine tune the parameters again by yourself.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

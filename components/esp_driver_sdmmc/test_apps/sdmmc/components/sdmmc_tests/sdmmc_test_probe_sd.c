@@ -8,6 +8,8 @@
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
 
+#define SDMMC_FREQ_CUSTOM_10M     10000
+
 static void do_one_sdmmc_probe_test(int slot, int width, int freq_khz, int ddr)
 {
     sdmmc_card_t card;
@@ -58,6 +60,7 @@ TEST_CASE("sdmmc probe, slot 1, 4-bit", "[sdmmc]")
     do_one_sdmmc_probe_test(SLOT_1, 4, SDMMC_FREQ_PROBING, NO_DDR);
     do_one_sdmmc_probe_test(SLOT_1, 4, SDMMC_FREQ_DEFAULT, NO_DDR);
     do_one_sdmmc_probe_test(SLOT_1, 4, SDMMC_FREQ_HIGHSPEED, NO_DDR);
+    do_one_sdmmc_probe_test(SLOT_1, 4, SDMMC_FREQ_CUSTOM_10M, NO_DDR);
 }
 
 TEST_CASE("sdmmc probe, slot 1, 4-bit DDR", "[sdmmc]")

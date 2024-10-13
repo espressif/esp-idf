@@ -926,6 +926,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     }
     case BTA_GATTC_CONNECT_EVT: {
         tBTA_GATTC_CONNECT *connect = &arg->connect;
+#if (SMP_INCLUDED == TRUE)
         bt_bdaddr_t bt_addr;
 
         memcpy(bt_addr.address, connect->remote_bda, sizeof(bt_addr.address));
@@ -935,7 +936,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
                             bt_addr.address[2], bt_addr.address[3],
                             bt_addr.address[4], bt_addr.address[5]);
         }
-
+#endif  ///SMP_INCLUDED == TRUE
         gattc_if = connect->client_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(connect->conn_id);
         param.connect.link_role = connect->link_role;

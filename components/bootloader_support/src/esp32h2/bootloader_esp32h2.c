@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include "esp_image_format.h"
 #include "flash_qio_mode.h"
 #include "esp_rom_gpio.h"
-#include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
@@ -23,7 +22,6 @@
 #include "soc/extmem_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/pcr_reg.h"
-#include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/ets_sys.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
@@ -33,7 +31,6 @@
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_lp_bias.h"
 #include "soc/regi2c_bias.h"
-#include "modem/modem_lpcon_reg.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
@@ -43,8 +40,10 @@
 #include "hal/cache_hal.h"
 #include "hal/lpwdt_ll.h"
 #include "soc/lp_wdt_reg.h"
+#include "soc/pmu_reg.h"
 #include "hal/efuse_hal.h"
-#include "modem/modem_lpcon_reg.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/brownout_ll.h"
 
 static const char *TAG = "boot.esp32h2";
 
@@ -87,16 +86,20 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    /* Enable analog i2c master clock */
-    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    /* Disable RF pll by default */
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFPLL);
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL);
+
+    regi2c_ctrl_ll_master_enable_clock(true);
+    regi2c_ctrl_ll_master_configure_clock();
 }
 
 static inline void bootloader_ana_reset_config(void)
 {
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset
-    bootloader_ana_bod_reset_config(true);
+    //Enable BOD reset (mode1)
+    brownout_ll_ana_reset_enable(true);
 }
 
 esp_err_t bootloader_init(void)
@@ -158,7 +161,7 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
+    // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();

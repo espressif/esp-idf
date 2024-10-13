@@ -2,7 +2,7 @@ menu "Power Management"
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
-        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32P4) || __DOXYGEN__ # TODO: IDF-7527
+        depends on (!FREERTOS_SMP && SOC_PM_SUPPORTED) || __DOXYGEN__
         default n
         help
             If enabled, application is compiled with support for power management.
@@ -49,7 +49,7 @@ menu "Power Management"
 
     config PM_SLP_IRAM_OPT
         bool "Put lightsleep related codes in internal RAM"
-        depends on FREERTOS_USE_TICKLESS_IDLE
+        depends on SOC_LIGHT_SLEEP_SUPPORTED
         help
             If enabled, about 2.1KB of lightsleep related source code would be in IRAM and chip would sleep
             longer for 310us at 160MHz CPU frequency most each time.
@@ -75,7 +75,7 @@ menu "Power Management"
             you can call 'gpio_sleep_sel_dis' to disable this feature on those pins.
             You can also keep this feature on and call 'gpio_sleep_set_direction' and 'gpio_sleep_set_pull_mode'
             to have a different GPIO configuration at sleep.
-            Waring: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
+            Warning: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
             at first, otherwise you will not be able to switch pullup/pulldown mode.
 
     config PM_SLP_DEFAULT_PARAMS_OPT
@@ -84,7 +84,8 @@ menu "Power Management"
 
     config PM_CHECK_SLEEP_RETENTION_FRAME
         bool
-        depends on PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+        depends on (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || \
+            (SOC_CPU_IN_TOP_DOMAIN && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
         default y if IDF_CI_BUILD
         default n
         help
@@ -111,32 +112,38 @@ menu "Power Management"
         select PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
         default y
         help
-            If enabled, the CPU will be powered down in light sleep, ESP chips supports saving and restoring CPU's running
-            context before and after light sleep, the feature provides applications with seamless CPU powerdowned lightsleep
-            without user awareness.
-            But this will takes up some internal memory. On esp32c3 soc, enabling this option will consume 1.68 KB of internal
-            RAM and will reduce sleep current consumption by about 100 uA. On esp32s3 soc, enabling this option will consume
-            8.58 KB of internal RAM and will reduce sleep current consumption by about 650 uA.
+            If enabled, the CPU will be powered down in light sleep,
+            ESP chips supports saving and restoring CPU's running context before and after light sleep,
+            the feature provides applications with seamless CPU powerdowned lightsleep without user awareness.
+            But this will takes up some internal memory.
+            On esp32c3 soc, enabling this option will consume 1.68 KB of internal RAM
+            and will reduce sleep current consumption by about 100 uA.
+            On esp32s3 soc, enabling this option will consume 8.58 KB of internal RAM
+            and will reduce sleep current consumption by about 650 uA.
 
     config PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         bool "Restore I/D-cache tag memory after power down CPU light sleep"
         depends on IDF_TARGET_ESP32S3 && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         default y
         help
-            Cache tag memory and CPU both belong to the CPU power domain. ESP chips supports saving and restoring Cache tag memory
-            before and after sleep, this feature supports accesses to the external memory that was cached before sleep still
-            be cached when the CPU wakes up from a powerdowned CPU lightsleep. This option controls the restore method for Cache
-            tag memory in lightsleep.
-            If this option is enabled, the I/D-cache tag memory will be backuped to the internal RAM before sleep and restored
-            upon wakeup. Depending on the the cache configuration, if this option is enabled, it will consume up to 9 KB
-            of internal RAM.
-            If this option is disabled, all cached data won't be kept after sleep, the DCache will be writeback before
-            sleep and invalid all cached data after sleep, all accesses to external memory(Flash/PSRAM) will be cache
-            missed after waking up, resulting in performance degradation due to increased memory accesses latency.
+            Cache tag memory and CPU both belong to the CPU power domain.
+            ESP chips supports saving and restoring Cache tag memory before and after sleep,
+            this feature supports accesses to the external memory that was cached before sleep still
+            be cached when the CPU wakes up from a powerdowned CPU lightsleep.
+            This option controls the restore method for Cache tag memory in lightsleep.
+            If this option is enabled, the I/D-cache tag memory will be backuped to the internal RAM
+            before sleep and restored upon wakeup.
+            Depending on the the cache configuration, if this option is enabled,
+            it will consume up to 9 KB of internal RAM.
+            If this option is disabled, all cached data won't be kept after sleep,
+            the DCache will be writeback before sleep and invalid all cached data after sleep,
+            all accesses to external memory(Flash/PSRAM) will be cache missed after waking up,
+            resulting in performance degradation due to increased memory accesses latency.
 
     config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
-        depends on SOC_PAU_SUPPORTED
+        depends on SOC_PM_SUPPORT_TOP_PD && SOC_PAU_SUPPORTED
+        select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !SOC_CPU_IN_TOP_DOMAIN
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
             If enabled, digital peripherals will be powered down in light sleep, it will reduce sleep

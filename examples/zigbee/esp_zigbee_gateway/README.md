@@ -54,7 +54,7 @@ I (660) ESP_ZB_GATEWAY: status: -1
 I (670) ESP_ZB_GATEWAY: Zigbee stack initialized
 I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted
 I (1280) ESP_ZB_GATEWAY: Start network formation
-I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)
+I (3060) ESP_ZB_GATEWAY: Formed network successfully (Extended PAN ID: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651, Channel:13, Short Address: 0x0000)
 I (4060) ESP_ZB_GATEWAY: status: 0
 I (4400) ESP_ZB_GATEWAY: Network steering started
 ```

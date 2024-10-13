@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,29 @@
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_networking_api.h"
 
+#if CONFIG_BLE_MESH_DEINIT
+static SemaphoreHandle_t deinit_comp_semaphore;
+#endif
+
+static inline void btc_ble_mesh_prov_cb_to_app_reprocess(esp_ble_mesh_prov_cb_event_t event,
+                                                         esp_ble_mesh_prov_cb_param_t *param)
+{
+    switch (event) {
+#if CONFIG_BLE_MESH_DEINIT
+    case ESP_BLE_MESH_DEINIT_MESH_COMP_EVT:
+        assert(deinit_comp_semaphore);
+        /* Give the semaphore when BLE Mesh de-initialization is finished.
+         * @note: At nimble host, once this lock is released, it will cause
+         * the btc task to be deleted.
+         */
+        xSemaphoreGive(deinit_comp_semaphore);
+        break;
+#endif
+    default:
+        break;
+    }
+}
+
 static inline void btc_ble_mesh_prov_cb_to_app(esp_ble_mesh_prov_cb_event_t event,
                                                esp_ble_mesh_prov_cb_param_t *param)
 {
@@ -79,6 +102,8 @@ static inline void btc_ble_mesh_prov_cb_to_app(esp_ble_mesh_prov_cb_event_t even
     if (btc_ble_mesh_cb) {
         btc_ble_mesh_cb(event, param);
     }
+
+    btc_ble_mesh_prov_cb_to_app_reprocess(event, param);
 }
 
 static inline void btc_ble_mesh_model_cb_to_app(esp_ble_mesh_model_cb_event_t event,
@@ -2825,6 +2850,8 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
+        /* Temporarily save the deinit semaphore and release it after the mesh deinit complete event is handled in the app layer */
+        deinit_comp_semaphore = arg->mesh_deinit.semaphore;
         break;
 #endif /* CONFIG_BLE_MESH_DEINIT */
     default:

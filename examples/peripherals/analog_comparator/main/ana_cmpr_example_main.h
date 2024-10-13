@@ -18,7 +18,11 @@ extern "C" {
 #define EXAMPLE_WAIT_TIME_PROP              (0.1)               // The wait time proportion in one relative signal period
 #define EXAMPLE_WAITE_TIME_US(freq_approx)  (uint32_t)(1000000 * EXAMPLE_WAIT_TIME_PROP / (freq_approx))
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define EXAMPLE_MONITOR_GPIO_NUM            (32)                // The gpio to monitor the on cross callback
+#else
 #define EXAMPLE_MONITOR_GPIO_NUM            (0)                 // The gpio to monitor the on cross callback
+#endif
 
 void example_init_monitor_gpio(void);
 

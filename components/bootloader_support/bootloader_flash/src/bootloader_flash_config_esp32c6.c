@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
-#include "esp_rom_efuse.h"
 #include "esp32c6/rom/spi_flash.h"
-#include "esp32c6/rom/efuse.h"
 #include "soc/gpio_periph.h"
-#include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc_caps.h"
@@ -32,6 +29,11 @@ void bootloader_flash_update_id()
 {
     esp_rom_spiflash_chip_t *chip = &rom_spiflash_legacy_data->chip;
     chip->device_id = bootloader_read_flash_id();
+}
+
+void bootloader_flash_update_size(uint32_t size)
+{
+    rom_spiflash_legacy_data->chip.chip_size = size;
 }
 
 void IRAM_ATTR bootloader_flash_cs_timing_config()
@@ -67,12 +69,12 @@ static const char *TAG = "boot.esp32c6";
 
 void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
-    uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
-    uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
-    uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
-    uint8_t cs0_gpio_num = SPI_CS0_GPIO_NUM;
-    uint8_t hd_gpio_num  = SPI_HD_GPIO_NUM;
-    uint8_t wp_gpio_num  = SPI_WP_GPIO_NUM;
+    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
+    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
+    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
+    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
+    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
+    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
     esp_rom_gpio_pad_set_drv(clk_gpio_num, drv);
     esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
     esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);

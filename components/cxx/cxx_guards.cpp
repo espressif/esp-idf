@@ -68,7 +68,7 @@ static void wait_for_guard_obj(guard_t* g)
     s_static_init_waiting_count++;
 #ifndef _NDEBUG
     s_static_init_max_waiting_count = std::max(s_static_init_waiting_count,
-            s_static_init_max_waiting_count);
+                                               s_static_init_max_waiting_count);
 #endif
 
     do {
@@ -91,7 +91,7 @@ static void wait_for_guard_obj(guard_t* g)
         /* Semaphore may have been given because some other guard object became ready.
          * Check the guard object we need and wait again if it is still pending.
          */
-    } while(g->pending);
+    } while (g->pending);
     s_static_init_waiting_count--;
 }
 

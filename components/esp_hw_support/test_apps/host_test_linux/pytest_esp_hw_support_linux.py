@@ -7,6 +7,4 @@ from pytest_embedded import Dut
 @pytest.mark.linux
 @pytest.mark.host_test
 def test_esp_hw_support_linux(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![ignore]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(group='!ignore', timeout=120)

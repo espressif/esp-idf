@@ -1,0 +1,20 @@
+menu "ESP-Driver:I2C Configurations"
+    depends on SOC_I2C_SUPPORTED
+    config I2C_ISR_IRAM_SAFE
+        bool "I2C ISR IRAM-Safe"
+        default n
+        help
+            Ensure the I2C interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+            note: This cannot be used in the I2C legacy driver.
+
+    config I2C_ENABLE_DEBUG_LOG
+        bool "Enable I2C debug log"
+        default n
+        help
+            whether to enable the debug log message for I2C driver.
+            Note that this option only controls the I2C driver log, will not affect other drivers.
+
+            note: This cannot be used in the I2C legacy driver.
+
+endmenu # I2C Configurations

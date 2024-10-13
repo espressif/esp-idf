@@ -1,29 +1,27 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "soc/soc_caps.h"
+/*
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
+*/
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
+#include "hal/usb_dwc_ll.h"
+#include "hal/usb_dwc_types.h"
+#include "hal/assert.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
-NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
-      functions must be called from critical sections unless specified otherwise
-*/
-
-#include <stdlib.h>
-#include <stddef.h>
-#include "soc/soc_caps.h"
-#if SOC_USB_OTG_SUPPORTED
-#include "soc/usb_dwc_struct.h"
-#include "hal/usb_dwc_ll.h"
-#endif
-#include "hal/usb_dwc_types.h"
-#include "hal/assert.h"
 
 #if SOC_USB_OTG_SUPPORTED
 
@@ -142,8 +140,9 @@ typedef struct {
         uint32_t val;
     };
     struct {
-        usb_hal_interval_t interval;        /**< The interval of the endpoint */
-        uint32_t phase_offset_frames;       /**< Phase offset in number of frames */
+        unsigned int interval;              /**< The interval of the endpoint in frames (FS) or microframes (HS) */
+        uint32_t offset;                    /**< Offset of this channel in the periodic scheduler */
+        bool is_hs;                         /**< This endpoint is HighSpeed. Needed for Periodic Frame List (HAL layer) scheduling */
     } periodic;     /**< Characteristic for periodic (interrupt/isochronous) endpoints only */
 } usb_dwc_hal_ep_char_t;
 
@@ -178,7 +177,7 @@ typedef struct {
     uint32_t *periodic_frame_list;                 /**< Pointer to scheduling frame list */
     usb_hal_frame_list_len_t frame_list_len;       /**< Length of the periodic scheduling frame list */
     //FIFO related
-    const usb_dwc_hal_fifo_config_t *fifo_config;  /**< FIFO sizes configuration */
+    usb_dwc_hal_fifo_config_t fifo_config;         /**< FIFO sizes configuration */
     union {
         struct {
             uint32_t dbnc_lock_enabled: 1;      /**< Debounce lock enabled */
@@ -193,7 +192,7 @@ typedef struct {
     struct {
         int num_allocd;                             /**< Number of channels currently allocated */
         uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
-        usb_dwc_hal_chan_t *hdls[USB_DWC_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
+        usb_dwc_hal_chan_t *hdls[OTG_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usb_dwc_hal_context_t;
 
@@ -206,7 +205,7 @@ typedef struct {
  * - The peripheral must have been reset and clock un-gated
  * - The USB PHY (internal or external) and associated GPIOs must already be configured
  * - GPIO pins configured
- * - Interrupt allocated but DISABLED (in case of an unknown interupt state)
+ * - Interrupt allocated but DISABLED (in case of an unknown interrupt state)
  * Exit:
  * - Checks to see if DWC_OTG is alive, and if HW version/config is correct
  * - HAl context initialized
@@ -291,7 +290,7 @@ static inline void usb_dwc_hal_port_init(usb_dwc_hal_context_t *hal)
 /**
  * @brief Deinitialize the host port
  *
- * - Will disable the host port's interrupts preventing further port aand channel events from ocurring
+ * - Will disable the host port's interrupts preventing further port aand channel events from occurring
  *
  * @param hal Context of the HAL layer
  */
@@ -334,7 +333,6 @@ static inline void usb_dwc_hal_port_toggle_power(usb_dwc_hal_context_t *hal, boo
  */
 static inline void usb_dwc_hal_port_toggle_reset(usb_dwc_hal_context_t *hal, bool enable)
 {
-    HAL_ASSERT(hal->channels.num_allocd == 0);  //Cannot reset if there are still allocated channels
     usb_dwc_ll_hprt_set_port_reset(hal->dev, enable);
 }
 
@@ -428,17 +426,6 @@ static inline void usb_dwc_hal_port_set_frame_list(usb_dwc_hal_context_t *hal, u
 }
 
 /**
- * @brief Get the pointer to the periodic scheduling frame list
- *
- * @param hal Context of the HAL layer
- * @return uint32_t* Base address of the periodic scheduling frame list
- */
-static inline uint32_t *usb_dwc_hal_port_get_frame_list(usb_dwc_hal_context_t *hal)
-{
-    return hal->periodic_frame_list;
-}
-
-/**
  * @brief Enable periodic scheduling
  *
  * @note The periodic frame list must be set via usb_dwc_hal_port_set_frame_list() should be set before calling this
@@ -459,7 +446,7 @@ static inline void usb_dwc_hal_port_periodic_enable(usb_dwc_hal_context_t *hal)
 /**
  * @brief Disable periodic scheduling
  *
- * Disabling periodic scheduling will save a bit of DMA bandwith (as the controller will no longer fetch the schedule
+ * Disabling periodic scheduling will save a bit of DMA bandwidth (as the controller will no longer fetch the schedule
  * from the frame list).
  *
  * @note Before disabling periodic scheduling, it is the user's responsibility to ensure that all periodic channels have
@@ -517,17 +504,17 @@ static inline usb_dwc_speed_t usb_dwc_hal_port_get_conn_speed(usb_dwc_hal_contex
  * @brief Disable the debounce lock
  *
  * This function must be called after calling usb_dwc_hal_port_check_if_connected() and will allow connection/disconnection
- * events to occur again. Any pending connection or disconenction interrupts are cleared.
+ * events to occur again. Any pending connection or disconnection interrupts are cleared.
  *
  * @param hal Context of the HAL layer
  */
 static inline void usb_dwc_hal_disable_debounce_lock(usb_dwc_hal_context_t *hal)
 {
     hal->flags.dbnc_lock_enabled = 0;
-    //Clear Conenction and disconenction interrupt in case it triggered again
+    //Clear Connection and disconnection interrupt in case it triggered again
     usb_dwc_ll_gintsts_clear_intrs(hal->dev, USB_DWC_LL_INTR_CORE_DISCONNINT);
     usb_dwc_ll_hprt_intr_clear(hal->dev, USB_DWC_LL_INTR_HPRT_PRTCONNDET);
-    //Reenable the hprt (connection) and disconnection interrupts
+    //Re-enable the hprt (connection) and disconnection interrupts
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_DISCONNINT);
 }
 
@@ -684,10 +671,10 @@ bool usb_dwc_hal_chan_request_halt(usb_dwc_hal_chan_t *chan_obj);
 /**
  * @brief Indicate that a channel is halted after a port error
  *
- * When a port error occurs (e.g., discconect, overcurrent):
+ * When a port error occurs (e.g., disconnect, overcurrent):
  * - Any previously active channels will remain active (i.e., they will not receive a channel interrupt)
  * - Attempting to disable them using usb_dwc_hal_chan_request_halt() will NOT generate an interrupt for ISOC channels
- *   (probalby something to do with the periodic scheduling)
+ *   (probably something to do with the periodic scheduling)
  *
  * However, the channel's enable bit can be left as 1 since after a port error, a soft reset will be done anyways.
  * This function simply updates the channels internal state variable to indicate it is halted (thus allowing it to be

@@ -17,7 +17,7 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include"
                        PRIV_INCLUDE_DIRS "." "spiffs/src"
                        REQUIRES esp_partition
-                       PRIV_REQUIRES ${pr} spi_flash)
+                       PRIV_REQUIRES ${pr})
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)

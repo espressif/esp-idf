@@ -56,24 +56,39 @@ menu "SPI RAM config"
         int
         default 26
 
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature"
+        default n
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        help
+            Helper for selecting both `SPIRAM_FETCH_INSTRUCTIONS` and `SPIRAM_RODATA`
+
     config SPIRAM_FETCH_INSTRUCTIONS
         bool "Move Instructions in Flash to PSRAM"
         default n
         help
             If enabled, instructions in flash will be moved into PSRAM on startup.
-            If SPIRAM_RODATA is also enabled, code that requires execution during an SPI1 Flash operation
-            can forgo being placed in IRAM, thus optimizing RAM usage (see External RAM documentation
-            for more details).
+            If SPIRAM_RODATA is also enabled, code that requires execution during an MSPI1 Flash operation
+            can forgo being placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
 
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
 
     config SPIRAM_RODATA
         bool "Move Read-Only Data in Flash to PSRAM"
         default n
         help
             If enabled, rodata in flash will be moved into PSRAM on startup.
-            If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation
-            can forgo being placed in IRAM, thus optimizing RAM usage (see External RAM documentation
-            for more details).
+            If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an MSPI1 Flash operation
+            is not necessary to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operation can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations. PSRAM access speed is faster than Flash access.
+            So the performance is better. (see External RAM documentation for more details).
 
     choice SPIRAM_SPEED
         prompt "Set RAM clock speed"
@@ -101,6 +116,25 @@ menu "SPI RAM config"
         config SPIRAM_SPEED_40M
             bool "40Mhz clock speed"
     endchoice
+
+    config SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        depends on SPIRAM_SPEED_120M && SPIRAM_MODE_OCT && IDF_EXPERIMENTAL_FEATURES
+        bool "Adjust PSRAM timing tuning point via on-chip temperature sensor in real-time"
+        default n
+        help
+            Temperature would influence the source clock frequency so that the timing tuning point set in start-up
+            might not be always proper when temperature varies in high range. This configuration would help checking
+            the temperature in real-time, and adjust timing point automatically when temperature change.
+            (see External RAM documentation for more details)
+
+    config SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND
+        depends on SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        int "PSRAM timing tuning measure temperature interval (unit: second)"
+        default 5
+        help
+            Due to adjusting timing point automatically when temperature change, the task will measure current
+            temperature value in some specific interval. This configuration option would help you to set the
+            proper interval. The interval unit is second.
 
     config SPIRAM_SPEED
         int

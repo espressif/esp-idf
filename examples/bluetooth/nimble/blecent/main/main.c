@@ -28,7 +28,29 @@
 #include "services/gap/ble_svc_gap.h"
 #include "blecent.h"
 
-/*** The UUID of the service containing the subscribable characterstic ***/
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
+#endif
+#endif
+
+/*** The UUID of the service containing the subscribable characteristic ***/
 static const ble_uuid_t * remote_svc_uuid =
     BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
                      	0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
@@ -183,7 +205,7 @@ blecent_custom_gatt_operations(const struct peer* peer)
                              remote_chr_uuid,
                              BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
     if (dsc == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characterstic\n");
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characteristic\n");
         goto err;
     }
 
@@ -455,17 +477,27 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+    uint32_t *addr_offset;
+#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
 
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
+#if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+#else
+        addr_offset = (uint32_t *)&peer_addr[1];
+        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        peer_addr[5] = 0xC3;
+        peer_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+#endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
@@ -501,6 +533,9 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+    uint32_t *addr_offset;
+#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
 
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -516,10 +551,17 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+#if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+#else
+        addr_offset = (uint32_t *)&peer_addr[1];
+        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        peer_addr[5] = 0xC3;
+        peer_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+#endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
@@ -561,12 +603,14 @@ blecent_connect_if_interesting(void *disc)
     }
 #endif
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         MODLOG_DFLT(DEBUG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -647,14 +691,14 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
         blecent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
@@ -800,7 +844,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         ext_print_adv_report(&event->disc);
 
         blecent_connect_if_interesting(&event->disc);

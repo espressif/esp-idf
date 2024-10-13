@@ -532,7 +532,7 @@ ESP-BLE-MESH 常见问题手册
 
     .. only:: esp32
 
-        未搭载 PSRAM 的 :doc:`ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>` 开发板，Wi-Fi 和 ESP-BLE-MESH 共存可以正常运行，但是吞吐率较低。当 Wi-Fi 和 ESP-BLE-MESH 共存时，搭载 PSRAM 的 ESP32-DevKitC 速率可以稳定在 1 Mbps 以上。
+        未搭载 PSRAM 的 `ESP32-DevKitC <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-devkitc/index.html>`__ 开发板，Wi-Fi 和 ESP-BLE-MESH 共存可以正常运行，但是吞吐率较低。当 Wi-Fi 和 ESP-BLE-MESH 共存时，搭载 PSRAM 的 ESP32-DevKitC 速率可以稳定在 1 Mbps 以上。
 
     应使能 menuconfig 中的一些配置来支持 PSRAM。
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -273,6 +273,15 @@ typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
  */
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback);
 
+/**
+ * @brief           This function is called to get the current application callbacks
+ *                  with BTA GATTC module.
+ *
+ * @return
+ *                  - esp_gattC_cb_t : current callback
+ *
+ */
+esp_gattc_cb_t esp_ble_gattc_get_callback(void);
 
 /**
  * @brief           This function is called to register application callbacks
@@ -290,9 +299,13 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id);
 
 /**
  * @brief           This function is called to unregister an application
- *                  from GATTC module.
+ *                  from the GATTC module.
  *
  * @param[in]       gattc_if: Gatt client access interface.
+ *
+ * @note            Before calling this API, ensure that all activities
+ *                  related to the application, such as connections, scans, ADV,
+ *                  are properly closed.
  *
  * @return
  *                  - ESP_OK: success
@@ -599,7 +612,7 @@ esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id,
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
- * @param[in]       handle : characteritic handle to read.
+ * @param[in]       handle : characteristic handle to read.
  * @param[in]       auth_req : authenticate request type
  *
  * @return

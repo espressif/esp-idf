@@ -16,6 +16,8 @@
  */
 
 #include "sdmmc_common.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#include "sd_pwr_ctrl.h"
 
 static const char* TAG = "sdmmc_init";
 
@@ -30,14 +32,38 @@ static const char* TAG = "sdmmc_init";
         } \
     } while(0);
 
+#define SDMMC_INIT_STEP_PARAM(condition, function, param) \
+    do { \
+        if ((condition)) { \
+            esp_err_t err = (function)(card, param); \
+            if (err != ESP_OK) { \
+                ESP_LOGD(TAG, "%s: %s returned 0x%x", __func__, #function, err); \
+                return err; \
+            } \
+        } \
+    } while(0);
 
 esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 {
+    esp_err_t ret = ESP_FAIL;
     memset(card, 0, sizeof(*card));
     memcpy(&card->host, config, sizeof(*config));
+
     const bool is_spi = host_is_spi(card);
     const bool always = true;
     const bool io_supported = true;
+
+    if (config->pwr_ctrl_handle) {
+        int voltage_mv = config->io_voltage * 1000;
+        ret = sd_pwr_ctrl_set_io_voltage(config->pwr_ctrl_handle, voltage_mv);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to set voltage (0x%x)", ret);
+            return ret;
+        }
+    }
+
+    /* Allocate cache-aligned buffer for SDIO over SDMMC.*/
+    SDMMC_INIT_STEP(!is_spi, sdmmc_allocate_aligned_buf);
 
     /* Check if host flags are compatible with slot configuration. */
     SDMMC_INIT_STEP(!is_spi, sdmmc_fix_host_flags);
@@ -99,6 +125,10 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* MMC cards: read CXD */
     SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_read_ext_csd);
 
+    /* SDIO cards: read CCCR card capabilities */
+    uint8_t card_cap = 0;
+    SDMMC_INIT_STEP_PARAM(is_sdio, sdmmc_io_init_read_card_cap, &card_cap);
+
     /* Try to switch card to HS mode if the card supports it.
      * Set card->max_freq_khz value accordingly.
      */
@@ -122,7 +152,8 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);
     /* Sanity check after eMMC switch to HS mode */
     SDMMC_INIT_STEP(is_mmc, sdmmc_init_mmc_check_ext_csd);
-    /* TODO: add similar checks for SDIO */
+    /* Sanity check for SDIO after switching the frequency */
+    SDMMC_INIT_STEP_PARAM(is_sdio, sdmmc_io_init_check_card_cap, &card_cap);
 
     return ESP_OK;
 }

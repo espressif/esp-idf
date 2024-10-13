@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,15 @@ typedef struct {
 } i2c_hal_context_t;
 
 /**
+ * @brief I2C hal clock configurations
+ */
+typedef struct {
+    uint8_t clk_sel;    // clock select
+    uint8_t clk_active; // clock active
+    hal_utils_clk_div_t clk_div;  // clock dividers
+} i2c_hal_sclk_info_t;
+
+/**
  * @brief Timing configuration structure. Used for I2C reset internally.
  */
 typedef struct {
@@ -47,6 +56,7 @@ typedef struct {
     int sda_sample; /*!< high_period time */
     int sda_hold; /*!< sda hold time */
     int timeout; /*!< timeout value */
+    i2c_hal_sclk_info_t clk_cfg; /*!< clock configuration */
 } i2c_hal_timing_config_t;
 
 #if SOC_I2C_SUPPORT_SLAVE
@@ -123,6 +133,15 @@ void i2c_hal_master_handle_tx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
 void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
 
 /**
+ * @brief Set scl timeout reg value according to given timeout us and source clock frequency
+ *
+ * @param hal Context of the HAL layer
+ * @param timeout_us timeout us
+ * @param sclk_clock_hz source clock hz
+ */
+void i2c_hal_master_set_scl_timeout_val(i2c_hal_context_t *hal, uint32_t timeout_us, uint32_t sclk_clock_hz);
+
+/**
  * @brief Init I2C hal layer
  *
  * @param hal Context of the HAL
@@ -160,6 +179,8 @@ void _i2c_hal_deinit(i2c_hal_context_t *hal);
  */
 void i2c_hal_master_trans_start(i2c_hal_context_t *hal);
 
+#if !SOC_I2C_SUPPORT_HW_FSM_RST
+
 /**
  * @brief Get timing configuration
  *
@@ -175,6 +196,8 @@ void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
  * @param timing_config Timing config structure.
  */
 void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config);
+
+#endif // !SOC_I2C_SUPPORT_HW_FSM_RST
 
 #endif  // #if SOC_I2C_SUPPORTED
 

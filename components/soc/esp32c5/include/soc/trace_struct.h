@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -10,14 +10,14 @@
 extern "C" {
 #endif
 
-/** Group: Trace memory configuration registers */
+/** Group: Memory configuration registers */
 /** Type of mem_start_addr register
- *  mem start addr
+ *  Memory start address
  */
 typedef union {
     struct {
         /** mem_start_addr : R/W; bitpos: [31:0]; default: 0;
-         *  The start address of trace memory
+         *  Configures the start address of the trace memory
          */
         uint32_t mem_start_addr:32;
     };
@@ -25,12 +25,12 @@ typedef union {
 } trace_mem_start_addr_reg_t;
 
 /** Type of mem_end_addr register
- *  mem end addr
+ *  Memory end address
  */
 typedef union {
     struct {
         /** mem_end_addr : R/W; bitpos: [31:0]; default: 4294967295;
-         *  The end address of trace memory
+         *  Configures the end address of the trace memory.
          */
         uint32_t mem_end_addr:32;
     };
@@ -38,12 +38,12 @@ typedef union {
 } trace_mem_end_addr_reg_t;
 
 /** Type of mem_current_addr register
- *  mem current addr
+ *  Memory current addr
  */
 typedef union {
     struct {
         /** mem_current_addr : RO; bitpos: [31:0]; default: 0;
-         *  current_mem_addr,indicate that next writing addr
+         *  Represents the current memory address for writing.
          */
         uint32_t mem_current_addr:32;
     };
@@ -51,14 +51,16 @@ typedef union {
 } trace_mem_current_addr_reg_t;
 
 /** Type of mem_addr_update register
- *  mem addr update
+ *  Memory address update
  */
 typedef union {
     struct {
         /** mem_current_addr_update : WT; bitpos: [0]; default: 0;
-         *  when set, the  will
-         *  \hyperref[fielddesc:TRACEMEMCURRENTADDR]{TRACE_MEM_CURRENT_ADDR} update to
-         *  \hyperref[fielddesc:TRACEMEMSTARTADDR]{TRACE_MEM_START_ADDR}.
+         *  Configures whether to update the value of
+         *  \hyperref[fielddesc:TRACEMEMCURRENTADDR]{TRACE_MEM_CURRENT_ADDR} to
+         *  \hyperref[fielddesc:TRACEMEMSTARTADDR]{TRACE_MEM_START_ADDR}.\\
+         *  0: Not update\\
+         *  1: Update\\
          */
         uint32_t mem_current_addr_update:1;
         uint32_t reserved_1:31;
@@ -69,17 +71,17 @@ typedef union {
 
 /** Group: Trace fifo status register */
 /** Type of fifo_status register
- *  fifo status register
+ *  FIFO status register
  */
 typedef union {
     struct {
         /** fifo_empty : RO; bitpos: [0]; default: 1;
-         *  Represent whether the fifo is empty. \\1: empty \\0: not empty
+         *  Represent whether the FIFO is empty. \\1: Empty \\0: Not empty
          */
         uint32_t fifo_empty:1;
         /** work_status : RO; bitpos: [2:1]; default: 0;
-         *  Represent trace work status: \\0: idle state \\1: working state\\ 2: wait state due
-         *  to hart halted or havereset \\3: lost state
+         *  Represent the state of the encoder: \\0: Idle state \\1: Working state\\ 2: Wait
+         *  state because hart is halted or in reset \\3: Lost state\\
          */
         uint32_t work_status:2;
         uint32_t reserved_3:29;
@@ -88,18 +90,18 @@ typedef union {
 } trace_fifo_status_reg_t;
 
 
-/** Group: Trace interrupt configuration registers */
+/** Group: Interrupt registers */
 /** Type of intr_ena register
- *  interrupt enable register
+ *  Interrupt enable register
  */
 typedef union {
     struct {
         /** fifo_overflow_intr_ena : R/W; bitpos: [0]; default: 0;
-         *  Set 1 enable fifo_overflow interrupt
+         *  Write 1 to enable TRACE_FIFO_OVERFLOW_INTR
          */
         uint32_t fifo_overflow_intr_ena:1;
         /** mem_full_intr_ena : R/W; bitpos: [1]; default: 0;
-         *  Set 1 enable mem_full interrupt
+         *  Write 1 to enable TRACE_MEM_FULL_INTR
          */
         uint32_t mem_full_intr_ena:1;
         uint32_t reserved_2:30;
@@ -108,16 +110,16 @@ typedef union {
 } trace_intr_ena_reg_t;
 
 /** Type of intr_raw register
- *  interrupt status register
+ *  Interrupt raw status register
  */
 typedef union {
     struct {
         /** fifo_overflow_intr_raw : RO; bitpos: [0]; default: 0;
-         *  fifo_overflow interrupt status
+         *  The raw interrupt status of TRACE_FIFO_OVERFLOW_INTR.
          */
         uint32_t fifo_overflow_intr_raw:1;
         /** mem_full_intr_raw : RO; bitpos: [1]; default: 0;
-         *  mem_full interrupt status
+         *  The raw interrupt status of TRACE_MEM_FULL_INTR
          */
         uint32_t mem_full_intr_raw:1;
         uint32_t reserved_2:30;
@@ -126,16 +128,16 @@ typedef union {
 } trace_intr_raw_reg_t;
 
 /** Type of intr_clr register
- *  interrupt clear register
+ *  Interrupt clear register
  */
 typedef union {
     struct {
         /** fifo_overflow_intr_clr : WT; bitpos: [0]; default: 0;
-         *  Set 1 clear fifo overflow interrupt
+         *  Write 1 to clear TRACE_FIFO_OVERFLOW_INTR
          */
         uint32_t fifo_overflow_intr_clr:1;
         /** mem_full_intr_clr : WT; bitpos: [1]; default: 0;
-         *  Set 1 clear mem full interrupt
+         *  Write 1 to clear TRACE_MEM_FULL_INTR
          */
         uint32_t mem_full_intr_clr:1;
         uint32_t reserved_2:30;
@@ -146,25 +148,25 @@ typedef union {
 
 /** Group: Trace configuration register */
 /** Type of trigger register
- *  trigger register
+ *  Trace enable register
  */
 typedef union {
     struct {
         /** trigger_on : WT; bitpos: [0]; default: 0;
-         *  Configure whether or not start trace.\\1: start trace \\0: invalid\\
+         *  Configure whether to enable the encoder.\\0: Invalid \\1: Enable\\
          */
         uint32_t trigger_on:1;
         /** trigger_off : WT; bitpos: [1]; default: 0;
-         *  Configure whether or not stop trace.\\1: stop trace \\0: invalid\\
+         *  Configure whether to disable the encoder.\\0: Invalid \\1: Disable\\
          */
         uint32_t trigger_off:1;
         /** mem_loop : R/W; bitpos: [2]; default: 1;
-         *  Configure memory loop mode. \\1: trace will loop wrtie trace_mem. \\0: when
-         *  mem_current_addr at mem_end_addr, it will stop at the mem_end_addr\\
+         *  Configure the memory writing mode. \\0: Non-loop mode. \\1: Loop mode\\
          */
         uint32_t mem_loop:1;
         /** restart_ena : R/W; bitpos: [3]; default: 1;
-         *  Configure whether or not enable auto-restart.\\1: enable\\0: disable\\
+         *  Configure whether or not enable automatic restart function for the encoder.\\0:
+         *  Disable\\1: Enable\\
          */
         uint32_t restart_ena:1;
         uint32_t reserved_4:28;
@@ -178,37 +180,29 @@ typedef union {
 typedef union {
     struct {
         /** dm_trigger_ena : R/W; bitpos: [0]; default: 0;
-         *  Configure whether or not enable cpu trigger action.\\1: enable\\0:disable\\
+         *  Configure whether to enable the trigger signal.\\0: Disable\\1:enable\\
          */
         uint32_t dm_trigger_ena:1;
         /** reset_ena : R/W; bitpos: [1]; default: 0;
-         *  Configure whether or not enable trace cpu haverest, when enabeld, if cpu have
-         *  reset, the encoder will output a packet to report the address of the last
-         *  instruction, and upon reset deassertion, the encoder start again.\\1: enabeld\\0:
-         *  disabled\\
+         *  Configure whether to reset, when enabled, if cpu have reset, the encoder will
+         *  output a packet to report the address of the last instruction, and upon reset
+         *  deassertion, the encoder start again.\\0: Disable\\0: Enable\\
          */
         uint32_t reset_ena:1;
         /** halt_ena : R/W; bitpos: [2]; default: 0;
-         *  Configure whether or not enable trace cpu is halted, when enabeld, if the cpu
-         *  halted, the encoder will output a packet to report the address of the last
-         *  instruction, and upon halted deassertion, the encoder start again.When disabled,
-         *  encoder will not report the last address before halted and first address after
-         *  halted, cpu halted information will not be tracked. \\1: enabeld\\0: disabled\\
+         *  Configure whether to enable the halt signal. \\1: Disable\\1: Enable\\
          */
         uint32_t halt_ena:1;
         /** stall_ena : R/W; bitpos: [3]; default: 0;
-         *  Configure whether or not enable stall cpu. When enabled, when the fifo almost full,
-         *  the cpu will be stalled until the packets is able to write to fifo.\\1:
-         *  enabled.\\0: disabled\\
+         *  Configure whether to enable the stall signal. \\0: Disable.\\1: Enable\\
          */
         uint32_t stall_ena:1;
         /** full_address : R/W; bitpos: [4]; default: 0;
-         *  Configure whether or not enable full-address mode.\\1: full address mode.\\0: delta
-         *  address mode\\
+         *  Configure the address mode.\\0: Delta address mode.\\1: Full address mode.\\
          */
         uint32_t full_address:1;
         /** implicit_except : R/W; bitpos: [5]; default: 0;
-         *  Configure whether or not enabel implicit exception mode. When enabled,, do not sent
+         *  Configure whether or not enable implicit exception mode. When enabled,, do not sent
          *  exception address, only exception cause in exception packets.\\1: enabled\\0:
          *  disabled\\
          */
@@ -224,26 +218,30 @@ typedef union {
 typedef union {
     struct {
         /** filter_en : R/W; bitpos: [0]; default: 0;
-         *  Configure whether or not enable filter unit. \\1: enable filter.\\ 0: always match
+         *  Configure whether to enable filtering. \\0: Disable, always match.\\ 1: Enable
          */
         uint32_t filter_en:1;
         /** match_comp : R/W; bitpos: [1]; default: 0;
-         *  when set, the comparator must be high in order for the filter to match
+         *  Configure whether to enable the comparator match mode. \\0: Disable \\1: Enable,
+         *  the comparator must be high in order for the filter to match
          */
         uint32_t match_comp:1;
         /** match_privilege : R/W; bitpos: [2]; default: 0;
-         *  when set, match privilege levels specified by
+         *  Configure whether to enable the privilege match mode. \\0: Disable \\1: Enable,
+         *  match privilege levels specified by
          *  \hyperref[fielddesc:TRACEMATCHCHOICEPRIVILEGE]{TRACE_MATCH_CHOICE_PRIVILEGE}.
          */
         uint32_t match_privilege:1;
         /** match_ecause : R/W; bitpos: [3]; default: 0;
-         *  when set, start matching from exception cause codes specified by
+         *  Configure whether to enable ecause match mode. \\0: Disable \\1: Enable, start
+         *  matching from exception cause codes specified by
          *  \hyperref[fielddesc:TRACEMATCHCHOICEECAUSE]{TRACE_MATCH_CHOICE_ECAUSE}, and stop
          *  matching upon return from the 1st matching exception.
          */
         uint32_t match_ecause:1;
         /** match_interrupt : R/W; bitpos: [4]; default: 0;
-         *  when set, start matching from a trap with the interrupt level codes specified by
+         *  Configure whether to enable the interrupt match mode. \\0: Disable \\1: Enable,
+         *  start matching from a trap with the interrupt level codes specified by
          *  \hyperref[fielddesc:TRACEMATCHVALUEINTERRUPT]{TRACE_MATCH_VALUE_INTERRUPT}, and
          *  stop matching upon return from the 1st matching trap.
          */
@@ -259,19 +257,19 @@ typedef union {
 typedef union {
     struct {
         /** match_choice_privilege : R/W; bitpos: [0]; default: 0;
-         *  Select match which privilege level when
-         *  \hyperref[fielddesc:TRACEMATCHPRIVILEGE]{TRACE_MATCH_PRIVILEGE} is set. \\1:
-         *  machine mode. \\0: user mode
+         *  Configures the privilege level for matching. Valid only when
+         *  \hyperref[fielddesc:TRACEMATCHPRIVILEGE]{TRACE_MATCH_PRIVILEGE} is set. \\0: User
+         *  mode. \\1: Machine mode
          */
         uint32_t match_choice_privilege:1;
         /** match_value_interrupt : R/W; bitpos: [1]; default: 0;
-         *  Select which match which itype when
-         *  \hyperref[fielddesc:TRACEMATCHINTERRUPT]{TRACE_MATCH_INTERRUP} is set. \\1: match
-         *  itype of 2. \\0: match itype or 1.
+         *  Configures the interrupt level for match. Valid only when when
+         *  \hyperref[fielddesc:TRACEMATCHINTERRUPT]{TRACE_MATCH_INTERRUP} is set. \\0:
+         *  itype=2. \\0: itype=2.
          */
         uint32_t match_value_interrupt:1;
         /** match_choice_ecause : R/W; bitpos: [7:2]; default: 0;
-         *  specified which ecause matched.
+         *  Configures the ecause code for matching.
          */
         uint32_t match_choice_ecause:6;
         uint32_t reserved_8:24;
@@ -285,33 +283,32 @@ typedef union {
 typedef union {
     struct {
         /** p_input : R/W; bitpos: [0]; default: 0;
-         *  Determines which input to compare against the primary comparator, \\0: iaddr, \\1:
-         *  tval.
+         *  Configures the input of the primary comparator for matching: \\0: iaddr \\1: tval\\
          */
         uint32_t p_input:1;
         uint32_t reserved_1:1;
         /** p_function : R/W; bitpos: [4:2]; default: 0;
-         *  Select the primary comparator function. \\0: equal, \\1: not equal, \\2: less than,
-         *  \\3: less than or equal, \\4: greater than, \\5: greater than or equal, \\other:
-         *  always match
+         *  Configures the function for the primary comparator. \\0: Equal, \\1: Not equal,
+         *  \\2: Less than, \\3: Less than or equal, \\4: Greater than, \\5: Greater than or
+         *  equal, \\Other: Always match
          */
         uint32_t p_function:3;
         /** p_notify : R/W; bitpos: [5]; default: 0;
-         *  Generate a trace packet explicitly reporting the address that cause the primary
-         *  match
+         *  Configure whether to explicitly report an instruction address matched against the
+         *  primary comparator. \\0:Not report \\1:Report
          */
         uint32_t p_notify:1;
         uint32_t reserved_6:2;
         /** s_input : R/W; bitpos: [8]; default: 0;
-         *  Determines which input to compare against the secondary comparator, \\0: iaddr,
-         *  \\1: tval.
+         *  Configures the input of the secondary comparator for matching: \\0: iaddr \\1:
+         *  tval\\
          */
         uint32_t s_input:1;
         uint32_t reserved_9:1;
         /** s_function : R/W; bitpos: [12:10]; default: 0;
-         *  Select the secondary comparator function. \\0: equal, \\1: not equal, \\2: less
-         *  than, \\3: less than or equal, \\4: greater than, \\5: greater than or equal,
-         *  \\other: always match
+         *  Configures the function for the secondary comparator. \\0: Equal, \\1: Not equal,
+         *  \\2: Less than, \\3: Less than or equal, \\4: Greater than, \\5: Greater than or
+         *  equal, \\Other: Always match
          */
         uint32_t s_function:3;
         /** s_notify : R/W; bitpos: [13]; default: 0;
@@ -321,10 +318,10 @@ typedef union {
         uint32_t s_notify:1;
         uint32_t reserved_14:2;
         /** match_mode : R/W; bitpos: [17:16]; default: 0;
-         *  0: only primary matches, \\1: primary and secondary comparator both
-         *  matches(P\&\&S),\\ 2:either primary or secondary comparator matches !(P\&\&S), \\3:
-         *  set when primary matches and continue to match until after secondary comparator
-         *  matches
+         *  Configures the comparator match mode: \\0: Only the primary comparator matches \\1:
+         *  Both primary and secondary comparator matches(P\&\&S) \\ 2:Neither primary or
+         *  secondary comparator matches !(P\&\&S) \\3: Start filtering when the primary
+         *  comparator matches and stop filtering when the secondary comparator matches\\
          */
         uint32_t match_mode:2;
         uint32_t reserved_18:14;
@@ -338,7 +335,7 @@ typedef union {
 typedef union {
     struct {
         /** p_match : R/W; bitpos: [31:0]; default: 0;
-         *  primary comparator match value
+         *  Configures the match value for the primary comparator
          */
         uint32_t p_match:32;
     };
@@ -351,7 +348,7 @@ typedef union {
 typedef union {
     struct {
         /** s_match : R/W; bitpos: [31:0]; default: 0;
-         *  secondary comparator match value
+         *  Configures the match value for the secondary comparator
          */
         uint32_t s_match:32;
     };
@@ -359,16 +356,18 @@ typedef union {
 } trace_filter_s_comparator_match_reg_t;
 
 /** Type of resync_prolonged register
- *  resync configuration register
+ *  Resync configuration register
  */
 typedef union {
     struct {
         /** resync_prolonged : R/W; bitpos: [23:0]; default: 128;
-         *  count number, when count to this value, send a sync package
+         *  Configures the threshold for synchronization counter
          */
         uint32_t resync_prolonged:24;
         /** resync_mode : R/W; bitpos: [25:24]; default: 0;
-         *  resyc mode sel: \\0: off, \\2: cycle count  \\3: package num count
+         *  Configures the synchronization mode: \\0: Disable the synchronization counter \\1:
+         *  Invalid \\2: Synchronization counter counts by packet  \\3: Synchronization counter
+         *  counts by cycle\\
          */
         uint32_t resync_mode:2;
         uint32_t reserved_26:6;
@@ -382,11 +381,12 @@ typedef union {
 typedef union {
     struct {
         /** hburst : R/W; bitpos: [2:0]; default: 0;
-         *  set hburst
+         *  Configures the AHB burst mode. \\0: SIGNAL \\1: INCR(length not defined) \\2:INCR4
+         *  \\4:INCR8 \\Others:Invalid
          */
         uint32_t hburst:3;
         /** max_incr : R/W; bitpos: [5:3]; default: 0;
-         *  set max continuous access for incr mode
+         *  Configures the maximum burst length for INCR mode
          */
         uint32_t max_incr:3;
         uint32_t reserved_6:26;
@@ -402,7 +402,9 @@ typedef union {
 typedef union {
     struct {
         /** clk_en : R/W; bitpos: [0]; default: 1;
-         *  The bit is used to enable clock gate when access all registers in this module.
+         *  Configures register clock gating. \\0: Support clock only when the application
+         *  writes registers to save power. \\1:Always force the clock on for registers \\ This
+         *  bit doesn't affect register access.
          */
         uint32_t clk_en:1;
         uint32_t reserved_1:31;
@@ -418,8 +420,7 @@ typedef union {
 typedef union {
     struct {
         /** date : R/W; bitpos: [27:0]; default: 35721984;
-         *  version control register. Note that this default value stored is the latest date
-         *  when the hardware logic was updated.
+         *  Version control register.
          */
         uint32_t date:28;
         uint32_t reserved_28:4;
@@ -428,7 +429,7 @@ typedef union {
 } trace_date_reg_t;
 
 
-typedef struct trace_dev_t {
+typedef struct {
     volatile trace_mem_start_addr_reg_t mem_start_addr;
     volatile trace_mem_end_addr_reg_t mem_end_addr;
     volatile trace_mem_current_addr_reg_t mem_current_addr;

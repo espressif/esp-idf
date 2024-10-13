@@ -43,7 +43,6 @@ char * realpath(const char *file_name, char *resolved_name)
     /* number of path components in the output buffer */
     size_t out_depth = 0;
 
-
     while (*in_ptr) {
         /* "path component" is the part between two '/' path separators.
          * locate the next path component in the input path:
@@ -52,7 +51,7 @@ char * realpath(const char *file_name, char *resolved_name)
         size_t path_component_len = end_of_path_component - in_ptr;
 
         if (path_component_len == 0 ||
-            (path_component_len == 1 && in_ptr[0] == '.')) {
+                (path_component_len == 1 && in_ptr[0] == '.')) {
             /* empty path component or '.' - nothing to do */
         } else if (path_component_len == 2 && in_ptr[0] == '.' && in_ptr[1] == '.') {
             /* '..' - remove one path component from the output */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,8 @@ typedef struct {
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< The signal output from the GPIO will be fed to the input path as well */
         uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
+        uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                       This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< TX channel config flags */
 } rmt_tx_channel_config_t;
 
@@ -89,7 +91,8 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
  *       Based on the setting of `rmt_transmit_config_t::queue_nonblocking`,
  *       if there're too many transactions pending in the queue, this function can block until it has free slot,
  *       otherwise just return quickly.
- * @note The data to be transmitted will be encoded into RMT symbols by the specific `encoder`.
+ * @note The payload data to be transmitted will be encoded into RMT symbols by the specific `encoder`.
+ * @note You CAN'T modify the `payload` during the transmission, it should be kept valid until the transmission is finished.
  *
  * @param[in] tx_channel RMT TX channel that created by `rmt_new_tx_channel()`
  * @param[in] encoder RMT encoder that created by various factory APIs like `rmt_new_bytes_encoder()`

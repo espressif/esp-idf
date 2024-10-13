@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,10 +152,10 @@ esp_err_t rmt_set_tx_carrier(rmt_channel_t channel, bool carrier_en, uint16_t hi
 esp_err_t rmt_set_mem_pd(rmt_channel_t channel, bool pd_en);
 
 /**
-* @brief Get RMT memory low power mode.
+* @brief Check if the RMT memory is force powered down
 *
-* @param channel RMT channel
-* @param pd_en Pointer to accept RMT memory low power mode.
+* @param channel RMT channel (actually this function is configured for all channels)
+* @param pd_en Pointer to accept the result
 *
 * @return
 *     - ESP_ERR_INVALID_ARG Parameter error

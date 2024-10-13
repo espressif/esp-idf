@@ -122,6 +122,8 @@ esp_err_t spi_slave_free(spi_host_device_t host);
 /**
  * @brief Queue a SPI transaction for execution
  *
+ * @note On esp32, if trans length not WORD aligned, the rx buffer last word memory will still overwritten by DMA HW
+ *
  * Queues a SPI transaction to be executed by this slave device. (The transaction queue size was specified when the slave
  * device was initialised via spi_slave_initialize.) This function may block if the queue is full (depending on the
  * ticks_to_wait parameter). No SPI operation is directly initiated by this function, the next queued transaction
@@ -147,9 +149,9 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  * @brief Get the result of a SPI transaction queued earlier
  *
  * This routine will wait until a transaction to the given device (queued earlier with
- * spi_slave_queue_trans) has succesfully completed. It will then return the description of the
+ * spi_slave_queue_trans) has successfully completed. It will then return the description of the
  * completed transaction so software can inspect the result and e.g. free the memory or
- * re-use the buffers.
+ * reuse the buffers.
  *
  * It is mandatory to eventually use this function for any transaction queued by ``spi_slave_queue_trans``.
  *

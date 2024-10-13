@@ -103,7 +103,7 @@ typedef struct {
 /**
  * @brief Initialize ADC continuous driver and get a handle to it
  *
- * @param[in]  hdl_config  Pointer to ADC initilization config. Refer to ``adc_continuous_handle_cfg_t``.
+ * @param[in]  hdl_config  Pointer to ADC initialization config. Refer to ``adc_continuous_handle_cfg_t``.
  * @param[out] ret_handle  ADC continuous mode driver handle
  *
  * @return

@@ -168,7 +168,7 @@ void advanced_ota_example_task(void *pvParameter)
     esp_app_desc_t app_desc;
     err = esp_https_ota_get_img_desc(https_ota_handle, &app_desc);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_https_ota_read_img_desc failed");
+        ESP_LOGE(TAG, "esp_https_ota_get_img_desc failed");
         goto ota_end;
     }
     err = validate_image_header(&app_desc);

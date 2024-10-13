@@ -1,0 +1,18 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/phy/phy_multi_init_data_test:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5", "esp32c61"]
+      reason: lack of runner
+
+tools/test_apps/phy/phy_tsens:
+  disable:
+    - if: (SOC_WIFI_SUPPORTED != 1 or SOC_TEMP_SENSOR_SUPPORTED != 1) or SOC_LIGHT_SLEEP_SUPPORTED != 1
+  depends_components:
+    - hal
+    - driver
+    - esp_phy
+    - esp_hw_support
+    - esp_wifi

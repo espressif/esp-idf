@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 # ESP-IDF Gatt Server Example
 
@@ -40,7 +40,7 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 This example works with UUID16 as default. To change to UUID128, follow this steps:
 
-1. Change the UIID16 to UUID128. You can change the UUID according to your needs.
+1. Change the UUID16 to UUID128. You can change the UUID according to your needs.
 
 ```c
 // Create a new UUID128 (using random values for this example)

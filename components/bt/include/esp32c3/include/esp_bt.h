@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02307120
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02404010
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -144,8 +144,21 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 
 #ifdef CONFIG_BT_CTRL_AGC_RECORRECT_EN
 #define BT_CTRL_AGC_RECORRECT_EN  CONFIG_BT_CTRL_AGC_RECORRECT_EN
+// ESP32-S3
+#if CONFIG_IDF_TARGET_ESP32S3
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+//Check if chip target is ESP32-C3 101
+#if CONFIG_ESP32C3_REV_MIN_101
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+#define BT_CTRL_AGC_RECORRECT_NEW       0
+#endif // CONFIG_ESP32C3_REV_MIN_101
+#endif // CONFIG_IDF_TARGET_ESP32S3
+
 #else
 #define BT_CTRL_AGC_RECORRECT_EN        0
+#define BT_CTRL_AGC_RECORRECT_NEW       0
 #endif
 
 #ifdef CONFIG_BT_CTRL_CODED_AGC_RECORRECT_EN
@@ -175,7 +188,25 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_BLE_CCA_MODE (0)
 #endif
 
-#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
+#if defined(CONFIG_BT_BLE_ADV_DATA_LENGTH_ZERO_AUX)
+#define BT_BLE_ADV_DATA_LENGTH_ZERO_AUX (CONFIG_BT_BLE_ADV_DATA_LENGTH_ZERO_AUX)
+#else
+#define BT_BLE_ADV_DATA_LENGTH_ZERO_AUX (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_CHAN_ASS_EN)
+#define BT_CTRL_CHAN_ASS_EN (CONFIG_BT_CTRL_CHAN_ASS_EN)
+#else
+#define BT_CTRL_CHAN_ASS_EN (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_PING_EN)
+#define BT_CTRL_LE_PING_EN (CONFIG_BT_CTRL_LE_PING_EN)
+#else
+#define BT_CTRL_LE_PING_EN (0)
+#endif
+
+#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1) | (BT_CTRL_AGC_RECORRECT_NEW << 2))
 
 #define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
 
@@ -221,6 +252,9 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .dup_list_refresh_period = DUPL_SCAN_CACHE_REFRESH_PERIOD,             \
     .ble_50_feat_supp  = BT_CTRL_50_FEATURE_SUPPORT,                       \
     .ble_cca_mode = BT_BLE_CCA_MODE,                                       \
+    .ble_data_lenth_zero_aux = BT_BLE_ADV_DATA_LENGTH_ZERO_AUX,            \
+    .ble_chan_ass_en = BT_CTRL_CHAN_ASS_EN,                                \
+    .ble_ping_en = BT_CTRL_LE_PING_EN,                                     \
 }
 
 #else
@@ -269,7 +303,7 @@ typedef struct {
     uint8_t sleep_clock;                    /*!< controller sleep clock */
     uint8_t ble_st_acl_tx_buf_nb;           /*!< controller static ACL TX BUFFER number */
     uint8_t ble_hw_cca_check;               /*!< controller hardware triggered CCA check */
-    uint16_t ble_adv_dup_filt_max;          /*!< maxinum number of duplicate scan filter */
+    uint16_t ble_adv_dup_filt_max;          /*!< maximum number of duplicate scan filter */
     bool coex_param_en;                     /*!< deprecated */
     uint8_t ce_len_type;                    /*!< connection event length computation method */
     bool coex_use_hooks;                    /*!< deprecated */
@@ -292,6 +326,9 @@ typedef struct {
     uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
     bool ble_50_feat_supp;                  /*!< BLE 5.0 feature support */
     uint8_t ble_cca_mode;                   /*!< BLE CCA mode */
+    uint8_t ble_data_lenth_zero_aux;        /*!< Config ext adv aux option */
+    uint8_t ble_chan_ass_en;                /*!< BLE channel assessment enable */
+    uint8_t ble_ping_en;                    /*!< BLE ping procedure enable */
 } esp_bt_controller_config_t;
 
 /**
@@ -339,19 +376,32 @@ typedef enum {
     ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
     ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
     ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 9,              /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9dbm */
-    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
-    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
-    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P21 = 15,             /*!< Corresponding to  +21dbm */
+    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to -9dbm */
+    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to -6dbm */
+    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to -3dbm */
+    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to 0dbm */
+    ESP_PWR_LVL_P3  = 9,              /*!< Corresponding to +3dbm */
+    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to +6dbm */
+    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to +9dbm */
+    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to +12dbm */
+    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to +15dbm */
+    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to +18dbm */
+    ESP_PWR_LVL_P20 = 15,             /*!< Corresponding to +20dbm */
+    ESP_PWR_LVL_P21 = 15,             /*!< Corresponding to +20dbm, this enum variable has been deprecated */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
+
+/**
+ * @brief The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ */
+typedef enum {
+    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
+    ESP_BLE_ENHANCED_PWR_TYPE_ADV,
+    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,
+    ESP_BLE_ENHANCED_PWR_TYPE_INIT,
+    ESP_BLE_ENHANCED_PWR_TYPE_CONN,
+    ESP_BLE_ENHANCED_PWR_TYPE_MAX,
+} esp_ble_enhanced_power_type_t;
 
 /**
  * @brief  Set BLE TX power
@@ -369,6 +419,25 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  * @return             >= 0 - Power level, < 0 - Invalid
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
+
+/**
+ * @brief  ENHANCED API for Setting BLE TX power
+ *         Connection Tx power should only be set after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc.
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level);
+
+/**
+ * @brief  ENHANCED API of Getting BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
+esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
 /**
  * @brief       Initialize BT controller to allocate task and other resource.
@@ -578,6 +647,15 @@ void esp_wifi_bt_power_domain_on(void);
  * @brief bt Wi-Fi power domain power off
  */
 void esp_wifi_bt_power_domain_off(void);
+
+/**
+ * @brief Get the Bluetooth module sleep clock source.
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_init()
+ *
+ * @return  clock source used in Bluetooth low power mode
+ */
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void);
 
 #ifdef __cplusplus
 }

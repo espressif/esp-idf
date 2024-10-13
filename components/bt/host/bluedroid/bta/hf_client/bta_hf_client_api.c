@@ -61,7 +61,8 @@ static const uint8_t bta_hf_client_cb_data_size[] = {
     sizeof(tBTA_HF_CLIENT_VAL),         // #define BTA_HF_CLIENT_BSIR_EVT              19
     sizeof(tBTA_HF_CLIENT_NUMBER),      // #define BTA_HF_CLIENT_BINP_EVT              20
     sizeof(tBTA_HF_CLIENT_VAL),         // #define BTA_HF_CLIENT_RING_INDICATION       21
-    0,                                  // #define BTA_HF_CLIENT_DISABLE_EVT           30
+    0,                                  // #define BTA_HF_CLIENT_DISABLE_EVT           22
+    sizeof(tBTA_SCO_PKT_STAT_NUMS),     // #define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT      23
 };
 /*****************************************************************************
 **  External Function Declarations

@@ -1,6 +1,6 @@
 choice ESP32P4_REV_MIN
     prompt "Minimum Supported ESP32-P4 Revision"
-    default ESP32P4_REV_MIN_0
+    default ESP32P4_REV_MIN_1
     help
         Required minimum chip revision. ESP-IDF will check for it and
         reject to boot if the chip revision fails the check.
@@ -11,11 +11,14 @@ choice ESP32P4_REV_MIN
 
     config ESP32P4_REV_MIN_0
         bool "Rev v0.0"
+    config ESP32P4_REV_MIN_1
+        bool "Rev v0.1"
 endchoice
 
 config ESP32P4_REV_MIN_FULL
     int
     default 0 if ESP32P4_REV_MIN_0
+    default 1 if ESP32P4_REV_MIN_1
 
 config ESP_REV_MIN_FULL
     int
@@ -39,3 +42,20 @@ config ESP32P4_REV_MAX_FULL
 config ESP_REV_MAX_FULL
     int
     default ESP32P4_REV_MAX_FULL
+
+config ESP_EFUSE_BLOCK_REV_MIN_FULL
+    int "Minimum Supported ESP32-P4 eFuse Block Revision"
+    default 0
+    help
+        Required minimum eFuse Block revision. ESP-IDF will check it at the 2nd bootloader stage
+        whether the current image can work correctly for this eFuse Block revision.
+        So that to avoid running an incompatible image on a SoC that contains breaking change in the eFuse Block.
+        If you want to update this value to run the image that not compatible with the current eFuse Block revision,
+        please contact to Espressif's business team for details:
+        https://www.espressif.com.cn/en/contact-us/sales-questions
+
+config ESP_EFUSE_BLOCK_REV_MAX_FULL
+    int
+    default 99
+    comment "Maximum Supported ESP32-P4 eFuse Block Revision (eFuse Block Rev v0.99)"
+    # The revision in the comment must correspond to the default value of ESP_EFUSE_BLOCK_REV_MAX_FULL

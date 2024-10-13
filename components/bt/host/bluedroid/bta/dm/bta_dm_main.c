@@ -31,7 +31,9 @@
 #include "osi/allocator.h"
 #include <string.h>
 
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "esp_coexist.h"
+#endif
 
 /*****************************************************************************
 ** Constants and types
@@ -65,11 +67,15 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     bta_dm_cfg_coex_status,                 /* BTA_DM_API_CFG_COEX_ST_EVT */
 #endif
+    bta_dm_send_vendor_hci,                 /* BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT */
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_page_timeout,                /* BTA_DM_API_PAGE_TO_SET_EVT */
     bta_dm_get_page_timeout,                /* BTA_DM_API_PAGE_TO_GET_EVT */
     bta_dm_set_acl_pkt_types,               /* BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    bta_dm_set_min_enc_key_size,            /* BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT */
+#endif
 #endif
     bta_dm_set_afh_channels,                /* BTA_DM_API_SET_AFH_CHANNELS_EVT */
 #if (SDP_INCLUDED == TRUE)
@@ -87,7 +93,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_pin_reply,                       /* BTA_DM_API_PIN_REPLY_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
-    /* power manger events */
+    /* power manager events */
     bta_dm_pm_btm_status,                   /* BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* BTA_DM_PM_TIMER_EVT */
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
@@ -226,6 +232,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_dtm_rx_start, /* BTA_DM_API_DTM_RX_START_EVT */
     bta_dm_ble_gap_dtm_stop, /* BTA_DM_API_DTM_STOP_EVT */
     bta_dm_ble_gap_clear_adv, /* BTA_DM_API_BLE_CLEAR_ADV_EVT */
+    bta_dm_ble_gap_set_rpa_timeout, /* BTA_DM_API_SET_RPA_TIMEOUT_EVT */
+    bta_dm_ble_gap_add_dev_to_resolving_list, /* BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT */
+    bta_dm_ble_gap_set_privacy_mode, /* BTA_DM_API_SET_PRIVACY_MODE_EVT */
 #endif
 };
 

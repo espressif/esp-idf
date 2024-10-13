@@ -43,7 +43,6 @@ void tearDown(void)
     check_leak(before_free_32bit, after_free_32bit, "32BIT");
 }
 
-
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());

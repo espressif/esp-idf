@@ -109,7 +109,7 @@ Expected:
 static void unpinned_task(void *arg)
 {
     // Disable scheduling/preemption to make sure the current task doesn't switch cores
-#if CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionDisable(NULL);
 #else
     vTaskSuspendAll();
@@ -140,7 +140,7 @@ static void unpinned_task(void *arg)
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption
-#if CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionEnable(NULL);
 #else
     xTaskResumeAll();

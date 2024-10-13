@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/usb_serial_jtag_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
@@ -53,9 +54,16 @@ typedef enum {
 } slow_clk_sel_t;
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
+static __attribute__((unused)) void recalib_bbpll(void);
 
- __attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
+#if CONFIG_ESP_SYSTEM_BBPLL_RECALIB
+    // In earlier version of ESP-IDF, the PLL provided by bootloader is not stable enough.
+    // Do calibration again here so that we can use better clock for the timing tuning.
+    recalib_bbpll();
+#endif
+
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas;
     rst_reas = esp_rom_get_reset_reason(0);
@@ -64,8 +72,11 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
+}
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+__attribute__((weak)) void esp_clk_init(void)
+{
+    assert(rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M);
 
     bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
     rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
@@ -115,8 +126,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM >= 0) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     }
 
     if (res) {
@@ -124,7 +135,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     }
 
     // Re calculate the ccount to make time calculation correct.
-    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
@@ -174,10 +185,10 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
             cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+            cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
         }
     } while (cal_val == 0);
-    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
+    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %" PRIu32, cal_val);
     esp_clk_slowclk_cal_set(cal_val);
 }
 
@@ -214,8 +225,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW ||
             rst_reas[0] == RESET_REASON_CPU0_RTC_WDT || rst_reas[0] == RESET_REASON_CPU0_MWDT1)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        || (rst_reas[1] == RESET_REASON_CPU1_MWDT0 || rst_reas[1] == RESET_REASON_CPU1_SW ||
-            rst_reas[1] == RESET_REASON_CPU1_RTC_WDT || rst_reas[1] == RESET_REASON_CPU1_MWDT1)
+            || (rst_reas[1] == RESET_REASON_CPU1_MWDT0 || rst_reas[1] == RESET_REASON_CPU1_SW ||
+                rst_reas[1] == RESET_REASON_CPU1_RTC_WDT || rst_reas[1] == RESET_REASON_CPU1_MWDT1)
 #endif
        ) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
@@ -260,6 +271,15 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                            SYSTEM_WIFI_CLK_I2C_CLK_EN |
                            SYSTEM_WIFI_CLK_UNUSED_BIT12 |
                            SYSTEM_WIFI_CLK_SDIO_HOST_EN;
+
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        /* This function only called on startup thus is thread safe. To avoid build errors/warnings
+         * declare __DECLARE_RCC_ATOMIC_ENV here. */
+        int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
+        // Disable USB-Serial-JTAG clock and it's pad if not used
+        usb_serial_jtag_ll_phy_enable_pad(false);
+        usb_serial_jtag_ll_enable_bus_clock(false);
+#endif
     }
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
@@ -309,9 +329,27 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Set WiFi light sleep clock source to RTC slow clock */
     REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
-    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_8M);
+    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL32K | SYSTEM_LPCLK_SEL_XTAL | SYSTEM_LPCLK_SEL_8M | SYSTEM_LPCLK_SEL_RTC_SLOW);
     SET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_RTC_SLOW);
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
+}
+
+// Workaround for bootloader not calibrated well issue.
+// Placed in IRAM because disabling BBPLL may influence the cache
+static void IRAM_ATTR NOINLINE_ATTR recalib_bbpll(void)
+{
+    rtc_cpu_freq_config_t old_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
+    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
+    //   Turn off the BBPLL and do calibration again to fix the issue.
+    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
+    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
+    if (old_config.source == SOC_CPU_CLK_SRC_PLL) {
+        rtc_clk_cpu_freq_set_xtal();
+        rtc_clk_cpu_freq_set_config(&old_config);
+    }
 }

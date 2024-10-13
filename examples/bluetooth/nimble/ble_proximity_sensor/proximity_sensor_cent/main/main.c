@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ static struct ble_prox_cent_link_lost_peer disconn_peer[MYNEWT_VAL(BLE_MAX_CONNE
 /* Note: Path loss is calculated using formula : threshold - RSSI value
  *       by default threshold is kept -128 as per the spec
  *       high_threshold and low_threshold are hardcoded after testing and noting
- *       RSSI values when distance betweeen devices are less and more.
+ *       RSSI values when distance between devices are less and more.
  */
 static int8_t high_threshold = -70;
 static int8_t low_threshold = -100;
@@ -335,12 +335,14 @@ ble_prox_cent_connect_if_interesting(void *disc)
     }
 #endif
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         MODLOG_DFLT(DEBUG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -396,14 +398,14 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
         ble_prox_cent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
@@ -561,7 +563,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         ext_print_adv_report(&event->disc);
 
         ble_prox_cent_connect_if_interesting(&event->disc);

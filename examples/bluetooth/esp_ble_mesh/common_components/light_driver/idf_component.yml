@@ -1,0 +1,3 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/lightbulb_driver: "==0.5.5"

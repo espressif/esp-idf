@@ -61,9 +61,15 @@
 #else
 #define DEFAULT_AUTHMODE WIFI_AUTH_OPEN
 #endif
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+#define DEFAULT_RSSI_5G_ADJUSTMENT CONFIG_EXAMPLE_FAST_SCAN_RSSI_5G_ADJUSTMENT
+#else
+#define DEFAULT_RSSI_5G_ADJUSTMENT 0
+#endif
 #else
 #define DEFAULT_RSSI -127
 #define DEFAULT_AUTHMODE WIFI_AUTH_OPEN
+#define DEFAULT_RSSI_5G_ADJUSTMENT 0
 #endif /*CONFIG_EXAMPLE_FAST_SCAN_THRESHOLD*/
 
 static const char *TAG = "scan";
@@ -107,6 +113,7 @@ static void fast_scan(void)
             .sort_method = DEFAULT_SORT_METHOD,
             .threshold.rssi = DEFAULT_RSSI,
             .threshold.authmode = DEFAULT_AUTHMODE,
+            .threshold.rssi_5g_adjustment = DEFAULT_RSSI_5G_ADJUSTMENT,
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));

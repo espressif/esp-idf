@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,67 +15,17 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "esp_rom_caps.h"
 #include "esp_rom_tlsf.h"
 
-/*!
- * @brief Opaque types for TLSF implementation
- */
+#include "tlsf_block_functions.h"
+#include "tlsf_control_functions.h"
+
+/* Definition of types used in TLSF */
 typedef void* tlsf_t;
 typedef void* pool_t;
-typedef void* tlsf_walker;
-
-/* ----------------------------------------------------------------
- * Bring certain inline functions, macro and structures from the
- * tlsf ROM implementation to be able to compile the patch.
- * ---------------------------------------------------------------- */
-
-#define tlsf_cast(t, exp)	((t) (exp))
-
-#define block_header_free_bit  (1 << 0)
-#define block_header_prev_free_bit  (1 << 1)
-#define block_header_overhead  (sizeof(size_t))
-#define block_start_offset (offsetof(block_header_t, size) + sizeof(size_t))
-
-typedef struct block_header_t
-{
-    /* Points to the previous physical block. */
-    struct block_header_t* prev_phys_block;
-
-    /* The size of this block, excluding the block header. */
-    size_t size;
-
-    /* Next and previous free blocks. */
-    struct block_header_t* next_free;
-    struct block_header_t* prev_free;
-} block_header_t;
-
-static inline __attribute__((__always_inline__)) size_t block_size(const block_header_t* block)
-{
-    return block->size & ~(block_header_free_bit | block_header_prev_free_bit);
-}
-
-static inline __attribute__((__always_inline__)) int block_is_free(const block_header_t* block)
-{
-    return tlsf_cast(int, block->size & block_header_free_bit);
-}
-
-static inline __attribute__((__always_inline__)) int block_is_prev_free(const block_header_t* block)
-{
-    return tlsf_cast(int, block->size & block_header_prev_free_bit);
-}
-
-static inline __attribute__((always_inline)) block_header_t* block_from_ptr(const void* ptr)
-{
-	return tlsf_cast(block_header_t*,
-		tlsf_cast(unsigned char*, ptr) - block_start_offset);
-}
-
-/* ----------------------------------------------------------------
- * End of the environment necessary to compile and link the patch
- * defined below
- * ---------------------------------------------------------------- */
 
 static poison_check_pfunc_t s_poison_check_region = NULL;
 
@@ -92,7 +42,9 @@ typedef struct integrity_t
 	int status;
 } integrity_t;
 
-static void integrity_walker(void* ptr, size_t size, int used, void* user)
+typedef bool (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
+
+static bool integrity_walker(void* ptr, size_t size, int used, void* user)
 {
 	block_header_t* block = block_from_ptr(ptr);
 	integrity_t* integ = tlsf_cast(integrity_t*, user);
@@ -124,9 +76,38 @@ static void integrity_walker(void* ptr, size_t size, int used, void* user)
 
 	integ->prev_status = this_status;
 	integ->status += status;
+
+    return true;
 }
 
-extern void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
+static bool default_walker(void* ptr, size_t size, int used, void* user)
+{
+	(void)user;
+	printf("\t%p %s size: %x (%p)\n", ptr, used ? "used" : "free", (unsigned int)size, block_from_ptr(ptr));
+	return true;
+}
+
+void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user)
+{
+	tlsf_walker pool_walker = walker ? walker : default_walker;
+	block_header_t* block =
+		offset_to_block(pool, -(int)block_header_overhead);
+
+	bool ret_val = true;
+	while (block && !block_is_last(block) && ret_val == true)
+	{
+		ret_val = pool_walker(
+			block_to_ptr(block),
+			block_size(block),
+			!block_is_free(block),
+			user);
+
+		if (ret_val == true) {
+			block = block_next(block);
+		}
+	}
+}
+
 int tlsf_check_pool(pool_t pool)
 {
 	/* Check that the blocks are physically correct. */
@@ -177,6 +158,7 @@ struct heap_tlsf_stub_table_t {
 extern struct heap_tlsf_stub_table_t* heap_tlsf_table_ptr;
 
 /* We will copy the ROM table and modify the functions we patch */
+
 struct heap_tlsf_stub_table_t heap_tlsf_patch_table_ptr;
 
 /*!

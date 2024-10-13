@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import logging
@@ -10,7 +10,12 @@ import tempfile
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 import gitlab
 
@@ -62,8 +67,9 @@ class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
+    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
-    def __init__(self, project_id: Optional[int] = None):
+    def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
         if config_data_from_env:
             # prefer to load config from env variable
@@ -79,7 +85,24 @@ class Gitlab(object):
     def _init_gitlab_inst(self, project_id: Optional[int], config_files: Optional[List[str]]) -> None:
         gitlab_id = os.getenv('LOCAL_GITLAB_HTTPS_HOST')  # if None, will use the default gitlab server
         self.gitlab_inst = gitlab.Gitlab.from_config(gitlab_id=gitlab_id, config_files=config_files)
-        self.gitlab_inst.auth()
+
+        try:
+            self.gitlab_inst.auth()
+        except gitlab.exceptions.GitlabAuthenticationError:
+            msg = """To call gitlab apis locally, please create ~/.python-gitlab.cfg with the following content:
+
+        [global]
+        default = internal
+        ssl_verify = true
+        timeout = 5
+
+        [internal]
+        url = <OUR INTERNAL HTTPS SERVER URL>
+        private_token = <YOUR PERSONAL ACCESS TOKEN>
+        api_version = 4
+        """
+            raise SystemExit(msg)
+
         if project_id:
             self.project = self.gitlab_inst.projects.get(project_id, lazy=True)
         else:
@@ -129,7 +152,7 @@ class Gitlab(object):
             archive_file.extractall(destination)
 
     @retry
-    def download_artifact(self, job_id: int, artifact_path: str, destination: Optional[str] = None) -> List[bytes]:
+    def download_artifact(self, job_id: int, artifact_path: List[str], destination: Optional[str] = None) -> List[bytes]:
         """
         download specific path of job artifacts and extract to destination.
 
@@ -232,7 +255,7 @@ class Gitlab(object):
     @staticmethod
     def decompress_archive(path: str, destination: str) -> str:
         full_destination = os.path.abspath(destination)
-        # By default max path lenght is set to 260 characters
+        # By default max path length is set to 260 characters
         # Prefix `\\?\` extends it to 32,767 characters
         if sys.platform == 'win32':
             full_destination = '\\\\?\\' + full_destination
@@ -257,6 +280,67 @@ class Gitlab(object):
         job = self.project.jobs.get(job_id)
         return ','.join(job.tag_list)
 
+    def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> List[int]:
+        """
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
+
+        :param main_pipeline_id: The ID of the main pipeline to start the search.
+        :return: A list of IDs of all downstream child pipelines.
+        """
+        bridge_pipeline_ids = []
+        child_pipeline_ids = []
+
+        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in main_pipeline_bridges:
+            downstream_pipeline = bridge.attributes.get('downstream_pipeline')
+            if not downstream_pipeline:
+                continue
+            bridge_pipeline_ids.append(downstream_pipeline['id'])
+
+        for bridge_pipeline_id in bridge_pipeline_ids:
+            child_pipeline_ids.append(bridge_pipeline_id)
+            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
+
+            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+                continue
+
+            child_bridges = bridge_pipeline.bridges.list()
+            for child_bridge in child_bridges:
+                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
+                if not downstream_child_pipeline:
+                    continue
+                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+
+        return [pid for pid in child_pipeline_ids if pid is not None]
+
+    def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
+        """
+        Retry failed jobs for a specific pipeline. Optionally include jobs marked as 'allowed failures'.
+
+        :param pipeline_id: ID of the pipeline whose failed jobs are to be retried.
+        :param retry_allowed_failures: Whether to retry jobs that are marked as allowed failures.
+        """
+        jobs_succeeded_retry = []
+        pipeline_ids = [pipeline_id] + self.get_downstream_pipeline_ids(pipeline_id)
+        logging.info(f'Retrying jobs for pipelines: {pipeline_ids}')
+        for pid in pipeline_ids:
+            pipeline = self.project.pipelines.get(pid)
+            job_ids_to_retry = [
+                job.id
+                for job in pipeline.jobs.list(scope='failed')
+                if retry_allowed_failures or not job.attributes.get('allow_failure', False)
+            ]
+            logging.info(f'Failed jobs for pipeline {pid}: {job_ids_to_retry}')
+            for job_id in job_ids_to_retry:
+                try:
+                    res = self.project.jobs.get(job_id).retry()
+                    jobs_succeeded_retry.append(job_id)
+                    logging.info(f'Retried job {job_id} with result {res}')
+                except Exception as e:
+                    logging.error(f'Failed to retry job {job_id}: {str(e)}')
+
+        return jobs_succeeded_retry
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -269,6 +353,9 @@ def main() -> None:
     parser.add_argument('--project_name', '-m', default=None)
     parser.add_argument('--destination', '-d', default=None)
     parser.add_argument('--artifact_path', '-a', nargs='*', default=None)
+    parser.add_argument(
+        '--retry-allowed-failures', action='store_true', help='Flag to retry jobs marked as allowed failures'
+    )
     args = parser.parse_args()
 
     gitlab_inst = Gitlab(args.project_id)
@@ -284,6 +371,9 @@ def main() -> None:
     elif args.action == 'get_project_id':
         ret = gitlab_inst.get_project_id(args.project_name)
         print('project id: {}'.format(ret))
+    elif args.action == 'retry_failed_jobs':
+        res = gitlab_inst.retry_failed_jobs(args.pipeline_id, args.retry_allowed_failures)
+        print('jobs retried successfully: {}'.format(res))
     elif args.action == 'get_job_tags':
         ret = gitlab_inst.get_job_tags(args.job_id)
         print(ret)

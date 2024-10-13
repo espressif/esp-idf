@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,7 @@ void touch_hal_deinit(void)
     touch_pad_t prox_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {[0 ... (SOC_TOUCH_PROXIMITY_CHANNEL_NUM - 1)] = 0};
     touch_ll_proximity_set_channel_num((const touch_pad_t *)prox_pad);
     touch_ll_sleep_set_channel_num(0);
-    touch_ll_sleep_disable_approach();
+    touch_ll_sleep_disable_proximity_sensing();
     touch_ll_reset();   // Reset the touch sensor FSM.
 }
 
@@ -152,7 +152,7 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
 void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config)
 {
     touch_ll_sleep_get_channel_num(&slp_config->touch_num);
-    slp_config->en_proximity = touch_ll_sleep_get_approach_status();
+    slp_config->en_proximity = touch_ll_sleep_is_proximity_enabled();
 }
 
 void touch_hal_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t meas_times)

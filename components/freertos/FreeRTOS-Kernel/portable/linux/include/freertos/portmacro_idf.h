@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,17 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 }
 
 /**
+ * @brief Checks if a given piece of memory can be used to store a FreeRTOS list
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a List
+ * @return false Otherwise
+ */
+bool xPortCheckValidListMem(const void *ptr);
+
+/**
  * @brief Checks if a given piece of memory can be used to store a task's TCB
  *
  * - Defined in heap_idf.c
@@ -70,6 +81,7 @@ bool xPortCheckValidTCBMem(const void *ptr);
  */
 bool xPortcheckValidStackMem(const void *ptr);
 
+#define portVALID_LIST_MEM(ptr)     xPortCheckValidListMem(ptr)
 #define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
@@ -91,6 +103,17 @@ static inline BaseType_t xPortInIsrContext(void)
     //Just call the FreeRTOS port interface version
     return xPortCheckIfInISR();
 }
+
+static inline void vPortAssertIfInISR(void)
+{
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
+}
+
+/**
+ * @brief Assert if in ISR context
+ */
+#define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 #if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
 /* If enabled, users must provide an implementation of vPortCleanUpTCB() */

@@ -14,5 +14,12 @@
 void register_system(void)
 {
     register_system_common();
-    register_system_sleep();
+
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    register_system_light_sleep();
+#endif
+
+#if SOC_DEEP_SLEEP_SUPPORTED
+    register_system_deep_sleep();
+#endif
 }

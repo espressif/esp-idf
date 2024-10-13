@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,10 @@ typedef enum {
 typedef void *esp_https_ota_handle_t;
 typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
+/**
+ * @brief ESP HTTPS OTA decrypt callback args
+ */
 typedef struct {
     const char *data_in;    /*!< Pointer to data to be decrypted */
     size_t data_in_len;     /*!< Input data length */
@@ -48,7 +51,7 @@ typedef struct {
 } decrypt_cb_arg_t;
 
 typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args, void *user_ctx);
-#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
 
 /**
  * @brief ESP HTTPS OTA configuration
@@ -59,7 +62,8 @@ typedef struct {
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
     uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
@@ -223,7 +227,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 /**
 * @brief  This function returns OTA image data read so far.
 *
-* @note   This API should be called only if `esp_https_ota_perform()` has been called atleast once or
+* @note   This API should be called only if `esp_https_ota_perform()` has been called at least once or
 *         if `esp_https_ota_get_img_desc` has been called before.
 *
 * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
@@ -233,6 +237,21 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 *    - total bytes read so far
 */
 int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle);
+
+
+/**
+ * @brief  This function returns the HTTP status code of the last HTTP response.
+ *
+ * @note   This API should be called only after esp_https_ota_begin() has been called.
+ *         This can be used to check the HTTP status code of the OTA download process.
+ *
+ * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
+ *
+ * @return
+ *    - -1    On failure
+ *    - HTTP status code
+ */
+int esp_https_ota_get_status_code(esp_https_ota_handle_t https_ota_handle);
 
 
 /**

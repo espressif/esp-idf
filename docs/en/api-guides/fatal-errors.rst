@@ -66,6 +66,10 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
   Start GDB server which can communicate with GDB over console UART port. This option will only provide read-only debugging or post-mortem debugging. See `GDB Stub`_ for more details.
 
+.. note::
+
+  The ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` choice in the configuration option :ref:`CONFIG_ESP_SYSTEM_PANIC` is only available when the component ``esp_gdbstub`` is included in the build.
+
 The behavior of the panic handler is affected by three other configuration options.
 
 - If :ref:`CONFIG_ESP_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
@@ -221,7 +225,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
         Backtrace:
 
         0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
-        18	    *ptr = 0x42424242;
+        18      *ptr = 0x42424242;
         #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
         #1  0x42006692 in foo () at ../main/hello_world_main.c:22
         #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
@@ -282,7 +286,7 @@ The GDB prompt can be used to inspect CPU registers, local and static variables,
 
 RTC Watchdog Timeout
 --------------------
-{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS"}
+{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
 The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 
@@ -389,10 +393,12 @@ Interrupt Watchdog Timeout on CPU0/CPU1
 
 Indicates that an interrupt watchdog timeout has occurred. See :doc:`Watchdogs <../api-reference/system/wdts>` for more information.
 
+.. _cache_error:
+
 |CACHE_ERR_MSG|
 ^^^^^^^^^^^^^^^
 
-In some situations, ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+In some situations, ESP-IDF will temporarily disable access to external SPI flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. For more details, see the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` and the :ref:`IRAM-Safe Interrupt Handlers <iram_safe_interrupts_handlers>` section.
 
 .. only:: SOC_MEMPROT_SUPPORTED
 
@@ -442,6 +448,8 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 ^^^^^^^^^^^^^^^^
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+
+    .. _Hardware-Stack-Guard:
 
     Hardware Stack Guard
     """"""""""""""""""""
@@ -523,6 +531,16 @@ The backtrace should point to the function where stack smashing has occurred. Ch
     .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
     .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: Stack overflow
+
+
+.. only:: SOC_CPU_HAS_LOCKUP_RESET
+
+    CPU Lockup
+    ^^^^^^^^^^
+    A CPU lockup reset happens when there is a double exception, i.e. when an exception occurs while the CPU is already in an exception handler. The most common cause for this is when the cache is in such a state that accessing external memory not possible. If this is the case then the panic handler will crash as well due to being unable to fetch instructions or read data.
+
+    If this is the case you can try placing the panic handler code in IRAM, which can be accessed when cache is disabled, to get more information about the cause of the lockup. This can be done with :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
+
 
 Undefined Behavior Sanitizer (UBSAN) Checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

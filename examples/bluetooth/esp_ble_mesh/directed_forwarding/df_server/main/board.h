@@ -10,6 +10,10 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif /**< __cplusplus */
+
 #include "driver/gpio.h"
 
 #if defined(CONFIG_BLE_MESH_ESP_WROOM_32)
@@ -34,6 +38,8 @@
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8
 #define LED_B GPIO_NUM_8
+#elif defined(CONFIG_BLE_MESH_ESP32C5_DEV)
+#define BLE_MESH_LED_STRIP_IO GPIO_NUM_8
 #endif
 
 #define LED_ON  1
@@ -44,4 +50,8 @@ void board_led_operation(uint8_t r, uint8_t g, uint8_t b);
 void board_led_operation_auto_close(uint8_t r, uint8_t g, uint8_t b, uint32_t ms);
 void board_init(void);
 
-#endif
+#ifdef __cplusplus
+}
+#endif /**< __cplusplus */
+
+#endif /* _BOARD_H_ */

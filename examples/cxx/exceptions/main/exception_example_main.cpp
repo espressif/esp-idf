@@ -14,11 +14,10 @@ using std::endl;
 using std::runtime_error;
 
 /* A simple class which may throw an exception from constructor */
-class Throwing
-{
+class Throwing {
 public:
     Throwing(int arg)
-    : m_arg(arg)
+        : m_arg(arg)
     {
         cout << "In constructor, arg=" << arg << endl;
         if (arg == 0) {

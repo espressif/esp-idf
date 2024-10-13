@@ -78,7 +78,7 @@ extern "C" {
     do {                                                                           \
         ESP_STATIC_ASSERT(__builtin_popcount((SIZE)) == 1, "Size must be a power of 2"); \
         ESP_STATIC_ASSERT((ADDR) % ((SIZE)) == 0, "Addr must be aligned to size"); \
-        RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY), ((ADDR) | ((SIZE >> 1) - 1)) >> 2); \
+        RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY), ((ADDR) | (((SIZE) >> 1) - 1)) >> 2); \
         RV_WRITE_CSR((CSR_PMACFG0) + (ENTRY), CFG);                                \
     } while (0)
 
@@ -119,7 +119,7 @@ extern "C" {
      generate specific assembly instructions.
    - ADDR is the address to write to the PMPADDRx register. Note this is the unshifted address.
    - CFG is the configuration value to write to the correct CFG entry register. Note that
-     the macro only sets bits in the CFG register, so it sould be zeroed already.
+     the macro only sets bits in the CFG register, so it should be zeroed already.
 */
 #define PMP_ENTRY_SET(ENTRY, ADDR, CFG) do {  \
     RV_WRITE_CSR((CSR_PMPADDR0) + (ENTRY), (ADDR) >> (PMP_SHIFT));    \
@@ -134,6 +134,24 @@ extern "C" {
 /*Reset all permissions of a particular PMPCFG entry*/
 #define PMP_ENTRY_CFG_RESET(ENTRY) do {\
     RV_CLEAR_CSR((CSR_PMPCFG0) + (ENTRY)/4, (0xFF) << (ENTRY%4)*8); \
+    } while(0)
+
+/*Reset all permissions of a particular PMACFG entry*/
+#define PMA_ENTRY_CFG_RESET(ENTRY) do {\
+    RV_WRITE_CSR((CSR_PMACFG0) + (ENTRY) , 0); \
+    RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY) , 0); \
+    } while(0)
+
+/* Reset and set the configuration of a particular TOR PMACFG entry */
+#define PMA_RESET_AND_ENTRY_SET_TOR(ENTRY, ADDR, CFG) do {\
+    PMA_ENTRY_CFG_RESET(ENTRY); \
+    PMA_ENTRY_SET_TOR(ENTRY, ADDR, CFG); \
+    } while(0)
+
+/* Reset and set the configuration of a particular NAPOT PMACFG entry */
+#define PMA_RESET_AND_ENTRY_SET_NAPOT(ENTRY, ADDR, SIZE, CFG) do {\
+    PMA_ENTRY_CFG_RESET(ENTRY); \
+    PMA_ENTRY_SET_NAPOT(ENTRY, ADDR, SIZE, CFG); \
     } while(0)
 
 /********************************************************
@@ -154,6 +172,20 @@ extern "C" {
 #define TDATA1_MATCH_S   (7)
 #define TDATA1_HIT_S     (20)
 
+
+/********************************************************
+   Espressif's bus error exceptions registers and fields
+ ********************************************************/
+
+#define MEXSTATUS   0x7E1
+#define MHINT       0x7C5
+
+#define LDPC0       0xBE0
+#define LDPC1       0xBE1
+
+#define STPC0       0xBF0
+#define STPC1       0xBF1
+#define STPC2       0xBF2
 
 /* RISC-V CSR macros
  * Adapted from https://github.com/michaeljclark/riscv-probe/blob/master/libfemto/include/arch/riscv/machine.h
@@ -181,6 +213,9 @@ extern "C" {
 
 #define RV_SET_CSR_FIELD(_r, _f, _v) ({ (RV_WRITE_CSR((_r),((RV_READ_CSR(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S)))));})
 #define RV_CLEAR_CSR_FIELD(_r, _f) ({ (RV_WRITE_CSR((_r),(RV_READ_CSR(_r) & ~((_f##_V) << (_f##_S)))));})
+
+#define RV_READ_MSTATUS_AND_DISABLE_INTR() ({ unsigned long __tmp; \
+  asm volatile ("csrrci %0, mstatus, 0x8"  : "=r"(__tmp)); __tmp; })
 
 #define _CSR_STRINGIFY(REG) #REG /* needed so the 'reg' argument can be a macro or a register name */
 

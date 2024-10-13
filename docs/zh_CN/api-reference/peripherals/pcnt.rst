@@ -25,6 +25,7 @@ PCNT 的功能从以下几个方面进行说明：
     - :ref:`pcnt-resource-allocation` - 说明如何通过配置分配 PCNT 单元和通道，以及在相应操作完成之后，如何回收单元和通道。
     - :ref:`pcnt-setup-channel-actions` - 说明如何设置通道针对不同信号沿和电平进行操作。
     - :ref:`pcnt-watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: - :ref:`pcnt-step-notify` - 说明如何配置观察步进，即当计数增量达到某个数值时，命令 PCNT 单元触发某个事件。
     - :ref:`pcnt-register-event-callbacks` - 说明如何将您的代码挂载到观察点事件的回调函数上。
     - :ref:`pcnt-set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
     :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - 说明如何使能外部清零信号并设置其参数。
@@ -47,9 +48,13 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 安装 PCNT 单元时，需要先完成配置 :cpp:type:`pcnt_unit_config_t`：
 
--  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
--  :cpp:member:`pcnt_unit_config_t::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
--  :cpp:member:`pcnt_unit_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
+.. list::
+
+    -  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
+    -  :cpp:member:`pcnt_unit_config_t::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::en_step_notify_up` 配置是否使能观察正方向步进。
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::en_step_notify_down` 配置是否使能观察负方向步进。
+    -  :cpp:member:`pcnt_unit_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 
 .. note::
 
@@ -82,7 +87,6 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 -  :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 与 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 用于指定 **边沿** 信号和 **电平** 信号对应的 GPIO 编号。请注意，这两个参数未被使用时，可以设置为 `-1`，即成为 **虚拟 IO** 。对于一些简单的脉冲计数应用，电平信号或边沿信号是固定的（即不会发生改变），可将其设置为虚拟 IO，然后该信号会被连接到一个固定的高/低逻辑电平，这样就可以在通道分配时回收一个 GPIO，节省一个 GPIO 管脚资源。
 -  :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` 与 :cpp:member:`pcnt_chan_config_t::virt_level_io_level` 用于指定 **边沿** 信号和 **电平** 信号的虚拟 IO 电平，以保证这些控制信号处于确定状态。请注意，只有在 :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 或 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 设置为 `-1` 时，这两个参数才有效。
 -  :cpp:member:`pcnt_chan_config_t::invert_edge_input` 与 :cpp:member:`pcnt_chan_config_t::invert_level_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵（不是 PCNT 单元）执行。
--  :cpp:member:`pcnt_chan_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲信号。
 
 调用函数 :cpp:func:`pcnt_new_channel`，将 :cpp:type:`pcnt_chan_config_t` 作为输入值并调用 :cpp:func:`pcnt_new_unit` 返回的 PCNT 单元句柄，可对 PCNT 通道进行分配和初始化。如果该函数正常运行，会返回一个 PCNT 通道句柄。如果没有可用的 PCNT 通道（PCNT 通道资源全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 通道总数记录在 :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT`，以供参考。注意，为某个单元安装 PCNT 通道时，应确保该单元处于初始状态，否则函数 :cpp:func:`pcnt_new_channel` 会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
@@ -141,7 +145,37 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
         由于硬件上的限制，在添加一个新的观察点后，你需要调用 :cpp:func:`pcnt_unit_clear_count` 函数来使之生效。
 
-.. _pcnt-register-event-callbacks:
+.. only:: SOC_PCNT_SUPPORT_STEP_NOTIFY
+
+    .. _pcnt-step-notify:
+
+    PCNT 观察步进
+    ^^^^^^^^^^^^^^^^
+
+    PCNT 单元可被设置为观察一个特定的数值增量（可以是正方向或负方向），这个观察数值增量的功能被称为 **观察步进**。启用观察步进需要使能 :cpp:member:`pcnt_unit_config_t::en_step_notify_up` 或 :cpp:member:`pcnt_unit_config_t::en_step_notify_down` 选项。 步进间隔不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器增量到达步进间隔时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断发送通知。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
+
+    观察步进分别可以通过 :cpp:func:`pcnt_unit_add_watch_step` 和 :cpp:func:`pcnt_unit_remove_watch_step` 进行添加和删除。不能同时添加多个观察步进，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
+
+    建议通过 :cpp:func:`pcnt_unit_remove_watch_step` 删除未使用的观察步进来回收资源。
+
+    .. note::
+
+        当观察步进和观察点同时被触发时，回调函数只会被调用一次。
+
+        当计数达到上/下限值时，步进增量会被重置为 0，请勿过分依赖于精确的步进间隔。
+
+    .. code:: c
+
+        // add positive direction step notify with 100 step intervals
+        ESP_ERROR_CHECK(pcnt_unit_add_watch_step(pcnt_unit, 100));
+
+    .. _pcnt-register-event-callbacks:
+
+.. only:: not SOC_PCNT_SUPPORT_STEP_NOTIFY
+
+    .. _pcnt-register-event-callbacks:
+
+
 
 注册事件回调函数
 ^^^^^^^^^^^^^^^^^^^^
@@ -152,9 +186,9 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
 可通过 ``user_ctx`` 将函数上下文保存到 :cpp:func:`pcnt_unit_register_event_callbacks` 中，这些数据会直接传递给回调函数。
 
-驱动程序会将特定事件的数据写入回调函数中，例如，观察点事件数据被声明为 :cpp:type:`pcnt_watch_event_data_t`：
+驱动程序会将特定事件的数据写入回调函数中，例如，观察点事件或观察步进事件数据被声明为 :cpp:type:`pcnt_watch_event_data_t`：
 
--  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` 用于保存触发该事件的观察点数值。
+-  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` 用于保存触发事件时计数器的数值。
 -  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` 用于保存上一次 PCNT 单元的过零模式，:cpp:type:`pcnt_unit_zero_cross_mode_t` 中列出了所有可能的过零模式。通常，不同的过零模式意味着不同的 **计数方向** 和 **计数步长**。
 
 注册回调函数会导致中断服务延迟安装，因此回调函数只能在 PCNT 单元被 :cpp:func:`pcnt_unit_enable` 使能之前调用。否则，回调函数会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
@@ -212,7 +246,6 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
         -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
         -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。驱动会使能上拉输入，以确保信号在未连接时保持高电平。
-        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过 :cpp:func:`gpio_set_level` 函数来模拟外部输入的清零信号。
 
     该输入信号的作用与调用 :cpp:func:`pcnt_unit_clear_count` 函数相同，但它不受软件延迟的限制，更适用于需要低延迟的场合。请注意，该信号的翻转频率不能太高。
 
@@ -278,8 +311,11 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清零。如果你想补偿该计数值的溢出损失，以期进一步拓宽计数器的实际位宽，你可以：
 
+.. list::
+
     1. 在安装 PCNT 计数单元的时候使能 :cpp:member:`pcnt_unit_config_t::accum_count` 选项。
-    2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points` 或添加观察步进 :ref:`pcnt-step-notify`
+    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`。
     3. 现在，:cpp:func:`pcnt_unit_get_count` 函数返回的计数值就会包含硬件计数器当前的计数值，累加上计数器溢出造成的损失。
 
 .. note::
@@ -342,10 +378,10 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 - :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 用于控制当缓存禁用时，默认的 ISR 句柄是否可以工作，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
 - :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` 用于使能调试日志输出，而这会增大固件二进制文件。
 
-应用实例
+应用示例
 ------------
 
-* 对旋转编码器的正交信号进行解码的实例请参考：:example:`peripherals/pcnt/rotary_encoder`。
+* :example:`peripherals/pcnt/rotary_encoder` 演示了如何使用 PCNT 外设来解码由常见的旋转编码器 EC11 生成的差分信号，以及如何配置旋转编码器将系统从 light-sleep 状态唤醒。
 
 
 API 参考

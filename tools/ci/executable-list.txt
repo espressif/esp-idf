@@ -14,6 +14,7 @@ components/heap/test_multi_heap_host/test_all_configs.sh
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
+components/nvs_flash/nvs_partition_tool/nvs_tool.py
 components/partition_table/check_sizes.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
@@ -46,6 +47,7 @@ examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
 install.fish
 install.sh
+tools/activate.py
 tools/check_python_dependencies.py
 tools/ci/build_template_app.sh
 tools/ci/check_api_violation.sh
@@ -55,14 +57,12 @@ tools/ci/check_codeowners.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_esp_memory_utils_headers.sh
 tools/ci/check_examples_extra_component_dirs.sh
-tools/ci/check_examples_rom_header.sh
 tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_requirement_files.py
 tools/ci/check_rules_components_patterns.py
-tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
@@ -74,12 +74,13 @@ tools/ci/fix_empty_prototypes.sh
 tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
+tools/ci/gitlab_yaml_linter.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
+tools/ci/sort_yaml.py
 tools/ci/test_autocomplete/test_autocomplete.py
 tools/ci/test_configure_ci_environment.sh
-tools/ci/test_reproducible_build.sh
 tools/docker/entrypoint.sh
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py

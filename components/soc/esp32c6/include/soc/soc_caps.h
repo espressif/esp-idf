@@ -1,13 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-// The long term plan is to have a single soc_caps.h for each peripheral.
-// During the refactoring and multichip support development process, we
-// seperate these information into periph_caps.h for each peripheral and
-// include them here.
 
 /*
  * These defines are parsed and imported as kconfig variables via the script
@@ -38,6 +33,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_ULP_SUPPORTED               1
@@ -64,7 +60,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_BOD_SUPPORTED               1
-#define SOC_APM_SUPPORTED               1
+#define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
 #define SOC_PMU_SUPPORTED               1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
@@ -76,6 +72,11 @@
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
+#define SOC_RNG_SUPPORTED               1
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_MODEM_CLOCK_SUPPORTED       1
+#define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -145,6 +146,7 @@
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 #define SOC_INT_PLIC_SUPPORTED          1       //riscv platform-level interrupt controller
+#define SOC_CPU_HAS_CSR_PC              1
 
 #define SOC_CPU_BREAKPOINTS_NUM             4
 #define SOC_CPU_WATCHPOINTS_NUM             4
@@ -152,6 +154,7 @@
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+#define SOC_CPU_PMP_REGION_GRANULARITY  4
 
 // TODO: IDF-5360 (Copy from esp32c3, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
@@ -166,10 +169,11 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_AHB_GDMA_VERSION            1U
-#define SOC_GDMA_NUM_GROUPS_MAX         1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-#define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION                1U
+#define SOC_GDMA_NUM_GROUPS_MAX             1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
+#define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -184,14 +188,14 @@
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
-#define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
-#define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has the full LP IO subsystem
 // On ESP32-C6, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 // GPIO0~7 on ESP32C6 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
@@ -200,17 +204,22 @@
 #define SOC_GPIO_OUT_RANGE_MAX          30
 
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000007FFFFF00ULL
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+// LP_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
-// The Clock Out singnal is route to the pin by GPIO matrix
+// The Clock Out signal is route to the pin by GPIO matrix
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
+#define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
+#define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8
@@ -228,13 +237,14 @@
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C6 has 1 I2C
-#define SOC_I2C_NUM                 (1U)
+#define SOC_I2C_NUM                 (2U) // I2C_NUM = HP_I2C + LP_I2C
+#define SOC_HP_I2C_NUM              (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
 
-// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
+#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
@@ -244,6 +254,7 @@
 #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
 #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+#define SOC_I2C_SUPPORT_SLEEP_RETENTION           (1)
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-C6 has 1 LP_I2C
@@ -254,6 +265,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
@@ -261,6 +273,7 @@
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)
 #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -274,6 +287,7 @@
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
+#define SOC_MMU_PAGE_SIZE_8KB_SUPPORTED       (1)
 #define SOC_MMU_PERIPH_NUM                    (1U)
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (1U)
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
@@ -307,6 +321,7 @@
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST as the RMT clock source */
+#define SOC_RMT_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up RMT registers before sleep */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (1U)   ///< 1 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
@@ -388,6 +403,12 @@
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
+#define SOC_SPI_SCT_SUPPORTED                     1
+#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  ((PERIPH_NUM==1) ? 1 : 0)    //Support Segmented-Configure-Transfer
+#define SOC_SPI_SCT_REG_NUM                       14
+#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
+#define SOC_SPI_SCT_CONF_BITLEN_MAX               0x3FFFA       //18 bits wide reg
+
 #define SOC_MEMSPI_IS_INDEPENDENT 1
 #define SOC_SPI_MAX_PRE_DIVIDER 16
 
@@ -427,9 +448,11 @@
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         2
@@ -459,6 +482,10 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
+/*-------------------------- APM CAPS ----------------------------------------*/
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
+#define SOC_APM_LP_APM0_SUPPORTED       1 /*!< Support for LP APM0 control filter */
+
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
@@ -474,6 +501,8 @@
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
 #define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
+#define SOC_UART_HAS_LP_UART            (1)         /*!< Support LP UART */
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
@@ -499,7 +528,7 @@
 #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configue the EXT1 trigger level */
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
@@ -521,8 +550,13 @@
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
 #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
+#define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
 
-#define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PM_PAU_LINK_NUM                 (4)
+#define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
+#define SOC_PM_PAU_REGDMA_LINK_WIFIMAC      (1)
+
+#define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
@@ -538,15 +572,20 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                    (1)
+
+/*--------------------------------- RNG CAPS --------------------------------------------*/
+#define SOC_RNG_CLOCK_IS_INDEPENDENT                          (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
+#define SOC_WIFI_FTM_SUPPORT                (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
+#define SOC_WIFI_MAC_VERSION_NUM            (2)    /*!< Wi-Fi MAC version num is 2 */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
@@ -563,3 +602,11 @@
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/
+
+/*------------------------------------- No Reset CAPS -------------------------------------*/
+#define SOC_CAPS_NO_RESET_BY_ANA_BOD           (1)
+
+
+/*------------------------------------- ULP CAPS -------------------------------------*/
+#define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR   (1) /*!< LP Core interrupts all map to a single entry in vector table */
+#define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */

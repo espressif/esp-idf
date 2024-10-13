@@ -13,10 +13,10 @@ Overview
     * :cpp:func:`esp_http_client_cleanup`: Closes the connection (if any) and frees up all the memory allocated to the HTTP client instance. This must be the last function to be called after the completion of operations.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Simple example that uses ESP HTTP Client to make HTTP/S requests can be found at :example:`protocols/esp_http_client`.
+- :example:`protocols/esp_http_client` demonstrates how to use the ESP HTTP Client to make HTTP/S requests.
 
 
 Basic HTTP Request
@@ -28,7 +28,7 @@ Check out the example functions ``http_rest_with_url`` and ``http_rest_with_host
 Persistent Connections
 ----------------------
 
-Persistent connection means that the HTTP client can re-use the same connection for several exchanges. If the server does not request to close the connection with the ``Connection: close`` header, the connection is not dropped but is instead kept open and used for further requests.
+Persistent connection means that the HTTP client can reuse the same connection for several exchanges. If the server does not request to close the connection with the ``Connection: close`` header, the connection is not dropped but is instead kept open and used for further requests.
 
 To allow ESP HTTP client to take full advantage of persistent connections, one should make as many requests as possible using the same handle instance. Check out the example functions ``http_rest_with_url`` and ``http_rest_with_hostname_path`` in the application example. Here, once the connection is created, multiple requests (``GET``, ``POST``, ``PUT``, etc.) are made before the connection is closed.
 
@@ -83,6 +83,7 @@ ESP HTTP client supports both **Basic** and **Digest** Authentication.
     * Users can provide the username and password in the ``url`` or the ``username`` and ``password`` members of the ``esp_http_client_config_t`` configuration. For ``auth_type = HTTP_AUTH_TYPE_BASIC``, the HTTP client takes only one perform operation to pass the authentication process.
     * If ``auth_type = HTTP_AUTH_TYPE_NONE``, but the ``username`` and ``password`` fields are present in the configuration, the HTTP client takes two perform operations. The client will receive the ``401 Unauthorized`` header in its first attempt to connect to the server. Based on this information, it decides which authentication method to choose and performs it in the second operation.
     * Check out the example functions ``http_auth_basic``, ``http_auth_basic_redirect`` (for Basic authentication) and ``http_auth_digest`` (for Digest authentication) in the application example for implementation details.
+    * Currently, Digest authentication supports only MD5 and SHA-256 algorithms.
 
 
 Examples of Authentication Configuration

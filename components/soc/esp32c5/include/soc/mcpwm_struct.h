@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -108,24 +108,6 @@ typedef union {
     uint32_t val;
 } mcpwm_timern_sync_reg_t;
 
-/** Type of timern_status register
- *  PWM timern status register.
- */
-typedef union {
-    struct {
-        /** timern_value : RO; bitpos: [15:0]; default: 0;
-         *  Represents current PWM timern counter value.
-         */
-        uint32_t timern_value:16;
-        /** timern_direction : RO; bitpos: [16]; default: 0;
-         *  Represents current PWM timern counter direction.\\0: Increment\\1: Decrement
-         */
-        uint32_t timern_direction:1;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} mcpwm_timern_status_reg_t;
-
 /** Type of timer_synci_cfg register
  *  Synchronization input selection register for PWM timers.
  */
@@ -194,69 +176,53 @@ typedef union {
     uint32_t val;
 } mcpwm_operator_timersel_reg_t;
 
-
-/** Group: cfgrep */
 /** Type of genn_stmp_cfg register
  *  Generatorn time stamp registers A and B transfer status and update method register
  */
 typedef union {
     struct {
-        /** genn_a_upmethod : R/W; bitpos: [3:0]; default: 0;
+        /** cmprn_a_upmethod : R/W; bitpos: [3:0]; default: 0;
          *  Configures the update method for PWM generator n time stamp A's active
          *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
          *  set to 1: Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t genn_a_upmethod:4;
-        /** genn_b_upmethod : R/W; bitpos: [7:4]; default: 0;
+        uint32_t cmprn_a_upmethod:4;
+        /** cmprn_b_upmethod : R/W; bitpos: [7:4]; default: 0;
          *  Configures the update method for PWM generator n time stamp B's active
          *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
          *  set to 1: Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t genn_b_upmethod:4;
-        /** genn_a_shdw_full : R/W/WTC/SC; bitpos: [8]; default: 0;
+        uint32_t cmprn_b_upmethod:4;
+        /** cmprn_a_shdw_full : R/W/WTC/SC; bitpos: [8]; default: 0;
          *  Represents whether or not generatorn time stamp A's shadow reg is transferred.\\0:
          *  A's active reg has been updated with shadow register latest value.\\1: A's shadow
          *  reg is filled and waiting to be transferred to A's active reg
          */
-        uint32_t genn_a_shdw_full:1;
-        /** genn_b_shdw_full : R/W/WTC/SC; bitpos: [9]; default: 0;
+        uint32_t cmprn_a_shdw_full:1;
+        /** cmprn_b_shdw_full : R/W/WTC/SC; bitpos: [9]; default: 0;
          *  Represents whether or not generatorn time stamp B's shadow reg is transferred.\\0:
          *  B's active reg has been updated with shadow register latest value.\\1: B's shadow
          *  reg is filled and waiting to be transferred to B's active reg
          */
-        uint32_t genn_b_shdw_full:1;
+        uint32_t cmprn_b_shdw_full:1;
         uint32_t reserved_10:22;
     };
     uint32_t val;
 } mcpwm_genn_stmp_cfg_reg_t;
 
-/** Type of genn_tstmp_a register
- *  Generatorn time stamp A's shadow register
+/** Type of genn_tstmp register
+ *  Generatorn time stamp shadow register
  */
 typedef union {
     struct {
-        /** genn_a : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator n time stamp A's shadow register.
+        /** cmprn : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the value of PWM generator n time stamp shadow register.
          */
-        uint32_t genn_a:16;
+        uint32_t cmprn:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} mcpwm_genn_tstmp_a_reg_t;
-
-/** Type of genn_tstmp_b register
- *  Generatorn time stamp B's shadow register
- */
-typedef union {
-    struct {
-        /** genn_b : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the value of PWM generator n time stamp B's shadow register.
-         */
-        uint32_t genn_b:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_genn_tstmp_b_reg_t;
+} mcpwm_genn_tstmp_reg_t;
 
 /** Type of genn_cfg0 register
  *  Generatorn fault event T0 and T1 configuration register
@@ -334,204 +300,134 @@ typedef union {
     uint32_t val;
 } mcpwm_genn_force_reg_t;
 
-/** Type of genn_a register
+/** Type of genn register
  *  PWMn output signal A actions configuration register
  */
 typedef union {
     struct {
-        /** genn_a_utez : R/W; bitpos: [1:0]; default: 0;
+        /** genn_utez : R/W; bitpos: [1:0]; default: 0;
          *  Configures action on PWMn A triggered by event TEZ when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_utez:2;
-        /** genn_a_utep : R/W; bitpos: [3:2]; default: 0;
+        uint32_t genn_utez:2;
+        /** genn_utep : R/W; bitpos: [3:2]; default: 0;
          *  Configures action on PWMn A triggered by event TEP when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_utep:2;
-        /** genn_a_utea : R/W; bitpos: [5:4]; default: 0;
+        uint32_t genn_utep:2;
+        /** genn_utea : R/W; bitpos: [5:4]; default: 0;
          *  Configures action on PWMn A triggered by event TEA when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_utea:2;
-        /** genn_a_uteb : R/W; bitpos: [7:6]; default: 0;
+        uint32_t genn_utea:2;
+        /** genn_uteb : R/W; bitpos: [7:6]; default: 0;
          *  Configures action on PWMn A triggered by event TEB when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_uteb:2;
-        /** genn_a_ut0 : R/W; bitpos: [9:8]; default: 0;
+        uint32_t genn_uteb:2;
+        /** genn_ut0 : R/W; bitpos: [9:8]; default: 0;
          *  Configures action on PWMn A triggered by event_t0 when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_ut0:2;
-        /** genn_a_ut1 : R/W; bitpos: [11:10]; default: 0;
+        uint32_t genn_ut0:2;
+        /** genn_ut1 : R/W; bitpos: [11:10]; default: 0;
          *  Configures action on PWMn A triggered by event_t1 when timer increasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_ut1:2;
-        /** genn_a_dtez : R/W; bitpos: [13:12]; default: 0;
+        uint32_t genn_ut1:2;
+        /** genn_dtez : R/W; bitpos: [13:12]; default: 0;
          *  Configures action on PWMn A triggered by event TEZ when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dtez:2;
-        /** genn_a_dtep : R/W; bitpos: [15:14]; default: 0;
+        uint32_t genn_dtez:2;
+        /** genn_dtep : R/W; bitpos: [15:14]; default: 0;
          *  Configures action on PWMn A triggered by event TEP when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dtep:2;
-        /** genn_a_dtea : R/W; bitpos: [17:16]; default: 0;
+        uint32_t genn_dtep:2;
+        /** genn_dtea : R/W; bitpos: [17:16]; default: 0;
          *  Configures action on PWMn A triggered by event TEA when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dtea:2;
-        /** genn_a_dteb : R/W; bitpos: [19:18]; default: 0;
+        uint32_t genn_dtea:2;
+        /** genn_dteb : R/W; bitpos: [19:18]; default: 0;
          *  Configures action on PWMn A triggered by event TEB when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dteb:2;
-        /** genn_a_dt0 : R/W; bitpos: [21:20]; default: 0;
+        uint32_t genn_dteb:2;
+        /** genn_dt0 : R/W; bitpos: [21:20]; default: 0;
          *  Configures action on PWMn A triggered by event_t0 when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dt0:2;
-        /** genn_a_dt1 : R/W; bitpos: [23:22]; default: 0;
+        uint32_t genn_dt0:2;
+        /** genn_dt1 : R/W; bitpos: [23:22]; default: 0;
          *  Configures action on PWMn A triggered by event_t1 when timer decreasing.\\0: No
          *  change\\1: Low\\2: High\\3: Toggle
          */
-        uint32_t genn_a_dt1:2;
+        uint32_t genn_dt1:2;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} mcpwm_genn_a_reg_t;
-
-/** Type of genn_b register
- *  PWMn output signal B actions configuration register
- */
-typedef union {
-    struct {
-        /** genn_b_utez : R/W; bitpos: [1:0]; default: 0;
-         *  Configures action on PWMn B triggered by event TEZ when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_utez:2;
-        /** genn_b_utep : R/W; bitpos: [3:2]; default: 0;
-         *  Configures action on PWMn B triggered by event TEP when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_utep:2;
-        /** genn_b_utea : R/W; bitpos: [5:4]; default: 0;
-         *  Configures action on PWMn B triggered by event TEA when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_utea:2;
-        /** genn_b_uteb : R/W; bitpos: [7:6]; default: 0;
-         *  Configures action on PWMn B triggered by event TEB when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_uteb:2;
-        /** genn_b_ut0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures action on PWMn B triggered by event_t0 when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_ut0:2;
-        /** genn_b_ut1 : R/W; bitpos: [11:10]; default: 0;
-         *  Configures action on PWMn B triggered by event_t1 when timer increasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_ut1:2;
-        /** genn_b_dtez : R/W; bitpos: [13:12]; default: 0;
-         *  Configures action on PWMn B triggered by event TEZ when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dtez:2;
-        /** genn_b_dtep : R/W; bitpos: [15:14]; default: 0;
-         *  Configures action on PWMn B triggered by event TEP when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dtep:2;
-        /** genn_b_dtea : R/W; bitpos: [17:16]; default: 0;
-         *  Configures action on PWMn B triggered by event TEA when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dtea:2;
-        /** genn_b_dteb : R/W; bitpos: [19:18]; default: 0;
-         *  Configures action on PWMn B triggered by event TEB when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dteb:2;
-        /** genn_b_dt0 : R/W; bitpos: [21:20]; default: 0;
-         *  Configures action on PWMn B triggered by event_t0 when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dt0:2;
-        /** genn_b_dt1 : R/W; bitpos: [23:22]; default: 0;
-         *  Configures action on PWMn B triggered by event_t1 when timer decreasing.\\0: No
-         *  change\\1: Low\\2: High\\3: Toggle
-         */
-        uint32_t genn_b_dt1:2;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} mcpwm_genn_b_reg_t;
+} mcpwm_genn_reg_t;
 
 /** Type of dtn_cfg register
  *  Dead time configuration register
  */
 typedef union {
     struct {
-        /** dtn_fed_upmethod : R/W; bitpos: [3:0]; default: 0;
+        /** dbn_fed_upmethod : R/W; bitpos: [3:0]; default: 0;
          *  Configures update method for FED (Falling edge delay) active register.\\0:
          *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t dtn_fed_upmethod:4;
-        /** dtn_red_upmethod : R/W; bitpos: [7:4]; default: 0;
+        uint32_t dbn_fed_upmethod:4;
+        /** dbn_red_upmethod : R/W; bitpos: [7:4]; default: 0;
          *  Configures update method for RED (rising edge delay) active register.\\0:
          *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
          *  Sync\\Bit3 is set to 1: Disable the update
          */
-        uint32_t dtn_red_upmethod:4;
-        /** dtn_deb_mode : R/W; bitpos: [8]; default: 0;
+        uint32_t dbn_red_upmethod:4;
+        /** dbn_deb_mode : R/W; bitpos: [8]; default: 0;
          *  Configures S8 in table, dual-edge B mode.\\0: fed/red take effect on different path
          *  separately\\1: fed/red take effect on B path, A out is in bypass or dulpB mode
          */
-        uint32_t dtn_deb_mode:1;
-        /** dtn_a_outswap : R/W; bitpos: [9]; default: 0;
+        uint32_t dbn_deb_mode:1;
+        /** dbn_a_outswap : R/W; bitpos: [9]; default: 0;
          *  Configures S6 in table.
          */
-        uint32_t dtn_a_outswap:1;
-        /** dtn_b_outswap : R/W; bitpos: [10]; default: 0;
+        uint32_t dbn_a_outswap:1;
+        /** dbn_b_outswap : R/W; bitpos: [10]; default: 0;
          *  Configures S7 in table.
          */
-        uint32_t dtn_b_outswap:1;
-        /** dtn_red_insel : R/W; bitpos: [11]; default: 0;
+        uint32_t dbn_b_outswap:1;
+        /** dbn_red_insel : R/W; bitpos: [11]; default: 0;
          *  Configures S4 in table.
          */
-        uint32_t dtn_red_insel:1;
-        /** dtn_fed_insel : R/W; bitpos: [12]; default: 0;
+        uint32_t dbn_red_insel:1;
+        /** dbn_fed_insel : R/W; bitpos: [12]; default: 0;
          *  Configures S5 in table.
          */
-        uint32_t dtn_fed_insel:1;
-        /** dtn_red_outinvert : R/W; bitpos: [13]; default: 0;
+        uint32_t dbn_fed_insel:1;
+        /** dbn_red_outinvert : R/W; bitpos: [13]; default: 0;
          *  Configures S2 in table.
          */
-        uint32_t dtn_red_outinvert:1;
-        /** dtn_fed_outinvert : R/W; bitpos: [14]; default: 0;
+        uint32_t dbn_red_outinvert:1;
+        /** dbn_fed_outinvert : R/W; bitpos: [14]; default: 0;
          *  Configures S3 in table.
          */
-        uint32_t dtn_fed_outinvert:1;
-        /** dtn_a_outbypass : R/W; bitpos: [15]; default: 1;
+        uint32_t dbn_fed_outinvert:1;
+        /** dbn_a_outbypass : R/W; bitpos: [15]; default: 1;
          *  Configures S1 in table.
          */
-        uint32_t dtn_a_outbypass:1;
-        /** dtn_b_outbypass : R/W; bitpos: [16]; default: 1;
+        uint32_t dbn_a_outbypass:1;
+        /** dbn_b_outbypass : R/W; bitpos: [16]; default: 1;
          *  Configures S0 in table.
          */
-        uint32_t dtn_b_outbypass:1;
-        /** dtn_clk_sel : R/W; bitpos: [17]; default: 0;
+        uint32_t dbn_b_outbypass:1;
+        /** dbn_clk_sel : R/W; bitpos: [17]; default: 0;
          *  Configures dead time generator n clock selection.\\0: PWM_clk\\1: PT_clk
          */
-        uint32_t dtn_clk_sel:1;
+        uint32_t dbn_clk_sel:1;
         uint32_t reserved_18:14;
     };
     uint32_t val;
@@ -542,10 +438,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dtn_fed : R/W; bitpos: [15:0]; default: 0;
+        /** dbn_fed : R/W; bitpos: [15:0]; default: 0;
          *  Configures shadow register for FED.
          */
-        uint32_t dtn_fed:16;
+        uint32_t dbn_fed:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -556,10 +452,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dtn_red : R/W; bitpos: [15:0]; default: 0;
+        /** dbn_red : R/W; bitpos: [15:0]; default: 0;
          *  Configures shadow register for RED.
          */
-        uint32_t dtn_red:16;
+        uint32_t dbn_red:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -570,33 +466,33 @@ typedef union {
  */
 typedef union {
     struct {
-        /** carriern_en : R/W; bitpos: [0]; default: 0;
+        /** choppern_en : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable carriern.\\0: Bypassed\\1: Enabled
          */
-        uint32_t carriern_en:1;
-        /** carriern_prescale : R/W; bitpos: [4:1]; default: 0;
+        uint32_t choppern_en:1;
+        /** choppern_prescale : R/W; bitpos: [4:1]; default: 0;
          *  Configures the prescale value of PWM carriern clock (PC_clk), so that period of
          *  PC_clk = period of PWM_clk * (PWM_CARRIERn_PRESCALE + 1)
          */
-        uint32_t carriern_prescale:4;
-        /** carriern_duty : R/W; bitpos: [7:5]; default: 0;
+        uint32_t choppern_prescale:4;
+        /** choppern_duty : R/W; bitpos: [7:5]; default: 0;
          *  Configures carrier duty. Duty = PWM_CARRIERn_DUTY / 8
          */
-        uint32_t carriern_duty:3;
-        /** carriern_oshtwth : R/W; bitpos: [11:8]; default: 0;
+        uint32_t choppern_duty:3;
+        /** choppern_oshtwth : R/W; bitpos: [11:8]; default: 0;
          *  Configures width of the first pulse. Measurement unit: Periods of the carrier.
          */
-        uint32_t carriern_oshtwth:4;
-        /** carriern_out_invert : R/W; bitpos: [12]; default: 0;
+        uint32_t choppern_oshtwth:4;
+        /** choppern_out_invert : R/W; bitpos: [12]; default: 0;
          *  Configures whether or not to invert the output of PWMn A and PWMn B for this
          *  submodule.\\0: Normal\\1: Invert
          */
-        uint32_t carriern_out_invert:1;
-        /** carriern_in_invert : R/W; bitpos: [13]; default: 0;
+        uint32_t choppern_out_invert:1;
+        /** choppern_in_invert : R/W; bitpos: [13]; default: 0;
          *  Configures whether or not to invert the input of PWMn A and PWMn B for this
          *  submodule.\\0: Normal\\1: Invert
          */
-        uint32_t carriern_in_invert:1;
+        uint32_t choppern_in_invert:1;
         uint32_t reserved_14:18;
     };
     uint32_t val;
@@ -607,86 +503,86 @@ typedef union {
  */
 typedef union {
     struct {
-        /** fhn_sw_cbc : R/W; bitpos: [0]; default: 0;
+        /** tzn_sw_cbc : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_sw_cbc:1;
-        /** fhn_f2_cbc : R/W; bitpos: [1]; default: 0;
+        uint32_t tzn_sw_cbc:1;
+        /** tzn_f2_cbc : R/W; bitpos: [1]; default: 0;
          *  Configures whether or not event_f2 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f2_cbc:1;
-        /** fhn_f1_cbc : R/W; bitpos: [2]; default: 0;
+        uint32_t tzn_f2_cbc:1;
+        /** tzn_f1_cbc : R/W; bitpos: [2]; default: 0;
          *  Configures whether or not event_f1 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f1_cbc:1;
-        /** fhn_f0_cbc : R/W; bitpos: [3]; default: 0;
+        uint32_t tzn_f1_cbc:1;
+        /** tzn_f0_cbc : R/W; bitpos: [3]; default: 0;
          *  Configures whether or not event_f0 will trigger cycle-by-cycle mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f0_cbc:1;
-        /** fhn_sw_ost : R/W; bitpos: [4]; default: 0;
+        uint32_t tzn_f0_cbc:1;
+        /** tzn_sw_ost : R/W; bitpos: [4]; default: 0;
          *  Configures whether or not to enable software force one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_sw_ost:1;
-        /** fhn_f2_ost : R/W; bitpos: [5]; default: 0;
+        uint32_t tzn_sw_ost:1;
+        /** tzn_f2_ost : R/W; bitpos: [5]; default: 0;
          *  Configures whether or not event_f2 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f2_ost:1;
-        /** fhn_f1_ost : R/W; bitpos: [6]; default: 0;
+        uint32_t tzn_f2_ost:1;
+        /** tzn_f1_ost : R/W; bitpos: [6]; default: 0;
          *  Configures whether or not event_f1 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f1_ost:1;
-        /** fhn_f0_ost : R/W; bitpos: [7]; default: 0;
+        uint32_t tzn_f1_ost:1;
+        /** tzn_f0_ost : R/W; bitpos: [7]; default: 0;
          *  Configures whether or not event_f0 will trigger one-shot mode action.\\0:
          *  Disable\\1: Enable
          */
-        uint32_t fhn_f0_ost:1;
-        /** fhn_a_cbc_d : R/W; bitpos: [9:8]; default: 0;
+        uint32_t tzn_f0_ost:1;
+        /** tzn_a_cbc_d : R/W; bitpos: [9:8]; default: 0;
          *  Configures cycle-by-cycle mode action on PWMn A when fault event occurs and timer
          *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_a_cbc_d:2;
-        /** fhn_a_cbc_u : R/W; bitpos: [11:10]; default: 0;
+        uint32_t tzn_a_cbc_d:2;
+        /** tzn_a_cbc_u : R/W; bitpos: [11:10]; default: 0;
          *  Configures cycle-by-cycle mode action on PWMn A when fault event occurs and timer
          *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_a_cbc_u:2;
-        /** fhn_a_ost_d : R/W; bitpos: [13:12]; default: 0;
+        uint32_t tzn_a_cbc_u:2;
+        /** tzn_a_ost_d : R/W; bitpos: [13:12]; default: 0;
          *  Configures one-shot mode action on PWMn A when fault event occurs and timer is
          *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_a_ost_d:2;
-        /** fhn_a_ost_u : R/W; bitpos: [15:14]; default: 0;
+        uint32_t tzn_a_ost_d:2;
+        /** tzn_a_ost_u : R/W; bitpos: [15:14]; default: 0;
          *  Configures one-shot mode action on PWMn A when fault event occurs and timer is
          *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_a_ost_u:2;
-        /** fhn_b_cbc_d : R/W; bitpos: [17:16]; default: 0;
+        uint32_t tzn_a_ost_u:2;
+        /** tzn_b_cbc_d : R/W; bitpos: [17:16]; default: 0;
          *  Configures cycle-by-cycle mode action on PWMn B when fault event occurs and timer
          *  is decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_b_cbc_d:2;
-        /** fhn_b_cbc_u : R/W; bitpos: [19:18]; default: 0;
+        uint32_t tzn_b_cbc_d:2;
+        /** tzn_b_cbc_u : R/W; bitpos: [19:18]; default: 0;
          *  Configures cycle-by-cycle mode action on PWMn B when fault event occurs and timer
          *  is increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_b_cbc_u:2;
-        /** fhn_b_ost_d : R/W; bitpos: [21:20]; default: 0;
+        uint32_t tzn_b_cbc_u:2;
+        /** tzn_b_ost_d : R/W; bitpos: [21:20]; default: 0;
          *  Configures one-shot mode action on PWMn B when fault event occurs and timer is
          *  decreasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_b_ost_d:2;
-        /** fhn_b_ost_u : R/W; bitpos: [23:22]; default: 0;
+        uint32_t tzn_b_ost_d:2;
+        /** tzn_b_ost_u : R/W; bitpos: [23:22]; default: 0;
          *  Configures one-shot mode action on PWMn B when fault event occurs and timer is
          *  increasing.\\0: Do nothing\\1: Force low\\2: Force high\\3: Toggle
          */
-        uint32_t fhn_b_ost_u:2;
+        uint32_t tzn_b_ost_u:2;
         uint32_t reserved_24:8;
     };
     uint32_t val;
@@ -697,53 +593,31 @@ typedef union {
  */
 typedef union {
     struct {
-        /** fhn_clr_ost : R/W; bitpos: [0]; default: 0;
+        /** tzn_clr_ost : R/W; bitpos: [0]; default: 0;
          *  Configures the generation of software one-shot mode action clear. A toggle
          *  (software negate its value) triggers a clear for on going one-shot mode action.
          */
-        uint32_t fhn_clr_ost:1;
-        /** fhn_cbcpulse : R/W; bitpos: [2:1]; default: 0;
+        uint32_t tzn_clr_ost:1;
+        /** tzn_cbcpulse : R/W; bitpos: [2:1]; default: 0;
          *  Configures the refresh moment selection of cycle-by-cycle mode action.\\0: Select
          *  nothing, will not refresh\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP
          */
-        uint32_t fhn_cbcpulse:2;
-        /** fhn_force_cbc : R/W; bitpos: [3]; default: 0;
+        uint32_t tzn_cbcpulse:2;
+        /** tzn_force_cbc : R/W; bitpos: [3]; default: 0;
          *  Configures the generation of software cycle-by-cycle mode action. A toggle
          *  (software negate its value) triggers a cycle-by-cycle mode action.
          */
-        uint32_t fhn_force_cbc:1;
-        /** fhn_force_ost : R/W; bitpos: [4]; default: 0;
+        uint32_t tzn_force_cbc:1;
+        /** tzn_force_ost : R/W; bitpos: [4]; default: 0;
          *  Configures the generation of software one-shot mode action. A toggle (software
          *  negate its value) triggers a one-shot mode action.
          */
-        uint32_t fhn_force_ost:1;
+        uint32_t tzn_force_ost:1;
         uint32_t reserved_5:27;
     };
     uint32_t val;
 } mcpwm_fhn_cfg1_reg_t;
 
-/** Type of fhn_status register
- *  Fault events status register
- */
-typedef union {
-    struct {
-        /** fhn_cbc_on : RO; bitpos: [0]; default: 0;
-         *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
-         *  action\\1: On going
-         */
-        uint32_t fhn_cbc_on:1;
-        /** fhn_ost_on : RO; bitpos: [1]; default: 0;
-         *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
-         *  going
-         */
-        uint32_t fhn_ost_on:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} mcpwm_fhn_status_reg_t;
-
-
-/** Group: fault det */
 /** Type of fault_detect register
  *  Fault detection configuration and status register
  */
@@ -793,8 +667,6 @@ typedef union {
     uint32_t val;
 } mcpwm_fault_detect_reg_t;
 
-
-/** Group: sync */
 /** Type of cap_timer_cfg register
  *  Capture timer configuration register
  */
@@ -825,8 +697,6 @@ typedef union {
     uint32_t val;
 } mcpwm_cap_timer_cfg_reg_t;
 
-
-/** Group: phase */
 /** Type of cap_timer_phase register
  *  Capture timer sync phase register
  */
@@ -840,8 +710,6 @@ typedef union {
     uint32_t val;
 } mcpwm_cap_timer_phase_reg_t;
 
-
-/** Group: cap_cfg */
 /** Type of cap_chn_cfg register
  *  Capture channel n configuration register
  */
@@ -858,7 +726,7 @@ typedef union {
          */
         uint32_t capn_mode:2;
         /** capn_prescale : R/W; bitpos: [10:3]; default: 0;
-         *  Configures prescale value on possitive edge of CAPn. Prescale value =
+         *  Configures prescale value on positive edge of CAPn. Prescale value =
          *  PWM_CAPn_PRESCALE + 1
          */
         uint32_t capn_prescale:8;
@@ -877,8 +745,436 @@ typedef union {
     uint32_t val;
 } mcpwm_cap_chn_cfg_reg_t;
 
+/** Type of update_cfg register
+ *  Generator Update configuration register
+ */
+typedef union {
+    struct {
+        /** global_up_en : R/W; bitpos: [0]; default: 1;
+         *  Configures whether or not to enable global update for all active registers in MCPWM
+         *  module.\\0: Disable\\1: Enable
+         */
+        uint32_t global_up_en:1;
+        /** global_force_up : R/W; bitpos: [1]; default: 0;
+         *  Configures the generation of global forced update for all active registers in MCPWM
+         *  module. A toggle (software invert its value) will trigger a global forced update.
+         *  Valid only when MCPWM_GLOBAL_UP_EN and MCPWM_OP0/1/2_UP_EN are both set to 1.
+         */
+        uint32_t global_force_up:1;
+        /** op0_up_en : R/W; bitpos: [2]; default: 1;
+         *  Configures whether or not to enable update of active registers in PWM operator0.
+         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
+         */
+        uint32_t op0_up_en:1;
+        /** op0_force_up : R/W; bitpos: [3]; default: 0;
+         *  Configures the generation of forced update for active registers in PWM operator0. A
+         *  toggle (software invert its value) will trigger a forced update. Valid only when
+         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP0_UP_EN are both set to 1.
+         */
+        uint32_t op0_force_up:1;
+        /** op1_up_en : R/W; bitpos: [4]; default: 1;
+         *  Configures whether or not to enable update of active registers in PWM operator1.
+         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
+         */
+        uint32_t op1_up_en:1;
+        /** op1_force_up : R/W; bitpos: [5]; default: 0;
+         *  Configures the generation of forced update for active registers in PWM operator1. A
+         *  toggle (software invert its value) will trigger a forced update. Valid only when
+         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP1_UP_EN are both set to 1.
+         */
+        uint32_t op1_force_up:1;
+        /** op2_up_en : R/W; bitpos: [6]; default: 1;
+         *  Configures whether or not to enable update of active registers in PWM operator2.
+         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
+         */
+        uint32_t op2_up_en:1;
+        /** op2_force_up : R/W; bitpos: [7]; default: 0;
+         *  Configures the generation of forced update for active registers in PWM operator2. A
+         *  toggle (software invert its value) will trigger a forced update. Valid only when
+         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP2_UP_EN are both set to 1.
+         */
+        uint32_t op2_force_up:1;
+        uint32_t reserved_8:24;
+    };
+    uint32_t val;
+} mcpwm_update_cfg_reg_t;
 
-/** Group: cap_ch */
+/** Type of evt_en register
+ *  Event enable register
+ */
+typedef union {
+    struct {
+        /** evt_timer0_stop_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable timer0 stop event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_timer0_stop_en:1;
+        /** evt_timer1_stop_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable timer1 stop event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_timer1_stop_en:1;
+        /** evt_timer2_stop_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable timer2 stop event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_timer2_stop_en:1;
+        /** evt_timer0_tez_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable timer0 equal zero event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer0_tez_en:1;
+        /** evt_timer1_tez_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable timer1 equal zero event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer1_tez_en:1;
+        /** evt_timer2_tez_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable timer2 equal zero event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer2_tez_en:1;
+        /** evt_timer0_tep_en : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to enable timer0 equal period event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer0_tep_en:1;
+        /** evt_timer1_tep_en : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to enable timer1 equal period event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer1_tep_en:1;
+        /** evt_timer2_tep_en : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to enable timer2 equal period event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_timer2_tep_en:1;
+        /** evt_op0_tea_en : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer equal a event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op0_tea_en:1;
+        /** evt_op1_tea_en : R/W; bitpos: [10]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer equal a event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op1_tea_en:1;
+        /** evt_op2_tea_en : R/W; bitpos: [11]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer equal a event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op2_tea_en:1;
+        /** evt_op0_teb_en : R/W; bitpos: [12]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer equal b event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op0_teb_en:1;
+        /** evt_op1_teb_en : R/W; bitpos: [13]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer equal b event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op1_teb_en:1;
+        /** evt_op2_teb_en : R/W; bitpos: [14]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer equal b event
+         *  generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op2_teb_en:1;
+        /** evt_f0_en : R/W; bitpos: [15]; default: 0;
+         *  Configures whether or not to enable fault0 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_f0_en:1;
+        /** evt_f1_en : R/W; bitpos: [16]; default: 0;
+         *  Configures whether or not to enable fault1 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_f1_en:1;
+        /** evt_f2_en : R/W; bitpos: [17]; default: 0;
+         *  Configures whether or not to enable fault2 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_f2_en:1;
+        /** evt_f0_clr_en : R/W; bitpos: [18]; default: 0;
+         *  Configures whether or not to enable fault0 clear event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_f0_clr_en:1;
+        /** evt_f1_clr_en : R/W; bitpos: [19]; default: 0;
+         *  Configures whether or not to enable fault1 clear event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_f1_clr_en:1;
+        /** evt_f2_clr_en : R/W; bitpos: [20]; default: 0;
+         *  Configures whether or not to enable fault2 clear event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_f2_clr_en:1;
+        /** evt_tz0_cbc_en : R/W; bitpos: [21]; default: 0;
+         *  Configures whether or not to enable cycle-by-cycle trip0 event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_tz0_cbc_en:1;
+        /** evt_tz1_cbc_en : R/W; bitpos: [22]; default: 0;
+         *  Configures whether or not to enable cycle-by-cycle trip1 event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_tz1_cbc_en:1;
+        /** evt_tz2_cbc_en : R/W; bitpos: [23]; default: 0;
+         *  Configures whether or not to enable cycle-by-cycle trip2 event generate.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t evt_tz2_cbc_en:1;
+        /** evt_tz0_ost_en : R/W; bitpos: [24]; default: 0;
+         *  Configures whether or not to enable one-shot trip0 event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_tz0_ost_en:1;
+        /** evt_tz1_ost_en : R/W; bitpos: [25]; default: 0;
+         *  Configures whether or not to enable one-shot trip1 event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_tz1_ost_en:1;
+        /** evt_tz2_ost_en : R/W; bitpos: [26]; default: 0;
+         *  Configures whether or not to enable one-shot trip2 event generate.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t evt_tz2_ost_en:1;
+        /** evt_cap0_en : R/W; bitpos: [27]; default: 0;
+         *  Configures whether or not to enable capture0 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_cap0_en:1;
+        /** evt_cap1_en : R/W; bitpos: [28]; default: 0;
+         *  Configures whether or not to enable capture1 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_cap1_en:1;
+        /** evt_cap2_en : R/W; bitpos: [29]; default: 0;
+         *  Configures whether or not to enable capture2 event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_cap2_en:1;
+        uint32_t reserved_30:2;
+    };
+    uint32_t val;
+} mcpwm_evt_en_reg_t;
+
+/** Type of task_en register
+ *  Task enable register
+ */
+typedef union {
+    struct {
+        /** task_cmpr0_a_up_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer stamp A's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr0_a_up_en:1;
+        /** task_cmpr1_a_up_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer stamp A's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr1_a_up_en:1;
+        /** task_cmpr2_a_up_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer stamp A's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr2_a_up_en:1;
+        /** task_cmpr0_b_up_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer stamp B's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr0_b_up_en:1;
+        /** task_cmpr1_b_up_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer stamp B's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr1_b_up_en:1;
+        /** task_cmpr2_b_up_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer stamp B's shadow register
+         *  update task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cmpr2_b_up_en:1;
+        /** task_gen_stop_en : R/W; bitpos: [6]; default: 0;
+         *  Configures whether or not to enable all PWM generate stop task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_gen_stop_en:1;
+        /** task_timer0_sync_en : R/W; bitpos: [7]; default: 0;
+         *  Configures whether or not to enable timer0 sync task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_timer0_sync_en:1;
+        /** task_timer1_sync_en : R/W; bitpos: [8]; default: 0;
+         *  Configures whether or not to enable timer1 sync task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_timer1_sync_en:1;
+        /** task_timer2_sync_en : R/W; bitpos: [9]; default: 0;
+         *  Configures whether or not to enable timer2 sync task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_timer2_sync_en:1;
+        /** task_timer0_period_up_en : R/W; bitpos: [10]; default: 0;
+         *  Configures whether or not to enable timer0 period update task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_timer0_period_up_en:1;
+        /** task_timer1_period_up_en : R/W; bitpos: [11]; default: 0;
+         *  Configures whether or not to enable timer1 period update task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_timer1_period_up_en:1;
+        /** task_timer2_period_up_en : R/W; bitpos: [12]; default: 0;
+         *  Configures whether or not to enable timer2 period update task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_timer2_period_up_en:1;
+        /** task_tz0_ost_en : R/W; bitpos: [13]; default: 0;
+         *  Configures whether or not to enable one shot trip0 task receive.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t task_tz0_ost_en:1;
+        /** task_tz1_ost_en : R/W; bitpos: [14]; default: 0;
+         *  Configures whether or not to enable one shot trip1 task receive.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t task_tz1_ost_en:1;
+        /** task_tz2_ost_en : R/W; bitpos: [15]; default: 0;
+         *  Configures whether or not to enable one shot trip2 task receive.\\0: Disable\\1:
+         *  Enable
+         */
+        uint32_t task_tz2_ost_en:1;
+        /** task_clr0_ost_en : R/W; bitpos: [16]; default: 0;
+         *  Configures whether or not to enable one shot trip0 clear task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_clr0_ost_en:1;
+        /** task_clr1_ost_en : R/W; bitpos: [17]; default: 0;
+         *  Configures whether or not to enable one shot trip1 clear task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_clr1_ost_en:1;
+        /** task_clr2_ost_en : R/W; bitpos: [18]; default: 0;
+         *  Configures whether or not to enable one shot trip2 clear task receive.\\0:
+         *  Disable\\1: Enable
+         */
+        uint32_t task_clr2_ost_en:1;
+        /** task_cap0_en : R/W; bitpos: [19]; default: 0;
+         *  Configures whether or not to enable capture0 task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cap0_en:1;
+        /** task_cap1_en : R/W; bitpos: [20]; default: 0;
+         *  Configures whether or not to enable capture1 task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cap1_en:1;
+        /** task_cap2_en : R/W; bitpos: [21]; default: 0;
+         *  Configures whether or not to enable capture2 task receive.\\0: Disable\\1: Enable
+         */
+        uint32_t task_cap2_en:1;
+        uint32_t reserved_22:10;
+    };
+    uint32_t val;
+} mcpwm_task_en_reg_t;
+
+/** Type of evt_en2 register
+ *  Event enable register2
+ */
+typedef union {
+    struct {
+        /** evt_op0_tee1_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E1_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op0_tee1_en:1;
+        /** evt_op1_tee1_en : R/W; bitpos: [1]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer equal OP1_TSTMP_E1_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op1_tee1_en:1;
+        /** evt_op2_tee1_en : R/W; bitpos: [2]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer equal OP2_TSTMP_E1_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op2_tee1_en:1;
+        /** evt_op0_tee2_en : R/W; bitpos: [3]; default: 0;
+         *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E2_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op0_tee2_en:1;
+        /** evt_op1_tee2_en : R/W; bitpos: [4]; default: 0;
+         *  Configures whether or not to enable PWM generator1 timer equal OP1_TSTMP_E2_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op1_tee2_en:1;
+        /** evt_op2_tee2_en : R/W; bitpos: [5]; default: 0;
+         *  Configures whether or not to enable PWM generator2 timer equal OP2_TSTMP_E2_REG
+         *  event generate.\\0: Disable\\1: Enable
+         */
+        uint32_t evt_op2_tee2_en:1;
+        uint32_t reserved_6:26;
+    };
+    uint32_t val;
+} mcpwm_evt_en2_reg_t;
+
+/** Type of opn_tstmp register
+ *  Generatorn timer stamp value register
+ */
+typedef union {
+    struct {
+        /** opn_tstmp_e : R/W; bitpos: [15:0]; default: 0;
+         *  Configures generatorn timer stamp E1 value register
+         */
+        uint32_t opn_tstmp_e:16;
+        uint32_t reserved_16:16;
+    };
+    uint32_t val;
+} mcpwm_opn_tstmp_reg_t;
+
+/** Type of clk register
+ *  Global configuration register
+ */
+typedef union {
+    struct {
+        /** clk_en : R/W; bitpos: [0]; default: 0;
+         *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
+         *  when application writes registers\\1: Force open the clock gate for register
+         */
+        uint32_t clk_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} mcpwm_clk_reg_t;
+
+/** Group: Status register */
+/** Type of timern_status register
+ *  PWM timern status register.
+ */
+typedef union {
+    struct {
+        /** timern_value : RO; bitpos: [15:0]; default: 0;
+         *  Represents current PWM timern counter value.
+         */
+        uint32_t timern_value:16;
+        /** timern_direction : RO; bitpos: [16]; default: 0;
+         *  Represents current PWM timern counter direction.\\0: Increment\\1: Decrement
+         */
+        uint32_t timern_direction:1;
+        uint32_t reserved_17:15;
+    };
+    uint32_t val;
+} mcpwm_timern_status_reg_t;
+
+/** Type of fhn_status register
+ *  Fault events status register
+ */
+typedef union {
+    struct {
+        /** tzn_cbc_on : RO; bitpos: [0]; default: 0;
+         *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
+         *  action\\1: On going
+         */
+        uint32_t tzn_cbc_on:1;
+        /** tzn_ost_on : RO; bitpos: [1]; default: 0;
+         *  Represents whether or not an one-shot mode action is on going.\\0:No action\\1: On
+         *  going
+         */
+        uint32_t tzn_ost_on:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} mcpwm_fhn_status_reg_t;
+
 /** Type of cap_chn register
  *  CAPn capture value register
  */
@@ -892,8 +1188,6 @@ typedef union {
     uint32_t val;
 } mcpwm_cap_chn_reg_t;
 
-
-/** Group: edge */
 /** Type of cap_status register
  *  Last capture trigger edge information register
  */
@@ -915,63 +1209,6 @@ typedef union {
     };
     uint32_t val;
 } mcpwm_cap_status_reg_t;
-
-
-/** Group: update */
-/** Type of update_cfg register
- *  Generator Update configuration register
- */
-typedef union {
-    struct {
-        /** global_up_en : R/W; bitpos: [0]; default: 1;
-         *  Configures whether or not to enable global update for all active registers in MCPWM
-         *  module.\\0: Disable\\1: Enable
-         */
-        uint32_t global_up_en:1;
-        /** global_force_up : R/W; bitpos: [1]; default: 0;
-         *  Configures the generation of global forced update for all active registers in MCPWM
-         *  module. A toggle (software invert its value) will trigger a global forced update.
-         *  Valid only when MCPWM_GLOBAL_UP_EN and MCPWM_OP0/1/2_UP_EN are both set to 1.
-         */
-        uint32_t global_force_up:1;
-        /** op0_up_en : R/W; bitpos: [2]; default: 1;
-         *  Configures whether or not to enable update of active registers in PWM operator$n.
-         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
-         */
-        uint32_t op0_up_en:1;
-        /** op0_force_up : R/W; bitpos: [3]; default: 0;
-         *  Configures the generation of forced update for active registers in PWM operator0. A
-         *  toggle (software invert its value) will trigger a forced update. Valid only when
-         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP0_UP_EN are both set to 1.
-         */
-        uint32_t op0_force_up:1;
-        /** op1_up_en : R/W; bitpos: [4]; default: 1;
-         *  Configures whether or not to enable update of active registers in PWM operator$n.
-         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
-         */
-        uint32_t op1_up_en:1;
-        /** op1_force_up : R/W; bitpos: [5]; default: 0;
-         *  Configures the generation of forced update for active registers in PWM operator1. A
-         *  toggle (software invert its value) will trigger a forced update. Valid only when
-         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP1_UP_EN are both set to 1.
-         */
-        uint32_t op1_force_up:1;
-        /** op2_up_en : R/W; bitpos: [6]; default: 1;
-         *  Configures whether or not to enable update of active registers in PWM operator$n.
-         *  Valid only when PWM_GLOBAL_UP_EN is set to 1.\\0: Disable\\1: Enable
-         */
-        uint32_t op2_up_en:1;
-        /** op2_force_up : R/W; bitpos: [7]; default: 0;
-         *  Configures the generation of forced update for active registers in PWM operator2. A
-         *  toggle (software invert its value) will trigger a forced update. Valid only when
-         *  MCPWM_GLOBAL_UP_EN and MCPWM_OP2_UP_EN are both set to 1.
-         */
-        uint32_t op2_force_up:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} mcpwm_update_cfg_reg_t;
-
 
 /** Group: Interrupt register */
 /** Type of int_ena register
@@ -1566,362 +1803,6 @@ typedef union {
     uint32_t val;
 } mcpwm_int_clr_reg_t;
 
-
-/** Group: etm */
-/** Type of evt_en register
- *  Event enable register
- */
-typedef union {
-    struct {
-        /** evt_timer0_stop_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable timer0 stop event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer0_stop_en:1;
-        /** evt_timer1_stop_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable timer1 stop event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer1_stop_en:1;
-        /** evt_timer2_stop_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable timer2 stop event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_timer2_stop_en:1;
-        /** evt_timer0_tez_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable timer0 equal zero event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer0_tez_en:1;
-        /** evt_timer1_tez_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable timer1 equal zero event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer1_tez_en:1;
-        /** evt_timer2_tez_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable timer2 equal zero event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer2_tez_en:1;
-        /** evt_timer0_tep_en : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable timer0 equal period event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer0_tep_en:1;
-        /** evt_timer1_tep_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable timer1 equal period event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer1_tep_en:1;
-        /** evt_timer2_tep_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable timer2 equal period event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_timer2_tep_en:1;
-        /** evt_op0_tea_en : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer equal a event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op0_tea_en:1;
-        /** evt_op1_tea_en : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer equal a event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op1_tea_en:1;
-        /** evt_op2_tea_en : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer equal a event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op2_tea_en:1;
-        /** evt_op0_teb_en : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer equal b event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op0_teb_en:1;
-        /** evt_op1_teb_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer equal b event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op1_teb_en:1;
-        /** evt_op2_teb_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer equal b event
-         *  generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op2_teb_en:1;
-        /** evt_f0_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable fault0 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_f0_en:1;
-        /** evt_f1_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to enable fault1 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_f1_en:1;
-        /** evt_f2_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable fault2 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_f2_en:1;
-        /** evt_f0_clr_en : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to enable fault0 clear event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_f0_clr_en:1;
-        /** evt_f1_clr_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable fault1 clear event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_f1_clr_en:1;
-        /** evt_f2_clr_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable fault2 clear event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_f2_clr_en:1;
-        /** evt_tz0_cbc_en : R/W; bitpos: [21]; default: 0;
-         *  Configures whether or not to enable cycle-by-cycle trip0 event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_tz0_cbc_en:1;
-        /** evt_tz1_cbc_en : R/W; bitpos: [22]; default: 0;
-         *  Configures whether or not to enable cycle-by-cycle trip1 event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_tz1_cbc_en:1;
-        /** evt_tz2_cbc_en : R/W; bitpos: [23]; default: 0;
-         *  Configures whether or not to enable cycle-by-cycle trip2 event generate.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t evt_tz2_cbc_en:1;
-        /** evt_tz0_ost_en : R/W; bitpos: [24]; default: 0;
-         *  Configures whether or not to enable one-shot trip0 event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_tz0_ost_en:1;
-        /** evt_tz1_ost_en : R/W; bitpos: [25]; default: 0;
-         *  Configures whether or not to enable one-shot trip1 event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_tz1_ost_en:1;
-        /** evt_tz2_ost_en : R/W; bitpos: [26]; default: 0;
-         *  Configures whether or not to enable one-shot trip2 event generate.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t evt_tz2_ost_en:1;
-        /** evt_cap0_en : R/W; bitpos: [27]; default: 0;
-         *  Configures whether or not to enable capture0 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_cap0_en:1;
-        /** evt_cap1_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to enable capture1 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_cap1_en:1;
-        /** evt_cap2_en : R/W; bitpos: [29]; default: 0;
-         *  Configures whether or not to enable capture2 event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_cap2_en:1;
-        uint32_t reserved_30:2;
-    };
-    uint32_t val;
-} mcpwm_evt_en_reg_t;
-
-/** Type of task_en register
- *  Task enable register
- */
-typedef union {
-    struct {
-        /** task_cmpr0_a_up_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer stamp A's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr0_a_up_en:1;
-        /** task_cmpr1_a_up_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer stamp A's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr1_a_up_en:1;
-        /** task_cmpr2_a_up_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer stamp A's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr2_a_up_en:1;
-        /** task_cmpr0_b_up_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer stamp B's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr0_b_up_en:1;
-        /** task_cmpr1_b_up_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer stamp B's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr1_b_up_en:1;
-        /** task_cmpr2_b_up_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer stamp B's shadow register
-         *  update task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cmpr2_b_up_en:1;
-        /** task_gen_stop_en : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable all PWM generate stop task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_gen_stop_en:1;
-        /** task_timer0_sync_en : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to enable timer0 sync task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer0_sync_en:1;
-        /** task_timer1_sync_en : R/W; bitpos: [8]; default: 0;
-         *  Configures whether or not to enable timer1 sync task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer1_sync_en:1;
-        /** task_timer2_sync_en : R/W; bitpos: [9]; default: 0;
-         *  Configures whether or not to enable timer2 sync task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_timer2_sync_en:1;
-        /** task_timer0_period_up_en : R/W; bitpos: [10]; default: 0;
-         *  Configures whether or not to enable timer0 period update task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_timer0_period_up_en:1;
-        /** task_timer1_period_up_en : R/W; bitpos: [11]; default: 0;
-         *  Configures whether or not to enable timer1 period update task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_timer1_period_up_en:1;
-        /** task_timer2_period_up_en : R/W; bitpos: [12]; default: 0;
-         *  Configures whether or not to enable timer2 period update task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_timer2_period_up_en:1;
-        /** task_tz0_ost_en : R/W; bitpos: [13]; default: 0;
-         *  Configures whether or not to enable one shot trip0 task receive.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_tz0_ost_en:1;
-        /** task_tz1_ost_en : R/W; bitpos: [14]; default: 0;
-         *  Configures whether or not to enable one shot trip1 task receive.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_tz1_ost_en:1;
-        /** task_tz2_ost_en : R/W; bitpos: [15]; default: 0;
-         *  Configures whether or not to enable one shot trip2 task receive.\\0: Disable\\1:
-         *  Enable
-         */
-        uint32_t task_tz2_ost_en:1;
-        /** task_clr0_ost_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether or not to enable one shot trip0 clear task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_clr0_ost_en:1;
-        /** task_clr1_ost_en : R/W; bitpos: [17]; default: 0;
-         *  Configures whether or not to enable one shot trip1 clear task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_clr1_ost_en:1;
-        /** task_clr2_ost_en : R/W; bitpos: [18]; default: 0;
-         *  Configures whether or not to enable one shot trip2 clear task receive.\\0:
-         *  Disable\\1: Enable
-         */
-        uint32_t task_clr2_ost_en:1;
-        /** task_cap0_en : R/W; bitpos: [19]; default: 0;
-         *  Configures whether or not to enable capture0 task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cap0_en:1;
-        /** task_cap1_en : R/W; bitpos: [20]; default: 0;
-         *  Configures whether or not to enable capture1 task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cap1_en:1;
-        /** task_cap2_en : R/W; bitpos: [21]; default: 0;
-         *  Configures whether or not to enable capture2 task receive.\\0: Disable\\1: Enable
-         */
-        uint32_t task_cap2_en:1;
-        uint32_t reserved_22:10;
-    };
-    uint32_t val;
-} mcpwm_task_en_reg_t;
-
-/** Type of evt_en2 register
- *  Event enable register2
- */
-typedef union {
-    struct {
-        /** evt_op0_tee1_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E1_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op0_tee1_en:1;
-        /** evt_op1_tee1_en : R/W; bitpos: [1]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer equal OP1_TSTMP_E1_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op1_tee1_en:1;
-        /** evt_op2_tee1_en : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer equal OP2_TSTMP_E1_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op2_tee1_en:1;
-        /** evt_op0_tee2_en : R/W; bitpos: [3]; default: 0;
-         *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E2_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op0_tee2_en:1;
-        /** evt_op1_tee2_en : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable PWM generator1 timer equal OP1_TSTMP_E2_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op1_tee2_en:1;
-        /** evt_op2_tee2_en : R/W; bitpos: [5]; default: 0;
-         *  Configures whether or not to enable PWM generator2 timer equal OP2_TSTMP_E2_REG
-         *  event generate.\\0: Disable\\1: Enable
-         */
-        uint32_t evt_op2_tee2_en:1;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} mcpwm_evt_en2_reg_t;
-
-
-/** Group: tstmp */
-/** Type of opn_tstmp_e1 register
- *  Generatorn timer stamp E1 value register
- */
-typedef union {
-    struct {
-        /** opn_tstmp_e1 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures generatorn timer stamp E1 value register
-         */
-        uint32_t opn_tstmp_e1:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_opn_tstmp_e1_reg_t;
-
-/** Type of opn_tstmp_e2 register
- *  Generatorn timer stamp E2 value register
- */
-typedef union {
-    struct {
-        /** opn_tstmp_e2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures generatorn timer stamp E2 value register
-         */
-        uint32_t opn_tstmp_e2:16;
-        uint32_t reserved_16:16;
-    };
-    uint32_t val;
-} mcpwm_opn_tstmp_e2_reg_t;
-
-/** Type of clk register
- *  Global configuration register
- */
-typedef union {
-    struct {
-        /** clk_en : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
-         *  when application writes registers\\1: Force open the clock gate for register
-         */
-        uint32_t clk_en:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} mcpwm_clk_reg_t;
-
-
 /** Group: Version register */
 /** Type of version register
  *  Version register.
@@ -1937,65 +1818,38 @@ typedef union {
     uint32_t val;
 } mcpwm_version_reg_t;
 
+typedef struct {
+    volatile mcpwm_timern_cfg0_reg_t timer_cfg0;
+    volatile mcpwm_timern_cfg1_reg_t timer_cfg1;
+    volatile mcpwm_timern_sync_reg_t timer_sync;
+    volatile mcpwm_timern_status_reg_t timer_status;
+} mcpwm_timer_regs_t;
+
+typedef struct {
+    volatile mcpwm_genn_stmp_cfg_reg_t gen_stmp_cfg;
+    volatile mcpwm_genn_tstmp_reg_t timestamp[2];
+    volatile mcpwm_genn_cfg0_reg_t gen_cfg0;
+    volatile mcpwm_genn_force_reg_t gen_force;
+    volatile mcpwm_genn_reg_t generator[2];
+    volatile mcpwm_dtn_cfg_reg_t dt_cfg;
+    volatile mcpwm_dtn_fed_cfg_reg_t dt_fed_cfg;
+    volatile mcpwm_dtn_red_cfg_reg_t dt_red_cfg;
+    volatile mcpwm_carriern_cfg_reg_t carrier_cfg;
+    volatile mcpwm_fhn_cfg0_reg_t fh_cfg0;
+    volatile mcpwm_fhn_cfg1_reg_t fh_cfg1;
+    volatile mcpwm_fhn_status_reg_t fh_status;
+} mcpwm_operator_reg_t;
+
+typedef struct {
+    volatile mcpwm_opn_tstmp_reg_t timestamp[2];
+} mcpwm_operator_tstmp_reg_t;
 
 typedef struct mcpwm_dev_t {
     volatile mcpwm_clk_cfg_reg_t clk_cfg;
-    volatile mcpwm_timern_cfg0_reg_t timer0_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer0_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer0_sync;
-    volatile mcpwm_timern_status_reg_t timer0_status;
-    volatile mcpwm_timern_cfg0_reg_t timer1_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer1_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer1_sync;
-    volatile mcpwm_timern_status_reg_t timer1_status;
-    volatile mcpwm_timern_cfg0_reg_t timer2_cfg0;
-    volatile mcpwm_timern_cfg1_reg_t timer2_cfg1;
-    volatile mcpwm_timern_sync_reg_t timer2_sync;
-    volatile mcpwm_timern_status_reg_t timer2_status;
+    volatile mcpwm_timer_regs_t timer[3];
     volatile mcpwm_timer_synci_cfg_reg_t timer_synci_cfg;
     volatile mcpwm_operator_timersel_reg_t operator_timersel;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen0_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen0_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen0_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen0_cfg0;
-    volatile mcpwm_genn_force_reg_t gen0_force;
-    volatile mcpwm_genn_a_reg_t gen0_a;
-    volatile mcpwm_genn_b_reg_t gen0_b;
-    volatile mcpwm_dtn_cfg_reg_t dt0_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt0_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt0_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier0_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh0_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh0_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh0_status;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen1_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen1_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen1_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen1_cfg0;
-    volatile mcpwm_genn_force_reg_t gen1_force;
-    volatile mcpwm_genn_a_reg_t gen1_a;
-    volatile mcpwm_genn_b_reg_t gen1_b;
-    volatile mcpwm_dtn_cfg_reg_t dt1_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt1_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt1_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier1_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh1_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh1_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh1_status;
-    volatile mcpwm_genn_stmp_cfg_reg_t gen2_stmp_cfg;
-    volatile mcpwm_genn_tstmp_a_reg_t gen2_tstmp_a;
-    volatile mcpwm_genn_tstmp_b_reg_t gen2_tstmp_b;
-    volatile mcpwm_genn_cfg0_reg_t gen2_cfg0;
-    volatile mcpwm_genn_force_reg_t gen2_force;
-    volatile mcpwm_genn_a_reg_t gen2_a;
-    volatile mcpwm_genn_b_reg_t gen2_b;
-    volatile mcpwm_dtn_cfg_reg_t dt2_cfg;
-    volatile mcpwm_dtn_fed_cfg_reg_t dt2_fed_cfg;
-    volatile mcpwm_dtn_red_cfg_reg_t dt2_red_cfg;
-    volatile mcpwm_carriern_cfg_reg_t carrier2_cfg;
-    volatile mcpwm_fhn_cfg0_reg_t fh2_cfg0;
-    volatile mcpwm_fhn_cfg1_reg_t fh2_cfg1;
-    volatile mcpwm_fhn_status_reg_t fh2_status;
+    volatile mcpwm_operator_reg_t operators[3];
     volatile mcpwm_fault_detect_reg_t fault_detect;
     volatile mcpwm_cap_timer_cfg_reg_t cap_timer_cfg;
     volatile mcpwm_cap_timer_phase_reg_t cap_timer_phase;
@@ -2010,17 +1864,12 @@ typedef struct mcpwm_dev_t {
     volatile mcpwm_evt_en_reg_t evt_en;
     volatile mcpwm_task_en_reg_t task_en;
     volatile mcpwm_evt_en2_reg_t evt_en2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op0_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op0_tstmp_e2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op1_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op1_tstmp_e2;
-    volatile mcpwm_opn_tstmp_e1_reg_t op2_tstmp_e1;
-    volatile mcpwm_opn_tstmp_e2_reg_t op2_tstmp_e2;
+    volatile mcpwm_operator_tstmp_reg_t operators_timestamp[3];
     volatile mcpwm_clk_reg_t clk;
     volatile mcpwm_version_reg_t version;
 } mcpwm_dev_t;
 
-extern mcpwm_dev_t MCPWM;
+extern mcpwm_dev_t MCPWM0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(mcpwm_dev_t) == 0x14c, "Invalid size of mcpwm_dev_t structure");

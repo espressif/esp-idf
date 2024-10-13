@@ -1,0 +1,108 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config ESP_ROM_HAS_CRC_LE
+    bool
+    default y
+
+config ESP_ROM_HAS_CRC_BE
+    bool
+    default y
+
+config ESP_ROM_HAS_JPEG_DECODE
+    bool
+    default y
+
+config ESP_ROM_UART_CLK_IS_XTAL
+    bool
+    default y
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+    int
+    default 3
+
+config ESP_ROM_HAS_RETARGETABLE_LOCKING
+    bool
+    default y
+
+config ESP_ROM_GET_CLK_FREQ
+    bool
+    default y
+
+config ESP_ROM_HAS_RVFPLIB
+    bool
+    default y
+
+config ESP_ROM_HAS_HAL_WDT
+    bool
+    default y
+
+config ESP_ROM_HAS_HAL_SYSTIMER
+    bool
+    default y
+
+config ESP_ROM_HAS_HEAP_TLSF
+    bool
+    default y
+
+config ESP_ROM_TLSF_CHECK_PATCH
+    bool
+    default y
+
+config ESP_ROM_MULTI_HEAP_WALK_PATCH
+    bool
+    default y
+
+config ESP_ROM_HAS_LAYOUT_TABLE
+    bool
+    default y
+
+config ESP_ROM_HAS_SPI_FLASH
+    bool
+    default y
+
+config ESP_ROM_WITHOUT_REGI2C
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG
+    bool
+    default y
+
+config ESP_ROM_HAS_VERSION
+    bool
+    default y
+
+config ESP_ROM_WDT_INIT_PATCH
+    bool
+    default y
+
+config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    bool
+    default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default -1
+
+config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+    bool
+    default y
+
+config ESP_ROM_CACHE_WB_INVLD_LOW_RANGE
+    bool
+    default y

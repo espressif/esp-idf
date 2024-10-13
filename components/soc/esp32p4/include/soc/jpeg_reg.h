@@ -64,13 +64,13 @@ extern "C" {
 #define JPEG_DEBUG_DIRECT_OUT_EN_M  (JPEG_DEBUG_DIRECT_OUT_EN_V << JPEG_DEBUG_DIRECT_OUT_EN_S)
 #define JPEG_DEBUG_DIRECT_OUT_EN_V  0x00000001U
 #define JPEG_DEBUG_DIRECT_OUT_EN_S  7
-/** JPEG_GRAY_SEL : R/W; bitpos: [8]; default: 1;
+/** JPEG_QNR_FIFO_SEL : R/W; bitpos: [8]; default: 1;
  *  0:use non-fifo way to access qnr ram,1:use fifo way to access qnr ram
  */
-#define JPEG_GRAY_SEL    (BIT(8))
-#define JPEG_GRAY_SEL_M  (JPEG_GRAY_SEL_V << JPEG_GRAY_SEL_S)
-#define JPEG_GRAY_SEL_V  0x00000001U
-#define JPEG_GRAY_SEL_S  8
+#define JPEG_QNR_FIFO_SEL    (BIT(8))
+#define JPEG_QNR_FIFO_SEL_M  (JPEG_QNR_FIFO_SEL_V << JPEG_QNR_FIFO_SEL_S)
+#define JPEG_QNR_FIFO_SEL_V  0x00000001U
+#define JPEG_QNR_FIFO_SEL_S  8
 /** JPEG_LQNR_TBL_SEL : R/W; bitpos: [10:9]; default: 0;
  *  choose  luminance quntization table id(TBD)
  */

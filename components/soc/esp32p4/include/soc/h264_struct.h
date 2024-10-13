@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -63,1029 +63,286 @@ typedef union {
     uint32_t val;
 } h264_gop_conf_reg_t;
 
-/** Type of a_sys_mb_res register
+/** Type of sys_mb_res register
  *  Video A horizontal and vertical MB resolution register.
  */
 typedef union {
     struct {
-        /** a_sys_total_mb_y : R/W; bitpos: [6:0]; default: 0;
+        /** sys_total_mb_y : R/W; bitpos: [6:0]; default: 0;
          *  Configures video A vertical MB resolution.
          */
-        uint32_t a_sys_total_mb_y:7;
-        /** a_sys_total_mb_x : R/W; bitpos: [13:7]; default: 0;
+        uint32_t sys_total_mb_y:7;
+        /** sys_total_mb_x : R/W; bitpos: [13:7]; default: 0;
          *  Configures video A horizontal MB resolution.
          */
-        uint32_t a_sys_total_mb_x:7;
+        uint32_t sys_total_mb_x:7;
         uint32_t reserved_14:18;
     };
     uint32_t val;
-} h264_a_sys_mb_res_reg_t;
+} h264_sys_mb_res_reg_t;
 
-/** Type of a_sys_conf register
+/** Type of sys_conf register
  *  Video A system level configuration register.
  */
 typedef union {
     struct {
-        /** a_db_tmp_ready_trigger_mb_num : R/W; bitpos: [6:0]; default: 3;
+        /** db_tmp_ready_trigger_mb_num : R/W; bitpos: [6:0]; default: 3;
          *  Configures when to trigger  video A H264_DB_TMP_READY_INT. When the (MB number of
          *  written db temp+1) is greater than this filed in first MB line, trigger
          *  H264_DB_TMP_READY_INT. Min is 3.
          */
-        uint32_t a_db_tmp_ready_trigger_mb_num:7;
-        /** a_rec_ready_trigger_mb_lines : R/W; bitpos: [13:7]; default: 4;
+        uint32_t db_tmp_ready_trigger_mb_num:7;
+        /** rec_ready_trigger_mb_lines : R/W; bitpos: [13:7]; default: 4;
          *  Configures when to trigger  video A H264_REC_READY_INT. When the MB line number of
          *  generated reconstruct pixel is greater than this filed, trigger H264_REC_READY_INT.
          *  Min is 4.
          */
-        uint32_t a_rec_ready_trigger_mb_lines:7;
-        /** a_intra_cost_cmp_offset : R/W; bitpos: [29:14]; default: 0;
+        uint32_t rec_ready_trigger_mb_lines:7;
+        /** intra_cost_cmp_offset : R/W; bitpos: [29:14]; default: 0;
          *  Configures video A intra cost offset when I MB compared with P MB.
          */
-        uint32_t a_intra_cost_cmp_offset:16;
+        uint32_t intra_cost_cmp_offset:16;
         uint32_t reserved_30:2;
     };
     uint32_t val;
-} h264_a_sys_conf_reg_t;
+} h264_sys_conf_reg_t;
 
-/** Type of a_deci_score register
+/** Type of deci_score register
  *  Video A luma and chroma MB decimate score Register.
  */
 typedef union {
     struct {
-        /** a_c_deci_score : R/W; bitpos: [9:0]; default: 0;
+        /** c_deci_score : R/W; bitpos: [9:0]; default: 0;
          *  Configures video A chroma MB decimate score. When chroma score is smaller than it,
          *  chroma decimate will be enable.
          */
-        uint32_t a_c_deci_score:10;
-        /** a_l_deci_score : R/W; bitpos: [19:10]; default: 0;
+        uint32_t c_deci_score:10;
+        /** l_deci_score : R/W; bitpos: [19:10]; default: 0;
          *  Configures video A luma MB decimate score. When luma score is smaller than it, luma
          *  decimate will be enable.
          */
-        uint32_t a_l_deci_score:10;
+        uint32_t l_deci_score:10;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} h264_a_deci_score_reg_t;
+} h264_deci_score_reg_t;
 
-/** Type of a_deci_score_offset register
+/** Type of deci_score_offset register
  *  Video A luma and chroma MB decimate score offset Register.
  */
 typedef union {
     struct {
-        /** a_i16x16_deci_score_offset : R/W; bitpos: [5:0]; default: 0;
+        /** i16x16_deci_score_offset : R/W; bitpos: [5:0]; default: 0;
          *  Configures video A i16x16 MB decimate score offset. This offset will be added to
          *  i16x16 MB score.
          */
-        uint32_t a_i16x16_deci_score_offset:6;
-        /** a_i_chroma_deci_score_offset : R/W; bitpos: [11:6]; default: 0;
+        uint32_t i16x16_deci_score_offset:6;
+        /** i_chroma_deci_score_offset : R/W; bitpos: [11:6]; default: 0;
          *  Configures video A I chroma MB decimate score offset. This offset will be added to
          *  I chroma MB score.
          */
-        uint32_t a_i_chroma_deci_score_offset:6;
-        /** a_p16x16_deci_score_offset : R/W; bitpos: [17:12]; default: 0;
+        uint32_t i_chroma_deci_score_offset:6;
+        /** p16x16_deci_score_offset : R/W; bitpos: [17:12]; default: 0;
          *  Configures video A p16x16 MB decimate score offset. This offset will be added to
          *  p16x16 MB score.
          */
-        uint32_t a_p16x16_deci_score_offset:6;
-        /** a_p_chroma_deci_score_offset : R/W; bitpos: [23:18]; default: 0;
+        uint32_t p16x16_deci_score_offset:6;
+        /** p_chroma_deci_score_offset : R/W; bitpos: [23:18]; default: 0;
          *  Configures video A p chroma MB decimate score offset. This offset will be added to
          *  p chroma MB score.
          */
-        uint32_t a_p_chroma_deci_score_offset:6;
+        uint32_t p_chroma_deci_score_offset:6;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} h264_a_deci_score_offset_reg_t;
+} h264_deci_score_offset_reg_t;
 
-/** Type of a_rc_conf0 register
+/** Type of rc_conf0 register
  *  Video A rate control configuration register0.
  */
 typedef union {
     struct {
-        /** a_qp : R/W; bitpos: [5:0]; default: 0;
+        /** qp : R/W; bitpos: [5:0]; default: 0;
          *  Configures video A frame level initial luma QP value.
          */
-        uint32_t a_qp:6;
-        /** a_rate_ctrl_u : R/W; bitpos: [21:6]; default: 0;
+        uint32_t qp:6;
+        /** rate_ctrl_u : R/W; bitpos: [21:6]; default: 0;
          *  Configures video A parameter U value. U = int((float) u << 8).
          */
-        uint32_t a_rate_ctrl_u:16;
-        /** a_mb_rate_ctrl_en : R/W; bitpos: [22]; default: 0;
+        uint32_t rate_ctrl_u:16;
+        /** mb_rate_ctrl_en : R/W; bitpos: [22]; default: 0;
          *  Configures video A whether or not to open macro block rate ctrl.\\1:Open the macro
          *  block rate ctrl\\1:Close the macro block rate ctrl.
          */
-        uint32_t a_mb_rate_ctrl_en:1;
+        uint32_t mb_rate_ctrl_en:1;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} h264_a_rc_conf0_reg_t;
+} h264_rc_conf0_reg_t;
 
-/** Type of a_rc_conf1 register
+/** Type of rc_conf1 register
  *  Video A rate control configuration register1.
  */
 typedef union {
     struct {
-        /** a_chroma_dc_qp_delta : R/W; bitpos: [2:0]; default: 0;
+        /** chroma_dc_qp_delta : R/W; bitpos: [2:0]; default: 0;
          *  Configures video A chroma DC QP offset based on Chroma QP. Chroma DC QP = Chroma
          *  QP(after map) + reg_chroma_dc_qp_delta.
          */
-        uint32_t a_chroma_dc_qp_delta:3;
-        /** a_chroma_qp_delta : R/W; bitpos: [6:3]; default: 0;
+        uint32_t chroma_dc_qp_delta:3;
+        /** chroma_qp_delta : R/W; bitpos: [6:3]; default: 0;
          *  Configures video A chroma QP offset based on luma QP. Chroma QP(before map) = Luma
          *  QP + reg_chroma_qp_delta.
          */
-        uint32_t a_chroma_qp_delta:4;
-        /** a_qp_min : R/W; bitpos: [12:7]; default: 0;
+        uint32_t chroma_qp_delta:4;
+        /** qp_min : R/W; bitpos: [12:7]; default: 0;
          *  Configures video A allowed luma QP min value.
          */
-        uint32_t a_qp_min:6;
-        /** a_qp_max : R/W; bitpos: [18:13]; default: 0;
+        uint32_t qp_min:6;
+        /** qp_max : R/W; bitpos: [18:13]; default: 0;
          *  Configures video A allowed luma QP max value.
          */
-        uint32_t a_qp_max:6;
-        /** a_mad_frame_pred : R/W; bitpos: [30:19]; default: 0;
+        uint32_t qp_max:6;
+        /** mad_frame_pred : R/W; bitpos: [30:19]; default: 0;
          *  Configures vdieo A frame level predicted MB MAD value.
          */
-        uint32_t a_mad_frame_pred:12;
+        uint32_t mad_frame_pred:12;
         uint32_t reserved_31:1;
     };
     uint32_t val;
-} h264_a_rc_conf1_reg_t;
+} h264_rc_conf1_reg_t;
 
-/** Type of a_db_bypass register
+/** Type of db_bypass register
  *  Video A Deblocking bypass register
  */
 typedef union {
     struct {
-        /** a_bypass_db_filter : R/W; bitpos: [0]; default: 0;
+        /** bypass_db_filter : R/W; bitpos: [0]; default: 0;
          *  Configures whether or not to bypass video A deblcoking filter. \\0: Open the
          *  deblock filter\\1: Close the deblock filter
          */
-        uint32_t a_bypass_db_filter:1;
+        uint32_t bypass_db_filter:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} h264_a_db_bypass_reg_t;
+} h264_db_bypass_reg_t;
 
-/** Type of a_roi_region0 register
- *  Video A H264 ROI region0 range configure register.
+/** Type of roi_region register
+ *  Video A H264 ROI region range configure register.
  */
 typedef union {
     struct {
-        /** a_roi_region0_x : R/W; bitpos: [6:0]; default: 0;
+        /** roi_region_x : R/W; bitpos: [6:0]; default: 0;
          *  Configures the horizontal start macroblocks of region 0 in Video A.
          */
-        uint32_t a_roi_region0_x:7;
-        /** a_roi_region0_y : R/W; bitpos: [13:7]; default: 0;
+        uint32_t roi_region_x:7;
+        /** roi_region_y : R/W; bitpos: [13:7]; default: 0;
          *  Configures the  vertical start macroblocks of region 0 in Video A.
          */
-        uint32_t a_roi_region0_y:7;
-        /** a_roi_region0_x_len : R/W; bitpos: [20:14]; default: 0;
+        uint32_t roi_region_y:7;
+        /** roi_region_x_len : R/W; bitpos: [20:14]; default: 0;
          *  Configures the number of  macroblocks in horizontal direction of  the region 0 in
          *  Video A.
          */
-        uint32_t a_roi_region0_x_len:7;
-        /** a_roi_region0_y_len : R/W; bitpos: [27:21]; default: 0;
+        uint32_t roi_region_x_len:7;
+        /** roi_region_y_len : R/W; bitpos: [27:21]; default: 0;
          *  Configures the number of  macroblocks in vertical direction of  the region 0 in
          *  Video A.
          */
-        uint32_t a_roi_region0_y_len:7;
-        /** a_roi_region0_en : R/W; bitpos: [28]; default: 0;
+        uint32_t roi_region_y_len:7;
+        /** roi_region_en : R/W; bitpos: [28]; default: 0;
          *  Configures whether or not to open Video A ROI of region 0 .\\0:Close ROI\\1:Open
          *  ROI.
          */
-        uint32_t a_roi_region0_en:1;
+        uint32_t roi_region_en:1;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} h264_a_roi_region0_reg_t;
+} h264_roi_region_reg_t;
 
-/** Type of a_roi_region1 register
- *  Video A H264 ROI region1 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region1_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 1 in Video A.
-         */
-        uint32_t a_roi_region1_x:7;
-        /** a_roi_region1_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 1 in Video A.
-         */
-        uint32_t a_roi_region1_y:7;
-        /** a_roi_region1_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 1 in
-         *  Video A.
-         */
-        uint32_t a_roi_region1_x_len:7;
-        /** a_roi_region1_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 1 in
-         *  Video A.
-         */
-        uint32_t a_roi_region1_y_len:7;
-        /** a_roi_region1_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 1 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region1_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region1_reg_t;
-
-/** Type of a_roi_region2 register
- *  Video A H264 ROI region2 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region2_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 2 in Video A.
-         */
-        uint32_t a_roi_region2_x:7;
-        /** a_roi_region2_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 2 in Video A.
-         */
-        uint32_t a_roi_region2_y:7;
-        /** a_roi_region2_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 2 in
-         *  Video A.
-         */
-        uint32_t a_roi_region2_x_len:7;
-        /** a_roi_region2_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 2 in
-         *  Video A.
-         */
-        uint32_t a_roi_region2_y_len:7;
-        /** a_roi_region2_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 2 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region2_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region2_reg_t;
-
-/** Type of a_roi_region3 register
- *  Video A H264 ROI region3 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region3_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 3 in Video A.
-         */
-        uint32_t a_roi_region3_x:7;
-        /** a_roi_region3_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 3 in Video A.
-         */
-        uint32_t a_roi_region3_y:7;
-        /** a_roi_region3_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 3 in
-         *  video A.
-         */
-        uint32_t a_roi_region3_x_len:7;
-        /** a_roi_region3_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 3 in
-         *  video A.
-         */
-        uint32_t a_roi_region3_y_len:7;
-        /** a_roi_region3_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 3 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region3_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region3_reg_t;
-
-/** Type of a_roi_region4 register
- *  Video A H264 ROI region4 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region4_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 4 in Video A.
-         */
-        uint32_t a_roi_region4_x:7;
-        /** a_roi_region4_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 4 in Video A.
-         */
-        uint32_t a_roi_region4_y:7;
-        /** a_roi_region4_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 4 in
-         *  video A.
-         */
-        uint32_t a_roi_region4_x_len:7;
-        /** a_roi_region4_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 4 in
-         *  video A.
-         */
-        uint32_t a_roi_region4_y_len:7;
-        /** a_roi_region4_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 4 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region4_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region4_reg_t;
-
-/** Type of a_roi_region5 register
- *  Video A H264 ROI region5 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region5_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontial start macroblocks of region 5 video A.
-         */
-        uint32_t a_roi_region5_x:7;
-        /** a_roi_region5_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 5 video A.
-         */
-        uint32_t a_roi_region5_y:7;
-        /** a_roi_region5_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 5
-         *  video A.
-         */
-        uint32_t a_roi_region5_x_len:7;
-        /** a_roi_region5_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 5 in
-         *  video A.
-         */
-        uint32_t a_roi_region5_y_len:7;
-        /** a_roi_region5_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 5 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region5_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region5_reg_t;
-
-/** Type of a_roi_region6 register
- *  Video A H264 ROI region6 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region6_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontial start macroblocks of region 6 video A.
-         */
-        uint32_t a_roi_region6_x:7;
-        /** a_roi_region6_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 6 in video A.
-         */
-        uint32_t a_roi_region6_y:7;
-        /** a_roi_region6_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 6 in
-         *  video A.
-         */
-        uint32_t a_roi_region6_x_len:7;
-        /** a_roi_region6_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 6 in
-         *  video A.
-         */
-        uint32_t a_roi_region6_y_len:7;
-        /** a_roi_region6_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 6 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region6_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region6_reg_t;
-
-/** Type of a_roi_region7 register
- *  Video A H264 ROI region7 range configure register.
- */
-typedef union {
-    struct {
-        /** a_roi_region7_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 7 in video A.
-         */
-        uint32_t a_roi_region7_x:7;
-        /** a_roi_region7_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 7 in video A.
-         */
-        uint32_t a_roi_region7_y:7;
-        /** a_roi_region7_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 7 in
-         *  video A.
-         */
-        uint32_t a_roi_region7_x_len:7;
-        /** a_roi_region7_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 7 in
-         *  video A.
-         */
-        uint32_t a_roi_region7_y_len:7;
-        /** a_roi_region7_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video A ROI of region 7 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t a_roi_region7_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_a_roi_region7_reg_t;
-
-/** Type of a_roi_region0_3_qp register
+/** Type of roi_region0_3_qp register
  *  Video A H264 ROI region0, region1,region2,region3 QP register.
  */
 typedef union {
     struct {
-        /** a_roi_region0_qp : R/W; bitpos: [6:0]; default: 0;
+        /** roi_region0_qp : R/W; bitpos: [6:0]; default: 0;
          *  Configure H264 ROI region0 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region0_qp:7;
-        /** a_roi_region1_qp : R/W; bitpos: [13:7]; default: 0;
+        uint32_t roi_region0_qp:7;
+        /** roi_region1_qp : R/W; bitpos: [13:7]; default: 0;
          *  Configure H264 ROI region1 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region1_qp:7;
-        /** a_roi_region2_qp : R/W; bitpos: [20:14]; default: 0;
+        uint32_t roi_region1_qp:7;
+        /** roi_region2_qp : R/W; bitpos: [20:14]; default: 0;
          *  Configure H264 ROI region2 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region2_qp:7;
-        /** a_roi_region3_qp : R/W; bitpos: [27:21]; default: 0;
+        uint32_t roi_region2_qp:7;
+        /** roi_region3_qp : R/W; bitpos: [27:21]; default: 0;
          *  Configure H264 ROI region3 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region3_qp:7;
+        uint32_t roi_region3_qp:7;
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} h264_a_roi_region0_3_qp_reg_t;
+} h264_roi_region0_3_qp_reg_t;
 
-/** Type of a_roi_region4_7_qp register
+/** Type of roi_region4_7_qp register
  *  Video A H264 ROI region4, region5,region6,region7 QP register.
  */
 typedef union {
     struct {
-        /** a_roi_region4_qp : R/W; bitpos: [6:0]; default: 0;
+        /** roi_region4_qp : R/W; bitpos: [6:0]; default: 0;
          *  Configure H264 ROI region4 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region4_qp:7;
-        /** a_roi_region5_qp : R/W; bitpos: [13:7]; default: 0;
+        uint32_t roi_region4_qp:7;
+        /** roi_region5_qp : R/W; bitpos: [13:7]; default: 0;
          *  Configure H264 ROI region5 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region5_qp:7;
-        /** a_roi_region6_qp : R/W; bitpos: [20:14]; default: 0;
+        uint32_t roi_region5_qp:7;
+        /** roi_region6_qp : R/W; bitpos: [20:14]; default: 0;
          *  Configure H264 ROI region6 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region6_qp:7;
-        /** a_roi_region7_qp : R/W; bitpos: [27:21]; default: 0;
+        uint32_t roi_region6_qp:7;
+        /** roi_region7_qp : R/W; bitpos: [27:21]; default: 0;
          *  Configure H264 ROI region7 qp in video A,fixed qp or delta qp.
          */
-        uint32_t a_roi_region7_qp:7;
+        uint32_t roi_region7_qp:7;
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} h264_a_roi_region4_7_qp_reg_t;
+} h264_roi_region4_7_qp_reg_t;
 
-/** Type of a_no_roi_region_qp_offset register
+/** Type of no_roi_region_qp_offset register
  *  Video A H264 no roi region QP register.
  */
 typedef union {
     struct {
-        /** a_no_roi_region_qp : R/W; bitpos: [6:0]; default: 0;
+        /** no_roi_region_qp : R/W; bitpos: [6:0]; default: 0;
          *  Configure H264 no region qp in video A, delta qp.
          */
-        uint32_t a_no_roi_region_qp:7;
+        uint32_t no_roi_region_qp:7;
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} h264_a_no_roi_region_qp_offset_reg_t;
+} h264_no_roi_region_qp_offset_reg_t;
 
-/** Type of a_roi_config register
+/** Type of roi_config register
  *  Video A H264 ROI configure register.
  */
 typedef union {
     struct {
-        /** a_roi_en : R/W; bitpos: [0]; default: 0;
+        /** roi_en : R/W; bitpos: [0]; default: 0;
          *  Configure whether or not to enable ROI in video A.\\0:not enable ROI\\1:enable ROI.
          */
-        uint32_t a_roi_en:1;
-        /** a_roi_mode : R/W; bitpos: [1]; default: 0;
+        uint32_t roi_en:1;
+        /** roi_mode : R/W; bitpos: [1]; default: 0;
          *  Configure the mode of ROI in video A.\\0:fixed qp\\1:delta qp.
          */
-        uint32_t a_roi_mode:1;
+        uint32_t roi_mode:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
-} h264_a_roi_config_reg_t;
-
-/** Type of b_sys_mb_res register
- *  Video B horizontal and vertical MB resolution register.
- */
-typedef union {
-    struct {
-        /** b_sys_total_mb_y : R/W; bitpos: [6:0]; default: 0;
-         *  Configures video B vertical MB resolution.
-         */
-        uint32_t b_sys_total_mb_y:7;
-        /** b_sys_total_mb_x : R/W; bitpos: [13:7]; default: 0;
-         *  Configures video B horizontal MB resolution.
-         */
-        uint32_t b_sys_total_mb_x:7;
-        uint32_t reserved_14:18;
-    };
-    uint32_t val;
-} h264_b_sys_mb_res_reg_t;
-
-/** Type of b_sys_conf register
- *  Video B system level configuration register.
- */
-typedef union {
-    struct {
-        /** b_db_tmp_ready_trigger_mb_num : R/W; bitpos: [6:0]; default: 3;
-         *  Configures when to trigger  video B H264_DB_TMP_READY_INT. When the (MB number of
-         *  written db temp+1) is greater than this filed in first MB line, trigger
-         *  H264_DB_TMP_READY_INT. Min is 3.
-         */
-        uint32_t b_db_tmp_ready_trigger_mb_num:7;
-        /** b_rec_ready_trigger_mb_lines : R/W; bitpos: [13:7]; default: 4;
-         *  Configures when to trigger  video B H264_REC_READY_INT. When the MB line number of
-         *  generated reconstruct pixel is greater than this filed, trigger H264_REC_READY_INT.
-         *  Min is 4.
-         */
-        uint32_t b_rec_ready_trigger_mb_lines:7;
-        /** b_intra_cost_cmp_offset : R/W; bitpos: [29:14]; default: 0;
-         *  Configures video B intra cost offset when I MB compared with P MB.
-         */
-        uint32_t b_intra_cost_cmp_offset:16;
-        uint32_t reserved_30:2;
-    };
-    uint32_t val;
-} h264_b_sys_conf_reg_t;
-
-/** Type of b_deci_score register
- *  Video B luma and chroma MB decimate score Register.
- */
-typedef union {
-    struct {
-        /** b_c_deci_score : R/W; bitpos: [9:0]; default: 0;
-         *  Configures video B chroma MB decimate score. When chroma score is smaller than it,
-         *  chroma decimate will be enable.
-         */
-        uint32_t b_c_deci_score:10;
-        /** b_l_deci_score : R/W; bitpos: [19:10]; default: 0;
-         *  Configures video B luma MB decimate score. When luma score is smaller than it, luma
-         *  decimate will be enable.
-         */
-        uint32_t b_l_deci_score:10;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} h264_b_deci_score_reg_t;
-
-/** Type of b_deci_score_offset register
- *  Video B luma and chroma MB decimate score offset Register.
- */
-typedef union {
-    struct {
-        /** b_i16x16_deci_score_offset : R/W; bitpos: [5:0]; default: 0;
-         *  Configures video B i16x16 MB decimate score offset. This offset will be added to
-         *  i16x16 MB score.
-         */
-        uint32_t b_i16x16_deci_score_offset:6;
-        /** b_i_chroma_deci_score_offset : R/W; bitpos: [11:6]; default: 0;
-         *  Configures video B I chroma MB decimate score offset. This offset will be added to
-         *  I chroma MB score.
-         */
-        uint32_t b_i_chroma_deci_score_offset:6;
-        /** b_p16x16_deci_score_offset : R/W; bitpos: [17:12]; default: 0;
-         *  Configures video B p16x16 MB decimate score offset. This offset will be added to
-         *  p16x16 MB score.
-         */
-        uint32_t b_p16x16_deci_score_offset:6;
-        /** b_p_chroma_deci_score_offset : R/W; bitpos: [23:18]; default: 0;
-         *  Configures video B p chroma MB decimate score offset. This offset will be added to
-         *  p chroma MB score.
-         */
-        uint32_t b_p_chroma_deci_score_offset:6;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} h264_b_deci_score_offset_reg_t;
-
-/** Type of b_rc_conf0 register
- *  Video B rate control configuration register0.
- */
-typedef union {
-    struct {
-        /** b_qp : R/W; bitpos: [5:0]; default: 0;
-         *  Configures video B frame level initial luma QP value.
-         */
-        uint32_t b_qp:6;
-        /** b_rate_ctrl_u : R/W; bitpos: [21:6]; default: 0;
-         *  Configures video B parameter U value. U = int((float) u << 8).
-         */
-        uint32_t b_rate_ctrl_u:16;
-        /** b_mb_rate_ctrl_en : R/W; bitpos: [22]; default: 0;
-         *  Configures video A whether or not to open macro block rate ctrl.\\1:Open the macro
-         *  block rate ctrl\\1:Close the macro block rate ctrl.
-         */
-        uint32_t b_mb_rate_ctrl_en:1;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} h264_b_rc_conf0_reg_t;
-
-/** Type of b_rc_conf1 register
- *  Video B rate control configuration register1.
- */
-typedef union {
-    struct {
-        /** b_chroma_dc_qp_delta : R/W; bitpos: [2:0]; default: 0;
-         *  Configures video B chroma DC QP offset based on Chroma QP. Chroma DC QP = Chroma
-         *  QP(after map) + reg_chroma_dc_qp_delta.
-         */
-        uint32_t b_chroma_dc_qp_delta:3;
-        /** b_chroma_qp_delta : R/W; bitpos: [6:3]; default: 0;
-         *  Configures video B chroma QP offset based on luma QP. Chroma QP(before map) = Luma
-         *  QP + reg_chroma_qp_delta.
-         */
-        uint32_t b_chroma_qp_delta:4;
-        /** b_qp_min : R/W; bitpos: [12:7]; default: 0;
-         *  Configures video B allowed luma QP min value.
-         */
-        uint32_t b_qp_min:6;
-        /** b_qp_max : R/W; bitpos: [18:13]; default: 0;
-         *  Configures video B allowed luma QP max value.
-         */
-        uint32_t b_qp_max:6;
-        /** b_mad_frame_pred : R/W; bitpos: [30:19]; default: 0;
-         *  Configures vdieo B frame level predicted MB MAD value.
-         */
-        uint32_t b_mad_frame_pred:12;
-        uint32_t reserved_31:1;
-    };
-    uint32_t val;
-} h264_b_rc_conf1_reg_t;
-
-/** Type of b_db_bypass register
- *  Video B Deblocking bypass register
- */
-typedef union {
-    struct {
-        /** b_bypass_db_filter : R/W; bitpos: [0]; default: 0;
-         *  Configures whether or not to bypass video B deblcoking filter. \\0: Open the
-         *  deblock filter\\1: Close the deblock filter
-         */
-        uint32_t b_bypass_db_filter:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} h264_b_db_bypass_reg_t;
-
-/** Type of b_roi_region0 register
- *  Video B H264 ROI region0 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region0_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 0 in Video B.
-         */
-        uint32_t b_roi_region0_x:7;
-        /** b_roi_region0_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 0 in Video B.
-         */
-        uint32_t b_roi_region0_y:7;
-        /** b_roi_region0_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 0 in
-         *  Video B.
-         */
-        uint32_t b_roi_region0_x_len:7;
-        /** b_roi_region0_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 0 in
-         *  Video B.
-         */
-        uint32_t b_roi_region0_y_len:7;
-        /** b_roi_region0_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 0 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region0_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region0_reg_t;
-
-/** Type of b_roi_region1 register
- *  Video B H264 ROI region1 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region1_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 1 in Video B.
-         */
-        uint32_t b_roi_region1_x:7;
-        /** b_roi_region1_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 1 in Video B.
-         */
-        uint32_t b_roi_region1_y:7;
-        /** b_roi_region1_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 1 in
-         *  Video B.
-         */
-        uint32_t b_roi_region1_x_len:7;
-        /** b_roi_region1_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 1 in
-         *  Video B.
-         */
-        uint32_t b_roi_region1_y_len:7;
-        /** b_roi_region1_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 1 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region1_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region1_reg_t;
-
-/** Type of b_roi_region2 register
- *  Video B H264 ROI region2 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region2_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 2 in Video B.
-         */
-        uint32_t b_roi_region2_x:7;
-        /** b_roi_region2_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 2 in Video B.
-         */
-        uint32_t b_roi_region2_y:7;
-        /** b_roi_region2_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 2 in
-         *  Video B.
-         */
-        uint32_t b_roi_region2_x_len:7;
-        /** b_roi_region2_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 2 in
-         *  Video B.
-         */
-        uint32_t b_roi_region2_y_len:7;
-        /** b_roi_region2_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 2 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region2_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region2_reg_t;
-
-/** Type of b_roi_region3 register
- *  Video B H264 ROI region3 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region3_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 3 in Video B.
-         */
-        uint32_t b_roi_region3_x:7;
-        /** b_roi_region3_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 3 in Video B.
-         */
-        uint32_t b_roi_region3_y:7;
-        /** b_roi_region3_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 3 in
-         *  video B.
-         */
-        uint32_t b_roi_region3_x_len:7;
-        /** b_roi_region3_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 3 in
-         *  video B.
-         */
-        uint32_t b_roi_region3_y_len:7;
-        /** b_roi_region3_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 3 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region3_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region3_reg_t;
-
-/** Type of b_roi_region4 register
- *  Video B H264 ROI region4 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region4_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 4 in Video B.
-         */
-        uint32_t b_roi_region4_x:7;
-        /** b_roi_region4_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 4 in Video B.
-         */
-        uint32_t b_roi_region4_y:7;
-        /** b_roi_region4_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 4 in
-         *  video B.
-         */
-        uint32_t b_roi_region4_x_len:7;
-        /** b_roi_region4_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 4 in
-         *  video B.
-         */
-        uint32_t b_roi_region4_y_len:7;
-        /** b_roi_region4_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 4 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region4_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region4_reg_t;
-
-/** Type of b_roi_region5 register
- *  Video B H264 ROI region5 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region5_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontial start macroblocks of region 5 video B.
-         */
-        uint32_t b_roi_region5_x:7;
-        /** b_roi_region5_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 5 video B.
-         */
-        uint32_t b_roi_region5_y:7;
-        /** b_roi_region5_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 5
-         *  video B.
-         */
-        uint32_t b_roi_region5_x_len:7;
-        /** b_roi_region5_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 5 in
-         *  video B.
-         */
-        uint32_t b_roi_region5_y_len:7;
-        /** b_roi_region5_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 5 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region5_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region5_reg_t;
-
-/** Type of b_roi_region6 register
- *  Video B H264 ROI region6 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region6_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontial start macroblocks of region 6 video B.
-         */
-        uint32_t b_roi_region6_x:7;
-        /** b_roi_region6_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 6 in video B.
-         */
-        uint32_t b_roi_region6_y:7;
-        /** b_roi_region6_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 6 in
-         *  video B.
-         */
-        uint32_t b_roi_region6_x_len:7;
-        /** b_roi_region6_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 6 in
-         *  video B.
-         */
-        uint32_t b_roi_region6_y_len:7;
-        /** b_roi_region6_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 6 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region6_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region6_reg_t;
-
-/** Type of b_roi_region7 register
- *  Video B H264 ROI region7 range configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_region7_x : R/W; bitpos: [6:0]; default: 0;
-         *  Configures the horizontal start macroblocks of region 7 in video B.
-         */
-        uint32_t b_roi_region7_x:7;
-        /** b_roi_region7_y : R/W; bitpos: [13:7]; default: 0;
-         *  Configures the  vertical start macroblocks of region 7 in video B.
-         */
-        uint32_t b_roi_region7_y:7;
-        /** b_roi_region7_x_len : R/W; bitpos: [20:14]; default: 0;
-         *  Configures the number of  macroblocks in horizontal direction of  the region 7 in
-         *  video B.
-         */
-        uint32_t b_roi_region7_x_len:7;
-        /** b_roi_region7_y_len : R/W; bitpos: [27:21]; default: 0;
-         *  Configures the number of  macroblocks in vertical direction of  the region 7 in
-         *  video B.
-         */
-        uint32_t b_roi_region7_y_len:7;
-        /** b_roi_region7_en : R/W; bitpos: [28]; default: 0;
-         *  Configures whether or not to open Video B ROI of region 7 .\\0:Close ROI\\1:Open
-         *  ROI.
-         */
-        uint32_t b_roi_region7_en:1;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} h264_b_roi_region7_reg_t;
-
-/** Type of b_roi_region0_3_qp register
- *  Video B H264 ROI region0, region1,region2,region3 QP register.
- */
-typedef union {
-    struct {
-        /** b_roi_region0_qp : R/W; bitpos: [6:0]; default: 0;
-         *  Configure H264 ROI region0 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region0_qp:7;
-        /** b_roi_region1_qp : R/W; bitpos: [13:7]; default: 0;
-         *  Configure H264 ROI region1 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region1_qp:7;
-        /** b_roi_region2_qp : R/W; bitpos: [20:14]; default: 0;
-         *  Configure H264 ROI region2 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region2_qp:7;
-        /** b_roi_region3_qp : R/W; bitpos: [27:21]; default: 0;
-         *  Configure H264 ROI region3 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region3_qp:7;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} h264_b_roi_region0_3_qp_reg_t;
-
-/** Type of b_roi_region4_7_qp register
- *  Video B H264 ROI region4, region5,region6,region7 QP register.
- */
-typedef union {
-    struct {
-        /** b_roi_region4_qp : R/W; bitpos: [6:0]; default: 0;
-         *  Configure H264 ROI region4 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region4_qp:7;
-        /** b_roi_region5_qp : R/W; bitpos: [13:7]; default: 0;
-         *  Configure H264 ROI region5 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region5_qp:7;
-        /** b_roi_region6_qp : R/W; bitpos: [20:14]; default: 0;
-         *  Configure H264 ROI region6 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region6_qp:7;
-        /** b_roi_region7_qp : R/W; bitpos: [27:21]; default: 0;
-         *  Configure H264 ROI region7 qp in video B,fixed qp or delta qp.
-         */
-        uint32_t b_roi_region7_qp:7;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} h264_b_roi_region4_7_qp_reg_t;
-
-/** Type of b_no_roi_region_qp_offset register
- *  Video B H264 no roi region QP register.
- */
-typedef union {
-    struct {
-        /** b_no_roi_region_qp : R/W; bitpos: [6:0]; default: 0;
-         *  Configure H264 no region qp in video B, delta qp.
-         */
-        uint32_t b_no_roi_region_qp:7;
-        uint32_t reserved_7:25;
-    };
-    uint32_t val;
-} h264_b_no_roi_region_qp_offset_reg_t;
-
-/** Type of b_roi_config register
- *  Video B H264 ROI configure register.
- */
-typedef union {
-    struct {
-        /** b_roi_en : R/W; bitpos: [0]; default: 0;
-         *  Configure whether or not to enable ROI in video B.\\0:not enable ROI\\1:enable ROI.
-         */
-        uint32_t b_roi_en:1;
-        /** b_roi_mode : R/W; bitpos: [1]; default: 0;
-         *  Configure the mode of ROI in video B.\\0:fixed qp\\1:delta qp.
-         */
-        uint32_t b_roi_mode:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} h264_b_roi_config_reg_t;
+} h264_roi_config_reg_t;
 
 /** Type of slice_header_remain register
  *  Frame Slice Header remain bit register.
@@ -1134,31 +391,18 @@ typedef union {
     uint32_t val;
 } h264_bs_threshold_reg_t;
 
-/** Type of slice_header_byte0 register
- *  Frame Slice Header byte low 32 bit  register.
+/** Type of slice_header_byte register
+ *  Frame Slice Header byte 32 bit register.
  */
 typedef union {
     struct {
-        /** slice_byte_lsb : R/W; bitpos: [31:0]; default: 0;
-         *  Configures Slice Header low 32 bit
+        /** byte : R/W; bitpos: [31:0]; default: 0;
+         *  Configures Slice Header 32 bit
          */
-        uint32_t slice_byte_lsb:32;
+        uint32_t byte:32;
     };
     uint32_t val;
-} h264_slice_header_byte0_reg_t;
-
-/** Type of slice_header_byte1 register
- *  Frame Slice Header byte high 32 bit  register.
- */
-typedef union {
-    struct {
-        /** slice_byte_msb : R/W; bitpos: [31:0]; default: 0;
-         *  Configures Slice Header high 32 bit
-         */
-        uint32_t slice_byte_msb:32;
-    };
-    uint32_t val;
-} h264_slice_header_byte1_reg_t;
+} h264_slice_header_reg_t;
 
 /** Type of conf register
  *  General configuration register.
@@ -1743,54 +987,31 @@ typedef union {
 
 
 typedef struct {
+    volatile h264_sys_mb_res_reg_t sys_mb_res;
+    volatile h264_sys_conf_reg_t sys_conf;
+    volatile h264_deci_score_reg_t deci_score;
+    volatile h264_deci_score_offset_reg_t deci_score_offset;
+    volatile h264_rc_conf0_reg_t rc_conf0;
+    volatile h264_rc_conf1_reg_t rc_conf1;
+    volatile h264_db_bypass_reg_t db_bypass;
+    volatile h264_roi_region_reg_t roi_region[8];
+    volatile h264_roi_region0_3_qp_reg_t roi_region0_3_qp;
+    volatile h264_roi_region4_7_qp_reg_t roi_region4_7_qp;
+    volatile h264_no_roi_region_qp_offset_reg_t no_roi_region_qp_offset;
+    volatile h264_roi_config_reg_t roi_config;
+} h264_ctrl_regs_t;
+
+typedef struct {
     volatile h264_sys_ctrl_reg_t sys_ctrl;
     volatile h264_gop_conf_reg_t gop_conf;
-    volatile h264_a_sys_mb_res_reg_t a_sys_mb_res;
-    volatile h264_a_sys_conf_reg_t a_sys_conf;
-    volatile h264_a_deci_score_reg_t a_deci_score;
-    volatile h264_a_deci_score_offset_reg_t a_deci_score_offset;
-    volatile h264_a_rc_conf0_reg_t a_rc_conf0;
-    volatile h264_a_rc_conf1_reg_t a_rc_conf1;
-    volatile h264_a_db_bypass_reg_t a_db_bypass;
-    volatile h264_a_roi_region0_reg_t a_roi_region0;
-    volatile h264_a_roi_region1_reg_t a_roi_region1;
-    volatile h264_a_roi_region2_reg_t a_roi_region2;
-    volatile h264_a_roi_region3_reg_t a_roi_region3;
-    volatile h264_a_roi_region4_reg_t a_roi_region4;
-    volatile h264_a_roi_region5_reg_t a_roi_region5;
-    volatile h264_a_roi_region6_reg_t a_roi_region6;
-    volatile h264_a_roi_region7_reg_t a_roi_region7;
-    volatile h264_a_roi_region0_3_qp_reg_t a_roi_region0_3_qp;
-    volatile h264_a_roi_region4_7_qp_reg_t a_roi_region4_7_qp;
-    volatile h264_a_no_roi_region_qp_offset_reg_t a_no_roi_region_qp_offset;
-    volatile h264_a_roi_config_reg_t a_roi_config;
-    volatile h264_b_sys_mb_res_reg_t b_sys_mb_res;
-    volatile h264_b_sys_conf_reg_t b_sys_conf;
-    volatile h264_b_deci_score_reg_t b_deci_score;
-    volatile h264_b_deci_score_offset_reg_t b_deci_score_offset;
-    volatile h264_b_rc_conf0_reg_t b_rc_conf0;
-    volatile h264_b_rc_conf1_reg_t b_rc_conf1;
-    volatile h264_b_db_bypass_reg_t b_db_bypass;
-    volatile h264_b_roi_region0_reg_t b_roi_region0;
-    volatile h264_b_roi_region1_reg_t b_roi_region1;
-    volatile h264_b_roi_region2_reg_t b_roi_region2;
-    volatile h264_b_roi_region3_reg_t b_roi_region3;
-    volatile h264_b_roi_region4_reg_t b_roi_region4;
-    volatile h264_b_roi_region5_reg_t b_roi_region5;
-    volatile h264_b_roi_region6_reg_t b_roi_region6;
-    volatile h264_b_roi_region7_reg_t b_roi_region7;
-    volatile h264_b_roi_region0_3_qp_reg_t b_roi_region0_3_qp;
-    volatile h264_b_roi_region4_7_qp_reg_t b_roi_region4_7_qp;
-    volatile h264_b_no_roi_region_qp_offset_reg_t b_no_roi_region_qp_offset;
-    volatile h264_b_roi_config_reg_t b_roi_config;
+    volatile h264_ctrl_regs_t ctrl[2];
     volatile h264_rc_status0_reg_t rc_status0;
     volatile h264_rc_status1_reg_t rc_status1;
     volatile h264_rc_status2_reg_t rc_status2;
     volatile h264_slice_header_remain_reg_t slice_header_remain;
     volatile h264_slice_header_byte_length_reg_t slice_header_byte_length;
     volatile h264_bs_threshold_reg_t bs_threshold;
-    volatile h264_slice_header_byte0_reg_t slice_header_byte0;
-    volatile h264_slice_header_byte1_reg_t slice_header_byte1;
+    volatile h264_slice_header_reg_t slice_header[2];
     volatile h264_int_raw_reg_t int_raw;
     volatile h264_int_st_reg_t int_st;
     volatile h264_int_ena_reg_t int_ena;

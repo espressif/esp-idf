@@ -1,6 +1,8 @@
 USB Host Maintainers Notes (Introduction)
 =========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document contains information regarding the implementation details of the USB Host stack. This document is intended for the maintainers and third-party contributors of the USB Host stack. Users of the USB Host stack should refer to :doc:`../usb_host` instead.
 
 .. warning::
@@ -10,7 +12,6 @@ This document contains information regarding the implementation details of the U
 .. figure:: ../../../../_static/usb_host/stack-overview.png
     :align: center
     :alt: Diagram of Host Stack Layers
-    :figclass: align-center
 
 This document is split into the following sections:
 
@@ -20,12 +21,14 @@ This document is split into the following sections:
     usb_host_notes_design
     usb_host_notes_arch
     usb_host_notes_dwc_otg
+    usb_host_notes_usbh
+    usb_host_notes_enum
+    usb_host_notes_ext_hub
 
 Todo:
 
 - USB Host Maintainers Notes (HAL & LL)
 - USB Host Maintainers Notes (HCD)
-- USB Host Maintainers Notes (USBH)
 - USB Host Maintainers Notes (Hub)
 - USB Host Maintainers Notes (USB Host Library)
 
@@ -43,13 +46,15 @@ Features & Limitations
 
 **The Host Stack currently supports the following notable features:**
 
-- Support FS (Full Speed) and LS (Low Speed) devices
-- Support all transfer types (Control, Bulk, Isochronous, and Interrupt)
+.. only:: esp32p4
+
+    - Supports HS (High Speed)
+
+- Supports FS (Full Speed) and LS (Low Speed) devices
+- Supports all transfer types (Control, Bulk, Isochronous, and Interrupt)
 - Automatically enumerates connected devices
-- Allows multiple class drivers (i.e., Clients of the USB Host Library) to run simultaneously and share the same device (i.e., composite devices).
+- Allows multiple class drivers (i.e., Clients of the USB Host Library) to run simultaneously and share the same device (i.e., composite devices)
 
 **The Host Stack currently has the following notable limitations:**
 
-- No HS (High Speed) support
 - No Hub support (currently only supports a single device)
-

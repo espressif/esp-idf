@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,6 +48,16 @@ static void check_heap_task_info(TaskHandle_t taskHdl)
             // and make sure it matches the expected value. The size returned by the
             // heap_caps_get_per_task_info includes the size of the block owner (4 bytes)
             TEST_ASSERT(heap_info.totals[i].size[0] == ALLOC_BYTES + 4);
+        }
+
+        // test that if not 0, the task handle corresponds to an actual task.
+        // this test is to make sure no rubbish is stored as a task handle.
+        if (heap_info.totals[i].task != 0) {
+            // feeding the task name returned by pcTaskGetName() to xTaskGetHandle().
+            // xTaskGetHandle would return the task handler used as parameter in
+            // pcTaskGetName if the task handle is valid. Otherwise, it will return
+            // NULL or just crash if the pointer to the task name is complete nonsense.
+            TEST_ASSERT_EQUAL(heap_info.totals[i].task, xTaskGetHandle(pcTaskGetName(heap_info.totals[i].task)));
         }
     }
     TEST_ASSERT_TRUE(task_found);

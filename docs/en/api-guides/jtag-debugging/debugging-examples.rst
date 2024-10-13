@@ -90,7 +90,7 @@ Information how many breakpoints are set and where is shown in window "Breakpoin
 
     Three breakpoints are set / maximum two are allowed
 
-If you now click "Resume" (click ``blink_task()`` under "Tread #8", if "Resume" button is grayed out), the processor will run and halt at a breakpoint. Clicking "Resume" another time will make it run again, halt on second breakpoint, and so on.
+If you now click "Resume" (click ``blink_task()`` under "Thread #8", if "Resume" button is grayed out), the processor will run and halt at a breakpoint. Clicking "Resume" another time will make it run again, halt on second breakpoint, and so on.
 
 You will be also able to see that LED is changing the state after each click to "Resume" program execution.
 
@@ -104,7 +104,7 @@ Halting the Target Manually
 
 When debugging, you may resume application and enter code waiting for some event or staying in infinite loop without any break points defined. In such case, to go back to debugging mode, you can break program execution manually by pressing "Suspend" button.
 
-To check it, delete all breakpoints and click "Resume". Then click "Suspend". Application will be halted at some random point and LED will stop blinking. Debugger will expand tread and highlight the line of code where application halted.
+To check it, delete all breakpoints and click "Resume". Then click "Suspend". Application will be halted at some random point and LED will stop blinking. Debugger will expand thread and highlight the line of code where application halted.
 
 .. figure:: ../../../_static/debugging-target-halted-manually.jpg
     :align: center
@@ -545,7 +545,7 @@ If your are blinking LED connected to GPIO4, then you should see fourth bit bein
     ...
     0x3ff44004: 0x00000010
 
-Now, when the LED is off, that corresponds to ``0x3ff44004: 0x00000000`` being displayed, try using ``set`` command to set this bit by writting ``0x00000010`` to the same memory location::
+Now, when the LED is off, that corresponds to ``0x3ff44004: 0x00000000`` being displayed, try using ``set`` command to set this bit by writing ``0x00000010`` to the same memory location::
 
     (gdb) x /1wx 0x3FF44004
     0x3ff44004: 0x00000000

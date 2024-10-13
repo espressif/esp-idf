@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -22,32 +22,28 @@ typedef union {
          */
         uint32_t rx_ext_en_sel:4;
         /** rx_sw_en : R/W; bitpos: [25]; default: 0;
-         *  Set this bit to enable data sampling by software.
+         *  Write 1 to enable data sampling by software.
          */
         uint32_t rx_sw_en:1;
         /** rx_ext_en_inv : R/W; bitpos: [26]; default: 0;
-         *  Set this bit to invert the external enable signal.
+         *  Write 1 to invert the external enable signal.
          */
         uint32_t rx_ext_en_inv:1;
         /** rx_pulse_submode_sel : R/W; bitpos: [29:27]; default: 0;
          *  Configures the rxd pulse sampling submode.
-         *  4'd0: positive pulse start(data bit included) &&  positive pulse end(data bit
-         *  included)
-         *  4'd1: positive pulse start(data bit included) && positive pulse end (data bit
-         *  excluded)
-         *  4'd2: positive pulse start(data bit excluded) && positive pulse end (data bit
-         *  included)
-         *  4'd3: positive pulse start(data bit excluded) && positive pulse end (data bit
-         *  excluded)
-         *  4'd4: positive pulse start(data bit included) && length end
-         *  4'd5: positive pulse start(data bit excluded) && length end
+         *  0: positive pulse start(data bit included) &&  positive pulse end(data bit included)
+         *  1: positive pulse start(data bit included) && positive pulse end (data bit excluded)
+         *  2: positive pulse start(data bit excluded) && positive pulse end (data bit included)
+         *  3: positive pulse start(data bit excluded) && positive pulse end (data bit excluded)
+         *  4: positive pulse start(data bit included) && length end
+         *  5: positive pulse start(data bit excluded) && length end
          */
         uint32_t rx_pulse_submode_sel:3;
         /** rx_smp_mode_sel : R/W; bitpos: [31:30]; default: 0;
          *  Configures the rxd sampling mode.
-         *  2'b00: external level enable mode
-         *  2'b01: external pulse enable mode
-         *  2'b10: internal software enable mode
+         *  0: external level enable mode
+         *  1: external pulse enable mode
+         *  2: internal software enable mode
          */
         uint32_t rx_smp_mode_sel:2;
     };
@@ -67,15 +63,15 @@ typedef union {
          */
         uint32_t rx_bitlen:19;
         /** rx_data_order_inv : R/W; bitpos: [28]; default: 0;
-         *  Set this bit to invert bit order of one byte sent from RX_FIFO to DMA.
+         *  Write 1 to invert bit order of one byte sent from RX_FIFO to DMA.
          */
         uint32_t rx_data_order_inv:1;
         /** rx_bus_wid_sel : R/W; bitpos: [31:29]; default: 3;
          *  Configures the rxd bus width.
-         *  3'd0: bus width is 1.
-         *  3'd1: bus width is 2.
-         *  3'd2: bus width is 4.
-         *  3'd3: bus width is 8.
+         *  0: bus width is 1.
+         *  1: bus width is 2.
+         *  2: bus width is 4.
+         *  3: bus width is 8.
          */
         uint32_t rx_bus_wid_sel:3;
     };
@@ -91,7 +87,7 @@ typedef union {
     struct {
         uint32_t reserved_0:12;
         /** rx_gating_en : R/W; bitpos: [12]; default: 0;
-         *  Set this bit to enable the clock gating of output rx clock.
+         *  Write 1 to enable the clock gating of output rx clock.
          */
         uint32_t rx_gating_en:1;
         /** rx_timeout_thres : R/W; bitpos: [28:13]; default: 4095;
@@ -99,7 +95,7 @@ typedef union {
          */
         uint32_t rx_timeout_thres:16;
         /** rx_timeout_en : R/W; bitpos: [29]; default: 1;
-         *  Set this bit to enable timeout function to generate error eof.
+         *  Write 1 to enable timeout function to generate error eof.
          */
         uint32_t rx_timeout_en:1;
         /** rx_eof_gen_sel : R/W; bitpos: [30]; default: 0;
@@ -121,7 +117,7 @@ typedef union {
     struct {
         uint32_t reserved_0:31;
         /** rx_start : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to start rx data sampling.
+         *  Write 1 to start rx data sampling.
          */
         uint32_t rx_start:1;
     };
@@ -141,15 +137,15 @@ typedef union {
          */
         uint32_t tx_bitlen:19;
         /** tx_data_order_inv : R/W; bitpos: [28]; default: 0;
-         *  Set this bit to invert bit order of one byte sent from TX_FIFO to IO data.
+         *  Write 1 to invert bit order of one byte sent from TX_FIFO to IO data.
          */
         uint32_t tx_data_order_inv:1;
         /** tx_bus_wid_sel : R/W; bitpos: [31:29]; default: 3;
          *  Configures the txd bus width.
-         *  3'd0: bus width is 1.
-         *  3'd1: bus width is 2.
-         *  3'd2: bus width is 4.
-         *  3'd3: bus width is 8.
+         *  0: bus width is 1.
+         *  1: bus width is 2.
+         *  2: bus width is 4.
+         *  3: bus width is 8.
          */
         uint32_t tx_bus_wid_sel:3;
     };
@@ -165,7 +161,7 @@ typedef union {
     struct {
         uint32_t reserved_0:31;
         /** tx_start : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to start tx data transmit.
+         *  Write 1 to start tx data transmit.
          */
         uint32_t tx_start:1;
     };
@@ -190,11 +186,11 @@ typedef union {
          */
         uint32_t tx_idle_value:16;
         /** tx_gating_en : R/W; bitpos: [30]; default: 0;
-         *  Set this bit to enable the clock gating of output tx clock.
+         *  Write 1 to enable the clock gating of output tx clock.
          */
         uint32_t tx_gating_en:1;
         /** tx_valid_output_en : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to enable the output of tx data valid signal.
+         *  Write 1 to enable the output of tx data valid signal.
          */
         uint32_t tx_valid_output_en:1;
     };
@@ -210,11 +206,11 @@ typedef union {
     struct {
         uint32_t reserved_0:30;
         /** tx_fifo_srst : R/W; bitpos: [30]; default: 0;
-         *  Set this bit to reset async fifo in tx module.
+         *  Write 1 to reset async fifo in tx module.
          */
         uint32_t tx_fifo_srst:1;
         /** rx_fifo_srst : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to reset async fifo in rx module.
+         *  Write 1 to reset async fifo in rx module.
          */
         uint32_t rx_fifo_srst:1;
     };
@@ -230,7 +226,7 @@ typedef union {
     struct {
         uint32_t reserved_0:31;
         /** rx_reg_update : WT; bitpos: [31]; default: 0;
-         *  Set this bit to update rx register configuration.
+         *  Write 1 to update rx register configuration.
          */
         uint32_t rx_reg_update:1;
     };
@@ -256,20 +252,20 @@ typedef union {
 
 /** Group: PARL_IO Interrupt Configuration and Status */
 /** Type of int_ena register
- *  Parallel IO interrupt enable singal configuration register.
+ *  Parallel IO interrupt enable signal configuration register.
  */
 typedef union {
     struct {
         /** tx_fifo_rempty_int_ena : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to enable TX_FIFO_REMPTY_INT.
+         *  Write 1 to enable TX_FIFO_REMPTY_INT.
          */
         uint32_t tx_fifo_rempty_int_ena:1;
         /** rx_fifo_wovf_int_ena : R/W; bitpos: [1]; default: 0;
-         *  Set this bit to enable RX_FIFO_WOVF_INT.
+         *  Write 1 to enable RX_FIFO_WOVF_INT.
          */
         uint32_t rx_fifo_wovf_int_ena:1;
         /** tx_eof_int_ena : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to enable TX_EOF_INT.
+         *  Write 1 to enable TX_EOF_INT.
          */
         uint32_t tx_eof_int_ena:1;
         uint32_t reserved_3:29;
@@ -278,19 +274,19 @@ typedef union {
 } parl_io_int_ena_reg_t;
 
 /** Type of int_raw register
- *  Parallel IO interrupt raw singal status register.
+ *  Parallel IO interrupt raw signal status register.
  */
 typedef union {
     struct {
-        /** tx_fifo_rempty_int_raw : R/WTC/SS; bitpos: [0]; default: 0;
+        /** tx_fifo_rempty_int_raw : R/SS/WTC; bitpos: [0]; default: 0;
          *  The raw interrupt status of TX_FIFO_REMPTY_INT.
          */
         uint32_t tx_fifo_rempty_int_raw:1;
-        /** rx_fifo_wovf_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
+        /** rx_fifo_wovf_int_raw : R/SS/WTC; bitpos: [1]; default: 0;
          *  The raw interrupt status of RX_FIFO_WOVF_INT.
          */
         uint32_t rx_fifo_wovf_int_raw:1;
-        /** tx_eof_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
+        /** tx_eof_int_raw : R/SS/WTC; bitpos: [2]; default: 0;
          *  The raw interrupt status of TX_EOF_INT.
          */
         uint32_t tx_eof_int_raw:1;
@@ -300,7 +296,7 @@ typedef union {
 } parl_io_int_raw_reg_t;
 
 /** Type of int_st register
- *  Parallel IO interrupt singal status register.
+ *  Parallel IO interrupt signal status register.
  */
 typedef union {
     struct {
@@ -322,20 +318,20 @@ typedef union {
 } parl_io_int_st_reg_t;
 
 /** Type of int_clr register
- *  Parallel IO interrupt  clear singal configuration register.
+ *  Parallel IO interrupt  clear signal configuration register.
  */
 typedef union {
     struct {
         /** tx_fifo_rempty_int_clr : WT; bitpos: [0]; default: 0;
-         *  Set this bit to clear TX_FIFO_REMPTY_INT.
+         *  Write 1 to clear TX_FIFO_REMPTY_INT.
          */
         uint32_t tx_fifo_rempty_int_clr:1;
         /** rx_fifo_wovf_int_clr : WT; bitpos: [1]; default: 0;
-         *  Set this bit to clear RX_FIFO_WOVF_INT.
+         *  Write 1 to clear RX_FIFO_WOVF_INT.
          */
         uint32_t rx_fifo_wovf_int_clr:1;
         /** tx_eof_int_clr : WT; bitpos: [2]; default: 0;
-         *  Set this bit to clear TX_EOF_INT.
+         *  Write 1 to clear TX_EOF_INT.
          */
         uint32_t tx_eof_int_clr:1;
         uint32_t reserved_3:29;
@@ -408,11 +404,11 @@ typedef union {
     struct {
         uint32_t reserved_0:30;
         /** rx_clk_i_inv : R/W; bitpos: [30]; default: 0;
-         *  Set this bit to invert the input Rx core clock.
+         *  Write 1 to invert the input Rx core clock.
          */
         uint32_t rx_clk_i_inv:1;
         /** rx_clk_o_inv : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to invert the output Rx core clock.
+         *  Write 1 to invert the output Rx core clock.
          */
         uint32_t rx_clk_o_inv:1;
     };
@@ -428,11 +424,11 @@ typedef union {
     struct {
         uint32_t reserved_0:30;
         /** tx_clk_i_inv : R/W; bitpos: [30]; default: 0;
-         *  Set this bit to invert the input Tx core clock.
+         *  Write 1 to invert the input Tx core clock.
          */
         uint32_t tx_clk_i_inv:1;
         /** tx_clk_o_inv : R/W; bitpos: [31]; default: 0;
-         *  Set this bit to invert the output Tx core clock.
+         *  Write 1 to invert the output Tx core clock.
          */
         uint32_t tx_clk_o_inv:1;
     };

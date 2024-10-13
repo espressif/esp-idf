@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,7 +190,7 @@ static esp_err_t init_send_queue(sdio_slave_context_t *hal)
     //loop in the ringbuf to link all the desc one after another as a ring
     for (int i = 0; i < hal->send_queue_size + 1; i++) {
         rcv_res = sdio_ringbuf_recv(buf, &last, NULL, RINGBUF_GET_ONE);
-        assert (rcv_res == ESP_OK);
+        HAL_ASSERT(rcv_res == ESP_OK);
 
         ret = sdio_ringbuf_send(buf, link_desc_to_last, last);
         if (ret != ESP_OK) return ret;
@@ -202,7 +202,7 @@ static esp_err_t init_send_queue(sdio_slave_context_t *hal)
     last = NULL;
     //clear the queue
     rcv_res = sdio_ringbuf_recv(buf, &first, &last, RINGBUF_GET_ALL);
-    assert (rcv_res == ESP_OK);
+    HAL_ASSERT(rcv_res == ESP_OK);
     HAL_ASSERT(first == last); //there should be only one desc remain
     sdio_ringbuf_return(buf, (uint8_t *) first);
     return ESP_OK;
@@ -634,7 +634,7 @@ void sdio_slave_hal_recv_flush_one_buffer(sdio_slave_context_t *hal)
 {
     sdio_slave_hal_recv_stailq_t *const queue = &hal->recv_link_list;
     sdio_slave_ll_desc_t *desc = STAILQ_FIRST(queue);
-    assert (desc != NULL && desc->owner == 0);
+    HAL_ASSERT(desc != NULL && desc->owner == 0);
     STAILQ_REMOVE_HEAD(queue, qe);
     desc->owner = 1;
     STAILQ_INSERT_TAIL(queue, desc, qe);

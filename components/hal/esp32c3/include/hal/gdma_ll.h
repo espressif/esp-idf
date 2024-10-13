@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,12 +47,15 @@ extern "C" {
 #define GDMA_LL_AHB_PAIRS_PER_GROUP        3 // Number of GDMA pairs in each AHB group
 #define GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT  1  // TX and RX channel in the same pair will share the same interrupt source number
 
+#define GDMA_LL_AHB_DESC_ALIGNMENT    4
+#define GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT  1
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**
  * @brief Enable the bus clock for the DMA module
  */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     SYSTEM.perip_clk_en1.reg_dma_clk_en = enable;
@@ -60,12 +63,12 @@ static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_enable_bus_clock(__VA_ARGS__)
+#define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the DMA module
  */
-static inline void gdma_ll_reset_register(int group_id)
+static inline void _gdma_ll_reset_register(int group_id)
 {
     (void)group_id;
     SYSTEM.perip_rst_en1.reg_dma_rst = 1;
@@ -74,7 +77,7 @@ static inline void gdma_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
+#define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Force enable register clock
@@ -242,9 +245,9 @@ static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t chann
 }
 
 /**
- * @brief Check if DMA RX FSM is in IDLE state
+ * @brief Check if DMA RX descriptor FSM is in IDLE state
  */
-static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
+static inline bool gdma_ll_rx_is_desc_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.in_link.park;
 }
@@ -468,9 +471,9 @@ static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
 }
 
 /**
- * @brief Check if DMA TX FSM is in IDLE state
+ * @brief Check if DMA TX descriptor FSM is in IDLE state
  */
-static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
+static inline bool gdma_ll_tx_is_desc_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.out_link.park;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@
 /* These lengths can be adjusted, if necessary: */
 bootloader_usable_dram_end = 0x4ff3abd0;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0x4000;
+bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
 bootloader_iram_seg_len = 0x2000;
 
@@ -47,7 +47,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32p4/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x4FF2DBD0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x4FF2CBD0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
@@ -88,6 +88,7 @@ SECTIONS
     *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libhal.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:key_mgr_hal.*(.literal.key_mgr_hal_set_key_usage .text.key_mgr_hal_set_key_usage)
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
@@ -130,9 +131,15 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram_seg
 
-  .dram0.data :
+  .dram0.bootdesc : ALIGN(0x10)
   {
     _data_start = ABSOLUTE(.);
+    *(.data_bootloader_desc .data_bootloader_desc.*)               /* Should be the first.  Bootloader version info.        DO NOT PUT ANYTHING BEFORE IT! */
+  } > dram_seg
+
+  .dram0.data :
+  {
+    *(.dram1 .dram1.*) /* catch stray DRAM_ATTR */
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -158,6 +165,7 @@ SECTIONS
     *(.gcc_except_table)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
+    *(.eh_frame_hdr)
     *(.eh_frame)
     . = (. + 3) & ~ 3;
     /* C++ constructor and destructor tables, properly ordered: */
@@ -210,6 +218,58 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } > iram_seg
+
+  .riscv.attributes 0: { *(.riscv.attributes) }
+
+  /* DWARF 1 */
+  .debug              0 : { *(.debug) }
+  .line               0 : { *(.line) }
+  /* GNU DWARF 1 extensions */
+  .debug_srcinfo      0 : { *(.debug_srcinfo) }
+  .debug_sfnames      0 : { *(.debug_sfnames) }
+  /* DWARF 1.1 and DWARF 2 */
+  .debug_aranges      0 : { *(.debug_aranges) }
+  .debug_pubnames     0 : { *(.debug_pubnames) }
+  /* DWARF 2 */
+  .debug_info         0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev       0 : { *(.debug_abbrev) }
+  .debug_line         0 : { *(.debug_line) }
+  .debug_frame        0 : { *(.debug_frame) }
+  .debug_str          0 : { *(.debug_str) }
+  .debug_loc          0 : { *(.debug_loc) }
+  .debug_macinfo      0 : { *(.debug_macinfo) }
+  .debug_pubtypes     0 : { *(.debug_pubtypes) }
+  /* DWARF 3 */
+  .debug_ranges       0 : { *(.debug_ranges) }
+  /* SGI/MIPS DWARF 2 extensions */
+  .debug_weaknames    0 : { *(.debug_weaknames) }
+  .debug_funcnames    0 : { *(.debug_funcnames) }
+  .debug_typenames    0 : { *(.debug_typenames) }
+  .debug_varnames     0 : { *(.debug_varnames) }
+  /* GNU DWARF 2 extensions */
+  .debug_gnu_pubnames 0 : { *(.debug_gnu_pubnames) }
+  .debug_gnu_pubtypes 0 : { *(.debug_gnu_pubtypes) }
+  /* DWARF 4 */
+  .debug_types        0 : { *(.debug_types) }
+  /* DWARF 5 */
+  .debug_addr         0 : { *(.debug_addr) }
+  .debug_line_str     0 : { *(.debug_line_str) }
+  .debug_loclists     0 : { *(.debug_loclists) }
+  .debug_macro        0 : { *(.debug_macro) }
+  .debug_names        0 : { *(.debug_names) }
+  .debug_rnglists     0 : { *(.debug_rnglists) }
+  .debug_str_offsets  0 : { *(.debug_str_offsets) }
+
+  .comment 0 : { *(.comment) }
+  .note.GNU-stack 0: { *(.note.GNU-stack) }
+
+  /**
+   * Discarding .rela.* sections results in the following mapping:
+   * .rela.text.* -> .text.*
+   * .rela.data.* -> .data.*
+   * And so forth...
+   */
+  /DISCARD/ : { *(.rela.*) }
 
 }
 

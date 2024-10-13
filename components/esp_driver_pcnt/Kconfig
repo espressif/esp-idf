@@ -15,18 +15,10 @@ menu "ESP-Driver:PCNT Configurations"
             Ensure the PCNT interrupt is IRAM-Safe by allowing the interrupt handler to be
             executable when the cache is disabled (e.g. SPI Flash write).
 
-    config PCNT_SUPPRESS_DEPRECATE_WARN
-        bool "Suppress legacy driver deprecated warning"
-        default n
-        help
-            Wether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
-            If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
-            you can enable this option.
-
     config PCNT_ENABLE_DEBUG_LOG
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for PCNT driver.
+            whether to enable the debug log message for PCNT driver.
             Note that, this option only controls the PCNT driver log, won't affect other drivers.
 endmenu

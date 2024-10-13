@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include "lp_core_main.h"
 #include "ulp_lp_core.h"
 #include "lp_core_uart.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_main_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_main_bin_end");
@@ -41,6 +43,13 @@ static void lp_core_init(void)
 
 void app_main(void)
 {
+    /* If user is using USB-serial-jtag then idf monitor needs some time to
+    *  re-connect to the USB port. We wait 1 sec here to allow for it to make the reconnection
+    *  before we print anything. Otherwise the chip will go back to sleep again before the user
+    *  has time to monitor any output.
+    */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause != ESP_SLEEP_WAKEUP_ULP) {
         printf("Not an LP core wakeup. Cause = %d\n", cause);

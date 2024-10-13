@@ -18,6 +18,7 @@
 #include "utils/common.h"
 #include "esp_err.h"
 #include "esp_dpp.h"
+#include "crypto/crypto.h"
 
 struct crypto_ecdh;
 struct hostapd_ip_addr;
@@ -29,6 +30,10 @@ struct dpp_global;
 #define PMK_LEN 32
 #define PMK_LEN_SUITE_B_192 48
 #define PMK_LEN_MAX 64
+
+/* Use a hardcoded Transaction ID 1 in Peer Discovery frames since there is only
+ * a single transaction in progress at any point in time. */
+static const u8 TRANSACTION_ID = 1;
 
 /* DPP events */
 #define DPP_EVENT_AUTH_SUCCESS "DPP-AUTH-SUCCESS "
@@ -155,11 +160,13 @@ struct dpp_bootstrap_info {
 	enum dpp_bootstrap_type type;
 	char *uri;
 	u8 mac_addr[ETH_ALEN];
+	char *chan;
 	char *info;
+	char *pk;
 	unsigned int freq[DPP_BOOTSTRAP_MAX_FREQ];
 	unsigned int num_freq;
 	int own;
-	struct crypto_key *pubkey;
+	struct crypto_ec_key *pubkey;
 	u8 pubkey_hash[SHA256_MAC_LEN];
 	const struct dpp_curve_params *curve;
 	unsigned int pkex_t; /* number of failures before dpp_pkex
@@ -178,12 +185,12 @@ struct dpp_pkex {
 	u8 peer_mac[ETH_ALEN];
 	char *identifier;
 	char *code;
-	struct crypto_key *x;
-	struct crypto_key *y;
+	struct crypto_ec_key *x;
+	struct crypto_ec_key *y;
 	u8 Mx[DPP_MAX_SHARED_SECRET_LEN];
 	u8 Nx[DPP_MAX_SHARED_SECRET_LEN];
 	u8 z[DPP_MAX_HASH_LEN];
-	struct crypto_key *peer_bootstrap_key;
+	struct crypto_ec_key *peer_bootstrap_key;
 	struct wpabuf *exchange_req;
 	struct wpabuf *exchange_resp;
 	unsigned int t; /* number of failures on code use */
@@ -246,8 +253,8 @@ struct dpp_authentication {
 	u8 e_nonce[DPP_MAX_NONCE_LEN];
 	u8 i_capab;
 	u8 r_capab;
-	struct crypto_key *own_protocol_key;
-	struct crypto_key *peer_protocol_key;
+	struct crypto_ec_key *own_protocol_key;
+	struct crypto_ec_key *peer_protocol_key;
 	struct wpabuf *req_msg;
 	struct wpabuf *resp_msg;
 	/* Intersection of possible frequencies for initiating DPP
@@ -316,7 +323,7 @@ struct dpp_configurator {
 	struct dl_list list;
 	unsigned int id;
 	int own;
-	struct crypto_key *csign;
+	struct crypto_ec_key *csign;
 	char *kid;
 	const struct dpp_curve_params *curve;
 };
@@ -436,13 +443,10 @@ extern size_t dpp_nonce_override_len;
 
 void dpp_bootstrap_info_free(struct dpp_bootstrap_info *info);
 const char * dpp_bootstrap_type_txt(enum dpp_bootstrap_type type);
-int dpp_bootstrap_key_hash(struct dpp_bootstrap_info *bi);
 int dpp_parse_uri_chan_list(struct dpp_bootstrap_info *bi,
 			    const char *chan_list);
 int dpp_parse_uri_mac(struct dpp_bootstrap_info *bi, const char *mac);
 int dpp_parse_uri_info(struct dpp_bootstrap_info *bi, const char *info);
-char * dpp_keygen(struct dpp_bootstrap_info *bi, const char *curve,
-		  u8 *privkey, size_t privkey_len);
 struct hostapd_hw_modes;
 struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 					  struct dpp_bootstrap_info *peer_bi,
@@ -502,6 +506,7 @@ struct wpabuf * dpp_build_conn_status_result(struct dpp_authentication *auth,
 					     enum dpp_status_error result,
 					     const u8 *ssid, size_t ssid_len,
 					     const char *channel_list);
+struct wpabuf * dpp_build_peer_disc_req(struct dpp_authentication *auth, struct dpp_config_obj *conf);
 struct wpabuf * dpp_alloc_msg(enum dpp_public_action_frame_type type,
 			      size_t len);
 const u8 * dpp_get_attr(const u8 *buf, size_t len, u16 req_id, u16 *ret_len);
@@ -586,6 +591,8 @@ struct dpp_global_config {
 struct dpp_global * dpp_global_init(struct dpp_global_config *config);
 void dpp_global_clear(struct dpp_global *dpp);
 void dpp_global_deinit(struct dpp_global *dpp);
+int dpp_connect(uint8_t *bssid, bool pdr_done);
+esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid);
 
 #endif /* CONFIG_DPP */
 #endif /* DPP_H */

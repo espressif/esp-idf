@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -229,6 +229,7 @@ static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_
  *
  * @param mode FSM mode.
  */
+__attribute__((always_inline))
 static inline void touch_ll_set_fsm_mode(touch_fsm_mode_t mode)
 {
     SENS.sar_touch_ctrl2.touch_start_fsm_en = 1;
@@ -264,6 +265,7 @@ static inline void touch_ll_start_fsm(void)
  *
  * @param mode FSM mode.
  */
+__attribute__((always_inline))
 static inline void touch_ll_stop_fsm(void)
 {
     RTCCNTL.state0.touch_slp_timer_en = 0;
@@ -497,7 +499,8 @@ static inline uint32_t touch_ll_read_raw_data(touch_pad_t touch_num)
  * @return
  *      - If touch sensors measure done.
  */
-static inline bool touch_ll_meas_is_done(void)
+__attribute__((always_inline))
+static inline bool touch_ll_is_measure_done(void)
 {
     return (bool)SENS.sar_touch_ctrl2.touch_meas_done;
 }

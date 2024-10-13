@@ -3,7 +3,7 @@ Analog to Digital Converter (ADC) Continuous Mode Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one", esp32c5="one"}
 
 Introduction
 ------------
@@ -134,11 +134,12 @@ Initialize the ADC Continuous Mode Driver
 
 .. code:: c
 
+    adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
         .max_store_buf_size = 1024,
-        .conv_frame_size = 100,
+        .conv_frame_size = 256,
     };
-    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config));
+    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config, &handle));
 
 
 Recycle the ADC Unit
@@ -146,7 +147,7 @@ Recycle the ADC Unit
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_deinit());
+    ESP_ERROR_CHECK(adc_continuous_deinit(handle));
 
 
 .. _adc-continuous-adc-configurations:
@@ -200,11 +201,11 @@ On the contrary, calling :cpp:func:`adc_continuous_stop` stops the ADC conversio
 
 .. code::c
 
-    ESP_ERROR_CHECK(adc_continuous_start());
+    ESP_ERROR_CHECK(adc_continuous_start(handle));
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_stop());
+    ESP_ERROR_CHECK(adc_continuous_stop(handle));
 
 
 .. _adc-continuous-register-event-callbacks:
@@ -276,7 +277,7 @@ where:
     * - Dout
       - ADC raw digital reading result.
     * - Vmax
-      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `TRM <{IDF_TARGET_TRM_EN_URL}>`__.
+      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
     * - Dmax
       - Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where the bitwidth is the :cpp:member:`adc_digi_pattern_config_t::bit_width` configured before.
 
@@ -350,7 +351,7 @@ ADC continuous mode driver APIs are not guaranteed to be thread-safe. However, t
 Application Examples
 --------------------
 
-* ADC continuous mode example: :example:`peripherals/adc/continuous_read`.
+* :example:`peripherals/adc/continuous_read` demonstrates how to use the ADC Continuous Read Mode (DMA Mode) on {IDF_TARGET_NAME} development boards to read from GPIO pins via on-chip ADC modules.
 
 
 API Reference

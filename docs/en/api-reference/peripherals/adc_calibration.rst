@@ -6,7 +6,7 @@ Analog to Digital Converter (ADC) Calibration Driver
 Introduction
 ------------
 
-In {IDF_TARGET_NAME}, the digital-to-analog converter (ADC) compares the input analog voltage to the reference, and determines each bit of the output digital result. By design, the ADC reference voltage for {IDF_TARGET_NAME} is 1100 mV. However, the true reference voltage can range from 1000 mV to 1200 mV among different chips. This guide introduces the ADC calibration driver to minimize the effect of different reference voltages, and get more accurate output results.
+In {IDF_TARGET_NAME}, the analog-to-digital converter (ADC) compares the input analog voltage to the reference, and determines each bit of the output digital result. By design, the ADC reference voltage for {IDF_TARGET_NAME} is 1100 mV. However, the true reference voltage can range from 1000 mV to 1200 mV among different chips. This guide introduces the ADC calibration driver to minimize the effect of different reference voltages, and get more accurate output results.
 
 
 Functional Overview
@@ -106,12 +106,12 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 
     After setting up the configuration structure, call :cpp:func:`adc_cali_create_scheme_curve_fitting` to create a Curve Fitting calibration scheme handle. This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`.
 
-    ADC Calibration Efuse Related Failures
+    ADC Calibration eFuse Related Failures
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     When the function :cpp:func:`adc_cali_create_scheme_curve_fitting` returns :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not correct on your board.
 
-    ESP-IDF provided ADC calibration scheme is based on the values in certain ADC calibration related on-chip eFuse bits. Espressif guarantees that these bits are burned during module manufacturing, so you don't have to burn these eFuses bits yourself.
+    The ADC calibration scheme provided by ESP-IDF is based on the values in certain ADC calibration related on-chip eFuse bits. Espressif guarantees that these bits are burned during module manufacturing, so you don't have to burn these eFuses bits yourself.
 
     If you see such an error, please contact us at `Technical Inquiries <https://www.espressif.com/en/contact-us/technical-inquiries>`__ website.
 

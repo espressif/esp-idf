@@ -6,4 +6,11 @@ menu "ESP HTTPS server"
         help
             Enable ESP HTTPS server component
 
+    config ESP_HTTPS_SERVER_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
 endmenu

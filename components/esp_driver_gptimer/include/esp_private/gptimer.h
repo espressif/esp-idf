@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,16 @@ esp_err_t gptimer_get_intr_handle(gptimer_handle_t timer, intr_handle_t *ret_int
  *      - ESP_FAIL: Get GPTimer power management lock failed because of other error
  */
 esp_err_t gptimer_get_pm_lock(gptimer_handle_t timer, esp_pm_lock_handle_t *ret_pm_lock);
+
+/**
+ * @brief Get the group_id from the timer handle
+ *
+ * @param[in] timer Timer handle created by `gptimer_new_timer()`
+ * @return
+ *      - ESP_OK: Get GPTimer group_id from handler successfully
+ *      - ESP_ERR_INVALID_ARG: Get GPTimer group_id failed because of invalid argument
+ */
+esp_err_t gptimer_get_group_id(gptimer_handle_t timer, int *group_id);
 
 #ifdef __cplusplus
 }

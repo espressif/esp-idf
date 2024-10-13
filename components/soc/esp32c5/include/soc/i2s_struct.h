@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -174,7 +174,11 @@ typedef union {
          *  Set this bit to enable receiver in Phillips standard mode
          */
         uint32_t rx_msb_shift:1;
-        uint32_t reserved_14:1;
+        /** rx_done_mode : R/W; bitpos: [14]; default: 0;
+         *  1: I2S trigger rx_done when in_suc_eof is 1. 0: I2S trigger rx_done when RX FIFO is
+         *  full.
+         */
+        uint32_t rx_done_mode:1;
         /** rx_left_align : R/W; bitpos: [15]; default: 1;
          *  1: I2S RX left alignment mode. 0: I2S RX right alignment mode.
          */
@@ -239,6 +243,57 @@ typedef union {
     };
     uint32_t val;
 } i2s_rx_conf1_reg_t;
+
+/** Type of rx_recomb_ctrl register
+ *  I2S RX configure register 1
+ */
+typedef union {
+    struct {
+        /** rx_recomb_en : R/W; bitpos: [0]; default: 0;
+         *  Set this bit to enable i2s rx data recombination.
+         */
+        uint32_t rx_recomb_en:1;
+        /** rx_recomb_ext_ch_num : R/W; bitpos: [2:1]; default: 0;
+         *  The channel number that i2s will extract the data into.
+         */
+        uint32_t rx_recomb_ext_ch_num:2;
+        uint32_t reserved_3:28;
+        /** rx_recomb_update : WT; bitpos: [31]; default: 0;
+         *  Set this bit to update i2s data recombination configuration, must be performed
+         *  after changing the config of any recombined-dma-channel.
+         */
+        uint32_t rx_recomb_update:1;
+    };
+    uint32_t val;
+} i2s_rx_recomb_ctrl_reg_t;
+
+/** Type of rx_recomb_dma_chn register
+ *  I2S RX recombined-dma-channel configuration register
+ */
+typedef union {
+    struct {
+        /** rx_recomb_dma_ch_valid : R/W; bitpos: [0]; default: 0;
+         *  Set this bit to enable the adc-dma-channel.
+         */
+        uint32_t rx_recomb_dma_ch_valid:1;
+        /** rx_recomb_dma_ch_style : R/W; bitpos: [4:1]; default: 0;
+         *  Set this field to set the recombined-dma-channel style. If choose to use i2s
+         *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
+         */
+        uint32_t rx_recomb_dma_ch_style:4;
+        /** rx_recomb_dma_ch_order : R/W; bitpos: [12:5]; default: 0;
+         *  Set this field to set the recombined-dma-channel order. If choose to use the order
+         *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
+         */
+        uint32_t rx_recomb_dma_ch_order:8;
+        /** rx_recomb_dma_ch_eof_num : R/W; bitpos: [28:13]; default: 0;
+         *  Set this field to set the receive eof byte length of the recombined-dma-channel.
+         */
+        uint32_t rx_recomb_dma_ch_eof_num:16;
+        uint32_t reserved_29:3;
+    };
+    uint32_t val;
+} i2s_rx_recomb_dma_chn_reg_t;
 
 /** Type of rx_pdm2pcm_conf register
  *  I2S RX configure register
@@ -371,20 +426,20 @@ typedef union {
     uint32_t val;
 } i2s_rx_tdm_ctrl_reg_t;
 
-/** Type of rxeof_num register
+/** Type of rx_eof_num register
  *  I2S RX data number control register.
  */
 typedef union {
     struct {
-        /** rx_eof_num : R/W; bitpos: [11:0]; default: 64;
-         *  The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[11:0] +
-         *  1) . It will trigger in_suc_eof interrupt in the configured DMA RX channel.
+        /** rx_eof_num : R/W; bitpos: [15:0]; default: 64;
+         *  The receive data bit length is (I2S_RX_BITS_MOD[4:0] + 1) * (REG_RX_EOF_NUM[15:0])
+         *  . It will trigger in_suc_eof interrupt in the configured DMA RX channel.
          */
-        uint32_t rx_eof_num:12;
-        uint32_t reserved_12:20;
+        uint32_t rx_eof_num:16;
+        uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2s_rxeof_num_reg_t;
+} i2s_rx_eof_num_reg_t;
 
 
 /** Group: TX Control and configuration registers */
@@ -410,7 +465,7 @@ typedef union {
          */
         uint32_t tx_slave_mod:1;
         /** tx_stop_en : R/W; bitpos: [4]; default: 1;
-         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is emtpy
+         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is empty
          */
         uint32_t tx_stop_en:1;
         /** tx_chan_equal : R/W; bitpos: [5]; default: 0;
@@ -535,7 +590,10 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:1;
+        /** tx_pdm_hp_bypass : R/W; bitpos: [0]; default: 0;
+         *  I2S TX PDM bypass hp filter or not. The option has been removed.
+         */
+        uint32_t tx_pdm_hp_bypass:1;
         /** tx_pdm_sinc_osr2 : R/W; bitpos: [4:1]; default: 2;
          *  I2S TX PDM OSR2 value
          */
@@ -845,7 +903,7 @@ typedef union {
     uint32_t val;
 } i2s_lc_hung_conf_reg_t;
 
-/** Type of conf_sigle_data register
+/** Type of conf_single_data register
  *  I2S signal data register
  */
 typedef union {
@@ -856,7 +914,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */
@@ -881,17 +939,17 @@ typedef union {
  */
 typedef union {
     struct {
-        /** etm_tx_send_word_num : R/W; bitpos: [9:0]; default: 64;
+        /** etm_tx_send_word_num : R/W; bitpos: [13:0]; default: 64;
          *  I2S ETM send x words event. When sending word number of
-         *  reg_etm_tx_send_word_num[9:0], i2s will trigger an etm event.
+         *  reg_etm_tx_send_word_num[13:0], i2s will trigger an etm event.
          */
-        uint32_t etm_tx_send_word_num:10;
-        /** etm_rx_receive_word_num : R/W; bitpos: [19:10]; default: 64;
+        uint32_t etm_tx_send_word_num:14;
+        /** etm_rx_receive_word_num : R/W; bitpos: [27:14]; default: 64;
          *  I2S ETM receive x words event. When receiving word number of
-         *  reg_etm_rx_receive_word_num[9:0], i2s will trigger an etm event.
+         *  reg_etm_rx_receive_word_num[13:0], i2s will trigger an etm event.
          */
-        uint32_t etm_rx_receive_word_num:10;
-        uint32_t reserved_20:12;
+        uint32_t etm_rx_receive_word_num:14;
+        uint32_t reserved_28:4;
     };
     uint32_t val;
 } i2s_etm_conf_reg_t;
@@ -955,7 +1013,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36713024;
+        /** date : R/W; bitpos: [27:0]; default: 36729232;
          *  I2S version control register
          */
         uint32_t date:28;
@@ -965,7 +1023,7 @@ typedef union {
 } i2s_date_reg_t;
 
 
-typedef struct i2s_dev_t {
+typedef struct {
     uint32_t reserved_000[3];
     volatile i2s_int_raw_reg_t int_raw;
     volatile i2s_int_st_reg_t int_st;
@@ -976,18 +1034,18 @@ typedef struct i2s_dev_t {
     volatile i2s_tx_conf_reg_t tx_conf;
     volatile i2s_rx_conf1_reg_t rx_conf1;
     volatile i2s_tx_conf1_reg_t tx_conf1;
-    uint32_t reserved_030[4];
+    volatile i2s_rx_recomb_ctrl_reg_t rx_recomb_ctrl;
+    volatile i2s_rx_recomb_dma_chn_reg_t rx_recomb_dma_ch[4];
     volatile i2s_tx_pcm2pdm_conf_reg_t tx_pcm2pdm_conf;
     volatile i2s_tx_pcm2pdm_conf1_reg_t tx_pcm2pdm_conf1;
     volatile i2s_rx_pdm2pcm_conf_reg_t rx_pdm2pcm_conf;
-    uint32_t reserved_04c;
     volatile i2s_rx_tdm_ctrl_reg_t rx_tdm_ctrl;
     volatile i2s_tx_tdm_ctrl_reg_t tx_tdm_ctrl;
     volatile i2s_rx_timing_reg_t rx_timing;
     volatile i2s_tx_timing_reg_t tx_timing;
     volatile i2s_lc_hung_conf_reg_t lc_hung_conf;
-    volatile i2s_rxeof_num_reg_t rxeof_num;
-    volatile i2s_conf_sigle_data_reg_t conf_sigle_data;
+    volatile i2s_rx_eof_num_reg_t rx_eof_num;
+    volatile i2s_conf_single_data_reg_t conf_single_data;
     volatile i2s_state_reg_t state;
     volatile i2s_etm_conf_reg_t etm_conf;
     volatile i2s_fifo_cnt_reg_t fifo_cnt;

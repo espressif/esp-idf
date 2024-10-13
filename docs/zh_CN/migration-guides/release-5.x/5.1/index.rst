@@ -7,6 +7,7 @@
     :maxdepth: 1
 
     gcc
+    :SOC_IEEE802154_SUPPORTED: ieee802154
     peripherals
     storage
     networking

@@ -7,6 +7,10 @@
 #ifndef _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_
 #define _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "esp_ble_mesh_defs.h"
 
 enum {
@@ -24,5 +28,9 @@ esp_err_t example_fast_prov_client_recv_timeout(uint32_t opcode, esp_ble_mesh_mo
 esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint16_t len, const uint8_t *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_FAST_PROV_CLIENT_MODEL_H_ */

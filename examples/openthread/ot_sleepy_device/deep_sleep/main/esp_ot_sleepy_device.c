@@ -193,8 +193,8 @@ static void ot_task_worker(void *aContext)
     esp_openthread_launch_mainloop();
 
     // Clean up
-    esp_netif_destroy(openthread_netif);
     esp_openthread_netif_glue_deinit();
+    esp_netif_destroy(openthread_netif);
 
     esp_vfs_eventfd_unregister();
     vTaskDelete(NULL);

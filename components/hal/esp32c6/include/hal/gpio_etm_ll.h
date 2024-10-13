@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,15 +22,20 @@
 #define GPIO_LL_ETM_TASK_ID_CLR(ch) (GPIO_TASK_CH0_CLEAR + (ch))
 #define GPIO_LL_ETM_TASK_ID_TOG(ch) (GPIO_TASK_CH0_TOGGLE + (ch))
 
+#define GPIO_LL_ETM_EVENT_CHANNELS_PER_GROUP    8
+#define GPIO_LL_ETM_TASK_CHANNELS_PER_GROUP     8
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Set which GPIO to be bounded to the event channel
+ * @brief Set which GPIO to be bound to the event channel
+ *
+ * @note Different channels can be bound to one GPIO
  *
  * @param dev Register base address
- * @param chan Channel number
+ * @param chan GPIO ETM Event channel number
  * @param gpio_num GPIO number
  */
 static inline void gpio_ll_etm_event_channel_set_gpio(gpio_etm_dev_t *dev, uint32_t chan, uint32_t gpio_num)
@@ -39,10 +44,10 @@ static inline void gpio_ll_etm_event_channel_set_gpio(gpio_etm_dev_t *dev, uint3
 }
 
 /**
- * @brief Wether to enable the event channel
+ * @brief Whether to enable the event channel
  *
  * @param dev Register base address
- * @param chan Channel number
+ * @param chan GPIO ETM Event channel number
  * @param enable True to enable, false to disable
  */
 static inline void gpio_ll_etm_enable_event_channel(gpio_etm_dev_t *dev, uint32_t chan, bool enable)
@@ -51,12 +56,24 @@ static inline void gpio_ll_etm_enable_event_channel(gpio_etm_dev_t *dev, uint32_
 }
 
 /**
- * @brief Set which GPIO to be bounded to the task channel
- *
- * @note One channel can be bounded to multiple different GPIOs
+ * @brief Get which GPIO is bound to the event channel
  *
  * @param dev Register base address
- * @param chan Channel number
+ * @param chan GPIO ETM Event channel number
+ * @return GPIO number
+ */
+static inline uint32_t gpio_ll_etm_event_channel_get_gpio(gpio_etm_dev_t *dev, uint32_t chan)
+{
+    return dev->event_chn_cfg[chan].etm_chn_event_sel;
+}
+
+/**
+ * @brief Set which GPIO to be bound to the task channel
+ *
+ * @note One channel can be bound to multiple different GPIOs
+ *
+ * @param dev Register base address
+ * @param chan GPIO ETM Task channel number
  * @param gpio_num GPIO number
  */
 static inline void gpio_ll_etm_gpio_set_task_channel(gpio_etm_dev_t *dev, uint32_t gpio_num, uint32_t chan)
@@ -70,7 +87,7 @@ static inline void gpio_ll_etm_gpio_set_task_channel(gpio_etm_dev_t *dev, uint32
 }
 
 /**
- * @brief Wether to enable the GPIO to be managed by the task channel
+ * @brief Whether to enable the GPIO to be managed by the task channel
  *
  * @param dev Register base address
  * @param gpio_num GPIO number
@@ -101,7 +118,7 @@ static inline bool gpio_ll_etm_is_task_gpio_enabled(gpio_etm_dev_t *dev, uint32_
 }
 
 /**
- * @brief Get the channel number that the GPIO is bounded to
+ * @brief Get the channel number that the GPIO is bound to
  *
  * @param dev Register base address
  * @param gpio_num GPIO number

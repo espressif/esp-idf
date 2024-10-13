@@ -391,6 +391,9 @@ struct bt_mesh_net_rx {
              net_if:2,       /* Network interface */
              local_match:1,  /* Matched a local element */
              friend_match:1, /* Matched an LPN we're friends for */
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+             replay_msg:1,   /* Replayed messages */
+#endif
              sbr_rpl:1;      /* Bridge RPL attacker */
     uint16_t msg_cache_idx;  /* Index of entry in message cache */
 };

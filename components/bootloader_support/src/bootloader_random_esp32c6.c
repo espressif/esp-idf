@@ -53,7 +53,7 @@ void bootloader_random_enable(void)
 
     // create patterns and set them in pattern table
     uint32_t pattern_one = (SAR2_CHANNEL << 2) | SAR2_ATTEN; // we want channel 9 with max attenuation
-    uint32_t pattern_two = SAR1_ATTEN; // we want channel 0 with max attenuation, channel doesn't really matter here
+    uint32_t pattern_two = (SAR2_CHANNEL << 2) | SAR1_ATTEN; // we want channel 9 with max attenuation
     uint32_t pattern_table = 0 | (pattern_two << 3 * PATTERN_BIT_WIDTH) | pattern_one << 2 * PATTERN_BIT_WIDTH;
     REG_WRITE(APB_SARADC_SAR_PATT_TAB1_REG, pattern_table);
 
@@ -87,9 +87,6 @@ void bootloader_random_disable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 0);
-
-    // Revert PMU_RF_PWC_REG to it's initial value
-    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
 
     // disable ADC_CTRL_CLK (SAR ADC function clock)
     REG_WRITE(PCR_SARADC_CLKM_CONF_REG, 0x00404000);

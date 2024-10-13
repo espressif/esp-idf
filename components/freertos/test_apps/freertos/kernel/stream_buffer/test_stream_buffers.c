@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,11 +64,11 @@ TEST_CASE("Stream Buffer: Send-receive tasks", "[freertos]")
     BaseType_t sender_core_id;
     BaseType_t receiver_core_id;
     sender_core_id = 0;
-    #if CONFIG_FREERTOS_UNICORE
-        receiver_core_id = 0;
-    #else
-        receiver_core_id = 1;
-    #endif
+#if CONFIG_FREERTOS_UNICORE
+    receiver_core_id = 0;
+#else
+    receiver_core_id = 1;
+#endif
     TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(sender_task, "sender", 4096, &test_args, UNITY_FREERTOS_PRIORITY + 2, NULL, sender_core_id));
     TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, &test_args, UNITY_FREERTOS_PRIORITY + 1, NULL, receiver_core_id));
 

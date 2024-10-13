@@ -40,3 +40,5 @@ jobs:
             echo ""
             exit 1
           fi
+          # Run pre-commit for PowerShell scripts check
+          pre-commit run --hook-stage manual check-powershell-scripts --from-ref base_ref --to-ref pr_ref --show-diff-on-failure

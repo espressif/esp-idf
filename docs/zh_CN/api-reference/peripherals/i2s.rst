@@ -74,13 +74,17 @@ I2S 时钟
 
 - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
 
-.. only:: not esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F160M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
 
-.. only:: esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F96M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
+
+.. only:: SOC_I2S_SUPPORTS_PLL_F240M
+
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
@@ -117,6 +121,7 @@ ESP32-C6    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    无         无
 ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
+ESP32-C5    I2S 0     I2S 0     无        I2S 0     无         无
 =========  ========  ========  ========  ========  ========  ==========
 
 标准模式
@@ -197,7 +202,7 @@ ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
     LCD/摄像头模式
     ^^^^^^^^^^^^^^^
 
-    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
+    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd/i80_lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
 
 .. only:: SOC_I2S_SUPPORTS_ADC_DAC
 
@@ -228,6 +233,15 @@ I2S 驱动中的资源可分为三个级别：
 电源管理启用（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统将在进入 Light-sleep 前调整或停止 I2S 时钟源，这可能会影响 I2S 信号，从而导致传输或接收的数据无效。
 
 I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL（若支持）时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
+
+.. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
+
+    睡眠保留
+    """"""""
+
+    {IDF_TARGET_NAME} 支持在进入 **轻度睡眠** 之前保留 I2S 寄存器中的内容，并在唤醒后恢复。也就是说外设若因进入 **轻度睡眠** 而掉电，程序不需要在唤醒后重新配置 I2S。
+
+    该特性可以通过置位配置中的 :cpp:member:`i2s_chan_config_t::allow_pd` 标志位启用。启用后驱动允许系统在轻度睡眠时对 I2S 掉电，同时保存 I2S 的寄存器内容。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 有限状态机
 ^^^^^^^^^^
@@ -286,6 +300,9 @@ I2S 驱动例程请参考 :example:`peripherals/i2s` 目录。以下为每种模
 
 标准 TX/RX 模式的应用
 ^^^^^^^^^^^^^^^^^^^^^
+
+- :example:`peripherals/i2s/i2s_codec/i2s_es8311` 演示了如何在 {IDF_TARGET_NAME} 上使用 I2S ES8311 音频编解码器来播放音乐或回声，具有高性能和低功耗的多位 delta-sigma 音频 ADC 和 DAC，提供自定义音乐、调整麦克风增益和音量的选项。
+- :example:`peripherals/i2s/i2s_basic/i2s_std` 演示了如何在 {IDF_TARGET_NAME} 上以单工或全双工模式使用 I2S 标准模式。
 
 不同声道的通信格式可通过以下标准模式的辅助宏来生成。如上所述，在标准模式下有三种格式，辅助宏分别为：
 
@@ -543,6 +560,8 @@ STD RX 模式
     PDM TX 模式的应用
     ^^^^^^^^^^^^^^^^^^^
 
+    - :example:`peripherals/i2s/i2s_basic/i2s_pdm` 演示了如何在 {IDF_TARGET_NAME} 上使用 PDM TX 模式，包括必要的硬件设置和配置。
+
     针对 TX 通道的 PDM 模式，声道配置的辅助宏为：
 
     - :c:macro:`I2S_PDM_TX_SLOT_DEFAULT_CONFIG`
@@ -639,6 +658,9 @@ STD RX 模式
     PDM RX 模式的应用
     ^^^^^^^^^^^^^^^^^^
 
+    - :example:`peripherals/i2s/i2s_recorder` 演示了如何通过 I2S 外设以 PDM 数据格式用数字 MEMS 麦克风录制音频，并将其以 ``.wav`` 文件格式保存到 {IDF_TARGET_NAME} 开发板上的 SD 卡中。
+    - :example:`peripherals/i2s/i2s_basic/i2s_pdm` 演示了如何在 {IDF_TARGET_NAME} 上使用 PDM RX 模式，包括必要的硬件设置和配置。
+
     针对 RX 通道的 PDM 模式，声道配置的辅助宏为：
 
     - :c:macro:`I2S_PDM_RX_SLOT_DEFAULT_CONFIG`
@@ -721,6 +743,9 @@ STD RX 模式
 
     TDM TX/RX 模式的应用
     ^^^^^^^^^^^^^^^^^^^^^
+
+    - :example:`peripherals/i2s/i2s_codec/i2s_es7210_tdm` 演示了如何在 {IDF_TARGET_NAME} 上使用 I2S TDM 模式来记录连接到 ES7210 编解码器的四个麦克风，并将录制的声音以 ``.wav`` 格式保存到 SD 卡中。
+    - :example:`peripherals/i2s/i2s_basic/i2s_tdm` 演示了如何在 {IDF_TARGET_NAME} 上以单工或全双工模式使用 TDM 模式。
 
     可以通过以下 TDM 模式的辅助宏生成不同的声道通信格式。如上所述，TDM 模式有四种格式，它们的辅助宏分别为：
 
@@ -974,6 +999,79 @@ STD RX 模式
         i2s_channel_init_std_mode(rx_handle, &std_rx_cfg);
         i2s_channel_enable(rx_handle);
 
+.. only:: SOC_I2S_SUPPORTS_ETM
+
+    I2S ETM 用法
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持 I2S ETM （Event Task Matrix，事件任务矩阵）。 它可以通过 I2S 事件触发一个其他的 ETM 任务，或者通过其他的 ETM 事件来控制 I2S 的启停任务。
+
+    头文件 ``driver/i2s_etm.h`` 中可以找到 I2S ETM 所需的接口函数，下面示例代码将展示如何通过 GPIO 的 ETM 事件控制 I2S 的启停。
+
+    .. code-block:: c
+
+        #include "driver/i2s_etm.h"
+        // ...
+        i2s_chan_handle_t tx_handle;
+        // 初始化 I2S 通道
+        // ......
+        int ctrl_gpio = 4;
+        // 初始化 GPIO 用于控制
+        // ......
+        /* 注册 GPIO ETM 事件 */
+        gpio_etm_event_config_t gpio_event_cfg = {
+            .edges = {GPIO_ETM_EVENT_EDGE_POS, GPIO_ETM_EVENT_EDGE_NEG},
+        };
+        esp_etm_event_handle_t gpio_pos_event_handle;
+        esp_etm_event_handle_t gpio_neg_event_handle;
+        gpio_new_etm_event(&gpio_event_cfg, &gpio_pos_event_handle, &gpio_neg_event_handle);
+        gpio_etm_event_bind_gpio(gpio_pos_event_handle, ctrl_gpio);
+        gpio_etm_event_bind_gpio(gpio_neg_event_handle, ctrl_gpio);
+        /* 注册 I2S ETM 任务 */
+        i2s_etm_task_config_t i2s_start_task_cfg = {
+            .task_type = I2S_ETM_TASK_START,
+        };
+        esp_etm_task_handle_t i2s_start_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_start_task_cfg, &i2s_start_task_handle);
+        i2s_etm_task_config_t i2s_stop_task_cfg = {
+            .task_type = I2S_ETM_TASK_STOP,
+        };
+        esp_etm_task_handle_t i2s_stop_task_handle;
+        i2s_new_etm_task(tx_handle, &i2s_stop_task_cfg, &i2s_stop_task_handle);
+        /* 绑定 GPIO 事件和 I2S ETM 任务 */
+        esp_etm_channel_config_t etm_config = {};
+        esp_etm_channel_handle_t i2s_etm_start_chan = NULL;
+        esp_etm_channel_handle_t i2s_etm_stop_chan = NULL;
+        esp_etm_new_channel(&etm_config, &i2s_etm_start_chan);
+        esp_etm_new_channel(&etm_config, &i2s_etm_stop_chan);
+        esp_etm_channel_connect(i2s_etm_start_chan, gpio_pos_event_handle, i2s_start_task_handle);
+        esp_etm_channel_connect(i2s_etm_stop_chan, gpio_neg_event_handle, i2s_stop_task_handle);
+        esp_etm_channel_enable(i2s_etm_start_chan);
+        esp_etm_channel_enable(i2s_etm_stop_chan);
+        /* 通过 ETM 启动 I2S 前需要先使能这个通道 */
+        i2s_channel_enable(tx_handle);
+        // （可选）这里可以把要发送的数据先加载到内部的发送缓冲区中
+        // 但是由于 tx_channel 还没有启动，所以当内部缓冲区加载满后，再写入会超时
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 0);
+        /* 通过拉高 GPIO 启动 I2S tx 通道 */
+        gpio_set_level(ctrl_gpio, 1);
+        // 写数据 ......
+        // i2s_channel_write(tx_handle, data, data_size, NULL, 1000);
+        /* 通过拉低 GPIO 停止 I2S tx 通道 */
+        gpio_set_level(ctrl_gpio, 0);
+
+        /* 释放 ETM 相关资源 */
+        i2s_channel_disable(tx_handle);
+        esp_etm_channel_disable(i2s_etm_start_chan);
+        esp_etm_channel_disable(i2s_etm_stop_chan);
+        esp_etm_del_event(gpio_pos_event_handle);
+        esp_etm_del_event(gpio_neg_event_handle);
+        esp_etm_del_task(i2s_start_task_handle);
+        esp_etm_del_task(i2s_stop_task_handle);
+        esp_etm_del_channel(i2s_etm_start_chan);
+        esp_etm_del_channel(i2s_etm_stop_chan);
+        // 去初始化 I2S 和 GPIO
+        // ......
 
 应用注意事项
 ------------

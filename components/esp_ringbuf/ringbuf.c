@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ typedef struct {
 typedef struct RingbufferDefinition Ringbuffer_t;
 typedef BaseType_t (*CheckItemFitsFunction_t)(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 typedef void (*CopyItemFunction_t)(Ringbuffer_t *pxRingbuffer, const uint8_t *pcItem, size_t xItemSize);
-typedef BaseType_t (*CheckItemAvailFunction_t) (Ringbuffer_t *pxRingbuffer);
+typedef BaseType_t (*CheckItemAvailFunction_t)(Ringbuffer_t *pxRingbuffer);
 typedef void *(*GetItemFunction_t)(Ringbuffer_t *pxRingbuffer, BaseType_t *pxIsSplit, size_t xMaxSize, size_t *pxItemSize);
 typedef void (*ReturnItemFunction_t)(Ringbuffer_t *pxRingbuffer, uint8_t *pvItem);
 typedef size_t (*GetCurMaxSizeFunction_t)(Ringbuffer_t *pxRingbuffer);
@@ -98,10 +98,10 @@ static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer);
 static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer);
 
 //Checks if an item will currently fit in a no-split/allow-split ring buffer
-static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xItemSize);
+static BaseType_t prvCheckItemFitsDefault(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 
 //Checks if an item will currently fit in a byte buffer
-static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize);
+static BaseType_t prvCheckItemFitsByteBuffer(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 
 /*
 Copies an item to a no-split ring buffer
@@ -276,7 +276,7 @@ static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)
     return xReturn;
 }
 
-static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static BaseType_t prvCheckItemFitsDefault(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pxRingbuffer->pucAcquire));              //pucAcquire is always aligned in no-split/allow-split ring buffers
@@ -304,7 +304,7 @@ static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xI
     }
 }
 
-static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static BaseType_t prvCheckItemFitsByteBuffer(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(pxRingbuffer->pucAcquire >= pxRingbuffer->pucHead && pxRingbuffer->pucAcquire < pxRingbuffer->pucTail);    //Check acquire pointer is within bounds
@@ -506,6 +506,13 @@ static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
         return pdFALSE;     //Byte buffers do not allow multiple retrievals before return
     }
     if ((pxRingbuffer->xItemsWaiting > 0) && ((pxRingbuffer->pucRead != pxRingbuffer->pucWrite) || (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG))) {
+        // If the ring buffer is a no-split buffer, the read pointer must point to an item that has been written to.
+        if ((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0) {
+            ItemHeader_t *pxHeader = (ItemHeader_t *)pxRingbuffer->pucRead;
+            if ((pxHeader->uxItemFlags & rbITEM_WRITTEN_FLAG) == 0) {
+                return pdFALSE;
+            }
+        }
         return pdTRUE;      //Items/data available for retrieval
     } else {
         return pdFALSE;     //No items/data available for retrieval
@@ -822,12 +829,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     BaseType_t xEntryTimeSet = pdFALSE;
     TimeOut_t xTimeOut;
 
-#ifdef __clang_analyzer__
-    // Teach clang-tidy that if NULL pointers are provided, this function will never dereference them
-    if (!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2) {
-        return pdFALSE;
-    }
-#endif /*__clang_analyzer__ */
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
 
     while (xExitLoop == pdFALSE) {
         portENTER_CRITICAL(&pxRingbuffer->mux);
@@ -888,12 +890,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 {
     BaseType_t xReturn = pdFALSE;
 
-#ifdef __clang_analyzer__
-    // Teach clang-tidy that if NULL pointers are provided, this function will never dereference them
-    if (!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2) {
-        return pdFALSE;
-    }
-#endif /*__clang_analyzer__ */
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
 
     portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
@@ -988,9 +985,6 @@ BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, s
     *ppvItem = NULL;
     if (xItemSize > pxRingbuffer->xMaxItemSize) {
         return pdFALSE;     //Data will never ever fit in the queue.
-    }
-    if ((pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) && xItemSize == 0) {
-        return pdTRUE;      //Sending 0 bytes to byte buffer has no effect
     }
 
     return prvSendAcquireGeneric(pxRingbuffer, NULL, ppvItem, xItemSize, xTicksToWait);
@@ -1246,7 +1240,7 @@ void vRingbufferDelete(RingbufHandle_t xRingbuffer)
     configASSERT(pxRingbuffer);
 
     //Ring buffer was not statically allocated. Free its memory.
-    if ( !( pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG ) ) {
+    if (!(pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG)) {
         free(pxRingbuffer->pucHead);
         free(pxRingbuffer);
     }
@@ -1384,6 +1378,11 @@ RingbufHandle_t xRingbufferCreateWithCaps(size_t xBufferSize, RingbufferType_t x
     StaticRingbuffer_t *pxStaticRingbuffer;
     uint8_t *pucRingbufferStorage;
 
+    //Allocate memory
+    if (xBufferType != RINGBUF_TYPE_BYTEBUF) {
+        xBufferSize = rbALIGN_SIZE(xBufferSize);    //xBufferSize is rounded up for no-split/allow-split buffers
+    }
+
     pxStaticRingbuffer = heap_caps_malloc(sizeof(StaticRingbuffer_t), (uint32_t)uxMemoryCaps);
     pucRingbufferStorage = heap_caps_malloc(xBufferSize, (uint32_t)uxMemoryCaps);
 
@@ -1407,7 +1406,8 @@ err:
 
 void vRingbufferDeleteWithCaps(RingbufHandle_t xRingbuffer)
 {
-    BaseType_t xResult;
+    // Return value unused if asserts are disabled
+    BaseType_t __attribute__((unused)) xResult;
     StaticRingbuffer_t *pxStaticRingbuffer = NULL;
     uint8_t *pucRingbufferStorage = NULL;
 

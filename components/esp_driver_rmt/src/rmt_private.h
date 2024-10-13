@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,9 +21,13 @@
 #include "hal/cache_ll.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_clk_tree.h"
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
+#include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/gpio.h"
+#include "esp_private/sleep_retention.h"
 #include "driver/rmt_common.h"
 
 #ifdef __cplusplus
@@ -49,9 +53,6 @@ extern "C" {
 
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-// DMA buffer size must align to `rmt_symbol_word_t`
-#define RMT_DMA_DESC_BUF_MAX_SIZE      (DMA_DESCRIPTOR_BUFFER_MAX_SIZE & ~(sizeof(rmt_symbol_word_t) - 1))
-
 #define RMT_DMA_NODES_PING_PONG               2  // two nodes ping-pong
 #define RMT_PM_LOCK_NAME_LEN_MAX              16
 #define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
@@ -61,10 +62,15 @@ extern "C" {
 typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
-#define RMT_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#define RMT_GET_NON_CACHE_ADDR(addr) (CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
 #else
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+
+#define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef struct {
     struct {
@@ -113,6 +119,10 @@ struct rmt_group_t {
     rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
     int intr_priority;     // RMT interrupt priority
+#if RMT_USE_RETENTION_LINK
+    sleep_retention_module_t sleep_retention_module; // sleep retention module
+    bool retention_link_created;       // mark if the retention link is created
+#endif
 };
 
 struct rmt_channel_t {
@@ -127,7 +137,6 @@ struct rmt_channel_t {
     _Atomic rmt_fsm_t fsm;  // channel life cycle specific FSM
     rmt_channel_direction_t direction; // channel direction
     rmt_symbol_word_t *hw_mem_base;    // base address of RMT channel hardware memory
-    rmt_symbol_word_t *dma_mem_base;   // base address of RMT channel DMA buffer
     gdma_channel_handle_t dma_chan;    // DMA channel
     esp_pm_lock_handle_t pm_lock;      // power management lock
 #if CONFIG_PM_ENABLE
@@ -157,6 +166,8 @@ typedef struct {
 
 struct rmt_tx_channel_t {
     rmt_channel_t base; // channel base class
+    rmt_symbol_word_t *dma_mem_base;    // base address of RMT channel DMA buffer
+    rmt_symbol_word_t *dma_mem_base_nc; // base address of RMT channel DMA buffer, accessed in non-cached way
     size_t mem_off;     // runtime argument, indicating the next writing position in the RMT hardware memory
     size_t mem_end;     // runtime argument, indicating the end of current writing region
     size_t ping_pong_symbols;  // ping-pong size (half of the RMT channel memory)
@@ -184,12 +195,14 @@ typedef struct {
 
 struct rmt_rx_channel_t {
     rmt_channel_t base;                  // channel base class
+    uint32_t filter_clock_resolution_hz; // filter clock resolution, in Hz
     size_t mem_off;                      // starting offset to fetch the symbols in RMT-MEM
     size_t ping_pong_symbols;            // ping-pong size (half of the RMT channel memory)
     rmt_rx_done_callback_t on_recv_done; // callback, invoked on receive done
     void *user_data;                     // user context
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
+    size_t dma_int_mem_alignment;         // DMA buffer alignment (both in size and address) for internal RX memory
     rmt_dma_descriptor_t *dma_nodes;     // DMA link nodes
     rmt_dma_descriptor_t *dma_nodes_nc;  // DMA descriptor nodes accessed in non-cached way
 };
@@ -238,6 +251,13 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
  * @return isr_flags
  */
 int rmt_get_isr_flags(rmt_group_t *group);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param group RMT group handle, returned from `rmt_acquire_group_handle`
+ */
+void rmt_create_retention_module(rmt_group_t *group);
 
 #ifdef __cplusplus
 }

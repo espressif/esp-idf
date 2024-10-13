@@ -145,7 +145,7 @@ ESP-MQTT 库将始终重新传输未确认的 QoS 1 和 2 发布消息，以避�
 
  * :cpp:member:`password <esp_mqtt_client_config_t::credentials_t::authentication_t::password>`：使用密码
  * * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` 和 :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`：进行双向 TLS 身份验证，PEM 或 DER 格式均可
- * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`：使用 ESP32-WROOM-32SE 中的安全元素
+ * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`：使用 ESP32 中的安全元素 (ATECC608A)
  * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`：使用某些乐鑫设备的数字签名外设
 
 会话

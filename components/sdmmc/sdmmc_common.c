@@ -29,17 +29,27 @@ esp_err_t sdmmc_init_ocr(sdmmc_card_t* card)
      */
 
     uint32_t host_ocr = get_host_ocr(card->host.io_voltage);
-    if ((card->ocr & SD_OCR_SDHC_CAP) != 0) {
-        host_ocr |= SD_OCR_SDHC_CAP;
+
+    /* In SPI mode, the only non-zero bit of ACMD41 is HCS (bit 30)
+     * In SD mode, bits 23:8 contain the supported voltage mask
+     */
+    uint32_t acmd41_arg = 0;
+    if (!host_is_spi(card)) {
+        acmd41_arg = host_ocr;
     }
+
+    if ((card->ocr & SD_OCR_SDHC_CAP) != 0) {
+        acmd41_arg |= SD_OCR_SDHC_CAP;
+    }
+
     /* Send SEND_OP_COND (ACMD41) command to the card until it becomes ready. */
-    err = sdmmc_send_cmd_send_op_cond(card, host_ocr, &card->ocr);
+    err = sdmmc_send_cmd_send_op_cond(card, acmd41_arg, &card->ocr);
 
     /* If time-out, re-try send_op_cond as MMC */
     if (err == ESP_ERR_TIMEOUT && !host_is_spi(card)) {
         ESP_LOGD(TAG, "send_op_cond timeout, trying MMC");
         card->is_mmc = 1;
-        err = sdmmc_send_cmd_send_op_cond(card, host_ocr, &card->ocr);
+        err = sdmmc_send_cmd_send_op_cond(card, acmd41_arg, &card->ocr);
     }
 
     if (err != ESP_OK) {
@@ -321,6 +331,24 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
             card->host.flags &= ~width_mask;
             card->host.flags |= width_4bit;
         }
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
+{
+    if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
+        void* buf = NULL;
+        size_t actual_size = 0;
+        esp_dma_mem_info_t dma_mem_info;
+        card->host.get_dma_info(card->host.slot, &dma_mem_info);
+        esp_err_t ret = esp_dma_capable_malloc(SDMMC_IO_BLOCK_SIZE, &dma_mem_info, &buf, &actual_size);
+
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        card->host.dma_aligned_buffer = buf;
     }
     return ESP_OK;
 }

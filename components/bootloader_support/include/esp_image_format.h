@@ -33,6 +33,7 @@ typedef struct {
   uint32_t segment_data[ESP_IMAGE_MAX_SEGMENTS]; /* Data offsets for each segment */
   uint32_t image_len; /* Length of image on flash, in bytes */
   uint8_t image_digest[32]; /* appended SHA-256 digest */
+  uint32_t secure_version; /* secure version for anti-rollback, it is covered by sha256 (set if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y) */
 } esp_image_metadata_t;
 
 typedef enum {

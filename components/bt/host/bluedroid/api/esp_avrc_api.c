@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -231,6 +231,149 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
+
+#if BTC_AV_CA_INCLUDED
+
+esp_err_t esp_avrc_ct_cover_art_connect(uint16_t mtu)
+{
+    if ((esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) ||
+        (!btc_avrc_ct_connected_p())) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!btc_avrc_ct_check_cover_art_support()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (mtu > ESP_AVRC_CA_MTU_MAX || mtu < ESP_AVRC_CA_MTU_MIN) {
+        mtu = ESP_AVRC_CA_MTU_MAX;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CT_API_COVER_ART_CONNECT_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+    arg.ca_conn.mtu = mtu;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_avrc_ct_cover_art_disconnect(void)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!btc_avrc_ct_check_cover_art_support()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CT_API_COVER_ART_DISCONNECT_EVT;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_avrc_ct_cover_art_get_image_properties(uint8_t *image_handle)
+{
+    if ((esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) ||
+        (!btc_avrc_ct_connected_p())) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!btc_avrc_ct_check_cover_art_support()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (image_handle == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_PROPERTIES_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+    memcpy(arg.ca_get_img_prop.image_handle, image_handle, ESP_AVRC_CA_IMAGE_HANDLE_LEN);
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_avrc_ct_cover_art_get_image(uint8_t *image_handle, uint8_t *image_descriptor, uint16_t image_descriptor_len)
+{
+    if ((esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) ||
+        (!btc_avrc_ct_connected_p())) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!btc_avrc_ct_check_cover_art_support()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (image_handle == NULL || image_descriptor == NULL || image_descriptor_len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+
+    memcpy(arg.ca_get_img.image_handle, image_handle, ESP_AVRC_CA_IMAGE_HANDLE_LEN);
+    arg.ca_get_img.image_descriptor_len = image_descriptor_len;
+    arg.ca_get_img.image_descriptor = image_descriptor;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), btc_avrc_arg_deep_copy, btc_avrc_arg_deep_free);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_avrc_ct_cover_art_get_linked_thumbnail(uint8_t *image_handle)
+{
+    if ((esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) ||
+        (!btc_avrc_ct_connected_p())) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!btc_avrc_ct_check_cover_art_support()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (image_handle == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CT_API_COVER_ART_GET_LINKED_THUMBNAIL_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+    memcpy(arg.ca_get_lk_thn.image_handle, image_handle, ESP_AVRC_CA_IMAGE_HANDLE_LEN);
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+#endif /* #if BTC_AV_CA_INCLUDED */
 
 /*********************************************************************************************/
 /**                  following is the API of AVRCP target role                              **/

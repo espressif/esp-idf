@@ -298,7 +298,7 @@ void vPortYieldFromISR( void )
 
     xThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
-    vTaskSwitchContext(xPortGetCoreID());
+    vTaskSwitchContext();
 
     xThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -333,7 +333,7 @@ BaseType_t xPortSetInterruptMask( void )
 
 void vPortClearInterruptMask( BaseType_t xMask )
 {
-    // Only reenable interrupts if xMask is 0
+    // Only re-enable interrupts if xMask is 0
     uxInterruptLevel = xMask;
     if (uxInterruptLevel == 0 && uxCriticalNestingIDF == 0) {
         vPortEnableInterrupts();
@@ -419,7 +419,7 @@ static void vPortSystemTickHandler( int sig )
 #if ( configUSE_PREEMPTION == 1 )
     if (xSwitchRequired == pdTRUE) {
         /* Select Next Task. */
-        vTaskSwitchContext(xPortGetCoreID());
+        vTaskSwitchContext();
 
         pxThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -600,6 +600,10 @@ unsigned long ulPortGetRunTime( void )
     return ( unsigned long ) xTimes.tms_utime;
 }
 /*-----------------------------------------------------------*/
+bool portVALID_LIST_MEM(const void *ptr)
+{
+    return true;
+}
 
 bool portVALID_TCB_MEM(const void *ptr)
 {
@@ -616,14 +620,6 @@ portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "port";
-
-
-/* When configSUPPORT_STATIC_ALLOCATION is set to 1 the application writer can
- * use a callback function to optionally provide the memory required by the idle
- * and timer tasks.  This is the stack that will be used by the timer task.  It is
- * declared here, as a global, so it can be checked by a test that is implemented
- * in a different file. */
-StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
 
 BaseType_t xPortCheckIfInISR(void)
 {
@@ -716,13 +712,22 @@ void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
 
     /* Pass out the size of the array pointed to by *ppxIdleTaskStackBuffer.
      * Note that, as the array is necessarily of type StackType_t,
-     * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+     * configMINIMAL_STACK_SIZE is specified in bytes. */
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 #endif // configSUPPORT_STATIC_ALLOCATION == 1
 /*-----------------------------------------------------------*/
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+#if ( (configSUPPORT_STATIC_ALLOCATION == 1) && (configUSE_TIMERS == 1))
+
+/* When configSUPPORT_STATIC_ALLOCATION is set to 1 the application writer can
+ * use a callback function to optionally provide the memory required by the idle
+ * and timer tasks.  This is the stack that will be used by the timer task.  It is
+ * declared here, as a global, so it can be checked by a test that is implemented
+ * in a different file. */
+StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+
+
 /* configUSE_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
  * application must provide an implementation of vApplicationGetTimerTaskMemory()
  * to provide the memory that is used by the Timer service task. */
@@ -744,10 +749,10 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 
     /* Pass out the size of the array pointed to by *ppxTimerTaskStackBuffer.
      * Note that, as the array is necessarily of type StackType_t,
-     * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+     * configMINIMAL_STACK_SIZE is specified in bytes. */
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
-#endif // configSUPPORT_STATIC_ALLOCATION == 1
+#endif // configSUPPORT_STATIC_ALLOCATION == 1 && (configUSE_TIMERS == 1)
 
 void vPortTakeLock( portMUX_TYPE *lock )
 {

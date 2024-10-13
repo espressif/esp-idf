@@ -271,6 +271,9 @@ int esp_transport_get_errno(esp_transport_handle_t t)
 void capture_tcp_transport_error(esp_transport_handle_t t, enum esp_tcp_transport_err_t error)
 {
     esp_tls_last_error_t *err_handle = esp_transport_get_error_handle(t);
+    if (err_handle == NULL) {
+        return;
+    }
     switch (error) {
         case ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN:
             err_handle->last_error = ESP_ERR_ESP_TLS_TCP_CLOSED_FIN;

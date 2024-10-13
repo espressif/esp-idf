@@ -99,7 +99,7 @@ esp_err_t rmt_new_ir_nec_encoder(const ir_nec_encoder_config_t *config, rmt_enco
     esp_err_t ret = ESP_OK;
     rmt_ir_nec_encoder_t *nec_encoder = NULL;
     ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    nec_encoder = calloc(1, sizeof(rmt_ir_nec_encoder_t));
+    nec_encoder = rmt_alloc_encoder_mem(sizeof(rmt_ir_nec_encoder_t));
     ESP_GOTO_ON_FALSE(nec_encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for ir nec encoder");
     nec_encoder->base.encode = rmt_encode_ir_nec;
     nec_encoder->base.del = rmt_del_ir_nec_encoder;

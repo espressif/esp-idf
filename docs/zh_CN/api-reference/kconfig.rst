@@ -33,7 +33,7 @@ Kconfig 文件的格式规定如下：
 - 在所有菜单中，选项名称的前缀需保持一致。目前，前缀长度应为至少 3 个字符。
 - 每级采用 4 个空格的缩进方式，子项需比父项多缩进一级。例如， ``menu`` 缩进 0 个空格，``menu`` 中的 ``config`` 则缩进 4 个空格， ``config`` 中的 ``help`` 缩进 8 个空格， ``help`` 下的文本缩进 12 个空格。
 - 行末不得出现尾随空格。
-- 选项最长为 40 个字符。
+- 选项最长为 50 个字符。
 - 每行最长为 120 个字符。
 
 .. note::
@@ -60,6 +60,13 @@ Kconfig 选项的向后兼容性
 2. ``kconfgen`` 递归查找 ESP-IDF 目录中所有包含新旧 Kconfig 选项名称的 ``sdkconfig.rename`` 文件。在 ``sdkconfig`` 文件中，新选项将替换旧选项。针对单个目标的重命名可以放在特定目标的重命名文件 ``sdkconfig.rename.TARGET`` 中，其中 ``TARGET`` 是目标名称，例如 ``sdkconfig.rename.esp32s2``。
 3. ``kconfgen`` 通过添加兼容性语句列表（即经过修改后，将旧选项的值设置为新选项的值），后处理 ``sdkconfig`` 文件，并生成所有构建结果（ ``sdkconfig.h``、 ``sdkconfig.cmake`` 以及 ``auto.conf``）。如果用户在其代码中仍然使用旧选项，此举可以防止用户代码出现问题。
 4. ``kconfgen`` 会自动生成 :ref:`configuration-deprecated-options`。
+
+``sdkconfig.rename`` 文件的结构如下：
+
+* 以 ``#`` 开头的行和空行将被忽略。
+* 其他所有行应遵循以下格式之一：
+    * ``CONFIG_DEPRECATED_NAME CONFIG_NEW_NAME``，其中 ``CONFIG_DEPRECATED_NAME`` 是旧配置名称，在较新的 ESP-IDF 版本中已更名为 ``CONFIG_NEW_NAME``。
+    * ``CONFIG_DEPRECATED_NAME !CONFIG_NEW_INVERTED_NAME``，其中 ``CONFIG_NEW_INVERTED_NAME`` 是在较新的 ESP-IDF 版本中通过布尔反转 ``CONFIG_DEPRECATED_NAME`` 的逻辑值而引入的新配置名称。
 
 .. _configuration-options-reference:
 

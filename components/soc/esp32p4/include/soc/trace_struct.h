@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -159,7 +159,7 @@ typedef union {
          */
         uint32_t trigger_off:1;
         /** mem_loop : R/W; bitpos: [2]; default: 1;
-         *  Configure memory loop mode. \\1: trace will loop wrtie trace_mem. \\0: when
+         *  Configure memory loop mode. \\1: trace will loop write trace_mem. \\0: when
          *  mem_current_addr at mem_end_addr, it will stop at the mem_end_addr\\
          */
         uint32_t mem_loop:1;
@@ -182,18 +182,18 @@ typedef union {
          */
         uint32_t dm_trigger_ena:1;
         /** reset_ena : R/W; bitpos: [1]; default: 0;
-         *  Configure whether or not enable trace cpu haverest, when enabeld, if cpu have
+         *  Configure whether or not enable trace cpu haverest, when enabled, if cpu have
          *  reset, the encoder will output a packet to report the address of the last
-         *  instruction, and upon reset deassertion, the encoder start again.\\1: enabeld\\0:
+         *  instruction, and upon reset deassertion, the encoder start again.\\1: enabled\\0:
          *  disabled\\
          */
         uint32_t reset_ena:1;
         /** halt_ena : R/W; bitpos: [2]; default: 0;
-         *  Configure whether or not enable trace cpu is halted, when enabeld, if the cpu
+         *  Configure whether or not enable trace cpu is halted, when enabled, if the cpu
          *  halted, the encoder will output a packet to report the address of the last
          *  instruction, and upon halted deassertion, the encoder start again.When disabled,
          *  encoder will not report the last address before halted and first address after
-         *  halted, cpu halted information will not be tracked. \\1: enabeld\\0: disabled\\
+         *  halted, cpu halted information will not be tracked. \\1: enabled\\0: disabled\\
          */
         uint32_t halt_ena:1;
         /** stall_ena : R/W; bitpos: [3]; default: 0;
@@ -208,7 +208,7 @@ typedef union {
          */
         uint32_t full_address:1;
         /** implicit_except : R/W; bitpos: [5]; default: 0;
-         *  Configure whether or not enabel implicit exception mode. When enabled,, do not sent
+         *  Configure whether or not enable implicit exception mode. When enabled,, do not sent
          *  exception address, only exception cause in exception packets.\\1: enabled\\0:
          *  disabled\\
          */
@@ -451,6 +451,8 @@ typedef struct {
     volatile trace_date_reg_t date;
 } trace_dev_t;
 
+extern trace_dev_t TRACE0;
+extern trace_dev_t TRACE1;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(trace_dev_t) == 0x400, "Invalid size of trace_dev_t structure");

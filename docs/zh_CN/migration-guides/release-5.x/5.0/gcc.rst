@@ -1,4 +1,4 @@
-GCC 
+GCC
 ***
 
 :link_to_translation:`en:[English]`
@@ -20,7 +20,7 @@ ESP-IDF 之前使用的 GCC 版本为 8.4.0，现已针对所有芯片目标升�
 升级至 GCC 11.2.0 后会触发新警告，或是导致原有警告内容发生变化。所有 GCC 警告的详细内容，请参考 `GCC 警告选项 <https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/Warning-Options.html>`_。建议用户仔细检查代码，并设法解决这些警告。但由于某些警告的特殊性及用户代码的复杂性，有些警告可能为误报，需要进行关键修复。在这种情况下，用户可以采取多种方式来抑制这些警告。本节介绍了用户可能遇到的常见警告及如何抑制这些警告。
 
 .. 注意::
-    
+
     建议用户在抑制警告之前仔细确认该警告是否确实为误报。
 
 
@@ -104,14 +104,14 @@ Xtensa 编译器中的 ``int32_t`` 和 ``uint32_t``
    :widths: 20 45 35
    :header-rows: 1
 
-   * - 
+   * -
      - 2021r2 及以上版本，GCC 8
      - 2022r1，GCC 11
    * - Xtensa
      - (unsigned) int
      - (unsigned) long
    * - riscv32
-     - (unsigned) long 
+     - (unsigned) long
      - (unsigned) long
 
 

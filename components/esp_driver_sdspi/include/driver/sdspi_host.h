@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,10 @@ typedef int sdspi_dev_handle_t;
     .command_timeout_ms = 0, \
     .get_real_freq = &sdspi_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
-    .set_input_delay = NULL \
+    .set_input_delay = NULL, \
+    .dma_aligned_buffer = NULL, \
+    .pwr_ctrl_handle = NULL, \
+    .get_dma_info = &sdspi_host_get_dma_info, \
 }
 
 /**
@@ -68,6 +71,7 @@ typedef struct {
     bool gpio_wp_polarity;     /*!< GPIO write protect polarity
                                     0 means "active low", i.e. card is protected when the GPIO is low;
                                     1 means "active high", i.e. card is protected when GPIO is high. */
+    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
 } sdspi_device_config_t;
 
 #define SDSPI_SLOT_NO_CS          GPIO_NUM_NC      ///< indicates that card select line is not used
@@ -86,6 +90,7 @@ typedef struct {
     .gpio_wp   = SDSPI_SLOT_NO_WP, \
     .gpio_int  = GPIO_NUM_NC, \
     .gpio_wp_polarity = SDSPI_IO_ACTIVE_LOW, \
+    .duty_cycle_pos = 0,\
 }
 
 /**
@@ -208,6 +213,17 @@ esp_err_t sdspi_host_io_int_enable(sdspi_dev_handle_t handle);
  *      - ESP_OK on success
  */
 esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_ticks);
+
+/**
+ * @brief Get the DMA memory information for the host driver
+ *
+ * @param[in]  slot          Not used
+ * @param[out] dma_mem_info  DMA memory information structure
+ * @return
+ *        - ESP_OK:                ON success.
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument.
+ */
+esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
 
 #ifdef __cplusplus
 }

@@ -56,8 +56,8 @@ typedef struct
  *      1. Read security configurations from the first NVS key
  *         partition listed in the partition table. (NVS key partition is
  *         any "data" type partition which has the subtype value set to "nvs_keys")
- *      2. If the NVS key partiton obtained in the previous step is empty,
- *         generate and store new keys in that NVS key partiton.
+ *      2. If the NVS key partition obtained in the previous step is empty,
+ *         generate and store new keys in that NVS key partition.
  *      3. Internally call "nvs_flash_secure_init()" with
  *         the security configurations obtained/generated in the previous steps.
  *

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,8 @@ typedef struct {
  *        Configure GPIO's Mode,pull-up,PullDown,IntrType
  *
  * @param  pGPIOConfig Pointer to GPIO configure struct
+ *
+ * @note This function always overwrite all the current IO configurations
  *
  * @return
  *     - ESP_OK success
@@ -157,10 +159,12 @@ int gpio_get_level(gpio_num_t gpio_num);
 /**
  * @brief    GPIO set direction
  *
- * Configure GPIO direction,such as output_only,input_only,output_and_input
+ * Configure GPIO mode,such as output_only,input_only,output_and_input
  *
  * @param  gpio_num  Configure GPIO pins number, it should be GPIO number. If you want to set direction of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  mode GPIO direction
+ *
+ * @note This function always overwrite all the current modes that have applied on the IO pin
  *
  * @return
  *     - ESP_OK Success
@@ -170,8 +174,20 @@ int gpio_get_level(gpio_num_t gpio_num);
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 
 /**
- * @brief  Configure GPIO pull-up/pull-down resistors
+ * @brief Enable input for an IO
  *
+ * @param gpio_num GPIO number
+ *
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG GPIO number error
+ */
+esp_err_t gpio_input_enable(gpio_num_t gpio_num);
+
+/**
+ * @brief  Configure GPIO internal pull-up/pull-down resistors
+ *
+ * @note This function always overwrite the current pull-up/pull-down configurations
  * @note ESP32: Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
  *
  * @param  gpio_num GPIO number. If you want to set pull up or down mode for e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
@@ -367,15 +383,20 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
   *
   * When a GPIO is set to hold, its state is latched at that moment and will not change when the internal
   * signal or the IO MUX/GPIO configuration is modified (including input enable, output enable, output value,
-  * function, and drive strength values). This function can be used to retain the state of GPIOs when the chip
-  * or system is reset, for example, when watchdog time-out or Deep-sleep events are triggered.
+  * function, and drive strength values). This function can be used to retain the state of GPIOs when the power
+  * domain of where GPIO/IOMUX belongs to becomes off. For example, chip or system is reset (e.g. watchdog
+  * time-out, deep-sleep events are triggered), or peripheral power-down in light-sleep.
   *
   * This function works in both input and output modes, and only applicable to output-capable GPIOs.
   * If this function is enabled:
   *   in output mode: the output level of the GPIO will be locked and can not be changed.
   *   in input mode: the input read value can still reflect the changes of the input signal.
   *
-  * However, on ESP32/S2/C3/S3/C2, this function cannot be used to hold the state of a digital GPIO during Deep-sleep.
+  * Please be aware that,
+  *
+  * On ESP32P4, the states of IOs can not be hold after waking up from Deep-sleep.
+  *
+  * Additionally, on ESP32/S2/C3/S3/C2, this function cannot be used to hold the state of a digital GPIO during Deep-sleep.
   * Even if this function is enabled, the digital GPIO will be reset to its default state when the chip wakes up from
   * Deep-sleep. If you want to hold the state of a digital GPIO during Deep-sleep, please call `gpio_deep_sleep_hold_en`.
   *
@@ -392,13 +413,13 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
 /**
   * @brief Disable gpio pad hold function.
   *
-  * When the chip is woken up from Deep-sleep, the gpio will be set to the default mode, so, the gpio will output
-  * the default level if this function is called. If you don't want the level changes, the gpio should be configured to
-  * a known state before this function is called.
+  * When the chip is woken up from peripheral power-down sleep, the gpio will be set to the default mode,
+  * so, the gpio will output the default level if this function is called. If you don't want the level changes, the
+  * gpio should be configured to a known state before this function is called.
   *  e.g.
   *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called,
   *     gpio18 will output low level(because gpio18 is input mode by default). If you don't want this behavior,
-  *     you should configure gpio18 as output mode and set it to hight level before calling `gpio_hold_dis`.
+  *     you should configure gpio18 as output mode and set it to high level before calling `gpio_hold_dis`.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -408,15 +429,20 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   */
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**
   * @brief Enable all digital gpio pads hold function during Deep-sleep.
   *
   * Enabling this feature makes all digital gpio pads be at the holding state during Deep-sleep. The state of each pad
   * holds is its active configuration (not pad's sleep configuration!).
   *
-  * Note that this pad hold feature only works when the chip is in Deep-sleep mode. When the chip is in active mode,
-  * the digital gpio state can be changed freely even you have called this function.
+  * Note:
+  *   1. For digital IO, this API takes effect only if the corresponding digital IO pad hold function has been enabled. You
+  *      can enable the GPIO pad hold function by calling `gpio_hold_en`.
+  *      has been enabled. You can call `gpio_hold_en` to enable the gpio pad hold function.
+  *   2. Though this API targets all digital IOs, the pad hold feature only works when the chip is in Deep-sleep mode. When
+  *      the chip is in active mode, the digital GPIO state can be changed freely even if you have called this function, except
+  *      for IOs that are already held by `gpio_hold_en`.
   *
   * After this API is being called, the digital gpio Deep-sleep hold feature will work during every sleep process. You
   * should call `gpio_deep_sleep_hold_dis` to disable this feature.
@@ -427,7 +453,7 @@ void gpio_deep_sleep_hold_en(void);
   * @brief Disable all digital gpio pads hold function during Deep-sleep.
   */
 void gpio_deep_sleep_hold_dis(void);
-#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 /**
   * @brief Set pad input to a peripheral signal through the IOMUX.
@@ -441,9 +467,9 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   * @param gpio_num gpio_num GPIO number of the pad.
   * @param func The function number of the peripheral pin to output pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  * @param out_en_inv True if the output enable needs to be inverted, otherwise False.
   */
-void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
+void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
@@ -454,14 +480,20 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
   * This function will immediately cause all pads to latch the current values of input enable, output enable,
   * output value, function, and drive strength values.
   *
-  * @warning This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
-  * (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
-  * pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
+  * @warning
+  *   1. This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
+  *      (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
+  *      pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
+  *   2. The hold state of all pads will be cancelled during ROM boot, so it is not recommended to use this API to hold
+  *      the pads state during deepsleep and reset.
   * */
 esp_err_t gpio_force_hold_all(void);
 
 /**
-  * @brief Force unhold all digital and rtc gpio pads.
+  * @brief Unhold all digital and rtc gpio pads.
+  *
+  * @note  The global hold signal and the hold signal of each IO act on the PAD through 'or' logic, so if a pad has already
+  *        been configured to hold by `gpio_hold_en`, this API can't release its hold state.
   * */
 esp_err_t gpio_force_unhold_all(void);
 #endif

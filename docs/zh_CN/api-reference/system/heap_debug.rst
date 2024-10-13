@@ -216,7 +216,8 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 - 启用 :ref:`CONFIG_HEAP_TRACING_DEST` 选项。
 - 在程序早期调用函数 :cpp:func:`heap_trace_init_standalone` 注册一个可用于记录内存跟踪的缓冲区。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 记录系统中的所有内存分配和释放操作。
-- 在有内存泄露之嫌的代码块后，调用函数 :cpp:func:`heap_trace_stop` 停止跟踪。
+- 在可疑代码执行完毕后调用 :cpp:func:`heap_trace_stop` 函数可停止跟踪内存的分配和释放。
+- 调用 :cpp:func:`heap_trace_alloc_pause` 函数暂停跟踪新的内存分配，同时继续跟踪内存释放。在可能泄漏内存的代码后立即调用该函数，防止记录任何新的内存分配。
 - 调用函数 :cpp:func:`heap_trace_dump` 导出内存跟踪结果。
 
 应用程序代码初始化、启动和停止堆内存跟踪的一般过程，见以下代码片段示例：
@@ -508,6 +509,11 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 - 由于存在 ``TIME_WAIT`` 状态，TCP 连接在关闭后仍会使用一些内存，``TIME_WAIT`` 状态结束后将释放这些内存。
 
 要区分“真实”和“误报”的内存泄漏，可以在堆内存跟踪运行时多次调用可疑代码，并在堆内存跟踪输出中查找重复出现的内存分配情况。
+
+应用示例
+--------------------
+
+- :example:`system/heap_task_tracking` 演示了如何使用堆任务跟踪功能跟踪分配给每个任务的堆内存。
 
 API 参考 - 堆内存跟踪
 ----------------------------

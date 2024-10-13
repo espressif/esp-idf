@@ -32,16 +32,16 @@
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC 高速内存
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC 低速内存
 
-.. only:: SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 和 Bluetooth 功能
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    在 Light-sleep 和 Deep-sleep 模式下，无线外设会被断电。因此，在进入这两种睡眠模式前，应用程序必须调用恰当的函数（:cpp:func:`esp_bluedroid_disable`、:cpp:func:`esp_bt_controller_disable` 或 :cpp:func:`esp_wifi_stop`）来禁用 Wi-Fi 和 Bluetooth。在 Light-sleep 或 Deep-sleep 模式下，即使不调用这些函数也无法连接 Wi-Fi 和 Bluetooth。
+    在 Light-sleep 和 Deep-sleep 模式下，无线外设会被断电。因此，在进入这两种睡眠模式前，应用程序必须调用恰当的函数（:cpp:func:`nimble_port_stop`、:cpp:func:`nimble_port_deinit`、:cpp:func:`esp_bluedroid_disable`、:cpp:func:`esp_bluedroid_deinit`、:cpp:func:`esp_bt_controller_disable`、:cpp:func:`esp_bt_controller_deinit` 或 :cpp:func:`esp_wifi_stop`）来禁用 Wi-Fi 和 Bluetooth。在 Light-sleep 或 Deep-sleep 模式下，即使不调用这些函数也无法连接 Wi-Fi 和 Bluetooth。
 
     如需保持 Wi-Fi 和 Bluetooth 连接，请启用 Wi-Fi 和 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式（请参阅 :doc:`电源管理 API <power_management>`）。在这两种模式下，Wi-Fi 和 Bluetooth 驱动程序发出请求时，系统将自动从睡眠中被唤醒，从而保持连接。
 
-.. only:: not SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and not SOC_BT_SUPPORTED
 
     睡眠模式下的 Wi-Fi 功能
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,7 +90,7 @@
 
     功能：
 
-    1. RTC IO 输入/高温下 RTC 内存（试验功能）：将 RTC IO 用作输入管脚，或在高温下使用 RTC 内存。禁用上述功能，芯片可进入超低功耗模式。由 API :cpp:func:`rtc_sleep_enable_ultra_low` 控制。
+    1. RTC IO 输入/高温下 RTC 内存（试验功能）：将 RTC IO 用作输入管脚，或在高温下使用 RTC 内存。禁用上述功能，芯片可进入超低功耗模式。由 API :cpp:func:`esp_sleep_sub_mode_config` 配置 `ESP_SLEEP_ULTRA_LOW_MODE` 模式的使能与关闭。
 
     2. ADC_TSEN_MONITOR：在 monitor 模式下使用 ADC/温度传感器（由 ULP 控制），通过 :cpp:func:`ulp_adc_init` 或其更高级别的 API 启用。仅适用于支持 monitor 模式的 ESP32-S2 和 ESP32-S3 芯片。
 
@@ -227,7 +227,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当所有所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ALL_LOW)
 
-    .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
+    .. only:: not esp32
 
         - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当任意一个所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ANY_LOW)
@@ -254,7 +254,13 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        当前的 RTC 控制器也包含更强大的逻辑，允许配置的 IO 同时使用不同的唤醒电平。这可以通过:cpp:func:`esp_sleep_enable_ext1_wakeup_io` 函数来进行配置。
+        当前的 RTC 控制器也包含更强大的逻辑，允许配置的 IO 同时使用不同的唤醒电平。这可以通过 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 函数来进行配置。
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+       .. note::
+
+           由于硬件限制，当我们将多个 IO 用于 EXT1 唤醒，此时不允许将这些 IO 的唤醒模式配置成不同的电平，在 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 已有相应的内部检查机制。
 
     .. warning::
 
@@ -298,6 +304,20 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
+    .. only:: SOC_PM_SUPPORT_TOP_PD
+
+       .. note::
+
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+
+                或者， 可以使用直接调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 用于 GPIO 唤醒，因为此时 digital IO 的电源域已经被关闭，这个情况类似于进入 Deep-sleep。
+
+            .. only::  not SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+
 .. only:: not SOC_RTCIO_WAKE_SUPPORTED
 
     GPIO 唤醒
@@ -307,11 +327,13 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     此外，可将由 VDD3P3_RTC 电源域供电的 IO 用于芯片的 Deep-sleep 唤醒。调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 函数可以配置相应的唤醒管脚和唤醒触发电平，该函数用于启用相应管脚的 Deep-sleep 唤醒功能。
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
-           在 Light-sleep 模式下，设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 GPIO 唤醒失效。
+            .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，可以使用直接调用 :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` 用于 GPIO 唤醒，因为此时 digital IO 的电源域已经被关闭，这个情况类似于进入 Deep-sleep。
 
 UART 唤醒（仅适用于 Light-sleep 模式）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -320,7 +342,9 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
 可调用 :cpp:func:`esp_sleep_enable_uart_wakeup` 函数来启用此唤醒源。
 
-    .. only:: esp32c6 or esp32h2
+使用 UART 唤醒之后，在芯片 Active 模式下需要让 UART 接受一些数据用来清零内部的唤醒指示信号。不然的话，下一次 UART 唤醒的触发将只需要比配置的阈值少两个上升沿的数量。
+
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
@@ -401,7 +425,7 @@ flash 断电
 
     在函数 :cpp:func:`esp_deep_sleep_start` 前增加以下代码即可避免额外电流消耗::
 
-	rtc_gpio_isolate(GPIO_NUM_12);
+        rtc_gpio_isolate(GPIO_NUM_12);
 
 .. only:: esp32c2 or esp32c3
 
@@ -447,13 +471,12 @@ UART 输出处理
 
 .. list::
 
-    - :example:`protocols/sntp`：如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
-    - :example:`wifi/power_save`：如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
-    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`：如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
-    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何通过多种芯片支持的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。
-    - :example:`system/light_sleep`: 如何使用多种芯片支持的唤醒源，如定时器，GPIO，触摸传感器等，触发 Light-sleep 唤醒。
-
+    - :example:`protocols/sntp` 演示如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` 演示如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` 演示如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` 演示如何通过 {IDF_TARGET_NAME} 的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。
+    - :example:`system/light_sleep` 演示如何使用  {IDF_TARGET_NAME} 的唤醒源，如定时器，GPIO，触摸传感器等，触发 Light-sleep 唤醒。
 
 API 参考
 -------------

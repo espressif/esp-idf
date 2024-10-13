@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,10 +34,10 @@ static const int coeff_a_scaling = 65536;
  * For each item, first element is the Coefficient, second element is the Multiple. (Coefficient / Multiple) is the real coefficient.
  *
  * @note {0,0} stands for unused item
- * @note In case of the overflow, these coeffcients are recorded as Absolute Value
+ * @note In case of the overflow, these coefficients are recorded as Absolute Value
  * @note For atten0 ~ 2, error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2); For atten3, error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
  * @note Above formula is rewritten from the original documentation, please note that the coefficients are re-ordered.
- * @note ADC1 and ADC2 use same coeffients
+ * @note ADC1 and ADC2 use same coefficients
  */
 const static uint64_t adc_error_coef_atten[4][5][2] = {
     {{225966470500043, 1e15}, {7265418501948, 1e16}, {109410402681, 1e16}, {0, 0}, {0, 0}},                         //atten0
@@ -47,7 +47,7 @@ const static uint64_t adc_error_coef_atten[4][5][2] = {
 };
 /**
  * Term sign
- * @note ADC1 and ADC2 use same coeffients
+ * @note ADC1 and ADC2 use same coefficients
  */
 const static int32_t adc_error_sign[4][5] = {
     {-1, -1, 1,  0,  0}, //atten0
@@ -130,7 +130,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     adc_calib_parsed_info_t efuse_parsed_data = {0};
     // Check parameters
     ESP_RETURN_ON_FALSE(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid unit num");
-    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Ivalid characteristic");
+    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid characteristic");
     ESP_RETURN_ON_FALSE(bit_width == ADC_WIDTH_BIT_12, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid bit_width");
     ESP_RETURN_ON_FALSE(atten < SOC_ADC_ATTEN_NUM, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid attenuation");
 

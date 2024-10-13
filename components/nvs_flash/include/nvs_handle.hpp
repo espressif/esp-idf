@@ -9,6 +9,18 @@
 
 namespace nvs {
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
+
 /**
  * The possible blob types. This is a helper definition for template functions.
  */
@@ -28,6 +40,9 @@ enum class ItemType : uint8_t {
     ANY  = NVS_TYPE_ANY
 };
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif
 
 /**
  * @brief A handle allowing nvs-entry related operations on the NVS.
@@ -165,6 +180,21 @@ public:
     virtual esp_err_t get_item_size(ItemType datatype, const char *key, size_t &size) = 0;
 
     /**
+     * @brief Checks whether key exists and optionally returns also data type of associated entry.
+     *
+     * @param[in]     key        Key name. Maximum length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
+     * @param[out]    nvstype    Nvs data type to of entry, if it exists.
+     *
+     * @return      - ESP_OK if NVS entry for key provided was found. Data type will be returned via \c nvstype.
+     *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist.
+     *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL.
+     *              - ESP_FAIL if there is an internal error; most likely due to corrupted
+     *                NVS partition (only if NVS assertion checks are disabled).
+     *              - other error codes from the underlying storage driver.
+     */
+    virtual esp_err_t find_key(const char* key, nvs_type_t &nvstype) = 0;
+
+    /**
      * @brief Erases an entry.
      */
     virtual esp_err_t erase_item(const char* key) = 0;
@@ -209,7 +239,7 @@ protected:
 /**
  * @brief Opens non-volatile storage and returns a handle object.
  *
- * The handle is automatically closed on desctruction. The scope of the handle is the namespace ns_name
+ * The handle is automatically closed on destruction. The scope of the handle is the namespace ns_name
  * in a particular partition partition_name.
  * The parameters partition_name, ns_name and open_mode have the same meaning and restrictions as the parameters
  * part_name, name and open_mode in \ref nvs_open_from_partition, respectively.

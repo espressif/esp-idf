@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/linux/test_apps/linux_test:
+  enable:
+    - if: IDF_TARGET in ["linux"]
+      reason: Test app is specifically for the linux target

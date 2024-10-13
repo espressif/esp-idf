@@ -6,12 +6,12 @@ endif()
 
 idf_component_register(SRCS "cxx_exception_stubs.cpp"
                             "cxx_guards.cpp"
+                            "cxx_init.cpp"
                         # Make sure that pthread is in component list
-                        PRIV_REQUIRES pthread)
+                        PRIV_REQUIRES pthread esp_system)
 
 if(NOT CONFIG_CXX_EXCEPTIONS)
     set(WRAP_FUNCTIONS
-        _Unwind_SetEnableExceptionFdeSorting
         __register_frame_info_bases
         __register_frame_info
         __register_frame
@@ -39,7 +39,9 @@ if(NOT CONFIG_CXX_EXCEPTIONS)
         _Unwind_Resume_or_Rethrow
         _Unwind_Backtrace
         __cxa_call_unexpected
-        __gxx_personality_v0)
+        __gxx_personality_v0
+        __cxa_throw
+        __cxa_allocate_exception)
 
     foreach(wrap ${WRAP_FUNCTIONS})
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
@@ -54,6 +56,7 @@ else()
     target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
 endif()
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxa_guard_dummy")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_init_dummy")
 
 # Force libpthread to appear later than libstdc++ in link line since libstdc++ depends on libpthread.
 # Furthermore, force libcxx to appear later than libgcc because some libgcc unwind code is wrapped, if C++

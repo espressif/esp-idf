@@ -10,7 +10,7 @@
 可用的断点和观察点
 ^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点，所以可以观察 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下文 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个观察点，所以可以观察 {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
 
 
 .. _jtag-debugging-tip-where-breakpoints:
@@ -178,6 +178,8 @@ TCL 语言中为变量赋值的语法是:
       - 设置成 ``0`` 可以关闭对 flash 断点的支持。
     * - ``ESP_SEMIHOST_BASEDIR``
       - 设置 semihosting 在主机端的默认目录。
+    * - ``ESP_ONLYCPU``
+      - 对于多核芯片，将该值设置为 ``1`` 可以仅启用单核调试功能
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars
@@ -231,6 +233,10 @@ JTAG 与 flash 加密和安全引导
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 默认情况下，开启了 flash 加密和（或者）安全引导后，系统在首次启动时，引导程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    请注意，一旦 JTAG 被永久禁用，就无法重新启用以访问 JTAG。但是我们也提供了暂时禁用 (soft disable) JTAG 的选项。有关如何暂时禁用以及重新启用 JTAG，请参考 :ref:`hmac_for_enabling_jtag`。
 
 Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者 flash 加密，仍会保留 JTAG 的功能。
 

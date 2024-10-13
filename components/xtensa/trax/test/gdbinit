@@ -3,7 +3,7 @@ set confirm off
 
 # Start OpenOCD and run to the entry function
 file test.elf
-target remote | openocd -c "log_output openocd.log; set ESP_RTOS none; set ESP_FLASH_SIZE 0; set ESP32_ONLYCPU 1" -f board/esp32-ethernet-kit-3.3v.cfg -c "gdb_port pipe; init; reset halt"
+target remote | openocd -c "log_output openocd.log; set ESP_RTOS none; set ESP_FLASH_SIZE 0; set ESP_ONLYCPU 1" -f board/esp32-ethernet-kit-3.3v.cfg -c "gdb_port pipe; init; reset halt"
 thb entry
 c
 

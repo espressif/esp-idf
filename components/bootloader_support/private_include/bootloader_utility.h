@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,11 @@
 #include "esp_image_format.h"
 #include "bootloader_config.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /**
  * @brief Load partition table.
  *
@@ -16,7 +21,7 @@
  * OTA data partition, factory app partition, and test app partition.
  *
  * @param[out] bs Bootloader state structure used to save read data.
- * @return        Return true if the partition table was succesfully loaded and MD5 checksum is valid.
+ * @return        Return true if the partition table was successfully loaded and MD5 checksum is valid.
  */
 bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
 
@@ -51,8 +56,13 @@ __attribute__((__noreturn__)) void bootloader_utility_load_boot_image(const boot
 /**
  * @brief Load that application which was worked before we go to the deep sleep.
  *
+ * If chip supports the RTC memory:
  * Checks the reboot reason if it is the deep sleep and has a valid partition in the RTC memory
  * then try to load the application which was worked before we go to the deep sleep.
+ *
+ * If chip does not support the RTC memory:
+ * Checks the reboot reason if it is the deep sleep then the partition table is read
+ * to select and load an application which was worked before we go to the deep sleep.
  *
  */
 void bootloader_utility_load_boot_image_from_deep_sleep(void);
@@ -120,3 +130,7 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
  * @return ESP_OK if secure boot digest is generated successfully.
  */
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
+
+#ifdef __cplusplus
+}
+#endif

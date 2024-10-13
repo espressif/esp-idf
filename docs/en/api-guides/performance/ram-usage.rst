@@ -45,24 +45,54 @@ To minimize static memory use:
 
 .. _optimize-stack-sizes:
 
-Reducing Stack Sizes
---------------------
+Determining Stack Size
+----------------------
 
 In FreeRTOS, task stacks are usually allocated from the heap. The stack size for each task is fixed and passed as an argument to :cpp:func:`xTaskCreate`. Each task can use up to its allocated stack size, but using more than this will cause an otherwise valid program to crash, with a stack overflow or heap corruption.
 
 Therefore, determining the optimum sizes of each task stack, minimizing the required size of each task stack, and minimizing the number of task stacks as whole, can all substantially reduce RAM usage.
 
-To determine the optimum size for a particular task stack, users can consider the following methods:
+Configuration Options for Stack Overflow Detection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- At runtime, call the function :cpp:func:`uxTaskGetStackHighWaterMark` with the handle of any task where you think there is unused stack memory. This function returns the minimum lifetime free stack memory in bytes.
+.. only:: SOC_ASSIST_DEBUG_SUPPORTED
+
+    Hardware Stack Guard
+    ~~~~~~~~~~~~~~~~~~~~
+
+    The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
+
+End of Stack Watchpoint
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The End of Stack Watchpoint feature places a CPU watchpoint at the end of the current stack. If that word is overwritten (such as in a stack overflow), a panic is triggered immediately. End of Stack Watchpoints can be enabled via the :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option, but can only be used if debugger watchpoints are not already being used.
+
+Stack Canary Bytes
+~~~~~~~~~~~~~~~~~~
+
+The Stack Canary Bytes feature adds a set of magic bytes at the end of each task's stack, and checks if those magic bytes have changed on every context switch. If those magic bytes are overwritten, a panic is triggered. Stack Canary Bytes can be enabled via the :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` option.
+
+.. note::
+
+    When using the End of Stack Watchpoint or Stack Canary Bytes, it is possible that a stack pointer skips over the watchpoint or canary bytes on a stack overflow and corrupts another region of RAM instead. Thus, these methods cannot detect all stack overflows.
+
+    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+
+        Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
+
+Run-time Methods to Determine Stack Size
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- The :cpp:func:`uxTaskGetStackHighWaterMark` returns the minimum free stack memory of a task throughout the task's lifetime, which gives a good indication of how much stack memory is left unused by a task.
 
   - The easiest time to call :cpp:func:`uxTaskGetStackHighWaterMark` is from the task itself: call ``uxTaskGetStackHighWaterMark(NULL)`` to get the current task's high water mark after the time that the task has achieved its peak stack usage, i.e., if there is a main loop, execute the main loop a number of times with all possible states, and then call :cpp:func:`uxTaskGetStackHighWaterMark`.
   - Often, it is possible to subtract almost the entire value returned here from the total stack size of a task, but allow some safety margin to account for unexpected small increases in stack usage at runtime.
 
-- Call :cpp:func:`uxTaskGetSystemState` at runtime to get a summary of all tasks in the system. This includes their individual stack high watermark values.
-- When debugger watchpoints are not being used, users can set the :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option. This will cause one of the watchpoints to watch the last word of the task's stack. If that word is overwritten (such as in a stack overflow), a panic is triggered immediately. This is slightly more reliable than the default :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` option of ``Check using canary bytes``, because the panic happens immediately, rather than on the next RTOS context switch. Neither option is perfect. In some cases, it is possible that the stack pointer skips the watchpoint or canary bytes and corrupts another region of RAM instead.
+- Call :cpp:func:`uxTaskGetSystemState` to get a summary of all tasks in the system. This includes their individual stack high watermark values.
 
-To reduce the required size of a particular task stack, users can consider the following methods:
+
+Reducing Stack Sizes
+--------------------
 
 - Avoid stack heavy functions. String formatting functions (like ``printf()``) are particularly heavy users of the stack, so any task which does not ever call these can usually have its stack size reduced.
 
@@ -71,12 +101,13 @@ To reduce the required size of a particular task stack, users can consider the f
 - Avoid allocating large variables on the stack. In C, any large structures or arrays allocated as an automatic variable (i.e., default scope of a C declaration) uses space on the stack. To minimize the sizes of these, allocate them statically and/or see if you can save memory by dynamically allocating them from the heap only when they are needed.
 - Avoid deep recursive function calls. Individual recursive function calls do not always add a lot of stack usage each time they are called, but if each function includes large stack-based variables then the overhead can get quite high.
 
-To reduce the total number of tasks, users can consider the following method:
+Reducing Task Count
+^^^^^^^^^^^^^^^^^^^
 
-- Combine tasks. If a particular task is never created, the task's stack is never allocated, thus reducing RAM usage significantly. Unnecessary tasks can typically be removed if those tasks can be combined with another task. In an application, tasks can typically be combined or removed if:
+Combine tasks. If a particular task is never created, the task's stack is never allocated, thus reducing RAM usage significantly. Unnecessary tasks can typically be removed if those tasks can be combined with another task. In an application, tasks can typically be combined or removed if:
 
-   - The work done by the tasks can be structured into multiple functions that are called sequentially.
-   - The work done by the tasks can be structured into smaller jobs that are serialized (via a FreeRTOS queue or similar) for execution by a worker task.
+- The work done by the tasks can be structured into multiple functions that are called sequentially.
+- The work done by the tasks can be structured into smaller jobs that are serialized (via a FreeRTOS queue or similar) for execution by a worker task.
 
 Internal Task Stack Sizes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -155,11 +186,11 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     :esp32: - Disabling :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` frees some IRAM but is only available in some flash configurations, see the configuration item help text.
     :esp32: - If the application uses PSRAM and is based on ESP32 rev. 3 (ECO3), setting :ref:`CONFIG_ESP32_REV_MIN` to ``3`` disables PSRAM bug workarounds, saving 10 KB or more of IRAM.
     - Disabling :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but saves some IRAM.
-    - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.
-    - Disabling :ref:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` prevents spi_slave interrupts from being serviced while writing to flash, which saves some IRAM.
+    :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but saves some IRAM.
+    :SOC_GPSPI_SUPPORTED: - Disabling :ref:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` prevents spi_slave interrupts from being serviced while writing to flash, which saves some IRAM.
     - Setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component saves some IRAM, especially for HAL code who calls ``HAL_ASSERT`` a lot and resides in IRAM.
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
-    - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
+    :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
 
 .. only:: esp32
@@ -171,7 +202,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    To use this option, ESP-IDF should be able to recognize that the new SRAM1 area is also a valid load address for an image segment. If the software bootloader was compiled before this option existed, then the bootloader will not be able to load the app that has code placed in this new extended IRAM area. This would typically happen if you are doing an OTA update, where only the app would be updated.
 
-   If the IRAM section were to be placed in an invalid area, then this would be detected during the bootup process, and result in a failed boot:
+   If the IRAM section were to be placed in an invalid area, then this would be detected during the boot-up process, and result in a failed boot:
 
    .. code-block:: text
 
@@ -182,6 +213,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
       Apps compiled with :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` may fail to boot, if used together with a software bootloader that was compiled before this config option was introduced. If you are using an older bootloader and updating over OTA, please test carefully before pushing any updates.
 
    Any memory that ends up unused for static IRAM will be added to the heap.
+
 
 .. only:: esp32c3
 
@@ -233,3 +265,19 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 .. note::
 
     Other configuration options exist that will increase IRAM usage by moving some functionality into IRAM, usually for performance, but the default option is not to do this. These are not listed here. The IRAM size impact of enabling these options is usually noted in the configuration item help text.
+
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+   Change cache size
+   ^^^^^^^^^^^^^^^^^
+
+   The {IDF_TARGET_NAME} RAM memory available size is dependent on the size of cache. Decreasing the cache size in the Kconfig options listed below will result in increasing the available RAM.
+
+   .. list::
+
+      :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+      :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+      :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,22 @@ esp_err_t esp_supplicant_init(void);
   *          - others: failed
   */
 esp_err_t esp_supplicant_deinit(void);
+
+/**
+ * @brief Disable or enable the caching of Pairwise Master Keys (PMK) in the supplicant.
+ *
+ * This function allows disabling or enabling the caching of Pairwise Master Keys (PMK).
+ * PMK caching is used in Wi-Fi Protected Access (WPA/WPA2/WPA3) networks to speed up the reconnection process
+ * by storing the PMK generated during the initial connection. Disabling PMK caching may result in slightly
+ * longer reconnection times. PMK caching is enabled by default, this configuration has been provided
+ * in case the AP is known not to support PMK caching or has a buggy implementation for PMK caching.
+ *
+ * @param disable Boolean indicating whether to disable (true) or enable (false) PMK caching.
+ * @return
+ *     - ESP_OK: Success
+ *     - An error code if disabling or enabling PMK caching fails.
+ */
+esp_err_t esp_supplicant_disable_pmk_caching(bool disable);
 
 /**
   * @}

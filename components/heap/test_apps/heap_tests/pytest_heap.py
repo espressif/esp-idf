@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -51,9 +50,14 @@ def test_heap_in_flash(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
+@pytest.mark.parametrize(
+    'target',
+    [
+        'esp32',
+        'esp32s2',
+        'esp32s3',
+    ]
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -62,11 +66,16 @@ def test_heap_in_flash(dut: Dut) -> None:
     ]
 )
 def test_heap(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(group='psram')
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
+@pytest.mark.parametrize(
+    'target',
+    [
+        'esp32',
+    ]
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -74,13 +83,10 @@ def test_heap(dut: Dut) -> None:
     ]
 )
 def test_heap_misc_options(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"IRAM_8BIT capability test"')
-    dut.expect_unity_test_output()
-
-    dut.expect_exact("Enter next test, or 'enter' to see menu")
-    dut.write('"test allocation and free function hooks"')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(name=[
+        'IRAM_8BIT capability test',
+        'test allocation and free function hooks'
+    ])
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")
     dut.write('"When enabled, allocation operation failure generates an abort"')
@@ -88,7 +94,12 @@ def test_heap_misc_options(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
+@pytest.mark.parametrize(
+    'target',
+    [
+        'esp32',
+    ]
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -97,26 +108,15 @@ def test_heap_misc_options(dut: Dut) -> None:
     ]
 )
 def test_heap_trace_dump(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[trace-dump][internal]')
-    dut.expect('Internal')
-
-    dut.expect_exact('Enter next test, or \'enter\' to see menu')
-    dut.write('[trace-dump][external]')
-    dut.expect('PSRAM')
-
-    dut.expect_exact('Enter next test, or \'enter\' to see menu')
-    dut.write('[trace-dump][all]')
-    dut.expect('Internal')
-    dut.expect('PSRAM')
-
-    dut.expect_exact('Enter next test, or \'enter\' to see menu')
-    dut.write('[heap-trace]')
-    dut.expect_unity_test_output(timeout=100)
+    dut.run_all_single_board_cases(group='trace-dump&internal')
+    dut.run_all_single_board_cases(group='trace-dump&external')
+    dut.run_all_single_board_cases(group='trace-dump&all')
+    dut.run_all_single_board_cases(group='heap-trace')
 
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='support TBD')  # TODO [ESP32C61] IDF-9858 IDF-10989
 @pytest.mark.parametrize(
     'config',
     [
@@ -124,6 +124,4 @@ def test_heap_trace_dump(dut: Dut) -> None:
     ]
 )
 def test_memory_protection(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[heap][mem_prot]')
-    dut.expect_unity_test_output(timeout=300)
+    dut.run_all_single_board_cases(group='heap&mem_prot', timeout=300)

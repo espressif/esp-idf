@@ -3,8 +3,6 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 1. 内部模块的最小化初始配置；
@@ -12,7 +10,7 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 3. 根据分区表和 ota_data（如果存在）选择需要引导的应用程序 (app) 分区；
 4. 将此应用程序镜像加载到 RAM（IRAM 和 DRAM）中，最后把控制权转交给此应用程序。
 
-引导加载程序位于 flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处。
+引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处。
 
 关于启动过程以及 ESP-IDF 引导加载程序的更多信息，请参考 :doc:`startup`。
 
@@ -27,24 +25,24 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 .. note::
 
-   如果在生产中测试现有产品的 OTA 更新，请确保测试中使用的 ESP-IDF 引导加载程序二进制文件与生产中部署的相同。
+    如果在生产中测试现有产品的 OTA 更新，请确保测试中使用的 ESP-IDF 引导加载程序二进制文件与生产中部署的相同。
 
 .. only:: esp32
 
-   ESP-IDF V2.1 之前的版本
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ESP-IDF V2.1 之前的版本
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
+    与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
 
-   ESP-IDF V3.1 之前的版本
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ESP-IDF V3.1 之前的版本
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
+    ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
 
-   ESP-IDF V5.1 之前的版本
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ESP-IDF V5.1 之前的版本
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   ESP-IDF V5.1 之前的版本构建的引导加载程序不支持 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，不应使用该选项。
+    ESP-IDF V5.1 之前的版本构建的引导加载程序不支持 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，不应使用该选项。
 
 
 配置 SPI flash
@@ -56,7 +54,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 .. only:: esp32
 
-   ESP-IDF V4.0 版本之前的引导加载程序使用其自身的文件头来配置 SPI flash，这意味着无法在 OTA 更新时更改 SPI flash 配置。为了与旧引导加载程序兼容，应用程序在其启动期间使用应用程序文件头中的配置信息重新初始化 flash 配置。
+    ESP-IDF V4.0 版本之前的引导加载程序使用其自身的文件头来配置 SPI flash，这意味着无法在 OTA 更新时更改 SPI flash 配置。为了与旧引导加载程序兼容，应用程序在其启动期间使用应用程序文件头中的配置信息重新初始化 flash 配置。
 
 日志级别
 ---------
@@ -95,7 +93,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     如果应用程序需要知道设备是否触发了出厂重置，可以通过调用 :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state` 函数来确定：
-    
+
     - 如果读取到设备出厂重置状态为 true，会返回状态 true，说明设备已经触发出厂重置。此后会重置状态为 false，以便后续的出厂重置触发判断。
     - 如果读取到设备出厂重置状态为 false，会返回状态 false，说明设备并未触发出厂重置，或者保存此状态的内存区域已失效。
 
@@ -118,7 +116,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 - :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - 设置启动 TEST 分区的管脚编号，该管脚将被配置为输入并启用内部上拉。要触发测试应用，必须在重置时将此管脚拉低或拉高（可配置）。
 
-   释放管脚输入并重启设备后，将重新启用默认的启动顺序，即启动工厂分区或任意 OTA 应用分区槽。
+  释放管脚输入并重启设备后，将重新启用默认的启动顺序，即启动工厂分区或任意 OTA 应用分区槽。
 
 - :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - 设置 GPIO 电平保持的时间，默认为 5 秒。设备重置后，管脚电平必须保持该设定的时间，才能执行恢复出厂设置或引导测试分区（如适用）。
 
@@ -131,14 +129,16 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 请参考 :doc:`OTA API 参考文档 </api-reference/system/ota>` 中的 :ref:`app_rollback` 和 :ref:`anti-rollback` 章节。
 
+.. _bootloader-watchdog:
+
 看门狗
 ----------
 
-默认情况下，硬件 RTC 看门狗定时器在引导加载程序运行时保持运行，如果 9 秒后没有应用程序成功启动，它将自动重置芯片。
+芯片配备两组看门狗定时器：主系统看门狗定时器 (MWDT_WDT) 和 RTC 看门狗定时器 (RTC_WDT)。芯片上电时，两组看门狗定时器都会被启用，但在引导加载程序中，两组看门狗定时器都会被禁用。设置 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` （默认设置）可以重新启用 RTC 看门狗定时器，用于跟踪从启用引导加载程序到调用用户主函数的时间。此期间内 RTC 看门狗定时器始终可用，并且如果在 9 秒内没有应用程序成功启动，则 RTC 看门狗定时器会自动重置芯片。这一功能可以有效防止启动过程中由于电源不稳定而导致的死机。
 
 - 可以通过设置 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 并重新编译引导加载程序来调整超时时间。
-- 可以通过调整应用程序的行为使 RTC 看门狗在应用程序启动后保持启用。看门狗需要由应用程序显示地重置（即“喂狗”），以避免重置。为此，请设置 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序，然后重新编译应用程序。
 - 通过禁用 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` 设置并重新编译引导加载程序，可以在引导加载程序中禁用 RTC 看门狗，但并不建议这样做。
+- 请参阅 :ref:`app-hardware-watchdog-timers`，了解如何在应用程序中使用 RTC_WDT。
 
 .. _bootloader-size:
 
@@ -163,20 +163,26 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 当启用 Secure Boot V2 时，由于引导加载程序最先加载到固定大小的缓冲区中进行验证，对二进制文件大小的绝对限制为 {IDF_TARGET_MAX_BOOTLOADER_SIZE}（不包括 4 KB 签名）。
 
+从深度睡眠中快速启动
+----------------------
+
+引导加载程序有 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 选项，可以减少从深度睡眠中唤醒的时间（有利于降低功耗）。当 :ref:`CONFIG_SECURE_BOOT` 选项禁用时，该选项可用。由于无需镜像校验，唤醒时间减少。
+
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    从深度睡眠中快速启动
-    ----------------------
+    在第一次启动时，引导加载程序将启动的应用程序的地址存储在 RTC FAST 存储器中。而在唤醒过程中，这个地址用于启动而无需任何检查，从而实现了快速加载。
 
-    引导加载程序有 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 选项，可以减少从深度睡眠中唤醒的时间（有利于降低功耗）。当 :ref:`CONFIG_SECURE_BOOT` 选项禁用时，该选项可用。由于无需镜像校验，唤醒时间减少。在第一次启动时，引导加载程序将启动的应用程序的地址存储在 RTC FAST 存储器中。而在唤醒过程中，这个地址用于启动而无需任何检查，从而实现了快速加载。
+.. only:: not SOC_RTC_FAST_MEM_SUPPORTED
+
+    {IDF_TARGET_NAME} 没有 RTC 存储器，因此无法存储正在运行的分区状态。每次唤醒会读取整个分区表，并加载正确的应用程序，而不进行额外的检查，因而使得加载速度更快。
 
 自定义引导加载程序
 ----------------------
 
 用户可以扩展或修改当前的引导加载程序，具体有两种方法：使用钩子实现或重写覆盖当前程序。这两种方法在 ESP-IDF 示例的 :example:`custom_bootloader` 文件夹中都有呈现。
 
-* `bootloader_hooks` 介绍了如何将钩子与引导加载程序初始化连接。
-* `bootloader_override` 介绍了如何覆盖引导加载程序的实现。
+* :example:`custom_bootloader/bootloader_hooks` 介绍了如何将钩子与引导加载程序初始化连接。
+* :example:`custom_bootloader/bootloader_override` 介绍了如何覆盖引导加载程序的实现。
 
 在引导加载程序的代码中，用户不能使用其他组件提供的驱动和函数，如果确实需要，请将该功能的实现部分放在项目的 `bootloader_components` 目录中（注意，这会增加引导加载程序的大小）。
 

@@ -12,7 +12,9 @@ ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建�
 本入门指南介绍了如何通过 **命令提示符** 进行有关操作。不过，安装 ESP-IDF 后，还可以使用 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 或其他支持 CMake 的图形化工具 IDE。
 
 .. note::
+
     限定条件：
+
     - 请注意 ESP-IDF 和 ESP-IDF 工具的安装路径不能超过 90 个字符，安装路径过长可能会导致构建失败。
     - Python 或 ESP-IDF 的安装路径中一定不能包含空格或括号。
     - 除非操作系统配置为支持 Unicode UTF-8，否则 Python 或 ESP-IDF 的安装路径中也不能包括特殊字符（非 ASCII 码字符）
@@ -132,7 +134,6 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
     windows-setup-update
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _CMake: https://cmake.org/download/
 .. _Ninja: https://ninja-build.org/

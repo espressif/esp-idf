@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@ ESP_EVENT_DEFINE_BASE(ESP_HTTP_SERVER_EVENT);
 
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
 {
-    esp_err_t err = esp_event_post(ESP_HTTP_SERVER_EVENT, event_id, event_data, event_data_size, portMAX_DELAY);
+    esp_err_t err = esp_event_post(ESP_HTTP_SERVER_EVENT, event_id, event_data, event_data_size, ESP_HTTP_SERVER_EVENT_POST_TIMEOUT);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post esp_http_server event: %s", esp_err_to_name(err));
     }
@@ -55,7 +55,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
             return httpd_sess_close_lru(hd);
-            /* Returning from this allowes the main server thread to process
+            /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
              * therefore httpd_accept_conn() will be called again, but this time
@@ -101,6 +101,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt SO_KEEPALIVE (%d)"), errno);
             goto exit;
         }
+#ifndef __APPLE__
         if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) < 0) {
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPIDLE (%d)"), errno);
             goto exit;
@@ -113,6 +114,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPCNT (%d)"), errno);
             goto exit;
         }
+#else // __APPLE__
+        if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPALIVE, &keep_alive_idle, sizeof(keep_alive_idle)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPALIVE (%d)"), errno);
+            goto exit;
+        }
+#endif // __APPLE__
     }
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGE(TAG, LOG_FMT("session creation failed"));
@@ -244,6 +251,11 @@ static int httpd_process_session(struct sock_db *session, void *context)
     }
 
     if (session->fd < 0) {
+        return 1;
+    }
+
+    // session is busy in an async task, do not process here.
+    if (session->for_async_req) {
         return 1;
     }
 
@@ -519,7 +531,8 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
                                hd->config.stack_size,
                                hd->config.task_priority,
                                httpd_thread, hd,
-                               hd->config.core_id) != ESP_OK) {
+                               hd->config.core_id,
+                               hd->config.task_caps) != ESP_OK) {
         /* Failed to launch task */
         httpd_delete(hd);
         return ESP_ERR_HTTPD_TASK;

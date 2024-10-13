@@ -25,7 +25,7 @@ System API
     heap_debug
     esp_timer
     internal-unstable
-    :not CONFIG_FREERTOS_UNICORE: ipc
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: ipc
     intr_alloc
     log
     misc_system_api

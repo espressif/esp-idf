@@ -179,6 +179,9 @@ TEST_CASE("wrlock reader waits", "[pthread][rwlock]")
 
     TEST_ASSERT_EQUAL_INT(pthread_rwlock_destroy(&rwlock), 0);
     vQueueDelete(wait_queue);
+
+    // Wait a few ticks to allow freertos idle task to free up memory
+    vTaskDelay(10);
 }
 
 TEST_CASE("wrlock multiple readers wait", "[pthread][rwlock]")

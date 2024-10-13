@@ -124,7 +124,7 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
      * The test case is implemented as follows:
      *      1. SPI Flash space is mmapped by MMU page size chunks, one by one
      *      2. the iteration stops when either whole SPI Flash range is exhausted or the MMU page pool is fully occupied (ESP_ERR_NO_MEM)
-     *      3. the last successfully mmaped MMU page is released, all the rest remains occupied
+     *      3. the last successfully mapped MMU page is released, all the rest remains occupied
      *      4. pseudo partition of DATA type is created over all the SPI Flash capacity
      *      5. esp_partition_get_sha256() is calculated for the partition defined in 4. (printed to standard output on successful completion)
      *      6. all the resources allocated directly by the test are released

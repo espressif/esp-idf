@@ -140,6 +140,29 @@ The following HAL function examples are selected from the Watchdog Timer HAL as 
     // De-initialize the WDT
     void wdt_hal_deinit(wdt_hal_context_t *hal);
 
+.. _hw-abstraction-hal-layer-disable-rtc-wdt:
+
+To Disable RTC_WDT
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+.. _hw-abstraction-hal-layer-feed-rtc-wdt:
+
+To Reset the RTC_WDT Counter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 HAL functions generally have the following characteristics:
 

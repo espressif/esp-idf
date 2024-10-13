@@ -3,4 +3,3 @@ archive: libvfs.a
 entries:
   if VFS_SELECT_IN_RAM = y:
     vfs:esp_vfs_select_triggered_isr (noflash)
-    vfs_uart:select_notif_callback_isr (noflash)

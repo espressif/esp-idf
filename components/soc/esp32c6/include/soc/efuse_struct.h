@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -509,14 +509,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_spi_reserved : RO; bitpos: [13:0]; default: 0;
-         *  Reserved.
+        /** active_hp_dbias : RO; bitpos: [4:0]; default: 0;
+         *  Stores the active hp dbias.
          */
-        uint32_t mac_spi_reserved:14;
-        /** spi_pad_conf_1 : RO; bitpos: [31:14]; default: 0;
+        uint32_t active_hp_dbias:5;
+        /** active_lp_dbias : RO; bitpos: [9:5]; default: 0;
+         *  Stores the active lp dbias.
+         */
+        uint32_t active_lp_dbias:5;
+        /** lslp_hp_dbg : RO; bitpos: [11:10]; default: 0;
+         *  Stores the lslp hp dbg.
+         */
+        uint32_t lslp_hp_dbg:2;
+        /** lslp_hp_dbias : RO; bitpos: [15:12]; default: 0;
+         *  Stores the lslp hp dbias.
+         */
+        uint32_t lslp_hp_dbias:4;
+        /** dslp_lp_dbg : RO; bitpos: [18:16]; default: 0;
+         *  Stores the dslp lp dbg.
+         */
+        uint32_t dslp_lp_dbg:3;
+        /** dslp_lp_dbias : RO; bitpos: [22:19]; default: 0;
+         *  Stores the dslp lp dbias.
+         */
+        uint32_t dslp_lp_dbias:4;
+        /** dbias_vol_gap : RO; bitpos: [27:23]; default: 0;
+         *  Stores the hp and lp dbias vol gap.
+         */
+        uint32_t dbias_vol_gap:5;
+        /** spi_pad_conf_1 : RO; bitpos: [31:28]; default: 0;
          *  Stores the first part of SPI_PAD_CONF.
          */
-        uint32_t spi_pad_conf_1:18;
+        uint32_t spi_pad_conf_1:4;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_2_reg_t;

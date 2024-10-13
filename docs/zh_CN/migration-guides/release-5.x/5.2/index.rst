@@ -7,7 +7,9 @@
     :maxdepth: 1
 
     gcc
+    :SOC_IEEE802154_SUPPORTED: ieee802154
     peripherals
     protocols
+    storage
     system
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** ICM_VER_DATE_REG register
  *  NA
  */
-#define ICM_VER_DATE_REG (DR_REG_ICM_BASE + 0x0)
+#define ICM_VER_DATE_REG (DR_REG_AXI_ICM_BASE + 0x0)
 /** ICM_REG_VER_DATE : R/W; bitpos: [31:0]; default: 539165204;
  *  NA
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** ICM_CLK_EN_REG register
  *  NA
  */
-#define ICM_CLK_EN_REG (DR_REG_ICM_BASE + 0x4)
+#define ICM_CLK_EN_REG (DR_REG_AXI_ICM_BASE + 0x4)
 /** ICM_REG_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  NA
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** ICM_DLOCK_STATUS_REG register
  *  NA
  */
-#define ICM_DLOCK_STATUS_REG (DR_REG_ICM_BASE + 0x8)
+#define ICM_DLOCK_STATUS_REG (DR_REG_AXI_ICM_BASE + 0x8)
 /** ICM_REG_DLOCK_MST : RO; bitpos: [3:0]; default: 0;
  *  Lowest numbered deadlocked master
  */
@@ -71,7 +71,7 @@ extern "C" {
 /** ICM_INT_RAW_REG register
  *  NA
  */
-#define ICM_INT_RAW_REG (DR_REG_ICM_BASE + 0xc)
+#define ICM_INT_RAW_REG (DR_REG_AXI_ICM_BASE + 0xc)
 /** ICM_REG_DLOCK_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  NA
  */
@@ -97,7 +97,7 @@ extern "C" {
 /** ICM_INT_ST_REG register
  *  NA
  */
-#define ICM_INT_ST_REG (DR_REG_ICM_BASE + 0x10)
+#define ICM_INT_ST_REG (DR_REG_AXI_ICM_BASE + 0x10)
 /** ICM_REG_DLOCK_INT_ST : RO; bitpos: [0]; default: 0;
  *  NA
  */
@@ -123,7 +123,7 @@ extern "C" {
 /** ICM_INT_ENA_REG register
  *  NA
  */
-#define ICM_INT_ENA_REG (DR_REG_ICM_BASE + 0x14)
+#define ICM_INT_ENA_REG (DR_REG_AXI_ICM_BASE + 0x14)
 /** ICM_REG_DLOCK_INT_ENA : R/W; bitpos: [0]; default: 1;
  *  NA
  */
@@ -149,7 +149,7 @@ extern "C" {
 /** ICM_INT_CLR_REG register
  *  NA
  */
-#define ICM_INT_CLR_REG (DR_REG_ICM_BASE + 0x18)
+#define ICM_INT_CLR_REG (DR_REG_AXI_ICM_BASE + 0x18)
 /** ICM_REG_DLOCK_INT_CLR : WT; bitpos: [0]; default: 0;
  *  NA
  */
@@ -175,7 +175,7 @@ extern "C" {
 /** ICM_MST_ARB_PRIORITY_REG0_REG register
  *  NA
  */
-#define ICM_MST_ARB_PRIORITY_REG0_REG (DR_REG_ICM_BASE + 0x1c)
+#define ICM_MST_ARB_PRIORITY_REG0_REG (DR_REG_AXI_ICM_BASE + 0x1c)
 /** ICM_REG_CPU_PRIORITY : R/W; bitpos: [3:0]; default: 0;
  *  CPU arbitration priority for command channels between masters connected to sys_icm
  */
@@ -241,7 +241,7 @@ extern "C" {
 /** ICM_SLV_ARB_PRIORITY_REG register
  *  NA
  */
-#define ICM_SLV_ARB_PRIORITY_REG (DR_REG_ICM_BASE + 0x24)
+#define ICM_SLV_ARB_PRIORITY_REG (DR_REG_AXI_ICM_BASE + 0x24)
 /** ICM_REG_L2MEM_PRIORITY : R/W; bitpos: [5:3]; default: 0;
  *  L2MEM arbitration priority for response channels between slaves connected to sys_icm
  */
@@ -285,7 +285,7 @@ extern "C" {
 /** ICM_MST_ARQOS_REG0_REG register
  *  NA
  */
-#define ICM_MST_ARQOS_REG0_REG (DR_REG_ICM_BASE + 0x28)
+#define ICM_MST_ARQOS_REG0_REG (DR_REG_AXI_ICM_BASE + 0x28)
 /** ICM_REG_CPU_ARQOS : R/W; bitpos: [3:0]; default: 0;
  *  NA
  */
@@ -346,7 +346,7 @@ extern "C" {
 /** ICM_MST_AWQOS_REG0_REG register
  *  NA
  */
-#define ICM_MST_AWQOS_REG0_REG (DR_REG_ICM_BASE + 0x30)
+#define ICM_MST_AWQOS_REG0_REG (DR_REG_AXI_ICM_BASE + 0x30)
 /** ICM_REG_CPU_AWQOS : R/W; bitpos: [3:0]; default: 0;
  *  NA
  */
@@ -407,7 +407,7 @@ extern "C" {
 /** ICM_SYS_ADDRHOLE_ADDR_REG register
  *  icm sys addr hole address registers
  */
-#define ICM_SYS_ADDRHOLE_ADDR_REG (DR_REG_ICM_BASE + 0x38)
+#define ICM_SYS_ADDRHOLE_ADDR_REG (DR_REG_AXI_ICM_BASE + 0x38)
 /** ICM_REG_ICM_SYS_ADDRHOLE_ADDR : RO; bitpos: [31:0]; default: 0;
  *  NA
  */
@@ -419,9 +419,9 @@ extern "C" {
 /** ICM_SYS_ADDRHOLE_INFO_REG register
  *  NA
  */
-#define ICM_SYS_ADDRHOLE_INFO_REG (DR_REG_ICM_BASE + 0x3c)
+#define ICM_SYS_ADDRHOLE_INFO_REG (DR_REG_AXI_ICM_BASE + 0x3c)
 /** ICM_REG_ICM_SYS_ADDRHOLE_ID : RO; bitpos: [7:0]; default: 0;
- *  master id = 4-bit CID + 4-bit  UID(refer to related IP) . CID is used to verfiy
+ *  master id = 4-bit CID + 4-bit  UID(refer to related IP) . CID is used to verify
  *  master in icm. CID: 4'h1: cache, 4'h5 gdma mst1, 4'h6: gdma mst2, 4'h8: axi pdma,
  *  4'ha: dma2d, 4'hb: h264 mst1, 4'hc: h264 mst2.
  */
@@ -448,7 +448,7 @@ extern "C" {
 /** ICM_CPU_ADDRHOLE_ADDR_REG register
  *  icm cpu addr hole address registers
  */
-#define ICM_CPU_ADDRHOLE_ADDR_REG (DR_REG_ICM_BASE + 0x40)
+#define ICM_CPU_ADDRHOLE_ADDR_REG (DR_REG_AXI_ICM_BASE + 0x40)
 /** ICM_REG_ICM_CPU_ADDRHOLE_ADDR : RO; bitpos: [31:0]; default: 0;
  *  It is illegall access address if reg_icm_cpu_addrhole_secure is 1. Otherwise, it
  *  the address without permission to access.
@@ -461,7 +461,7 @@ extern "C" {
 /** ICM_CPU_ADDRHOLE_INFO_REG register
  *  NA
  */
-#define ICM_CPU_ADDRHOLE_INFO_REG (DR_REG_ICM_BASE + 0x44)
+#define ICM_CPU_ADDRHOLE_INFO_REG (DR_REG_AXI_ICM_BASE + 0x44)
 /** ICM_REG_ICM_CPU_ADDRHOLE_ID : RO; bitpos: [4:0]; default: 0;
  *  master id: 5'h0: hp core0, 5'h1:hp core1, 5'h2:lp core, 5'h3:usb otg11, 5'h4:
  *  regdma, 5'h5: gmac, 5'h5 sdmmc, 5'h7: usbotg20, 5'h8: trace0, 5'h9: trace1, 5'ha
@@ -489,7 +489,7 @@ extern "C" {
 /** ICM_DLOCK_TIMEOUT_REG register
  *  NA
  */
-#define ICM_DLOCK_TIMEOUT_REG (DR_REG_ICM_BASE + 0x48)
+#define ICM_DLOCK_TIMEOUT_REG (DR_REG_AXI_ICM_BASE + 0x48)
 /** ICM_REG_DLOCK_TIMEOUT : R/W; bitpos: [12:0]; default: 2048;
  *  if no response until reg_dlock_timeout bus clock cycle, deadlock will happen
  */
@@ -501,7 +501,7 @@ extern "C" {
 /** ICM_RDN_ECO_CS_REG register
  *  NA
  */
-#define ICM_RDN_ECO_CS_REG (DR_REG_ICM_BASE + 0x50)
+#define ICM_RDN_ECO_CS_REG (DR_REG_AXI_ICM_BASE + 0x50)
 /** ICM_REG_RDN_ECO_EN : R/W; bitpos: [0]; default: 0;
  *  NA
  */
@@ -520,7 +520,7 @@ extern "C" {
 /** ICM_RDN_ECO_LOW_REG register
  *  NA
  */
-#define ICM_RDN_ECO_LOW_REG (DR_REG_ICM_BASE + 0x54)
+#define ICM_RDN_ECO_LOW_REG (DR_REG_AXI_ICM_BASE + 0x54)
 /** ICM_RDN_ECO_LOW : R/W; bitpos: [31:0]; default: 0;
  *  NA
  */
@@ -532,7 +532,7 @@ extern "C" {
 /** ICM_RDN_ECO_HIGH_REG register
  *  NA
  */
-#define ICM_RDN_ECO_HIGH_REG (DR_REG_ICM_BASE + 0x58)
+#define ICM_RDN_ECO_HIGH_REG (DR_REG_AXI_ICM_BASE + 0x58)
 /** ICM_RDN_ECO_HIGH : R/W; bitpos: [31:0]; default: 4294967295;
  *  NA
  */

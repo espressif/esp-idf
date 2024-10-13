@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,12 @@
 #include "esp_partition.h"
 #include "esp_flash.h"
 #include "esp_timer.h"
+
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#define EXAMPLE_TIMER_ALERT_TIME    (1 * 3 * 1000)
+#else
+#define EXAMPLE_TIMER_ALERT_TIME    (1 * 10 * 1000)
+#endif
 
 static void oneshot_timer_callback(void* arg);
 static void cb_in_psram(void);
@@ -41,14 +47,14 @@ void app_main(void)
     ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
     ESP_ERROR_CHECK(esp_flash_erase_region(part->flash_chip, part->address, part->size));
 
-    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, 1 * 10 * 1000));
+    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, EXAMPLE_TIMER_ALERT_TIME));
     ESP_ERROR_CHECK(esp_flash_erase_region(part->flash_chip, part->address, part->size));
 
     ESP_LOGI(TAG, "callback(in PSRAM) response time: %d us", time_cb_end - time_cb_start);
 
     instructions_in_psram = false;
 
-    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, 1 * 10 * 1000));
+    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, EXAMPLE_TIMER_ALERT_TIME));
     ESP_ERROR_CHECK(esp_flash_erase_region(part->flash_chip, part->address, part->size));
 
     ESP_LOGI(TAG, "callback(in IRAM) response time: %d us", time_cb_end - time_cb_start);

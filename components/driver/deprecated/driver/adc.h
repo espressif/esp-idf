@@ -278,7 +278,6 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
 #endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
 
-
 /*---------------------------------------------------------------
             ADC DMA Read Setting
 ---------------------------------------------------------------*/
@@ -286,7 +285,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
 /**
  * @brief Initialize the Digital ADC.
  *
- * @param init_config Pointer to Digital ADC initilization config. Refer to ``adc_digi_init_config_t``.
+ * @param init_config Pointer to Digital ADC initialization config. Refer to ``adc_digi_init_config_t``.
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
@@ -341,7 +340,7 @@ esp_err_t adc_digi_deinitialize(void);
 /**
  * @brief Setting the digital controller.
  *
- * @param config Pointer to digital controller paramter. Refer to ``adc_digi_config_t``.
+ * @param config Pointer to digital controller parameter. Refer to ``adc_digi_config_t``.
  *
  * @return
  *      - ESP_ERR_INVALID_STATE Driver state is invalid.

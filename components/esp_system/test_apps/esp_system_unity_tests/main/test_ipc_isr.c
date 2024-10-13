@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,9 @@
 #ifdef CONFIG_ESP_IPC_ISR_ENABLE
 
 #if CONFIG_IDF_TARGET_ARCH_RISCV
-    #define STORE_ERROR         "Store access fault"
+#define STORE_ERROR         "Store access fault"
 #else
-    #define STORE_ERROR         "StoreProhibited"
+#define STORE_ERROR         "StoreProhibited"
 #endif
 
 void esp_test_ipc_isr_callback(void* arg);
@@ -33,7 +33,6 @@ TEST_CASE("Test ipc_isr blocking IPC function calls a ASM function", "[ipc]")
 }
 
 void esp_test_ipc_isr_get_other_core_id(void* arg);
-
 
 TEST_CASE("Test ipc_isr blocking IPC function calls get_other_core_id", "[ipc]")
 {
@@ -62,7 +61,7 @@ TEST_CASE("Test ipc_isr blocking IPC function calls get_cycle_count_other_cpu", 
 {
     int val = 0x5a5a;
     esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, &val);
-    esp_rom_printf("CCOUNT CPU0 = %d\n", esp_cpu_get_cycle_count());
+    esp_rom_printf("CCOUNT CPU0 = %" PRIu32 "\n", esp_cpu_get_cycle_count());
     esp_rom_printf("CCOUNT CPU1 = %d\n", val);
 }
 

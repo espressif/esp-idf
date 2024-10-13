@@ -6,7 +6,7 @@
 OTA 流程概览
 ------------
 
-OTA 升级机制可以让设备在固件正常运行时根据接收数据（如通过 Wi-Fi 或蓝牙）进行自我更新。
+OTA 升级机制可以让设备在固件正常运行时根据接收数据（如通过 Wi-Fi、蓝牙或以太网）进行自我更新。
 
 要运行 OTA 机制，需配置设备的 :doc:`../../api-guides/partition-tables`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
 
@@ -36,9 +36,33 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
 * 应用程序出现严重错误，无法继续工作，必须回滚到此前的版本，:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 将正在运行的版本标记为 ``ESP_OTA_IMG_INVALID`` 然后复位。引导加载程序不会选取此版本，而是启动此前正常运行的版本。
 * 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，则无需调用函数便可复位，回滚至之前的应用版本。
 
+可使用以下代码检测 OTA 更新后应用程序的首次启动。首次启动时，应用程序会检查其状态并执行检测。如果检测成功，应用程序调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数，确认应用运行成功。如果检测失败，应用程序调用 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 函数，回滚至之前的应用版本。
+
+如果应用程序由于中止、重启或掉电无法启动或运行上述代码，引导加载程序在下一次启动尝试中会将该应用程序的状态标记为 ``ESP_OTA_IMG_INVALID``，并回滚至之前的应用版本。
+
+.. code:: c
+
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            // run diagnostic function ...
+            bool diagnostic_is_ok = diagnostic();
+            if (diagnostic_is_ok) {
+                ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "Diagnostics failed! Start rollback to the previous version ...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        }
+    }
+
+请查看 :example:`system/ota/native_ota_example` 获取包含上述代码片段的完整示例。
+
 .. note::
 
-  应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (ota_0, ota_1, ...)。
+  应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (``ota_0``, ``ota_1``, ...)。
 
 应用程序 OTA 状态
 ^^^^^^^^^^^^^^^^^
@@ -56,7 +80,7 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
                                则仅会选取一次。在引导加载程序中，状态立即变为
                                ``ESP_OTA_IMG_PENDING_VERIFY``。
  ESP_OTA_IMG_PENDING_VERIFY    如使能 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则不会选取，状态变为``ESP_OTA_IMG_ABORTED``。
+                               则不会选取，状态变为 ``ESP_OTA_IMG_ABORTED``。
 =============================  ========================================================
 
 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能（默认情况），则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 不会使用。
@@ -76,7 +100,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 * 引导加载程序选取一个新版应用程序来引导，这样应用程序状态就不会设置为 ``ESP_OTA_IMG_INVALID`` 或 ``ESP_OTA_IMG_ABORTED``。
 * 引导加载程序检查所选取的新版应用程序，若状态设置为 ``ESP_OTA_IMG_NEW``，则写入 ``ESP_OTA_IMG_PENDING_VERIFY``。该状态表示，需确认应用程序的可操作性，如不确认，发生重启，则状态会重写为 ``ESP_OTA_IMG_ABORTED`` （见上文），该应用程序不可再启动，将回滚至上一版本。
 * 新版应用程序启动，应进行自测。
-* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（ ``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
+* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
 * 若未通过自测，则调用函数 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`，回滚至之前能正常工作的应用程序版本，同时将无效的新版本应用程序设置为 ``ESP_OTA_IMG_INVALID``。
 * 如果新版应用程序可操作性没有确认，则状态一直为 ``ESP_OTA_IMG_PENDING_VERIFY``。下一次启动时，状态变更为 ``ESP_OTA_IMG_ABORTED``，阻止其再次启动，之后回滚到之前的版本。
 
@@ -153,9 +177,9 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
                     // check current version with downloading
                     if (esp_efuse_check_secure_version(new_app_info.secure_version) == false) {
-                    	ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
-                    	http_cleanup(client);
-                    	task_fatal_error();
+                      ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
+                      http_cleanup(client);
+                      task_fatal_error();
                     }
 
                     image_header_was_checked = true;
@@ -197,6 +221,21 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 
   具体可参考 :ref:`signed-app-verify`。
 
+OTA 性能调优
+------------
+
+- 在写操作时，与按默认机制逐块顺序擦除相比，一次性擦除更新分区可能有助于减少固件升级所需的时间。要启用此功能，请在 :cpp:type:`esp_https_ota_config_t` 结构体中将 :cpp:member:`esp_https_ota_config_t::bulk_flash_erase` 设置为 true。如果要擦除的分区过大，可能会触发任务看门狗。建议在这种情况下增加看门狗超时时间。
+
+  .. code-block:: c
+
+      esp_https_ota_config_t ota_config = {
+          .bulk_flash_erase = true,
+      }
+
+- 调整 :cpp:member:`esp_https_ota_config_t::http_config::buffer_size` 也有助于 OTA 性能调优。
+- :cpp:type:`esp_https_ota_config_t` 结构体中有一个成员 :cpp:member:`esp_https_ota_config_t::buffer_caps`，可以用来指定在为 OTA 缓冲区分配内存时使用的内存类型。当启用 SPIRAM 时，将该值配置为 MALLOC_CAP_INTERNAL 可能有助于 OTA 性能调优。
+- 请参阅 :doc:`/api-guides/performance/speed` 中的 **提高网络速度** 小节获取详细信息。
+
 
 OTA 工具 ``otatool.py``
 ----------------------------
@@ -232,7 +271,7 @@ Python API
 
 .. code-block:: python
 
-  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  # 创建 parttool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
   target = OtatoolTarget("/dev/ttyUSB1")
 
 现在，可使用创建的 `OtatoolTarget` 在目标设备上完成操作：
@@ -258,7 +297,7 @@ Python API
 命令行界面
 ^^^^^^^^^^
 
-``otatool.py`` 的命令行界面具有如下结构：
+``otatool.py`` 的命令行界面具有如下结构体：
 
 .. code-block:: bash
 
@@ -302,10 +341,10 @@ Python API
 * :doc:`../peripherals/spi_flash/index`
 * :doc:`esp_https_ota`
 
-应用程序示例
+应用示例
 ------------
 
-端对端的 OTA 固件升级示例请参考 :example:`system/ota`。
+- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到出厂分区等操作。有关更多信息，请参考 :example_file:`system/ota/otatool/README.md`。
 
 API 参考
 --------
@@ -322,4 +361,3 @@ OTA 升级失败排查
     :figclass: align-center
 
     OTA 升级失败时如何排查（点击放大）
-

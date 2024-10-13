@@ -44,7 +44,7 @@ function(__component_get_target var name_or_alias)
 
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
-    # Assume first that the paramters is an alias.
+    # Assume first that the parameters is an alias.
     string(REPLACE "::" "_" name_or_alias "${name_or_alias}")
     set(component_target ___${name_or_alias})
 
@@ -138,7 +138,7 @@ endfunction()
 # Add a component to process in the build. The components are keeped tracked of in property
 # __COMPONENT_TARGETS in component target form.
 #
-function(__component_add component_dir prefix)
+function(__component_add component_dir prefix component_source)
     # For each component, two entities are created: a component target and a component library. The
     # component library is created during component registration (the actual static/interface library).
     # On the other hand, component targets are created early in the build
@@ -186,14 +186,18 @@ function(__component_add component_dir prefix)
     __component_set_property(${component_target} COMPONENT_NAME ${component_name})
     __component_set_property(${component_target} COMPONENT_DIR ${component_dir})
     __component_set_property(${component_target} COMPONENT_ALIAS ${component_alias})
+    if(component_source)
+        __component_set_property(${component_target} COMPONENT_SOURCE ${component_source})
+    endif()
 
     __component_set_property(${component_target} __PREFIX ${prefix})
 
     # Set Kconfig related properties on the component
     __kconfig_component_init(${component_target})
 
-    # set BUILD_COMPONENT_DIRS build property
+    # these two properties are used to keep track of the components known to the build system
     idf_build_set_property(BUILD_COMPONENT_DIRS ${component_dir} APPEND)
+    idf_build_set_property(BUILD_COMPONENT_TARGETS ${component_target} APPEND)
 endfunction()
 
 #
@@ -375,10 +379,14 @@ endmacro()
 function(idf_component_get_property var component property)
     cmake_parse_arguments(_ "GENERATOR_EXPRESSION" "" "" ${ARGN})
     __component_get_target(component_target ${component})
-    if(__GENERATOR_EXPRESSION)
-        set(val "$<TARGET_PROPERTY:${component_target},${property}>")
+    if("${component_target}" STREQUAL "")
+        message(FATAL_ERROR "Failed to resolve component '${component}'")
     else()
-        __component_get_property(val ${component_target} ${property})
+        if(__GENERATOR_EXPRESSION)
+            set(val "$<TARGET_PROPERTY:${component_target},${property}>")
+        else()
+            __component_get_property(val ${component_target} ${property})
+        endif()
     endif()
     set(${var} "${val}" PARENT_SCOPE)
 endfunction()
@@ -397,6 +405,9 @@ endfunction()
 function(idf_component_set_property component property val)
     cmake_parse_arguments(_ "APPEND" "" "" ${ARGN})
     __component_get_target(component_target ${component})
+    if(NOT component_target)
+        message(FATAL_ERROR "Failed to resolve component '${component}'")
+    endif()
 
     if(__APPEND)
         __component_set_property(${component_target} ${property} "${val}" APPEND)

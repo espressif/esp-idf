@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,6 @@
 
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform_util.h"
-
-#define ECP_VALIDATE_RET( cond )    \
-    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA )
-#define ECP_VALIDATE( cond )        \
-    MBEDTLS_INTERNAL_VALIDATE( cond )
 
 #if defined(MBEDTLS_ECP_MUL_ALT) || defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
 
@@ -86,6 +81,10 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
     int res;
     ecc_point_t point;
 
+    if (grp == NULL || pt == NULL) {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
+
     if (grp->id != MBEDTLS_ECP_DP_SECP192R1 && grp->id != MBEDTLS_ECP_DP_SECP256R1) {
 #if defined(MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK)
         return mbedtls_ecp_check_pubkey_soft(grp, pt);
@@ -94,12 +93,10 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
 #endif
     }
 
-    ECP_VALIDATE_RET( grp != NULL );
-    ECP_VALIDATE_RET( pt  != NULL );
-
     /* Must use affine coordinates */
-    if( mbedtls_mpi_cmp_int( &pt->MBEDTLS_PRIVATE(Z), 1 ) != 0 )
+    if (mbedtls_mpi_cmp_int( &pt->MBEDTLS_PRIVATE(Z), 1 ) != 0 ) {
         return( MBEDTLS_ERR_ECP_INVALID_KEY );
+    }
 
     mbedtls_platform_zeroize((void *)&point, sizeof(ecc_point_t));
 

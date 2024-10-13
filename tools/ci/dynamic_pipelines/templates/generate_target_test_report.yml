@@ -1,0 +1,18 @@
+generate_pytest_report:
+  stage: .post
+  tags: [build, shiny]
+  image: $ESP_ENV_IMAGE
+  when: always
+  artifacts:
+    paths:
+      - target_test_report.html
+      - failed_cases.html
+      - skipped_cases.html
+      - succeeded_cases.html
+    expire_in: 1 week
+    when: always
+
+  script:
+      - python tools/ci/get_known_failure_cases_file.py
+      - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type target_test
+      - python tools/ci/previous_stage_job_status.py --stage target_test

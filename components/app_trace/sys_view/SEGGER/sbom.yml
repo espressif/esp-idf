@@ -1,0 +1,6 @@
+name: 'SystemView'
+version: '3.42'
+cpe: cpe:2.3:a:segger:systemview:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: SEGGER Microcontroller GmbH'
+description: Real-time recording and visualization tool for embedded systems.

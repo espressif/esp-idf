@@ -112,9 +112,7 @@ GPIO 捆绑包操作
 
     有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **处理器指令拓展 (PIE)（稍后发布）** [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
-
-    通过汇编操作专用 GPIO 的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/dedicated_gpio` 目录下。示例演示了如何通过汇编操作专用 GPIO 来模拟 UART、I2C 和 SPI 总线。
+.. only:: not (esp32s2 or esp32s3)
 
     有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ESP-RISC-V CPU** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
@@ -152,12 +150,20 @@ GPIO 捆绑包操作
         // 等待完成信号量
         xSemaphoreTake(sem, portMAX_DELAY);
 
-.. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT
 
-    应用示例
-    -------------------
+应用示例
+--------
 
-    基于专用 GPIO 的矩阵键盘示例：:example:`peripherals/gpio/matrix_keyboard`.
+.. list::
+
+    * 通过汇编代码使用专用的 CPU 指令来操作 GPIO 以模拟 UART/I2C/SPI 协议（Bit Banging） :example:`peripherals/dedicated_gpio`.
+    :SOC_DEDIC_GPIO_HAS_INTERRUPT: * :example:`peripherals/gpio/matrix_keyboard` 演示了如何使用专用 GPIO API 驱动矩阵键盘，例如改变 GPIO 的电平、触发边缘中断以及读取 GPIO 的电平。
+    * :example:`peripherals/dedicated_gpio/soft_i2c` 演示了如何配置和使用专用/快速 GPIO 来模拟 I2C 主机设备、执行总线上的读写操作、以及通过将某些函数放在 IRAM 中来满足严格的时序要求。
+    * :example:`peripherals/dedicated_gpio/soft_uart` 演示了如何使用专用/快速 GPIO 在 {IDF_TARGET_NAME} 上模拟 UART 总线。可以通过 TX 管脚和 RX 管脚在 UART 总线上发送和接收字符，还可以通过 `menuconfig` 来调整波特率和其他配置。
+
+    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2 or esp32p4
+
+        * :example:`peripherals/dedicated_gpio/soft_spi` 演示了如何配置和使用专用/快速 GPIO，在 {IDF_TARGET_NAME} 上模拟全双工 SPI 总线。
 
 
 API 参考

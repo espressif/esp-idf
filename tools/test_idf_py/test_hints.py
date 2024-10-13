@@ -149,7 +149,7 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         self.projectdir.mkdir(parents=True)
         (self.projectdir / 'CMakeLists.txt').write_text((
             'cmake_minimum_required(VERSION 3.16)\n'
-            f'set(EXTRA_COMPONENT_DIRS "{components}")\n'
+            f'set(EXTRA_COMPONENT_DIRS "{components.as_posix()}")\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
             'project(foo)'))
@@ -164,7 +164,7 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         # when components are nested. The main component should be identified as the
         # real source, not the component1 component.
         output = run_idf(['app'], self.projectdir)
-        self.assertNotIn('BUG: esp_timer.h found in component esp_timer which is already in the requirements list of component1', output)
+        self.assertNotIn('esp_timer.h found in component esp_timer which is already in the requirements list of component1', output)
         self.assertIn('To fix this, add esp_timer to PRIV_REQUIRES list of idf_component_register call', output)
 
     def tearDown(self) -> None:

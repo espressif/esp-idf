@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -27,6 +27,8 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "sd_pwr_ctrl.h"
+#include "esp_dma_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,7 +80,7 @@ typedef struct {
     uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
-    uint32_t fule_support: 1;       /*!< SD FULE (Full User Area Logical Erase) feature support */
+    uint32_t fule_support: 1;       /*!< SD FILE (Full User Area Logical Erase) feature support */
     uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
     uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
     uint32_t reserved: 20;          /*!< reserved for future expansion */
@@ -175,7 +177,12 @@ typedef struct {
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
 #define SDMMC_HOST_FLAG_DDR     BIT(4)      /*!< host supports DDR mode for SD/MMC */
-#define SDMMC_HOST_FLAG_DEINIT_ARG BIT(5)      /*!< host `deinit` function called with the slot argument */
+#define SDMMC_HOST_FLAG_DEINIT_ARG BIT(5)   /*!< host `deinit` function called with the slot argument */
+#define SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF \
+                                BIT(6)      /*!< Allocate internal buffer of 512 bytes that meets DMA's requirements.
+                                                 Currently this is only used by the SDIO driver. Set this flag when
+                                                 using SDIO CMD53 byte mode, with user buffer that is behind the cache
+                                                 or not aligned to 4 byte boundary. */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -201,6 +208,9 @@ typedef struct {
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
+    void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
+    esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
 } sdmmc_host_t;
 
 /**

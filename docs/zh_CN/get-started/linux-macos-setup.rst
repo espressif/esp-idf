@@ -216,9 +216,19 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 自定义工具安装路径
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户的根目录中，即 Linux 系统中的 ``$HOME/.espressif`` 目录。可以选择将工具安装到其他目录中，但请在运行安装脚本前，重新设置环境变量 ``IDF_TOOLS_PATH``。注意，请确保用户账号已经具备了读写该路径的权限。
+本步骤中介绍的脚本将 ESP-IDF 所需的编译工具默认安装在用户的根目录中，即 Linux 系统中的 ``$HOME/.espressif`` 目录。可以选择将工具安装到其他目录中，**但请在运行安装脚本前，导出环境变量 IDF_TOOLS_PATH**。注意，请确保用户账号已经具备了读写该路径的权限。
 
-如果修改了 ``IDF_TOOLS_PATH`` 变量，请确保该变量在每次执行安装脚本（``install.bat``、``install.ps1`` 或 ``install.sh``）和导出脚本（``export.bat``、``export.ps1`` 或 ``export.sh``）均保持一致。
+.. code-block:: bash
+
+    export IDF_TOOLS_PATH="$HOME/required_idf_tools_path"
+    ./install.sh
+
+    . ./export.sh
+
+如果修改了 ``IDF_TOOLS_PATH`` 变量，请在运行任意 ESP-IDF 工具或脚本前，将该变量导出到环境变量中。
+
+.. note::
+    如未导出环境变量，大多数 shell 将不支持在变量赋值中使用 ``IDF_TOOLS_PATH``，例如 ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``。因为即便在源脚本中导出或修改了该变量，当前的执行环境也不受变量赋值影响。
 
 .. _get-started-set-up-env:
 
@@ -294,7 +304,6 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

@@ -5,8 +5,7 @@ components/esp_lcd/test_apps/i2c_lcd:
     - if: SOC_I2C_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2c/**/*
+    - esp_driver_i2c
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
@@ -30,6 +29,16 @@ components/esp_lcd/test_apps/i80_lcd:
     - esp_driver_i2s
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
+
+components/esp_lcd/test_apps/mipi_dsi_lcd:
+  depends_components:
+    - esp_lcd
+  disable:
+    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners, DSI can't work without an LCD connected
 
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:

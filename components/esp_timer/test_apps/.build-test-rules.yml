@@ -1,7 +1,0 @@
-# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
-
-components/esp_timer/test_apps:
-  disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"] # Sleep support IDF-6267, IDF-7528
-      temporary: true
-      reason: Not supported yet

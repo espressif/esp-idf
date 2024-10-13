@@ -99,7 +99,7 @@ ESP-BLE-MESH GATT Proxy Server
 ESP-BLE-MESH Models API Reference
 ---------------------------------
 
-This section contains ESP-BLE-MESH Model related APIs, event types, event parameters, etc. 
+This section contains ESP-BLE-MESH Model related APIs, event types, event parameters, etc.
 
 There are six categories of models:
 
@@ -225,4 +225,3 @@ Composition and Metadata
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. include-build-file:: inc/esp_ble_mesh_cm_data_api.inc
-

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ extern "C" {
 #define ESP_ERR_ESPNOW_INTERNAL     (ESP_ERR_ESPNOW_BASE + 6) /*!< Internal error */
 #define ESP_ERR_ESPNOW_EXIST        (ESP_ERR_ESPNOW_BASE + 7) /*!< ESPNOW peer has existed */
 #define ESP_ERR_ESPNOW_IF           (ESP_ERR_ESPNOW_BASE + 8) /*!< Interface error */
+#define ESP_ERR_ESPNOW_CHAN         (ESP_ERR_ESPNOW_BASE + 9) /*!< Channel error */
 
 #define ESP_NOW_ETH_ALEN             6         /*!< Length of ESPNOW peer MAC address */
 #define ESP_NOW_KEY_LEN              16        /*!< Length of ESPNOW peer local master key */
@@ -48,7 +49,9 @@ extern "C" {
 #define ESP_NOW_MAX_TOTAL_PEER_NUM   20        /*!< Maximum number of ESPNOW total peers */
 #define ESP_NOW_MAX_ENCRYPT_PEER_NUM 6         /*!< Maximum number of ESPNOW encrypted peers */
 
-#define ESP_NOW_MAX_DATA_LEN         250       /*!< Maximum length of ESPNOW data which is sent very time */
+#define ESP_NOW_MAX_IE_DATA_LEN      250       /**< Maximum data length in a vendor-specific element */
+#define ESP_NOW_MAX_DATA_LEN  ESP_NOW_MAX_IE_DATA_LEN   /**< Maximum length of data sent in each ESPNOW transmission for v1.0 */
+#define ESP_NOW_MAX_DATA_LEN_V2      1490      /**< Maximum length of data sent in each ESPNOW transmission for v2.0 */
 
 /**
  * @brief Status of sending ESPNOW data .
@@ -134,7 +137,12 @@ esp_err_t esp_now_init(void);
 esp_err_t esp_now_deinit(void);
 
 /**
-  * @brief     Get the version of ESPNOW
+  * @brief     Get the version of ESPNOW. Currently, ESPNOW supports two versions: v1.0 and v2.0.
+  *
+  *            The v2.0 devices are capable of receiving packets from both v2.0 and v1.0 devices. In contrast, v1.0 devices can only receive packets from other v1.0 devices.
+  *            However, v1.0 devices can receive v2.0 packets if the packet length is less than or equal to ESP_NOW_MAX_IE_DATA_LEN.
+  *            For packets exceeding this length, the v1.0 devices will either truncate the data to the first ESP_NOW_MAX_IE_DATA_LEN bytes or discard the packet entirely.
+  *            For detailed behavior, please refer to the documentation corresponding to the specific IDF version.
   *
   * @param     version  ESPNOW version
   *
@@ -205,7 +213,8 @@ esp_err_t esp_now_unregister_send_cb(void);
   *          - ESP_ERR_ESPNOW_INTERNAL : internal error
   *          - ESP_ERR_ESPNOW_NO_MEM : out of memory, when this happens, you can delay a while before sending the next data
   *          - ESP_ERR_ESPNOW_NOT_FOUND : peer is not found
-  *          - ESP_ERR_ESPNOW_IF : current WiFi interface doesn't match that of peer
+  *          - ESP_ERR_ESPNOW_IF : current Wi-Fi interface doesn't match that of peer
+  *          - ESP_ERR_ESPNOW_CHAN: current Wi-Fi channel doesn't match that of peer
   */
 esp_err_t esp_now_send(const uint8_t *peer_addr, const uint8_t *data, size_t len);
 
@@ -266,7 +275,7 @@ esp_err_t esp_now_mod_peer(const esp_now_peer_info_t *peer);
   *    - others: failed
   */
 esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate)
-      __attribute__((deprecated("This API can be only used when rate is non-HE rate, \
+__attribute__((deprecated("This API can be only used when rate is non-HE rate, \
                                 please use esp_now_set_peer_rate_config if you want full support of the rate.")));
 
 /**

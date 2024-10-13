@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,6 @@
 #include <assert.h>
 #include <string.h>
 #include <inttypes.h>
-#if __has_include(<bsd/string.h>)
-// for strlcpy
-#include <bsd/string.h>
-#endif
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -235,6 +231,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_END) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -248,6 +245,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                          (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size,
                          (int) (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -255,6 +253,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_SET) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -283,7 +282,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
     uint8_t *part_ptr = s_spiflash_mem_file_buf + ESP_PARTITION_TABLE_OFFSET;
 
     ESP_LOGV(TAG, "");
-    ESP_LOGV(TAG, "Partition table sucessfully imported, partitions found:");
+    ESP_LOGV(TAG, "Partition table successfully imported, partitions found:");
 
     while (true) {
         esp_partition_info_t *p_part_item = (esp_partition_info_t *)part_ptr;
@@ -393,19 +392,21 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
     // hook gathers statistics and can emulate power-off
     // in case of power - off it decreases new_size to the number of bytes written
-    // before power event occured
+    // before power event occurred
     if (!ESP_PARTITION_HOOK_WRITE(dst_addr, &new_size)) {
         ret =  ESP_ERR_FLASH_OP_FAIL;
     }
 
     for (size_t x = 0; x < new_size; x++) {
 
+#ifdef CONFIG_ESP_PARTITION_ERASE_CHECK
         // Check if address to be written was erased first
         if((~((uint8_t *)dst_addr)[x] & ((uint8_t *)src)[x]) != 0) {
             ESP_LOGW(TAG, "invalid flash operation detected");
             ret = ESP_ERR_FLASH_OP_FAIL;
             break;
         }
+#endif // CONFIG_ESP_PARTITION_ERASE_CHECK
 
         // AND with destination byte (to emulate real NOR FLASH behavior)
         ((uint8_t *)dst_addr)[x] &= ((uint8_t *)src)[x];
@@ -546,8 +547,13 @@ esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_act(void)
     return &s_esp_partition_file_mmap_ctrl_act;
 }
 
+uint32_t esp_partition_get_main_flash_sector_size(void)
+{
+    return ESP_PARTITION_EMULATED_SECTOR_SIZE;
+}
+
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
-// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash requency
+// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash frequency
 // all values in microseconds
 // values are for block sizes starting at 4 bytes and going up to 4096 bytes
 static size_t s_esp_partition_stat_read_times[] = {7, 5, 6, 7, 11, 18, 32, 60, 118, 231, 459};
@@ -669,7 +675,7 @@ static bool esp_partition_hook_erase(const void *dstAddr, size_t *size)
         }
     }
 
-    // update statistcs for all sectors until power down cycle
+    // update statistics for all sectors until power down cycle
     for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
         ++s_esp_partition_stat_erase_ops;
         s_esp_partition_stat_sector_erase_count[sector_index]++;

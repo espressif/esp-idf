@@ -32,6 +32,8 @@
 #define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
 #endif
 
+#define GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 /*!< The alignment of the memory and size when DMA accesses the encryption memory */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,8 +69,8 @@ struct gdma_channel_t {
     portMUX_TYPE spinlock;  // channel level spinlock
     gdma_channel_direction_t direction; // channel direction
     int periph_id; // Peripheral instance ID, indicates which peripheral is connected to this GDMA channel
-    size_t sram_alignment;  // alignment for memory in SRAM
-    size_t psram_alignment; // alignment for memory in PSRAM
+    size_t int_mem_alignment; // alignment for memory in internal memory
+    size_t ext_mem_alignment; // alignment for memory in external memory
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
     struct {
         uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM

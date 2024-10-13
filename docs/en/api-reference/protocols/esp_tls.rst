@@ -143,11 +143,11 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     ATECC608A (Secure Element) with ESP-TLS
     --------------------------------------------------
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
     .. note::
 
-        ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
     To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
@@ -208,8 +208,10 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     ECDSA Peripheral with ESP-TLS
     -----------------------------
 
-    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__ documentation for programming the ECDSA key in the efuse.
+    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to :doc:`ECDSA Guide <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
+
     To use ECDSA peripheral with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` to `true`, and set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the eFuse block ID in which ECDSA private key is stored.
+
     This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it needs not be supplied to the :cpp:type:`esp_tls_cfg_t` structure.
 
     .. code-block:: c

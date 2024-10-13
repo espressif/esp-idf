@@ -129,7 +129,7 @@ esp_err_t dac_digi_deinit(void);
 /**
  * @brief Setting the DAC digital controller.
  *
- * @param cfg Pointer to digital controller paramter. See ``dac_digi_config_t``.
+ * @param cfg Pointer to digital controller parameter. See ``dac_digi_config_t``.
  *
  * @return
  *     - ESP_OK success

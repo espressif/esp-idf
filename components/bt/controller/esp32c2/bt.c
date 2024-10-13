@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,50 +16,54 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
+
 #include "nimble/nimble_port_freertos.h"
 
 #ifdef ESP_PLATFORM
 #include "esp_log.h"
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
 #endif
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "esp_hci_transport.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
 #include "esp_intr_alloc.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#endif
 #include "soc/syscon_reg.h"
 #include "soc/modem_clkrst_reg.h"
 #include "esp_private/periph_ctrl.h"
-#include "hci_uart.h"
 #include "bt_osi_mem.h"
-
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-#include "hci/hci_hal.h"
-#endif
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#include "esp_private/esp_modem_clock.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "esp_sleep.h"
 
 #include "soc/syscon_reg.h"
 #include "soc/dport_access.h"
 
 #include "hal/efuse_ll.h"
+#include "soc/rtc.h"
+
 /* Macro definition
  ************************************************************************
  */
@@ -72,13 +76,6 @@
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 #define BT_ASSERT_PRINT              ets_printf
-
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-/* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
-#define ACL_DATA_MBUF_LEADINGSPCAE    4
-#endif // CONFIG_BT_BLUEDROID_ENABLED
-
-
 /* Types definition
  ************************************************************************
  */
@@ -97,12 +94,12 @@ struct ext_funcs_t {
     int (*_esp_intr_free)(void **ret_handle);
     void *(* _malloc)(size_t size);
     void (*_free)(void *p);
-    void (*_hal_uart_start_tx)(int);
-    int (*_hal_uart_init_cbs)(int, hci_uart_tx_char, hci_uart_tx_done, hci_uart_rx_char, void *);
-    int (*_hal_uart_config)(int, int32_t, uint8_t, uint8_t, uart_parity_t, uart_hw_flowcontrol_t);
-    int (*_hal_uart_close)(int);
-    void (*_hal_uart_blocking_tx)(int, uint8_t);
-    int (*_hal_uart_init)(int, void *);
+    void (*_rsv1)(int);
+    int (*_rsv2)(int, int (*)(void *arg), int (*)(void *arg, uint8_t byte), int (*)(void *arg, uint8_t byte), void *);
+    int (*_rsv3)(int, int32_t, uint8_t, uint8_t, int, int);
+    int (*_rsv4)(int);
+    void (*_rsv5)(int, uint8_t);
+    int (*_rsv6)(int, void *);
     int (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
@@ -127,6 +124,7 @@ extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int ble_log_deinit_async(void);
 extern void ble_log_async_output_dump_all(bool output);
+extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
@@ -156,14 +154,21 @@ extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t hand
 extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
 extern void bt_track_pll_cap(void);
-
+extern char *ble_controller_get_compile_version(void);
+extern const char *r_ble_controller_get_rom_compile_version(void);
 #if CONFIG_BT_RELEASE_IRAM
 extern uint32_t _iram_bt_text_start;
 extern uint32_t _bss_bt_end;
-#else
-extern uint32_t _bt_bss_end;
-extern uint32_t _bt_controller_data_start;
 #endif
+
+extern uint32_t _bt_bss_start;
+extern uint32_t _bt_bss_end;
+extern uint32_t _bt_controller_bss_start;
+extern uint32_t _bt_controller_bss_end;
+extern uint32_t _bt_data_start;
+extern uint32_t _bt_data_end;
+extern uint32_t _bt_controller_data_start;
+extern uint32_t _bt_controller_data_end;
 
 /* Local Function Declaration
  *********************************************************************
@@ -172,16 +177,6 @@ static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-static void hci_uart_start_tx_wrapper(int uart_no);
-static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
-                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg);
-static int hci_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits, uint8_t stopbits,
-                                   uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl);
-static int hci_uart_close_wrapper(int uart_no);
-static void hci_uart_blocking_tx_wrapper(int port, uint8_t data);
-static int hci_uart_init_wrapper(int uart_no, void *cfg);
-#endif // CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
                                   void *arg, void **ret_handle_in);
 static int esp_intr_free_wrapper(void **ret_handle);
@@ -193,15 +188,248 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end);
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
+#endif // #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /* Local variable definition
  ***************************************************************************
  */
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-const static uint32_t log_bufs_size[] = {2048, 1024, 1024};
+const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
+enum log_out_mode {
+    LOG_DUMP_MEMORY,
+    LOG_ASYNC_OUT,
+    LOG_STORAGE_TO_FLASH,
+};
+
+bool log_is_inited = false;
+#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+uint8_t log_output_mode = LOG_DUMP_MEMORY;
+#else
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+uint8_t log_output_mode = LOG_STORAGE_TO_FLASH;
+#else
+uint8_t log_output_mode = LOG_ASYNC_OUT;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+
+void esp_bt_log_output_mode_set(uint8_t output_mode)
+{
+    log_output_mode = output_mode;
+}
+
+uint8_t esp_bt_log_output_mode_get(void)
+{
+    return log_output_mode;
+}
+
+esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
+{
+    esp_err_t ret = ESP_OK;
+    interface_func_t bt_controller_log_interface;
+    bt_controller_log_interface = esp_bt_controller_log_interface;
+    bool task_create;
+    uint8_t buffers = 0;
+
+    if (log_is_inited) {
+        return ret;
+    }
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_HCI;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+
+    switch (log_output_mode) {
+        case LOG_DUMP_MEMORY:
+            task_create = false;
+            break;
+        case LOG_ASYNC_OUT:
+        case LOG_STORAGE_TO_FLASH:
+            task_create = true;
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            if (log_output_mode == LOG_STORAGE_TO_FLASH) {
+                esp_bt_ctrl_log_partition_get_and_erase_first_block();
+            }
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            break;
+        default:
+            assert(0);
+    }
+
+    ret = ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
+    if (ret == ESP_OK) {
+        log_is_inited = true;
+    }
+
+    return ret;
+}
+
+void esp_bt_ontroller_log_deinit(void)
+{
+    ble_log_deinit_async();
+    log_is_inited = false;
+}
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+#include "esp_partition.h"
+#include "hal/wdt_hal.h"
+
+#define MAX_STORAGE_SIZE          (CONFIG_BT_LE_CONTROLLER_LOG_PARTITION_SIZE)
+#define BLOCK_SIZE                (4096)
+#define THRESHOLD                 (3072)
+#define PARTITION_NAME            "bt_ctrl_log"
+
+static const esp_partition_t *log_partition;
+static uint32_t write_index = 0;
+static uint32_t next_erase_index = BLOCK_SIZE;
+static bool block_erased = false;
+static bool stop_write = false;
+static bool is_filled = false;
+
+static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void)
+{
+    log_partition = NULL;
+    assert(MAX_STORAGE_SIZE % BLOCK_SIZE == 0);
+    // Find the partition map in the partition table
+    log_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PARTITION_NAME);
+    assert(log_partition != NULL);
+    // Prepare data to be read later using the mapped address
+    ESP_ERROR_CHECK(esp_partition_erase_range(log_partition, 0, BLOCK_SIZE));
+    write_index = 0;
+    next_erase_index = BLOCK_SIZE;
+    block_erased = false;
+    is_filled = false;
+    stop_write = false;
+}
+
+static int esp_bt_controller_log_storage(uint32_t len, const uint8_t *addr, bool end)
+{
+    if (len > MAX_STORAGE_SIZE) {
+        return -1;
+    }
+
+    if (stop_write) {
+        return 0;
+    }
+
+    assert(log_partition != NULL);
+    if (((write_index) % BLOCK_SIZE) >= THRESHOLD && !block_erased) {
+        // esp_rom_printf("Ers nxt: %d,%d\n", next_erase_index, write_index);
+        esp_partition_erase_range(log_partition, next_erase_index, BLOCK_SIZE);
+        next_erase_index = (next_erase_index + BLOCK_SIZE) % MAX_STORAGE_SIZE;
+        block_erased = true;
+    }
+
+    if (((write_index + len) / BLOCK_SIZE) >  (write_index / BLOCK_SIZE)) {
+        block_erased = false;
+    }
+
+    if (write_index + len <= MAX_STORAGE_SIZE) {
+        esp_partition_write(log_partition, write_index, addr, len);
+        write_index = (write_index + len) % MAX_STORAGE_SIZE;
+    } else {
+        uint32_t first_part_len = MAX_STORAGE_SIZE - write_index;
+        esp_partition_write(log_partition, write_index, addr, first_part_len);
+        esp_partition_write(log_partition, 0, addr + first_part_len, len - first_part_len);
+        write_index = len - first_part_len;
+        is_filled = true;
+        // esp_rom_printf("old idx: %d,%d\n",next_erase_index, write_index);
+    }
+
+    return 0;
+}
+
+void esp_bt_read_ctrl_log_from_flash(bool output)
+{
+    esp_partition_mmap_handle_t mmap_handle;
+    uint32_t read_index;
+    const void *mapped_ptr;
+    const uint8_t *buffer;
+    uint32_t print_len;
+    uint32_t max_print_len;
+    esp_err_t err;
+
+    print_len = 0;
+    max_print_len = 4096;
+    err = esp_partition_mmap(log_partition, 0, MAX_STORAGE_SIZE, ESP_PARTITION_MMAP_DATA, &mapped_ptr, &mmap_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE("FLASH", "Mmap failed: %s", esp_err_to_name(err));
+        return;
+    }
+
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL_SAFE(&spinlock);
+    esp_panic_handler_reconfigure_wdts(5000);
+    ble_log_async_output_dump_all(true);
+    stop_write = true;
+    esp_bt_ontroller_log_deinit();
+    portEXIT_CRITICAL_SAFE(&spinlock);
+
+    buffer = (const uint8_t *)mapped_ptr;
+    if (is_filled) {
+        read_index = next_erase_index;
+    } else {
+        read_index = 0;
+    }
+
+    esp_rom_printf("\r\nREAD_CHECK:%ld,%ld,%d\r\n",read_index, write_index, is_filled);
+    esp_rom_printf("\r\n[DUMP_START:");
+    while (read_index != write_index) {
+        esp_rom_printf("%02x ", buffer[read_index]);
+        if (print_len > max_print_len) {
+            vTaskDelay(2);
+            print_len = 0;
+        }
+
+        print_len++;
+        read_index = (read_index + 1) % MAX_STORAGE_SIZE;
+    }
+    esp_rom_printf(":DUMP_END]\r\n");
+    esp_partition_munmap(mmap_handle);
+    err = esp_bt_controller_log_init(log_output_mode);
+    assert(err == ESP_OK);
+
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
+{
+    if (log_output_mode == LOG_STORAGE_TO_FLASH) {
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+        esp_bt_controller_log_storage(len, addr, end);
+#endif //CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    } else {
+        for (int i = 0; i < len; i++) {
+            esp_rom_printf("%02x ", addr[i]);
+        }
+
+        if (end) {
+            esp_rom_printf("\n");
+        }
+    }
+}
+
+void esp_ble_controller_log_dump_all(bool output)
+{
+   if (log_output_mode == LOG_STORAGE_TO_FLASH) {
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+        esp_bt_read_ctrl_log_from_flash(output);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    } else {
+        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL_SAFE(&spinlock);
+        esp_panic_handler_reconfigure_wdts(5000);
+        BT_ASSERT_PRINT("\r\n[DUMP_START:");
+        ble_log_async_output_dump_all(output);
+        BT_ASSERT_PRINT(":DUMP_END]\r\n");
+        portEXIT_CRITICAL_SAFE(&spinlock);
+    }
+}
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
@@ -210,9 +438,9 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif // CONFIG_PM_ENABLE
+static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
 
 #define BLE_RTC_DELAY_US                    (1800)
-
 
 static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
     ._magic = OSI_COEX_MAGIC_VALUE,
@@ -229,14 +457,6 @@ struct ext_funcs_t ext_funcs_ro = {
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = bt_osi_mem_malloc_internal,
     ._free = bt_osi_mem_free,
-#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    ._hal_uart_start_tx     =  hci_uart_start_tx_wrapper,
-    ._hal_uart_init_cbs     =  hci_uart_init_cbs_wrapper,
-    ._hal_uart_config       =  hci_uart_config_wrapper,
-    ._hal_uart_close        =  hci_uart_close_wrapper,
-    ._hal_uart_blocking_tx  =  hci_uart_blocking_tx_wrapper,
-    ._hal_uart_init         =  hci_uart_init_wrapper,
-#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
@@ -283,86 +503,9 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 #endif // CONFIG_SW_COEXIST_ENABLE
 }
 
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-bool esp_vhci_host_check_send_available(void)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return false;
-    }
-    return true;
-}
-
-/**
- * Allocates an mbuf for use by the nimble host.
- */
-static struct os_mbuf *ble_hs_mbuf_gen_pkt(uint16_t leading_space)
-{
-    struct os_mbuf *om;
-    int rc;
-
-    om = os_msys_get_pkthdr(0, 0);
-    if (om == NULL) {
-        return NULL;
-    }
-
-    if (om->om_omp->omp_databuf_len < leading_space) {
-        rc = os_mbuf_free_chain(om);
-        assert(rc == 0);
-        return NULL;
-    }
-
-    om->om_data += leading_space;
-
-    return om;
-}
-
-/**
- * Allocates an mbuf suitable for an HCI ACL data packet.
- *
- * @return                  An empty mbuf on success; null on memory
- *                              exhaustion.
- */
-struct os_mbuf *ble_hs_mbuf_acl_pkt(void)
-{
-    return ble_hs_mbuf_gen_pkt(4 + 1);
-}
-
-void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return;
-    }
-
-    if (*(data) == DATA_TYPE_COMMAND) {
-        struct ble_hci_cmd *cmd = NULL;
-        cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
-        assert(cmd);
-        memcpy((uint8_t *)cmd, data + 1, len - 1);
-        ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
-    }
-
-    if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
-        assert(om);
-        assert(os_mbuf_append(om, &data[1], len - 1) == 0);
-        ble_hci_trans_hs_acl_tx(om);
-    }
-}
-
-esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
-{
-    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        return ESP_FAIL;
-    }
-
-    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
-
-    return ESP_OK;
-}
-#endif // CONFIG_BT_BLUEDROID_ENABLED
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
-    return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
+    return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < CONFIG_FREERTOS_NUMBER_OF_CORES ? core_id : tskNO_AFFINITY));
 }
 
 static void task_delete_wrapper(void *task_handle)
@@ -389,56 +532,6 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
     return rc;
 }
 
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-static void hci_uart_start_tx_wrapper(int uart_no)
-{
-    hci_uart_start_tx(uart_no);
-}
-
-static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
-                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg)
-{
-    int rc = -1;
-    rc = hci_uart_init_cbs(uart_no, tx_func, tx_done, rx_func, arg);
-    return rc;
-}
-
-
-static int hci_uart_config_wrapper(int port_num, int32_t baud_rate, uint8_t data_bits,
-                                   uint8_t stop_bits,uart_parity_t parity,
-                                   uart_hw_flowcontrol_t flow_ctl)
-{
-    int rc = -1;
-    rc = hci_uart_config(port_num, baud_rate, data_bits, stop_bits, parity, flow_ctl);
-    return rc;
-}
-
-static int hci_uart_close_wrapper(int uart_no)
-{
-    int rc = -1;
-    rc = hci_uart_close(uart_no);
-    return rc;
-}
-
-static void hci_uart_blocking_tx_wrapper(int port, uint8_t data)
-{
-    //This function is nowhere to use.
-}
-
-static int hci_uart_init_wrapper(int uart_no, void *cfg)
-{
-    //This function is nowhere to use.
-    return 0;
-}
-
-#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-
-static int ble_hci_unregistered_hook(void*, void*)
-{
-    ESP_LOGD(NIMBLE_PORT_LOG_TAG,"%s ble hci rx_evt is not registered.",__func__);
-    return 0;
-}
-
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
 {
     int rc = esp_intr_alloc(source, flags | ESP_INTR_FLAG_IRAM, handler, arg, (intr_handle_t *)ret_handle_in);
@@ -459,6 +552,20 @@ void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
     esp_ble_set_wakeup_overhead(overhead);
 }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+
+modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void)
+{
+    return s_bt_lpclk_src;
+}
+
+void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src)
+{
+    if (clk_src >= MODEM_CLOCK_LPCLK_SRC_MAX) {
+        return;
+    }
+
+    s_bt_lpclk_src = clk_src;
+}
 
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
@@ -486,7 +593,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     s_ble_active = true;
 }
 
-esp_err_t controller_sleep_init(void)
+esp_err_t controller_sleep_init(modem_clock_lpclk_src_t slow_clk_src)
 {
     esp_err_t rc = 0;
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
@@ -494,7 +601,11 @@ esp_err_t controller_sleep_init(void)
     r_ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0, 500 + BLE_RTC_DELAY_US);
 
 #ifdef CONFIG_PM_ENABLE
-    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+    if (slow_clk_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
+    }
 #endif // CONFIG_PM_ENABLE
 
 #endif // CONFIG_BT_LE_SLEEP_ENABLE
@@ -545,37 +656,74 @@ void controller_sleep_deinit(void)
 #endif //CONFIG_PM_ENABLE
 }
 
-void ble_rtc_clk_init(void)
+static void esp_bt_rtc_slow_clk_select(modem_clock_lpclk_src_t slow_clk_src)
 {
-    // modem_clkrst_reg
-    // LP_TIMER_SEL_XTAL32K -> 0
-    // LP_TIMER_SEL_XTAL -> 1
-    // LP_TIMER_SEL_8M -> 0
-    // LP_TIMER_SEL_RTC_SLOW -> 0
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL32K_S);
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
-
+    /* Select slow clock source for BT momdule */
+    switch (slow_clk_src) {
+        case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL32K_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
 #ifdef CONFIG_XTAL_FREQ_26
-    // LP_TIMER_CLK_DIV_NUM -> 130
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 129, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 129, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
 #else
-    // LP_TIMER_CLK_DIV_NUM -> 250
-    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 249, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 249, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
 #endif // CONFIG_XTAL_FREQ_26
-
-    // MODEM_CLKRST_ETM_CLK_ACTIVE -> 1
-    // MODEM_CLKRST_ETM_CLK_SEL -> 0
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_EXT32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_XTAL32K_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 0, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
+            break;
+        default:
+            ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported slow clock");
+            assert(0);
+            break;
+    }
     SET_PERI_REG_BITS(MODEM_CLKRST_ETM_CLK_CONF_REG, 1, 1, MODEM_CLKRST_ETM_CLK_ACTIVE_S);
     SET_PERI_REG_BITS(MODEM_CLKRST_ETM_CLK_CONF_REG, 1, 0, MODEM_CLKRST_ETM_CLK_SEL_S);
+}
 
+static modem_clock_lpclk_src_t ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
+{
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
+#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
+#else
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+            s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_EXT32K;
+        } else {
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
+            s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
+        }
+#endif // CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+    }
+
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_EXT32K) {
+        cfg->rtc_freq = 32768;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
+#ifdef CONFIG_XTAL_FREQ_26
+        cfg->rtc_freq = 40000;
+#else
+        cfg->rtc_freq = 32000;
+#endif // CONFIG_XTAL_FREQ_26
+    }
+    esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
+    return s_bt_lpclk_src;
 }
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
+    modem_clock_lpclk_src_t rtc_clk_src;
+    uint8_t hci_transport_mode;
+
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
@@ -587,13 +735,22 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
-    ble_rtc_clk_init();
+    rtc_clk_src = ble_rtc_clk_init(cfg);
 
     ret = esp_register_ext_funcs(&ext_funcs_ro);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "register extend functions failed");
         return ret;
     }
+
+#if DEFAULT_BT_LE_50_FEATURE_SUPPORT || DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_OBSERVER
+    extern int esp_ble_rom_func_ptr_init_all(void);
+    esp_ble_rom_func_ptr_init_all();
+#else
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Init only legacy adv and slave function");
+    extern int esp_ble_rom_func_ptr_init_legacy_adv_and_slave(void);
+    esp_ble_rom_func_ptr_init_legacy_adv_and_slave();
+#endif
 
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
@@ -643,35 +800,24 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
-
     ret = ble_controller_init(cfg);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
         goto modem_deint;
     }
 
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble rom commit:[%s]", r_ble_controller_get_rom_compile_version());
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    interface_func_t bt_controller_log_interface;
-    bt_controller_log_interface = esp_bt_controller_log_interface;
-    uint8_t buffers = 0;
-#if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-#if CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
-    buffers |= ESP_BLE_LOG_BUF_HCI;
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
-#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    ret = ble_log_init_async(bt_controller_log_interface, false, buffers, (uint32_t *)log_bufs_size);
-#else
-    ret = ble_log_init_async(bt_controller_log_interface, true, buffers, (uint32_t *)log_bufs_size);
-#endif // CONFIG_BT_CONTROLLER_LOG_DUMP
+    ret = esp_bt_controller_log_init(log_output_mode);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
         goto controller_init_err;
     }
 #endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
 
-    ret = controller_sleep_init();
+    ret = controller_sleep_init(rtc_clk_src);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "controller_sleep_init failed %d", ret);
         goto free_controller;
@@ -680,20 +826,32 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     uint8_t mac[6];
     ESP_ERROR_CHECK(esp_read_mac((uint8_t *)mac, ESP_MAC_BT));
 
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Bluetooth MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
     swap_in_place(mac, 6);
 
     esp_ble_ll_set_public_addr(mac);
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
-    ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hci_unregistered_hook,NULL,
-                         (ble_hci_trans_rx_acl_fn *)ble_hci_unregistered_hook,NULL);
+#if CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
+    hci_transport_mode = HCI_TRANSPORT_VHCI;
+#elif CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+    hci_transport_mode = HCI_TRANSPORT_UART_NO_DMA;
+#endif // CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
+    ret = hci_transport_init(hci_transport_mode);
+    if (ret) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "hci transport init failed %d", ret);
+        goto free_controller;
+    }
     return ESP_OK;
 free_controller:
+    hci_transport_deinit();
     controller_sleep_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 controller_init_err:
-    ble_log_deinit_async();
+    esp_bt_ontroller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 modem_deint:
@@ -718,10 +876,11 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_FAIL;
     }
 
+    hci_transport_deinit();
     controller_sleep_deinit();
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    ble_log_deinit_async();
+    esp_bt_ontroller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 
@@ -840,9 +999,48 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
+{
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
+
+#ifndef CONFIG_BT_RELEASE_IRAM
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if(area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
+    } else {
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
+    }
+
+    return ret;
+}
+#endif
+
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    intptr_t mem_start, mem_end;
+    esp_err_t ret = ESP_OK;
 
 #if CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
     /* Release Bluetooth text section and merge Bluetooth data, bss & text into a large free heap
@@ -851,26 +1049,58 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
      * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_PMP_IDRAM_SPLIT` needs
      * to be disabled.
      */
-    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "`ESP_SYSTEM_PMP_IDRAM_SPLIT` should be disabled!");
-    assert(0);
+    #error "ESP_SYSTEM_PMP_IDRAM_SPLIT should be disabled to allow BT to be released"
 #endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
 
-    if (mode & ESP_BT_MODE_BLE) {
-#if CONFIG_BT_RELEASE_IRAM
-        mem_start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start);
-        mem_end = (intptr_t)&_bss_bt_end;
-#else
-        mem_start = (intptr_t)&_bt_controller_data_start;
-        mem_end = (intptr_t)&_bt_bss_end;
-#endif // CONFIG_BT_RELEASE_IRAM
-        if (mem_start != mem_end) {
-            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Release BLE [0x%08x] - [0x%08x], len %d", mem_start,
-                     mem_end, mem_end - mem_start);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
     }
 
-    return ESP_OK;
+    if ((mode & ESP_BT_MODE_BLE) == 0) {
+        return ret;
+    }
+
+#if CONFIG_BT_RELEASE_IRAM
+    bt_area_t merged_region = {
+        .start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start),
+        .end = (intptr_t)&_bss_bt_end,
+        .name = "BT Text, BSS and Data"
+    };
+    ret = esp_bt_mem_release_area(&merged_region);
+#else
+    bt_area_t bss = {
+        .start = (intptr_t)&_bt_bss_start,
+        .end   = (intptr_t)&_bt_bss_end,
+        .name  = "BT BSS",
+    };
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+    bt_area_t data = {
+        .start = (intptr_t)&_bt_data_start,
+        .end   = (intptr_t)&_bt_data_end,
+        .name  = "BT Data",
+    };
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
+
+    /* Start by freeing Bluetooth BSS section */
+    if (ret == ESP_OK) {
+        ret = esp_bt_mem_release_areas(&bss, &cont_bss);
+    }
+
+    /* Do the same thing with the Bluetooth data section */
+    if (ret == ESP_OK) {
+        ret = esp_bt_mem_release_areas(&data, &cont_data);
+    }
+#endif
+
+    return ret;
 }
 
 
@@ -1000,36 +1230,11 @@ uint8_t esp_ble_get_chip_rev_version(void)
     return efuse_ll_get_chip_wafer_version_minor();
 }
 
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
-{
-    for (int i = 0; i < len; i++) {
-        esp_rom_printf("%02x ", addr[i]);
-    }
-    if (end) {
-        esp_rom_printf("\n");
-    }
-}
-
-void esp_ble_controller_log_dump_all(bool output)
-{
-    portMUX_TYPE spinlock;
-
-    portENTER_CRITICAL_SAFE(&spinlock);
-    BT_ASSERT_PRINT("\r\n[DUMP_START:");
-    ble_log_async_output_dump_all(output);
-    BT_ASSERT_PRINT("]\r\n");
-    portEXIT_CRITICAL_SAFE(&spinlock);
-}
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-
-#if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED == true)
-
+#if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
-
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 #include "mbedtls/aes.h"
-
 #if CONFIG_BT_LE_SM_SC
 #include "mbedtls/cipher.h"
 #include "mbedtls/entropy.h"
@@ -1037,7 +1242,9 @@ void esp_ble_controller_log_dump_all(bool output)
 #include "mbedtls/cmac.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h"
-#endif
+
+static mbedtls_ecp_keypair keypair;
+#endif // CONFIG_BT_LE_SM_SC
 
 #else
 #include "tinycrypt/aes.h"
@@ -1047,15 +1254,15 @@ void esp_ble_controller_log_dump_all(bool output)
 #if CONFIG_BT_LE_SM_SC
 #include "tinycrypt/cmac_mode.h"
 #include "tinycrypt/ecc_dh.h"
-#endif
+#endif // CONFIG_BT_LE_SM_SC
+#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
-#endif
-
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
-#if CONFIG_BT_LE_SM_SC
-static mbedtls_ecp_keypair keypair;
-#endif
-#endif
+/* Based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
+static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
+    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3, 0xe3,
+    0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
+    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
+};
 
 int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                          const uint8_t *our_priv_key, uint8_t *out_dhkey)
@@ -1102,8 +1309,7 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
     }
 
     /* Set PRNG */
-    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                    NULL, 0)) != 0) {
+    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
         goto exit;
     }
 
@@ -1147,18 +1353,11 @@ exit:
     if (rc == TC_CRYPTO_FAIL) {
         return BLE_SM_KEY_ERR;
     }
-#endif
+#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
     swap_buf(out_dhkey, dh, 32);
     return 0;
 }
-
-/* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
-static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
-    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3, 0xe3,
-    0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
-    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
-};
 
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
@@ -1205,7 +1404,7 @@ exit:
 
     return 0;
 }
-#endif
+#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
 /**
  * pub: 64 bytes
@@ -1221,7 +1420,6 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
     uint8_t pk[64];
 
     do {
-
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
         if (mbedtls_gen_keypair(pk, priv) != 0) {
             return BLE_SM_KEY_ERR;
@@ -1230,17 +1428,16 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
         if (uECC_make_key(pk, priv, &curve_secp256r1) != TC_CRYPTO_SUCCESS) {
             return BLE_SM_KEY_ERR;
         }
-#endif
-
+#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
         /* Make sure generated key isn't debug key. */
     } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
 
     swap_buf(pub, pk, 32);
     swap_buf(&pub[32], &pk[32], 32);
     swap_in_place(priv, 32);
-#endif
-
+#endif // CONFIG_BT_LE_SM_SC_DEBUG_KEYS
     return 0;
 }
 
-#endif
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+#endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)

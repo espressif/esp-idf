@@ -2,11 +2,17 @@ menu "Example Configuration"
 
     config EXAMPLE_LCD_I80_COLOR_IN_PSRAM
         bool "Allocate color data from PSRAM"
-        depends on IDF_TARGET_ESP32S3
+        depends on SOC_PSRAM_DMA_CAPABLE
         default y
         help
-            Enable this option if you wish to allocate the color buffer used by LVGL from PSRAM.
-            Unmatched PSRAM band width with LCD requirement can lead to blurred image display.
+            Enable this option if you want to allocate the LVGL draw buffer from PSRAM.
+
+    config EXAMPLE_LCD_PIXEL_CLOCK_HZ
+        int "Pixel clock frequency (Hz)"
+        default 2000000 if EXAMPLE_LCD_I80_COLOR_IN_PSRAM && IDF_TARGET_ESP32S3
+        default 10000000
+        help
+            Set the pixel clock frequency in Hz.
 
     choice EXAMPLE_LCD_I80_CONTROLLER_MODEL
         prompt "i80 LCD controller model"
@@ -44,29 +50,6 @@ menu "Example Configuration"
         int
         default 16 if EXAMPLE_LCD_NT35510_DATA_WIDTH_16
         default 8
-
-    config EXAMPLE_LCD_TOUCH_ENABLED
-        bool "Enable LCD touch"
-        default n
-        help
-            Enable this option if you wish to use display touch. You can select from three touch controllers.
-
-    choice EXAMPLE_LCD_TOUCH_CONTROLLER
-        prompt "LCD touch controller model"
-        depends on EXAMPLE_LCD_TOUCH_ENABLED
-        default EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
-        help
-            Select LCD touch controller model
-
-        config EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
-            bool "GT911"
-
-        config EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
-            bool "TT21100"
-
-        config EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
-            bool "FT5X06"
-    endchoice
 
     choice EXAMPLE_LCD_IMAGE_SOURCE
         prompt "LCD image source from"

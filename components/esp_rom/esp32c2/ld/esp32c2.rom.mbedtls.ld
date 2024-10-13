@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,6 @@ mbedtls_asn1_write_mpi = 0x400026d4;
 mbedtls_base64_decode = 0x400026d8;
 mbedtls_ccm_star_encrypt_and_tag = 0x40002774;
 mbedtls_ccm_star_auth_decrypt = 0x40002778;
-mbedtls_cipher_init = 0x4000277c;
-mbedtls_cipher_set_padding_mode = 0x40002780;
-mbedtls_cipher_reset = 0x40002784;
-mbedtls_cipher_finish = 0x40002788;
-mbedtls_cipher_crypt = 0x4000278c;
-mbedtls_cipher_cmac_starts = 0x40002790;
-mbedtls_cipher_cmac_update = 0x40002794;
-mbedtls_cipher_cmac_finish = 0x40002798;
 mbedtls_ctr_drbg_init = 0x4000279c;
 mbedtls_ctr_drbg_seed = 0x400027a0;
 mbedtls_ctr_drbg_free = 0x400027a4;
@@ -74,7 +66,7 @@ mbedtls_sha512_clone = 0x40002a50;
 mbedtls_sha512_starts = 0x40002a54;
 mbedtls_sha512_update = 0x40002a58;
 mbedtls_sha512_finish = 0x40002a5c;
-mbedtls_internal_sha512_process = 0x40002a60;
+/*mbedtls_internal_sha512_process = 0x40002a60;*/
 mbedtls_sha512 = 0x40002a64;
 mbedtls_aes_xts_init = 0x40002b68;
 mbedtls_aes_xts_free = 0x40002b6c;
@@ -95,7 +87,7 @@ mbedtls_md5_clone = 0x40002be0;
 mbedtls_md5_starts = 0x40002be4;
 mbedtls_md5_update = 0x40002be8;
 mbedtls_md5_finish = 0x40002bec;
-mbedtls_internal_md5_process = 0x40002bf0;
+/*mbedtls_internal_md5_process = 0x40002bf0;*/
 mbedtls_md5 = 0x40002bf4;
 mbedtls_sha1 = 0x40002c08;
 /* Data (.data, .bss, .rodata) */

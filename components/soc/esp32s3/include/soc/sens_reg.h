@@ -1,16 +1,8 @@
-// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SENS_REG_H_
 #define _SOC_SENS_REG_H_
 
@@ -602,7 +594,7 @@ extern "C" {
 #define SENS_TOUCH_DENOISE_END_V  0x1
 #define SENS_TOUCH_DENOISE_END_S  18
 /* SENS_TOUCH_DATA_SEL : R/W ;bitpos:[17:16] ;default: 2'd0 ; */
-/*description: 3: smooth data 2: baseline 1,0: raw_data.*/
+/*description: 3: smooth data 2: benchmark 1,0: raw_data.*/
 #define SENS_TOUCH_DATA_SEL    0x00000003
 #define SENS_TOUCH_DATA_SEL_M  ((SENS_TOUCH_DATA_SEL_V)<<(SENS_TOUCH_DATA_SEL_S))
 #define SENS_TOUCH_DATA_SEL_V  0x3
@@ -1378,8 +1370,8 @@ extern "C" {
 
 #define SENS_SAR_HALL_CTRL_REG          (DR_REG_SENS_BASE + 0xFC)
 /* SENS_HALL_PHASE_FORCE : R/W ;bitpos:[31] ;default: 1'b1 ; */
-/*description: 1: HALL PHASE is controlled by SW  0: HALL PHASE is controlled by FSM in ULP-cop
-rocessor.*/
+/*description: 1: HALL PHASE is controlled by SW  0: HALL PHASE is controlled by FSM in
+ULP-coprocessor.*/
 #define SENS_HALL_PHASE_FORCE    (BIT(31))
 #define SENS_HALL_PHASE_FORCE_M  (BIT(31))
 #define SENS_HALL_PHASE_FORCE_V  0x1

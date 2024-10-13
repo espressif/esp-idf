@@ -48,4 +48,17 @@ menu "A2DP Example Configuration"
         help
             GPIO number to use for I2S Data Driver.
 
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_SPEAKER"
+        help
+            Use this option to set local device name.
+
+    config EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+        bool "Use AVRCP CT Cover Art Feature"
+        depends on BT_CLASSIC_ENABLED
+        default y
+        help
+            This enables the AVRCP Cover Art feature in example and try to get cover art image from peer device.
+
 endmenu

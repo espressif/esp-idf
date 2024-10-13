@@ -56,8 +56,27 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. note::
 
-   如果使用了独立的栈，建议栈大小应大于 800 字节，确保核心转储例程本身不会导致栈溢出。
+   如果使用了独立的栈，建议栈大小应大于 1300 字节，确保核心转储例程本身不会导致栈溢出。
 
+
+.. only:: not esp32c5
+
+    核心转储内存区域
+    ^^^^^^^^^^^^^^^^
+
+    核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
+
+    推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
+
+    .. only:: SOC_SPIRAM_SUPPORTED
+
+        .. note::
+
+            除了崩溃任务的 TCB 和栈外，位于外部 RAM 中的数据不会保存到核心转储文件中，包括使用 ``EXT_RAM_BSS_ATTR`` 或 ``EXT_RAM_NOINIT_ATTR`` 属性定义的变量，以及存储在 ``extram_bss`` 段中的任何数据。
+
+    .. note::
+
+        该功能仅在使用 ELF 文件格式时可用。
 
 将核心转储保存到 flash
 -----------------------
@@ -68,16 +87,17 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. code-block:: none
 
-   # 名称，   类型，子类型，   偏移量，   大小
-   # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
-   nvs,      data, nvs,     0x9000,  0x6000
-   phy_init, data, phy,     0xf000,  0x1000
-   factory,  app,  factory, 0x10000, 1M
-   coredump, data, coredump,,        64K
+    # 名称，   类型，子类型，   偏移量，   大小
+    # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
+    nvs,      data, nvs,     0x9000,  0x6000
+    phy_init, data, phy,     0xf000,  0x1000
+    factory,  app,  factory, 0x10000, 1M
+    coredump, data, coredump,,        64K
 
 .. important::
 
-    如果设备启用了 :doc:`../security/flash-encryption`，请在核心转储分区中添加 ``encrypted`` 标志。
+    如果设备启用了 :doc:`../security/flash-encryption`，请在核心转储分区中添加 ``encrypted`` 标志。请注意，使用 ``idf.py coredump-info`` 或 ``idf.py coredump-debug`` 命令无法从加密分区读取核心转储。
+    建议使用 ``idf.py coredump-info -c <path-to-core-dump>`` 命令从 ESP 设备侧读取核心转储，ESP 设备会自动解密分区并发送到相应位置用于分析。
 
     .. code-block:: none
 
@@ -98,6 +118,11 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     idf.py coredump-debug
 
 
+.. note::
+
+    ``idf.py coredump-info`` 命令和 ``idf.py coredump-debug`` 命令对 `esp-coredump` 工具进行了封装，可以在 ESP-IDF 环境中轻松使用。更多信息，请参考 :ref:`core_dump_commands`。
+
+
 将核心转储保存到 UART
 -----------------------
 
@@ -116,36 +141,45 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     ===============================================================
     ==================== ESP32 CORE DUMP START ====================
 
-    Crashed task handle: 0x3ffc5640, name: 'main', GDB name: 'process 1073501760'
+    Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
+    Crashed task is not in the interrupt context
+    Panic reason: abort() was called at PC 0x400d66b9 on core 0
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)
     excvaddr       0x0
-    epc1           0x40027657
+    epc1           0x40084013
     epc2           0x0
     ...
     ==================== CURRENT THREAD STACK =====================
-    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    #0  0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+    #1  0x4008510c in esp_system_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/port/esp_system_chip.c:93
     ...
     ======================== THREADS INFO =========================
-    Id   Target Id          Frame
-    * 1    process 1073501760 0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    2    process 1073503644 vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+      Id   Target Id          Frame
+    * 1    process 1073413024 0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+      2    process 1073413368 vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:133
     ...
-    ==================== THREAD 1 (TCB: 0x3ffc5640, name: 'main') =====================
-    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+           TCB             NAME PRIO C/B  STACK USED/FREE
+    ---------- ---------------- -------- ----------------
+    0x3ffafba0             main      1/1         368/3724
+    0x3ffafcf8            IDLE0      0/0         288/1240
+    0x3ffafe50            IDLE1      0/0         416/1108
     ...
-    ==================== THREAD 2 (TCB: 0x3ffc5d9c, name: 'IDLE') =====================
-    #0  vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+    ==================== THREAD 1 (TCB: 0x3ffafba0, name: 'main') =====================
+    #0  0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+    #1  0x4008510c in esp_system_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    ...
+    ==================== THREAD 2 (TCB: 0x3ffafcf8, name: 'IDLE0') =====================
+    #0  vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:133
     #1  0x40000000 in ?? ()
     ...
     ======================= ALL MEMORY REGIONS ========================
     Name   Address   Size   Attrs
     ...
-    .iram0.vectors 0x40024000 0x403 R XA
-    .dram0.data 0x3ffbf1c0 0x2c0c RW A
+    .iram0.vectors 0x40080000 0x403 R XA
+    .iram0.text 0x40080404 0xb8ab R XA
+    .dram0.data 0x3ffb0000 0x2114 RW A
     ...
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
@@ -162,7 +196,7 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     <将 Base64 编码的核心转储内容解码，并将其保存到磁盘文件中>
     ================= CORE DUMP END ===================
 
-建议将核心转储文本主体手动保存到文件，``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
+建议将核心转储文本主体手动保存到文件， ``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
 
 .. code-block:: bash
 
@@ -175,6 +209,8 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     idf.py coredump-debug -c </path/to/saved/base64/text>
 
 
+.. _core_dump_commands:
+
 核心转储命令
 ------------------
 
@@ -182,6 +218,12 @@ ESP-IDF 提供了一些特殊命令，有助于检索和分析核心转储：
 
 * ``idf.py coredump-info`` - 打印崩溃任务的寄存器、调用栈、系统可用任务列表、内存区域以及核心转储中存储的内存内容（包括 TCB 和栈）。
 * ``idf.py coredump-debug`` - 创建核心转储 ELF 文件，并使用该文件运行 GDB 调试会话。你可以手动检查内存、变量和任务状态。请注意，由于并未将所有内存保存在核心转储中，因此只有在栈上分配的变量的值才有意义。
+
+高阶用户如果需要传递额外参数或使用自定义 ELF 文件，可直接使用 `esp-coredump <https://github.com/espressif/esp-coredump>`_ 工具。如果在 ESP-IDF 环境中使用该工具，可运行如下命令查询更多信息：
+
+.. code-block:: bash
+
+    esp-coredump --help
 
 
 回溯中的 ROM 函数

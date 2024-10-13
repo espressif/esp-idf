@@ -80,6 +80,7 @@ api-reference/peripherals/sigmadelta            api-reference/peripherals/sdm
 
 # The 'secure boot' guides are now 'secure boot v1' guides
 security/secure-boot                           security/secure-boot-v1
+security/host-based-security-workflows         security/security-features-enablement-workflows
 
 # Since ESP32-S2, hw-reference URLs are now namespaced by chip
 hw-reference/get-started-devkitc                hw-reference/esp32/get-started-devkitc

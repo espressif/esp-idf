@@ -45,7 +45,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
-    const int cap_gpio = 0;
+    const int cap_gpio = TEST_CAP_GPIO;
     // put the GPIO into a preset state
     gpio_set_level(cap_gpio, 0);
 
@@ -140,7 +140,7 @@ TEST_CASE("mcpwm_comparator_iram_safe", "[mcpwm]")
 
     printf("install MCPWM generator\r\n");
     mcpwm_generator_config_t gen_config = {
-        .gen_gpio_num = 0,
+        .gen_gpio_num = TEST_PWMA_GPIO,
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 

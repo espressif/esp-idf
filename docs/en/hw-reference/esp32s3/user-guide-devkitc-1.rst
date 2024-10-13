@@ -307,7 +307,7 @@ Hardware Revision Details
 
 .. note::
 
-    Both versions of ESP32-S3-DevKitC-1 are available on the market. The main difference lies in that the RGB LED is connected to different pins.
+    Both the initial and v1.1 versions of ESP32-S3-DevKitC-1 are available on the market. The main difference lies in the GPIO assignment for the RGB LED: the initial version uses GPIO48, whereas v1.1 uses GPIO38.
 
 
 Related Documents
@@ -318,8 +318,8 @@ Related Documents
 - `ESP32-S3-WROOM-2 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-2_datasheet_en.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-S3-DevKitC-1_V1.1_20221130.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 PCB layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-S3-DevKitC-1_V1.1_20220429.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 Dimensions <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 Dimensions source file <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
+- `ESP32-S3-DevKitC-1 Dimensions <https://dl.espressif.com/dl/schematics/esp_idf/DXF_ESP32-S3-DevKitC-1_V1.1_20220429.pdf>`_ (PDF)
+- `ESP32-S3-DevKitC-1 Dimensions source file <https://dl.espressif.com/dl/schematics/esp_idf/DXF_ESP32-S3-DevKitC-1_V1.1_20220429.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
 

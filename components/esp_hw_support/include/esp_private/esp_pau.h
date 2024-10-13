@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ void pau_regdma_trigger_modem_link_backup(void);
 void pau_regdma_trigger_modem_link_restore(void);
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
  * @brief Set the address of system REGDMA Link in active state
  * @param link_addr linked lists address
@@ -76,6 +76,16 @@ void pau_regdma_trigger_extra_link_backup(void);
  * @brief Software trigger regdma to perform extra link restore
  */
 void pau_regdma_trigger_extra_link_restore(void);
+
+#if SOC_PAU_IN_TOP_DOMAIN
+/**
+ * @brief Rentention link entry selection, enable or disable the retention
+ *        link entry configuration in always-on domain
+ *
+ * @param enable Set true to use always-on domain link configuration instead
+ */
+void pau_regdma_enable_aon_link_entry(bool enable);
+#endif
 
 #ifdef __cplusplus
 }

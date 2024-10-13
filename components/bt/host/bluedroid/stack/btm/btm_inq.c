@@ -163,7 +163,7 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
     UINT8        scan_mode = 0;
     UINT16       service_class;
     UINT8       *p_cod;
-    UINT8        major, minor;
+    UINT8        major, minor, reserved_2;
     DEV_CLASS    cod;
     LAP          temp_lap[2];
     BOOLEAN      is_limited;
@@ -255,13 +255,14 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
     if (is_limited ^ cod_limited) {
         BTM_COD_MINOR_CLASS(minor, p_cod );
         BTM_COD_MAJOR_CLASS(major, p_cod );
+        BTM_COD_RESERVED_2(reserved_2, p_cod);
         if (is_limited) {
             service_class |= BTM_COD_SERVICE_LMTD_DISCOVER;
         } else {
             service_class &= ~BTM_COD_SERVICE_LMTD_DISCOVER;
         }
 
-        FIELDS_TO_COD(cod, minor, major, service_class);
+        FIELDS_TO_COD(cod, reserved_2, minor, major, service_class);
         (void) BTM_SetDeviceClass (cod);
     }
 
@@ -515,7 +516,7 @@ tBTM_STATUS BTM_SetPeriodicInquiryMode (tBTM_INQ_PARMS *p_inqparms, UINT16 max_d
 
     /* Before beginning the inquiry the current filter must be cleared, so initiate the command */
     if ((status = btm_set_inq_event_filter (p_inqparms->filter_cond_type, &p_inqparms->filter_cond)) != BTM_CMD_STARTED) {
-        /* If set filter command is not succesful reset the state */
+        /* If set filter command is not successful reset the state */
         p_inq->p_inq_results_cb = NULL;
         p_inq->state = BTM_INQ_INACTIVE_STATE;
 
@@ -688,7 +689,7 @@ UINT16 BTM_ReadConnectability (UINT16 *p_window, UINT16 *p_interval)
 ** Description      This function returns a bit mask of the current inquiry state
 **
 ** Returns          BTM_INQUIRY_INACTIVE if inactive (0)
-**                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
+**                  BTM_LIMITED_INQUIRY_ACTIVE if a limited inquiry is active
 **                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
 **                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
 **
@@ -783,7 +784,7 @@ tBTM_STATUS BTM_CancelInquiry(void)
 ** Description      This function is called to start an inquiry.
 **
 ** Parameters:      p_inqparms - pointer to the inquiry information
-**                      mode - GENERAL or LIMITED inquiry, BR/LE bit mask seperately
+**                      mode - GENERAL or LIMITED inquiry, BR/LE bit mask separately
 **                      duration - length in 1.28 sec intervals (If '0', the inquiry is CANCELLED)
 **                      max_resps - maximum amount of devices to search for before ending the inquiry
 **                      filter_cond_type - BTM_CLR_INQUIRY_FILTER, BTM_FILTER_COND_DEVICE_CLASS, or
@@ -1858,7 +1859,7 @@ void btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode)
 #if BLE_INCLUDED == TRUE
                 /* new device response */
                 && ( p_i == NULL ||
-                     /* exisiting device with BR/EDR info */
+                     /* existing device with BR/EDR info */
                      (p_i && (p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BREDR) != 0)
                    )
 #endif

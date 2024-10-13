@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,8 @@
 typedef struct esp_lcd_platform_t {
     portMUX_TYPE spinlock; // spinlock used to protect platform level resources
     union {
-        void *panels[SOC_LCD_RGB_PANELS]; // array of RGB LCD panel instances
-        void *buses[SOC_LCD_I80_BUSES];   // array of i80 bus instances
+        void *panels[SOC_LCDCAM_RGB_NUM_PANELS]; // array of RGB LCD panel instances
+        void *buses[SOC_LCDCAM_I80_NUM_BUSES];   // array of i80 bus instances
     }; // LCD peripheral can only work under either RGB mode or intel 8080 mode
 } esp_lcd_platform_t;
 
@@ -30,7 +30,7 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
     switch (device_type) {
     case LCD_COM_DEVICE_TYPE_I80:
         // search for a bus slot then register to platform
-        for (int i = 0; (i < SOC_LCD_I80_BUSES) && (member_id == -1); i++) {
+        for (int i = 0; (i < SOC_LCDCAM_I80_NUM_BUSES) && (member_id == -1); i++) {
             portENTER_CRITICAL(&s_lcd_platform.spinlock);
             if (!s_lcd_platform.buses[i]) {
                 s_lcd_platform.buses[i] = device_obj;
@@ -41,7 +41,7 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
         break;
     case LCD_COM_DEVICE_TYPE_RGB:
         // search for a panel slot then register to platform
-        for (int i = 0; (i < SOC_LCD_RGB_PANELS) && (member_id == -1); i++) {
+        for (int i = 0; (i < SOC_LCDCAM_RGB_NUM_PANELS) && (member_id == -1); i++) {
             portENTER_CRITICAL(&s_lcd_platform.spinlock);
             if (!s_lcd_platform.panels[i]) {
                 s_lcd_platform.panels[i] = device_obj;

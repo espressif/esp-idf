@@ -8,7 +8,6 @@
 #include <string.h>
 #include <assert.h>
 #include "esp_partition.h"
-#include "spi_flash_mmap.h"
 #include "esp_log.h"
 
 static const char *TAG = "example";
@@ -44,9 +43,9 @@ void app_main(void)
     assert(memcmp(store_data, read_data, sizeof(read_data)) == 0);
     ESP_LOGI(TAG, "Read data: %s", read_data);
 
-    // Erase the area where the data was written. Erase size shoud be a multiple of SPI_FLASH_SEC_SIZE
+    // Erase the area where the data was written. Erase size should be a multiple of SPI_FLASH_SEC_SIZE
     // and also be SPI_FLASH_SEC_SIZE aligned
-    ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, SPI_FLASH_SEC_SIZE));
+    ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, partition->erase_size));
 
     // Read back the data (should all now be 0xFF's)
     memset(store_data, 0xFF, sizeof(read_data));

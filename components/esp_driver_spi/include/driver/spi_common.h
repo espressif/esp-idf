@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,9 +89,10 @@ typedef spi_common_dma_t spi_dma_chan_t;
  *
  * You can use this structure to specify the GPIO pins of the bus. Normally, the driver will use the
  * GPIO matrix to route the signals. An exception is made when all signals either can be routed through
- * the IO_MUX or are -1. In that case, the IO_MUX is used, allowing for >40MHz speeds.
+ * the IO_MUX or are -1. In that case, the IO_MUX is used. On ESP32, using GPIO matrix will bring about 25ns of input
+ * delay, which may cause incorrect read for >40MHz speeds.
  *
- * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t refering to these lines will be ignored and can thus safely be left uninitialized.
+ * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t referring to these lines will be ignored and can thus safely be left uninitialized.
  */
 typedef struct {
     union {
@@ -115,6 +116,7 @@ typedef struct {
     int data5_io_num;     ///< GPIO pin for spi data5 signal in octal mode, or -1 if not used.
     int data6_io_num;     ///< GPIO pin for spi data6 signal in octal mode, or -1 if not used.
     int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
+    bool data_io_default_level; ///< Output data IO default level when no transaction.
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     esp_intr_cpu_affinity_t  isr_cpu_id;    ///< Select cpu core to register SPI ISR.
@@ -165,6 +167,20 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
  *         - ESP_OK                on success
  */
 esp_err_t spi_bus_free(spi_host_device_t host_id);
+
+/**
+ * @brief Helper function for malloc DMA capable memory for SPI driver
+ *
+ * @note This API will take care of the cache and hardware alignment internally.
+ *       To free/release memory allocated by this helper function, simply calling `free()`
+ *
+ * @param[in]  host_id          SPI peripheral who will using the memory
+ * @param[in]  size             Size in bytes, the amount of memory to allocate
+ * @param[in]  extra_heap_caps  Extra heap caps based on MALLOC_CAP_DMA
+ *
+ * @return                      Pointer to the memory if allocated successfully
+ */
+void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps);
 
 #ifdef __cplusplus
 }

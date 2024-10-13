@@ -5,4 +5,4 @@ if(CONFIG_MQTT_PROTOCOL_5)
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    PRIV_REQUIRES cmock test_utils mqtt nvs_flash app_update esp_eth esp_netif spi_flash common)
+                    PRIV_REQUIRES cmock test_utils mqtt nvs_flash app_update spi_flash common)

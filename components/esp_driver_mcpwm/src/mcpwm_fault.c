@@ -109,7 +109,7 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
 
     // if interrupt priority specified before, it cannot be changed until the group is released
     // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group intrrupt priority failed");
+    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
 
     // GPIO configuration
     gpio_config_t gpio_conf = {

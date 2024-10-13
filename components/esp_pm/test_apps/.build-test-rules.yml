@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_pm/test_apps:
+  enable:
+    - if: INCLUDE_DEFAULT == 1
+  disable:
+    - if: CONFIG_NAME == "pm_pd_top_sleep" and IDF_TARGET not in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32C61] IDF-9250
+  depends_components:
+    - esp_pm

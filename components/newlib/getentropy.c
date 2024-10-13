@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,4 +27,9 @@ int getentropy(void *buffer, size_t length)
     }
 
     return 0;
+}
+
+void newlib_include_getentropy_impl(void)
+{
+    // Linker hook, exists for no other purpose
 }

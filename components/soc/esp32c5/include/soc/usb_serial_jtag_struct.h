@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,7 @@ typedef union {
          *  can check USB_SERIAL_JTAG_OUT_EP1_WR_ADDR USB_SERIAL_JTAG_OUT_EP0_RD_ADDR to know
          *  how many data is received, then read data from UART Rx FIFO.
          */
-        uint32_t rdwr_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rdwr_byte:32;
     };
     uint32_t val;
 } usb_serial_jtag_ep1_reg_t;
@@ -131,7 +130,7 @@ typedef union {
          */
         uint32_t test_enable:1;
         /** test_usb_oe : R/W; bitpos: [1]; default: 0;
-         *  USB pad oen in test
+         *  USB pad one in test
          */
         uint32_t test_usb_oe:1;
         /** test_tx_dp : R/W; bitpos: [2]; default: 0;
@@ -290,7 +289,7 @@ typedef union {
          */
         uint32_t serial_out_afifo_reset_rd:1;
         /** serial_out_afifo_rempty : RO; bitpos: [4]; default: 1;
-         *  CDC_ACM OUTOUT async FIFO empty signal in read clock domain.
+         *  CDC_ACM OUTPUT async FIFO empty signal in read clock domain.
          */
         uint32_t serial_out_afifo_rempty:1;
         /** serial_in_afifo_wfull : RO; bitpos: [5]; default: 0;
@@ -301,6 +300,43 @@ typedef union {
     };
     uint32_t val;
 } usb_serial_jtag_ser_afifo_config_reg_t;
+
+/** Type of serial_ep_timeout0 register
+ *  USB uart out endpoint timeout configuration.
+ */
+typedef union {
+    struct {
+        /** serial_timeout_en : R/W; bitpos: [0]; default: 0;
+         *  USB serial out ep timeout enable. When a timeout event occurs, serial out ep buffer
+         *  is automatically cleared and reg_serial_timeout_status is asserted.
+         */
+        uint32_t serial_timeout_en:1;
+        /** serial_timeout_status : R/WTC/SS; bitpos: [1]; default: 0;
+         *  Serial out ep triggers a timeout event.
+         */
+        uint32_t serial_timeout_status:1;
+        /** serial_timeout_status_clr : WT; bitpos: [2]; default: 0;
+         *  Write 1 to clear reg_serial_timeout_status.
+         */
+        uint32_t serial_timeout_status_clr:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} usb_serial_jtag_serial_ep_timeout0_reg_t;
+
+/** Type of serial_ep_timeout1 register
+ *  USB uart out endpoint timeout configuration.
+ */
+typedef union {
+    struct {
+        /** serial_timeout_max : R/W; bitpos: [31:0]; default: 4800768;
+         *  USB serial out ep timeout max threshold value, indicates the maximum time that
+         *  waiting for ESP to take away data in memory. This value is in steps of 20.83ns.
+         */
+        uint32_t serial_timeout_max:32;
+    };
+    uint32_t val;
+} usb_serial_jtag_serial_ep_timeout1_reg_t;
 
 
 /** Group: Interrupt Registers */
@@ -889,7 +925,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 34640416;
+        /** date : R/W; bitpos: [31:0]; default: 36770368;
          *  register version.
          */
         uint32_t date:32;
@@ -898,7 +934,7 @@ typedef union {
 } usb_serial_jtag_date_reg_t;
 
 
-typedef struct usb_serial_jtag_dev_t {
+typedef struct {
     volatile usb_serial_jtag_ep1_reg_t ep1;
     volatile usb_serial_jtag_ep1_conf_reg_t ep1_conf;
     volatile usb_serial_jtag_int_raw_reg_t int_raw;
@@ -926,7 +962,9 @@ typedef struct usb_serial_jtag_dev_t {
     volatile usb_serial_jtag_config_update_reg_t config_update;
     volatile usb_serial_jtag_ser_afifo_config_reg_t ser_afifo_config;
     volatile usb_serial_jtag_bus_reset_st_reg_t bus_reset_st;
-    uint32_t reserved_06c[5];
+    volatile usb_serial_jtag_serial_ep_timeout0_reg_t serial_ep_timeout0;
+    volatile usb_serial_jtag_serial_ep_timeout1_reg_t serial_ep_timeout1;
+    uint32_t reserved_074[3];
     volatile usb_serial_jtag_date_reg_t date;
 } usb_serial_jtag_dev_t;
 

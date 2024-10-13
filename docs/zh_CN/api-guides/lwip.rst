@@ -419,6 +419,14 @@ IP 层特性
 
 - 支持 IPV4 映射 IPV6 地址
 
+NAPT 和端口转发
+++++++++++++++++++++++++
+
+支持 IPv4 网络地址端口转换（NAPT）和端口转发。然而，仅限于单个接口启用 NAPT。
+
+- 要在两个接口之间使用 NAPT 转发数据包，必须在连接到目标网络的接口上启用 NAPT。例如，为了通过 Wi-Fi 接口为以太网流量启用互联网访问，必须在以太网接口上启用 NAPT。
+- NAPT 的使用示例可参考 :example:`network/vlan_support`。
+
 .. _lwip-custom-hooks:
 
 自定义 lwIP 钩子
@@ -451,6 +459,10 @@ IP 层特性
 
 如 :ref:`lwip-dns-limitation` 所述，ESP-IDF 中的 lwIP 扩展功能仍然受到全局 DNS 限制的影响。为了在应用程序代码中解决这一限制，可以使用 ``FALLBACK_DNS_SERVER_ADDRESS()`` 宏定义所有接口能够访问的全局 DNS 备用服务器，或者单独维护每个接口的 DNS 服务器，并在默认接口更改时重新配置。
 
+通过网络数据库 API 返回的 IP 地址数量受限：``getaddrinfo()`` 和 ``gethostbyname()`` 受到宏 ``DNS_MAX_HOST_IP`` 的限制，宏的默认值为 1。
+
+在调用 ``getaddrinfo()`` 函数时，不会返回规范名称。因此，第一个返回的 ``addrinfo`` 结构中的 ``ai_canonname`` 字段仅包含 ``nodename`` 参数或相同内容的字符串。
+
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 
 .. only:: esp32
@@ -471,9 +483,7 @@ IP 层特性
 最大吞吐量
 ^^^^^^^^^^^^^^^^^^
 
-在 :example:`wifi/iperf` 示例中，乐鑫测试了在射频密封的封闭环境下 ESP-IDF 的 TCP/IP 吞吐量。
-
-iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已知可最大化 TCP/IP 吞吐量的设置，但该设置会占用更多 RAM。要牺牲其他性能，在应用程序中最大化 TCP/IP 吞吐量，建议将该示例文件中的设置应用到项目的 sdkconfig 文件中。
+乐鑫使用 iperf 测试应用程序 https://iperf.fr/ 测试了 ESP-IDF 的 TCP/IP 吞吐量。关于实际测试和优化配置的更多信息，请参考 :ref:`improve-network-speed`。
 
 .. important::
 
@@ -505,6 +515,7 @@ iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已
 
 - 减少 :ref:`CONFIG_LWIP_MAX_SOCKETS` 可以减少系统中的最大套接字数量。更改此设置，会让处于 ``WAIT_CLOSE`` 状态的 TCP 套接字在需要打开新套接字时更快地关闭和复用，进一步降低峰值 RAM 使用量。
 - 减少 :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`、:ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 和 :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 可以减少 RAM 使用量，但会影响吞吐量，具体取决于使用情况。
+- 减少 :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 可以通过限制同时接受的连接数来减少 RAM 使用量。
 - 减少 :ref:`CONFIG_LWIP_TCP_MSL` 和 :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` 可以减少系统中的最大分段寿命，同时会使处于 ``TIME_WAIT`` 和 ``FIN_WAIT_2`` 状态的 TCP 套接字能更快地关闭和复用。
 - 禁用 :ref:`CONFIG_LWIP_IPV6` 可以在系统启动时节省大约 39 KB 的固件大小和 2 KB 的 RAM，并在运行 TCP/IP 栈时节省 7 KB 的 RAM。如果无需支持 IPV6，可以禁用 IPv6，减少 flash 和 RAM 占用。
 - 禁用 :ref:`CONFIG_LWIP_IPV4` 可以在系统启动时节省大约 26 KB 的固件大小和 600 B 的 RAM，并在运行 TCP/IP 栈时节省 6 KB 的 RAM。如果本地网络仅支持 IPv6 配置，可以禁用 IPv4，减少 flash 和 RAM 占用。

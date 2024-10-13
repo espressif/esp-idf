@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -46,11 +46,11 @@ static void light_sleep_task(void *args)
                 break;
             case ESP_SLEEP_WAKEUP_UART:
                 wakeup_reason = "uart";
-                /* Hang-up for a while to switch and execuse the uart task
+                /* Hang-up for a while to switch and execute the uart task
                  * Otherwise the chip may fall sleep again before running uart task */
                 vTaskDelay(1);
                 break;
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if EXAMPLE_TOUCH_LSLEEP_WAKEUP_SUPPORT
             case ESP_SLEEP_WAKEUP_TOUCHPAD:
                 wakeup_reason = "touch";
                 break;
@@ -68,7 +68,7 @@ static void light_sleep_task(void *args)
                 wakeup_reason, t_after_us / 1000, (t_after_us - t_before_us) / 1000);
 #endif
         if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
-            /* Waiting for the gpio inactive, or the chip will continously trigger wakeup*/
+            /* Waiting for the gpio inactive, or the chip will continuously trigger wakeup*/
             example_wait_gpio_inactive();
         }
     }
@@ -83,7 +83,7 @@ void app_main(void)
     example_register_timer_wakeup();
     /* Enable wakeup from light sleep by uart */
     example_register_uart_wakeup();
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if EXAMPLE_TOUCH_LSLEEP_WAKEUP_SUPPORT
     /* Enable wakeup from light sleep by touch element */
     example_register_touch_wakeup();
 #endif

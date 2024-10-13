@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,41 @@ typedef enum {
     ESP_BT_DEV_COEX_TYPE_BT,
 } esp_bt_dev_coex_type_t;
 
+/// BT device callback events
+typedef enum {
+    ESP_BT_DEV_NAME_RES_EVT = 0,                    /*!< Device name result event */
+    ESP_BT_DEV_EVT_MAX,
+} esp_bt_dev_cb_event_t;
+
+/// BT device callback parameters
+typedef union {
+    /**
+     * @brief ESP_BT_DEV_NAME_RES_EVT
+     */
+    struct name_res_param {
+        esp_bt_status_t status;                /*!< Status of getting device name */
+        char *name;                            /*!< Name of Bluetooth device */
+    } name_res;                                /*!< discovery result parameter struct */
+} esp_bt_dev_cb_param_t;
+
+/**
+ * @brief           bluetooth device callback function type
+ *
+ * @param           event : Event type
+ *
+ * @param           param : Pointer to callback parameter
+ */
+typedef void (* esp_bt_dev_cb_t)(esp_bt_dev_cb_event_t event, esp_bt_dev_cb_param_t *param);
+
+/**
+ * @brief           register callback function. This function should be called after esp_bluedroid_enable() completes successfully
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_bt_dev_register_callback(esp_bt_dev_cb_t callback);
+
 /**
  *
  * @brief      Get bluetooth device address.  Must use after "esp_bluedroid_enable".
@@ -61,7 +96,21 @@ const uint8_t *esp_bt_dev_get_address(void);
  *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
  *                  - ESP_FAIL : others
  */
-esp_err_t esp_bt_dev_set_device_name(const char *name);
+esp_err_t esp_bt_dev_set_device_name(const char *name) __attribute__((deprecated("Please use esp_bt_gap_set_device_name or esp_ble_gap_set_device_name")));
+
+/**
+ * @brief           Get bluetooth device name. This function should be called after esp_bluedroid_enable()
+ *                  completes successfully.
+ *
+ *                  A BR/EDR/LE device type shall have a single Bluetooth device name which shall be
+ *                  identical irrespective of the physical channel used to perform the name discovery procedure.
+ *
+ * @return
+ *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL : others
+ */
+esp_err_t esp_bt_dev_get_device_name(void) __attribute__((deprecated("Please use esp_bt_gap_get_device_name or esp_ble_gap_get_device_name")));
 
 /**
  * @brief           Config bluetooth device coexis status. This function should be called after esp_bluedroid_enable()

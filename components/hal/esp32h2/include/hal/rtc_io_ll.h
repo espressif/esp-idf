@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,10 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "soc/lp_aon_struct.h"
+#include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
 #include "hal/misc.h"
 
@@ -26,6 +29,22 @@ typedef enum {
     RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
+
+
+/**
+ * @brief Enable/Disable LP_IO peripheral clock.
+ *
+ * @param enable true to enable the clock / false to disable the clock
+ */
+static inline void _rtcio_ll_enable_io_clock(bool enable)
+{
+    LPPERI.clk_en.lp_io_ck_en = enable;
+    while (LPPERI.clk_en.lp_io_ck_en != enable) {
+        ;
+    }
+}
+
+#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
 
 /**
  * @brief Select the rtcio function.

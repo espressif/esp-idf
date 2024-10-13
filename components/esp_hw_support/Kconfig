@@ -39,6 +39,12 @@ menu "Hardware Settings"
         config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
             bool
 
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES
+            int
+            default 1 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            default 2 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            default 4 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+
             # Insert chip-specific MAC config
         orsource "./port/$IDF_TARGET/Kconfig.mac"
 
@@ -50,6 +56,13 @@ menu "Hardware Settings"
                 If you have an invalid MAC CRC (ESP_ERR_INVALID_CRC) problem
                 and you still want to use this chip, you can enable this option to bypass such an error.
                 This applies to both MAC_FACTORY and CUSTOM_MAC efuses.
+
+        config ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC
+            bool "Enable using custom mac as base mac"
+            default n
+            help
+                When this configuration is enabled, the user can invoke `esp_read_mac` to obtain the desired type of
+                MAC using a custom MAC as the base MAC.
     endmenu
 
     menu "Sleep Config"
@@ -117,10 +130,10 @@ menu "Hardware Settings"
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
             default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || \
-                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c2, esp32c3, esp32s3, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
+                esp32c2, esp32c3, esp32s3, esp32c5, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
                 a small electrostatic pulse during light sleep, with specific condition
 
                 - GPIO needs to be configured as input-mode only
@@ -134,28 +147,39 @@ menu "Hardware Settings"
                 This option provides a software workaround for this issue. Configure to isolate all
                 GPIO pins in sleep state.
 
-        config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
-            int "Extra delay in deep sleep wake stub (in us)"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
-            default 2000
+        config ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
+            int "Extra delay (in us) after flash powerdown sleep wakeup to wait flash ready"
+            default 2000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 0
             range 0 5000
             help
-                When the chip exits deep sleep, the CPU and the flash chip are powered on
-                at the same time. CPU will run deep sleep stub first, and then
-                proceed to load code from flash. Some flash chips need sufficient
-                time to pass between power on and first read operation. By default,
-                without any extra delay, this time is approximately 900us, although
+                When the chip exits sleep, the CPU and the flash chip are powered on at the same time.
+                CPU will run rom code (deepsleep) or ram code (lightsleep) first, and then load or execute
+                code from flash.
+
+                Some flash chips need sufficient time to pass between power on and first read operation.
+                By default, without any extra delay, this time is approximately 900us, although
                 some flash chip types need more than that.
 
-                By default extra delay is set to 2000us. When optimizing startup time
+                (!!! Please adjust this value according to the Data Sheet of SPI Flash used in your project.)
+                In Flash Data Sheet, the parameters that define the Flash ready timing after power-up (minimum
+                time from Vcc(min) to CS activeare) usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
+                and the configuration value here should be:
+                ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY = tVSL - 900
+
+                For esp32 and esp32s3, the default extra delay is set to 2000us. When optimizing startup time
                 for applications which require it, this value may be reduced.
 
-                If you are seeing "flash read err, 1000" message printed to the
-                console after deep sleep reset, try increasing this value.
+                If you are seeing "flash read err, 1000" message printed to the console after deep sleep reset
+                on esp32, or triggered RTC_WDT/LP_WDT after lightsleep wakeup, try increasing this value.
+                (For esp32, the delay will be executed in both deep sleep and light sleep wake up flow.
+                For chips after esp32, the delay will be executed only in light sleep flow, the delay
+                controlled by the EFUSE_FLASH_TPUW in ROM will be executed in deepsleep wake up flow.)
 
         config ESP_SLEEP_CACHE_SAFE_ASSERTION
             bool "Check the cache safety of the sleep wakeup code in sleep process"
             default n
+            select ESP_PANIC_HANDLER_IRAM
             help
                 Enabling it will check the cache safety of the code before the flash power is ready after
                 light sleep wakeup, and check PM_SLP_IRAM_OPT related code cache safety. This option is
@@ -190,18 +214,6 @@ menu "Hardware Settings"
                 callback and hence it is highly recommended to keep them as short as possible.
     endmenu
 
-    menu "ESP_SLEEP_WORKAROUND"
-        # No visible menu/configs for workaround
-        visible if 0
-        config ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-            bool "ESP32C3 SYSTIMER Stall Issue Workaround"
-            depends on IDF_TARGET_ESP32C3
-            help
-                Its not able to stall ESP32C3 systimer in sleep.
-                To fix related RTOS TICK issue, select it to disable related systimer during sleep.
-                TODO: IDF-7036
-    endmenu
-
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
     endmenu
@@ -221,115 +233,19 @@ menu "Hardware Settings"
             bool "Enable debug log"
             default n
             help
-                Wether to enable the debug log message for ETM core driver.
+                whether to enable the debug log message for ETM core driver.
                 Note that, this option only controls the ETM related driver log, won't affect other drivers.
     endmenu # ETM Configuration
 
-    menu "GDMA Configuration"
-        depends on SOC_GDMA_SUPPORTED
-        config GDMA_CTRL_FUNC_IN_IRAM
-            bool "Place GDMA control functions into IRAM"
-            default n
-            help
-                Place GDMA control functions (like start/stop/append/reset) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config GDMA_ISR_IRAM_SAFE
-            bool "GDMA ISR IRAM-Safe"
-            default n
-            help
-                This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
-                cache misses, and also be able to run whilst the cache is disabled.
-                (e.g. SPI Flash write).
-
-        config GDMA_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for GDMA driver.
-                Note that, this option only controls the GDMA driver log, won't affect other drivers.
-    endmenu # GDMA Configuration
+    rsource "./dma/Kconfig.dma"
 
     menu "Main XTAL Config"
-        choice XTAL_FREQ_SEL
-            prompt "Main XTAL frequency"
-            default XTAL_FREQ_40 if SOC_XTAL_SUPPORT_40M
-            help
-                This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
-                The selected value MUST reflect the frequency of the given hardware.
-
-                Note: The XTAL_FREQ_AUTO option allows the ESP target to automatically estimating XTAL clock's
-                operating frequency. However, this feature is only supported on the ESP32. The ESP32 uses the
-                internal 8MHZ as a reference when estimating. Due to the internal oscillator's frequency being
-                temperature dependent, usage of the XTAL_FREQ_AUTO is not recommended in applications that operate
-                in high ambient temperatures or use high-temperature qualified chips and modules.
-
-            config XTAL_FREQ_24
-                depends on SOC_XTAL_SUPPORT_24M
-                bool "24 MHz"
-            config XTAL_FREQ_26
-                depends on SOC_XTAL_SUPPORT_26M
-                bool "26 MHz"
-            config XTAL_FREQ_32
-                depends on SOC_XTAL_SUPPORT_32M
-                bool "32 MHz"
-            config XTAL_FREQ_40
-                depends on SOC_XTAL_SUPPORT_40M
-                bool "40 MHz"
-            config XTAL_FREQ_AUTO
-                depends on SOC_XTAL_SUPPORT_AUTO_DETECT
-                bool "Autodetect"
-        endchoice
-
-        # rtc_xtal_freq_t enum in soc/rtc.h lists the XTAL frequencies can be supported
-        # SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
-        config XTAL_FREQ
-            int
-            default 24 if XTAL_FREQ_24
-            default 26 if XTAL_FREQ_26
-            default 32 if XTAL_FREQ_32
-            default 40 if XTAL_FREQ_40
-            default 0  if XTAL_FREQ_AUTO
+        orsource "./port/$IDF_TARGET/Kconfig.xtal"
     endmenu
 
-    menu "Crypto DPA Protection"
-        depends on SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
-        config ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            bool "Enable crypto DPA protection at startup"
-            default y
-            help
-                This config controls the DPA (Differential Power Analysis) protection
-                knob for the crypto peripherals. DPA protection dynamically adjusts the
-                clock frequency of the crypto peripheral. DPA protection helps to make it
-                difficult to perform SCA attacks on the crypto peripherals. However,
-                there is also associated performance impact based on the security level
-                set. Please refer to the TRM for more details.
+    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
 
-        choice ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            prompt "DPA protection level"
-            depends on ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            default ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            help
-                Configure the DPA protection security level
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-                bool "Security level low"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-                bool "Security level medium"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-                bool "Security level high"
-        endchoice
-
-        config ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            int
-            default 1 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            default 2 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-            default 3 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-
-    endmenu
+    orsource "./port/$IDF_TARGET/Kconfig.ldo"
 
     # Invisible bringup bypass options for esp_hw_support component
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
@@ -341,6 +257,15 @@ menu "Hardware Settings"
             clock support isn't done yet. So with this option,
             we use xtal on FPGA as the clock source.
 
+    config ESP_BRINGUP_BYPASS_RANDOM_SETTING
+        bool
+        default y if !SOC_RNG_SUPPORTED
+        default n
+        help
+            This option is only used for new chip bringup, when
+            RNG isn't done yet. So with this option, we use 0x5A
+            to fill the random buffers
+
     config ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
         bool
         default n
@@ -348,4 +273,13 @@ menu "Hardware Settings"
     config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         bool
         default n
+
+    config ESP_CLK_RC32K_NOT_TO_USE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+        default n
+        help
+            Due to the poor low-temperature characteristics of
+            RC32K (it cannot operate below -40 degrees Celsius),
+            please avoid using it whenever possible
 endmenu

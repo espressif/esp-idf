@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,18 @@
 #include "btc/btc_manage.h"
 #include "btc_gap_ble.h"
 #include "btc/btc_ble_storage.h"
-
+#include "esp_random.h"
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_GAP_BLE, callback) == 0 ? ESP_OK : ESP_FAIL);
+}
+
+esp_gap_ble_cb_t esp_ble_gap_get_callback(void)
+{
+    return (esp_gap_ble_cb_t) btc_profile_cb_get(BTC_PID_GAP_BLE);
 }
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
@@ -183,6 +188,25 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
+{
+    // Static device address: First two bits are '11', rest is random
+    rand_addr[0] = 0xC0 | (esp_random() & 0x3F);
+    for (int i = 1; i < 6; i++) {
+        rand_addr[i] = esp_random() & 0xFF; // Randomize remaining bits
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr)
+{
+    // Non-resolvable private address: First two bits are '00', rest is random
+    rand_addr[0] = (esp_random() & 0x3F);
+    for (int i = 1; i < 6; i++) {
+        rand_addr[i] = esp_random() & 0xFF; // Randomize remaining bits
+    }
+    return ESP_OK;
+}
 
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
 {
@@ -195,6 +219,48 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_SET_RAND_ADDRESS;
     memcpy(arg.set_rand_addr.rand_addr, rand_addr, ESP_BD_ADDR_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeout)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (rpa_timeout < 0x0001 || rpa_timeout > 0x0E10) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT;
+    arg.set_rpa_timeout.rpa_timeout = rpa_timeout;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+
+esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint8_t addr_type, uint8_t *peer_irk)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (addr_type > BLE_ADDR_TYPE_RANDOM ||!peer_addr || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST;
+
+    memcpy(arg.add_dev_to_resolving_list.addr, peer_addr, ESP_BD_ADDR_LEN);
+    arg.add_dev_to_resolving_list.addr_type = addr_type;
+    memcpy(arg.add_dev_to_resolving_list.irk, peer_irk, ESP_PEER_IRK_LEN);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -294,6 +360,7 @@ esp_err_t esp_ble_gap_config_local_icon (uint16_t icon)
     case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_AND_NAV:
     case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD:
     case ESP_BLE_APPEARANCE_OUTDOOR_SPORTS_LOCATION_POD_AND_NAV:
+    case ESP_BLE_APPEARANCE_STANDALONE_SPEAKER:
         msg.sig = BTC_SIG_API_CALL;
         msg.pid = BTC_PID_GAP_BLE;
         msg.act = BTC_GAP_BLE_ACT_CONFIG_LOCAL_ICON;
@@ -391,9 +458,25 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
 
 esp_err_t esp_ble_gap_set_device_name(const char *name)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
 
-    return esp_bt_dev_set_device_name(name);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (!name){
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (strlen(name) > BTC_MAX_LOC_BD_NAME_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_SET_DEV_NAME;
+    arg.set_dev_name.device_name = (char *)name;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gap_get_device_name(void)
@@ -421,21 +504,37 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
     return ESP_OK;
 }
 
-uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
+uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length)
 {
+    if (length == NULL) {
+        return NULL;
+    }
+
     if (((type < ESP_BLE_AD_TYPE_FLAG) || (type > ESP_BLE_AD_TYPE_128SERVICE_DATA)) &&
             (type != ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE)) {
-        LOG_ERROR("the eir type not define, type = %x\n", type);
+        LOG_ERROR("The advertising data type is not defined, type = %x", type);
+        *length = 0;
         return NULL;
     }
 
+    if (adv_data_len == 0) {
+        *length = 0;
+        return NULL;
+    }
     if (adv_data == NULL) {
-        LOG_ERROR("Invalid p_eir data.\n");
+        LOG_ERROR("Invalid advertising data.");
+        *length = 0;
         return NULL;
     }
 
-    return (BTM_CheckAdvData( adv_data, type, length));
+    return (BTM_CheckAdvData( adv_data, adv_data_len, type, length));
 }
+
+uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *length)
+{
+    return esp_ble_resolve_adv_data_by_type( adv_data, ESP_BLE_ADV_DATA_LEN_MAX + ESP_BLE_SCAN_RSP_DATA_LEN_MAX, (esp_ble_adv_data_type) type, length);
+}
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
 {
@@ -929,6 +1028,25 @@ esp_err_t esp_ble_dtm_stop(void)
     msg.act = BTC_GAP_BLE_DTM_STOP;
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PRIVACY_MODE;
+
+    arg.set_privacy_mode.addr_type = addr_type;
+    memcpy(arg.set_privacy_mode.addr, addr, sizeof(esp_bd_addr_t));
+    arg.set_privacy_mode.privacy_mode = mode;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -1594,3 +1712,31 @@ esp_err_t esp_ble_gap_set_periodic_adv_sync_trans_params(esp_bd_addr_t addr, con
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cmd_param)
+{
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!vendor_cmd_param || !vendor_cmd_param->p_param_buf || !vendor_cmd_param->param_len) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+    // If command is not a VSC, return error
+    if ((vendor_cmd_param->opcode & VENDOR_HCI_CMD_MASK) != VENDOR_HCI_CMD_MASK) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT;
+    arg.vendor_cmd_send.opcode = vendor_cmd_param->opcode;
+    arg.vendor_cmd_send.param_len = vendor_cmd_param->param_len;
+    arg.vendor_cmd_send.p_param_buf = vendor_cmd_param->p_param_buf;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy, btc_gap_ble_arg_deep_free)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}

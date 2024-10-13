@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@
 #define OSI_INITIAL_TRACE_LEVEL             UC_BT_LOG_OSI_TRACE_LEVEL
 #define BLUFI_INITIAL_TRACE_LEVEL           UC_BT_LOG_BLUFI_TRACE_LEVEL
 
+// MEMORY
 #if UC_BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  TRUE
 #define BTC_DYNAMIC_MEMORY         TRUE
@@ -62,6 +63,37 @@
 
 #ifndef BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
+#endif
+
+#if UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
+#else
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
+#endif
+
+#if UC_BT_ABORT_WHEN_ALLOCATION_FAILS
+#define HEAP_ALLOCATION_FAILS_ABORT TRUE
+#else
+#define HEAP_ALLOCATION_FAILS_ABORT FALSE
+#endif
+
+// HCI LOG
+#if UC_BT_HCI_LOG_DEBUG_EN
+#define BT_HCI_LOG_INCLUDED  UC_BT_HCI_LOG_DEBUG_EN
+#else
+#define BT_HCI_LOG_INCLUDED  FALSE
+#endif
+
+#if UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define HCI_LOG_DATA_BUFFER_SIZE  UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define HCI_BUFFER_SIZE  (5)
+#endif
+
+#if UC_BT_HCI_ADV_BUFFER_SIZE
+#define HCI_LOG_ADV_BUFFER_SIZE  UC_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define HCI_LOG_ADV_BUFFER_SIZE  (5)
 #endif
 
 /* OS Configuration from User config (eg: sdkconfig) */

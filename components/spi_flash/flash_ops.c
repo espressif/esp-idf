@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,8 @@
 #include "esp32c2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/cache.h"
 #endif
 #include "esp_rom_spiflash.h"
 #include "esp_flash_partitions.h"
@@ -52,6 +54,8 @@
 #include "bootloader_flash_config.h"
 #include "esp_compiler.h"
 #include "esp_rom_efuse.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_io.h"
 #endif
@@ -148,12 +152,25 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     }
     //Set F4R4 board pin drive strength. TODO: IDF-3663
 #endif
-    /* Reserve the GPIO pins */
+}
+
+void esp_mspi_pin_reserve(void)
+{
     uint64_t reserve_pin_mask = 0;
+    uint8_t mspi_io;
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
-        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+        if (!bootloader_flash_is_octal_mode_enabled()
+            && i >=  ESP_MSPI_IO_DQS && i <= ESP_MSPI_IO_D7) {
+            continue;
+        }
+#endif
+        mspi_io = esp_mspi_get_io(i);
+        if (mspi_io < 64) {     // 'reserve_pin_mask' have 64 bits length
+            reserve_pin_mask |= BIT64(mspi_io);
+        }
     }
-    esp_gpio_reserve_pins(reserve_pin_mask);
+    esp_gpio_reserve(reserve_pin_mask);
 }
 
 esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
@@ -200,18 +217,18 @@ void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
 #endif
 
 static const uint8_t s_mspi_io_num_default[] = {
-    SPI_CLK_GPIO_NUM,
-    SPI_Q_GPIO_NUM,
-    SPI_D_GPIO_NUM,
-    SPI_CS0_GPIO_NUM,
-    SPI_HD_GPIO_NUM,
-    SPI_WP_GPIO_NUM,
+    MSPI_IOMUX_PIN_NUM_CLK,
+    MSPI_IOMUX_PIN_NUM_MISO,
+    MSPI_IOMUX_PIN_NUM_MOSI,
+    MSPI_IOMUX_PIN_NUM_CS0,
+    MSPI_IOMUX_PIN_NUM_HD,
+    MSPI_IOMUX_PIN_NUM_WP,
 #if SOC_SPI_MEM_SUPPORT_OPI_MODE
-    SPI_DQS_GPIO_NUM,
-    SPI_D4_GPIO_NUM,
-    SPI_D5_GPIO_NUM,
-    SPI_D6_GPIO_NUM,
-    SPI_D7_GPIO_NUM
+    MSPI_IOMUX_PIN_NUM_DQS,
+    MSPI_IOMUX_PIN_NUM_D4,
+    MSPI_IOMUX_PIN_NUM_D5,
+    MSPI_IOMUX_PIN_NUM_D6,
+    MSPI_IOMUX_PIN_NUM_D7
 #endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
 };
 
@@ -283,3 +300,22 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
     return s_mspi_io_num_default[io];
 #endif // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
 }
+
+#if !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM  // IDF-10019
+esp_err_t IRAM_ATTR esp_mspi_32bit_address_flash_feature_check(void)
+{
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on this chip");
+    return ESP_ERR_NOT_SUPPORTED;
+#elif CONFIG_IDF_TARGET_ESP32P4
+    // IDF-10019
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (unlikely(!ESP_CHIP_REV_ABOVE(chip_version, 1))) {
+        ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on ESP32P4 ECO0");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    return ESP_OK;
+}
+#endif // !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM

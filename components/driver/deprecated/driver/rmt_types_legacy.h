@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-
 #define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
 #define RMT_CHANNEL_FLAGS_INVERT_SIG (1 << 1) /*!< Invert RMT signal */
 
@@ -38,7 +37,6 @@ typedef struct {
         uint32_t val; /*!< Equivalent unsigned value for the RMT item */
     };
 } rmt_item32_t;
-
 
 #if SOC_RMT_SUPPORTED
 /**

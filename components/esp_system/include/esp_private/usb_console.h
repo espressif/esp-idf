@@ -24,7 +24,6 @@ extern "C" {
  * "cdcacm" VFS driver, or by the USB CDC driver in TinyUSB.
  */
 
-
 /**
  * RX/TX callback function type
  * @param arg  callback-specific context pointer

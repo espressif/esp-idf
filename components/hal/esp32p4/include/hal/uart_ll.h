@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,11 +39,18 @@ extern "C" {
 
 #define UART_LL_REG_FIELD_BIT_SHIFT(hw) (((hw) == &LP_UART) ? 3 : 0)
 
-#define UART_LL_MIN_WAKEUP_THRESH (2)
+#define UART_LL_MIN_WAKEUP_THRESH (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
+
+// UART sleep retention module
+#define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
+                                                     (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : \
+                                                     (uart_num == UART_NUM_2) ? SLEEP_RETENTION_MODULE_UART2 : \
+                                                     (uart_num == UART_NUM_3) ? SLEEP_RETENTION_MODULE_UART3 : \
+                                                     (uart_num == UART_NUM_4) ? SLEEP_RETENTION_MODULE_UART4 : -1)
 
 // Define UART interrupts
 typedef enum {
@@ -100,9 +107,9 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
         break;
-    case 2:
-        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
-        break;
+    // case 2:
+    //     *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
+    //     break;
     }
 }
 
@@ -122,9 +129,9 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
     case LP_UART_SCLK_XTAL_D2:
         LPPERI.core_clk_sel.lp_uart_clk_sel = 1;
         break;
-    case LP_UART_SCLK_LP_PLL:
-        LPPERI.core_clk_sel.lp_uart_clk_sel = 2;
-        break;
+    // case LP_UART_SCLK_LP_PLL: // TODO: LP_PLL clock requires extra support
+    //     LPPERI.core_clk_sel.lp_uart_clk_sel = 2;
+    //     break;
     default:
         // Invalid LP_UART clock source
         HAL_ASSERT(false);
@@ -167,14 +174,38 @@ FORCE_INLINE_ATTR void lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, ui
  * @param hw_id LP UART instance ID
  * @param enable True to enable, False to disable
  */
-static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
+static inline void _lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 {
     (void)hw_id;
     LPPERI.clk_en.ck_en_lp_uart = enable;
 }
 
 // LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief  Enable the UART clock.
+ *
+ * @param hw_id LP UART instance ID
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_sclk_enable(int hw_id)
+{
+    (void)hw_id;
+    LP_UART.clk_conf.tx_sclk_en = 1;
+    LP_UART.clk_conf.rx_sclk_en = 1;
+}
+
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param hw_id LP UART instance ID
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_sclk_disable(int hw_id)
+{
+    (void)hw_id;
+    LP_UART.clk_conf.tx_sclk_en = 0;
+    LP_UART.clk_conf.rx_sclk_en = 0;
+}
 
 /**
  * @brief Reset LP UART module
@@ -202,8 +233,7 @@ static inline void lp_uart_ll_reset_register(int hw_id)
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    bool uart_rst_en = false;
+    bool uart_rst_en = true;
     bool uart_apb_en = false;
     bool uart_sys_en = false;
     switch (uart_num) {
@@ -232,7 +262,14 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
         uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en;
         uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en;
         break;
+    case 5:
+        uart_rst_en = LPPERI.reset_en.rst_en_lp_uart;
+        uart_apb_en = LPPERI.clk_en.ck_en_lp_uart;
+        uart_sys_en = true;
+        break;
     default:
+        // Unknown uart port number
+        HAL_ASSERT(false);
         break;
     }
     return (!uart_rst_en && uart_apb_en && uart_sys_en);
@@ -243,7 +280,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable true to enable, false to disable
  */
-static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+static inline void _uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
 {
     switch (uart_num) {
     case 0:
@@ -275,7 +312,7 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
     }
 }
 // HP_SYS_CLKRST.soc_clk_ctrlx are shared registers, so this function must be used in an atomic way
-#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset UART module
@@ -323,7 +360,7 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
  * @return None.
  */
 
-FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
+FORCE_INLINE_ATTR void _uart_ll_sclk_enable(uart_dev_t *hw)
 {
     if ((hw) == &UART0) {
         HP_SYS_CLKRST.peri_clk_ctrl110.reg_uart0_clk_en = 1;
@@ -339,9 +376,11 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
         // Not going to implement LP_UART reset in this function, it will have its own LL function
         abort();
     }
+    hw->clk_conf.tx_sclk_en = 1;
+    hw->clk_conf.rx_sclk_en = 1;
 }
 // HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
-#define uart_ll_sclk_enable(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_sclk_enable(__VA_ARGS__)
+#define uart_ll_sclk_enable(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_sclk_enable(__VA_ARGS__)
 
 /**
  * @brief  Disable the UART clock.
@@ -350,7 +389,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
+FORCE_INLINE_ATTR void _uart_ll_sclk_disable(uart_dev_t *hw)
 {
     if ((hw) == &UART0) {
         HP_SYS_CLKRST.peri_clk_ctrl110.reg_uart0_clk_en = 0;
@@ -366,9 +405,11 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
         // Not going to implement LP_UART reset in this function, it will have its own LL function
         abort();
     }
+    hw->clk_conf.tx_sclk_en = 0;
+    hw->clk_conf.rx_sclk_en = 0;
 }
 // HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
-#define uart_ll_sclk_disable(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_sclk_disable(__VA_ARGS__)
+#define uart_ll_sclk_disable(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_sclk_disable(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.
@@ -628,8 +669,11 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
  */
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
+    // Write to the FIFO should make sure only involve write operation, any read operation would cause data lost.
+    // Non-32-bit access would lead to a read-modify-write operation to the register, which is undesired.
+    // Therefore, use 32-bit access to avoid any potential problem.
     for (int i = 0; i < (int)wr_len; i++) {
-        hw->fifo.rxfifo_rd_byte = buf[i];
+        hw->fifo.val = (int)buf[i];
     }
 }
 
@@ -808,7 +852,7 @@ FORCE_INLINE_ATTR void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num
 }
 
 /**
- * @brief  Configure the transmiter to send break chars.
+ * @brief  Configure the transmitter to send break chars.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  break_num The number of the break chars need to be send.
@@ -875,7 +919,7 @@ FORCE_INLINE_ATTR void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
  * @brief  Configure the software flow control.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  flow_ctrl The UART sofware flow control settings.
+ * @param  flow_ctrl The UART software flow control settings.
  * @param  sw_flow_ctrl_en Set true to enable software flow control, otherwise set it false.
  *
  * @return None.
@@ -971,8 +1015,33 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
+    // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
     hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
+
+/**
+ * @brief   Enable/disable the UART pad clock in sleep_state
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable enable or disable
+ */
+FORCE_INLINE_ATTR void _uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
+{
+    if (hw == &UART0) {
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart0_slp_clk_en = 1;
+    } else if (hw == &UART1) {
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart1_slp_clk_en = 1;
+    } else if (hw == &UART2) {
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart2_slp_clk_en = 1;
+    } else if (hw == &UART3) {
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart3_slp_clk_en = 1;
+    } else if (hw == &UART4) {
+        LP_AON_CLKRST.hp_clk_ctrl.hp_pad_uart4_slp_clk_en = 1;
+    }
+}
+
+// LP_AON_CLKRST.hp_clk_ctrl is a shared register, so this function must be used in an atomic way
+#define uart_ll_enable_pad_sleep_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uart_ll_enable_pad_sleep_clock(__VA_ARGS__)
 
 /**
  * @brief  Configure the UART work in normal mode.
@@ -1205,7 +1274,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_hw_cts_en(uart_dev_t *hw)
  * @brief Configure TX signal loop back to RX module, just for the testing purposes
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  loop_back_en Set ture to enable the loop back function, else set it false.
+ * @param  loop_back_en Set true to enable the loop back function, else set it false.
  *
  * @return None
  */

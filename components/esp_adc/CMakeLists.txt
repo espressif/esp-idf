@@ -6,18 +6,29 @@ endif()
 
 set(includes "include" "interface" "${target}/include" "deprecated/include")
 
-set(srcs "adc_cali.c"
-         "adc_cali_curve_fitting.c"
-         "deprecated/esp_adc_cal_common_legacy.c")
+set(srcs)
 
 if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs "adc_oneshot.c" "adc_common.c")
-endif()
+    list(APPEND srcs
+        "adc_oneshot.c"
+        "adc_common.c"
+        "adc_cali.c"
+        "adc_cali_curve_fitting.c"
+        "deprecated/esp_adc_cal_common_legacy.c"
+    )
 
-if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-    list(APPEND srcs "adc_continuous.c")
-    if(CONFIG_SOC_ADC_MONITOR_SUPPORTED)
-        list(APPEND srcs "adc_monitor.c")
+    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+        list(APPEND srcs "adc_continuous.c")
+        if(CONFIG_SOC_ADC_MONITOR_SUPPORTED)
+            list(APPEND srcs "adc_monitor.c")
+        endif()
+        if(CONFIG_SOC_GDMA_SUPPORTED)
+            list(APPEND srcs "gdma/adc_dma.c")
+        elseif(${target} STREQUAL "esp32")
+            list(APPEND srcs "esp32/adc_dma.c")
+        elseif(${target} STREQUAL "esp32s2")
+            list(APPEND srcs "esp32s2/adc_dma.c")
+        endif()
     endif()
 endif()
 
@@ -42,5 +53,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_REQUIRES driver esp_driver_gpio efuse esp_pm esp_ringbuf
+                       PRIV_REQUIRES driver esp_driver_gpio efuse esp_pm esp_ringbuf esp_mm
                        LDFRAGMENTS linker.lf)

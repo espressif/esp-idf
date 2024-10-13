@@ -1,283 +1,216 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.default_dependencies: &default_dependencies
+  depends_components:
+    - lwip
+    - esp_netif
+    - esp_wifi
+    - esp_phy
+    - esp_eth
+    - mbedtls
+    - protocol_examples_common
+
 examples/protocols/esp_http_client:
+  <<: *default_dependencies
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable_test:
     - if: IDF_TARGET not in ["esp32", "linux"]
-      temporary: true
-      reason: only test on esp32
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
+  depends_filepatterns:
+    - components/esp_http_client/**/*
 
 examples/protocols/esp_local_ctrl:
+  <<: *default_dependencies
   disable:
-    - if: SOC_WIFI_SUPPORTED != 1
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
-      reason: not supported on p4
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+      reason: only test on these targets
+  depends_filepatterns:
+    - components/protocomm/**/*
+    - tools/esp_prov/**/*
 
 examples/protocols/http_request:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
       reason: only test on esp32
 
 examples/protocols/http_server:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
+      reason: only test on these targets
+  depends_filepatterns:
+    - components/esp_http_server/**/*
 
 examples/protocols/http_server/captive_portal:
+  <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+    - if: SOC_WIFI_SUPPORTED != 1
+      reason: WiFi is required
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
       reason: only test on esp32
+  depends_filepatterns:
+    - components/esp_http_server/**/*
 
 examples/protocols/http_server/restful_server:
+  <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+      reason: not supported yet
+  depends_filepatterns:
+    - components/esp_http_server/**/*
 
 examples/protocols/http_server/ws_echo_server:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
       reason: only test on esp32
+  depends_filepatterns:
+    - components/esp_http_server/**/*
 
 examples/protocols/https_mbedtls:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+  <<: *default_dependencies
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/https_request:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/https_server/simple:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/https_server/wss_server:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
       reason: only test on esp32
 
-examples/protocols/https_x509_bundle:
+examples/protocols/https_request:
+  <<: *default_dependencies
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32h2"]
       temporary: true
-      reason: not supported on p4 # TODO: IDF-8076
+      reason: not supported on h2
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
+
+examples/protocols/https_server/simple:
+  <<: *default_dependencies
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      reason: only test on these targets
+  depends_filepatterns:
+    - components/esp_https_server/**/*
+    - components/esp_tls/**/*
+
+examples/protocols/https_server/wss_server:
+  <<: *default_dependencies
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only test on esp32
+  depends_filepatterns:
+    - components/esp_https_server/**/*
+
+examples/protocols/https_x509_bundle:
+  <<: *default_dependencies
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only test on esp32
+  depends_filepatterns:
+    - components/esp_tls/**/*
 
 examples/protocols/icmp_echo:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
+  <<: *default_dependencies
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/l2tap:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/modbus:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-7869
+  <<: *default_dependencies
+  depends_filepatterns:
+    - examples/common_components/protocol_examples_common/**/*
+    - examples/protocols/modbus/mb_example_common/**/*
+
+
+examples/protocols/mqtt:
+  <<: *default_dependencies
+  depends_filepatterns:
+    - components/mqtt/**/*
 
 examples/protocols/mqtt/custom_outbox:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
 
 examples/protocols/mqtt/ssl:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/mqtt/ssl_ds:
+  <<: *default_dependencies
   disable:
-    - if: SOC_DIG_SIGN_SUPPORTED != 1 or IDF_TARGET == "esp32p4" # TODO: IDF-8077
+    - if: SOC_DIG_SIGN_SUPPORTED != 1
       temporary: false
       reason: DS not present
 
-examples/protocols/mqtt/ssl_mutual_auth:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
-
-examples/protocols/mqtt/ssl_psk:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
-
 examples/protocols/mqtt/tcp:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/mqtt/ws:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/mqtt/wss:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/mqtt5:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8077
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/smtp_client:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
+  <<: *default_dependencies
 
 examples/protocols/sntp:
+  <<: *default_dependencies
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
 
 examples/protocols/sockets:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
+  <<: *default_dependencies
+  disable_test:
+    - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/sockets/non_blocking:
+  <<: *default_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/sockets/tcp_client:
+  <<: *default_dependencies
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
-  enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
-
-examples/protocols/sockets/tcp_server:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
-  disable_test:
-    - if: SOC_WIFI_SUPPORTED != 1
-
-examples/protocols/sockets/udp_client:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
-  disable_test:
-    - if: SOC_WIFI_SUPPORTED != 1
-
-examples/protocols/sockets/udp_server:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4
-  disable_test:
-    - if: SOC_WIFI_SUPPORTED != 1
+  # linux target won't work with CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN=y
 
 examples/protocols/static_ip:
-  disable:
-    - if: IDF_TARGET in ["esp32h2"]
-    - if: IDF_TARGET == "esp32p4"
+  <<: *default_dependencies
+  disable_test:
+    - if: IDF_TARGET != "esp32"
       temporary: true
-      reason: not supported on p4
+      reason: lack of runners

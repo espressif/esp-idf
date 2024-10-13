@@ -25,7 +25,7 @@
 
 #define LWIP_TIMEVAL_PRIVATE 0
 #include <sys/time.h>
-#include "esp_linux_helper.h"
+#include <sys/cdefs.h>
 
 #define LWIP_ERRNO_INCLUDE <errno.h>
 

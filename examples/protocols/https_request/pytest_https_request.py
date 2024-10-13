@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import logging
@@ -50,8 +50,10 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
     requestHandler = https_request_handler()
     httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
-    httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file,
-                                   certfile=server_file, server_side=True)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(certfile=server_file, keyfile=key_file)
+
+    httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
 
 

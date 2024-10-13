@@ -889,7 +889,7 @@ typedef union {
 } lp_i2s_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_i2s_dev_t {
     volatile lp_i2s_vad_conf_reg_t vad_conf;
     volatile lp_i2s_vad_result_reg_t vad_result;
     volatile lp_i2s_rx_mem_conf_reg_t rx_mem_conf;
@@ -938,6 +938,7 @@ typedef struct {
     volatile lp_i2s_date_reg_t date;
 } lp_i2s_dev_t;
 
+extern lp_i2s_dev_t LP_I2S;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_i2s_dev_t) == 0x100, "Invalid size of lp_i2s_dev_t structure");

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+    <testsuite errors="2" failures="0" hostname="FA002598" name="pytest" skipped="0" tests="2" time="22.981" timestamp="2024-05-17T17:51:26.669364">
+        <testcase classname="components.driver.test_apps.i2c_test_apps.pytest_i2c" file="components/driver/test_apps/i2c_test_apps/pytest_i2c.py" line="21" name="('esp32h2', 'esp32h2').('defaults', 'defaults').test_i2c_multi_device" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/('esp32h2', 'esp32h2').('defaults', 'defaults').test_i2c_multi_device/dut.txt" time="11.910">
+            <error message="failed on setup with &quot;EOFError&quot;">conftest.py:74: in case_tester
+    yield CaseTester(dut, **kwargs)
+tools/ci/idf_unity_tester.py:202: in __init__
+    self._manager = Manager()
+/usr/lib/python3.9/multiprocessing/context.py:57: in Manager
+    m.start()
+/usr/lib/python3.9/multiprocessing/managers.py:557: in start
+    self._address = reader.recv()
+/usr/lib/python3.9/multiprocessing/connection.py:255: in recv
+    buf = self._recv_bytes()
+/usr/lib/python3.9/multiprocessing/connection.py:419: in _recv_bytes
+    buf = self._recv(4)
+/usr/lib/python3.9/multiprocessing/connection.py:388: in _recv
+    raise EOFError
+E   EOFError</error>
+        </testcase>
+        <testcase classname="components.driver.test_apps.i2s_test_apps.i2s_multi_dev.pytest_i2s_multi_dev" file="components/driver/test_apps/i2s_test_apps/i2s_multi_dev/pytest_i2s_multi_dev.py" line="5" name="('esp32h2', 'esp32h2').('default', 'default').test_i2s_multi_dev" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/('esp32h2', 'esp32h2').('default', 'default').test_i2s_multi_dev/dut.txt" time="11.071">
+            <error message="failed on setup with &quot;EOFError&quot;">conftest.py:74: in case_tester
+    yield CaseTester(dut, **kwargs)
+tools/ci/idf_unity_tester.py:202: in __init__
+    self._manager = Manager()
+/usr/lib/python3.9/multiprocessing/context.py:57: in Manager
+    m.start()
+/usr/lib/python3.9/multiprocessing/managers.py:557: in start
+    self._address = reader.recv()
+/usr/lib/python3.9/multiprocessing/connection.py:255: in recv
+    buf = self._recv_bytes()
+/usr/lib/python3.9/multiprocessing/connection.py:419: in _recv_bytes
+    buf = self._recv(4)
+/usr/lib/python3.9/multiprocessing/connection.py:388: in _recv
+    raise EOFError
+E   EOFError</error>
+        </testcase>
+    </testsuite>
+    <testsuite errors="0" failures="1" hostname="GX64-C2-SH-1-ITS1N4" name="pytest" skipped="0" tests="3" time="101.163" timestamp="2024-05-17T17:52:04.061589">
+        <testcase classname="components.vfs.test_apps.pytest_vfs" file="components/vfs/test_apps/pytest_vfs.py" line="7" name="esp32c2.default.test_vfs_default" dut_log_url="https://https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c2.default.test_vfs_default/dut.txt" time="30.044"/>
+        <testcase classname="components.vfs.test_apps.pytest_vfs" file="components/vfs/test_apps/pytest_vfs.py" line="7" name="esp32c2.iram.test_vfs_default" dut_log_url="https://https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c2.iram.test_vfs_default/dut.txt" time="28.323"/>
+        <testcase classname="components.wpa_supplicant.test_apps.pytest_wpa_supplicant_ut" file="components/wpa_supplicant/test_apps/pytest_wpa_supplicant_ut.py" line="8" name="esp32c2.default.test_wpa_supplicant_ut" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c2.default.test_wpa_supplicant_ut/dut.txt" time="42.796">
+            <failure message="AssertionError: Unity test failed">/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/plugin.py:1272: in pytest_runtest_call
+    self._raise_dut_failed_cases_if_exists(duts)  # type: ignore
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/plugin.py:1207: in _raise_dut_failed_cases_if_exists
+    raise AssertionError('Unity test failed')
+E   AssertionError: Unity test failed</failure>
+        </testcase>
+    </testsuite>
+    <testsuite errors="0" failures="0" hostname="runner-zmdq2hnf-project-103-concurrent-3" name="pytest" skipped="1" tests="8" time="123.596" timestamp="2024-05-17T03:04:11.412971">
+        <testcase classname="test_common" file="test_common.py" line="114" name="test_python_interpreter_unix" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_python_interpreter_unix/dut.txt" time="7.523"/>
+        <testcase classname="test_common" file="test_common.py" line="133" name="test_python_interpreter_win" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_python_interpreter_win/dut.txt" time="0.000">
+            <skipped message="Linux does not support executing .exe files" type="pytest.skip">/builds/espressif/esp-idf/tools/test_build_system/test_common.py:134: Linux does not support executing .exe files</skipped>
+        </testcase>
+        <testcase classname="test_common" file="test_common.py" line="147" name="test_invoke_confserver" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_invoke_confserver/dut.txt" time="10.179"/>
+        <testcase classname="test_common" file="test_common.py" line="153" name="test_ccache_used_to_build" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_ccache_used_to_build/dut.txt" time="23.713"/>
+        <testcase classname="test_common" file="test_common.py" line="171" name="test_toolchain_prefix_in_description_file" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_toolchain_prefix_in_description_file/dut.txt" time="8.390"/>
+        <testcase classname="test_common" file="test_common.py" line="178" name="test_subcommands_with_options" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_subcommands_with_options/dut.txt" time="28.118"/>
+        <testcase classname="test_common" file="test_common.py" line="194" name="test_fallback_to_build_system_target" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_fallback_to_build_system_target/dut.txt" time="11.687"/>
+        <testcase classname="test_common" file="test_common.py" line="203" name="test_create_component_project" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/test_create_component_project/dut.txt" time="33.986"/>
+    </testsuite>
+    <testsuite errors="0" failures="4" hostname="FA002285" name="pytest" skipped="0" tests="4" time="231.048" timestamp="2024-05-17T17:50:02.291973">
+        <testcase classname="components.esp_timer.test_apps.pytest_esp_timer_ut" file="components/esp_timer/test_apps/pytest_esp_timer_ut.py" line="20" name="esp32c3.release.test_esp_timer" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c3.release.test_esp_timer/dut.txt" time="39.686">
+            <failure message="pexpect.exceptions.TIMEOUT: Not found &quot;Press ENTER to see the list of tests&quot;
+Bytes in current buffer (color code eliminated): ce710,len:0x2afc entry 0x403cc710
+Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_esp_timer/dut.txt">/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:76: in wrapper
+    index = func(self, pattern, *args, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:153: in expect_exact
+    return self.pexpect_proc.expect_exact(pattern, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:432: in expect_exact
+    return exp.expect_loop(timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:181: in expect_loop
+    return self.timeout(e)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:144: in timeout
+    raise exc
+E   pexpect.exceptions.TIMEOUT: &lt;pytest_embedded.log.PexpectProcess object at 0x7f47b1ab46a0&gt;
+E   searcher: searcher_string:
+E       0: b'Press ENTER to see the list of tests'
+E   &lt;pytest_embedded.log.PexpectProcess object at 0x7f47b1ab46a0&gt;
+E   searcher: searcher_string:
+E       0: b'Press ENTER to see the list of tests'
+
+The above exception was the direct cause of the following exception:
+components/esp_timer/test_apps/pytest_esp_timer_ut.py:24: in test_esp_timer
+    dut.run_all_single_board_cases(timeout=120)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:435: in run_all_single_board_cases
+    for case in self.test_menu:
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:243: in test_menu
+    self._test_menu = self._parse_test_menu()
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:124: in _parse_test_menu
+    self.expect_exact(ready_line)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:83: in wrapper
+    raise e.__class__(debug_str) from e
+E   pexpect.exceptions.TIMEOUT: Not found &quot;Press ENTER to see the list of tests&quot;
+E   Bytes in current buffer (color code eliminated): ce710,len:0x2afc entry 0x403cc710
+E   Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_esp_timer/dut.txt</failure>
+        </testcase>
+        <testcase classname="components.wear_levelling.test_apps.pytest_wear_levelling" file="components/wear_levelling/test_apps/pytest_wear_levelling.py" line="7" name="esp32c3.512safe.test_wear_levelling" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c3.512safe.test_wear_levelling/dut.txt" time="69.850">
+            <failure message="pexpect.exceptions.TIMEOUT: Not found &quot;re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)', re.MULTILINE)&quot;
+Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 6673 bytes)
+Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.512safe.test_wear_levelling/dut.txt">/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:76: in wrapper
+    index = func(self, pattern, *args, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:131: in expect
+    return self.pexpect_proc.expect(pattern, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:354: in expect
+    return self.expect_list(compiled_pattern_list,
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:383: in expect_list
+    return exp.expect_loop(timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:181: in expect_loop
+    return self.timeout(e)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:144: in timeout
+    raise exc
+E   pexpect.exceptions.TIMEOUT: &lt;pytest_embedded.log.PexpectProcess object at 0x7f47af653b80&gt;
+E   searcher: searcher_re:
+E       0: re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)')
+E   &lt;pytest_embedded.log.PexpectProcess object at 0x7f47af653b80&gt;
+E   searcher: searcher_re:
+E       0: re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)')
+
+The above exception was the direct cause of the following exception:
+components/wear_levelling/test_apps/pytest_wear_levelling.py:18: in test_wear_levelling
+    dut.expect_unity_test_output()
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:180: in expect_unity_test_output
+    self.expect(UNITY_SUMMARY_LINE_REGEX, timeout=timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:83: in wrapper
+    raise e.__class__(debug_str) from e
+E   pexpect.exceptions.TIMEOUT: Not found &quot;re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)', re.MULTILINE)&quot;
+E   Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 6673 bytes)
+E   Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.512safe.test_wear_levelling/dut.txt</failure>
+        </testcase>
+        <testcase classname="components.wear_levelling.test_apps.pytest_wear_levelling" file="components/wear_levelling/test_apps/pytest_wear_levelling.py" line="7" name="esp32c3.release.test_wear_levelling" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c3.release.test_wear_levelling/dut.txt" time="70.304">
+            <failure message="pexpect.exceptions.TIMEOUT: Not found &quot;re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)', re.MULTILINE)&quot;
+Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 24528 bytes)
+Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_wear_levelling/dut.txt">/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:76: in wrapper
+    index = func(self, pattern, *args, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:131: in expect
+    return self.pexpect_proc.expect(pattern, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:354: in expect
+    return self.expect_list(compiled_pattern_list,
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:383: in expect_list
+    return exp.expect_loop(timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:181: in expect_loop
+    return self.timeout(e)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:144: in timeout
+    raise exc
+E   pexpect.exceptions.TIMEOUT: &lt;pytest_embedded.log.PexpectProcess object at 0x7f47afc540d0&gt;
+E   searcher: searcher_re:
+E       0: re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)')
+E   &lt;pytest_embedded.log.PexpectProcess object at 0x7f47afc540d0&gt;
+E   searcher: searcher_re:
+E       0: re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)')
+
+The above exception was the direct cause of the following exception:
+components/wear_levelling/test_apps/pytest_wear_levelling.py:18: in test_wear_levelling
+    dut.expect_unity_test_output()
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:180: in expect_unity_test_output
+    self.expect(UNITY_SUMMARY_LINE_REGEX, timeout=timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:83: in wrapper
+    raise e.__class__(debug_str) from e
+E   pexpect.exceptions.TIMEOUT: Not found &quot;re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P&lt;result&gt;OK|FAIL)', re.MULTILINE)&quot;
+E   Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 24528 bytes)
+E   Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_wear_levelling/dut.txt</failure>
+        </testcase>
+        <testcase classname="components.wpa_supplicant.test_apps.pytest_wpa_supplicant_ut" file="components/wpa_supplicant/test_apps/pytest_wpa_supplicant_ut.py" line="8" name="esp32c3.default.test_wpa_supplicant_ut" dut_log_url="https://url/esp/esp-idf/pytest-embedded/2024-07-01_10-53-05-207900/esp32c3.default.test_wpa_supplicant_ut/dut.txt" time="51.208">
+            <failure message="pexpect.exceptions.TIMEOUT: Not found &quot;Press ENTER to see the list of tests&quot;
+Bytes in current buffer (color code eliminated): 0 d4 000 00x0000 x0000x00 000000 0
+Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.default.test_wpa_supplicant_ut/dut.txt">/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:76: in wrapper
+    index = func(self, pattern, *args, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:153: in expect_exact
+    return self.pexpect_proc.expect_exact(pattern, **kwargs)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/spawnbase.py:432: in expect_exact
+    return exp.expect_loop(timeout)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:181: in expect_loop
+    return self.timeout(e)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pexpect/expect.py:144: in timeout
+    raise exc
+E   pexpect.exceptions.TIMEOUT: &lt;pytest_embedded.log.PexpectProcess object at 0x7f47afc54df0&gt;
+E   searcher: searcher_string:
+E       0: b'Press ENTER to see the list of tests'
+E   &lt;pytest_embedded.log.PexpectProcess object at 0x7f47afc54df0&gt;
+E   searcher: searcher_string:
+E       0: b'Press ENTER to see the list of tests'
+
+The above exception was the direct cause of the following exception:
+components/wpa_supplicant/test_apps/pytest_wpa_supplicant_ut.py:17: in test_wpa_supplicant_ut
+    dut.run_all_single_board_cases()
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:435: in run_all_single_board_cases
+    for case in self.test_menu:
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:243: in test_menu
+    self._test_menu = self._parse_test_menu()
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded_idf/unity_tester.py:124: in _parse_test_menu
+    self.expect_exact(ready_line)
+/root/.espressif/python_env/idf5.2_py3.9_env/lib/python3.9/site-packages/pytest_embedded/dut.py:83: in wrapper
+    raise e.__class__(debug_str) from e
+E   pexpect.exceptions.TIMEOUT: Not found &quot;Press ENTER to see the list of tests&quot;
+E   Bytes in current buffer (color code eliminated): 0 d4 000 00x0000 x0000x00 000000 0
+E   Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.default.test_wpa_supplicant_ut/dut.txt</failure>
+        </testcase>
+    </testsuite>
+</testsuites>

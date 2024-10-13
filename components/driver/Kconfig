@@ -1,6 +1,8 @@
 menu "Driver Configurations"
 
-    menu "Legacy ADC Configuration"
+    orsource "./twai/Kconfig.twai"
+
+    menu "Legacy ADC Driver Configuration"
 
         config ADC_DISABLE_DAC
             depends on SOC_DAC_SUPPORTED
@@ -16,7 +18,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
+                Whether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
@@ -53,76 +55,101 @@ menu "Driver Configurations"
                 bool "Suppress legacy driver deprecated warning"
                 default n
                 help
-                    Wether to suppress the deprecation warnings when using legacy adc calibration
+                    Whether to suppress the deprecation warnings when using legacy adc calibration
                     driver (esp_adc_cal.h).
                     If you want to continue using the legacy driver, and don't want to see related
                     deprecation warnings, you can enable this option.
 
-        endmenu
+        endmenu # Legacy ADC Calibration Configuration
+    endmenu  # Legacy ADC Driver Configuration
 
-    endmenu  # ADC Configuration
-
-    orsource "./twai/Kconfig.twai"
-
-    orsource "./uart/Kconfig.uart"
-
-    menu "USB Serial/JTAG Configuration"
-        depends on SOC_USB_SERIAL_JTAG_SUPPORTED
-        config USJ_NO_AUTO_LS_ON_CONNECTION
-            bool "Don't enter the automatic light sleep when USB Serial/JTAG port is connected"
-            depends on PM_ENABLE && ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+    menu "Legacy DAC Driver Configurations"
+        depends on SOC_DAC_SUPPORTED
+        config DAC_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                If enabled, the chip will constantly monitor the connection status of the USB Serial/JTAG port. As long
-                as the USB Serial/JTAG is connected, a ESP_PM_NO_LIGHT_SLEEP power management lock will be acquired to
-                prevent the system from entering light sleep.
-                This option can be useful if serial monitoring is needed via USB Serial/JTAG while power management is
-                enabled, as the USB Serial/JTAG cannot work under light sleep and after waking up from light sleep.
-                Note. This option can only control the automatic Light-Sleep behavior. If esp_light_sleep_start() is
-                called manually from the program, enabling this option will not prevent light sleep entry even if the
-                USB Serial/JTAG is in use.
-    endmenu # USB Serial/JTAG Configuration
+                Whether to suppress the deprecation warnings when using legacy dac driver (driver/dac.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy DAC Driver Configurations
 
-    menu "Parallel IO Configuration"
-        depends on SOC_PARLIO_SUPPORTED
-
-        config PARLIO_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
+    menu "Legacy MCPWM Driver Configurations"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to enable the debug log message for parallel IO driver.
-                Note that, this option only controls the parallel IO driver log, won't affect other drivers.
+                Whether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy MCPWM Driver Configurations
 
-        config PARLIO_ISR_IRAM_SAFE
-            bool "Parallel IO ISR IRAM-Safe"
-            default n
-            select GDMA_CTRL_FUNC_IN_IRAM # the driver needs to start the GDMA in the interrupt
-            help
-                Ensure the Parallel IO interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-    endmenu # Parallel IO Configuration
-
-    orsource "./ledc/Kconfig.ledc"
-
-    menu "I2C Configuration"
-        config I2C_ISR_IRAM_SAFE
-            bool "I2C ISR IRAM-Safe"
+    menu "Legacy Timer Group Driver Configurations"
+        depends on SOC_GPTIMER_SUPPORTED
+        config GPTIMER_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Ensure the I2C interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-                note: This cannot be used in the I2C legacy driver.
+                Whether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
 
-        config I2C_ENABLE_DEBUG_LOG
-            bool "Enable I2C debug log"
+    endmenu # Legacy Timer Group Driver Configurations
+
+    menu "Legacy RMT Driver Configurations"
+        depends on SOC_RMT_SUPPORTED
+        config RMT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to enable the debug log message for I2C driver.
-                Note that this option only controls the I2C driver log, will not affect other drivers.
+                Whether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy RMT Driver Configurations
 
-                note: This cannot be used in the I2C legacy driver.
+    menu "Legacy I2S Driver Configurations"
+        depends on SOC_I2S_SUPPORTED
+        config I2S_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Whether to suppress the deprecation warnings when using legacy i2s driver (driver/i2s.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy I2S Driver Configurationss
 
-    endmenu # I2C Configurations
+    menu "Legacy PCNT Driver Configurations"
+        depends on SOC_PCNT_SUPPORTED
+        config PCNT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy PCNT Driver Configurationss
+
+    menu "Legacy SDM Driver Configurations"
+        depends on SOC_SDM_SUPPORTED
+        config SDM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy SDM driver (driver/sigmadelta.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy SDM Driver Configurationss
+
+    menu "Legacy Temperature Sensor Driver Configurations"
+        depends on SOC_TEMP_SENSOR_SUPPORTED
+        config TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy temperature sensor driver
+                (driver/temp_sensor.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+    endmenu # Legacy Temperature Sensor Driver Configurationss
 
 endmenu  # Driver configurations

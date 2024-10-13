@@ -179,12 +179,6 @@ static void prov_send_fail_msg(uint8_t err)
 {
     PROV_BUF(buf, 2);
 
-    /**
-     * For the case MESH/NODE/PROV/BV-10-C, Node must send Transaction ACK
-     * before Provisioning Failed message is transmitted.
-     */
-    bt_mesh_gen_prov_ack_send(&prov_link, prov_link.rx.id);
-
     bt_mesh_prov_buf_init(&buf, PROV_FAILED);
     net_buf_simple_add_u8(&buf, err);
 

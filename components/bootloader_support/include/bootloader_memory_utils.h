@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "soc/soc.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
@@ -179,6 +180,31 @@ inline static bool esp_ptr_in_tcm(const void *p) {
 #endif  //#if SOC_MEM_TCM_SUPPORTED
 
 /** End of the common section that has to be in sync with esp_memory_utils.h **/
+
+/**
+ * @brief Check if the pointer is in PSRAM vaddr space
+ *
+ * @note This function is only used when in bootloader, where the PSRAM isn't initialised.
+ *       This function simply check if the pointer is the in the PSRAM vaddr space.
+ *       The PSRAM vaddr space is not always the same as the actual PSRAM vaddr range used in APP
+ *
+ * @param p pointer
+ *
+ * @return true: is in PSRAM; false: not in PSRAM
+ */
+__attribute__((always_inline))
+inline static bool esp_ptr_in_extram(const void *p) {
+    bool valid = false;
+#if SOC_IRAM_PSRAM_ADDRESS_LOW
+    valid |= ((intptr_t)p >= SOC_IRAM_PSRAM_ADDRESS_LOW && (intptr_t)p < SOC_IRAM_PSRAM_ADDRESS_HIGH);
+#endif
+
+#if SOC_DRAM_PSRAM_ADDRESS_LOW
+    valid |= ((intptr_t)p >= SOC_DRAM_PSRAM_ADDRESS_LOW && (intptr_t)p < SOC_DRAM_PSRAM_ADDRESS_HIGH);
+#endif
+    return valid;
+}
+
 /** Don't add new functions below **/
 
 #ifdef __cplusplus

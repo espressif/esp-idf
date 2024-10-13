@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -163,7 +163,7 @@ ble_prph_restart_adv(void)
 {
 #if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
     if (!xSemaphoreGive(s_sem_restart_adv)) {
-        ESP_LOGE(TAG, "Failed to give Semaphor");
+        ESP_LOGE(TAG, "Failed to give Semaphore");
     }
 #else
     ble_prph_advertise();
@@ -189,14 +189,14 @@ static int
 ble_prph_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         if (event->connect.status == 0) {
             /* A new connection was established. */
             ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->connect.conn_handle,
                      ++s_ble_prph_conn_num);
-#if !CONFIG_EXAMPLE_EXTENDED_ADV && CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
-             ble_prph_restart_adv();
-#endif // !CONFIG_EXAMPLE_EXTENDED_ADV && CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+#if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
+            ble_prph_restart_adv();
+#endif //CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
         } else {
             /* Restart the advertising */
             ble_prph_restart_adv();
@@ -214,9 +214,6 @@ ble_prph_gap_event(struct ble_gap_event *event, void *arg)
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(TAG, "advertisement completed. Reason=%d.",event->adv_complete.reason);
-#if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
-        ble_prph_restart_adv();
-#endif // CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
         return 0;
 #endif // CONFIG_EXAMPLE_EXTENDED_ADV
 
@@ -316,7 +313,7 @@ app_main(void)
             vTaskDelay(pdMS_TO_TICKS(delay_ms));
             ble_prph_advertise();
         } else {
-            ESP_LOGE(TAG, "Failed to take Semaphor");
+            ESP_LOGE(TAG, "Failed to take Semaphore");
         }
     }
 #endif // CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED

@@ -42,7 +42,7 @@ DRAM（数据 RAM）
 
 可以将 ``__NOINIT_ATTR`` 宏用作属性，从而将数据放入 ``.noinit`` 部分。放入该部分的值在启动时不会被初始化，在软件重启后也会保持值不变。
 
-.. only:: esp32
+.. only:: SOC_SPIRAM_SUPPORTED
 
    通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
 
@@ -92,12 +92,12 @@ IRAM（指令 RAM）
 
 或者，也可以通过使用 ``IRAM_ATTR`` 宏在源代码中指定需要放入 IRAM 的代码::
 
-	#include "esp_attr.h"
+    #include "esp_attr.h"
 
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...
-	}
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
 
 放入 IRAM 后可能会导致 IRAM 安全中断处理程序出现问题：
 
@@ -150,7 +150,9 @@ DROM（数据存储在 flash 中）
     RTC Slow memory（RTC 慢速存储器）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-reference/system/ulp` 访问的代码和变量。
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+
+        从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-reference/system/ulp` 访问的代码和变量。
 
     ``RTC_NOINIT_ATTR`` 属性宏可以用来将数据放入 RTC Slow memory。放入此类型存储器的值从深度睡眠模式中醒来后会保持值不变。
 
@@ -170,8 +172,9 @@ DROM（数据存储在 flash 中）
 
             对于 {IDF_TARGET_NAME}，RTC 存储器已被重新重命名为 LP（低功耗）存储器。在与 {IDF_TARGET_NAME} 相关的 IDF 代码、文档以及技术参考手册中，可能会出现这两个术语混用的情况。
 
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
-    RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
+        RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
 
     .. only:: esp32
 
@@ -182,6 +185,14 @@ DROM（数据存储在 flash 中）
     .. only:: not esp32
 
         除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
+
+
+.. only:: SOC_MEM_TCM_SUPPORTED
+
+    紧密耦合内存 (TCM)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    TCM 是靠近 CPU 放置的内存，支持在 CPU 频率下直接访问，无需通过 cache。虽然在一般情况下，TCM 的效率或速度相较 cache 偏低，但是访问 TCM 所需的时间是可以预测且始终一致的。具有稳定的访问速度对于时间关键型例程来说十分重要，因此 TCM 对于此类例程而言非常有用。
 
 
 具备 DMA 功能

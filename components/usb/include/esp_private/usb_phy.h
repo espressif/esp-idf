@@ -7,7 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/usb_phy_types.h"
 

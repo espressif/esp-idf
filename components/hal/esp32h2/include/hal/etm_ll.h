@@ -97,7 +97,7 @@ static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
  */
 static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, uint32_t event)
 {
-    hw->channel[chan].evt_id.evt_id = event;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, evt_id, event);
 }
 
 /**
@@ -109,7 +109,7 @@ static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, ui
  */
 static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uint32_t task)
 {
-    hw->channel[chan].task_id.task_id = task;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, task_id, task);
 }
 
 #ifdef __cplusplus

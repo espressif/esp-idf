@@ -34,7 +34,7 @@
 /// Data rejected due to write error
 #define TOKEN_RSP_WRITE_ERR   0b01101
 
-/// Data error tokens have format 0b0000xyzw where xyzw are signle bit flags.
+/// Data error tokens have format 0b0000xyzw where xyzw are single bit flags.
 /// MASK and VAL are used to check if a token is an error token
 #define TOKEN_ERR_MASK      0b11110000
 #define TOKEN_ERR_VAL       0b00000000

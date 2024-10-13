@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,6 @@ typedef struct async_memcpy_transaction_t {
 /// @note - Number of transaction objects are determined by the backlog parameter
 typedef struct {
     async_memcpy_context_t parent; // Parent IO interface
-    size_t sram_trans_align;       // DMA transfer alignment (both in size and address) for SRAM memory
     size_t max_single_dma_buffer;  // max DMA buffer size by a single descriptor
     cp_dma_hal_context_t hal;      // CPDMA hal
     intr_handle_t intr;            // CPDMA interrupt handle
@@ -90,7 +89,7 @@ esp_err_t esp_async_memcpy_install_cpdma(const async_memcpy_config_t *config, as
     uint32_t trans_queue_len = config->backlog ? config->backlog : DEFAULT_TRANSACTION_QUEUE_LENGTH;
     // allocate memory for transaction pool, aligned to 4 because the trans->eof_node requires that alignment
     mcp_dma->transaction_pool = heap_caps_aligned_calloc(4, trans_queue_len, sizeof(async_memcpy_transaction_t),
-                                MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+                                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(mcp_dma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
 
     // Init hal context
@@ -111,8 +110,7 @@ esp_err_t esp_async_memcpy_install_cpdma(const async_memcpy_config_t *config, as
     // initialize other members
     portMUX_INITIALIZE(&mcp_dma->spin_lock);
     atomic_init(&mcp_dma->fsm, MCP_FSM_IDLE);
-    mcp_dma->sram_trans_align = config->sram_trans_align;
-    size_t trans_align = config->sram_trans_align;
+    size_t trans_align = config->dma_burst_size;
     mcp_dma->max_single_dma_buffer = trans_align ? ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, trans_align) : DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
     mcp_dma->parent.del = mcp_cpdma_del;
     mcp_dma->parent.memcpy = mcp_cpdma_memcpy;
@@ -240,12 +238,6 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     esp_err_t ret = ESP_OK;
     async_memcpy_cpdma_context_t *mcp_dma = __containerof(ctx, async_memcpy_cpdma_context_t, parent);
     ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "CP_DMA can only access SRAM");
-    // alignment check
-    if (mcp_dma->sram_trans_align) {
-        ESP_RETURN_ON_FALSE((((intptr_t)dst & (mcp_dma->sram_trans_align - 1)) == 0), ESP_ERR_INVALID_ARG, TAG, "buffer address not aligned: %p -> %p", src, dst);
-        ESP_RETURN_ON_FALSE(((n & (mcp_dma->sram_trans_align - 1)) == 0), ESP_ERR_INVALID_ARG, TAG,
-                            "copy size should align to %d bytes", mcp_dma->sram_trans_align);
-    }
     async_memcpy_transaction_t *trans = NULL;
     // pick one transaction node from idle queue
     trans = try_pop_trans_from_idle_queue(mcp_dma);
@@ -257,12 +249,12 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     uint32_t num_desc_per_path = (n + max_single_dma_buffer - 1) / max_single_dma_buffer;
     // allocate DMA descriptors, descriptors need a strict alignment
     trans->tx_desc_link = heap_caps_aligned_calloc(4, num_desc_per_path, sizeof(dma_descriptor_align4_t),
-                          MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+                                                   MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(trans->tx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
     // don't have to allocate the EOF descriptor, we will use trans->eof_node as the RX EOF descriptor
     if (num_desc_per_path > 1) {
         trans->rx_desc_link = heap_caps_aligned_calloc(4, num_desc_per_path - 1, sizeof(dma_descriptor_align4_t),
-                              MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+                                                       MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
         ESP_GOTO_ON_FALSE(trans->rx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
     } else {
         // small copy buffer, use the trans->eof_node is sufficient

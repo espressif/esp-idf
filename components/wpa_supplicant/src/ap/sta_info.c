@@ -175,6 +175,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 #ifdef CONFIG_SAE
 	sta->sae_commit_processing = false;
 	sta->remove_pending = false;
+	sta->lock = os_semphr_create(1, 1);
 #endif /* CONFIG_SAE */
 
 	return sta;

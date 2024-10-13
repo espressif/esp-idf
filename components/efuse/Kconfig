@@ -16,7 +16,8 @@ menu "eFuse Bit Manager"
 
     config EFUSE_VIRTUAL
         bool "Simulate eFuse operations in RAM"
-        default n
+        default n if !IDF_TARGET_LINUX
+        default y if IDF_TARGET_LINUX
         help
             If "n" - No virtual mode. All eFuse operations are real and use eFuse registers.
             If "y" - The virtual mode is enabled and all eFuse operations (read and write) are redirected
@@ -30,7 +31,7 @@ menu "eFuse Bit Manager"
 
     config EFUSE_VIRTUAL_KEEP_IN_FLASH
         bool "Keep eFuses in flash"
-        depends on EFUSE_VIRTUAL
+        depends on EFUSE_VIRTUAL && !IDF_TARGET_LINUX
         help
             In addition to the "Simulate eFuse operations in RAM" option, this option just adds
             a feature to keep eFuses after reboots in flash memory. To use this mode the partition_table

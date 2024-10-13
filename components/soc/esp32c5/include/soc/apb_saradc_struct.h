@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +111,54 @@ typedef union {
     };
     uint32_t val;
 } apb_saradc_filter_ctrl1_reg_t;
+
+/** Type of saradc_fsm_wait register
+ *  digital saradc configure register
+ */
+typedef union {
+    struct {
+        /** saradc_saradc_xpd_wait : R/W; bitpos: [7:0]; default: 8;
+         *  saradc_xpd_wait
+         */
+        uint32_t saradc_saradc_xpd_wait:8;
+        /** saradc_saradc_rstb_wait : R/W; bitpos: [15:8]; default: 8;
+         *  saradc_rstb_wait
+         */
+        uint32_t saradc_saradc_rstb_wait:8;
+        /** saradc_saradc_standby_wait : R/W; bitpos: [23:16]; default: 255;
+         *  saradc_standby_wait
+         */
+        uint32_t saradc_saradc_standby_wait:8;
+        uint32_t reserved_24:8;
+    };
+    uint32_t val;
+} apb_saradc_fsm_wait_reg_t;
+
+/** Type of saradc_sar1_status register
+ *  digital saradc configure register
+ */
+typedef union {
+    struct {
+        /** saradc_saradc_sar1_status : RO; bitpos: [31:0]; default: 536870912;
+         *  saradc1 status about data and channel
+         */
+        uint32_t saradc_saradc_sar1_status:32;
+    };
+    uint32_t val;
+} apb_saradc_sar1_status_reg_t;
+
+/** Type of saradc_sar2_status register
+ *  digital saradc configure register
+ */
+typedef union {
+    struct {
+        /** saradc_saradc_sar2_status : RO; bitpos: [31:0]; default: 536870912;
+         *  saradc2 status about data and channel
+         */
+        uint32_t saradc_saradc_sar2_status:32;
+    };
+    uint32_t val;
+} apb_saradc_sar2_status_reg_t;
 
 /** Type of saradc_sar_patt_tab1 register
  *  digital saradc configure register
@@ -569,7 +617,18 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:15;
+        /** saradc_tsens_xpd_wait : R/W; bitpos: [11:0]; default: 2;
+         *  the time that power up tsens need wait
+         */
+        uint32_t saradc_tsens_xpd_wait:12;
+        /** saradc_tsens_xpd_force : R/W; bitpos: [13:12]; default: 0;
+         *  force power up tsens
+         */
+        uint32_t saradc_tsens_xpd_force:2;
+        /** saradc_tsens_clk_inv : R/W; bitpos: [14]; default: 1;
+         *  inv tsens clk
+         */
+        uint32_t saradc_tsens_clk_inv:1;
         /** saradc_tsens_clk_sel : R/W; bitpos: [15]; default: 0;
          *  tsens clk select
          */
@@ -655,11 +714,13 @@ typedef union {
 } apb_saradc_ctrl_date_reg_t;
 
 
-typedef struct apb_dev_t {
+typedef struct {
     volatile apb_saradc_ctrl_reg_t saradc_ctrl;
     volatile apb_saradc_ctrl2_reg_t saradc_ctrl2;
     volatile apb_saradc_filter_ctrl1_reg_t saradc_filter_ctrl1;
-    uint32_t reserved_00c[3];
+    volatile apb_saradc_fsm_wait_reg_t saradc_fsm_wait;
+    volatile apb_saradc_sar1_status_reg_t saradc_sar1_status;
+    volatile apb_saradc_sar2_status_reg_t saradc_sar2_status;
     volatile apb_saradc_sar_patt_tab1_reg_t saradc_sar_patt_tab1;
     volatile apb_saradc_sar_patt_tab2_reg_t saradc_sar_patt_tab2;
     volatile apb_saradc_onetime_sample_reg_t saradc_onetime_sample;

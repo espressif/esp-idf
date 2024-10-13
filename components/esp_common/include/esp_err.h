@@ -36,7 +36,6 @@ typedef int esp_err_t;
 #define ESP_ERR_NOT_FINISHED        0x10C   /*!< Operation has not fully completed */
 #define ESP_ERR_NOT_ALLOWED         0x10D   /*!< Operation is not allowed */
 
-
 #define ESP_ERR_WIFI_BASE           0x3000  /*!< Starting number of WiFi error codes */
 #define ESP_ERR_MESH_BASE           0x4000  /*!< Starting number of MESH error codes */
 #define ESP_ERR_FLASH_BASE          0x6000  /*!< Starting number of flash error codes */
@@ -79,7 +78,6 @@ const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen);
 /** @cond */
 void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression) __attribute__((__noreturn__));
 
-/** @cond */
 void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int line, const char *function, const char *expression);
 
 #ifndef __ASSERT_FUNC

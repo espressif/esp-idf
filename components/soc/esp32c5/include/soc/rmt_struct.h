@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@ extern "C" {
 
 /** Group: FIFO R/W registers */
 /** Type of chndata register
- *  The read and write  data register for CHANNELn by apb fifo access.
+ *  The read and write data register for channel 0 by APB FIFO access.
  */
 typedef union {
     struct {
@@ -24,92 +24,106 @@ typedef union {
     uint32_t val;
 } rmt_chndata_reg_t;
 
-/** Type of chmdata register
- *  The read and write  data register for CHANNELn by apb fifo access.
- */
-typedef union {
-    struct {
-        /** chmdata : HRO; bitpos: [31:0]; default: 0;
-         *  Read and write data for channel n via APB FIFO.
-         */
-        uint32_t chmdata:32;
-    };
-    uint32_t val;
-} rmt_chmdata_reg_t;
-
 
 /** Group: Configuration registers */
 /** Type of chnconf0 register
- *  Channel n configure register 0
+ *  Configuration register 0 for channel 0
  */
 typedef union {
     struct {
         /** tx_start_chn : WT; bitpos: [0]; default: 0;
-         *  Set this bit to start sending data on CHANNELn.
+         *  Configures whether to enable sending data in channel n. \\
+         *  0: No effect\\
+         *  1: Enable\\
          */
         uint32_t tx_start_chn:1;
         /** mem_rd_rst_chn : WT; bitpos: [1]; default: 0;
-         *  Set this bit to reset read ram address for CHANNELn by accessing transmitter.
+         *  Configures whether to reset RAM read address accessed by the transmitter for
+         *  channel n. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t mem_rd_rst_chn:1;
         /** apb_mem_rst_chn : WT; bitpos: [2]; default: 0;
-         *  Set this bit to reset W/R ram address for CHANNELn by accessing apb fifo.
+         *  Configures whether to reset RAM W/R address accessed by APB FIFO for channel n. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t apb_mem_rst_chn:1;
         /** tx_conti_mode_chn : R/W; bitpos: [3]; default: 0;
-         *  Set this bit to restart transmission  from the first data to the last data in
-         *  CHANNELn.
+         *  Configures whether to enable continuous TX mode for channel n. \\
+         *  0: No Effect\\
+         *  1: Enable\\
+         *  In this mode, the transmitter starts transmission from the first data. If an
+         *  end-marker is encountered, the transmitter starts transmitting data from the first
+         *  data again. if no end-marker is encountered, the transmitter starts transmitting
+         *  the first data again when the last data is transmitted.\\
          */
         uint32_t tx_conti_mode_chn:1;
         /** mem_tx_wrap_en_chn : R/W; bitpos: [4]; default: 0;
-         *  This is the channel n enable bit for wraparound mode: it will resume sending at the
-         *  start when the data to be sent is more than its memory size.
+         *  Configures whether to enable wrap TX mode for channel n. \\
+         *  0: No effect\\
+         *  1: Enable\\
+         *  In this mode, if the TX data size is larger than the channel's RAM block size, the
+         *  transmitter continues transmitting the first data to the last data in loops.\\
          */
         uint32_t mem_tx_wrap_en_chn:1;
         /** idle_out_lv_chn : R/W; bitpos: [5]; default: 0;
-         *  This bit configures the level of output signal in CHANNELn when the latter is in
-         *  IDLE state.
+         *  Configures the level of output signal for channel n when the transmitter is in idle
+         *  state.
          */
         uint32_t idle_out_lv_chn:1;
         /** idle_out_en_chn : R/W; bitpos: [6]; default: 0;
-         *  This is the output enable-control bit for CHANNELn in IDLE state.
+         *  Configures whether to enable the output for channel n in idle state. \\
+         *  0: No effect\\
+         *  1: Enable\\
          */
         uint32_t idle_out_en_chn:1;
         /** tx_stop_chn : R/W/SC; bitpos: [7]; default: 0;
-         *  Set this bit to stop the transmitter of CHANNELn sending data out.
+         *  Configures whether to stop the transmitter of channel n sending data out. \\
+         *  0: No effect\\
+         *  1: Stop\\
          */
         uint32_t tx_stop_chn:1;
         /** div_cnt_chn : R/W; bitpos: [15:8]; default: 2;
-         *  This register is used to configure the divider for clock of CHANNELn.
+         *  Configures the divider for clock of channel n. \\
+         *  Measurement unit: rmt_sclk\\
          */
         uint32_t div_cnt_chn:8;
         /** mem_size_chn : R/W; bitpos: [18:16]; default: 1;
-         *  This register is used to configure the maximum size of memory allocated to CHANNELn.
+         *  Configures the maximum number of memory blocks allocated to channel n.
          */
         uint32_t mem_size_chn:3;
         uint32_t reserved_19:1;
         /** carrier_eff_en_chn : R/W; bitpos: [20]; default: 1;
-         *  1: Add carrier modulation on the output signal only at the send data state for
-         *  CHANNELn. 0: Add carrier modulation on the output signal at all state for CHANNELn.
-         *  Only valid when RMT_CARRIER_EN_CHn is 1.
+         *  Configures whether to add carrier modulation on the output signal only at
+         *  data-sending state for channel n. \\
+         *  0: Add carrier modulation on the output signal at data-sending state and idle state
+         *  for channel n\\
+         *  1: Add carrier modulation on the output signal only at data-sending state for
+         *  channel n\\
+         *  Only valid when RMT_CARRIER_EN_CHn is 1.\\
          */
         uint32_t carrier_eff_en_chn:1;
         /** carrier_en_chn : R/W; bitpos: [21]; default: 1;
-         *  This is the carrier modulation enable-control bit for CHANNELn. 1: Add carrier
-         *  modulation in the output signal. 0: No carrier modulation in sig_out.
+         *  Configures whether to enable the carrier modulation on output signal for channel n.
+         *  \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t carrier_en_chn:1;
         /** carrier_out_lv_chn : R/W; bitpos: [22]; default: 1;
-         *  This bit is used to configure the position of carrier wave for CHANNELn.
-         *
-         *  1'h0: add carrier wave on low level.
-         *
-         *  1'h1: add carrier wave on high level.
+         *  Configures the position of carrier wave for channel n. \\
+         *  0: Add carrier wave on low level\\
+         *  1: Add carrier wave on high level\\
          */
         uint32_t carrier_out_lv_chn:1;
-        uint32_t reserved_23:1;
+        /** afifo_rst_chn : WT; bitpos: [23]; default: 0;
+         *  Reserved
+         */
+        uint32_t afifo_rst_chn:1;
         /** conf_update_chn : WT; bitpos: [24]; default: 0;
-         *  synchronization bit for CHANNELn
+         *  Synchronization bit for channel n.
          */
         uint32_t conf_update_chn:1;
         uint32_t reserved_25:7;
@@ -118,35 +132,37 @@ typedef union {
 } rmt_chnconf0_reg_t;
 
 /** Type of chmconf0 register
- *  Channel m configure register 0
+ *  Configuration register 0 for channel 2
  */
 typedef union {
     struct {
         /** div_cnt_chm : R/W; bitpos: [7:0]; default: 2;
-         *  This register is used to configure the divider for clock of CHANNELm.
+         *  Configures the clock divider of channel m. \\
+         *  Measurement unit: rmt_sclk\\
          */
         uint32_t div_cnt_chm:8;
         /** idle_thres_chm : R/W; bitpos: [22:8]; default: 32767;
-         *  When no edge is detected on the input signal and continuous clock cycles is longer
-         *  than this register value, received process is finished.
+         *  Configures RX threshold. \\
+         *  When no edge is detected on the input signal for continuous clock cycles longer
+         *  than this field value, the receiver stops receiving data.\\
+         *  Measurement unit: clk_div\\
          */
         uint32_t idle_thres_chm:15;
         /** mem_size_chm : R/W; bitpos: [25:23]; default: 1;
-         *  This register is used to configure the maximum size of memory allocated to CHANNELm.
+         *  Configures the maximum number of memory blocks allocated to channel m.
          */
         uint32_t mem_size_chm:3;
         uint32_t reserved_26:2;
         /** carrier_en_chm : R/W; bitpos: [28]; default: 1;
-         *  This is the carrier modulation enable-control bit for CHANNELm. 1: Add carrier
-         *  modulation in the output signal. 0: No carrier modulation in sig_out.
+         *  Configures whether to enable carrier modulation on output signal for channel m. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t carrier_en_chm:1;
         /** carrier_out_lv_chm : R/W; bitpos: [29]; default: 1;
-         *  This bit is used to configure the position of carrier wave for CHANNELm.
-         *
-         *  1'h0: add carrier wave on low level.
-         *
-         *  1'h1: add carrier wave on high level.
+         *  Configures the position of carrier wave for channel m. \\
+         *  0: Add carrier wave on low level\\
+         *  1: Add carrier wave on high level\\
          */
         uint32_t carrier_out_lv_chm:1;
         uint32_t reserved_30:2;
@@ -155,47 +171,62 @@ typedef union {
 } rmt_chmconf0_reg_t;
 
 /** Type of chmconf1 register
- *  Channel m configure register 1
+ *  Configuration register 1 for channel 2
  */
 typedef union {
     struct {
         /** rx_en_chm : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to enable receiver to receive data on CHANNELm.
+         *  Configures whether to enable the receiver to start receiving data in channel m. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t rx_en_chm:1;
         /** mem_wr_rst_chm : WT; bitpos: [1]; default: 0;
-         *  Set this bit to reset write ram address for CHANNELm by accessing receiver.
+         *  Configures whether to reset RAM write address accessed by the receiver for channel
+         *  m. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t mem_wr_rst_chm:1;
         /** apb_mem_rst_chm : WT; bitpos: [2]; default: 0;
-         *  Set this bit to reset W/R ram address for CHANNELm by accessing apb fifo.
+         *  Configures whether to reset RAM W/R address accessed by APB FIFO for channel m. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t apb_mem_rst_chm:1;
         /** mem_owner_chm : R/W/SC; bitpos: [3]; default: 1;
-         *  This register marks the ownership of CHANNELm's ram block.
-         *
-         *  1'h1: Receiver is using the ram.
-         *
-         *  1'h0: APB bus is using the ram.
+         *  Configures the ownership of channel m's RAM block. \\
+         *  0: APB bus is using the RAM\\
+         *  1: Receiver is using the RAM\\
          */
         uint32_t mem_owner_chm:1;
         /** rx_filter_en_chm : R/W; bitpos: [4]; default: 0;
-         *  This is the receive filter's enable bit for CHANNELm.
+         *  Configures whether to enable the receiver's filter for channel m. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t rx_filter_en_chm:1;
         /** rx_filter_thres_chm : R/W; bitpos: [12:5]; default: 15;
-         *  Ignores the input pulse when its width is smaller than this register value in APB
-         *  clock periods (in receive mode).
+         *  Configures whether the receiver, when receiving data, ignores the input pulse when
+         *  its width is shorter than this register value in units of rmt_sclk cycles. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t rx_filter_thres_chm:8;
         /** mem_rx_wrap_en_chm : R/W; bitpos: [13]; default: 0;
-         *  This is the channel m enable bit for wraparound mode: it will resume receiving at
-         *  the start when the data to be received is more than its memory size.
+         *  Configures whether to enable wrap RX mode for channel m. \\
+         *  0: Disable\\
+         *  1: Enable\\
+         *  In this mode, if the RX data size is larger than channel m's RAM block size, the
+         *  receiver stores the RX data from the first address to the last address in loops.\\
          */
         uint32_t mem_rx_wrap_en_chm:1;
-        uint32_t reserved_14:1;
+        /** afifo_rst_chm : WT; bitpos: [14]; default: 0;
+         *  Reserved
+         */
+        uint32_t afifo_rst_chm:1;
         /** conf_update_chm : WT; bitpos: [15]; default: 0;
-         *  synchronization bit for CHANNELm
+         *  Synchronization bit for channel m.
          */
         uint32_t conf_update_chm:1;
         uint32_t reserved_16:16;
@@ -204,16 +235,20 @@ typedef union {
 } rmt_chmconf1_reg_t;
 
 /** Type of sys_conf register
- *  RMT apb configuration register
+ *  Configuration register for RMT APB
  */
 typedef union {
     struct {
         /** apb_fifo_mask : R/W; bitpos: [0]; default: 0;
-         *  1'h1: access memory directly.   1'h0: access memory by FIFO.
+         *  Configures the memory access mode. \\
+         *  0: Access memory by FIFO\\
+         *  1: Access memory directly\\
          */
         uint32_t apb_fifo_mask:1;
         /** mem_clk_force_on : R/W; bitpos: [1]; default: 0;
-         *  Set this bit to enable the clock for RMT memory.
+         *  Configures whether to enable the clock for RMT memory. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t mem_clk_force_on:1;
         /** mem_force_pd : R/W; bitpos: [2]; default: 0;
@@ -247,8 +282,9 @@ typedef union {
         uint32_t sclk_active:1;
         uint32_t reserved_27:4;
         /** clk_en : R/W; bitpos: [31]; default: 0;
-         *  RMT register clock gate enable signal. 1: Power up the drive clock of registers. 0:
-         *  Power down the drive clock of registers
+         *  Configures whether to enable signal of RMT register clock gate. \\
+         *  0: Power down the drive clock of registers\\
+         *  1: Power up the drive clock of registers\\
          */
         uint32_t clk_en:1;
     };
@@ -284,40 +320,45 @@ typedef union {
 
 /** Group: Status registers */
 /** Type of chnstatus register
- *  Channel n status register
+ *  Channel 0 status register
  */
 typedef union {
     struct {
         /** mem_raddr_ex_chn : RO; bitpos: [8:0]; default: 0;
-         *  This register records the memory address offset when transmitter of CHANNELn is
-         *  using the RAM.
+         *  Represents the memory address offset when transmitter of channel n is using the RAM.
          */
         uint32_t mem_raddr_ex_chn:9;
         /** state_chn : RO; bitpos: [11:9]; default: 0;
-         *  This register records the FSM status of CHANNELn.
+         *  Represents the FSM status of channel n.
          */
         uint32_t state_chn:3;
         /** apb_mem_waddr_chn : RO; bitpos: [20:12]; default: 0;
-         *  This register records the memory address offset when writes RAM over APB bus.
+         *  Represents the memory address offset when writes RAM over APB bus.
          */
         uint32_t apb_mem_waddr_chn:9;
         /** apb_mem_rd_err_chn : RO; bitpos: [21]; default: 0;
-         *  This status bit will be set if the offset address out of memory size when reading
-         *  via APB bus.
+         *  Represents whether the offset address exceeds memory size when reading via APB bus.
+         *  \\
+         *  0: Not exceed\\
+         *  1: Exceed\\
          */
         uint32_t apb_mem_rd_err_chn:1;
         /** mem_empty_chn : RO; bitpos: [22]; default: 0;
-         *  This status bit will be set when the data to be set is more than memory size and
-         *  the wraparound mode is disabled.
+         *  Represents whether the TX data size exceeds the memory size and the wrap TX mode is
+         *  disabled. \\
+         *  0: Not exceed\\
+         *  1: Exceed\\
          */
         uint32_t mem_empty_chn:1;
         /** apb_mem_wr_err_chn : RO; bitpos: [23]; default: 0;
-         *  This status bit will be set if the offset address out of memory size when writes
-         *  via APB bus.
+         *  Represents whether the offset address exceeds memory size (overflows) when writes
+         *  via APB bus. \\
+         *  0: Not exceed\\
+         *  1: Exceed\\
          */
         uint32_t apb_mem_wr_err_chn:1;
         /** apb_mem_raddr_chn : RO; bitpos: [31:24]; default: 0;
-         *  This register records the memory address offset when reading RAM over APB bus.
+         *  Represents the memory address offset when reading RAM over APB bus.
          */
         uint32_t apb_mem_raddr_chn:8;
     };
@@ -325,36 +366,41 @@ typedef union {
 } rmt_chnstatus_reg_t;
 
 /** Type of chmstatus register
- *  Channel m status register
+ *  Channel 2 status register
  */
 typedef union {
     struct {
         /** mem_waddr_ex_chm : RO; bitpos: [8:0]; default: 0;
-         *  This register records the memory address offset when receiver of CHANNELm is using
-         *  the RAM.
+         *  Represents the memory address offset when receiver of channel m is using the RAM.
          */
         uint32_t mem_waddr_ex_chm:9;
         uint32_t reserved_9:3;
         /** apb_mem_raddr_chm : RO; bitpos: [20:12]; default: 0;
-         *  This register records the memory address offset when reads RAM over APB bus.
+         *  Represents the memory address offset when reads RAM over APB bus.
          */
         uint32_t apb_mem_raddr_chm:9;
         uint32_t reserved_21:1;
         /** state_chm : RO; bitpos: [24:22]; default: 0;
-         *  This register records the FSM status of CHANNELm.
+         *  Represents the FSM status of channel m.
          */
         uint32_t state_chm:3;
         /** mem_owner_err_chm : RO; bitpos: [25]; default: 0;
-         *  This status bit will be set when the ownership of memory block is wrong.
+         *  Represents whether the ownership of memory block is wrong. \\
+         *  0: The ownership of memory block is correct\\
+         *  1: The ownership of memory block is wrong\\
          */
         uint32_t mem_owner_err_chm:1;
         /** mem_full_chm : RO; bitpos: [26]; default: 0;
-         *  This status bit will be set if the receiver receives more data than the memory size.
+         *  Represents whether the receiver receives more data than the memory can fit. \\
+         *  0: The receiver does not receive more data than the memory can fit\\
+         *  1: The receiver receives more data than the memory can fit\\
          */
         uint32_t mem_full_chm:1;
         /** apb_mem_rd_err_chm : RO; bitpos: [27]; default: 0;
-         *  This status bit will be set if the offset address out of memory size when reads via
-         *  APB bus.
+         *  Represents whether the offset address exceeds memory size (overflows) when reads
+         *  RAM via APB bus. \\
+         *  0: Not exceed\\
+         *  1: Exceed\\
          */
         uint32_t apb_mem_rd_err_chm:1;
         uint32_t reserved_28:4;
@@ -637,18 +683,18 @@ typedef union {
 
 /** Group: Carrier wave duty cycle registers */
 /** Type of chncarrier_duty register
- *  Channel n duty cycle configuration register
+ *  Duty cycle configuration register for channel 0
  */
 typedef union {
     struct {
         /** carrier_low_chn : R/W; bitpos: [15:0]; default: 64;
-         *  This register is used to configure carrier wave 's low level clock period for
-         *  CHANNELn.
+         *  Configures carrier wave's low level clock period for channel n. \\
+         *  Measurement unit: rmt_sclk\\
          */
         uint32_t carrier_low_chn:16;
         /** carrier_high_chn : R/W; bitpos: [31:16]; default: 64;
-         *  This register is used to configure carrier wave 's high level clock period for
-         *  CHANNELn.
+         *  Configures carrier wave's high level clock period for channel n. \\
+         *  Measurement unit: rmt_sclk\\
          */
         uint32_t carrier_high_chn:16;
     };
@@ -656,18 +702,22 @@ typedef union {
 } rmt_chncarrier_duty_reg_t;
 
 /** Type of chm_rx_carrier_rm register
- *  Channel m carrier remove register
+ *  Carrier remove register for channel 2
  */
 typedef union {
     struct {
         /** carrier_low_thres_chm : R/W; bitpos: [15:0]; default: 0;
-         *  The low level period in a carrier modulation mode is
-         *  (REG_RMT_REG_CARRIER_LOW_THRES_CHm + 1) for channel m.
+         *  Configures the low level period in a carrier modulation mode for channel m. \\
+         *  The low level period in a carrier modulation mode is (RMT_CARRIER_LOW_THRES_CHm +
+         *  1) for channel m. \\
+         *  Measurement unit: clk_div\\
          */
         uint32_t carrier_low_thres_chm:16;
         /** carrier_high_thres_chm : R/W; bitpos: [31:16]; default: 0;
+         *  Configures the high level period in a carrier modulation mode for channel m. \\
          *  The high level period in a carrier modulation mode is
-         *  (REG_RMT_REG_CARRIER_HIGH_THRES_CHm + 1) for channel m.
+         *  (REG_RMT_REG_CARRIER_HIGH_THRES_CHm + 1) for channel m.\\
+         *  Measurement unit: clk_div\\
          */
         uint32_t carrier_high_thres_chm:16;
     };
@@ -677,30 +727,35 @@ typedef union {
 
 /** Group: Tx event configuration registers */
 /** Type of chn_tx_lim register
- *  Channel n Tx event configuration register
+ *  Configuration register for channel 0 TX event
  */
 typedef union {
     struct {
         /** tx_lim_chn : R/W; bitpos: [8:0]; default: 128;
-         *  This register is used to configure the maximum entries that CHANNELn can send out.
+         *  Configures the maximum entries that channel n can send out.
          */
         uint32_t tx_lim_chn:9;
         /** tx_loop_num_chn : R/W; bitpos: [18:9]; default: 0;
-         *  This register is used to configure the maximum loop count when tx_conti_mode is
-         *  valid.
+         *  Configures the maximum loop count when Continuous TX mode is valid.
          */
         uint32_t tx_loop_num_chn:10;
         /** tx_loop_cnt_en_chn : R/W; bitpos: [19]; default: 0;
-         *  This register is the enabled bit for loop count.
+         *  Configures whether to enable loop count. \\
+         *  0: No effect\\
+         *  1: Enable\\
          */
         uint32_t tx_loop_cnt_en_chn:1;
         /** loop_count_reset_chn : WT; bitpos: [20]; default: 0;
-         *  This register is used to reset the loop count when tx_conti_mode is valid.
+         *  Configures whether to reset the loop count when tx_conti_mode is valid. \\
+         *  0: No effect\\
+         *  1: Reset\\
          */
         uint32_t loop_count_reset_chn:1;
         /** loop_stop_en_chn : R/W; bitpos: [21]; default: 0;
-         *  This bit is used to enable the loop send stop function after the loop counter
-         *  counts to  loop number for CHANNELn.
+         *  Configures whether to enable the loop send stop function after the loop counter
+         *  counts to loop number for channel n. \\
+         *  0: No effect\\
+         *  1: Enable\\
          */
         uint32_t loop_stop_en_chn:1;
         uint32_t reserved_22:10;
@@ -736,7 +791,7 @@ typedef union {
 
 /** Group: Rx event configuration registers */
 /** Type of chm_rx_lim register
- *  Channel m Rx event configuration register
+ *  Configuration register for channel 2 RX event
  */
 typedef union {
     struct {
@@ -752,7 +807,7 @@ typedef union {
 
 /** Group: Version register */
 /** Type of date register
- *  RMT version register
+ *  Version control register
  */
 typedef union {
     struct {
@@ -767,13 +822,12 @@ typedef union {
 
 
 typedef struct rmt_dev_t {
-    volatile rmt_chndata_reg_t chndata[2];
-    volatile rmt_chmdata_reg_t chmdata[2];
+    volatile rmt_chndata_reg_t chndata[4];
     volatile rmt_chnconf0_reg_t chnconf0[2];
     volatile struct {
         rmt_chmconf0_reg_t conf0;
         rmt_chmconf1_reg_t conf1;
-    } chmconf[2];;
+    } chmconf[2];
     volatile rmt_chnstatus_reg_t chnstatus[2];
     volatile rmt_chmstatus_reg_t chmstatus[2];
     volatile rmt_int_raw_reg_t int_raw;

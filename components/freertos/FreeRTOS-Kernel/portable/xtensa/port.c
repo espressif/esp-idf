@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -107,6 +107,11 @@ BaseType_t xPortStartScheduler( void )
     vPortSetupTimer();
 
     port_xSchedulerRunning[xPortGetCoreID()] = 1;
+
+    // Windows contain references to the startup stack which will be reclaimed by the main task
+    // Spill the windows to create a clean environment to ensure we do not carry over any such references
+    // to invalid SPs which will cause problems if main_task does a windowoverflow to them
+    xthal_window_spill();
 
     // Cannot be directly called from C; never returns
     __asm__ volatile ("call0    _frxt_dispatch\n");
@@ -395,7 +400,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     | Coproc Save Area          | (CPSA MUST BE FIRST)
     | ------------------------- |
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -449,7 +454,8 @@ BaseType_t xPortInIsrContext(void)
 
 void vPortAssertIfInISR(void)
 {
-    configASSERT(xPortInIsrContext());
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
 }
 
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
@@ -489,16 +495,20 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 {
     /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
+     * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
     spinlock_release(mux);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNesting[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);

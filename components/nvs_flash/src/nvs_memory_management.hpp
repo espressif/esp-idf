@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <cstdlib>
+#include "esp_heap_caps.h"
 
 #pragma once
 
@@ -41,6 +42,8 @@ struct ExceptionlessAllocatable {
      */
     static void *operator new( std::size_t ) = delete;
 
+    static void *operator new[]( std::size_t ) = delete;
+
     /**
      * Simple implementation with malloc(). No exceptions are thrown if the allocation fails.
      * To use this operator, your type must inherit from this class and then allocate with:
@@ -50,13 +53,39 @@ struct ExceptionlessAllocatable {
      * @endcode
      */
     void *operator new (size_t size, const std::nothrow_t&) noexcept {
+#ifdef CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM
+        return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+                                                MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+#else
         return std::malloc(size);
+#endif
+    }
+
+    void *operator new [](size_t size, const std::nothrow_t&) noexcept {
+#ifdef CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM
+        return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+                                                MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+#else
+        return std::malloc(size);
+#endif
     }
 
     /**
      * Use \c delete as normal. This operator will be called automatically instead of the global one from libstdc++.
      */
     void operator delete (void *obj) noexcept {
-        free(obj);
+#ifdef CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM
+        return heap_caps_free(obj);
+#else
+        return std::free(obj);
+#endif
+    }
+
+    void operator delete [](void *obj) noexcept {
+#ifdef CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM
+        return heap_caps_free(obj);
+#else
+        return std::free(obj);
+#endif
     }
 };

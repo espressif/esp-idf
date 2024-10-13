@@ -114,6 +114,7 @@ menu "OpenThread"
                 Select this to use the native 15.4 radio.
 
         config OPENTHREAD_RADIO_SPINEL_UART
+            select UART_ISR_IN_IRAM
             bool "Connect via UART"
             help
                 Select this to connect to a Radio Co-Processor via UART.
@@ -157,15 +158,40 @@ menu "OpenThread"
         default OPENTHREAD_RCP_UART
 
         config OPENTHREAD_RCP_UART
+            select UART_ISR_IN_IRAM
             bool "UART RCP"
             help
                 Select this to enable UART connection to host.
 
         config OPENTHREAD_RCP_SPI
             bool "SPI RCP"
+            select GPIO_CTRL_FUNC_IN_IRAM
             help
                 Select this to enable SPI connection to host.
     endchoice
+
+    menu "OpenThread version message"
+        depends on OPENTHREAD_ENABLED
+
+        config OPENTHREAD_PACKAGE_NAME
+            string "OpenThread package name"
+            default "openthread-esp32"
+            help
+                The OpenThread package name.
+
+        config OPENTHREAD_PLATFORM_INFO
+            string "platform information"
+            default IDF_TARGET
+            help
+                The OpenThread platform information.
+    endmenu
+
+    config OPENTHREAD_NCP_VENDOR_HOOK
+        bool "Enable vendor command for RCP"
+        depends on OPENTHREAD_RADIO
+        default y
+        help
+            Select this to enable OpenThread NCP vendor commands.
 
     config OPENTHREAD_CLI
         bool "Enable Openthread Command-Line Interface"
@@ -196,7 +222,6 @@ menu "OpenThread"
         int "The size of max commissioning joiner entries"
         depends on OPENTHREAD_COMMISSIONER
         default 2
-        range 2 50
 
     config OPENTHREAD_JOINER
         bool "Enable Joiner"
@@ -218,7 +243,6 @@ menu "OpenThread"
         int "Specifies number of service entries in the SRP client service pool"
         depends on OPENTHREAD_SRP_CLIENT
         default 5
-        range 2 20
         help
             Set the max buffer size of service entries in the SRP client service pool.
 
@@ -247,30 +271,35 @@ menu "OpenThread"
         int "The number of openthread message buffers"
         depends on OPENTHREAD_ENABLED
         default 65
-        range 10 100 if !OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
-        range 10 8191 if OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
 
     config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
         int "The size of openthread spinel rx frame buffer"
-        depends on OPENTHREAD_ENABLED
-        default 1024
-        range 512 8192
+        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
+        default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
+        default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
+
+    config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
+        int "Maximum backoffs times before declaring a channel access failure."
+        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
+        default 4
+        help
+            The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
+            failure.
 
     config OPENTHREAD_MLE_MAX_CHILDREN
         int "The size of max MLE children entries"
         depends on OPENTHREAD_ENABLED
         default 10
-        range 5 50
 
     config OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
         int "The size of max TMF address cache entries"
         depends on OPENTHREAD_ENABLED
         default 20
-        range 5 50
 
     config OPENTHREAD_DNS64_CLIENT
         bool "Use dns64 client"
         depends on OPENTHREAD_ENABLED && LWIP_IPV4
+        select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
         default n
         help
             Select this option to acquire NAT64 address from dns servers.
@@ -285,8 +314,7 @@ menu "OpenThread"
     config OPENTHREAD_UART_BUFFER_SIZE
         int "The uart received buffer size of openthread"
         depends on OPENTHREAD_ENABLED
-        default 256
-        range 128 1024
+        default 2048
         help
             Set the OpenThread UART buffer size.
 
@@ -359,6 +387,37 @@ menu "OpenThread"
         default n
         help
             Select this option to enable the radio statistics feature, you can use radio command to print some radio
-            Statistics informations.
+            Statistics information.
+
+    config OPENTHREAD_SPINEL_ONLY
+        bool "Enable OpenThread External Radio Spinel feature"
+        default n
+        help
+            Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+
+    config OPENTHREAD_RX_ON_WHEN_IDLE
+        bool "Enable OpenThread radio capability rx on when idle"
+        default y if !ESP_COEX_SW_COEXIST_ENABLE
+        default n if ESP_COEX_SW_COEXIST_ENABLE
+        help
+            Select this option to enable OpenThread radio capability rx on when idle. Do not support this feature when
+            SW coexistence is enabled.
+
+    menu "Thread Address Query Config"
+        config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+            int "Timeout value (in seconds) for a address notification response after sending an address query."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 3
+
+        config OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+            int "Initial retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 15
+
+        config OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+            int "Maximum retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 120
+    endmenu
 
 endmenu

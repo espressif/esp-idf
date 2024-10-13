@@ -68,6 +68,20 @@
 #define IDF_PERFORMANCE_MIN_UDP_TX_ETH_THROUGHPUT                                   70
 #endif
 
+#ifndef IDF_PERFORMANCE_MIN_TCP_RX_ETH_THROUGHPUT_SPI_ETH
+#define IDF_PERFORMANCE_MIN_TCP_RX_ETH_THROUGHPUT_SPI_ETH                           2
+#endif
+#ifndef IDF_PERFORMANCE_MIN_TCP_TX_ETH_THROUGHPUT_SPI_ETH
+#define IDF_PERFORMANCE_MIN_TCP_TX_ETH_THROUGHPUT_SPI_ETH                           3
+#endif
+#ifndef IDF_PERFORMANCE_MIN_UDP_RX_ETH_THROUGHPUT_SPI_ETH
+#define IDF_PERFORMANCE_MIN_UDP_RX_ETH_THROUGHPUT_SPI_ETH                           5
+#endif
+#ifndef IDF_PERFORMANCE_MIN_UDP_TX_ETH_THROUGHPUT_SPI_ETH
+#define IDF_PERFORMANCE_MIN_UDP_TX_ETH_THROUGHPUT_SPI_ETH                           7
+#endif
+
+
 // events dispatched per second by event loop library
 #if !CONFIG_FREERTOS_SMP // IDF-5112
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH

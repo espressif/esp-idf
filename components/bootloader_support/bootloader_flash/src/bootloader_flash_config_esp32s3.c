@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,11 @@ void bootloader_flash_update_id()
 {
     esp_rom_spiflash_chip_t *chip = &rom_spiflash_legacy_data->chip;
     chip->device_id = bootloader_read_flash_id();
+}
+
+void bootloader_flash_update_size(uint32_t size)
+{
+    rom_spiflash_legacy_data->chip.chip_size = size;
 }
 
 void IRAM_ATTR bootloader_flash_cs_timing_config()
@@ -100,12 +105,12 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     uint8_t wp_pin = esp_rom_efuse_get_flash_wp_gpio();
-    uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
-    uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
-    uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
-    uint8_t cs0_gpio_num = SPI_CS0_GPIO_NUM;
-    uint8_t hd_gpio_num  = SPI_HD_GPIO_NUM;
-    uint8_t wp_gpio_num  = SPI_WP_GPIO_NUM;
+    uint8_t clk_gpio_num = MSPI_IOMUX_PIN_NUM_CLK;
+    uint8_t q_gpio_num   = MSPI_IOMUX_PIN_NUM_MISO;
+    uint8_t d_gpio_num   = MSPI_IOMUX_PIN_NUM_MOSI;
+    uint8_t cs0_gpio_num = MSPI_IOMUX_PIN_NUM_CS0;
+    uint8_t hd_gpio_num  = MSPI_IOMUX_PIN_NUM_HD;
+    uint8_t wp_gpio_num  = MSPI_IOMUX_PIN_NUM_WP;
     if (spiconfig == 0) {
 
     } else {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,8 @@ static inline transport_esp_tls_t *ssl_get_context_data(esp_transport_handle_t t
 static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms, bool is_plain_tcp)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
+
     if (ssl->conn_state == TRANS_SSL_INIT) {
         ssl->cfg.timeout_ms = timeout_ms;
         ssl->cfg.is_plain_tcp = is_plain_tcp;
@@ -101,6 +103,7 @@ static inline int tcp_connect_async(esp_transport_handle_t t, const char *host, 
 static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     ssl->cfg.timeout_ms = timeout_ms;
 
@@ -114,8 +117,11 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) <= 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
         esp_tls_error_handle_t esp_tls_error_handle;
-        esp_tls_get_error_handle(ssl->tls, &esp_tls_error_handle);
-        esp_transport_set_errors(t, esp_tls_error_handle);
+        if (esp_tls_get_error_handle(ssl->tls, &esp_tls_error_handle) == ESP_OK) {
+            esp_transport_set_errors(t, esp_tls_error_handle);
+        } else {
+            ESP_LOGE(TAG, "Error in obtaining the error handle");
+        }
         goto exit_failure;
     }
 
@@ -136,6 +142,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     esp_tls_last_error_t *err_handle = esp_transport_get_error_handle(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     ssl->cfg.timeout_ms = timeout_ms;
     esp_err_t err = esp_tls_plain_tcp_connect(host, strlen(host), port, &ssl->cfg, err_handle, &ssl->sockfd);
@@ -151,6 +158,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
     int ret = -1;
     int remain = 0;
     struct timeval timeout;
@@ -182,6 +190,7 @@ static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
 static int base_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
     int ret = -1;
     struct timeval timeout;
     fd_set writeset;
@@ -208,6 +217,7 @@ static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int 
 {
     int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     if ((poll = esp_transport_poll_write(t, timeout_ms)) <= 0) {
         ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
@@ -230,6 +240,7 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
 {
     int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     if ((poll = esp_transport_poll_write(t, timeout_ms)) <= 0) {
         ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
@@ -246,6 +257,7 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
 static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     int poll = esp_transport_poll_read(t, timeout_ms);
     if (poll == -1) {
@@ -281,6 +293,7 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
 static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
 
     int poll = esp_transport_poll_read(t, timeout_ms);
     if (poll == -1) {
@@ -313,6 +326,8 @@ static int base_close(esp_transport_handle_t t)
 {
     int ret = -1;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    ESP_STATIC_ANALYZER_CHECK(ssl == NULL, -1);
+
     if (ssl && ssl->ssl_initialized) {
         ret = esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;

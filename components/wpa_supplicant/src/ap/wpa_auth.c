@@ -789,7 +789,7 @@ continue_processing:
              * strong random numbers. Reject the first 4-way
              * handshake(s) and collect some entropy based on the
              * information from it. Once enough entropy is
-             * available, the next atempt will trigger GMK/Key
+             * available, the next attempt will trigger GMK/Key
              * Counter update and the station will be allowed to
              * continue.
              */
@@ -2560,7 +2560,7 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
                 uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
-                bool *pmf_enable, int subtype)
+                bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result status_code = WPA_IE_OK;
@@ -2601,7 +2601,7 @@ send_resp:
                 omit_rsnxe = true;
             }
 
-            if (esp_send_assoc_resp(hapd, sta, bssid, resp, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
+            if (esp_send_assoc_resp(hapd, bssid, resp, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
                 resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
             }
 
@@ -2611,6 +2611,7 @@ send_resp:
 
             //Check whether AP uses Management Frame Protection for this connection
             *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
+            *pairwise_cipher = GET_BIT_POSITION(sta->wpa_sm->pairwise);
         }
 
         wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
@@ -2618,21 +2619,6 @@ send_resp:
 
     return true;
 }
-
-#ifdef CONFIG_WPS_REGISTRAR
-static void ap_free_sta_timeout(void *ctx, void *data)
-{
-    struct hostapd_data *hapd = (struct hostapd_data *) ctx;
-    u8 *addr = (u8 *) data;
-    struct sta_info *sta = ap_get_sta(hapd, addr);
-
-    if (sta) {
-        ap_free_sta(hapd, sta);
-    }
-
-    os_free(addr);
-}
-#endif
 
 bool wpa_ap_remove(u8* bssid)
 {
@@ -2656,19 +2642,6 @@ bool wpa_ap_remove(u8* bssid)
         return true;
     }
 #endif /* CONFIG_SAE */
-
-#ifdef CONFIG_WPS_REGISTRAR
-    wpa_printf(MSG_DEBUG, "wps_status=%d", wps_get_status());
-    if (wps_get_status() == WPS_STATUS_PENDING) {
-        u8 *addr = os_malloc(ETH_ALEN);
-
-        if (!addr) {
-            return false;
-        }
-        os_memcpy(addr, sta->addr, ETH_ALEN);
-        eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
-    } else
-#endif
     ap_free_sta(hapd, sta);
 
     return true;

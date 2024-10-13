@@ -194,7 +194,7 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO0, GPIO2, GPIO5, GPIO12 (MTDI), and GPIO15 (MTDO) are strapping pins. For more infomation, please refer to `ESP32 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_.
+    - Strapping pin: GPIO0, GPIO2, GPIO5, GPIO12 (MTDI), and GPIO15 (MTDO) are strapping pins. For more information, please refer to `ESP32 datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`_.
     - SPI0/1: GPIO6-11 and GPIO16-17 are usually connected to the SPI flash and PSRAM integrated on the module and therefore should not be used for other purposes.
     - JTAG: GPIO12-15 are usually used for inline debug.
     - GPI: GPIO34-39 can only be set as input mode and do not have software-enabled pullup or pulldown functions.

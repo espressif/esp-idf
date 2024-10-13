@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,8 +103,15 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     ESP_RETURN_ON_FALSE((s_tsens_attribute_copy == NULL), ESP_ERR_INVALID_STATE, TAG, "Already installed");
     temperature_sensor_handle_t tsens = NULL;
     tsens = (temperature_sensor_obj_t *) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
-    ESP_GOTO_ON_FALSE(tsens != NULL, ESP_ERR_NO_MEM, err, TAG, "no mem for temp sensor");
-    tsens->clk_src = tsens_config->clk_src;
+    ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_NO_MEM, TAG, "no mem for temp sensor");
+    if (tsens->clk_src == 0) {
+        tsens->clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT;
+    } else {
+        tsens->clk_src = tsens_config->clk_src;
+    }
+
+    temperature_sensor_power_acquire();
+    temperature_sensor_ll_clk_sel(tsens->clk_src);
 
     ESP_GOTO_ON_ERROR(temperature_sensor_attribute_table_sort(), err, TAG, "Table sort failed");
     ESP_GOTO_ON_ERROR(temperature_sensor_choose_best_range(tsens, tsens_config), err, TAG, "Cannot select the correct range");
@@ -140,6 +147,7 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
         ESP_RETURN_ON_ERROR(esp_intr_free(tsens->temp_sensor_isr_handle), TAG, "uninstall interrupt service failed");
     }
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    temperature_sensor_power_release();
 
     free(tsens);
     return ESP_OK;
@@ -175,8 +183,10 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
     temperature_sensor_ll_sample_enable(true);
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
-    temperature_sensor_ll_clk_sel(tsens->clk_src);
-    temperature_sensor_power_acquire();
+    // After enabling/resetting the temperature sensor,
+    // the output value gradually approaches the true temperature
+    // value as the measurement time increases. 300us is recommended.
+    esp_rom_delay_us(300);
     tsens->fsm = TEMP_SENSOR_FSM_ENABLE;
     return ESP_OK;
 }
@@ -186,7 +196,6 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE(tsens, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "tsens not enabled yet");
 
-    temperature_sensor_power_release();
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     temperature_sensor_ll_wakeup_enable(false);
     temperature_sensor_ll_sample_enable(false);
@@ -304,7 +313,7 @@ esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsen
 
     // lazy install interrupt service.
     if (!tsens->temp_sensor_isr_handle) {
-        ret = esp_intr_alloc_intrstatus(ETS_APB_ADC_INTR_SOURCE, isr_flags,
+        ret = esp_intr_alloc_intrstatus(ETS_TEMPERATURE_SENSOR_INTR_SOURCE, isr_flags,
                                         (uint32_t)temperature_sensor_ll_get_intr_status(),
                                         TEMPERATURE_SENSOR_LL_INTR_MASK, temperature_sensor_isr, tsens, &tsens->temp_sensor_isr_handle);
     }

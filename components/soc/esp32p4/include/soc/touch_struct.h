@@ -270,7 +270,7 @@ typedef union {
         uint32_t reserved_25:7;
     };
     uint32_t val;
-} rtc_touch_sampler_status_reg_t;
+} rtc_touch_sample_status_reg_t;
 
 /** Type of chn_tmp_status register
  *  Realtime channel status
@@ -320,7 +320,7 @@ typedef struct {
     volatile rtc_touch_chn_data_reg_t chn_data[15];
     volatile rtc_touch_slp_ch_data_reg_t slp_ch_data;
     volatile rtc_touch_aprch_ch_data_reg_t aprch_ch_data;
-    volatile rtc_touch_sampler_status_reg_t sampler_status;
+    volatile rtc_touch_sample_status_reg_t sample_status;
     volatile rtc_touch_chn_tmp_status_reg_t chn_tmp_status;
     uint32_t reserved_060[40];
     volatile rtc_touch_date_reg_t date;

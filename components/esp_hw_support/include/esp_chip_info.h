@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,8 @@ typedef enum {
     CHIP_ESP32C6 = 13, //!< ESP32-C6
     CHIP_ESP32H2 = 16, //!< ESP32-H2
     CHIP_ESP32P4 = 18, //!< ESP32-P4
-    CHIP_ESP32C5 = 19, //!< ESP32-C5
+    CHIP_ESP32C61= 20, //!< ESP32-C61
+    CHIP_ESP32C5 = 23, //!< ESP32-C5
     CHIP_POSIX_LINUX = 999, //!< The code is running on POSIX/Linux simulator
 } esp_chip_model_t;
 
@@ -61,7 +62,7 @@ void esp_chip_info(esp_chip_info_t* out_info);
  * @brief Cache lock bug exists or not
  *
  * @return
- *          - ture : bug exists
+ *          - true : bug exists
  *          - false : bug not exists
  */
 bool soc_has_cache_lock_bug(void);

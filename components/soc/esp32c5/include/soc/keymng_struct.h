@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -18,10 +18,10 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** clk_en : R/W; bitpos: [0]; default: 1;
+        /** reg_cg_force_on : R/W; bitpos: [0]; default: 1;
          *  Write 1 to force on register clock gate.
          */
-        uint32_t clk_en:1;
+        uint32_t reg_cg_force_on:1;
         /** mem_cg_force_on : R/W; bitpos: [1]; default: 0;
          *  Write 1 to force on memory clock gate.
          */
@@ -128,27 +128,32 @@ typedef union {
  */
 typedef union {
     struct {
-        /** use_efuse_key : R/W; bitpos: [1:0]; default: 0;
+        /** use_efuse_key : R/W; bitpos: [4:0]; default: 0;
          *  Set each bit to choose efuse key instead of key manager deployed key. Each bit
-         *  stands for a key type: bit 1 for xts_key; bit 0 for ecdsa_key
+         *  stands for a key type:bit 4 for psram_key; bit 3 for ds_key; bit 2 for hmac_key;
+         *  bit 1 for flash_key; bit 0 for ecdsa_key
          */
-        uint32_t use_efuse_key:2;
-        uint32_t reserved_2:2;
-        /** rnd_switch_cycle : R/W; bitpos: [8:4]; default: 15;
+        uint32_t use_efuse_key:5;
+        /** rnd_switch_cycle : R/W; bitpos: [9:5]; default: 15;
          *  The core clock cycle number to sample one rng input data. Please set it bigger than
          *  the clock cycle ratio: T_rng/T_km
          */
         uint32_t rnd_switch_cycle:5;
-        /** use_sw_init_key : R/W; bitpos: [9]; default: 0;
+        /** use_sw_init_key : R/W; bitpos: [10]; default: 0;
          *  Set this bit to use software written init key instead of efuse_init_key.
          */
         uint32_t use_sw_init_key:1;
-        /** xts_aes_key_len : R/W; bitpos: [10]; default: 0;
-         *  Set this bit to choose using xts-aes-256 or xts-aes-128. 1: use xts-aes-256. 0: use
-         *  xts-aes-128.
+        /** flash_key_len : R/W; bitpos: [11]; default: 0;
+         *  Set this bit to choose flash crypt using xts-aes-256 or xts-aes-128. 1: use
+         *  xts-aes-256. 0: use xts-aes-128.
          */
-        uint32_t xts_aes_key_len:1;
-        uint32_t reserved_11:21;
+        uint32_t flash_key_len:1;
+        /** psram_key_len : R/W; bitpos: [12]; default: 0;
+         *  Set this bit to choose psram crypt using xts-aes-256 or xts-aes-128. 1: use
+         *  xts-aes-256. 0: use xts-aes-128.
+         */
+        uint32_t psram_key_len:1;
+        uint32_t reserved_13:19;
     };
     uint32_t val;
 } keymng_static_reg_t;
@@ -158,25 +163,28 @@ typedef union {
  */
 typedef union {
     struct {
-        /** use_efuse_key_lock : R/W1; bitpos: [1:0]; default: 0;
+        /** use_efuse_key_lock : R/W1; bitpos: [4:0]; default: 0;
          *  Write 1 to lock reg_use_efuse_key. Each bit locks the corresponding bit of
          *  reg_use_efuse_key.
          */
-        uint32_t use_efuse_key_lock:2;
-        uint32_t reserved_2:2;
-        /** rnd_switch_cycle_lock : R/W1; bitpos: [4]; default: 0;
+        uint32_t use_efuse_key_lock:5;
+        /** rnd_switch_cycle_lock : R/W1; bitpos: [5]; default: 0;
          *  Write 1 to lock reg_rnd_switch_cycle.
          */
         uint32_t rnd_switch_cycle_lock:1;
-        /** use_sw_init_key_lock : R/W1; bitpos: [5]; default: 0;
+        /** use_sw_init_key_lock : R/W1; bitpos: [6]; default: 0;
          *  Write 1 to lock reg_use_sw_init_key.
          */
         uint32_t use_sw_init_key_lock:1;
-        /** xts_aes_key_len_lock : R/W1; bitpos: [6]; default: 0;
-         *  Write 1 to lock reg_xts_aes_key_len.
+        /** flash_key_len_lock : R/W1; bitpos: [7]; default: 0;
+         *  Write 1 to lock reg_flash_key_len.
          */
-        uint32_t xts_aes_key_len_lock:1;
-        uint32_t reserved_7:25;
+        uint32_t flash_key_len_lock:1;
+        /** psram_key_len_lock : R/W1; bitpos: [8]; default: 0;
+         *  Write 1 to lock reg_psram_key_len.
+         */
+        uint32_t psram_key_len_lock:1;
+        uint32_t reserved_9:23;
     };
     uint32_t val;
 } keymng_lock_reg_t;
@@ -194,8 +202,9 @@ typedef union {
          */
         uint32_t kgen_mode:3;
         /** key_purpose : R/W; bitpos: [6:3]; default: 0;
-         *  Set this field to choose the key purpose. 1: ecdsa_key 2: xts_256_1_key. 3:
-         *  xts_256_2_key. 4. xts_128_key. others: reserved.
+         *  Set this field to choose the key purpose. 1: ecdsa_key 2: flash_256_1_key. 3:
+         *  flash_256_2_key. 4: flash_128_key. 6: hmac_key. 7: ds_key. 8: psram_256_1_key. 9:
+         *  psram_256_2_key. 10: psram_128_key. Others: reserved.
          */
         uint32_t key_purpose:4;
         uint32_t reserved_7:25;
@@ -214,10 +223,10 @@ typedef union {
          *  Write 1 to continue Key Manager operation at LOAD/GAIN state.
          */
         uint32_t start:1;
-        /** continue : WT; bitpos: [1]; default: 0;
+        /** conti : WT; bitpos: [1]; default: 0;
          *  Write 1 to start Key Manager at IDLE state.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -266,12 +275,27 @@ typedef union {
          *  has not been deployed yet.
          */
         uint32_t key_ecdsa_vld:1;
-        /** key_xts_vld : RO; bitpos: [1]; default: 0;
-         *  The status bit for key_xts.        1: The key has been deployed correctly. 0: The
+        /** key_flash_vld : RO; bitpos: [1]; default: 0;
+         *  The status bit for key_flash.     1: The key has been deployed correctly. 0: The
          *  key has not been deployed yet.
          */
-        uint32_t key_xts_vld:1;
-        uint32_t reserved_2:30;
+        uint32_t key_flash_vld:1;
+        /** key_hmac_vld : RO; bitpos: [2]; default: 0;
+         *  The status bit for key_hmac.    1: The key has been deployed correctly. 0: The key
+         *  has not been deployed yet.
+         */
+        uint32_t key_hmac_vld:1;
+        /** key_ds_vld : RO; bitpos: [3]; default: 0;
+         *  The status bit for key_ds.         1: The key has been deployed correctly. 0: The
+         *  key has not been deployed yet.
+         */
+        uint32_t key_ds_vld:1;
+        /** key_psram_vld : RO; bitpos: [4]; default: 0;
+         *  The status bit for key_psram.   1: The key has been deployed correctly. 0: The key
+         *  has not been deployed yet.
+         */
+        uint32_t key_psram_vld:1;
+        uint32_t reserved_5:27;
     };
     uint32_t val;
 } keymng_key_vld_reg_t;
@@ -297,7 +321,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36720704;
+        /** date : R/W; bitpos: [27:0]; default: 36774224;
          *  Key Manager version control register.
          */
         uint32_t date:28;
@@ -307,14 +331,14 @@ typedef union {
 } keymng_date_reg_t;
 
 
-typedef struct keymng_dev_t {
+typedef struct {
     uint32_t reserved_000;
     volatile keymng_clk_reg_t clk;
     volatile keymng_int_raw_reg_t int_raw;
     volatile keymng_int_st_reg_t int_st;
     volatile keymng_int_ena_reg_t int_ena;
     volatile keymng_int_clr_reg_t int_clr;
-    volatile keymng_static_reg_t static;
+    volatile keymng_static_reg_t static_cfg;
     volatile keymng_lock_reg_t lock;
     volatile keymng_conf_reg_t conf;
     volatile keymng_start_reg_t start;

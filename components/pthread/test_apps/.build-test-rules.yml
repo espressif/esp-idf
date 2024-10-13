@@ -1,0 +1,10 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/pthread/test_apps/pthread_psram_tests:
+  enable:
+    - if: IDF_TARGET in ["esp32"]
+      reason: PSRAM only available on ESP32, S2, S3; code is fairly generic
+
+components/pthread/test_apps/pthread_unity_tests:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32p4", "esp32s2", "esp32s3", "linux"]

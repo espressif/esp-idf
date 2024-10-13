@@ -69,9 +69,11 @@ static void mcpwm_cap_timer_unregister_from_group(mcpwm_cap_timer_t *cap_timer)
 
 static esp_err_t mcpwm_cap_timer_destroy(mcpwm_cap_timer_t *cap_timer)
 {
+#if !SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     if (cap_timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(cap_timer->pm_lock), TAG, "delete pm_lock failed");
     }
+#endif
     if (cap_timer->group) {
         mcpwm_cap_timer_unregister_from_group(cap_timer);
     }
@@ -101,6 +103,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     // capture timer clock source is same as the MCPWM group
     ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
+    cap_timer->pm_lock = group->pm_lock;
     uint32_t periph_src_clk_hz = 0;
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), err, TAG, "get clock source freq failed");
     ESP_LOGD(TAG, "periph_src_clk_hz %"PRIu32"", periph_src_clk_hz);
@@ -277,7 +280,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
 
     // if interrupt priority specified before, it cannot be changed until the group is released
     // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group intrrupt priority failed");
+    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
 
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_chan_id, config->flags.neg_edge);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_chan_id, config->flags.pos_edge);

@@ -206,6 +206,11 @@ The chip driver relies on the host driver.
 OS Functions
 ^^^^^^^^^^^^
 
+.. toctree::
+   :hidden:
+
+   ../spi_features
+
 Currently the OS function layer provides entries of a lock and delay.
 
 The lock (see :ref:`spi_bus_lock`) is used to resolve the conflicts among the access of devices on the same SPI bus, and the SPI Flash chip access. E.g.

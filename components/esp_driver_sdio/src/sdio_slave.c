@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "esp_cpu.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
@@ -100,6 +101,12 @@ static const char TAG[] = "sdio_slave";
 #define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s(%d): "s, __FUNCTION__,__LINE__,##__VA_ARGS__)
 #define SDIO_SLAVE_LOGW(s, ...) ESP_LOGW(TAG, "%s: "s, __FUNCTION__,##__VA_ARGS__)
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define SDIO_SLAVE_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SDIO_SLAVE_RCC_ATOMIC()
+#endif
+
 // sdio_slave_buf_handle_t is of type recv_desc_t*;
 typedef struct recv_desc_s {
     union {
@@ -113,7 +120,7 @@ typedef struct recv_desc_s {
             // first 3 WORDs of this struct is defined by and compatible to the DMA link list format.
             uint32_t _reserved0;
             uint32_t _reserved1;
-            TAILQ_ENTRY(recv_desc_s) te; // tailq used to store the registered descriptors.
+            TAILQ_ENTRY(recv_desc_s) tail_entry; // tailq used to store the registered descriptors.
         };
     };
 } recv_desc_t;
@@ -304,9 +311,11 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     }
     configure_pin(slot->d3_gpio, slot->func, pullup);
 
-    //enable module and config
-    periph_module_reset(PERIPH_SDIO_SLAVE_MODULE);
-    periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
+    //enable register clock
+    SDIO_SLAVE_RCC_ATOMIC() {
+        sdio_slave_ll_enable_bus_clock(true);
+        sdio_slave_ll_reset_register();
+    }
 
     sdio_slave_hal_hw_init(context.hal);
     return ESP_OK;
@@ -333,6 +342,11 @@ static void sdio_slave_hw_deinit(void)
     recover_pin(slot->d1_gpio, slot->func);
     recover_pin(slot->d2_gpio, slot->func);
     recover_pin(slot->d3_gpio, slot->func);
+
+    //disable register clock
+    SDIO_SLAVE_RCC_ATOMIC() {
+        sdio_slave_ll_enable_bus_clock(false);
+    }
 }
 
 esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
@@ -367,8 +381,8 @@ void sdio_slave_deinit(void)
     //unregister all buffers registered but returned (not loaded)
     recv_desc_t *temp_desc;
     recv_desc_t *desc;
-    TAILQ_FOREACH_SAFE(desc, &context.recv_reg_list, te, temp_desc) {
-        TAILQ_REMOVE(&context.recv_reg_list, desc, te);
+    TAILQ_FOREACH_SAFE(desc, &context.recv_reg_list, tail_entry, temp_desc) {
+        TAILQ_REMOVE(&context.recv_reg_list, desc, tail_entry);
         free(desc);
     }
     //unregister all buffers that is loaded and not returned
@@ -558,7 +572,7 @@ static void sdio_intr_send(void *arg)
             }
 
             assert(returned_cnt == 0);
-            ESP_EARLY_LOGV(TAG, "end: %x", finished_arg);
+            ESP_EARLY_LOGV(TAG, "end: %p", finished_arg);
             ret = xQueueSendFromISR(context.ret_queue, &finished_arg, &yield);
             assert(ret == pdTRUE);
         }
@@ -719,7 +733,7 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     assert(desc->not_receiving);
 
     critical_enter_recv();
-    TAILQ_REMOVE(&context.recv_reg_list, desc, te);
+    TAILQ_REMOVE(&context.recv_reg_list, desc, tail_entry);
     desc->not_receiving = 0; //manually remove the prev link (by set not_receiving=0), to indicate this is in the queue
     sdio_slave_hal_load_buf(context.hal, &desc->hal_desc);
     critical_exit_recv();
@@ -739,7 +753,7 @@ sdio_slave_buf_handle_t sdio_slave_recv_register_buf(uint8_t *start)
     //initially in the reg list
     sdio_slave_hal_recv_init_desc(context.hal, &desc->hal_desc, start);
     critical_enter_recv();
-    TAILQ_INSERT_TAIL(&context.recv_reg_list, desc, te);
+    TAILQ_INSERT_TAIL(&context.recv_reg_list, desc, tail_entry);
     critical_exit_recv();
     return desc;
 }
@@ -748,7 +762,7 @@ esp_err_t sdio_slave_recv(sdio_slave_buf_handle_t *handle_ret, uint8_t **out_add
 {
     esp_err_t ret = sdio_slave_recv_packet(handle_ret, wait);
     if (ret == ESP_ERR_NOT_FINISHED) {
-        //This API was not awared of the EOF info, return ESP_OK to keep back-compatible.
+        //This API was not aware of the EOF info, return ESP_OK to keep back-compatible.
         ret = ESP_OK;
     }
     if (ret == ESP_OK) {
@@ -776,7 +790,7 @@ esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t *handle_ret, TickType_t
     //remove from queue, add back to reg list.
     recv_desc_t *desc = (recv_desc_t *)sdio_slave_hal_recv_unload_desc(context.hal);
     assert(desc != NULL && desc->hal_desc.owner == 0);
-    TAILQ_INSERT_TAIL(&context.recv_reg_list, desc, te);
+    TAILQ_INSERT_TAIL(&context.recv_reg_list, desc, tail_entry);
     critical_exit_recv();
 
     *handle_ret = (sdio_slave_buf_handle_t)desc;
@@ -793,7 +807,7 @@ esp_err_t sdio_slave_recv_unregister_buf(sdio_slave_buf_handle_t handle)
     CHECK_HANDLE_IDLE(desc); //in the queue, fail.
 
     critical_enter_recv();
-    TAILQ_REMOVE(&context.recv_reg_list, desc, te);
+    TAILQ_REMOVE(&context.recv_reg_list, desc, tail_entry);
     critical_exit_recv();
     free(desc);
     return ESP_OK;

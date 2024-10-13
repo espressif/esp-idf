@@ -1,18 +1,19 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import inspect
 import os
 import re
 import sys
-from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import yaml
+from idf_ci_utils import get_all_manifest_files
 from idf_ci_utils import IDF_PATH
 
 YES = u'\u2713'
@@ -34,6 +35,7 @@ USUAL_TO_FORMAL = {
     'esp32c5': 'ESP32-C5',
     'esp32h2': 'ESP32-H2',
     'esp32p4': 'ESP32-P4',
+    'esp32c61': 'ESP32-C61',
     'linux': 'Linux',
 }
 
@@ -47,6 +49,7 @@ FORMAL_TO_USUAL = {
     'ESP32-C5': 'esp32c5',
     'ESP32-H2': 'esp32h2',
     'ESP32-P4': 'esp32p4',
+    'ESP32-C61': 'esp32c61',
     'Linux': 'linux',
 }
 
@@ -94,7 +97,7 @@ def check_readme(
         if not _readme_path:
             return None, SUPPORTED_TARGETS
 
-        with open(_readme_path) as _fr:
+        with open(_readme_path, encoding='utf8') as _fr:
             _readme_str = _fr.read()
 
         support_string = SUPPORTED_TARGETS_TABLE_REGEX.findall(_readme_str)
@@ -148,9 +151,7 @@ def check_readme(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
@@ -260,7 +261,7 @@ def check_test_scripts(
 
         if _app.verified_targets == actual_verified_targets:
             return True
-        elif _app.verified_targets == sorted(actual_verified_targets + bypass_check_test_targets or []):  # type: ignore
+        elif not (set(_app.verified_targets) - set(actual_verified_targets + (bypass_check_test_targets or []))):
             print(f'WARNING: bypass test script check on {_app.app_dir} for targets {bypass_check_test_targets} ')
             return True
 
@@ -304,9 +305,7 @@ def check_test_scripts(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
@@ -347,42 +346,10 @@ def check_test_scripts(
     sys.exit(exit_code)
 
 
-def sort_yaml(files: List[str]) -> None:
-    from ruamel.yaml import YAML, CommentedMap
-
-    yaml = YAML()
-    yaml.indent(mapping=2, sequence=4, offset=2)
-    yaml.width = 4096  # avoid wrap lines
-
-    exit_code = 0
-    for f in files:
-        with open(f) as fr:
-            file_s = fr.read()
-            fr.seek(0)
-            file_d: CommentedMap = yaml.load(fr)
-
-        sorted_yaml = CommentedMap(dict(sorted(file_d.items())))
-        file_d.copy_attributes(sorted_yaml)
-
-        with StringIO() as s:
-            yaml.dump(sorted_yaml, s)
-
-            string = s.getvalue()
-            if string != file_s:
-                with open(f, 'w') as fw:
-                    fw.write(string)
-                print(
-                    f'Sorted yaml file {f}. Please take a look. sometimes the format is a bit messy'
-                )
-                exit_code = 1
-
-    sys.exit(exit_code)
-
-
 def check_exist() -> None:
     exit_code = 0
 
-    config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
+    config_files = get_all_manifest_files()
     for file in config_files:
         if 'managed_components' in Path(file).parts:
             continue
@@ -424,9 +391,6 @@ if __name__ == '__main__':
         help='default build test rules config file',
     )
 
-    _sort_yaml = action.add_parser('sort-yaml')
-    _sort_yaml.add_argument('files', nargs='+', help='all specified yaml files')
-
     _check_exist = action.add_parser('check-exist')
 
     arg = parser.parse_args()
@@ -436,9 +400,7 @@ if __name__ == '__main__':
         os.path.join(os.path.dirname(__file__), '..', '..')
     )
 
-    if arg.action == 'sort-yaml':
-        sort_yaml(arg.files)
-    elif arg.action == 'check-exist':
+    if arg.action == 'check-exist':
         check_exist()
     else:
         check_dirs = set()
@@ -464,9 +426,10 @@ if __name__ == '__main__':
         if check_all:
             check_dirs = {IDF_PATH}
             _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'unit-test-app'),
-                             os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app')]
+                             os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app'),
+                             os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project')]
         else:
-            _exclude_dirs = []
+            _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project')]
 
         extra_default_build_targets_list: List[str] = []
         bypass_check_test_targets_list: List[str] = []

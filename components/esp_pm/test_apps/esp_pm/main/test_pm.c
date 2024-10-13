@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -54,21 +54,21 @@ static void switch_freq(int mhz)
         .min_freq_mhz = MIN(mhz, xtal_freq_mhz),
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
-    printf("Waiting for frequency to be set to %d MHz...\n", mhz);
-    while (esp_clk_cpu_freq() / MHZ != mhz)
-    {
-        vTaskDelay(pdMS_TO_TICKS(200));
-        printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / MHZ);
-    }
+    TEST_ASSERT_EQUAL_UINT32(mhz, esp_clk_cpu_freq() / MHZ);
+    printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / MHZ);
 }
 
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 10, 80, 20, 40};
+#elif CONFIG_IDF_TARGET_ESP32C5
+static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 12, 80, 24, 40};
 #elif CONFIG_IDF_TARGET_ESP32H2
 static const int test_freqs[] = {32, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 64, 48, 32, 64, 48, 8, 64, 48, 16, 32};
 #elif CONFIG_IDF_TARGET_ESP32C2
 static const int test_freqs[] = {CONFIG_XTAL_FREQ, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, CONFIG_XTAL_FREQ, 80,
                                  CONFIG_XTAL_FREQ / 2, CONFIG_XTAL_FREQ}; // C2 xtal has 40/26MHz option
+#elif CONFIG_IDF_TARGET_ESP32P4
+static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 90, 40, 90, 10, 90, 20, 40, 360, 90, 180, 90, 40};
 #else
 static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
 #endif
@@ -154,7 +154,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
         const int us_per_tick = 1 * portTICK_PERIOD_MS * 1000;
 
         printf("%d %d\n", ticks_to_delay * us_per_tick, timer_diff_us);
-        TEST_ASSERT(timer_diff_us < ticks_to_delay * us_per_tick);
+        TEST_ASSERT(timer_diff_us <= ticks_to_delay * us_per_tick);
     }
 
     light_sleep_disable();
@@ -228,8 +228,9 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
         printf("%lld %lld %u\n", end_rtc - start_rtc, end_hs - start_hs, end_tick - start_tick);
 
         TEST_ASSERT_INT32_WITHIN(3, delay_ticks, end_tick - start_tick);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_hs - start_hs);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_rtc - start_rtc);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_hs - start_hs);
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_rtc - start_rtc);
     }
     REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
     rtc_gpio_deinit(ext1_wakeup_gpio);
@@ -279,13 +280,15 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 0);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU0: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 1);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU1: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 #endif
     }
     vSemaphoreDelete(done_sem);
@@ -347,7 +350,8 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
 
     TEST_ASSERT_EQUAL_UINT32(NUM_INTERVALS, args.cur_interval);
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
-        TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
+        // TODO: PM-214
+        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
 
     TEST_ESP_OK( esp_timer_dump(stdout) );

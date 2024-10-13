@@ -1,0 +1,24 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_uart/test_apps/rs485:
+  disable:
+    - if: SOC_UART_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_driver_uart
+    - esp_driver_gpio
+
+components/esp_driver_uart/test_apps/uart:
+  disable:
+    - if: SOC_UART_SUPPORTED != 1
+  depends_components:
+    - esp_driver_uart
+    - esp_driver_gpio
+
+components/esp_driver_uart/test_apps/uart_vfs:
+  depends_components:
+    - esp_driver_uart
+    - vfs

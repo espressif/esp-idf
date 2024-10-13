@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
         return ESP_ERR_INVALID_STATE;                \
     }
 
-#define ESP_BT_STATUS_BASE_FOR_HCI_ERR  0X0100  /* base for coverting HCI error code to ESP status */
+#define ESP_BT_STATUS_BASE_FOR_HCI_ERR  0X0100  /* base for converting HCI error code to ESP status */
 
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
@@ -110,6 +110,14 @@ typedef enum {
     ESP_BT_STATUS_HCI_CONN_TOUT_DUE_TO_MIC_FAILURE,
     ESP_BT_STATUS_HCI_CONN_FAILED_ESTABLISHMENT,
     ESP_BT_STATUS_HCI_MAC_CONNECTION_FAILED,
+    ESP_BT_STATUS_HCI_CCA_REJECTED,
+    ESP_BT_STATUS_HCI_TYPE0_SUBMAP_NOT_DEFINED,
+    ESP_BT_STATUS_HCI_UNKNOWN_ADV_ID,
+    ESP_BT_STATUS_HCI_LIMIT_REACHED,
+    ESP_BT_STATUS_HCI_OPT_CANCEL_BY_HOST,
+    ESP_BT_STATUS_HCI_PKT_TOO_LONG,
+    ESP_BT_STATUS_HCI_TOO_LATE,
+    ESP_BT_STATUS_HCI_TOO_EARLY,
 } esp_bt_status_t;
 
 
@@ -163,6 +171,9 @@ typedef enum {
 /// Bluetooth address length
 #define ESP_BD_ADDR_LEN     6
 
+/// Bluetooth peer irk
+#define ESP_PEER_IRK_LEN    16
+
 /// Bluetooth device address
 typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
 
@@ -197,6 +208,8 @@ typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 
 #define ESP_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+
+#define ESP_BLE_ADV_NAME_LEN_MAX 29
 
 #ifdef __cplusplus
 }

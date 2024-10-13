@@ -27,6 +27,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_BT_SUPPORTED
     bool
     default y
@@ -108,6 +112,26 @@ config SOC_WDT_SUPPORTED
     default y
 
 config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_PERIPH_SHARE_INTERRUPT
+    bool
+    default y
+
+config SOC_PM_SUPPORTED
     bool
     default y
 
@@ -215,6 +239,10 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
+config SOC_CPU_HAS_CSR_PC
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -283,11 +311,23 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
+    int
+    default 6
+
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000001FFFC0
 
 config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
+    bool
+    default y
+
+config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
+    int
+    default 3
+
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
     bool
     default y
 
@@ -304,6 +344,10 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     default y
 
 config SOC_I2C_NUM
+    int
+    default 1
+
+config SOC_HP_I2C_NUM
     int
     default 1
 
@@ -395,10 +439,6 @@ config SOC_RTCIO_PIN_COUNT
     int
     default 0
 
-config SOC_RSA_MAX_BIT_LEN
-    int
-    default 3072
-
 config SOC_SHA_SUPPORT_RESUME
     bool
     default y
@@ -458,6 +498,22 @@ config SOC_SPI_SUPPORT_CLK_PLL_F40M
 config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
+
+config SOC_SPI_SCT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_SCT_REG_NUM
+    int
+    default 14
+
+config SOC_SPI_SCT_BUFFER_NUM_MAX
+    bool
+    default y
+
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
 
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
@@ -617,7 +673,7 @@ config SOC_UART_FIFO_LEN
 
 config SOC_UART_BITRATE_MAX
     int
-    default 5000000
+    default 2500000
 
 config SOC_UART_SUPPORT_WAKEUP_INT
     bool
@@ -636,6 +692,10 @@ config SOC_UART_SUPPORT_XTAL_CLK
     default y
 
 config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+    bool
+    default y
+
+config SOC_SUPPORT_COEXISTENCE
     bool
     default y
 
@@ -703,6 +763,10 @@ config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
     bool
     default y
 
+config SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -724,6 +788,10 @@ config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
     default y
 
 config SOC_BLUFI_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
     bool
     default y
 

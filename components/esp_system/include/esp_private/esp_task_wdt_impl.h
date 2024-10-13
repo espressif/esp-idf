@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief   Allocate and initialize the Task Watchdog Timer (TWDT) with the given configuration.
  *
@@ -28,7 +27,6 @@ extern "C" {
 esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
                                            twdt_isr_callback callback,
                                            twdt_ctx_t *obj);
-
 
 /**
  * @brief   Reconfigure a timer.
@@ -52,7 +50,6 @@ esp_err_t esp_task_wdt_impl_timer_reconfigure(twdt_ctx_t obj, const esp_task_wdt
  */
 void esp_task_wdt_impl_timer_free(twdt_ctx_t obj);
 
-
 /**
  * @brief   Feed the Task Watchdog Timer (TWDT)
  *
@@ -65,14 +62,12 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj);
  */
 esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj);
 
-
 /**
  * @brief   Function invoked as soon as the Task Watchdog Timer (TWDT) ISR callback is called.
  *
  * @param[in] obj Abstract implementation context
  */
 void esp_task_wdt_impl_timeout_triggered(twdt_ctx_t obj);
-
 
 /**
  * @brief   Stop the Task Watchdog Timer (TWDT).
@@ -81,7 +76,6 @@ void esp_task_wdt_impl_timeout_triggered(twdt_ctx_t obj);
  *
  */
 esp_err_t esp_task_wdt_impl_timer_stop(twdt_ctx_t obj);
-
 
 /**
  * @brief   Restart the Task Watchdog Timer (TWDT)
@@ -94,7 +88,6 @@ esp_err_t esp_task_wdt_impl_timer_stop(twdt_ctx_t obj);
  *  - Other: failed to stop the timer
  */
 esp_err_t esp_task_wdt_impl_timer_restart(twdt_ctx_t obj);
-
 
 #ifdef __cplusplus
 }

@@ -53,7 +53,7 @@ esp_err_t rmt_new_musical_score_encoder(const musical_score_encoder_config_t *co
     esp_err_t ret = ESP_OK;
     rmt_musical_score_encoder_t *score_encoder = NULL;
     ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    score_encoder = calloc(1, sizeof(rmt_musical_score_encoder_t));
+    score_encoder = rmt_alloc_encoder_mem(sizeof(rmt_musical_score_encoder_t));
     ESP_GOTO_ON_FALSE(score_encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for musical score encoder");
     score_encoder->base.encode = rmt_encode_musical_score;
     score_encoder->base.del = rmt_del_musical_score_encoder;

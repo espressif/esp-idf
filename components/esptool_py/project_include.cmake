@@ -5,13 +5,13 @@ idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
+
 set(chip_model ${target})
 
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} -m esp_idf_monitor)
-set(ESPMKUF2 ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
 set(ESPTOOLPY_CHIP "${chip_model}")
 
 if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
@@ -72,11 +72,6 @@ if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
         # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
         # as elf2image can't have 'detect' as an option...
         set(ESPFLASHSIZE detect)
-
-        # Flash size detection updates the image header which would invalidate the appended
-        # SHA256 digest. Therefore, a digest is not appended in that case.
-        # This argument requires esptool>=4.1.
-        list(APPEND esptool_elf2image_args --dont-append-digest)
     endif()
 
     if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
@@ -84,7 +79,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
     endif()
 endif()
 
-# We still set "--min-rev" to keep the app compatible with older booloaders where this field is controlled.
+# We still set "--min-rev" to keep the app compatible with older bootloaders where this field is controlled.
 if(CONFIG_IDF_TARGET_ESP32)
     # for this chip min_rev is major revision
     math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} / 100")
@@ -101,17 +96,10 @@ endif()
 list(APPEND esptool_elf2image_args --min-rev-full ${CONFIG_ESP_REV_MIN_FULL})
 list(APPEND esptool_elf2image_args --max-rev-full ${CONFIG_ESP_REV_MAX_FULL})
 
-set(monitor_rev_args "--revision;${CONFIG_ESP_REV_MIN_FULL}")
-
 if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
     # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
-
-    # Flash size detection updates the image header which would invalidate the appended
-    # SHA256 digest. Therefore, a digest is not appended in that case.
-    # This argument requires esptool>=4.1.
-    list(APPEND esptool_elf2image_args --dont-append-digest)
 endif()
 
 if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
@@ -208,35 +196,59 @@ add_custom_target(erase_flash
     VERBATIM
     )
 
-set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+set(MERGE_BIN_ARGS merge_bin)
+if(DEFINED ENV{ESP_MERGE_BIN_OUTPUT})
+    list(APPEND MERGE_BIN_ARGS "-o" "$ENV{ESP_MERGE_BIN_OUTPUT}")
+else()
+    if(DEFINED ENV{ESP_MERGE_BIN_FORMAT} AND "$ENV{ESP_MERGE_BIN_FORMAT}" STREQUAL "hex")
+        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.hex")
+    else()
+        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.bin")
+    endif()
+endif()
 
-add_custom_target(uf2
+if(DEFINED ENV{ESP_MERGE_BIN_FORMAT})
+    list(APPEND MERGE_BIN_ARGS "-f" "$ENV{ESP_MERGE_BIN_FORMAT}")
+endif()
+
+list(APPEND MERGE_BIN_ARGS "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
+
+add_custom_target(merge-bin
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPMKUF2}"
-    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+    -D "SERIAL_TOOL=${ESPTOOLPY}"
+    -D "SERIAL_TOOL_ARGS=${MERGE_BIN_ARGS}"
+    -D "WORKING_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    DEPENDS gen_project_binary bootloader
     USES_TERMINAL
     VERBATIM
     )
 
-add_custom_target(uf2-app
-    COMMAND ${CMAKE_COMMAND}
-    -D "IDF_PATH=${idf_path}"
-    -D "SERIAL_TOOL=${ESPMKUF2}"
-    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
-    -P run_serial_tool.cmake
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    USES_TERMINAL
-    VERBATIM
-    )
+set(MONITOR_ARGS "")
+
+list(APPEND MONITOR_ARGS "--toolchain-prefix;${_CMAKE_TOOLCHAIN_PREFIX};")
+
+if(CONFIG_ESP_COREDUMP_DECODE)
+list(APPEND MONITOR_ARGS "--decode-coredumps;${CONFIG_ESP_COREDUMP_DECODE};")
+endif()
+
+list(APPEND MONITOR_ARGS "--target;${target};")
+
+list(APPEND MONITOR_ARGS "--revision;${CONFIG_ESP_REV_MIN_FULL};")
+
+if(CONFIG_IDF_TARGET_ARCH_RISCV)
+    list(APPEND MONITOR_ARGS "--decode-panic;backtrace;")
+endif()
+
+list(APPEND MONITOR_ARGS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>")
 
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPMONITOR}"
-    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
+    -D "SERIAL_TOOL_ARGS=${MONITOR_ARGS}"
     -D "WORKING_DIRECTORY=${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -321,7 +333,7 @@ endfunction()
 # This function takes a fifth optional named parameter: "ALWAYS_PLAINTEXT". As
 # its name states, it marks whether the image should be flashed as plain text or
 # not. If build macro CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is set and
-# this parameter is provided, then the image will be flahsed as plain text
+# this parameter is provided, then the image will be flashed as plain text
 # (not encrypted) on the target. This parameter will be ignored if build macro
 # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is not set.
 function(esptool_py_flash_target_image target_name image_name offset image)
@@ -447,7 +459,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
         # If we only have encrypted images to flash, we must use legacy
         # --encrypt parameter.
         # As the properties ENCRYPTED_IMAGES and NON_ENCRYPTED_IMAGES have not
-        # been geenrated yet, we must use CMake expression generator to test
+        # been generated yet, we must use CMake expression generator to test
         # which esptool.py options we can use.
 
         # The variable has_non_encrypted_image will be evaluated to "1" if some
@@ -476,7 +488,7 @@ ${non_encrypted_files}\n\
 ${if_enc_expr}\
 ${encrypted_files}")
 
-        # The expression is ready to be geenrated, write it to the file which
+        # The expression is ready to be generated, write it to the file which
         # extension is .in
         file_generate("${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
                       CONTENT "${flash_args_content}")

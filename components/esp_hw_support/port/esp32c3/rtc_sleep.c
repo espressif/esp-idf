@@ -24,7 +24,7 @@
 #include "soc/regi2c_dig_reg.h"
 #include "soc/regi2c_lp_bias.h"
 #include "hal/efuse_hal.h"
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
 #include "soc/systimer_reg.h"
 #endif
 
@@ -174,14 +174,14 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         rtc_sleep_pu(pu_cfg);
     }
     if (cfg.wifi_pd_en) {
-        REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO | RTC_CNTL_WIFI_FORCE_ISO);
+        REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     }
     if (cfg.bt_pd_en) {
-        REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO | RTC_CNTL_BT_FORCE_ISO);
+        REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_PD_EN);
     } else {
@@ -222,6 +222,8 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     }
     /* mem force pu */
     SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU);
+
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU, cfg.rtc_regulator_fpu);
     if (!cfg.int_8m_pd_en) {
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
@@ -249,17 +251,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period)
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, slowclk_period));
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-void rtc_sleep_systimer_enable(bool en)
-{
-    if (en) {
-        REG_SET_BIT(SYSTIMER_CONF_REG, SYSTIMER_TIMER_UNIT1_WORK_EN);
-    } else {
-        REG_CLR_BIT(SYSTIMER_CONF_REG, SYSTIMER_TIMER_UNIT1_WORK_EN);
-    }
-}
-#endif
 
 static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
 

@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 /**
+ * @file esp_srp.h
  * @brief SRP-6a protocol implementation
  *
  * More information on protocol can be found: https://datatracker.ietf.org/doc/html/rfc5054
@@ -98,6 +99,13 @@ typedef enum {
     ESP_NG_3072 = 0,
 } esp_ng_type_t;
 
+/**
+ * @brief esp_srp handle as the result of `esp_srp_init`
+ *
+ * The handle is returned by `esp_srp_init` on successful init. It is then
+ * passed for subsequent API calls as an argument. `esp_srp_free` can be used to
+ * clean up the handle. After `esp_srp_free` the handle becomes invalid.
+ */
 typedef struct esp_srp_handle esp_srp_handle_t;
 
 /**

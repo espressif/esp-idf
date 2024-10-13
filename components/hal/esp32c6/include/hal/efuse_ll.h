@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,20 @@
 #include <stdbool.h>
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
-#include "esp32c6/rom/efuse.h"
+#include "rom/efuse.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    EFUSE_CONTROLLER_STATE_RESET            = 0,    ///< efuse_controllerid is on reset state.
+    EFUSE_CONTROLLER_STATE_IDLE             = 1,    ///< efuse_controllerid is on idle state.
+    EFUSE_CONTROLLER_STATE_READ_INIT        = 2,    ///< efuse_controllerid is on read init state.
+    EFUSE_CONTROLLER_STATE_READ_BLK0        = 3,    ///< efuse_controllerid is on reading block0 state.
+    EFUSE_CONTROLLER_STATE_BLK0_CRC_CHECK   = 4,    ///< efuse_controllerid is on checking block0 crc state.
+    EFUSE_CONTROLLER_STATE_READ_RS_BLK      = 5,    ///< efuse_controllerid is on reading RS block state.
+} efuse_controller_state_t;
 
 // Always inline these functions even no gcc optimization is applied.
 
@@ -60,6 +69,41 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_ve
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
     return EFUSE.rd_repeat_data4.disable_wafer_version_major;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.lslp_hp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.lslp_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dslp_lp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dslp_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dbias_vol_gap;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
@@ -138,6 +182,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
     EFUSE.wr_tim_conf2.pwr_off_num = value;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
+{
+    return EFUSE.status.state;
 }
 
 /******************* eFuse control functions *************************/

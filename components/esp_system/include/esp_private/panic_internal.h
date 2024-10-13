@@ -14,7 +14,6 @@
 
 #include "sdkconfig.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,6 +74,8 @@ void panic_arch_fill_info(void *frame, panic_info_t *info);
 
 void panic_soc_fill_info(void *frame, panic_info_t *info);
 
+bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info);
+
 void panic_print_registers(const void *frame, int core);
 
 void panic_print_backtrace(const void *frame, int core);
@@ -84,6 +85,8 @@ uint32_t panic_get_address(const void* frame);
 void panic_set_address(void *frame, uint32_t addr);
 
 uint32_t panic_get_cause(const void* frame);
+
+void panic_prepare_frame_from_ctx(void* frame);
 
 #ifdef __cplusplus
 }

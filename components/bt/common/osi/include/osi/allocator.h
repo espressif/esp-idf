@@ -122,13 +122,18 @@ do {                                                    \
 
 #else
 
+// Memory alloc function without print and assertion
 #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-#define osi_malloc(size)                  heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
-#define osi_calloc(size)                  heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#define osi_malloc_base(size)             heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#define osi_calloc_base(size)             heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
 #else
-#define osi_malloc(size)                  malloc((size))
-#define osi_calloc(size)                  calloc(1, (size))
+#define osi_malloc_base(size)             malloc((size))
+#define osi_calloc_base(size)             calloc(1, (size))
 #endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+
+// Memory alloc function with print and assertion when fails
+#define osi_malloc(size)                  osi_malloc_func((size))
+#define osi_calloc(size)                  osi_calloc_func((size))
 #define osi_free(p)                       free((p))
 
 #endif /* HEAP_MEMORY_DEBUG */

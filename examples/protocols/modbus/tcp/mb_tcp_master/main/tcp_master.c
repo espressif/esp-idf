@@ -397,7 +397,7 @@ static int master_create_slave_list(mdns_result_t* results, char** addr_table,
             cid_resolve_cnt++;
         }
     }
-    ESP_LOGI(TAG, "Resolved %d cids, with %d IP addresses", cid_resolve_cnt, ip_index);
+    ESP_LOGI(TAG, "Resolved %d cids, with %d address(es)", cid_resolve_cnt, ip_index);
     return cid_resolve_cnt;
 }
 
@@ -659,7 +659,7 @@ static esp_err_t init_services(mb_tcp_addr_type_t ip_addr_type)
 #elif CONFIG_MB_SLAVE_IP_FROM_STDIN
     int ip_cnt = master_get_slave_ip_stdin(slave_ip_address_table);
     if (ip_cnt) {
-        ESP_LOGI(TAG, "Configured %d IP addresse(s).", ip_cnt);
+        ESP_LOGI(TAG, "Configured %d IP address(es).", ip_cnt);
     } else {
         ESP_LOGE(TAG, "Fail to get IP address from stdin. Continue.");
         return ESP_ERR_NOT_FOUND;

@@ -17,7 +17,7 @@ SECTIONS
     . = ORIGIN(ram);
     .text :
     {
-        *start.S.obj(.text.vectors) /* Default reset vector must link to offset 0x0 */
+        *ulp_riscv_vectors.S.obj(.text.vectors) /* Default reset vector must link to offset 0x0 */
         *(.text)
         *(.text*)
     } >ram

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
 */
@@ -30,8 +30,12 @@ static void register_free(void);
 static void register_heap(void);
 static void register_version(void);
 static void register_restart(void);
+#if SOC_DEEP_SLEEP_SUPPORTED
 static void register_deep_sleep(void);
+#endif
+#if SOC_LIGHT_SLEEP_SUPPORTED
 static void register_light_sleep(void);
+#endif
 #if WITH_TASKS_INFO
 static void register_tasks(void);
 #endif
@@ -42,8 +46,12 @@ void register_system(void)
     register_heap();
     register_version();
     register_restart();
+#if SOC_DEEP_SLEEP_SUPPORTED
     register_deep_sleep();
+#endif
+#if SOC_LIGHT_SLEEP_SUPPORTED
     register_light_sleep();
+#endif
 #if WITH_TASKS_INFO
     register_tasks();
 #endif
@@ -61,7 +69,7 @@ static int get_version(int argc, char **argv)
     }
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
-    printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknow");
+    printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknown");
     printf("\tcores:%d\r\n", info.cores);
     printf("\tfeature:%s%s%s%s%" PRIu32 "%s\r\n",
            info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",
@@ -122,7 +130,7 @@ static void register_free(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
 
-/* 'heap' command prints minumum heap size */
+/* 'heap' command prints minimum heap size */
 static int heap_size(int argc, char **argv)
 {
     uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
@@ -177,6 +185,7 @@ static void register_tasks(void)
 
 #endif // WITH_TASKS_INFO
 
+#if SOC_DEEP_SLEEP_SUPPORTED
 /** 'deep_sleep' command puts the chip into deep sleep mode */
 
 static struct {
@@ -250,7 +259,9 @@ static void register_deep_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_DEEP_SLEEP_SUPPORTED
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 /** 'light_sleep' command puts the chip into light sleep mode */
 
 static struct {
@@ -345,3 +356,4 @@ static void register_light_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_LIGHT_SLEEP_SUPPORTED

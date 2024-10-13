@@ -1,18 +1,10 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-
+#include "esp_crypto_dma.h"
 #include "esp_aes_dma_priv.h"
 
 #include "soc/soc_caps.h"
@@ -20,7 +12,7 @@
 #include "hal/crypto_dma_ll.h"
 
 
-esp_err_t esp_aes_dma_start(const lldesc_t *input, const lldesc_t *output)
+esp_err_t esp_aes_dma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output)
 {
     crypto_dma_ll_reset();
     crypto_dma_ll_set_mode(CRYPTO_DMA_AES);
@@ -36,7 +28,7 @@ esp_err_t esp_aes_dma_start(const lldesc_t *input, const lldesc_t *output)
     return ESP_OK;
 }
 
-bool esp_aes_dma_done(const lldesc_t *output)
+bool esp_aes_dma_done(const crypto_dma_desc_t *output)
 {
-    return (crypto_dma_ll_inlink_is_eof() && (output->owner == 0));
+    return (crypto_dma_ll_inlink_is_eof() && (output->dw0.owner == 0));
 }

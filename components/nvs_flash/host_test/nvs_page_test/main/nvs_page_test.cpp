@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,19 @@ static const char* TAG = "nvs_page_host_test";
 #include "unity.h"
 #include "test_fixtures.hpp"
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
 
 using namespace std;
 using namespace nvs;
@@ -374,7 +387,7 @@ void test_Page_readItem__read_corrupted_erase_fail()
     // prepare corrupt entry for reading
     fix.write_raw( 96, fix.value_entry, sizeof(fix.value_entry));
 
-    // emulate write failure as nvs will try to invalidate the corupt entry
+    // emulate write failure as nvs will try to invalidate the corrupt entry
     // by setting bit in entry table (0xfa -> 0xf2)
     fix.fail_write_at(1);
 
@@ -450,7 +463,7 @@ void test_Page_readItem__corrupt_data_erase_failure()
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
 
-    // corupt the data
+    // corrupt the data
     fix.blob_data[16] = 0xdf;
     fix.write_raw(128, fix.blob_data, sizeof(fix.blob_data));
 
@@ -968,3 +981,7 @@ int main(int argc, char **argv)
     int failures = UNITY_END();
     return failures;
 }
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,11 @@
 
 static const char TAG[] = "rtc_power";
 
+static void check_deepsleep_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+}
+
 static void test_deepsleep(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -28,33 +33,48 @@ static void test_deepsleep(void)
     esp_deep_sleep_start();
 }
 
-// Deepsleep (with 8MD256 or ADC/TSEN in monitor)
-TEST_CASE("Power Test: DSLP_8MD256", "[pm]")
-{
-    esp_sleep_enable_adc_tsens_monitor(true);
 
-    test_deepsleep();
+static void test_set_adc_tsen_monitor_mode(void) {
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
 }
+
+static void test_unset_adc_tesen_monitor_mode(void) {
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, false);
+    TEST_ASSERT_EQUAL(0, esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]);
+}
+
+// Deepsleep (with 8MD256 or ADC/TSEN in monitor)
+TEST_CASE_MULTIPLE_STAGES(  "Power Test: DSLP_8MD256", "[pm]",
+                            test_set_adc_tsen_monitor_mode,
+                            test_deepsleep,
+                            check_deepsleep_reset,
+                            test_unset_adc_tesen_monitor_mode
+                        )
 
 #if !CONFIG_RTC_CLK_SRC_INT_8MD256
 // Deepsleep (default)
-TEST_CASE("Power Test: DSLP_DEFAULT", "[pm]")
-{
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+TEST_CASE_MULTIPLE_STAGES(  "Power Test: DSLP_DEFAULT", "[pm]",
+                            test_deepsleep,
+                            check_deepsleep_reset
+                        )
 
-    test_deepsleep();
+static void test_set_ultra_low_mode(void) {
+    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, true);
+}
+
+static void test_unset_ultra_low_mode(void) {
+    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, false);
+    TEST_ASSERT_EQUAL(0, esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_ULTRA_LOW_MODE]);
 }
 
 // Deepsleep (ultra-low power)
-TEST_CASE("Power Test: DSLP_ULTRA_LOW", "[pm]")
-{
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
+TEST_CASE_MULTIPLE_STAGES(  "Power Test: DSLP_ULTRA_LOW", "[pm]",
+                            test_set_ultra_low_mode,
+                            test_deepsleep,
+                            check_deepsleep_reset,
+                            test_unset_ultra_low_mode
+    )
 
-    extern void rtc_sleep_enable_ultra_low(bool);
-    rtc_sleep_enable_ultra_low(true);
-
-    test_deepsleep();
-}
 #endif //!CONFIG_RTC_CLK_SRC_INT_8MD256
 
 static void test_lightsleep(void)
@@ -125,17 +145,14 @@ TEST_CASE("Power Test: LSLP_8MD256", "[pm]")
 // Lightsleep (with ADC/TSEN in monitor)
 TEST_CASE("Power Test: LSLP_ADC_TSENS", "[pm]")
 {
-    extern void esp_sleep_enable_adc_tsens_monitor(bool);
-    esp_sleep_enable_adc_tsens_monitor(true);
-
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
     test_lightsleep();
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, false);
 }
 
 // Lightsleep (default)
 TEST_CASE("Power Test: LSLP_DEFAULT", "[pm]")
 {
-    esp_sleep_enable_adc_tsens_monitor(false); //This is the default option. Add this line to avoid the case executing this case directly after the DSLP_8MD256 case.
-
     test_lightsleep();
 }
 #endif //!CONFIG_RTC_CLK_SRC_INT_8MD256

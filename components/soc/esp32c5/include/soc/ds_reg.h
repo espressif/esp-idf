@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -54,11 +54,13 @@ extern "C" {
 #define DS_Z_MEM_SIZE_BYTES 512
 
 /** DS_SET_START_REG register
- *  DS start control register
+ *  Activates the DS module
  */
 #define DS_SET_START_REG (DR_REG_DS_BASE + 0xe00)
 /** DS_SET_START : WT; bitpos: [0]; default: 0;
- *  set this bit to start DS operation.
+ *  Configures whether or not to activate the DS peripheral.\\
+ *  0: Invalid\\
+ *  1: Activate the DS peripheral\\
  */
 #define DS_SET_START    (BIT(0))
 #define DS_SET_START_M  (DS_SET_START_V << DS_SET_START_S)
@@ -78,11 +80,13 @@ extern "C" {
 #define DS_SET_CONTINUE_S  0
 
 /** DS_SET_FINISH_REG register
- *  DS finish control register
+ *  Ends DS operation
  */
 #define DS_SET_FINISH_REG (DR_REG_DS_BASE + 0xe08)
 /** DS_SET_FINISH : WT; bitpos: [0]; default: 0;
- *  Set this bit to finish DS process.
+ *  Configures whether or not to end DS operation. \\
+ *  0: Invalid\\
+ *  1: End DS operation\\
  */
 #define DS_SET_FINISH    (BIT(0))
 #define DS_SET_FINISH_M  (DS_SET_FINISH_V << DS_SET_FINISH_S)
@@ -90,11 +94,13 @@ extern "C" {
 #define DS_SET_FINISH_S  0
 
 /** DS_QUERY_BUSY_REG register
- *  DS query busy register
+ *  Status of the DS module
  */
 #define DS_QUERY_BUSY_REG (DR_REG_DS_BASE + 0xe0c)
 /** DS_QUERY_BUSY : RO; bitpos: [0]; default: 0;
- *  digital signature state. 1'b0: idle, 1'b1: busy
+ *  Represents whether or not the DS module is idle.\\
+ *  0: The DS module is idle\\
+ *  1: The DS module is busy\\
  */
 #define DS_QUERY_BUSY    (BIT(0))
 #define DS_QUERY_BUSY_M  (DS_QUERY_BUSY_V << DS_QUERY_BUSY_S)
@@ -102,11 +108,14 @@ extern "C" {
 #define DS_QUERY_BUSY_S  0
 
 /** DS_QUERY_KEY_WRONG_REG register
- *  DS query key-wrong counter register
+ *  Checks the reason why \begin{math}DS_KEY\end{math} is not ready
  */
 #define DS_QUERY_KEY_WRONG_REG (DR_REG_DS_BASE + 0xe10)
 /** DS_QUERY_KEY_WRONG : RO; bitpos: [3:0]; default: 0;
- *  digital signature key wrong counter
+ *  Represents the specific problem with HMAC initialization.\\
+ *  0: HMAC is not called\\
+ *  1-15: HMAC was activated, but the DS peripheral did not successfully receive the
+ *  \begin{math}DS_KEY\end{math} from the HMAC peripheral. (The biggest value is 15)\\
  */
 #define DS_QUERY_KEY_WRONG    0x0000000FU
 #define DS_QUERY_KEY_WRONG_M  (DS_QUERY_KEY_WRONG_V << DS_QUERY_KEY_WRONG_S)
@@ -114,29 +123,47 @@ extern "C" {
 #define DS_QUERY_KEY_WRONG_S  0
 
 /** DS_QUERY_CHECK_REG register
- *  DS query check result register
+ *  Queries DS check result
  */
 #define DS_QUERY_CHECK_REG (DR_REG_DS_BASE + 0xe14)
 /** DS_MD_ERROR : RO; bitpos: [0]; default: 0;
- *  MD checkout result. 1'b0: MD check pass, 1'b1: MD check fail
+ *  Represents whether or not the MD check passes.\\
+ *  0: The MD check passes\\
+ *  1: The MD check fails\\
  */
 #define DS_MD_ERROR    (BIT(0))
 #define DS_MD_ERROR_M  (DS_MD_ERROR_V << DS_MD_ERROR_S)
 #define DS_MD_ERROR_V  0x00000001U
 #define DS_MD_ERROR_S  0
 /** DS_PADDING_BAD : RO; bitpos: [1]; default: 0;
- *  padding checkout result. 1'b0: a good padding, 1'b1: a bad padding
+ *  Represents whether or not the padding check passes.\\
+ *  0: The padding check passes\\
+ *  1: The padding check fails\\
  */
 #define DS_PADDING_BAD    (BIT(1))
 #define DS_PADDING_BAD_M  (DS_PADDING_BAD_V << DS_PADDING_BAD_S)
 #define DS_PADDING_BAD_V  0x00000001U
 #define DS_PADDING_BAD_S  1
 
+/** DS_KEY_SOURCE_REG register
+ *  DS configure key source register
+ */
+#define DS_KEY_SOURCE_REG (DR_REG_DS_BASE + 0xe18)
+/** DS_KEY_SOURCE : R/W; bitpos: [0]; default: 0;
+ *  digital signature key source bit. \\
+ *  1'b0: key is from hmac.\\
+ *  1'b1: key is from key manager. \\
+ */
+#define DS_KEY_SOURCE    (BIT(0))
+#define DS_KEY_SOURCE_M  (DS_KEY_SOURCE_V << DS_KEY_SOURCE_S)
+#define DS_KEY_SOURCE_V  0x00000001U
+#define DS_KEY_SOURCE_S  0
+
 /** DS_DATE_REG register
  *  DS version control register
  */
 #define DS_DATE_REG (DR_REG_DS_BASE + 0xe20)
-/** DS_DATE : R/W; bitpos: [29:0]; default: 538969624;
+/** DS_DATE : R/W; bitpos: [29:0]; default: 539166977;
  *  ds version information
  */
 #define DS_DATE    0x3FFFFFFFU

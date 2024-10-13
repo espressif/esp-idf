@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,15 +11,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "sdkconfig.h"
-
+#include "esp_log.h"
 #include "ctrl_sock.h"
 
 #if CONFIG_IDF_TARGET_LINUX
-#define IPV4_ENABLED    1
-#define IPV6_ENABLED    1
+#define IPV4_ENABLED      1
+#define IPV6_ENABLED      1
+#define LOOPBACK_ENABLED  1
 #else   // CONFIG_IDF_TARGET_LINUX
-#define IPV4_ENABLED    CONFIG_LWIP_IPV4
-#define IPV6_ENABLED    CONFIG_LWIP_IPV6
+#define IPV4_ENABLED      CONFIG_LWIP_IPV4
+#define IPV6_ENABLED      CONFIG_LWIP_IPV6
+#define LOOPBACK_ENABLED  CONFIG_LWIP_NETIF_LOOPBACK
 #endif  // !CONFIG_IDF_TARGET_LINUX
 
 /* Control socket, because in some network stacks select can't be woken up any
@@ -27,6 +29,11 @@
  */
 int cs_create_ctrl_sock(int port)
 {
+#if !LOOPBACK_ENABLED
+    ESP_LOGE("esp_http_server", "Please enable LWIP_NETIF_LOOPBACK for %s API", __func__);
+    return -1;
+#endif
+
     int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (fd < 0) {
         return -1;

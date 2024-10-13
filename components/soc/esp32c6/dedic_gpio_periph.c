@@ -8,7 +8,6 @@
 #include "soc/dedic_gpio_periph.h"
 
 const dedic_gpio_signal_conn_t dedic_gpio_periph_signals = {
-    .module = -1,
     .irq = -1,
     .cores = {
         [0] = {

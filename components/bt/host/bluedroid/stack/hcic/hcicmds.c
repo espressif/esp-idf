@@ -1910,4 +1910,30 @@ BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
 }
+
+#if (ENC_KEY_SIZE_CTRL_MODE == ENC_KEY_SIZE_CTRL_MODE_STD)
+BOOLEAN btsnd_hcic_set_min_enc_key_size (UINT8 size)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_SET_MIN_ENC_KEY_SIZE)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_SET_MIN_ENC_KEY_SIZE;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_SET_MIN_ENC_KEY_SIZE);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_SET_MIN_ENC_KEY_SIZE);
+
+    UINT8_TO_STREAM  (pp, size);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
+#endif
+
 #endif /// CLASSIC_BT_INCLUDED == TRUE

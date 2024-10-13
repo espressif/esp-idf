@@ -20,8 +20,7 @@
 
 using namespace std::chrono;
 
-const auto sleep_time = seconds
-{
+const auto sleep_time = seconds {
     5
 };
 

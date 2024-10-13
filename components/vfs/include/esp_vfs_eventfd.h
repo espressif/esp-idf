@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -29,7 +21,7 @@ extern "C" {
  * @brief Eventfd vfs initialization settings
  */
 typedef struct {
-    size_t max_fds;     /*!< The maxinum number of eventfds supported */
+    size_t max_fds;     /*!< The maximum number of eventfds supported */
 } esp_vfs_eventfd_config_t;
 
 #define ESP_VFS_EVENTD_CONFIG_DEFAULT() (esp_vfs_eventfd_config_t) { \
@@ -53,7 +45,7 @@ esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config);
 esp_err_t esp_vfs_eventfd_unregister(void);
 
 /*
- * @brief Creates an event file descirptor.
+ * @brief Creates an event file descriptor.
  *
  * The behavior of read, write and select is the same as man(2) eventfd with
  * EFD_SEMAPHORE **NOT** specified. A new flag EFD_SUPPORT_ISR has been added.

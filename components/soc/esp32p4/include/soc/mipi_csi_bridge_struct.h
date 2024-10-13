@@ -170,11 +170,11 @@ typedef union {
          *  endianness order in bytes. 2'h0 is normal mode and 2'h3 is useful to YUV420(Legacy)
          *  when isp is bapassed.
          */
-        uint32_t byte_endian_order:1;
+        uint32_t byte_endian_order:1;    //byte_swap_en
         /** bit_endian_order : R/W; bitpos: [1]; default: 0;
          *  N/A
          */
-        uint32_t bit_endian_order:1;
+        uint32_t bit_endian_order:1;     //reserved
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -343,7 +343,7 @@ typedef union {
 } csi_brg_host_ctrl_reg_t;
 
 
-typedef struct {
+typedef struct csi_brg_dev_t {
     volatile csi_brg_clk_en_reg_t clk_en;
     volatile csi_brg_csi_en_reg_t csi_en;
     volatile csi_brg_dma_req_cfg_reg_t dma_req_cfg;
@@ -361,6 +361,7 @@ typedef struct {
     volatile csi_brg_host_ctrl_reg_t host_ctrl;
 } csi_brg_dev_t;
 
+extern csi_brg_dev_t MIPI_CSI_BRIDGE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(csi_brg_dev_t) == 0x44, "Invalid size of csi_brg_dev_t structure");

@@ -1,5 +1,22 @@
 menu "Example Configuration"
 
+    choice EXAMPLE_LOCAL_CTRL_TRANSPORT
+        bool "Local Control Transport"
+        default EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
+        default EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE if SOC_BT_SUPPORTED
+        help
+            Local Control component offers both, HTTP/S and BLE transports. Choose any one.
+
+        config EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
+            bool "HTTP/S"
+            select LWIP_IPV4
+
+        config EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE
+            bool "BLE"
+            select BT_ENABLED
+            depends on SOC_BT_SUPPORTED
+    endchoice
+
     choice EXAMPLE_PROTOCOMM_SECURITY_VERSION
         bool "Protocomm security version"
         default EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
@@ -40,5 +57,14 @@ menu "Example Configuration"
                 This enables the production mode for
                 security version 2.
     endchoice
+
+    config EXAMPLE_LOCAL_CTRL_USING_BLUEDROID
+        bool
+        depends on (BT_BLUEDROID_ENABLED && !IDF_TARGET_ESP32)
+        select BT_BLE_42_FEATURES_SUPPORTED
+        default y
+        help
+            This enables BLE 4.2 features for Bluedroid which are required for
+            the API definitions that are present in the esp_gap_ble_api header.
 
 endmenu

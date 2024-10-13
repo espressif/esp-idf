@@ -267,7 +267,8 @@ int tlsv12_key_x_server_params_hash(u16 tls_version, u8 hash_Alg,
 int tls_key_x_server_params_hash(u16 tls_version, const u8 *client_random,
 				 const u8 *server_random,
 				 const u8 *server_params,
-				 size_t server_params_len, u8 *hash);
+				 size_t server_params_len,
+				 u8 *hash, size_t hsz);
 int tls_verify_signature(u16 tls_version, struct crypto_public_key *pk,
 			 const u8 *data, size_t data_len,
 			 const u8 *pos, size_t len, u8 *alert);

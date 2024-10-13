@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
@@ -33,19 +34,14 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
+#include "soc/soc_caps.h"
 #include "esp_memory_utils.h"
 #include "adc_continuous_internal.h"
-//For DMA
-#if SOC_GDMA_SUPPORTED
-#include "esp_private/gdma.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "hal/spi_types.h"
-#include "esp_private/spi_common_internal.h"
-#elif CONFIG_IDF_TARGET_ESP32
-#include "hal/i2s_types.h"
-#include "driver/i2s_types.h"
-#include "soc/i2s_periph.h"
-#include "esp_private/i2s_platform.h"
+#include "esp_private/adc_dma.h"
+#include "adc_dma_internal.h"
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
 #endif
 
 static const char *ADC_TAG = "adc_continuous";
@@ -61,14 +57,75 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
 ---------------------------------------------------------------*/
-//Function to address transaction
-static bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx);
 
-#if SOC_GDMA_SUPPORTED
-static bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
-#else
-static void adc_dma_intr_handler(void *arg);
+static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
+{
+    BaseType_t taskAwoken = 0;
+    bool need_yield = false;
+    BaseType_t ret;
+    adc_hal_dma_desc_status_t status = false;
+    uint8_t *finished_buffer = NULL;
+    uint32_t finished_size = 0;
+
+    while (1) {
+        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &finished_buffer, &finished_size);
+        if (status != ADC_HAL_DMA_DESC_VALID) {
+            break;
+        }
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        else {
+            esp_err_t msync_ret = esp_cache_msync((void *)finished_buffer, finished_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            assert(msync_ret == ESP_OK);
+        }
 #endif
+
+        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
+        need_yield |= (taskAwoken == pdTRUE);
+
+        if (adc_digi_ctx->cbs.on_conv_done) {
+            adc_continuous_evt_data_t edata = {
+                .conv_frame_buffer = finished_buffer,
+                .size = finished_size,
+            };
+            if (adc_digi_ctx->cbs.on_conv_done(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
+                need_yield |= true;
+            }
+        }
+
+        if (ret == pdFALSE) {
+            if (adc_digi_ctx->flags.flush_pool) {
+                size_t actual_size = 0;
+                uint8_t *old_data = xRingbufferReceiveUpToFromISR(adc_digi_ctx->ringbuf_hdl, &actual_size, adc_digi_ctx->ringbuf_size);
+                /**
+                 * Replace by ringbuffer reset API when this API is ready.
+                 * Now we do manual reset.
+                 * For old_data == NULL condition (equals to the future ringbuffer reset fail condition), we don't care this time data,
+                 * as this only happens when the ringbuffer size is small, new data will be filled in soon.
+                 */
+                if (old_data) {
+                    vRingbufferReturnItemFromISR(adc_digi_ctx->ringbuf_hdl, old_data, &taskAwoken);
+                    xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
+                    if (taskAwoken == pdTRUE) {
+                        need_yield |= true;
+                    }
+                }
+            }
+
+            //ringbuffer overflow happens before
+            if (adc_digi_ctx->cbs.on_pool_ovf) {
+                adc_continuous_evt_data_t edata = {};
+                if (adc_digi_ctx->cbs.on_pool_ovf(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
+                    need_yield |= true;
+                }
+            }
+        }
+    }
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    esp_err_t msync_ret = esp_cache_msync((void *)(adc_digi_ctx->hal.rx_desc), adc_digi_ctx->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(msync_ret == ESP_OK);
+#endif
+    return need_yield;
+}
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
@@ -136,7 +193,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 
     //malloc internal buffer used by DMA
-    adc_ctx->rx_dma_buf = heap_caps_calloc(1, hdl_config->conv_frame_size * INTERNAL_BUF_NUM, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    adc_ctx->rx_dma_buf = heap_caps_calloc(INTERNAL_BUF_NUM, hdl_config->conv_frame_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     if (!adc_ctx->rx_dma_buf) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -145,7 +202,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     //malloc dma descriptor
     uint32_t dma_desc_num_per_frame = (hdl_config->conv_frame_size + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
-    adc_ctx->hal.rx_desc = heap_caps_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    adc_ctx->hal.rx_desc = heap_caps_aligned_calloc(ADC_DMA_DESC_ALIGN, dma_desc_max_num, sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     if (!adc_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -165,79 +222,16 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 #endif //CONFIG_PM_ENABLE
 
-#if SOC_GDMA_SUPPORTED
-    //alloc rx gdma channel
-    gdma_channel_alloc_config_t rx_alloc_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_RX,
-    };
-    ret = gdma_new_channel(&rx_alloc_config, &adc_ctx->rx_dma_channel);
+    ret = adc_dma_init(&adc_ctx->adc_dma);
+    adc_ctx->adc_intr_func = adc_dma_intr;
     if (ret != ESP_OK) {
         goto cleanup;
     }
-    gdma_connect(adc_ctx->rx_dma_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_ADC, 0));
-
-    gdma_strategy_config_t strategy_config = {
-        .auto_update_desc = true,
-        .owner_check = true
-    };
-    gdma_apply_strategy(adc_ctx->rx_dma_channel, &strategy_config);
-
-    gdma_rx_event_callbacks_t cbs = {
-        .on_recv_eof = adc_dma_in_suc_eof_callback
-    };
-    gdma_register_rx_event_callbacks(adc_ctx->rx_dma_channel, &cbs, adc_ctx);
-
-    int dma_chan;
-    gdma_get_channel_id(adc_ctx->rx_dma_channel, &dma_chan);
-
-#elif CONFIG_IDF_TARGET_ESP32S2
-    //ADC utilises SPI3 DMA on ESP32S2
-    bool spi_success = false;
-    uint32_t dma_chan = 0;
-
-    spi_success = spicommon_periph_claim(SPI3_HOST, "adc");
-    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &dma_chan, &dma_chan);
-    if (ret == ESP_OK) {
-        adc_ctx->spi_host = SPI3_HOST;
-    }
-    if (!spi_success || (adc_ctx->spi_host != SPI3_HOST)) {
-        goto cleanup;
-    }
-
-    ret = esp_intr_alloc(spicommon_irqdma_source_for_host(adc_ctx->spi_host), ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
-                         (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
-    if (ret != ESP_OK) {
-        goto cleanup;
-    }
-
-#elif CONFIG_IDF_TARGET_ESP32
-    //ADC utilises I2S0 DMA on ESP32
-    uint32_t dma_chan = 0;
-    ret = i2s_platform_acquire_occupation(I2S_NUM_0, "adc");
-    if (ret != ESP_OK) {
-        ret = ESP_ERR_NOT_FOUND;
-        goto cleanup;
-    }
-
-    adc_ctx->i2s_host = I2S_NUM_0;
-    ret = esp_intr_alloc(i2s_periph_signal[adc_ctx->i2s_host].irq, ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
-                         (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
-    if (ret != ESP_OK) {
-        goto cleanup;
-    }
-#endif
+    ret = adc_dma_intr_event_init(adc_ctx);
 
     adc_hal_dma_config_t config = {
-#if SOC_GDMA_SUPPORTED
-        .dev = (void *)GDMA_LL_GET_HW(0),
-#elif CONFIG_IDF_TARGET_ESP32S2
-        .dev = (void *)SPI_LL_GET_HW(adc_ctx->spi_host),
-#elif CONFIG_IDF_TARGET_ESP32
-        .dev = (void *)I2S_LL_GET_HW(adc_ctx->i2s_host),
-#endif
         .eof_desc_num = INTERNAL_BUF_NUM,
         .eof_step = dma_desc_num_per_frame,
-        .dma_chan = dma_chan,
         .eof_num = hdl_config->conv_frame_size / SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
     adc_hal_dma_ctx_config(&adc_ctx->hal, &config);
@@ -246,10 +240,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     adc_ctx->fsm = ADC_FSM_INIT;
     *ret_handle = adc_ctx;
 
-    //enable ADC digital part
-    periph_module_enable(PERIPH_SARADC_MODULE);
-    //reset ADC digital part
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_UNIT_1);
@@ -263,104 +254,15 @@ cleanup:
     return ret;
 }
 
-#if SOC_GDMA_SUPPORTED
-static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
-{
-    assert(event_data);
-    adc_continuous_ctx_t *ctx = (adc_continuous_ctx_t *)user_data;
-    ctx->rx_eof_desc_addr = event_data->rx_eof_desc_addr;
-    return s_adc_dma_intr(user_data);
-}
-
-#else
-static IRAM_ATTR void adc_dma_intr_handler(void *arg)
-{
-    adc_continuous_ctx_t *ctx = (adc_continuous_ctx_t *)arg;
-    bool need_yield = false;
-
-    bool conversion_finish = adc_hal_check_event(&ctx->hal, ADC_HAL_DMA_INTR_MASK);
-    if (conversion_finish) {
-        adc_hal_digi_clr_intr(&ctx->hal, ADC_HAL_DMA_INTR_MASK);
-
-        intptr_t desc_addr = adc_hal_get_desc_addr(&ctx->hal);
-
-        ctx->rx_eof_desc_addr = desc_addr;
-        need_yield = s_adc_dma_intr(ctx);
-    }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
-}
-#endif
-
-static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
-{
-    BaseType_t taskAwoken = 0;
-    bool need_yield = false;
-    BaseType_t ret;
-    adc_hal_dma_desc_status_t status = false;
-    uint8_t *finished_buffer = NULL;
-    uint32_t finished_size = 0;
-
-    while (1) {
-        status = adc_hal_get_reading_result(&adc_digi_ctx->hal, adc_digi_ctx->rx_eof_desc_addr, &finished_buffer, &finished_size);
-        if (status != ADC_HAL_DMA_DESC_VALID) {
-            break;
-        }
-
-        ret = xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
-        need_yield |= (taskAwoken == pdTRUE);
-
-        if (adc_digi_ctx->cbs.on_conv_done) {
-            adc_continuous_evt_data_t edata = {
-                .conv_frame_buffer = finished_buffer,
-                .size = finished_size,
-            };
-            if (adc_digi_ctx->cbs.on_conv_done(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
-                need_yield |= true;
-            }
-        }
-
-        if (ret == pdFALSE) {
-            if (adc_digi_ctx->flags.flush_pool) {
-                size_t actual_size = 0;
-                uint8_t *old_data = xRingbufferReceiveUpToFromISR(adc_digi_ctx->ringbuf_hdl, &actual_size, adc_digi_ctx->ringbuf_size);
-                /**
-                 * Replace by ringbuffer reset API when this API is ready.
-                 * Now we do mannual reset.
-                 * For old_data == NULL condition (equals to the future ringbuffer reset fail condition), we don't care this time data,
-                 * as this only happens when the ringbuffer size is small, new data will be filled in soon.
-                 */
-                if (old_data) {
-                    vRingbufferReturnItemFromISR(adc_digi_ctx->ringbuf_hdl, old_data, &taskAwoken);
-                    xRingbufferSendFromISR(adc_digi_ctx->ringbuf_hdl, finished_buffer, finished_size, &taskAwoken);
-                    if (taskAwoken == pdTRUE) {
-                        need_yield |= true;
-                    }
-                }
-            }
-
-            //ringbuffer overflow happens before
-            if (adc_digi_ctx->cbs.on_pool_ovf) {
-                adc_continuous_evt_data_t edata = {};
-                if (adc_digi_ctx->cbs.on_pool_ovf(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
-                    need_yield |= true;
-                }
-            }
-        }
-    }
-
-    return need_yield;
-}
-
 esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_STATE, ADC_TAG, "The driver isn't initialised");
     ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_INIT, ESP_ERR_INVALID_STATE, ADC_TAG, "ADC continuous mode isn't in the init state, it's started already");
 
     //reset ADC digital part to reset ADC sampling EOF counter
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    ADC_BUS_CLK_ATOMIC() {
+        adc_ll_reset_register();
+    }
 
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(handle->pm_lock), ADC_TAG, "acquire pm_lock failed");
@@ -400,10 +302,26 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 
     adc_hal_digi_init(&handle->hal);
+#if !CONFIG_IDF_TARGET_ESP32
+    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src), true);
+#endif
     adc_hal_digi_controller_config(&handle->hal, &handle->hal_digi_ctrlr_cfg);
+    adc_hal_digi_enable(false);
 
-    //start conversion
-    adc_hal_digi_start(&handle->hal, handle->rx_dma_buf);
+    adc_dma_stop(handle->adc_dma);
+    adc_hal_digi_connect(false);
+
+    adc_dma_reset(handle->adc_dma);
+    adc_hal_digi_reset();
+    adc_hal_digi_dma_link(&handle->hal, handle->rx_dma_buf);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    esp_err_t ret = esp_cache_msync(handle->hal.rx_desc, handle->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    assert(ret == ESP_OK);
+#endif
+
+    adc_dma_start(handle->adc_dma, handle->hal.rx_desc);
+    adc_hal_digi_connect(true);
+    adc_hal_digi_enable(true);
 
     return ESP_OK;
 }
@@ -414,14 +332,16 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_STARTED, ESP_ERR_INVALID_STATE, ADC_TAG, "The driver is already stopped");
 
     handle->fsm = ADC_FSM_INIT;
-    //disable the in suc eof intrrupt
-    adc_hal_digi_dis_intr(&handle->hal, ADC_HAL_DMA_INTR_MASK);
-    //clear the in suc eof interrupt
-    adc_hal_digi_clr_intr(&handle->hal, ADC_HAL_DMA_INTR_MASK);
-    //stop ADC
-    adc_hal_digi_stop(&handle->hal);
 
-    adc_hal_digi_deinit(&handle->hal);
+    adc_dma_stop(handle->adc_dma);
+    adc_hal_digi_enable(false);
+    adc_hal_digi_connect(false);
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_hal_digi_clr_eof();
+#endif
+
+    adc_hal_digi_deinit();
 
     if (handle->use_adc2) {
         adc_lock_release(ADC_UNIT_2);
@@ -489,21 +409,11 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
     free(handle->rx_dma_buf);
     free(handle->hal.rx_desc);
     free(handle->hal_digi_ctrlr_cfg.adc_pattern);
-#if SOC_GDMA_SUPPORTED
-    gdma_disconnect(handle->rx_dma_channel);
-    gdma_del_channel(handle->rx_dma_channel);
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_intr_free(handle->dma_intr_hdl);
-    spicommon_dma_chan_free(handle->spi_host);
-    spicommon_periph_free(handle->spi_host);
-#elif CONFIG_IDF_TARGET_ESP32
-    esp_intr_free(handle->dma_intr_hdl);
-    i2s_platform_release_occupation(handle->i2s_host);
-#endif
+    adc_dma_deinit(handle->adc_dma);
     free(handle);
     handle = NULL;
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
 
     return ESP_OK;
 }
@@ -639,12 +549,12 @@ esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_t * const channel)
+esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t *const unit_id, adc_channel_t *const channel)
 {
     return adc_io_to_channel(io_num, unit_id, channel);
 }
 
-esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num)
+esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *const io_num)
 {
     return adc_channel_to_io(unit_id, channel, io_num);
 }

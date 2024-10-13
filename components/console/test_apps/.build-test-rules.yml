@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/console/test_apps/console:
+  enable:
+    - if: IDF_TARGET in["esp32", "esp32c3", "linux"]
+      reason: Testing all major architectures

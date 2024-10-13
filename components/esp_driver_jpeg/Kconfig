@@ -1,0 +1,12 @@
+menu "ESP-Driver:JPEG-Codec Configurations"
+    depends on SOC_JPEG_CODEC_SUPPORTED
+
+    config JPEG_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            whether to enable the debug log message for JPEG driver.
+            Note that, this option only controls the JPEG driver log, won't affect other drivers.
+            Please also note, enable this option will make jpeg codec process speed much slower.
+
+endmenu

@@ -14,6 +14,7 @@
 #include "freertos/task.h"
 #include "esp_timer.h"
 #include "ccomp_timer.h"
+#include "string.h"
 
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
@@ -43,13 +44,13 @@ typedef struct {
 ---------------------------------------------------------------*/
 static sdmmc_card_t s_card;
 
-static void s_master_init(test_sdio_param_t *host_param, essl_handle_t *out_handle)
+static void s_master_init(test_sdio_param_t *host_param, essl_handle_t *out_handle, sdmmc_card_t** out_card)
 {
     sdmmc_host_t host_config = (sdmmc_host_t)SDMMC_HOST_DEFAULT();
     host_config.flags = host_param->host_flags;
-    if (host_config.flags == SDMMC_HOST_FLAG_4BIT) {
+    if (host_config.flags & SDMMC_HOST_FLAG_4BIT) {
         ESP_LOGI(TAG, "Probe using SD 4-bit...");
-    } else if (host_config.flags == SDMMC_HOST_FLAG_1BIT) {
+    } else if (host_config.flags & SDMMC_HOST_FLAG_1BIT) {
         ESP_LOGI(TAG, "Probe using SD 1-bit...");
     }
     host_config.max_freq_khz = host_param->max_freq_khz;
@@ -81,6 +82,18 @@ static void s_master_init(test_sdio_param_t *host_param, essl_handle_t *out_hand
     TEST_ESP_OK(essl_sdio_init_dev(out_handle, &essl_sdio_config));
 
     TEST_ESP_OK(essl_init(*out_handle, TEST_TIMEOUT_MAX));
+
+    if (out_card) {
+        *out_card = card;
+    }
+}
+
+static void s_master_deinit(void)
+{
+    free(s_card.host.dma_aligned_buffer);
+    s_card.host.dma_aligned_buffer = 0;
+
+    sdmmc_host_deinit();
 }
 
 //trigger event 7 to indicate Slave to stop the test
@@ -102,11 +115,11 @@ TEST_CASE("SDIO_SDMMC: test interrupt", "[sdio]")
     esp_err_t ret = ESP_FAIL;
     essl_handle_t handle = NULL;
     test_sdio_param_t test_param = {
-        .host_flags = SDMMC_HOST_FLAG_4BIT,
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
         .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
     };
     //essl init and sdmmc init
-    s_master_init(&test_param, &handle);
+    s_master_init(&test_param, &handle, NULL);
 
     TEST_ESP_OK(essl_set_intr_ena(handle, TEST_INT_MASK_ALL, TEST_TIMEOUT_MAX));
     ret = essl_wait_int(handle, 0);
@@ -127,7 +140,7 @@ TEST_CASE("SDIO_SDMMC: test interrupt", "[sdio]")
         TEST_ESP_OK(essl_clear_intr(handle, int_st, TEST_TIMEOUT_MAX));
     }
 
-    sdmmc_host_deinit();
+    s_master_deinit();
 }
 
 /*---------------------------------------------------------------
@@ -137,11 +150,11 @@ TEST_CASE("SDIO_SDMMC: test register", "[sdio]")
 {
     essl_handle_t handle = NULL;
     test_sdio_param_t test_param = {
-        .host_flags = SDMMC_HOST_FLAG_4BIT,
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
         .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
     };
     //essl init and sdmmc init
-    s_master_init(&test_param, &handle);
+    s_master_init(&test_param, &handle, NULL);
 
     uint32_t init_val = 30;
     srand(850);
@@ -161,7 +174,7 @@ TEST_CASE("SDIO_SDMMC: test register", "[sdio]")
     }
 
     s_send_finish_test(handle);
-    sdmmc_host_deinit();
+    s_master_deinit();
 }
 
 /*---------------------------------------------------------------
@@ -171,11 +184,11 @@ TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
 {
     essl_handle_t handle = NULL;
     test_sdio_param_t test_param = {
-        .host_flags = SDMMC_HOST_FLAG_4BIT,
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
         .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
     };
     //essl init and sdmmc init
-    s_master_init(&test_param, &handle);
+    s_master_init(&test_param, &handle, NULL);
 
     //wait for the slave to stop, reset and start again
     vTaskDelay(10);
@@ -204,7 +217,67 @@ TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
     }
 
     s_send_finish_test(handle);
-    sdmmc_host_deinit();
+    s_master_deinit();
+}
+
+/*---------------------------------------------------------------
+                SDMMC_SDIO: test fixed addr
+---------------------------------------------------------------*/
+#include "soc/soc.h"
+#define HOST_SLCHOST_CONF_W0_REG        (DR_REG_SLCHOST_BASE + 0x6C)
+
+TEST_CASE("SDIO_SDMMC: test fixed addr", "[sdio]")
+{
+    essl_handle_t handle = NULL;
+    sdmmc_card_t* card;
+    test_sdio_param_t test_param = {
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
+        .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
+    };
+    //essl init and sdmmc init
+    s_master_init(&test_param, &handle, &card);
+
+    vTaskDelay(10);
+
+    const int test_size = 128;
+    const int write_addr = 6;
+    uint8_t buf[test_size] = {};
+    srand(850);
+    for (int i = 0; i < test_size; i++) {
+        buf[i] = rand();
+    }
+    ESP_LOG_BUFFER_HEX("write_val", buf, test_size);
+
+    TEST_ESP_OK(sdmmc_io_write_bytes(card, 1, ((HOST_SLCHOST_CONF_W0_REG + write_addr) & 0x3FF) | SDMMC_IO_FIXED_ADDR, buf, test_size));
+
+    const int max_size = 64;
+    uint8_t read_buf[max_size] = {};
+    TEST_ESP_OK(sdmmc_io_read_bytes(card, 1, HOST_SLCHOST_CONF_W0_REG & 0x3FF, read_buf, max_size));
+    ESP_LOG_BUFFER_HEX("read_all", read_buf, max_size);
+    for (int i = 0; i < max_size; i++) {
+        if (i >= 24 && i < 28) {
+            continue;
+        }
+        if (i >= 32 && i < 48) {
+            continue;
+        }
+        if (i == write_addr) {
+            TEST_ASSERT_EQUAL_HEX8(buf[test_size - 1], read_buf[i]);
+        } else {
+            TEST_ASSERT_EQUAL_HEX8(0xcc, read_buf[i]);
+        }
+    }
+
+    const int read_size = (test_size > max_size ? max_size : test_size);
+    memset(read_buf, 0, read_size);
+    TEST_ESP_OK(sdmmc_io_read_bytes(card, 1, ((HOST_SLCHOST_CONF_W0_REG + write_addr) & 0x3FF) | SDMMC_IO_FIXED_ADDR, read_buf, read_size));
+    ESP_LOG_BUFFER_HEX("read_fixed", read_buf, read_size);
+    for (int i = 0; i < read_size; i++) {
+        TEST_ASSERT_EQUAL_HEX8(buf[test_size - 1], read_buf[i]);
+    }
+
+    s_send_finish_test(handle);
+    s_master_deinit();
 }
 
 /*---------------------------------------------------------------
@@ -212,11 +285,11 @@ TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
 ---------------------------------------------------------------*/
 test_sdio_param_t test_param_lists[TEST_TARNS_PARAM_NUMS] = {
     {
-        .host_flags = SDMMC_HOST_FLAG_4BIT,
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
         .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
     },
     {
-        .host_flags = SDMMC_HOST_FLAG_1BIT,
+        .host_flags = SDMMC_HOST_FLAG_1BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
         .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
     },
 };
@@ -229,11 +302,11 @@ static void test_from_host(bool check_data)
     test_prepare_buffer_pool(TEST_RX_BUFFER_SIZE * 4, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 
     for (int i = 0; i < TEST_TARNS_PARAM_NUMS; i++) {
-        ESP_LOGI(TAG, "host mode: %s", (test_param_lists[i].host_flags == SDMMC_HOST_FLAG_4BIT) ? "4BIT Mode" : "1BIT Mode");
+        ESP_LOGI(TAG, "host mode: %s", (test_param_lists[i].host_flags & SDMMC_HOST_FLAG_4BIT) ? "4BIT Mode" : "1BIT Mode");
         ESP_LOGI(TAG, "host speed: %"PRIu32" kHz", test_param_lists[i].max_freq_khz);
 
         essl_handle_t handle = NULL;
-        s_master_init(&test_param_lists[i], &handle);
+        s_master_init(&test_param_lists[i], &handle, NULL);
 
         // Two counters are used. The `esp_timer_get_time()` is for the typical time, and the
         // `ccomp_timer` is for performance test to reduce influence caused by cache miss.
@@ -262,7 +335,7 @@ static void test_from_host(bool check_data)
 
         esp_rom_delay_us(50 * 1000);
         s_send_finish_test(handle);
-        sdmmc_host_deinit();
+        s_master_deinit();
     }
 
     test_destroy_buffer_pool();
@@ -286,11 +359,11 @@ static void test_to_host(bool check_data)
     uint8_t *host_rx_buffer = (uint8_t *)heap_caps_calloc(1, recv_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 
     for (int i = 0; i < TEST_TARNS_PARAM_NUMS; i++) {
-        ESP_LOGI(TAG, "host mode: %s", (test_param_lists[i].host_flags == SDMMC_HOST_FLAG_4BIT) ? "4BIT Mode" : "1BIT Mode");
+        ESP_LOGI(TAG, "host mode: %s", (test_param_lists[i].host_flags & SDMMC_HOST_FLAG_4BIT) ? "4BIT Mode" : "1BIT Mode");
         ESP_LOGI(TAG, "host speed: %"PRIu32" kHz", test_param_lists[i].max_freq_khz);
 
         essl_handle_t handle = NULL;
-        s_master_init(&test_param_lists[i], &handle);
+        s_master_init(&test_param_lists[i], &handle, NULL);
 
         esp_err_t ret;
         int offset = 0;
@@ -333,7 +406,7 @@ static void test_to_host(bool check_data)
 
         esp_rom_delay_us(50 * 1000);
         s_send_finish_test(handle);
-        sdmmc_host_deinit();
+        s_master_deinit();
     }
 
     free(host_rx_buffer);

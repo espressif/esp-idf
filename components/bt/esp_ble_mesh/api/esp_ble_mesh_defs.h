@@ -71,6 +71,14 @@ typedef uint8_t esp_ble_mesh_octet8_t[ESP_BLE_MESH_OCTET8_LEN];
 #define ESP_BLE_MESH_KEY_PRIMARY                            0x0000
 #define ESP_BLE_MESH_KEY_ANY                                0xFFFF
 
+/*!< Internal macros used to initialize array members */
+#define ESP_BLE_MESH_KEY_UNUSED_ELT_(IDX, _) ESP_BLE_MESH_KEY_UNUSED
+#define ESP_BLE_MESH_ADDR_UNASSIGNED_ELT_(IDX, _) ESP_BLE_MESH_ADDR_UNASSIGNED
+#define ESP_BLE_MESH_MODEL_KEYS_UNUSED            \
+    { LISTIFY(CONFIG_BLE_MESH_MODEL_KEY_COUNT, ESP_BLE_MESH_KEY_UNUSED_ELT_, (,)) }
+#define ESP_BLE_MESH_MODEL_GROUPS_UNASSIGNED      \
+    { LISTIFY(CONFIG_BLE_MESH_MODEL_GROUP_COUNT, ESP_BLE_MESH_ADDR_UNASSIGNED_ELT_, (,)) }
+
 /*!< Primary Network Key index */
 #define ESP_BLE_MESH_NET_PRIMARY                            0x000
 
@@ -286,26 +294,24 @@ typedef enum {
 #define ESP_BLE_MESH_SIG_MODEL(_id, _op, _pub, _user_data)          \
 {                                                                   \
     .model_id = (_id),                                              \
-    .op = _op,                                                      \
-    .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =       \
-            ESP_BLE_MESH_KEY_UNUSED },                              \
     .pub = _pub,                                                    \
-    .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =   \
-            ESP_BLE_MESH_ADDR_UNASSIGNED },                         \
+    .keys = ESP_BLE_MESH_MODEL_KEYS_UNUSED,                         \
+    .groups = ESP_BLE_MESH_MODEL_GROUPS_UNASSIGNED,                 \
+    .op = _op,                                                      \
     .user_data = _user_data,                                        \
 }
 
 /*!< This macro is associated with BLE_MESH_MODEL_VND_CB in mesh_access.h */
 #define ESP_BLE_MESH_VENDOR_MODEL(_company, _id, _op, _pub, _user_data) \
 {                                                                       \
-    .vnd.company_id = (_company),                                       \
-    .vnd.model_id = (_id),                                              \
-    .op = _op,                                                          \
+    .vnd = {                                                            \
+        .company_id = (_company),                                       \
+        .model_id = (_id),                                              \
+    },                                                                  \
     .pub = _pub,                                                        \
-    .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =           \
-            ESP_BLE_MESH_KEY_UNUSED },                                  \
-    .groups = { [0 ... (CONFIG_BLE_MESH_MODEL_GROUP_COUNT - 1)] =       \
-            ESP_BLE_MESH_ADDR_UNASSIGNED },                             \
+    .keys = ESP_BLE_MESH_MODEL_KEYS_UNUSED,                             \
+    .groups = ESP_BLE_MESH_MODEL_GROUPS_UNASSIGNED,                     \
+    .op = _op,                                                          \
     .user_data = _user_data,                                            \
 }
 
@@ -324,8 +330,8 @@ typedef enum {
 {                                                       \
     .location         = (_loc),                         \
     .sig_model_count  = ARRAY_SIZE(_mods),              \
-    .sig_models       = (_mods),                        \
     .vnd_model_count  = ARRAY_SIZE(_vnd_mods),          \
+    .sig_models       = (_mods),                        \
     .vnd_models       = (_vnd_mods),                    \
 }
 
@@ -492,8 +498,9 @@ typedef struct {
 #define ESP_BLE_MESH_MODEL_PUB_DEFINE(_name, _msg_len, _role) \
     NET_BUF_SIMPLE_DEFINE_STATIC(bt_mesh_pub_msg_##_name, _msg_len); \
     static esp_ble_mesh_model_pub_t _name = { \
-        .update = (uint32_t)NULL, \
         .msg = &bt_mesh_pub_msg_##_name, \
+        .update = (uint32_t)NULL, \
+        .dev_role = _role, \
     }
 
 /** @def ESP_BLE_MESH_MODEL_OP

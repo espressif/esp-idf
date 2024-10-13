@@ -1,9 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
-endif()
-
 if(CONFIG_EFUSE_VIRTUAL)
     message(STATUS "Efuse virtual mode is enabled. If Secure boot or Flash encryption is on"
         " it does not provide any security. FOR TESTING ONLY!")
@@ -32,10 +28,27 @@ list(APPEND srcs "src/esp_efuse_api.c"
                  "src/esp_efuse_utility.c"
                  "src/efuse_controller/keys/${type}/esp_efuse_api_key.c")
 
-idf_component_register(SRCS "${srcs}"
+if(BOOTLOADER_BUILD)
+    idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES bootloader_support soc spi_flash
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${private_include}")
+else()
+    list(APPEND srcs "src/esp_efuse_startup.c")
+    if(${target} STREQUAL "linux")
+        set(priv_requires soc spi_flash esp_system esp_partition)
+    else()
+        set(priv_requires bootloader_support soc spi_flash esp_system esp_partition esp_app_format)
+    endif()
+    idf_component_register(SRCS "${srcs}"
+                    PRIV_REQUIRES "${priv_requires}"
+                    INCLUDE_DIRS "${include_dirs}"
+                    PRIV_INCLUDE_DIRS "${private_include}")
+    if(NOT ${target} STREQUAL "linux")
+        # Forces the linker to include esp_efuse_startup.c
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_efuse_startup_include_func")
+    endif()
+endif()
 
 if(target)
     set(TOOL_TARGET -t ${target})

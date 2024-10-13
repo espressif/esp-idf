@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,24 +10,25 @@
 #include <string.h>
 #include <sys/lock.h>
 #include "sdkconfig.h"
-#include "esp_compiler.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
 #include "soc/soc_caps.h"
-#include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "hal/dedic_gpio_cpu_ll.h"
-#include "hal/gpio_hal.h"
+#include "esp_private/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/dedic_gpio.h"
 #include "soc/dedic_gpio_periph.h"
+
 #if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
 #include "soc/dedic_gpio_struct.h"
+#endif
+#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 #include "hal/dedic_gpio_ll.h"
 #endif
 
@@ -57,7 +58,7 @@ struct dedic_gpio_platform_t {
 };
 
 struct dedic_gpio_bundle_t {
-    uint32_t core_id;    // CPU core ID, a GPIO bundle must be installed to a specific CPU core
+    int core_id;    // CPU core ID, a GPIO bundle must be installed to a specific CPU core
     uint32_t out_mask;   // mask of output channels in the bank
     uint32_t in_mask;    // mask of input channels in the bank
     uint32_t out_offset; // offset in the bank (seen from output channel)
@@ -75,7 +76,7 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
         if (!s_platform[core_id]) {
             s_platform[core_id] = calloc(1, sizeof(dedic_gpio_platform_t));
             if (s_platform[core_id]) {
-                // initialize platfrom members
+                // initialize platform members
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
                 // initial occupy_mask: 1111...100...0
                 s_platform[core_id]->out_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1);
@@ -84,7 +85,11 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
                 s_platform[core_id]->dev = &DEDIC_GPIO;
 #endif // SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
 #if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-                periph_module_enable(dedic_gpio_periph_signals.module); // enable APB clock to peripheral
+                // enable dedicated GPIO register clock
+                PERIPH_RCC_ATOMIC() {
+                    dedic_gpio_ll_enable_bus_clock(true);
+                    dedic_gpio_ll_reset_register();
+                }
 #endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
             }
         }
@@ -98,7 +103,7 @@ err:
     return ret;
 }
 
-static void dedic_gpio_break_platform(uint32_t core_id)
+static void dedic_gpio_break_platform(int core_id)
 {
     if (s_platform[core_id]) {
         // prevent breaking platform concurrently
@@ -107,7 +112,10 @@ static void dedic_gpio_break_platform(uint32_t core_id)
             free(s_platform[core_id]);
             s_platform[core_id] = NULL;
 #if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-            periph_module_disable(dedic_gpio_periph_signals.module); // disable module if no GPIO channel is being used
+            // disable the register clock if no GPIO channel is in use
+            PERIPH_RCC_ATOMIC() {
+                dedic_gpio_ll_enable_bus_clock(false);
+            }
 #endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
         }
         _lock_release(&s_platform_mutexlock[core_id]);
@@ -142,7 +150,7 @@ static void dedic_gpio_default_isr(void *arg)
     }
 }
 
-static esp_err_t dedic_gpio_install_interrupt(uint32_t core_id)
+static esp_err_t dedic_gpio_install_interrupt(int core_id)
 {
     esp_err_t ret = ESP_OK;
     if (!s_platform[core_id]->intr_hdl) {
@@ -163,7 +171,7 @@ err:
     return ret;
 }
 
-static void dedic_gpio_uninstall_interrupt(uint32_t core_id)
+static void dedic_gpio_uninstall_interrupt(int core_id)
 {
     if (s_platform[core_id]->intr_hdl) {
         // prevent uninstall interrupt concurrently
@@ -178,7 +186,7 @@ static void dedic_gpio_uninstall_interrupt(uint32_t core_id)
     }
 }
 
-static void dedic_gpio_set_interrupt(uint32_t core_id, uint32_t channel, dedic_gpio_intr_type_t type)
+static void dedic_gpio_set_interrupt(int core_id, uint32_t channel, dedic_gpio_intr_type_t type)
 {
     dedic_gpio_ll_set_interrupt_type(s_platform[core_id]->dev, channel, type);
     if (type != DEDIC_GPIO_INTR_NONE) {
@@ -260,13 +268,13 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     // route dedicated GPIO channel signals to GPIO matrix
     if (config->flags.in_en) {
         for (size_t i = 0; i < config->array_size; i++) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
+            gpio_func_sel(config->gpio_array[i], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_in_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].in_sig_per_channel[in_offset + i], config->flags.in_invert);
         }
     }
     if (config->flags.out_en) {
         for (size_t i = 0; i < config->array_size; i++) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
+            gpio_func_sel(config->gpio_array[i], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
 #if !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
@@ -305,7 +313,7 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
     bool recycle_all = false;
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
-    uint32_t core_id = esp_cpu_get_core_id();
+    int core_id = esp_cpu_get_core_id();
     ESP_GOTO_ON_FALSE(core_id == bundle->core_id, ESP_FAIL, err, TAG, "del bundle on wrong CPU");
 
     portENTER_CRITICAL(&s_platform[core_id]->spinlock);

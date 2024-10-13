@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -141,12 +141,9 @@ typedef uint32_t TickType_t;
 BaseType_t xPortInIsrContext(void);
 
 /**
- * @brief Asserts if in ISR context
+ * @brief Assert if in ISR context
  *
  * - Asserts on xPortInIsrContext() internally
- *
- * @note [refactor-todo] Check if this API is still required
- * @note [refactor-todo] Check if this should be inlined
  */
 void vPortAssertIfInISR(void);
 
@@ -172,7 +169,7 @@ BaseType_t xPortInterruptedFromISRContext(void);
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void);
 
 /**
- * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ * @brief Re-enable interrupts in a nested manner (meant to be called from ISRs)
  *
  * @warning Only applies to current CPU.
  * @param prev_level Previous interrupt level
@@ -427,6 +424,9 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portSET_INTERRUPT_MASK_FROM_ISR()                   xPortSetInterruptMaskFromISR()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
 
+/**
+ * @brief Assert if in ISR context
+ */
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 /**
@@ -460,7 +460,7 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portENTER_CRITICAL_ISR(mux)                 vPortEnterCritical(mux)
 #define portEXIT_CRITICAL_ISR(mux)                  vPortExitCritical(mux)
 
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux, timeout)
 #define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
 #define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
 
@@ -513,15 +513,11 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 
-/**
- * - Fine resolution uses ccount
- * - ALT is coarse and uses esp_timer
- * @note [refactor-todo] Make fine and alt timers mutually exclusive
- */
-#define portGET_RUN_TIME_COUNTER_VALUE() xthal_get_ccount()
 #ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x) do {x = (uint32_t)esp_timer_get_time();} while(0)
-#endif
+#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) esp_timer_get_time())
+#else // Uses CCOUNT
+#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) xthal_get_ccount())
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 
 // --------------------- TCB Cleanup -----------------------
 
@@ -637,6 +633,17 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 // -------------------- Heap Related -----------------------
 
 /**
+ * @brief Checks if a given piece of memory can be used to store a FreeRTOS list
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a List
+ * @return false Otherwise
+ */
+bool xPortCheckValidListMem(const void *ptr);
+
+/**
  * @brief Checks if a given piece of memory can be used to store a task's TCB
  *
  * - Defined in heap_idf.c
@@ -658,6 +665,7 @@ bool xPortCheckValidTCBMem(const void *ptr);
  */
 bool xPortcheckValidStackMem(const void *ptr);
 
+#define portVALID_LIST_MEM(ptr)     xPortCheckValidListMem(ptr)
 #define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 

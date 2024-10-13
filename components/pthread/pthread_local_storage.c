@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 /* Sanity check to ensure that the number of FreeRTOS TLSPs is at least 1 */
 #if (CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS < 1)
-    #error "CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS cannot be 0 for pthread TLS"
+#error "CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS cannot be 0 for pthread TLS"
 #endif
 
 #define PTHREAD_TLS_INDEX 0
@@ -77,7 +77,7 @@ static key_entry_t *find_key(pthread_key_t key)
     portENTER_CRITICAL(&s_keys_lock);
     key_entry_t *result = NULL;;
     SLIST_FOREACH(result, &s_keys, next) {
-        if(result->key == key) {
+        if (result->key == key) {
             break;
         }
     }
@@ -147,7 +147,9 @@ static void pthread_cleanup_thread_specific_data_callback(int index, void *v_tls
     free(tls);
 }
 
-/* this function called from pthread_task_func for "early" cleanup of TLS in a pthread */
+/* this function called from pthread_task_func for "early" cleanup of TLS in a pthread
+   and from pthread_join/pthread_detach for cleanup of TLS after pthread exit
+*/
 void pthread_internal_local_storage_destructor_callback(TaskHandle_t handle)
 {
     void *tls = pvTaskGetThreadLocalStoragePointer(handle, PTHREAD_TLS_INDEX);
@@ -157,9 +159,9 @@ void pthread_internal_local_storage_destructor_callback(TaskHandle_t handle)
            calling it again...
         */
 #if !defined(CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS)
-        vTaskSetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX, NULL);
+        vTaskSetThreadLocalStoragePointer(handle, PTHREAD_TLS_INDEX, NULL);
 #else
-        vTaskSetThreadLocalStoragePointerAndDelCallback(NULL,
+        vTaskSetThreadLocalStoragePointerAndDelCallback(handle,
                                                         PTHREAD_TLS_INDEX,
                                                         NULL,
                                                         NULL);
@@ -171,7 +173,7 @@ static value_entry_t *find_value(const values_list_t *list, pthread_key_t key)
 {
     value_entry_t *result = NULL;;
     SLIST_FOREACH(result, list, next) {
-        if(result->key == key) {
+        if (result->key == key) {
             break;
         }
     }
@@ -186,7 +188,7 @@ void *pthread_getspecific(pthread_key_t key)
     }
 
     value_entry_t *entry = find_value(tls, key);
-    if(entry != NULL) {
+    if (entry != NULL) {
         return entry->value;
     }
     return NULL;

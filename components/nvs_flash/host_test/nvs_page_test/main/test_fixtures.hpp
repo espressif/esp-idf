@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,8 +37,9 @@ public:
             TEST_FAIL_MESSAGE("Failed to initialize esp_partition_file_mmap");
         }
 
-        esp_partition.address = start_sector * SPI_FLASH_SEC_SIZE;
-        esp_partition.size = (start_sector + sector_count) * SPI_FLASH_SEC_SIZE;
+        const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
+        esp_partition.address = start_sector * sec_size;
+        esp_partition.size = (start_sector + sector_count) * sec_size;
         esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         esp_partition.type = ESP_PARTITION_TYPE_DATA;
         esp_partition.subtype = ESP_PARTITION_SUBTYPE_DATA_NVS;
@@ -47,7 +48,7 @@ public:
 
     ~PartitionEmulationFixture()
     {
-        // ensure underlying mmaped file gets deleted after unmap.
+        // ensure underlying mapped file gets deleted after unmap.
         esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_input();
         p_ctrl->remove_dump = true;
         esp_partition_file_munmap();

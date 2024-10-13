@@ -26,7 +26,7 @@ First, let’s take a look at the includes:
 #include "esp_gatt_common_api.h"
 #include "sdkconfig.h"
 ```
-These includes are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
+These includes are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
 
 * `esp_bt.h`: implements BT controller and VHCI configuration procedures from the host side.
 * `esp_bt_main.h`: implements initialization and enabling of the Bluedroid stack.
@@ -62,8 +62,8 @@ The entry point to this example is the app_main() function:
         ESP_LOGE(GATTS_TAG, "%s enable controller failed", __func__);
         return;
     }
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTS_TAG, "%s init bluetooth failed", __func__);
         return;
@@ -132,8 +132,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+ret = esp_bluedroid_init();
 ret = esp_bluedroid_enable();
 ```
 The Bluetooth stack is up and running at this point in the program flow, however the functionality of the application has not been defined yet. The functionality is defined by reacting to events such as what happens when another device tries to read or write parameters and establish a connection. The two main managers of events are the GAP and GATT event handlers. The application needs to register a callback function for each event handler in order to let the application know which functions are going to handle the GAP and GATT events:
@@ -188,13 +187,15 @@ struct gatts_profile_inst {
 The Application Profiles are stored in an array and corresponding callback functions `gatts_profile_a_event_handler()` and `gatts_profile_b_event_handler()` are assigned. Different applications on the GATT client use different interfaces, represented by the gatts_if parameter. For initialization, this parameter is set to `ESP_GATT_IF_NONE`, which means that the Application Profile is not linked to any client yet.
 
 ```c
+/* One gatt-based profile one app_id and one gatts_if, this array will store the gatts_if returned by ESP_GATTS_REG_EVT */
 static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
     [PROFILE_A_APP_ID] = {
         .gatts_cb = gatts_profile_a_event_handler,
-        .gatts_if = ESP_GATT_IF_NONE,
+        .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
+    },
     [PROFILE_B_APP_ID] = {
-        .gatts_cb = gatts_profile_b_event_handler,
-        .gatts_if = ESP_GATT_IF_NONE,
+        .gatts_cb = gatts_profile_b_event_handler,                   /* This demo does not implement, similar as profile A */
+        .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
 };
 ```
@@ -648,11 +649,8 @@ The `esp_ble_gap_update_conn_params()` function triggers a GAP event `ESP_GAP_BL
 
 ```c
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-         ESP_LOGI(GATTS_TAG, "update connection params status = %d, min_int = %d, max_int = %d,
-                  conn_int = %d,latency = %d, timeout = %d",
+         ESP_LOGI(GATTS_TAG, "update connection params status = %d, conn_int = %d,latency = %d, timeout = %d",
                   param->update_conn_params.status,
-                  param->update_conn_params.min_int,
-                  param->update_conn_params.max_int,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
                   param->update_conn_params.timeout);
@@ -720,7 +718,7 @@ case ESP_GATTS_WRITE_EVT: {
      ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
      if (!param->write.is_prep){
         ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-        esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+        ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
         if (gl_profile_tab[PROFILE_B_APP_ID].descr_handle == param->write.handle && param->write.len == 2){
             uint16_t descr_value= param->write.value[1]<<8 | param->write.value[0];
             if (descr_value == 0x0001){
@@ -772,35 +770,37 @@ The `example_write_event_env()` function contains the logic for the write long c
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     esp_gatt_status_t status = ESP_GATT_OK;
     if (param->write.need_rsp){
-       if (param->write.is_prep){
-            if (prepare_write_env->prepare_buf == NULL){
+        if (param->write.is_prep) {
+            if(param->write.offset > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_OFFSET;
+            } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_ATTR_LEN;
+            }
+            if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
                 prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE*sizeof(uint8_t));
                 prepare_write_env->prepare_len = 0;
                 if (prepare_write_env->prepare_buf == NULL) {
                     ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem");
                     status = ESP_GATT_NO_RESOURCES;
                 }
-            } else {
-                if(param->write.offset > PREPARE_BUF_MAX_SIZE) {
-                    status = ESP_GATT_INVALID_OFFSET;
-                }
-                else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-                    status = ESP_GATT_INVALID_ATTR_LEN;
-                }
             }
 
             esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
-            gatt_rsp->attr_value.len = param->write.len;
-            gatt_rsp->attr_value.handle = param->write.handle;
-            gatt_rsp->attr_value.offset = param->write.offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
-                                                                 param->write.trans_id, status, gatt_rsp);
-            if (response_err != ESP_OK){
-               ESP_LOGE(GATTS_TAG, "Send response error");
+            if (gatt_rsp) {
+                gatt_rsp->attr_value.len = param->write.len;
+                gatt_rsp->attr_value.handle = param->write.handle;
+                gatt_rsp->attr_value.offset = param->write.offset;
+                gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
+                if (response_err != ESP_OK) {
+                    ESP_LOGE(GATTS_TAG, "Send response error\n");
+                }
+                free(gatt_rsp);
+            } else {
+                ESP_LOGE(GATTS_TAG, "malloc failed, no resource to send response error\n");
+                status = ESP_GATT_NO_RESOURCES;
             }
-            free(gatt_rsp);
             if (status != ESP_GATT_OK){
                 return;
             }
@@ -809,7 +809,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
                    param->write.len);
             prepare_write_env->prepare_len += param->write.len;
 
-        }else{
+        } else {
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, NULL);
         }
     }
@@ -830,9 +830,9 @@ The function then checks if the Prepare Write Request parameter represented by t
 
 ```c
 …
-if (param->write.is_prep){
+if (param->write.is_prep) {
 …
-}else{
+} else {
 	esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, NULL);
 }
 …
@@ -852,7 +852,7 @@ static prepare_type_env_t b_prepare_write_env;
 In order to use the prepare buffer, some memory space is allocated for it. In case the allocation fails due to a lack of memory, an error is printed:
 
 ```c
-if (prepare_write_env->prepare_buf == NULL) {
+if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
     prepare_write_env->prepare_buf =
     (uint8_t*)malloc(PREPARE_BUF_MAX_SIZE*sizeof(uint8_t));
     prepare_write_env->prepare_len = 0;
@@ -917,7 +917,7 @@ Let’s take a look at the Executive Write function:
 ```c
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-        esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        ESP_LOG_BUFFER_HEX(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }
     else{
         ESP_LOGI(GATTS_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
@@ -934,7 +934,7 @@ The executive write is used to either confirm or cancel the write procedure done
 
 ```c
 if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-   esp_log_buffer_hex(GATTS_TAG,
+   ESP_LOG_BUFFER_HEX(GATTS_TAG,
                       prepare_write_env->prepare_buf,
                       prepare_write_env->prepare_len);
  }

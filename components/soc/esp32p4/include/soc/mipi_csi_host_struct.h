@@ -1815,7 +1815,7 @@ typedef union {
 } csi_host_phy_stopstate_reg_t;
 
 
-typedef struct {
+typedef struct csi_host_dev_t {
     volatile csi_host_version_reg_t version;
     volatile csi_host_n_lanes_reg_t n_lanes;
     volatile csi_host_csi2_resetn_reg_t csi2_resetn;
@@ -1872,6 +1872,7 @@ typedef struct {
     volatile csi_host_scrambling_seed2_reg_t scrambling_seed2;
 } csi_host_dev_t;
 
+extern csi_host_dev_t MIPI_CSI_HOST;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(csi_host_dev_t) == 0x30c, "Invalid size of csi_host_dev_t structure");

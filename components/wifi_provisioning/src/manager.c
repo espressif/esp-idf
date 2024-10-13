@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,7 +156,7 @@ static struct wifi_prov_mgr_ctx *prov_ctx;
 
 /* This executes registered app_event_callback for a particular event
  *
- * NOTE : By the time this fucntion returns, it is possible that
+ * NOTE : By the time this function returns, it is possible that
  * the manager got de-initialized due to a call to wifi_prov_mgr_deinit()
  * either inside the event callbacks or from another thread. Therefore
  * post execution of execute_event_cb(), the validity of prov_ctx must
@@ -812,6 +812,7 @@ static esp_err_t update_wifi_scan_results(void)
     prov_ctx->ap_list[curr_channel] = (wifi_ap_record_t *) calloc(get_count, sizeof(wifi_ap_record_t));
     if (!prov_ctx->ap_list[curr_channel]) {
         ESP_LOGE(TAG, "Failed to allocate memory for AP list");
+        esp_wifi_clear_ap_list();
         goto exit;
     }
     if (esp_wifi_scan_get_ap_records(&get_count, prov_ctx->ap_list[curr_channel]) != ESP_OK) {
@@ -1214,6 +1215,11 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned)
     return ESP_OK;
 }
 
+bool wifi_prov_mgr_is_sm_idle(void)
+{
+    return (prov_ctx->prov_state == WIFI_PROV_STATE_IDLE);
+}
+
 static void wifi_connect_timer_cb(void *arg)
 {
     if (esp_wifi_connect() != ESP_OK) {
@@ -1234,6 +1240,9 @@ esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
     }
+
+    execute_event_cb(WIFI_PROV_SET_STA_CONFIG, (void *)wifi_cfg, sizeof(wifi_config_t));
+
     if (prov_ctx->prov_state >= WIFI_PROV_STATE_CRED_RECV) {
         ESP_LOGE(TAG, "Wi-Fi credentials already received by provisioning app");
         RELEASE_LOCK(prov_ctx_lock);

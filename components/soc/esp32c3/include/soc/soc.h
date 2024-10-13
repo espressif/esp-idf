@@ -20,7 +20,7 @@
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x10000)
 #define REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1E000)
+#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                       // only one I2S on C3
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE - (i) * 0x1000)
 #define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))   // only one GPSPI
@@ -136,9 +136,7 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
 #define  CPU_CLK_FREQ_MHZ_BTLD                       (80)           // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 80*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
@@ -148,7 +146,6 @@
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            40              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */

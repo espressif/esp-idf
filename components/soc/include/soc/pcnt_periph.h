@@ -26,7 +26,6 @@ typedef struct {
             const uint32_t clear_sig;
         } units[SOC_PCNT_UNITS_PER_GROUP];
         const uint32_t irq;
-        const periph_module_t module;
     } groups[SOC_PCNT_GROUPS];
 } pcnt_signal_conn_t;
 

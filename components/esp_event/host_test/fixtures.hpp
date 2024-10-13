@@ -78,7 +78,7 @@ enum class CreateAnd {
 };
 
 struct MockQueue : public CMockFix {
-    MockQueue (CreateAnd flags) : queue(reinterpret_cast<QueueHandle_t>(0xdeadbeef))
+    MockQueue(CreateAnd flags) : queue(reinterpret_cast<QueueHandle_t>(0xdeadbeef))
     {
         if (flags == CreateAnd::FAIL) {
             xQueueGenericCreate_ExpectAnyArgsAndReturn(nullptr);
@@ -101,7 +101,7 @@ struct MockQueue : public CMockFix {
 };
 
 struct MockMutex : public CMockFix {
-    MockMutex (CreateAnd flags) : sem(reinterpret_cast<QueueHandle_t>(0xdeadbeef))
+    MockMutex(CreateAnd flags) : sem(reinterpret_cast<QueueHandle_t>(0xdeadbeef))
     {
         if (flags == CreateAnd::FAIL) {
             xQueueCreateMutex_ExpectAnyArgsAndReturn(nullptr);
@@ -124,7 +124,7 @@ struct MockMutex : public CMockFix {
 };
 
 struct MockTask : public CMockFix {
-    MockTask (CreateAnd flags) : task((TaskHandle_t) 1)
+    MockTask(CreateAnd flags) : task((TaskHandle_t) 1)
     {
         if (flags == CreateAnd::FAIL) {
             xTaskCreatePinnedToCore_ExpectAnyArgsAndReturn(pdFALSE);

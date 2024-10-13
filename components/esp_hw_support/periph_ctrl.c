@@ -1,15 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
-#include "hal/clk_gate_ll.h"
 #include "esp_attr.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/soc_caps.h"
+#ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
+#include "hal/clk_gate_ll.h"
+#endif
 
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED
 #include "esp_private/esp_modem_clock.h"
 #endif
 
@@ -55,6 +57,7 @@ void periph_rcc_release_exit(periph_module_t periph, uint8_t ref_count)
 
 void periph_module_enable(periph_module_t periph)
 {
+#ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     if (ref_counts[periph] == 0) {
@@ -62,10 +65,12 @@ void periph_module_enable(periph_module_t periph)
     }
     ref_counts[periph]++;
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 void periph_module_disable(periph_module_t periph)
 {
+#ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     ref_counts[periph]--;
@@ -73,18 +78,21 @@ void periph_module_disable(periph_module_t periph)
         periph_ll_disable_clk_set_rst(periph);
     }
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 void periph_module_reset(periph_module_t periph)
 {
+#ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
     assert(periph < PERIPH_MODULE_MAX);
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     periph_ll_reset(periph);
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 #if !SOC_IEEE802154_BLE_ONLY
-#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED
+#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT

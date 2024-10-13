@@ -48,22 +48,22 @@ static const char * NVS_KEY = "onoff_client";
 static esp_ble_mesh_client_t onoff_client;
 
 static esp_ble_mesh_cfg_srv_t config_server = {
-    .relay = ESP_BLE_MESH_RELAY_ENABLED,
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
+    .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_cli_pub, 2 + 1, ROLE_NODE);
@@ -79,8 +79,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t composition = {
     .cid = CID_ESP,
-    .elements = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements = elements,
 };
 
 /* Disable OOB security for SILabs Android app */
@@ -89,8 +89,8 @@ static esp_ble_mesh_prov_t provision = {
 #if 0
     .output_size = 4,
     .output_actions = ESP_BLE_MESH_DISPLAY_NUMBER,
-    .input_actions = ESP_BLE_MESH_PUSH,
     .input_size = 4,
+    .input_actions = ESP_BLE_MESH_PUSH,
 #else
     .output_size = 0,
     .output_actions = 0,
@@ -279,7 +279,7 @@ static esp_err_t ble_mesh_init(void)
         return err;
     }
 
-    err = esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_node_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh node (err %d)", err);
         return err;

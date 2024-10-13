@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "soc/periph_defs.h"
 
 #ifdef __cplusplus
@@ -24,10 +25,10 @@ extern "C" {
  * @note This macro will increase the reference lock of that peripheral.
  *       You can get the value before the increment from the `rc_name` local variable
  */
-#define PERIPH_RCC_ACQUIRE_ATOMIC(periph, rc_name)                \
-    for (uint8_t rc_name, i = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
-         i ? (rc_name = periph_rcc_acquire_enter(periph), 1) : 0; \
-         periph_rcc_acquire_exit(periph, rc_name), i--)
+#define PERIPH_RCC_ACQUIRE_ATOMIC(rc_periph, rc_name)                \
+    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
+         _rc_cnt ? (rc_name = periph_rcc_acquire_enter(rc_periph), 1) : 0; \
+         periph_rcc_acquire_exit(rc_periph, rc_name), _rc_cnt--)
 
 /**
  * @brief Release the RCC lock for a peripheral module
@@ -36,10 +37,10 @@ extern "C" {
  * @note This macro will decrease the reference lock of that peripheral.
  *       You can get the value after the decrease from the `rc_name` local variable
  */
-#define PERIPH_RCC_RELEASE_ATOMIC(periph, rc_name)                \
-    for (uint8_t rc_name, i = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
-         i ? (rc_name = periph_rcc_release_enter(periph), 1) : 0; \
-         periph_rcc_release_exit(periph, rc_name), i--)
+#define PERIPH_RCC_RELEASE_ATOMIC(rc_periph, rc_name)                \
+    for (uint8_t rc_name, _rc_cnt = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
+         _rc_cnt ? (rc_name = periph_rcc_release_enter(rc_periph), 1) : 0; \
+         periph_rcc_release_exit(rc_periph, rc_name), _rc_cnt--)
 
 /**
  * @brief A simplified version of `PERIPH_RCC_ACQUIRE/RELEASE_ATOMIC`, without a reference count
@@ -47,9 +48,9 @@ extern "C" {
  * @note User code protected by this macro should be as short as possible, because it's a critical section
  */
 #define PERIPH_RCC_ATOMIC()                   \
-    for (int i = 1, __DECLARE_RCC_ATOMIC_ENV; \
-         i ? (periph_rcc_enter(), 1) : 0;     \
-         periph_rcc_exit(), i--)
+    for (int _rc_cnt = 1, __DECLARE_RCC_ATOMIC_ENV; \
+         _rc_cnt ? (periph_rcc_enter(), 1) : 0;     \
+         periph_rcc_exit(), _rc_cnt--)
 
 /** @cond */
 // The following functions are not intended to be used directly by the developers
@@ -68,6 +69,24 @@ void periph_rcc_exit(void);
 /*************************************************************************************************************
  * @note The following APIs are no longer supported since ESP32P4, please use the RCC lock macros instead.
  *************************************************************************************************************/
+// allow the following targets to use the legacy periph_module_xyz APIs, to maintain backward compatibility,
+// because periph_module_xyz is also used outside of the ESP-IDF
+#if defined(CONFIG_IDF_TARGET_ESP32)   || \
+    defined(CONFIG_IDF_TARGET_ESP32S2) || \
+    defined(CONFIG_IDF_TARGET_ESP32S3) || \
+    defined(CONFIG_IDF_TARGET_ESP32C2) || \
+    defined(CONFIG_IDF_TARGET_ESP32C3) || \
+    defined(CONFIG_IDF_TARGET_ESP32C6) || \
+    defined(CONFIG_IDF_TARGET_ESP32H2)
+#define __PERIPH_CTRL_ALLOW_LEGACY_API
+#endif
+
+#ifdef __PERIPH_CTRL_ALLOW_LEGACY_API
+#define __PERIPH_CTRL_DEPRECATE_ATTR
+#else
+#define __PERIPH_CTRL_DEPRECATE_ATTR __attribute__((deprecated("This function is not functional on "CONFIG_IDF_TARGET)))
+#endif
+
 /**
  * @brief Enable peripheral module by un-gating the clock and de-asserting the reset signal.
  *
@@ -77,6 +96,7 @@ void periph_rcc_exit(void);
  *       @c periph_module_disable() has to be called the same number of times,
  *       in order to put the peripheral into disabled state.
  */
+__PERIPH_CTRL_DEPRECATE_ATTR
 void periph_module_enable(periph_module_t periph);
 
 /**
@@ -88,6 +108,7 @@ void periph_module_enable(periph_module_t periph);
  *       @c periph_module_disable() has to be called the same number of times,
  *       in order to put the peripheral into disabled state.
  */
+__PERIPH_CTRL_DEPRECATE_ATTR
 void periph_module_disable(periph_module_t periph);
 
 /**
@@ -97,6 +118,7 @@ void periph_module_disable(periph_module_t periph);
  *
  * @note Calling this function does not enable or disable the clock for the module.
  */
+__PERIPH_CTRL_DEPRECATE_ATTR
 void periph_module_reset(periph_module_t periph);
 
 /**
@@ -130,6 +152,8 @@ void wifi_module_enable(void);
  * @note Calling this function will only disable Wi-Fi module.
  */
 void wifi_module_disable(void);
+
+#undef __PERIPH_CTRL_DEPRECATE_ATTR
 
 #ifdef __cplusplus
 }

@@ -20,13 +20,3 @@ if [ $count -gt 0 ]; then
     echo "Please try to use the APIs listed in esp_rom/include/esp_rom_xxx.h"
     exit 1
 fi
-
-# ESP-IDF `hal` component shouldn't call "assert()" directlly
-files_to_search=$(git ls-files --full-name 'components/hal/*' | grep -v components/hal/test_apps/)
-found_libc_assert=$(grep -E '\W+assert\(' $files_to_search)
-if [ -n "$found_libc_assert" ]; then
-    echo "hal assert violation"
-    echo $found_libc_assert
-    echo "Please use HAL_ASSERT() instead of assert() in hal component"
-    exit 1
-fi

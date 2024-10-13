@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,12 +33,20 @@ const static char *TAG = "CACHE_TEST";
 #define TEST_OFFSET       0x100000
 #if CONFIG_IDF_TARGET_ESP32S2
 #define TEST_SYNC_START   (SOC_DPORT_CACHE_ADDRESS_LOW + TEST_OFFSET)
+#define TEST_SYNC_SIZE    CONFIG_ESP32S2_DATA_CACHE_SIZE
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define TEST_SYNC_START   (SOC_DRAM0_CACHE_ADDRESS_LOW + TEST_OFFSET)
+#define TEST_SYNC_SIZE    CONFIG_ESP32S3_DATA_CACHE_SIZE
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define TEST_SYNC_START   (SOC_DRAM_PSRAM_ADDRESS_LOW + TEST_OFFSET)
+#define TEST_SYNC_SIZE    CONFIG_CACHE_L2_CACHE_SIZE
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define TEST_SYNC_START   (SOC_DRAM_PSRAM_ADDRESS_LOW + TEST_OFFSET)
+#define TEST_SYNC_SIZE    CONFIG_CACHE_L1_CACHE_SIZE
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEST_SYNC_START   (SOC_DRAM_PSRAM_ADDRESS_LOW + TEST_OFFSET)
+#define TEST_SYNC_SIZE    CONFIG_CACHE_L1_CACHE_SIZE
 #endif
-#define TEST_SYNC_SIZE    0x8000
 
 #define RECORD_TIME_PREPARE()   uint32_t __t1, __t2
 #define RECORD_TIME_START()     do {__t1 = esp_cpu_get_cycle_count();} while(0)
@@ -202,3 +210,8 @@ TEST_CASE("test cache msync work with PSRAM stack", "[cache]")
     free(stack_for_task);
 }
 #endif  //#if CONFIG_SPIRAM
+
+TEST_CASE("test cache msync unaligned flag not work with M2C direction", "[cache]")
+{
+    TEST_ASSERT(esp_cache_msync((void *)TEST_SYNC_START, 0x8000, ESP_CACHE_MSYNC_FLAG_UNALIGNED | ESP_CACHE_MSYNC_FLAG_DIR_M2C) == ESP_ERR_INVALID_ARG);
+}

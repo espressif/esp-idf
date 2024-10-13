@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -51,7 +51,10 @@ typedef union {
          */
         uint32_t uart0_sclk_div_num:8;
         /** uart0_sclk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0: XTAL, 1: fosc, 2: 80MHz
+         *  Configures the clock source of UART0.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t uart0_sclk_sel:2;
         /** uart0_sclk_en : R/W; bitpos: [22]; default: 1;
@@ -70,11 +73,11 @@ typedef union {
     struct {
         uint32_t reserved_0:1;
         /** uart0_mem_force_pu : R/W; bitpos: [1]; default: 1;
-         *  Set this bit to force power down UART0 memory.
+         *  Set this bit to force power up UART0 memory.
          */
         uint32_t uart0_mem_force_pu:1;
         /** uart0_mem_force_pd : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to force power up UART0 memory.
+         *  Set this bit to force power down UART0 memory.
          */
         uint32_t uart0_mem_force_pd:1;
         uint32_t reserved_3:29;
@@ -122,7 +125,10 @@ typedef union {
          */
         uint32_t uart1_sclk_div_num:8;
         /** uart1_sclk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0: XTAL, 1: fosc, 2: 80MHz
+         *  Configures the clock source of UART1.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t uart1_sclk_sel:2;
         /** uart1_sclk_en : R/W; bitpos: [22]; default: 1;
@@ -141,11 +147,11 @@ typedef union {
     struct {
         uint32_t reserved_0:1;
         /** uart1_mem_force_pu : R/W; bitpos: [1]; default: 1;
-         *  Set this bit to force power down UART1 memory.
+         *  Set this bit to force power up UART1 memory.
          */
         uint32_t uart1_mem_force_pu:1;
         /** uart1_mem_force_pd : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to force power up UART1 memory.
+         *  Set this bit to force power down UART1 memory.
          */
         uint32_t uart1_mem_force_pd:1;
         uint32_t reserved_3:29;
@@ -186,12 +192,15 @@ typedef union {
     struct {
         /** mspi_fast_div_num : R/W; bitpos: [7:0]; default: 0;
          *  Set as one within (0,1,2) to generate div1(default)/div2/div4 of low-speed
-         *  clock-source to drive clk_mspi_fast. Only avaiable whe the clck-source is a
+         *  clock-source to drive clk_mspi_fast. Only available when the clock-source is a
          *  low-speed clock-source such as XTAL/FOSC.
          */
         uint32_t mspi_fast_div_num:8;
         /** mspi_func_clk_sel : R/W; bitpos: [9:8]; default: 0;
-         *  set this field to select clock-source.
+         *  Configures the clock source for MSPI.\\
+         *  0(default): XTAL_CLK\\
+         *  1 RC_FAST_CLK\\
+         *  2: PLL_F480M_CLK\\
          */
         uint32_t mspi_func_clk_sel:2;
         /** mspi_func_clk_en : R/W; bitpos: [10]; default: 1;
@@ -212,7 +221,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** i2c_clk_en : R/W; bitpos: [0]; default: 1;
+        /** i2c_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable i2c apb clock
          */
         uint32_t i2c_clk_en:1;
@@ -243,11 +252,13 @@ typedef union {
          */
         uint32_t i2c_sclk_div_num:8;
         /** i2c_sclk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+         *  Configures the clock source of I2C.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
          */
         uint32_t i2c_sclk_sel:1;
         uint32_t reserved_21:1;
-        /** i2c_sclk_en : R/W; bitpos: [22]; default: 1;
+        /** i2c_sclk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable i2c function clock
          */
         uint32_t i2c_sclk_en:1;
@@ -261,7 +272,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** twai0_clk_en : R/W; bitpos: [0]; default: 1;
+        /** twai0_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable twai0 apb clock
          */
         uint32_t twai0_clk_en:1;
@@ -285,11 +296,13 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** twai0_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+         *  Configures the clock source of TWAI0.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
          */
         uint32_t twai0_func_clk_sel:1;
         uint32_t reserved_21:1;
-        /** twai0_func_clk_en : R/W; bitpos: [22]; default: 1;
+        /** twai0_func_clk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable twai0 function clock
          */
         uint32_t twai0_func_clk_en:1;
@@ -303,7 +316,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** twai1_clk_en : R/W; bitpos: [0]; default: 1;
+        /** twai1_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable twai1 apb clock
          */
         uint32_t twai1_clk_en:1;
@@ -327,11 +340,13 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** twai1_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+         *  Configures the clock source of TWAI1.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
          */
         uint32_t twai1_func_clk_sel:1;
         uint32_t reserved_21:1;
-        /** twai1_func_clk_en : R/W; bitpos: [22]; default: 1;
+        /** twai1_func_clk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable twai1 function clock
          */
         uint32_t twai1_func_clk_en:1;
@@ -367,7 +382,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rmt_clk_en : R/W; bitpos: [0]; default: 1;
+        /** rmt_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable rmt apb clock
          */
         uint32_t rmt_clk_en:1;
@@ -398,10 +413,13 @@ typedef union {
          */
         uint32_t rmt_sclk_div_num:8;
         /** rmt_sclk_sel : R/W; bitpos: [21:20]; default: 1;
-         *  set this field to select clock-source. 0: XTAL, 1(default):  FOSC, 2: 80MHz
+         *  Configures the clock source of RMT.\\
+         *  0: XTAL_CLK\\
+         *  1 (default): RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t rmt_sclk_sel:2;
-        /** rmt_sclk_en : R/W; bitpos: [22]; default: 1;
+        /** rmt_sclk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable rmt function clock
          */
         uint32_t rmt_sclk_en:1;
@@ -410,12 +428,31 @@ typedef union {
     uint32_t val;
 } pcr_rmt_sclk_conf_reg_t;
 
+/** Type of rmt_pd_ctrl register
+ *  RMT power control register
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:1;
+        /** rmt_mem_force_pu : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to force power up RMT memory.
+         */
+        uint32_t rmt_mem_force_pu:1;
+        /** rmt_mem_force_pd : R/W; bitpos: [2]; default: 1;
+         *  Set this bit to force power down RMT memory.
+         */
+        uint32_t rmt_mem_force_pd:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_rmt_pd_ctrl_reg_t;
+
 /** Type of ledc_conf register
  *  LEDC configuration register
  */
 typedef union {
     struct {
-        /** ledc_clk_en : R/W; bitpos: [0]; default: 1;
+        /** ledc_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable ledc apb clock
          */
         uint32_t ledc_clk_en:1;
@@ -439,11 +476,13 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** ledc_sclk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
-         *  80MHz, 2: FOSC, 3: XTAL.
+         *  Configures the clock source of LEDC.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t ledc_sclk_sel:2;
-        /** ledc_sclk_en : R/W; bitpos: [22]; default: 1;
+        /** ledc_sclk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable ledc function clock
          */
         uint32_t ledc_sclk_en:1;
@@ -451,6 +490,25 @@ typedef union {
     };
     uint32_t val;
 } pcr_ledc_sclk_conf_reg_t;
+
+/** Type of ledc_pd_ctrl register
+ *  LEDC power control register
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:1;
+        /** ledc_mem_force_pu : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to force power up LEDC memory.
+         */
+        uint32_t ledc_mem_force_pu:1;
+        /** ledc_mem_force_pd : R/W; bitpos: [2]; default: 1;
+         *  Set this bit to force power down LEDC memory.
+         */
+        uint32_t ledc_mem_force_pd:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_ledc_pd_ctrl_reg_t;
 
 /** Type of timergroup0_conf register
  *  TIMERGROUP0 configuration register
@@ -474,7 +532,7 @@ typedef union {
          */
         uint32_t tg0_timer0_ready:1;
         /** tg0_timer1_ready : RO; bitpos: [4]; default: 1;
-         *  reserved
+         *  Query this field after reset timer_group0 timer1 module
          */
         uint32_t tg0_timer1_ready:1;
         uint32_t reserved_5:27;
@@ -489,8 +547,10 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** tg0_timer_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of general-purpose timers in Timer Group 0.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t tg0_timer_clk_sel:2;
         /** tg0_timer_clk_en : R/W; bitpos: [22]; default: 1;
@@ -509,8 +569,10 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** tg0_wdt_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of WDT in Timer Group 0.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t tg0_wdt_clk_sel:2;
         /** tg0_wdt_clk_en : R/W; bitpos: [22]; default: 1;
@@ -544,7 +606,7 @@ typedef union {
          */
         uint32_t tg1_timer0_ready:1;
         /** tg1_timer1_ready : RO; bitpos: [4]; default: 1;
-         *  reserved
+         *  Query this field after reset timer_group1 timer1 module
          */
         uint32_t tg1_timer1_ready:1;
         uint32_t reserved_5:27;
@@ -559,8 +621,10 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** tg1_timer_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of general-purpose timers in Timer Group 1.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t tg1_timer_clk_sel:2;
         /** tg1_timer_clk_en : R/W; bitpos: [22]; default: 1;
@@ -579,8 +643,10 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** tg1_wdt_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of WDT in Timer Group 1.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t tg1_wdt_clk_sel:2;
         /** tg1_wdt_clk_en : R/W; bitpos: [22]; default: 1;
@@ -621,7 +687,9 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** systimer_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: FOSC.
+         *  Configures the clock source of System Timer.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
          */
         uint32_t systimer_func_clk_sel:1;
         uint32_t reserved_21:1;
@@ -639,7 +707,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** i2s_clk_en : R/W; bitpos: [0]; default: 1;
+        /** i2s_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable i2s apb clock
          */
         uint32_t i2s_clk_en:1;
@@ -674,11 +742,14 @@ typedef union {
          */
         uint32_t i2s_tx_clkm_div_num:8;
         /** i2s_tx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3:
-         *  I2S_MCLK_in.
+         *  Configures the clock source of I2S TX.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: PLL_F240M_CLK\\
+         *  2: PLL_F160M_CLK\\
+         *  3: I2S_MCLK_in\\
          */
         uint32_t i2s_tx_clkm_sel:2;
-        /** i2s_tx_clkm_en : R/W; bitpos: [22]; default: 1;
+        /** i2s_tx_clkm_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable i2s_tx function clock
          */
         uint32_t i2s_tx_clkm_en:1;
@@ -728,15 +799,21 @@ typedef union {
          */
         uint32_t i2s_rx_clkm_div_num:8;
         /** i2s_rx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.
+         *  Configures the clock source of I2S RX.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: PLL_F240M_CLK\\
+         *  2: PLL_F160M_CLK\\
+         *  3: I2S_MCLK_in\\
          */
         uint32_t i2s_rx_clkm_sel:2;
-        /** i2s_rx_clkm_en : R/W; bitpos: [22]; default: 1;
+        /** i2s_rx_clkm_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable i2s_rx function clock
          */
         uint32_t i2s_rx_clkm_en:1;
         /** i2s_mclk_sel : R/W; bitpos: [23]; default: 0;
-         *  This field is used to select master-clock. 0(default): clk_i2s_rx, 1: clk_i2s_tx
+         *  Configures to select master clock.\\
+         *  0 (default): I2S_TX_CLK\\
+         *  1: I2S_RX_CLK\\
          */
         uint32_t i2s_mclk_sel:1;
         uint32_t reserved_24:8;
@@ -787,7 +864,7 @@ typedef union {
          *  Set 0 to reset function_register of saradc module
          */
         uint32_t saradc_rst_en:1;
-        /** saradc_reg_clk_en : R/W; bitpos: [2]; default: 1;
+        /** saradc_reg_clk_en : R/W; bitpos: [2]; default: 0;
          *  Set 1 to enable saradc apb clock
          */
         uint32_t saradc_reg_clk_en:1;
@@ -818,11 +895,13 @@ typedef union {
          */
         uint32_t saradc_clkm_div_num:8;
         /** saradc_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of SAR ADC.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t saradc_clkm_sel:2;
-        /** saradc_clkm_en : R/W; bitpos: [22]; default: 1;
+        /** saradc_clkm_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable saradc function clock
          */
         uint32_t saradc_clkm_en:1;
@@ -838,11 +917,13 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** tsens_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0(default): FOSC, 1: XTAL.
+         *  Configures the clock source of the temperature sensor.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
          */
         uint32_t tsens_clk_sel:1;
         uint32_t reserved_21:1;
-        /** tsens_clk_en : R/W; bitpos: [22]; default: 1;
+        /** tsens_clk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable tsens clock
          */
         uint32_t tsens_clk_en:1;
@@ -904,7 +985,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** pcnt_clk_en : R/W; bitpos: [0]; default: 1;
+        /** pcnt_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable pcnt clock
          */
         uint32_t pcnt_clk_en:1;
@@ -926,7 +1007,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** etm_clk_en : R/W; bitpos: [0]; default: 1;
+        /** etm_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable etm clock
          */
         uint32_t etm_clk_en:1;
@@ -948,7 +1029,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** pwm_clk_en : R/W; bitpos: [0]; default: 1;
+        /** pwm_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable pwm clock
          */
         uint32_t pwm_clk_en:1;
@@ -976,11 +1057,13 @@ typedef union {
          */
         uint32_t pwm_div_num:8;
         /** pwm_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): do not select anyone clock, 1:
-         *  160MHz, 2: XTAL, 3: FOSC.
+         *  Configures the clock source of MCPWM.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F160M_CLK\\
          */
         uint32_t pwm_clkm_sel:2;
-        /** pwm_clkm_en : R/W; bitpos: [22]; default: 1;
+        /** pwm_clkm_en : R/W; bitpos: [22]; default: 0;
          *  set this field as 1 to activate pwm clkm.
          */
         uint32_t pwm_clkm_en:1;
@@ -994,7 +1077,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** parl_clk_en : R/W; bitpos: [0]; default: 1;
+        /** parl_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable parl apb clock
          */
         uint32_t parl_clk_en:1;
@@ -1021,11 +1104,14 @@ typedef union {
          */
         uint32_t parl_clk_rx_div_num:16;
         /** parl_clk_rx_sel : R/W; bitpos: [17:16]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
-         *  user clock from pad.
+         *  Configures the clock source of Paraller IO RX\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F240M_CLK\\
+         *  3: Use the clock from chip pin\\
          */
         uint32_t parl_clk_rx_sel:2;
-        /** parl_clk_rx_en : R/W; bitpos: [18]; default: 1;
+        /** parl_clk_rx_en : R/W; bitpos: [18]; default: 0;
          *  Set 1 to enable parl rx clock
          */
         uint32_t parl_clk_rx_en:1;
@@ -1048,11 +1134,14 @@ typedef union {
          */
         uint32_t parl_clk_tx_div_num:16;
         /** parl_clk_tx_sel : R/W; bitpos: [17:16]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
-         *  user clock from pad.
+         *  Configures the clock source of Paraller IO RX\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F240M_CLK\\
+         *  3: Use the clock from chip pin\\
          */
         uint32_t parl_clk_tx_sel:2;
-        /** parl_clk_tx_en : R/W; bitpos: [18]; default: 1;
+        /** parl_clk_tx_en : R/W; bitpos: [18]; default: 0;
          *  Set 1 to enable parl tx clock
          */
         uint32_t parl_clk_tx_en:1;
@@ -1070,7 +1159,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** pvt_monitor_clk_en : R/W; bitpos: [0]; default: 1;
+        /** pvt_monitor_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable apb clock of pvt module
          */
         uint32_t pvt_monitor_clk_en:1;
@@ -1106,12 +1195,13 @@ typedef union {
         uint32_t pvt_monitor_func_clk_div_num:4;
         uint32_t reserved_4:16;
         /** pvt_monitor_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz drived by SPLL
-         *  divided by 3.
+         *  Configures the clock source of PVT MONITOR.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: PLL_F160M_CLK\\
          */
         uint32_t pvt_monitor_func_clk_sel:1;
         uint32_t reserved_21:1;
-        /** pvt_monitor_func_clk_en : R/W; bitpos: [22]; default: 1;
+        /** pvt_monitor_func_clk_en : R/W; bitpos: [22]; default: 0;
          *  Set 1 to enable source clock of pvt sitex
          */
         uint32_t pvt_monitor_func_clk_en:1;
@@ -1171,8 +1261,11 @@ typedef union {
          */
         uint32_t spi2_clkm_div_num:8;
         /** spi2_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
-         *  reserved.
+         *  Configures the clock source of SPI2.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: PLL_F160M_CLK\\
+         *  2: RC_FAST_CLK\\
+         *  3: PLL_F120M_CLK\\
          */
         uint32_t spi2_clkm_sel:2;
         /** spi2_clkm_en : R/W; bitpos: [22]; default: 1;
@@ -1189,7 +1282,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** aes_clk_en : R/W; bitpos: [0]; default: 1;
+        /** aes_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable aes clock
          */
         uint32_t aes_clk_en:1;
@@ -1211,7 +1304,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sha_clk_en : R/W; bitpos: [0]; default: 1;
+        /** sha_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable sha clock
          */
         uint32_t sha_clk_en:1;
@@ -1233,7 +1326,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rsa_clk_en : R/W; bitpos: [0]; default: 1;
+        /** rsa_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable rsa clock
          */
         uint32_t rsa_clk_en:1;
@@ -1255,15 +1348,15 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rsa_mem_pd : R/W; bitpos: [0]; default: 0;
+        /** rsa_mem_pd : R/W; bitpos: [0]; default: 1;
          *  Set this bit to power down rsa internal memory.
          */
         uint32_t rsa_mem_pd:1;
-        /** rsa_mem_force_pu : R/W; bitpos: [1]; default: 1;
+        /** rsa_mem_force_pu : R/W; bitpos: [1]; default: 0;
          *  Set this bit to force power up rsa internal memory
          */
         uint32_t rsa_mem_force_pu:1;
-        /** rsa_mem_force_pd : R/W; bitpos: [2]; default: 0;
+        /** rsa_mem_force_pd : R/W; bitpos: [2]; default: 1;
          *  Set this bit to force power down rsa internal memory.
          */
         uint32_t rsa_mem_force_pd:1;
@@ -1277,7 +1370,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ecc_clk_en : R/W; bitpos: [0]; default: 1;
+        /** ecc_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable ecc clock
          */
         uint32_t ecc_clk_en:1;
@@ -1299,15 +1392,15 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ecc_mem_pd : R/W; bitpos: [0]; default: 0;
+        /** ecc_mem_pd : R/W; bitpos: [0]; default: 1;
          *  Set this bit to power down ecc internal memory.
          */
         uint32_t ecc_mem_pd:1;
-        /** ecc_mem_force_pu : R/W; bitpos: [1]; default: 1;
+        /** ecc_mem_force_pu : R/W; bitpos: [1]; default: 0;
          *  Set this bit to force power up ecc internal memory
          */
         uint32_t ecc_mem_force_pu:1;
-        /** ecc_mem_force_pd : R/W; bitpos: [2]; default: 0;
+        /** ecc_mem_force_pd : R/W; bitpos: [2]; default: 1;
          *  Set this bit to force power down ecc internal memory.
          */
         uint32_t ecc_mem_force_pd:1;
@@ -1321,7 +1414,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ds_clk_en : R/W; bitpos: [0]; default: 1;
+        /** ds_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable ds clock
          */
         uint32_t ds_clk_en:1;
@@ -1343,7 +1436,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** hmac_clk_en : R/W; bitpos: [0]; default: 1;
+        /** hmac_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable hmac clock
          */
         uint32_t hmac_clk_en:1;
@@ -1365,7 +1458,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ecdsa_clk_en : R/W; bitpos: [0]; default: 1;
+        /** ecdsa_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable ecdsa clock
          */
         uint32_t ecdsa_clk_en:1;
@@ -1407,8 +1500,10 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** iomux_func_clk_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0: do not select anyone clock, 1: 80MHz, 2:
-         *  FOSC, 3(default): XTAL.
+         *  Configures the clock source of IO MUX.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F80M_CLK\\
          */
         uint32_t iomux_func_clk_sel:2;
         /** iomux_func_clk_en : R/W; bitpos: [22]; default: 1;
@@ -1419,28 +1514,6 @@ typedef union {
     };
     uint32_t val;
 } pcr_iomux_clk_conf_reg_t;
-
-/** Type of mem_monitor_conf register
- *  MEM_MONITOR configuration register
- */
-typedef union {
-    struct {
-        /** mem_monitor_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable mem_monitor clock
-         */
-        uint32_t mem_monitor_clk_en:1;
-        /** mem_monitor_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset mem_monitor module
-         */
-        uint32_t mem_monitor_rst_en:1;
-        /** mem_monitor_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset mem_monitor module
-         */
-        uint32_t mem_monitor_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_mem_monitor_conf_reg_t;
 
 /** Type of regdma_conf register
  *  REGDMA configuration register
@@ -1465,7 +1538,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** trace_clk_en : R/W; bitpos: [0]; default: 1;
+        /** trace_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable trace clock
          */
         uint32_t trace_clk_en:1;
@@ -1483,7 +1556,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** assist_clk_en : R/W; bitpos: [0]; default: 1;
+        /** assist_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable assist clock
          */
         uint32_t assist_clk_en:1;
@@ -1509,7 +1582,15 @@ typedef union {
          *  Set 0 to reset cache module
          */
         uint32_t cache_rst_en:1;
-        uint32_t reserved_2:30;
+        /** cache_pu_en : R/W; bitpos: [2]; default: 1;
+         *  Set 0 to power up cache mem
+         */
+        uint32_t cache_pu_en:1;
+        /** cache_pd_en : R/W; bitpos: [3]; default: 0;
+         *  Set 0 to power down cache mem
+         */
+        uint32_t cache_pd_en:1;
+        uint32_t reserved_4:28;
     };
     uint32_t val;
 } pcr_cache_conf_reg_t;
@@ -1519,11 +1600,19 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:2;
-        /** modem_rst_en : R/W; bitpos: [2]; default: 0;
+        /** modem_apb_clk_en : R/W; bitpos: [0]; default: 1;
+         *  This field indicates if modem_apb clock is enable. 0: disable, 1: enable(default).
+         */
+        uint32_t modem_apb_clk_en:1;
+        /** modem_rst_en : R/W; bitpos: [1]; default: 0;
          *  Set this file as 1 to reset modem-subsystem.
          */
         uint32_t modem_rst_en:1;
+        /** modem_clk_en : R/W; bitpos: [2]; default: 1;
+         *  This field indicates if modem source clock is enable. 0: disable, 1:
+         *  enable(default).
+         */
+        uint32_t modem_clk_en:1;
         uint32_t reserved_3:29;
     };
     uint32_t val;
@@ -1553,18 +1642,13 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ls_div_num : HRO; bitpos: [7:0]; default: 0;
-         *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
-         *  clock-source such as XTAL/FOSC.
-         */
-        uint32_t ls_div_num:8;
-        /** hs_div_num : HRO; bitpos: [15:8]; default: 2;
-         *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
-         */
-        uint32_t hs_div_num:8;
+        uint32_t reserved_0:16;
         /** soc_clk_sel : R/W; bitpos: [17:16]; default: 0;
-         *  This field is used to select clock source. 0: XTAL, 1: FOSC, 2: 160M_PLL, 3:
-         *  240M_PLL.
+         *  Configures to select the clock source of HP_ROOT_CLK.\\
+         *  0 (default): XTAL_CLK\\
+         *  1: RC_FAST_CLK\\
+         *  2: PLL_F160M_CLK\\
+         *  2: PLL_F240M_CLK\\
          */
         uint32_t soc_clk_sel:2;
         uint32_t reserved_18:6;
@@ -1572,7 +1656,11 @@ typedef union {
          *  This field indicates the frequency(MHz) of XTAL.
          */
         uint32_t clk_xtal_freq:7;
-        uint32_t reserved_31:1;
+        /** cpu_dbgmd_clk_en : R/W; bitpos: [31]; default: 1;
+         *  This field indicates if cpu debug mode clock is enable. 0: disable, 1:
+         *  enable(default).
+         */
+        uint32_t cpu_dbgmd_clk_en:1;
     };
     uint32_t val;
 } pcr_sysclk_conf_reg_t;
@@ -1582,7 +1670,14 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:3;
+        /** cpuperiod_sel : HRO; bitpos: [1:0]; default: 1;
+         *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+         */
+        uint32_t cpuperiod_sel:2;
+        /** pll_freq_sel : HRO; bitpos: [2]; default: 1;
+         *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+         */
+        uint32_t pll_freq_sel:1;
         /** cpu_wait_mode_force_on : R/W; bitpos: [3]; default: 1;
          *  Set 1 to force cpu_waiti_clk enable.
          */
@@ -1603,8 +1698,8 @@ typedef union {
 typedef union {
     struct {
         /** cpu_div_num : R/W; bitpos: [7:0]; default: 0;
-         *  Set this field to generate clk_cpu drived by clk_hproot. The clk_cpu is
-         *  div1(default)/div2/div4 of clk_hproot. This field is only avaliable for low-speed
+         *  Set this field to generate clk_cpu derived by clk_hproot. The clk_cpu is
+         *  div1(default)/div2/div4 of clk_hproot. This field is only available for low-speed
          *  clock-source such as XTAL/FOSC, and should be used together with PCR_AHB_DIV_NUM.
          */
         uint32_t cpu_div_num:8;
@@ -1619,8 +1714,8 @@ typedef union {
 typedef union {
     struct {
         /** ahb_div_num : R/W; bitpos: [7:0]; default: 0;
-         *  Set this field to generate clk_ahb drived by clk_hproot. The clk_ahb is
-         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only avaliable for
+         *  Set this field to generate clk_ahb derived by clk_hproot. The clk_ahb is
+         *  div1(default)/div2/div4/div8 of clk_hproot. This field is only available for
          *  low-speed clock-source such as XTAL/FOSC, and should be used together with
          *  PCR_CPU_DIV_NUM.
          */
@@ -1646,7 +1741,7 @@ typedef union {
          */
         uint32_t apb_decrease_div_num:8;
         /** apb_div_num : R/W; bitpos: [15:8]; default: 0;
-         *  Set as one within (0,1,3) to generate clk_apb drived by clk_ahb. The clk_apb is
+         *  Set as one within (0,1,3) to generate clk_apb derived by clk_ahb. The clk_apb is
          *  div1(default)/div2/div4 of clk_ahb.
          */
         uint32_t apb_div_num:8;
@@ -1661,48 +1756,48 @@ typedef union {
 typedef union {
     struct {
         /** pll_240m_clk_en : R/W; bitpos: [0]; default: 1;
-         *  This field is used to open 240 MHz clock (div2 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 240 MHz clock (div2 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_240m_clk_en:1;
         /** pll_160m_clk_en : R/W; bitpos: [1]; default: 1;
-         *  This field is used to open 160 MHz clock (div3 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 160 MHz clock (div3 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_160m_clk_en:1;
         /** pll_120m_clk_en : R/W; bitpos: [2]; default: 1;
-         *  This field is used to open 120 MHz clock (div4 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 120 MHz clock (div4 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_120m_clk_en:1;
         /** pll_80m_clk_en : R/W; bitpos: [3]; default: 1;
-         *  This field is used to open 80 MHz clock (div6  of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 80 MHz clock (div6  of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_80m_clk_en:1;
         /** pll_60m_clk_en : R/W; bitpos: [4]; default: 1;
-         *  This field is used to open 60 MHz clock (div8 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 60 MHz clock (div8 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_60m_clk_en:1;
         /** pll_48m_clk_en : R/W; bitpos: [5]; default: 1;
-         *  This field is used to open 48 MHz clock (div10 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 48 MHz clock (div10 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_48m_clk_en:1;
         /** pll_40m_clk_en : R/W; bitpos: [6]; default: 1;
-         *  This field is used to open 40 MHz clock (div12 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 40 MHz clock (div12 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_40m_clk_en:1;
         /** pll_20m_clk_en : R/W; bitpos: [7]; default: 1;
-         *  This field is used to open 20 MHz clock (div24 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 20 MHz clock (div24 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_20m_clk_en:1;
         /** pll_12m_clk_en : R/W; bitpos: [8]; default: 1;
-         *  This field is used to open 12 MHz clock (div40 of SPLL) drived from SPLL. 0: close,
-         *  1: open(default). Only avaliable when high-speed clock-source SPLL is active.
+         *  This field is used to open 12 MHz clock (div40 of SPLL) derived from SPLL. 0: close,
+         *  1: open(default). Only available when high-speed clock-source SPLL is active.
          */
         uint32_t pll_12m_clk_en:1;
         uint32_t reserved_9:23;
@@ -1764,43 +1859,27 @@ typedef union {
     uint32_t val;
 } pcr_ctrl_clk_out_en_reg_t;
 
-/** Type of ctrl_tick_conf register
- *  TICK configuration register
- */
-typedef union {
-    struct {
-        /** xtal_tick_num : R/W; bitpos: [7:0]; default: 39;
-         *  ******* Description ***********
-         */
-        uint32_t xtal_tick_num:8;
-        /** fosc_tick_num : R/W; bitpos: [15:8]; default: 7;
-         *  ******* Description ***********
-         */
-        uint32_t fosc_tick_num:8;
-        /** tick_enable : R/W; bitpos: [16]; default: 1;
-         *  ******* Description ***********
-         */
-        uint32_t tick_enable:1;
-        /** rst_tick_cnt : R/W; bitpos: [17]; default: 0;
-         *  ******* Description ***********
-         */
-        uint32_t rst_tick_cnt:1;
-        uint32_t reserved_18:14;
-    };
-    uint32_t val;
-} pcr_ctrl_tick_conf_reg_t;
-
 /** Type of ctrl_32k_conf register
  *  32KHz clock configuration register
  */
 typedef union {
     struct {
-        /** 32k_sel : R/W; bitpos: [1:0]; default: 0;
-         *  This field indicates which one 32KHz clock will be used by timergroup. 0:
-         *  OSC32K(default), 1: XTAL32K, 2/3: 32KHz from pad GPIO0.
+        /** 32k_sel : R/W; bitpos: [2:0]; default: 0;
+         *  Configures the 32KHz clock for TIMER_GROUP.\\
+         *  0 (default): RC32K_CLK\\
+         *  1: XTAL32K_CLK\\
+         *  2: OSC_SLOW_CLK\\
+         *  3: RC_SLOW_CLK\\
+         *  4: RC_FAST_CLK\\
          */
-        uint32_t 32k_sel:2;
-        uint32_t reserved_2:30;
+        uint32_t clk_32k_sel:3;
+        uint32_t reserved_3:5;
+        /** fosc_tick_num : R/W; bitpos: [15:8]; default: 7;
+         *  When PCR_32K_SEL set as 4, This field PCR_FOSC_TICK_NUM is used to set the divider
+         *  number of fosc.
+         */
+        uint32_t fosc_tick_num:8;
+        uint32_t reserved_16:16;
     };
     uint32_t val;
 } pcr_ctrl_32k_conf_reg_t;
@@ -1854,12 +1933,16 @@ typedef union {
 } pcr_sram_power_conf_1_reg_t;
 
 /** Type of sec_conf register
- *  xxxx
+ *  Clock source configuration register for External Memory Encryption and Decryption
  */
 typedef union {
     struct {
         /** sec_clk_sel : R/W; bitpos: [1:0]; default: 0;
-         *  xxxx
+         *  Configures the clock source for the External Memory Encryption and Decryption
+         *  module.\\
+         *  0(default): XTAL_CLK\\
+         *  1 RC_FAST_CLK\\
+         *  2: PLL_F480M_CLK\\
          */
         uint32_t sec_clk_sel:2;
         /** sec_rst_en : R/W; bitpos: [2]; default: 0;
@@ -1871,13 +1954,39 @@ typedef union {
     uint32_t val;
 } pcr_sec_conf_reg_t;
 
-/** Type of bus_clk_update register
+/** Type of adc_dac_inv_phase_conf register
  *  xxxx
  */
 typedef union {
     struct {
-        /** bus_clock_update : R/W/WTC; bitpos: [0]; default: 0;
+        /** clk_rx_adc_inv_phase_ena : R/W; bitpos: [0]; default: 0;
          *  xxxx
+         */
+        uint32_t clk_rx_adc_inv_phase_ena:1;
+        /** clk_tx_dac_inv_phase_ena : R/W; bitpos: [1]; default: 0;
+         *  xxxx
+         */
+        uint32_t clk_tx_dac_inv_phase_ena:1;
+        /** clk_pwdet_adc_inv_phase_ena : R/W; bitpos: [2]; default: 0;
+         *  xxxx
+         */
+        uint32_t clk_pwdet_adc_inv_phase_ena:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_adc_dac_inv_phase_conf_reg_t;
+
+/** Type of bus_clk_update register
+ *  Configuration register for applying updated high-performance system clock sources
+ */
+typedef union {
+    struct {
+        /** bus_clock_update : R/W/WTC; bitpos: [0]; default: 0;
+         *  Configures whether or not to update configurations for CPU_CLK division, AHB_CLK
+         *  division and HP_ROOT_CLK clock source selection.\\
+         *  0: Not update configurations\\
+         *  1: Update configurations\\
+         *  This bit is automatically cleared when configurations have been updated.\\
          */
         uint32_t bus_clock_update:1;
         uint32_t reserved_1:31;
@@ -1886,16 +1995,18 @@ typedef union {
 } pcr_bus_clk_update_reg_t;
 
 /** Type of sar_clk_div register
- *  xxxx
+ *  SAR ADC clock divisor configuration register
  */
 typedef union {
     struct {
         /** sar2_clk_div_num : R/W; bitpos: [7:0]; default: 4;
-         *  xxxx
+         *  Configures the divisor for SAR ADC 2  clock to generate ADC analog control
+         *  signals.\\
          */
         uint32_t sar2_clk_div_num:8;
         /** sar1_clk_div_num : R/W; bitpos: [15:8]; default: 4;
-         *  xxxx
+         *  Configures the divisor for SAR ADC 1  clock to generate ADC analog control
+         *  signals.\\
          */
         uint32_t sar1_clk_div_num:8;
         uint32_t reserved_16:16;
@@ -1921,84 +2032,12 @@ typedef union {
     uint32_t val;
 } pcr_pwdet_sar_clk_conf_reg_t;
 
-/** Type of sdio_slave_conf register
- *  SDIO_SLAVE configuration register
- */
-typedef union {
-    struct {
-        /** sdio_slave_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable sdio_slave clock
-         */
-        uint32_t sdio_slave_clk_en:1;
-        /** sdio_slave_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset sdio_slave module
-         */
-        uint32_t sdio_slave_rst_en:1;
-        uint32_t reserved_2:30;
-    };
-    uint32_t val;
-} pcr_sdio_slave_conf_reg_t;
-
-/** Type of usb_otg_conf register
- *  USB_OTG configuration register
- */
-typedef union {
-    struct {
-        /** usb_otg_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable usb_otg bus clock
-         */
-        uint32_t usb_otg_clk_en:1;
-        /** usb_otg_adp_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset usb_otg core adp
-         */
-        uint32_t usb_otg_adp_rst_en:1;
-        /** usb_otg_misc_rst_en : R/W; bitpos: [2]; default: 0;
-         *  Set 0 to reset usb_otg misc
-         */
-        uint32_t usb_otg_misc_rst_en:1;
-        /** usb_otg_global_rst_en : R/W; bitpos: [3]; default: 0;
-         *  Set 0 to reset usb_otg module
-         */
-        uint32_t usb_otg_global_rst_en:1;
-        uint32_t reserved_4:28;
-    };
-    uint32_t val;
-} pcr_usb_otg_conf_reg_t;
-
-/** Type of usb_otg_clk_conf register
- *  USB_OTG func clk configuration register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:20;
-        /** usb_otg_phy_refclk_sel : R/W; bitpos: [20]; default: 1;
-         *  Set 1 to sel 12m pll clock, set 0 to sel pad clock
-         */
-        uint32_t usb_otg_phy_refclk_sel:1;
-        /** usb_otg_phy_refclk_en : R/W; bitpos: [21]; default: 1;
-         *  Set 1 to enable usb_otg_phy_refclk clock
-         */
-        uint32_t usb_otg_phy_refclk_en:1;
-        /** usb_otg_adp_clk_sel : R/W; bitpos: [23:22]; default: 0;
-         *  Set 0 to sel clock from gpio_matrix, set 1 to sel osc32k, set 2 to sel xtal32k, set
-         *  3 to sel ext32k
-         */
-        uint32_t usb_otg_adp_clk_sel:2;
-        /** usb_otg_adp_clk_en : R/W; bitpos: [24]; default: 1;
-         *  Set 1 to enable usb_otg_adp_clk clock
-         */
-        uint32_t usb_otg_adp_clk_en:1;
-        uint32_t reserved_25:7;
-    };
-    uint32_t val;
-} pcr_usb_otg_clk_conf_reg_t;
-
 /** Type of bs_conf register
  *  BS configuration register
  */
 typedef union {
     struct {
-        /** bs_clk_en : R/W; bitpos: [0]; default: 1;
+        /** bs_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable bs clock
          */
         uint32_t bs_clk_en:1;
@@ -2029,6 +2068,25 @@ typedef union {
     };
     uint32_t val;
 } pcr_bs_func_conf_reg_t;
+
+/** Type of bs_pd_ctrl register
+ *  BS power control register
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:1;
+        /** bs_mem_force_pu : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to force power up bs memory.
+         */
+        uint32_t bs_mem_force_pu:1;
+        /** bs_mem_force_pd : R/W; bitpos: [2]; default: 1;
+         *  Set this bit to force power down bs memory.
+         */
+        uint32_t bs_mem_force_pd:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_bs_pd_ctrl_reg_t;
 
 /** Type of timergroup_wdt_conf register
  *  TIMERGROUP_WDT configuration register
@@ -2061,7 +2119,11 @@ typedef union {
          *  Set 0 to reset timer_group1 xtal clock domain
          */
         uint32_t tg1_xtal_rst_en:1;
-        uint32_t reserved_2:30;
+        /** tg0_xtal_clk_en : R/W; bitpos: [2]; default: 1;
+         *  Set 1 to enable tg0 xtal clock
+         */
+        uint32_t tg0_xtal_clk_en:1;
+        uint32_t reserved_3:29;
     };
     uint32_t val;
 } pcr_timergroup_xtal_conf_reg_t;
@@ -2071,7 +2133,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** km_clk_en : R/W; bitpos: [0]; default: 1;
+        /** km_clk_en : R/W; bitpos: [0]; default: 0;
          *  Set 1 to enable km clock
          */
         uint32_t km_clk_en:1;
@@ -2087,6 +2149,126 @@ typedef union {
     };
     uint32_t val;
 } pcr_km_conf_reg_t;
+
+/** Type of km_pd_ctrl register
+ *  Key Manager power control register
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:1;
+        /** km_mem_force_pu : R/W; bitpos: [1]; default: 0;
+         *  Set this bit to force power up KM memory.
+         */
+        uint32_t km_mem_force_pu:1;
+        /** km_mem_force_pd : R/W; bitpos: [2]; default: 1;
+         *  Set this bit to force power down KM memory.
+         */
+        uint32_t km_mem_force_pd:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_km_pd_ctrl_reg_t;
+
+/** Type of tcm_mem_monitor_conf register
+ *  TCM_MEM_MONITOR configuration register
+ */
+typedef union {
+    struct {
+        /** tcm_mem_monitor_clk_en : R/W; bitpos: [0]; default: 1;
+         *  Set 1 to enable tcm_mem_monitor clock
+         */
+        uint32_t tcm_mem_monitor_clk_en:1;
+        /** tcm_mem_monitor_rst_en : R/W; bitpos: [1]; default: 0;
+         *  Set 0 to reset tcm_mem_monitor module
+         */
+        uint32_t tcm_mem_monitor_rst_en:1;
+        /** tcm_mem_monitor_ready : RO; bitpos: [2]; default: 1;
+         *  Query this field after reset tcm_mem_monitor module
+         */
+        uint32_t tcm_mem_monitor_ready:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_tcm_mem_monitor_conf_reg_t;
+
+/** Type of psram_mem_monitor_conf register
+ *  PSRAM_MEM_MONITOR configuration register
+ */
+typedef union {
+    struct {
+        /** psram_mem_monitor_clk_en : R/W; bitpos: [0]; default: 1;
+         *  Set 1 to enable psram_mem_monitor clock
+         */
+        uint32_t psram_mem_monitor_clk_en:1;
+        /** psram_mem_monitor_rst_en : R/W; bitpos: [1]; default: 0;
+         *  Set 0 to reset psram_mem_monitor module
+         */
+        uint32_t psram_mem_monitor_rst_en:1;
+        /** psram_mem_monitor_ready : RO; bitpos: [2]; default: 1;
+         *  Query this field after reset psram_mem_monitor module
+         */
+        uint32_t psram_mem_monitor_ready:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_psram_mem_monitor_conf_reg_t;
+
+/** Type of reset_event_bypass register
+ *  reset event bypass backdoor configuration register
+ */
+typedef union {
+    struct {
+        /** reset_event_bypass_apm : R/W; bitpos: [0]; default: 0;
+         *  This field is used to control reset event relationship for
+         *  tee_reg/apm_reg/hp_system_reg. 1: tee_reg/apm_reg/hp_system_reg will only be reset
+         *  by power-reset. some reset event will be bypass. 0: tee_reg/apm_reg/hp_system_reg
+         *  will not only be reset by power-reset, but also some reset event.
+         */
+        uint32_t reset_event_bypass_apm:1;
+        /** reset_event_bypass : R/W; bitpos: [1]; default: 1;
+         *  This field is used to control reset event relationship for system-bus. 1: system
+         *  bus (including arbiter/router) will only be reset by power-reset. some reset event
+         *  will be bypass. 0: system bus (including arbiter/router) will not only be reset by
+         *  power-reset, but also some reset event.
+         */
+        uint32_t reset_event_bypass:1;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} pcr_reset_event_bypass_reg_t;
+
+/** Type of hpcore_0_pd_ctrl register
+ *  HP CORE0 power control register
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:1;
+        /** hpcore_0_mem_force_pu : R/W; bitpos: [1]; default: 1;
+         *  Set this bit to force power up HP CORE0 memory.
+         */
+        uint32_t hpcore_0_mem_force_pu:1;
+        /** hpcore_0_mem_force_pd : R/W; bitpos: [2]; default: 0;
+         *  Set this bit to force power down HP CORE0 memory.
+         */
+        uint32_t hpcore_0_mem_force_pd:1;
+        uint32_t reserved_3:29;
+    };
+    uint32_t val;
+} pcr_hpcore_0_pd_ctrl_reg_t;
+
+/** Type of clock_gate register
+ *  PCR clock gating configure register
+ */
+typedef union {
+    struct {
+        /** clk_en : R/W; bitpos: [0]; default: 0;
+         *  Set this bit as 1 to force on clock gating.
+         */
+        uint32_t clk_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} pcr_clock_gate_reg_t;
 
 
 /** Group: Frequency Statistics Register */
@@ -2109,13 +2291,28 @@ typedef union {
 } pcr_sysclk_freq_query_0_reg_t;
 
 
+/** Group: FPGA Debug Register */
+/** Type of fpga_debug register
+ *  fpga debug register
+ */
+typedef union {
+    struct {
+        /** fpga_debug : R/W; bitpos: [31:0]; default: 4294967295;
+         *  Only used in fpga debug.
+         */
+        uint32_t fpga_debug:32;
+    };
+    uint32_t val;
+} pcr_fpga_debug_reg_t;
+
+
 /** Group: Version Register */
 /** Type of date register
  *  Date register.
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36720976;
+        /** date : R/W; bitpos: [27:0]; default: 36774528;
          *  PCR version information.
          */
         uint32_t date:28;
@@ -2124,8 +2321,15 @@ typedef union {
     uint32_t val;
 } pcr_date_reg_t;
 
+/**
+ * @brief The struct of I2C configuration registers
+ */
+typedef struct {
+    pcr_i2c_conf_reg_t i2c_conf;
+    pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
+} pcr_i2c_reg_t;
 
-typedef struct pcr_dev_t {
+typedef struct {
     volatile pcr_uart0_conf_reg_t uart0_conf;
     volatile pcr_uart0_sclk_conf_reg_t uart0_sclk_conf;
     volatile pcr_uart0_pd_ctrl_reg_t uart0_pd_ctrl;
@@ -2134,8 +2338,7 @@ typedef struct pcr_dev_t {
     volatile pcr_uart1_pd_ctrl_reg_t uart1_pd_ctrl;
     volatile pcr_mspi_conf_reg_t mspi_conf;
     volatile pcr_mspi_clk_conf_reg_t mspi_clk_conf;
-    volatile pcr_i2c_conf_reg_t i2c_conf;
-    volatile pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
+    volatile pcr_i2c_reg_t i2c[1];
     volatile pcr_twai0_conf_reg_t twai0_conf;
     volatile pcr_twai0_func_clk_conf_reg_t twai0_func_clk_conf;
     volatile pcr_twai1_conf_reg_t twai1_conf;
@@ -2143,8 +2346,10 @@ typedef struct pcr_dev_t {
     volatile pcr_uhci_conf_reg_t uhci_conf;
     volatile pcr_rmt_conf_reg_t rmt_conf;
     volatile pcr_rmt_sclk_conf_reg_t rmt_sclk_conf;
+    volatile pcr_rmt_pd_ctrl_reg_t rmt_pd_ctrl;
     volatile pcr_ledc_conf_reg_t ledc_conf;
     volatile pcr_ledc_sclk_conf_reg_t ledc_sclk_conf;
+    volatile pcr_ledc_pd_ctrl_reg_t ledc_pd_ctrl;
     volatile pcr_timergroup0_conf_reg_t timergroup0_conf;
     volatile pcr_timergroup0_timer_clk_conf_reg_t timergroup0_timer_clk_conf;
     volatile pcr_timergroup0_wdt_clk_conf_reg_t timergroup0_wdt_clk_conf;
@@ -2186,7 +2391,6 @@ typedef struct pcr_dev_t {
     volatile pcr_ecdsa_conf_reg_t ecdsa_conf;
     volatile pcr_iomux_conf_reg_t iomux_conf;
     volatile pcr_iomux_clk_conf_reg_t iomux_clk_conf;
-    volatile pcr_mem_monitor_conf_reg_t mem_monitor_conf;
     volatile pcr_regdma_conf_reg_t regdma_conf;
     volatile pcr_trace_conf_reg_t trace_conf;
     volatile pcr_assist_conf_reg_t assist_conf;
@@ -2201,24 +2405,28 @@ typedef struct pcr_dev_t {
     volatile pcr_sysclk_freq_query_0_reg_t sysclk_freq_query_0;
     volatile pcr_pll_div_clk_en_reg_t pll_div_clk_en;
     volatile pcr_ctrl_clk_out_en_reg_t ctrl_clk_out_en;
-    volatile pcr_ctrl_tick_conf_reg_t ctrl_tick_conf;
     volatile pcr_ctrl_32k_conf_reg_t ctrl_32k_conf;
     volatile pcr_sram_power_conf_0_reg_t sram_power_conf_0;
     volatile pcr_sram_power_conf_1_reg_t sram_power_conf_1;
     volatile pcr_sec_conf_reg_t sec_conf;
-    uint32_t reserved_140[2];
+    volatile pcr_adc_dac_inv_phase_conf_reg_t adc_dac_inv_phase_conf;
     volatile pcr_bus_clk_update_reg_t bus_clk_update;
     volatile pcr_sar_clk_div_reg_t sar_clk_div;
     volatile pcr_pwdet_sar_clk_conf_reg_t pwdet_sar_clk_conf;
-    volatile pcr_sdio_slave_conf_reg_t sdio_slave_conf;
-    volatile pcr_usb_otg_conf_reg_t usb_otg_conf;
-    volatile pcr_usb_otg_clk_conf_reg_t usb_otg_clk_conf;
     volatile pcr_bs_conf_reg_t bs_conf;
     volatile pcr_bs_func_conf_reg_t bs_func_conf;
+    volatile pcr_bs_pd_ctrl_reg_t bs_pd_ctrl;
     volatile pcr_timergroup_wdt_conf_reg_t timergroup_wdt_conf;
     volatile pcr_timergroup_xtal_conf_reg_t timergroup_xtal_conf;
     volatile pcr_km_conf_reg_t km_conf;
-    uint32_t reserved_174[930];
+    volatile pcr_km_pd_ctrl_reg_t km_pd_ctrl;
+    volatile pcr_tcm_mem_monitor_conf_reg_t tcm_mem_monitor_conf;
+    volatile pcr_psram_mem_monitor_conf_reg_t psram_mem_monitor_conf;
+    volatile pcr_reset_event_bypass_reg_t reset_event_bypass;
+    volatile pcr_hpcore_0_pd_ctrl_reg_t hpcore_0_pd_ctrl;
+    uint32_t reserved_17c[926];
+    volatile pcr_fpga_debug_reg_t fpga_debug;
+    volatile pcr_clock_gate_reg_t clock_gate;
     volatile pcr_date_reg_t date;
 } pcr_dev_t;
 

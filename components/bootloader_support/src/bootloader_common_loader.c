@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,9 +24,10 @@
 #include "bootloader_sha.h"
 #include "sys/param.h"
 #include "bootloader_flash_priv.h"
+#include "esp_rom_caps.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
-#define IS_MAX_REV_SET(max_chip_rev_full) (((max_chip_rev_full) != 65535) && ((max_chip_rev_full) != 0))
+#define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
 
 static const char* TAG = "boot_comm";
 
@@ -56,6 +57,31 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
     return bootloader_common_select_otadata(two_otadata, valid_two_otadata, true);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32
+esp_err_t bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full)
+{
+    esp_err_t err = ESP_OK;
+#ifndef CONFIG_IDF_ENV_FPGA
+    // Check whether the efuse block version satisfy the requirements of current image.
+    uint32_t revision = efuse_hal_blk_version();
+    uint32_t major_rev = revision / 100;
+    uint32_t minor_rev = revision % 100;
+    if (IS_FIELD_SET(min_rev_full) && !ESP_EFUSE_BLK_REV_ABOVE(revision, min_rev_full)) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev >= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    min_rev_full / 100, min_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+    // If burnt `disable_blk_version_major` bit, skip the max version check
+    if ((IS_FIELD_SET(max_rev_full) && (revision > max_rev_full) && !efuse_hal_get_disable_blk_version_major())) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev <= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    max_rev_full / 100, max_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+#endif
+    return err;
+}
+#endif  // !CONFIG_IDF_TARGET_ESP32
+
 esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
 {
     esp_err_t err = ESP_OK;
@@ -79,7 +105,7 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         }
         if (type == ESP_IMAGE_APPLICATION) {
             unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
+            if ((IS_FIELD_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
                 ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
                          max_rev / 100, max_rev % 100,
                          major_rev, minor_rev);
@@ -121,7 +147,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 #if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
 static uint32_t rtc_retain_mem_size(void) {
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#if CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC && !CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_IN_CRC
     /* A custom memory has been reserved by the user, do not consider this memory into CRC calculation as it may change without
      * the have the user updating the CRC. Return the offset of the custom field, which is equivalent to size of the structure
      * minus the size of everything after (including) `custom` */
@@ -212,7 +238,12 @@ void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, boo
 rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
 #ifdef BOOTLOADER_BUILD
+
+#if ESP_ROM_HAS_LP_ROM
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW)
+#else
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+#endif //ESP_ROM_HAS_LP_ROM
     static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
     return s_bootloader_retain_mem;
 #else
@@ -220,5 +251,6 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
     return &s_bootloader_retain_mem;
 #endif // !BOOTLOADER_BUILD
 }
+
 
 #endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM

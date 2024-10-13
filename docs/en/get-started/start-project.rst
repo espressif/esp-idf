@@ -1,6 +1,6 @@
-{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash", esp32p4="silicon revision v0.0, 2 MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256"}
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848"}
 
 Build the Project
 =================
@@ -72,7 +72,9 @@ Monitor the Output
 
 To check if "hello_world" is indeed running, type ``idf.py -p PORT monitor`` (Do not forget to replace PORT with your serial port name).
 
-This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` application::
+This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` application.
+
+.. code-block:: bash
 
     $ idf.py -p <PORT> monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
@@ -113,14 +115,13 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
     1. Exit the monitor.
     2. Go back to ``menuconfig``.
-    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ_SEL` to 26 MHz.
+    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ` to 26 MHz.
     4. After that, ``build and flash`` the application again.
 
     In the current version of ESP-IDF, main XTAL frequencies supported by {IDF_TARGET_NAME} are as follows:
 
     .. list::
 
-        :SOC_XTAL_SUPPORT_24M: - 24 MHz
         :SOC_XTAL_SUPPORT_26M: - 26 MHz
         :SOC_XTAL_SUPPORT_32M: - 32 MHz
         :SOC_XTAL_SUPPORT_40M: - 40 MHz
@@ -174,7 +175,7 @@ ESP-IDF supports Python 3.8 or newer. It is recommended to upgrade your operatin
 
     A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
 
-    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `ESP Component Registry <https://components.espressif.com>`_.
 
     .. only:: esp32
 

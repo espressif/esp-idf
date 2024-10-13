@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -24,6 +25,9 @@
 #include "unity.h"
 #include "memory_checks.h"
 
+#include "esp_heap_caps.h"
+#include "esp_random.h"
+
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "mbedtls/aes.h"
 #endif
@@ -32,7 +36,73 @@
 #include "esp_hmac.h"
 #endif
 
+extern void record_heap_free_sizes(void);
+extern int32_t get_heap_free_difference(const bool nvs_active_pool);
+
 static const char* TAG = "test_nvs";
+
+TEST_CASE("Kconfig option controls heap capability allocator for NVS", "[nvs_ram]")
+{
+    // number of keys used for test
+    const size_t max_key = 400;
+
+    char key_name[sizeof("keyXXXXX ")];
+    int32_t out_val = 0;
+    nvs_handle_t handle;
+
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_open("test_namespace1", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_erase_all(handle));
+    record_heap_free_sizes();
+
+    for(size_t i=0; i<max_key; i++) {
+        // prepare key name
+        sprintf(key_name, "key%05u", i);
+
+        TEST_ESP_OK(nvs_set_i32(handle, key_name, 666));
+        TEST_ESP_OK(nvs_commit(handle));
+    }
+
+    // after writing records, active pool should decrease while inactive should stay same
+    TEST_ASSERT_LESS_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    for(size_t i=0; i<max_key; i++) {
+        // prepare random key name
+        uint32_t key_num = esp_random();
+        key_num = key_num % max_key;
+        sprintf(key_name, "key%05lu", (uint32_t) key_num);
+
+        TEST_ESP_OK(nvs_get_i32(handle, key_name, &out_val));
+    }
+
+    // after reading records, no changes on heap are expected
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    TEST_ESP_OK(nvs_erase_all(handle));
+
+    // after erasing records, active pool should increase while inactive should stay same
+    TEST_ASSERT_GREATER_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit());
+
+    // after deinit, active pool should increase by space occupied by the page management while inactive should only slightly increase
+    TEST_ASSERT_GREATER_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_GREATER_OR_EQUAL_INT32(0, get_heap_free_difference(false));
+}
 
 TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
 {
@@ -58,7 +128,7 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
     nvs_close(handle);
     TEST_ESP_OK(nvs_flash_erase());
 
-    // exptected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
+    // expected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
     TEST_ESP_ERR(ESP_ERR_NVS_NOT_INITIALIZED, nvs_open("uninit_ns", NVS_READWRITE, &handle));
 
     // just to be sure it's deinitialized in case of error and not affecting other tests
@@ -97,12 +167,6 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 }
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED
-/* TODO: This test does not run in CI as the runner assigned has
- * flash encryption enabled by default. Enabling flash encryption
- * 'selects' NVS encryption; a new runner needs to be setup
- * for testing the HMAC NVS encryption scheme without flash encryption
- * enabled for this test.
- */
 TEST_CASE("test nvs encryption with HMAC-based scheme without toggling any config options", "[nvs_encr_hmac]")
 {
     nvs_handle_t handle;
@@ -593,29 +657,39 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     extern const char nvs_key_start[] asm("_binary_encryption_keys_bin_start");
     extern const char nvs_key_end[]   asm("_binary_encryption_keys_bin_end");
     extern const char nvs_data_sch0_start[] asm("_binary_partition_encrypted_bin_start");
+    extern const char nvs_data_sch0_end[] asm("_binary_partition_encrypted_bin_end");
 
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
 
     assert(key_part && "partition table must have a KEY partition");
-    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT_TRUE((nvs_key_end - nvs_key_start - 1) == key_part->erase_size);
 
     ESP_ERROR_CHECK(esp_partition_erase_range(key_part, 0, key_part->size));
 
-    for (int i = 0; i < key_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, SPI_FLASH_SEC_SIZE) );
+    for (int i = 0; i < key_part->size; i+= key_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, key_part->erase_size) );
     }
 
-    for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch0_start + i, SPI_FLASH_SEC_SIZE) );
+    const int content_size = nvs_data_sch0_end - nvs_data_sch0_start - 1;
+    TEST_ASSERT_TRUE((content_size % key_part->erase_size) == 0);
+
+    const int size_to_write = MIN(content_size, nvs_part->size);
+    for (int i = 0; i < size_to_write; i+= nvs_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch0_start + i, nvs_part->erase_size) );
     }
 
     err = nvs_flash_read_security_cfg(key_part, &xts_cfg);
 #elif CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
     extern const char nvs_data_sch1_start[]    asm("_binary_partition_encrypted_hmac_bin_start");
+    extern const char nvs_data_sch1_end[]    asm("_binary_partition_encrypted_hmac_bin_end");
 
-    for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch1_start + i, SPI_FLASH_SEC_SIZE) );
+    const int content_size = nvs_data_sch1_end - nvs_data_sch1_start - 1;
+    TEST_ASSERT_TRUE((content_size % nvs_part->erase_size) == 0);
+
+    const int size_to_write = MIN(content_size, nvs_part->size);
+    for (int i = 0; i < size_to_write; i+= nvs_part->erase_size) {
+        ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_sch1_start + i, nvs_part->erase_size) );
     }
 
     nvs_sec_scheme_t *scheme_cfg = nvs_flash_get_default_security_scheme();

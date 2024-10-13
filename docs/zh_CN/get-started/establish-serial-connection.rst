@@ -141,12 +141,12 @@
 
     {IDF_TARGET_NAME} 支持 USB 外设，无需外部 USB 至 UART 桥，即可烧录二进制文件。
 
-    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26"}
-    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27"}
+    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26", esp32p4="GPIO24/26"}
+    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27", esp32p4="GPIO24/26"}
 
     {IDF_TARGET_NAME} 上的 USB 使用 **{IDF_TARGET_USB_PIN_DP}** 作为 **D+**， **{IDF_TARGET_USB_PIN_DM}** 作为 **D-**。
 
-    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3 and not esp32p4
 
         .. note:: {IDF_TARGET_NAME} 仅支持 *USB CDC and JTAG*。
 
@@ -183,11 +183,33 @@
 
     idf.py -p PORT [-b BAUD] flash
 
-如需改变烧录器的波特率，请用需要的波特率代替 ``BAUD``。默认的波特率为 ``460800``。
+将 ``PORT`` 替换为 {IDF_TARGET_NAME} 开发板的串口名称。``-b`` 为可选参数，默认的波特率为 ``460800``。如需改变烧录器的波特率，请用需要的波特率代替 ``BAUD``。
+
+要查看串口名称，Windows 用户请参考 `check-port-on-windows`_，Linux 与 macOS 用户请参考 `check-port-on-linux-and-macos`_。
+
+例如，Windows 平台上串口名称为 ``COM3``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p COM3 -b 115200 flash
+
+Linux 平台上串口名称为 ``/dev/ttyUSB0``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p /dev/ttyUSB0 -b 115200 flash
+
+macOS 平台上串口名称为 ``/dev/cu.usbserial-1401``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p /dev/cu.usbserial-1401 -b 115200 flash
 
 .. note::
 
     如果设备不支持自动下载模式，则需要手动进入下载模式。请按住 ``BOOT`` 按钮，同时按一下 ``RESET`` 按钮。之后，松开 ``BOOT`` 按钮。
+
+.. _check-port-on-windows:
 
 在 Windows 上查看端口
 ---------------------
@@ -209,6 +231,8 @@
     :figclass: align-center
 
     Windows 设备管理器中 ESP-WROVER-KIT 的两个 USB 串行端口
+
+.. _check-port-on-linux-and-macos:
 
 在 Linux 和 macOS 上查看端口
 -----------------------------
@@ -276,25 +300,11 @@ Windows 和 Linux 操作系统
 
     在 Linux 操作系统中使用 PuTTY 设置串口通信参数
 
-然后，请检查 {IDF_TARGET_NAME} 是否有打印日志。如有，请在终端打开串口进行查看。这里的日志内容取决于加载到 {IDF_TARGET_NAME} 的应用程序，请参考 `输出示例`_。如果没有看到输出日志，请尝试重启开发板。
+然后，请检查 {IDF_TARGET_NAME} 是否有打印日志。如有，请在终端打开串口进行查看。这里的日志内容取决于加载到 {IDF_TARGET_NAME} 的应用程序，请参考 `输出示例`_。如果没有看到输出日志，请参考 `故障排除`_。
 
 .. 注解::
 
    请在验证完串口通信正常后，关闭串口终端。如果终端一直保持打开的状态，之后上传固件时将无法访问串口。
-
-.. 注解::
-
-   如果没有日志输出，请检查以下原因：
-
-   - {IDF_TARGET_NAME} 的供电是否正常
-   - 启动终端程序后，是否重置开发板
-   - 使用 `在 Windows 上查看端口`_ 与 `在 Linux 和 macOS 上查看端口`_ 中描述的方法，检查所选串口是否正确
-   - 其他程序是否正在使用该串口
-   - 对于 `Windows 和 Linux 操作系统`_ 中描述的串口终端程序，其选择的端口是否正确
-   - 串口终端程序中的串口设置是否适用于该应用程序
-   - 开发板上选择的 USB 连接器（UART）是否正确
-   - 应用程序是否会输出日志
-   - 是否禁用了日志输出（使用 :example:`hello world 示例 <get-started/hello_world>` 进行测试）
 
 macOS 操作系统
 ^^^^^^^^^^^^^^^^^
@@ -315,14 +325,29 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 
 将 ``device_name`` 替换为运行 ``ls /dev/cu.*`` 后出现的设备串口号。
 
-- **屏幕** 显示的日志即为所需内容。日志内容取决于加载到 {IDF_TARGET_NAME} 的应用程序，请参考 `输出示例`_。请使用 ``Ctrl-A + K`` 键退出当前 **屏幕** 会话。
+- **屏幕** 显示的日志即为所需内容。日志内容取决于加载到 {IDF_TARGET_NAME} 的应用程序，请参考 `输出示例`_。如果没有看到输出日志，请参考 `故障排除`_。请使用 ``Ctrl-A + K`` 键退出当前 **屏幕** 会话。
 
 .. 注解::
 
    请在验证完串口通信正常后，关闭 **当前屏幕会话**。如果直接关闭终端窗口而没有关闭 **屏幕**，之后上传固件时将无法访问串口。
 
+故障排除
+^^^^^^^^^^^^^^^
+
+如果没有日志输出，请检查以下原因：
+
+- {IDF_TARGET_NAME} 的供电是否正常
+- 启动终端程序后，是否重置开发板
+- 使用 `在 Windows 上查看端口`_ 与 `在 Linux 和 macOS 上查看端口`_ 中描述的方法，检查所选串口是否正确
+- 其他程序是否正在使用该串口
+- 串口终端程序中的串口设置是否适用于该应用程序
+- 应用程序是否会输出日志。具体来说，如果在 ``Component config`` > ``Log`` > ``Log Level`` > ``Default log verbosity (Info)`` 中设置为 ``No output``，则不会打印出任何日志。你可以在 ``menuconfig`` 中更改该设置。
+- 是否禁用了日志输出（使用 :example:`hello world 示例 <get-started/hello_world>` 进行测试）
+
 输出示例
 ^^^^^^^^^^^
+
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9", esp32c6="GPIO9", esp32h2="GPIO9", esp32p4="GPIO35"}
 
 以下是一个日志示例。如果没看到任何输出，请尝试重置开发板。
 
@@ -352,7 +377,7 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 
 .. 注解::
 
-   在某些串口接线方式下，在 {IDF_TARGET_NAME} 启动并开始打印串口日志前，需要在终端程序中禁用串口 RTS ＆ DTR 管脚。该问题仅存在于将 RTS ＆ DTR 管脚直接连接到 EN ＆ GPIO0 管脚上的情况，绝大多数开发板（包括乐鑫所有的开发板）都没有这个问题。更多详细信息，请参考 `esptool 文档`_。
+   在某些串口接线方式下，在 {IDF_TARGET_NAME} 启动并开始打印串口日志前，需要在终端程序中禁用串口 RTS ＆ DTR 管脚。该问题仅存在于将 RTS ＆ DTR 管脚直接连接到 EN ＆ {IDF_TARGET_STRAP_GPIO} 管脚上的情况，绝大多数开发板（包括乐鑫所有的开发板）都没有这个问题。更多详细信息，请参考 `esptool 文档`_。
 
 如在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
 

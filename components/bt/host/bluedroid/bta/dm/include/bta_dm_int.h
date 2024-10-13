@@ -57,11 +57,15 @@ enum {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     BTA_DM_API_CFG_COEX_ST_EVT,
 #endif
+    BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT,
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_PAGE_TO_SET_EVT,
     BTA_DM_API_PAGE_TO_GET_EVT,
     BTA_DM_API_SET_ACL_PKT_TYPES_EVT,
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT,
+#endif
 #endif
     BTA_DM_API_SET_AFH_CHANNELS_EVT,
 #if (SDP_INCLUDED == TRUE)
@@ -80,7 +84,7 @@ enum {
     BTA_DM_API_PIN_REPLY_EVT,
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
-    /* power manger events */
+    /* power manager events */
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
@@ -219,6 +223,9 @@ enum {
     BTA_DM_API_DTM_RX_START_EVT,
     BTA_DM_API_DTM_STOP_EVT,
     BTA_DM_API_BLE_CLEAR_ADV_EVT,
+    BTA_DM_API_SET_RPA_TIMEOUT_EVT,
+    BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT,
+    BTA_DM_API_SET_PRIVACY_MODE_EVT,
 #endif
     BTA_DM_MAX_EVT
 };
@@ -249,11 +256,13 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
+    tBT_DEVICE_TYPE     name_type; /* name for BLE, name for BT or name for BTDM */
 } tBTA_DM_API_SET_NAME;
 
 typedef struct {
-    BT_HDR              hdr;
+    BT_HDR                  hdr;
     tBTA_GET_DEV_NAME_CBACK *p_cback;
+    tBT_DEVICE_TYPE         name_type;
 } tBTA_DM_API_GET_NAME;
 
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
@@ -264,6 +273,14 @@ typedef struct {
     UINT8  status;
 } tBTA_DM_API_CFG_COEX_STATUS;
 #endif
+
+typedef struct {
+    BT_HDR    hdr;
+    UINT16    opcode;
+    UINT8    param_len;
+    UINT8     *p_param_buf;
+    tBTA_SEND_VENDOR_HCI_CMPL_CBACK *vendor_hci_cb;
+}tBTA_DM_API_SEND_VENDOR_HCI_CMD;
 
 /* data type for BTA_DM_API_CONFIG_EIR_EVT */
 typedef struct {
@@ -307,6 +324,15 @@ typedef struct {
     UINT16              pkt_types;
     tBTM_CMPL_CB        *set_acl_pkt_types_cb;
 } tBTA_DM_API_SET_ACL_PKT_TYPES;
+
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+/* data type for BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT8               key_size;
+    tBTM_CMPL_CB        *set_min_enc_key_size_cb;
+} tBTA_DM_API_SET_MIN_ENC_KEY_SIZE;
+#endif
 
 /* data type for BTA_DM_API_GET_REMOTE_NAME_EVT */
 typedef struct {
@@ -660,7 +686,7 @@ typedef struct {
     tBTA_DM_BLE_SEL_CBACK   *p_select_cback;
 } tBTA_DM_API_BLE_SET_BG_CONN_TYPE;
 
-/* set prefered BLE connection parameters for a device */
+/* set preferred BLE connection parameters for a device */
 typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 peer_bda;
@@ -760,6 +786,20 @@ typedef struct {
 typedef struct {
     BT_HDR      hdr;
 } tBTA_DM_APT_CLEAR_ADDR;
+
+typedef struct {
+    BT_HDR      hdr;
+    UINT16      rpa_timeout;
+    tBTA_SET_RPA_TIMEOUT_CMPL_CBACK  *p_set_rpa_timeout_cback;
+} tBTA_DM_API_SET_RPA_TIMEOUT;
+
+typedef struct {
+    BT_HDR      hdr;                                    // Event header
+    esp_bd_addr_t addr;                                 // Bluetooth device address
+    UINT8       addr_type;                              // Type of the address
+    UINT8       irk[PEER_IRK_LEN];                     // Identity Resolving Key (IRK)
+    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback; // Callback function pointer
+} tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST;
 
 /* set adv parameter for BLE advertising */
 typedef struct {
@@ -910,6 +950,14 @@ typedef struct {
     BT_HDR                  hdr;
     tBTA_CLEAR_ADV_CMPL_CBACK       *p_clear_adv_cback;
 } tBTA_DM_API_CLEAR_ADV;
+
+typedef struct {
+    BT_HDR                              hdr;
+    tBLE_ADDR_TYPE                      addr_type;
+    BD_ADDR                             addr;
+    UINT8                               privacy_mode;
+    tBTA_SET_PRIVACY_MODE_CMPL_CBACK    *p_cback;
+} tBTA_DM_API_SET_PRIVACY_MODE;
 
 #endif /* BLE_INCLUDED */
 
@@ -1162,12 +1210,16 @@ typedef union {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     tBTA_DM_API_CFG_COEX_STATUS cfg_coex_status;
 #endif
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD vendor_hci_cmd;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
     tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    tBTA_DM_API_SET_MIN_ENC_KEY_SIZE set_min_enc_key_size;
+#endif
 #if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_GET_REMOTE_NAME  get_rmt_name;
 #endif
@@ -1261,6 +1313,8 @@ typedef union {
     tBTA_DM_API_BLE_SET_DATA_LENGTH     ble_set_data_length;
     tBTA_DM_APT_SET_DEV_ADDR            set_addr;
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
+    tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
+    tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
     tBTA_DM_API_BLE_MULTI_ADV_ENB       ble_multi_adv_enb;
     tBTA_DM_API_BLE_MULTI_ADV_PARAM     ble_multi_adv_param;
     tBTA_DM_API_BLE_MULTI_ADV_DATA      ble_multi_adv_data;
@@ -1310,6 +1364,7 @@ typedef union {
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
     tBTA_DM_API_BLE_DTM_STOP        dtm_stop;
     tBTA_DM_API_CLEAR_ADV           ble_clear_adv;
+    tBTA_DM_API_SET_PRIVACY_MODE    ble_set_privacy_mode;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -1444,7 +1499,7 @@ typedef struct {
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
-    UINT8                       cur_av_count;       /* current AV connecions */
+    UINT8                       cur_av_count;       /* current AV connections */
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
@@ -1535,6 +1590,7 @@ typedef struct {
 #if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB     *p_di_db;     /* pointer to the DI discovery database */
 #endif  ///SDP_INCLUDED == TRUE
+    BOOLEAN             uuid_added;
     UINT8               di_num;         /* total local DI record number */
     UINT32              di_handle[BTA_DI_NUM_MAX];  /* local DI record handle, the first one is primary record */
 } tBTA_DM_DI_CB;
@@ -1676,11 +1732,15 @@ extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
 extern void bta_dm_cfg_coex_status(tBTA_DM_MSG *p_data);
 #endif
+extern void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data);
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+extern void bta_dm_set_min_enc_key_size (tBTA_DM_MSG *p_data);
+#endif
 #endif
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data);
@@ -1738,6 +1798,9 @@ extern void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data);
+#if SMP_INCLUDED == TRUE
+extern void bta_dm_co_security_param_init(void);
+#endif
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
 extern void bta_dm_cfg_filter_cond (tBTA_DM_MSG *p_data);
 extern void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data);
@@ -1751,7 +1814,9 @@ extern void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
-
+extern void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data);

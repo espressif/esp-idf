@@ -33,6 +33,8 @@ typedef int32_t INT32;
 
 #define BCM_STRCPY_S(x1,x2)      strcpy((x1),(x2))
 #define BCM_STRNCPY_S(x1,x2,x3)  strncpy((x1),(x2),(x3))
+#define BCM_STRCMP_S(x1,x2)      strcmp((x1),(x2))
+#define BCM_STRNCMP_S(x1,x2,x3)  strncmp((x1),(x2),(x3))
 
 /* READ WELL !!
 **
@@ -676,6 +678,11 @@ typedef void (BT_LOG_FUNC) (int trace_type, const char *fmt_str, ...);
 typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 #endif
 
+/* peer irk */
+#ifndef PEER_IRK_LEN
+#define PEER_IRK_LEN     16
+typedef uint8_t PEER_IRK[PEER_IRK_LEN];
+#endif
 // From bd.c
 
 /*****************************************************************************

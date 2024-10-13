@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -203,6 +203,33 @@ exit:
     return error;
 }
 
+static esp_event_handler_t meshcop_e_publish_handler = NULL;
+static void esp_openthread_meshcop_e_publish_handler(void *args, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (meshcop_e_publish_handler) {
+        meshcop_e_publish_handler(args, base, event_id, data);
+    }
+}
+
+static esp_event_handler_t meshcop_e_remove_handler = NULL;
+static void esp_openthread_meshcop_e_remove_handler(void *args, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (meshcop_e_remove_handler) {
+        meshcop_e_remove_handler(args, base, event_id, data);
+    }
+}
+
+void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool for_publish)
+{
+    if (for_publish) {
+        meshcop_e_publish_handler = handler;
+    } else if (!for_publish) {
+        meshcop_e_remove_handler = handler;
+    } else {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
+}
+
 static esp_err_t register_openthread_event_handlers(esp_netif_t *esp_netif)
 {
     ESP_RETURN_ON_ERROR(
@@ -229,6 +256,12 @@ static esp_err_t register_openthread_event_handlers(esp_netif_t *esp_netif)
     ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE,
                                                    esp_netif_action_leave_ip6_multicast_group, esp_netif),
                         OT_PLAT_LOG_TAG, "OpenThread interface leave ip6 multicast group event register failed");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_PUBLISH_MESHCOP_E,
+                                                   esp_openthread_meshcop_e_publish_handler, NULL),
+                        OT_PLAT_LOG_TAG, "OpenThread publish meshcop-e service event register failed");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_REMOVE_MESHCOP_E,
+                                                   esp_openthread_meshcop_e_remove_handler, NULL),
+                        OT_PLAT_LOG_TAG, "OpenThread remove meshcop-e service event register failed");
     return ESP_OK;
 }
 
@@ -244,6 +277,8 @@ static void unregister_openthread_event_handlers(void)
                                  esp_netif_action_join_ip6_multicast_group);
     esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE,
                                  esp_netif_action_leave_ip6_multicast_group);
+    esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_PUBLISH_MESHCOP_E, esp_openthread_meshcop_e_publish_handler);
+    esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_REMOVE_MESHCOP_E, esp_openthread_meshcop_e_remove_handler);
 }
 
 static esp_err_t openthread_netif_post_attach(esp_netif_t *esp_netif, void *args)
@@ -285,7 +320,7 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     otIp6SetAddressCallback(instance, process_thread_address, instance);
     otIp6SetReceiveCallback(instance, process_thread_receive, instance);
     otIp6SetReceiveFilterEnabled(instance, true);
-    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_DISABLED);
+    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_RLOC_ALOC_ONLY);
 
     s_openthread_netif_glue.event_fd = eventfd(0, 0);
     if (s_openthread_netif_glue.event_fd < 0) {

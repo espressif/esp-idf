@@ -1,0 +1,88 @@
+#include "sdkconfig.h"
+
+  /* DWARF 1 */
+  .debug              0 : { *(.debug) }
+  .line               0 : { *(.line) }
+  /* GNU DWARF 1 extensions */
+  .debug_srcinfo      0 : { *(.debug_srcinfo) }
+  .debug_sfnames      0 : { *(.debug_sfnames) }
+  /* DWARF 1.1 and DWARF 2 */
+  .debug_aranges      0 : { *(.debug_aranges) }
+  .debug_pubnames     0 : { *(.debug_pubnames) }
+  /* DWARF 2 */
+  .debug_info         0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev       0 : { *(.debug_abbrev) }
+  .debug_line         0 : { *(.debug_line) }
+  .debug_frame        0 : { *(.debug_frame) }
+  .debug_str          0 : { *(.debug_str) }
+  .debug_loc          0 : { *(.debug_loc) }
+  .debug_macinfo      0 : { *(.debug_macinfo) }
+  .debug_pubtypes     0 : { *(.debug_pubtypes) }
+  /* DWARF 3 */
+  .debug_ranges       0 : { *(.debug_ranges) }
+  /* SGI/MIPS DWARF 2 extensions */
+  .debug_weaknames    0 : { *(.debug_weaknames) }
+  .debug_funcnames    0 : { *(.debug_funcnames) }
+  .debug_typenames    0 : { *(.debug_typenames) }
+  .debug_varnames     0 : { *(.debug_varnames) }
+  /* GNU DWARF 2 extensions */
+  .debug_gnu_pubnames 0 : { *(.debug_gnu_pubnames) }
+  .debug_gnu_pubtypes 0 : { *(.debug_gnu_pubtypes) }
+  /* DWARF 4 */
+  .debug_types        0 : { *(.debug_types) }
+  /* DWARF 5 */
+  .debug_addr         0 : { *(.debug_addr) }
+  .debug_line_str     0 : { *(.debug_line_str) }
+  .debug_loclists     0 : { *(.debug_loclists) }
+  .debug_macro        0 : { *(.debug_macro) }
+  .debug_names        0 : { *(.debug_names) }
+  .debug_rnglists     0 : { *(.debug_rnglists) }
+  .debug_str_offsets  0 : { *(.debug_str_offsets) }
+
+  .comment 0 : { *(.comment) }
+  .note.GNU-stack 0: { *(.note.GNU-stack) }
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+  .riscv.attributes 0: { *(.riscv.attributes) }
+
+  /DISCARD/ :
+  {
+   /**
+    * Discarding .rela.* sections results in the following mapping:
+    * .rela.text.* -> .text.*
+    * .rela.data.* -> .data.*
+    * And so forth...
+    */
+   *(.rela.*)
+   *(.got .got.plt) /* TODO: GCC-382 */
+#if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+   *(.eh_frame_hdr)
+   *(.eh_frame)
+#endif // !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+  }
+#elif CONFIG_IDF_TARGET_ARCH_XTENSA
+/**
+ * .xt.prop and .xt.lit sections will be used by the debugger and disassembler
+ * to get more information about raw data present in the code.
+ * Indeed, it may be required to add some padding at some points in the code
+ * in order to align a branch/jump destination on a particular bound.
+ * Padding these instructions will generate null bytes that shall be
+ * interpreted as data, and not code by the debugger or disassembler.
+ * This section will only be present in the ELF file, not in the final binary
+ * For more details, check GCC-212
+ */
+  .xtensa.info 0: { *(.xtensa.info) }
+  .xt.prop 0 : { *(.xt.prop .xt.prop.* .gnu.linkonce.prop.*) }
+  .xt.lit 0 : { *(.xt.lit .xt.lit.* .gnu.linkonce.p.*) }
+
+  /DISCARD/ :
+  {
+   *(.fini)
+   *(.eh_frame_hdr)
+#if !CONFIG_COMPILER_CXX_EXCEPTIONS
+   *(.eh_frame)
+#endif // !CONFIG_COMPILER_CXX_EXCEPTIONS
+  }
+#else
+  #error "Target architecture is not supported!"
+#endif

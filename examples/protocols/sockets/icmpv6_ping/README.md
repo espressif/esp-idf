@@ -1,12 +1,12 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 
 # ICMPv6 Ping example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-The application first finds a network interface with an IPv6 address of **Global** or **Unique Local** type.
+The application first finds a network interface with an IPv6 address of **Global**, **Unique Local**, **Link Local** type.
 The application then creates a raw ICMPv6 socket and sends an ICMPv6 Echo Request to the destination ipv6 address, with the ipv6 address previously found over the interface as the source address. The application keeps waiting for an echo reply from the target destination.
 
 ## Hardware Required
@@ -31,6 +31,11 @@ Set the following parameters under "***Example Configuration***" Options:
 * Set the '**Destination IPV6 Address**' for the ICMPv6 ping example.
   **Destination IPV6 Address** can also be set manually by modifying the source file `icmpv6_ping.c`.
 * Press '**`s`**' to save and '**`q`**' to quit the menu.
+
+Network configuration:
+* Ensure the Wifi router you are connecting to has a global IPv6 address.
+  If not, this example will keep waiting for a *Router Advertisement* message.
+* To make this example work with the default settings set the global IPv6 of your router address as `2001:DB8::56AF:97FF:FEB3:2195`
 
 #### Build and execute as follows:
 ```sh

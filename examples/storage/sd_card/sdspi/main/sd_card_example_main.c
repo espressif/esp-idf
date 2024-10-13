@@ -13,12 +13,40 @@
 #include <sys/stat.h>
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
+#include "sd_test_io.h"
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#endif
 
 #define EXAMPLE_MAX_CHAR_SIZE    64
 
 static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
+
+#ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
+const char* names[] = {"CLK ", "MOSI", "MISO", "CS  "};
+const int pins[] = {CONFIG_EXAMPLE_PIN_CLK,
+                    CONFIG_EXAMPLE_PIN_MOSI,
+                    CONFIG_EXAMPLE_PIN_MISO,
+                    CONFIG_EXAMPLE_PIN_CS};
+
+const int pin_count = sizeof(pins)/sizeof(pins[0]);
+#if CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+const int adc_channels[] = {CONFIG_EXAMPLE_ADC_PIN_CLK,
+                            CONFIG_EXAMPLE_ADC_PIN_MOSI,
+                            CONFIG_EXAMPLE_ADC_PIN_MISO,
+                            CONFIG_EXAMPLE_ADC_PIN_CS};
+#endif //CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+
+pin_configuration_t config = {
+    .names = names,
+    .pins = pins,
+#if CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+    .adc_channels = adc_channels,
+#endif
+};
+#endif //CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
 
 // Pin assignments can be set in menuconfig, see "SD SPI Example Configuration" menu.
 // You can also change the pin assignments here by changing the following 4 lines.
@@ -95,6 +123,23 @@ void app_main(void)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
+    // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
+    // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
+    // and the internal LDO power supply, we need to initialize the power supply first.
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_IO_ID,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create a new on-chip LDO power control driver");
+        return;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
     spi_bus_config_t bus_cfg = {
         .mosi_io_num = PIN_NUM_MOSI,
         .miso_io_num = PIN_NUM_MISO,
@@ -103,6 +148,7 @@ void app_main(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
+
     ret = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize bus.");
@@ -125,6 +171,9 @@ void app_main(void)
         } else {
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                      "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
+#ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
+            check_sd_card_pins(&config, pin_count);
+#endif
         }
         return;
     }
@@ -166,6 +215,7 @@ void app_main(void)
     }
 
     // Format FATFS
+#ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
     ret = esp_vfs_fat_sdcard_format(mount_point, card);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
@@ -176,8 +226,9 @@ void app_main(void)
         ESP_LOGI(TAG, "file still exists");
         return;
     } else {
-        ESP_LOGI(TAG, "file doesnt exist, format done");
+        ESP_LOGI(TAG, "file doesn't exist, formatting done");
     }
+#endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
 
     const char *file_nihao = MOUNT_POINT"/nihao.txt";
     memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
@@ -199,4 +250,13 @@ void app_main(void)
 
     //deinitialize the bus after all devices are removed
     spi_bus_free(host.slot);
+
+    // Deinitialize the power control driver if it was used
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
+        return;
+    }
+#endif
 }

@@ -13,7 +13,7 @@ const static char *TAG = "cache_utils";
 esp_err_t test_set_buffer_dirty(intptr_t vaddr_start, size_t size)
 {
     if (((vaddr_start % 32) != 0) || ((size % 32) != 0)) {
-        ESP_LOGE(TAG, "addr not 4B aligned");
+        ESP_LOGE(TAG, "addr or size not 4B aligned");
         return ESP_ERR_INVALID_ARG;
     }
 

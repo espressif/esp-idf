@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "hal/key_mgr_types.h"
 
@@ -110,7 +112,7 @@ void key_mgr_hal_write_public_info(const uint8_t *public_info_buf, const size_t 
 void key_mgr_hal_read_public_info(uint8_t *public_info_buf, const size_t read_len);
 
 /* @brief Set the AES-XTS key length for the Key Manager */
-void key_mgr_hal_set_aes_xts_key_len(const esp_key_mgr_xts_aes_key_len_t key_len);
+void key_mgr_hal_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len);
 
 /* @brief Get the AES-XTS key length for the Key Manager */
 esp_key_mgr_xts_aes_key_len_t key_mgr_hal_get_aes_xts_key_len(void);

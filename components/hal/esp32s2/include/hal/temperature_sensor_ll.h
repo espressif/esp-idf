@@ -48,10 +48,27 @@ static inline void temperature_sensor_ll_enable(bool enable)
 /**
  * @brief Enable the clock
  */
-static inline void temperature_sensor_ll_clk_enable(bool enable)
+static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
     SENS.sar_tctrl2.tsens_clkgate_en = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_bus_clk_enable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_bus_clk_enable(__VA_ARGS__);} while(0)
+
+/**
+ * @brief Enable the clock
+ */
+static inline void temperature_sensor_ll_reset_module(void)
+{
+    SENS.sar_tctrl2.tsens_reset = 1;
+    SENS.sar_tctrl2.tsens_reset = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
  * @brief Choose the clock. No need to choose the clock source on ESP32-S2. ESP32-S2

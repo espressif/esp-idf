@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@ extern "C" {
 #define OSI_QUEUE_SEND_BACK          1
 #define OSI_QUEUE_SEND_OVERWRITE     2
 
-typedef struct {
+typedef struct wifi_osi_funcs_t {
     int32_t _version;
     bool (* _env_is_chip)(void);
     void (*_set_intr)(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio);
@@ -81,7 +81,7 @@ typedef struct {
     void (* _wifi_apb80m_release)(void);
     void (* _phy_disable)(void);
     void (* _phy_enable)(void);
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_ESP_WIFI_TARGET_ESP32
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
 #endif
@@ -113,7 +113,7 @@ typedef struct {
     int (* _get_random)(uint8_t *buf, size_t len);
     int (* _get_time)(void *t);
     unsigned long (* _random)(void);
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_WIFI_TARGET_ESP32
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(unsigned int level, const char* tag, const char* format, ...);
@@ -149,12 +149,12 @@ typedef struct {
     int (* _coex_schm_process_restart)(void);
     int (* _coex_schm_register_cb)(int, int (* cb)(int));
     int (* _coex_register_start_cb)(int (* cb)(void));
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     void (* _regdma_link_set_write_wait_content)(void *, uint32_t, uint32_t);
     void * (* _sleep_retention_find_link_by_id)(int);
-    int (* _sleep_retention_entries_create)(const void *, int, int, int);
-    void (* _sleep_retention_entries_destroy)(int);
 #endif
+    int (*_coex_schm_flexible_period_set)(uint8_t);
+    uint8_t (*_coex_schm_flexible_period_get)(void);
     int32_t _magic;
 } wifi_osi_funcs_t;
 

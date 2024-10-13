@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -650,20 +650,62 @@ extern "C" {
  *  BLOCK1 data register $n.
  */
 #define EFUSE_RD_MAC_SPI_SYS_2_REG (DR_REG_EFUSE_BASE + 0x4c)
-/** EFUSE_MAC_SPI_RESERVED : RO; bitpos: [13:0]; default: 0;
- *  Reserved.
+/** EFUSE_ACTIVE_HP_DBIAS : RO; bitpos: [4:0]; default: 0;
+ *  Stores the active hp dbias.
  */
-#define EFUSE_MAC_SPI_RESERVED    0x00003FFFU
-#define EFUSE_MAC_SPI_RESERVED_M  (EFUSE_MAC_SPI_RESERVED_V << EFUSE_MAC_SPI_RESERVED_S)
-#define EFUSE_MAC_SPI_RESERVED_V  0x00003FFFU
-#define EFUSE_MAC_SPI_RESERVED_S  0
-/** EFUSE_SPI_PAD_CONF_1 : RO; bitpos: [31:14]; default: 0;
+#define EFUSE_ACTIVE_HP_DBIAS    0x0000001FU
+#define EFUSE_ACTIVE_HP_DBIAS_M  (EFUSE_ACTIVE_HP_DBIAS_V << EFUSE_ACTIVE_HP_DBIAS_S)
+#define EFUSE_ACTIVE_HP_DBIAS_V  0x0000001FU
+#define EFUSE_ACTIVE_HP_DBIAS_S  0
+/** EFUSE_ACTIVE_LP_DBIAS : RO; bitpos: [9:5]; default: 0;
+ *  Stores the active lp dbias.
+ */
+#define EFUSE_ACTIVE_LP_DBIAS    0x0000001FU
+#define EFUSE_ACTIVE_LP_DBIAS_M  (EFUSE_ACTIVE_LP_DBIAS_V << EFUSE_ACTIVE_LP_DBIAS_S)
+#define EFUSE_ACTIVE_LP_DBIAS_V  0x0000001FU
+#define EFUSE_ACTIVE_LP_DBIAS_S  5
+/** EFUSE_LSLP_HP_DBG : RO; bitpos: [11:10]; default: 0;
+ *  Stores the lslp hp dbg.
+ */
+#define EFUSE_LSLP_HP_DBG    0x00000003U
+#define EFUSE_LSLP_HP_DBG_M  (EFUSE_LSLP_HP_DBG_V << EFUSE_LSLP_HP_DBG_S)
+#define EFUSE_LSLP_HP_DBG_V  0x00000003U
+#define EFUSE_LSLP_HP_DBG_S  10
+/** EFUSE_LSLP_HP_DBIAS : RO; bitpos: [15:12]; default: 0;
+ *  Stores the lslp hp dbias.
+ */
+#define EFUSE_LSLP_HP_DBIAS    0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_M  (EFUSE_LSLP_HP_DBIAS_V << EFUSE_LSLP_HP_DBIAS_S)
+#define EFUSE_LSLP_HP_DBIAS_V  0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_S  12
+/** EFUSE_DSLP_LP_DBG : RO; bitpos: [18:16]; default: 0;
+ *  Stores the dslp lp dbg.
+ */
+#define EFUSE_DSLP_LP_DBG    0x00000007U
+#define EFUSE_DSLP_LP_DBG_M  (EFUSE_DSLP_LP_DBG_V << EFUSE_DSLP_LP_DBG_S)
+#define EFUSE_DSLP_LP_DBG_V  0x00000007U
+#define EFUSE_DSLP_LP_DBG_S  16
+/** EFUSE_DSLP_LP_DBIAS : RO; bitpos: [22:19]; default: 0;
+ *  Stores the dslp lp dbias.
+ */
+#define EFUSE_DSLP_LP_DBIAS    0x0000000FU
+#define EFUSE_DSLP_LP_DBIAS_M  (EFUSE_DSLP_LP_DBIAS_V << EFUSE_DSLP_LP_DBIAS_S)
+#define EFUSE_DSLP_LP_DBIAS_V  0x0000000FU
+#define EFUSE_DSLP_LP_DBIAS_S  19
+/** EFUSE_DBIAS_VOL_GAP : RO; bitpos: [27:23]; default: 0;
+ *  Stores the hp and lp dbias vol gap.
+ */
+#define EFUSE_DBIAS_VOL_GAP    0x0000001FU
+#define EFUSE_DBIAS_VOL_GAP_M  (EFUSE_DBIAS_VOL_GAP_V << EFUSE_DBIAS_VOL_GAP_S)
+#define EFUSE_DBIAS_VOL_GAP_V  0x0000001FU
+#define EFUSE_DBIAS_VOL_GAP_S  23
+/** EFUSE_SPI_PAD_CONF_1 : RO; bitpos: [31:28]; default: 0;
  *  Stores the first part of SPI_PAD_CONF.
  */
-#define EFUSE_SPI_PAD_CONF_1    0x0003FFFFU
+#define EFUSE_SPI_PAD_CONF_1    0x0000000FU
 #define EFUSE_SPI_PAD_CONF_1_M  (EFUSE_SPI_PAD_CONF_1_V << EFUSE_SPI_PAD_CONF_1_S)
-#define EFUSE_SPI_PAD_CONF_1_V  0x0003FFFFU
-#define EFUSE_SPI_PAD_CONF_1_S  14
+#define EFUSE_SPI_PAD_CONF_1_V  0x0000000FU
+#define EFUSE_SPI_PAD_CONF_1_S  28
 
 /** EFUSE_RD_MAC_SPI_SYS_3_REG register
  *  BLOCK1 data register $n.

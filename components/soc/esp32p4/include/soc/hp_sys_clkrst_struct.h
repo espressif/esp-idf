@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -2859,10 +2859,7 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_dbg_ch1_sel:8;
-        /** reg_dbg_ch2_sel : R/W; bitpos: [23:16]; default: 255;
-         *  Reserved
-         */
-        uint32_t reg_dbg_ch2_sel:8;
+        uint32_t reserved_16:8;
         /** reg_dbg_ch0_div_num : R/W; bitpos: [31:24]; default: 3;
          *  Reserved
          */
@@ -2880,10 +2877,7 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_dbg_ch1_div_num:8;
-        /** reg_dbg_ch2_div_num : R/W; bitpos: [15:8]; default: 3;
-         *  Reserved
-         */
-        uint32_t reg_dbg_ch2_div_num:8;
+        uint32_t reserved_8:8;
         /** reg_dbg_ch0_en : R/W; bitpos: [16]; default: 0;
          *  Reserved
          */
@@ -2892,11 +2886,7 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_dbg_ch1_en:1;
-        /** reg_dbg_ch2_en : R/W; bitpos: [18]; default: 0;
-         *  Reserved
-         */
-        uint32_t reg_dbg_ch2_en:1;
-        uint32_t reserved_19:13;
+        uint32_t reserved_18:14;
     };
     uint32_t val;
 } hp_sys_clkrst_dbg_clk_ctrl1_reg_t;

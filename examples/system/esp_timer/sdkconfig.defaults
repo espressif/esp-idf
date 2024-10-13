@@ -1,3 +1,4 @@
+# With this option enabled, esp_timer_dump() prints more data about timers in the output log
 CONFIG_ESP_TIMER_PROFILING=y
 
 # NEWLIB_NANO_FORMAT is enabled by default on ESP32-C2

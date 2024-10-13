@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,21 +48,20 @@ FORCE_INLINE_ATTR void esp_core_dump_replace_sp(void* new_sp, core_dump_stack_co
     xthal_window_spill();
 
     /* Backup the special registers PS, WindowBase and WindowStart. We will need to restore them later */
-    asm volatile ("mov %0, sp \n" \
-                  "mov %1, a0 \n" \
-                  "rsr.ps %2 \n"\
-                  "rsr.windowbase %3 \n"\
-                  "rsr.windowstart %4 \n"\
-                : "=r"(old_ctx->sp),
-                  "=r"(old_ctx->a0),
-                  "=r"(old_ctx->ps),
-                  "=r"(old_ctx->windowbase),
-                  "=r"(old_ctx->windowstart) :);
+    asm volatile("mov %0, sp \n" \
+                 "mov %1, a0 \n" \
+                 "rsr.ps %2 \n"\
+                 "rsr.windowbase %3 \n"\
+                 "rsr.windowstart %4 \n"\
+                 : "=r"(old_ctx->sp),
+                 "=r"(old_ctx->a0),
+                 "=r"(old_ctx->ps),
+                 "=r"(old_ctx->windowbase),
+                 "=r"(old_ctx->windowstart) :);
 
     /* Set the new stack */
     SET_STACK(new_sp);
 }
-
 
 /**
  * @brief Restore the stack pointer that was returned when calling `esp_core_dump_replace_sp()` function.
@@ -74,23 +73,23 @@ FORCE_INLINE_ATTR void esp_core_dump_restore_sp(core_dump_stack_context_t* old_c
     /* Start by disabling WindowOverflowEnable bit from PS to make sure we won't get a Window Overflow exception
      * restoring WindowBase and WindowStart registers */
     const uint32_t ps_woe = old_ctx->ps & ~(PS_WOE_MASK);
-    asm volatile ( \
-        "wsr.ps %0 \n"\
-        "rsync \n"\
-        "wsr.windowbase %1 \n"\
-        "rsync \n"\
-        "wsr.windowstart %2 \n"\
-        "rsync \n"\
-        "mov sp, %3 \n" \
-        "mov a0, %4 \n" \
-        "wsr.ps %5 \n"\
-        "rsync \n"\
-        :: "r"(ps_woe),
-           "r"(old_ctx->windowbase),
-           "r"(old_ctx->windowstart),
-           "r"(old_ctx->sp),
-           "r"(old_ctx->a0),
-           "r"(old_ctx->ps));
+    asm volatile(\
+                 "wsr.ps %0 \n"\
+                 "rsync \n"\
+                 "wsr.windowbase %1 \n"\
+                 "rsync \n"\
+                 "wsr.windowstart %2 \n"\
+                 "rsync \n"\
+                 "mov sp, %3 \n" \
+                 "mov a0, %4 \n" \
+                 "wsr.ps %5 \n"\
+                 "rsync \n"\
+                 :: "r"(ps_woe),
+                 "r"(old_ctx->windowbase),
+                 "r"(old_ctx->windowstart),
+                 "r"(old_ctx->sp),
+                 "r"(old_ctx->a0),
+                 "r"(old_ctx->ps));
 }
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,50 +16,68 @@ extern "C" {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:1;
+        /** systimer_clk_fo : R/W; bitpos: [0]; default: 0;
+         *  systimer clock force on
+         */
+        uint32_t systimer_clk_fo:1;
         /** etm_en : R/W; bitpos: [1]; default: 0;
-         *  enable systimer's etm task and event
+         *  Configures whether or not to enable generation of ETM events.\\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t etm_en:1;
         uint32_t reserved_2:20;
         /** target2_work_en : R/W; bitpos: [22]; default: 0;
-         *  target2 work enable
+         *  Configures whether or not to enable COMP2.\\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t target2_work_en:1;
         /** target1_work_en : R/W; bitpos: [23]; default: 0;
-         *  target1 work enable
+         *  Configures whether or not to enable COMP1. See details in SYSTIMER_TARGET2_WORK_EN.
          */
         uint32_t target1_work_en:1;
         /** target0_work_en : R/W; bitpos: [24]; default: 0;
-         *  target0 work enable
+         *  Configures whether or not to enable COMP0. See details in SYSTIMER_TARGET2_WORK_EN.
          */
         uint32_t target0_work_en:1;
         /** timer_unit1_core1_stall_en : R/W; bitpos: [25]; default: 1;
-         *  If timer unit1 is stalled when core1 stalled
+         *  Configures whether or not UNIT1 is stalled when CORE1 is stalled. \\
+         *  0: UNIT1 is not stalled. \\
+         *  1: UNIT1 is stalled.\\
          */
         uint32_t timer_unit1_core1_stall_en:1;
         /** timer_unit1_core0_stall_en : R/W; bitpos: [26]; default: 1;
-         *  If timer unit1 is stalled when core0 stalled
+         *  Configures whether or not UNIT1 is stalled when CORE0 is stalled. See details in
+         *  SYSTIMER_TIMER_UNIT1_CORE1_STALL_EN.
          */
         uint32_t timer_unit1_core0_stall_en:1;
         /** timer_unit0_core1_stall_en : R/W; bitpos: [27]; default: 0;
-         *  If timer unit0 is stalled when core1 stalled
+         *  Configures whether or not UNIT0 is stalled when CORE1 is stalled. See details in
+         *  SYSTIMER_TIMER_UNIT1_CORE1_STALL_EN.
          */
         uint32_t timer_unit0_core1_stall_en:1;
         /** timer_unit0_core0_stall_en : R/W; bitpos: [28]; default: 0;
-         *  If timer unit0 is stalled when core0 stalled
+         *  Configures whether or not UNIT0 is stalled when CORE0 is stalled. See details in
+         *  SYSTIMER_TIMER_UNIT1_CORE1_STALL_EN.
          */
         uint32_t timer_unit0_core0_stall_en:1;
         /** timer_unit1_work_en : R/W; bitpos: [29]; default: 0;
-         *  timer unit1 work enable
+         *  Configures whether or not to enable UNIT1. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t timer_unit1_work_en:1;
         /** timer_unit0_work_en : R/W; bitpos: [30]; default: 1;
-         *  timer unit0 work enable
+         *  Configures whether or not to enable UNIT0. \\
+         *  0: Disable\\
+         *  1: Enable\\
          */
         uint32_t timer_unit0_work_en:1;
         /** clk_en : R/W; bitpos: [31]; default: 0;
-         *  register file clk gating
+         *  Configures register clock gating. \\
+         *  0: Only enable needed clock for register read or write operations. \\
+         *  1: Register clock is always enabled for read and write operations. \\
          */
         uint32_t clk_en:1;
     };
@@ -68,394 +86,188 @@ typedef union {
 
 
 /** Group: SYSTEM TIMER UNIT0 CONTROL AND CONFIGURATION REGISTER */
-/** Type of unit0_op register
- *  system timer unit0 value update register
+/** Type of unit_op register
+ *  Read unit value to registers
  */
 typedef union {
     struct {
         uint32_t reserved_0:29;
-        /** timer_unit0_value_valid : R/SS/WTC; bitpos: [29]; default: 0;
-         *  timer value is sync and valid
+        /** timer_unit_value_valid : R/SS/WTC; bitpos: [29]; default: 0;
+         *  Represents unit value is synchronized and valid.
          */
-        uint32_t timer_unit0_value_valid:1;
-        /** timer_unit0_update : WT; bitpos: [30]; default: 0;
-         *  update timer_unit0
+        uint32_t timer_unit_value_valid:1;
+        /** timer_unit_update : WT; bitpos: [30]; default: 0;
+         *  Configures whether or not to update timer unit, i.e., reads the unit count value
+         *  to SYSTIMER_TIMER_UNIT0_VALUE_HI and SYSTIMER_TIMER_UNIT0_VALUE_LO. \\
+         *  0: No effect\\
+         *  1: Update timer UNIT0 \\
          */
-        uint32_t timer_unit0_update:1;
+        uint32_t timer_unit_update:1;
         uint32_t reserved_31:1;
     };
     uint32_t val;
-} systimer_unit0_op_reg_t;
+} systimer_unit_op_reg_t;
 
-/** Type of unit0_load_hi register
- *  system timer unit0 value high load register
+/** Type of unit_load_hi register
+ *  High 20 bits to be loaded to UNIT0
  */
 typedef union {
     struct {
-        /** timer_unit0_load_hi : R/W; bitpos: [19:0]; default: 0;
-         *  timer unit0 load high 20 bits
+        /** timer_unit_load_hi : R/W; bitpos: [19:0]; default: 0;
+         *  Configures the value to be loaded to UNIT0, high 20 bits.
          */
-        uint32_t timer_unit0_load_hi:20;
+        uint32_t timer_unit_load_hi:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} systimer_unit0_load_hi_reg_t;
+} systimer_unit_load_hi_reg_t;
 
-/** Type of unit0_load_lo register
- *  system timer unit0 value low load register
+/** Type of unit_load_lo register
+ *  Low 32 bits to be loaded to UNIT0
  */
 typedef union {
     struct {
-        /** timer_unit0_load_lo : R/W; bitpos: [31:0]; default: 0;
-         *  timer unit0 load low 32 bits
+        /** timer_unit_load_lo : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the value to be loaded to UNIT0, low 32 bits.
          */
-        uint32_t timer_unit0_load_lo:32;
+        uint32_t timer_unit_load_lo:32;
     };
     uint32_t val;
-} systimer_unit0_load_lo_reg_t;
+} systimer_unit_load_lo_reg_t;
 
-/** Type of unit0_value_hi register
- *  system timer unit0 value high register
+/** Type of unit_value_hi register
+ *  UNIT0 value, high 20 bits
  */
 typedef union {
     struct {
-        /** timer_unit0_value_hi : RO; bitpos: [19:0]; default: 0;
-         *  timer read value high 20bits
+        /** timer_unit_value_hi : RO; bitpos: [19:0]; default: 0;
+         *  Represents UNIT0 read value, high 20 bits.
          */
-        uint32_t timer_unit0_value_hi:20;
+        uint32_t timer_unit_value_hi:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} systimer_unit0_value_hi_reg_t;
+} systimer_unit_value_hi_reg_t;
 
-/** Type of unit0_value_lo register
- *  system timer unit0 value low register
+/** Type of unit_value_lo register
+ *  UNIT0 value, low 32 bits
  */
 typedef union {
     struct {
-        /** timer_unit0_value_lo : RO; bitpos: [31:0]; default: 0;
-         *  timer read value low 32bits
+        /** timer_unit_value_lo : RO; bitpos: [31:0]; default: 0;
+         *  Represents UNIT0 read value, low 32 bits.
          */
-        uint32_t timer_unit0_value_lo:32;
+        uint32_t timer_unit_value_lo:32;
     };
     uint32_t val;
-} systimer_unit0_value_lo_reg_t;
+} systimer_unit_value_lo_reg_t;
 
-/** Type of unit0_load register
- *  system timer unit0 conf sync register
+/** Type of unit_load register
+ *  UNIT0 synchronization register
  */
 typedef union {
     struct {
-        /** timer_unit0_load : WT; bitpos: [0]; default: 0;
-         *  timer unit0 sync enable signal
+        /** timer_unit_load : WT; bitpos: [0]; default: 0;
+         *  Configures whether or not to reload the value of UNIT0, i.e., reloads the values of
+         *  SYSTIMER_TIMER_UNIT0_VALUE_HI and SYSTIMER_TIMER_UNIT0_VALUE_LO to UNIT0. \\
+         *  0: No effect \\
+         *  1: Reload the value of UNIT0\\
          */
-        uint32_t timer_unit0_load:1;
+        uint32_t timer_unit_load:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} systimer_unit0_load_reg_t;
-
-
-/** Group: SYSTEM TIMER UNIT1 CONTROL AND CONFIGURATION REGISTER */
-/** Type of unit1_op register
- *  system timer unit1 value update register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:29;
-        /** timer_unit1_value_valid : R/SS/WTC; bitpos: [29]; default: 0;
-         *  timer value is sync and valid
-         */
-        uint32_t timer_unit1_value_valid:1;
-        /** timer_unit1_update : WT; bitpos: [30]; default: 0;
-         *  update timer unit1
-         */
-        uint32_t timer_unit1_update:1;
-        uint32_t reserved_31:1;
-    };
-    uint32_t val;
-} systimer_unit1_op_reg_t;
-
-/** Type of unit1_load_hi register
- *  system timer unit1 value high load register
- */
-typedef union {
-    struct {
-        /** timer_unit1_load_hi : R/W; bitpos: [19:0]; default: 0;
-         *  timer unit1 load high 20 bits
-         */
-        uint32_t timer_unit1_load_hi:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_unit1_load_hi_reg_t;
-
-/** Type of unit1_load_lo register
- *  system timer unit1 value low load register
- */
-typedef union {
-    struct {
-        /** timer_unit1_load_lo : R/W; bitpos: [31:0]; default: 0;
-         *  timer unit1 load low 32 bits
-         */
-        uint32_t timer_unit1_load_lo:32;
-    };
-    uint32_t val;
-} systimer_unit1_load_lo_reg_t;
-
-/** Type of unit1_value_hi register
- *  system timer unit1 value high register
- */
-typedef union {
-    struct {
-        /** timer_unit1_value_hi : RO; bitpos: [19:0]; default: 0;
-         *  timer read value high 20bits
-         */
-        uint32_t timer_unit1_value_hi:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_unit1_value_hi_reg_t;
-
-/** Type of unit1_value_lo register
- *  system timer unit1 value low register
- */
-typedef union {
-    struct {
-        /** timer_unit1_value_lo : RO; bitpos: [31:0]; default: 0;
-         *  timer read value low 32bits
-         */
-        uint32_t timer_unit1_value_lo:32;
-    };
-    uint32_t val;
-} systimer_unit1_value_lo_reg_t;
-
-/** Type of unit1_load register
- *  system timer unit1 conf sync register
- */
-typedef union {
-    struct {
-        /** timer_unit1_load : WT; bitpos: [0]; default: 0;
-         *  timer unit1 sync enable signal
-         */
-        uint32_t timer_unit1_load:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} systimer_unit1_load_reg_t;
+} systimer_unit_load_reg_t;
 
 
 /** Group: SYSTEM TIMER COMP0 CONTROL AND CONFIGURATION REGISTER */
-/** Type of target0_hi register
- *  system timer comp0 value high register
+/** Type of target_hi register
+ *  Alarm value to be loaded to COMP0, high 20 bits
  */
 typedef union {
     struct {
-        /** timer_target0_hi : R/W; bitpos: [19:0]; default: 0;
-         *  timer taget0 high 20 bits
+        /** timer_target_hi : R/W; bitpos: [19:0]; default: 0;
+         *  Configures the alarm value to be loaded to COMP0, high 20 bits.
          */
-        uint32_t timer_target0_hi:20;
+        uint32_t timer_target_hi:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} systimer_target0_hi_reg_t;
+} systimer_target_hi_reg_t;
 
-/** Type of target0_lo register
- *  system timer comp0 value low register
+/** Type of target_lo register
+ *  Alarm value to be loaded to COMP0, low 32 bits
  */
 typedef union {
     struct {
-        /** timer_target0_lo : R/W; bitpos: [31:0]; default: 0;
-         *  timer taget0 low 32 bits
+        /** timer_target_lo : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the alarm value to be loaded to COMP0, low 32 bits.
          */
-        uint32_t timer_target0_lo:32;
+        uint32_t timer_target_lo:32;
     };
     uint32_t val;
-} systimer_target0_lo_reg_t;
+} systimer_target_lo_reg_t;
 
-/** Type of target0_conf register
- *  system timer comp0 target mode register
+/** Type of target_conf register
+ *  Configure COMP0 alarm mode
  */
 typedef union {
     struct {
-        /** target0_period : R/W; bitpos: [25:0]; default: 0;
-         *  target0 period
+        /** target_period : R/W; bitpos: [25:0]; default: 0;
+         *  Configures COMP0 alarm period.
          */
-        uint32_t target0_period:26;
+        uint32_t target_period:26;
         uint32_t reserved_26:4;
-        /** target0_period_mode : R/W; bitpos: [30]; default: 0;
-         *  Set target0 to period mode
+        /** target_period_mode : R/W; bitpos: [30]; default: 0;
+         *  Selects the two alarm modes for COMP0. \\
+         *  0: Target mode\\
+         *  1: Period mode\\
          */
-        uint32_t target0_period_mode:1;
-        /** target0_timer_unit_sel : R/W; bitpos: [31]; default: 0;
-         *  select which unit to compare
+        uint32_t target_period_mode:1;
+        /** target_timer_unit_sel : R/W; bitpos: [31]; default: 0;
+         *  Chooses the counter value for comparison with COMP0.\\
+         *  0: Use the count value from UNIT$0\\
+         *  1: Use the count value from UNIT$1\\
          */
-        uint32_t target0_timer_unit_sel:1;
+        uint32_t target_timer_unit_sel:1;
     };
     uint32_t val;
-} systimer_target0_conf_reg_t;
+} systimer_target_conf_reg_t;
 
-/** Type of comp0_load register
- *  system timer comp0 conf sync register
+/** Type of comp_load register
+ *  COMP0 synchronization register
  */
 typedef union {
     struct {
-        /** timer_comp0_load : WT; bitpos: [0]; default: 0;
-         *  timer comp0 sync enable signal
+        /** timer_comp_load : WT; bitpos: [0]; default: 0;
+         *  Configures whether or not to enable COMP0 synchronization, i.e., reload the alarm
+         *  value/period to COMP0.\\
+         *  0: No effect \\
+         *  1: Enable COMP0 synchronization\\
          */
-        uint32_t timer_comp0_load:1;
+        uint32_t timer_comp_load:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
-} systimer_comp0_load_reg_t;
-
-
-/** Group: SYSTEM TIMER COMP1 CONTROL AND CONFIGURATION REGISTER */
-/** Type of target1_hi register
- *  system timer comp1 value high register
- */
-typedef union {
-    struct {
-        /** timer_target1_hi : R/W; bitpos: [19:0]; default: 0;
-         *  timer taget1 high 20 bits
-         */
-        uint32_t timer_target1_hi:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_target1_hi_reg_t;
-
-/** Type of target1_lo register
- *  system timer comp1 value low register
- */
-typedef union {
-    struct {
-        /** timer_target1_lo : R/W; bitpos: [31:0]; default: 0;
-         *  timer taget1 low 32 bits
-         */
-        uint32_t timer_target1_lo:32;
-    };
-    uint32_t val;
-} systimer_target1_lo_reg_t;
-
-/** Type of target1_conf register
- *  system timer comp1 target mode register
- */
-typedef union {
-    struct {
-        /** target1_period : R/W; bitpos: [25:0]; default: 0;
-         *  target1 period
-         */
-        uint32_t target1_period:26;
-        uint32_t reserved_26:4;
-        /** target1_period_mode : R/W; bitpos: [30]; default: 0;
-         *  Set target1 to period mode
-         */
-        uint32_t target1_period_mode:1;
-        /** target1_timer_unit_sel : R/W; bitpos: [31]; default: 0;
-         *  select which unit to compare
-         */
-        uint32_t target1_timer_unit_sel:1;
-    };
-    uint32_t val;
-} systimer_target1_conf_reg_t;
-
-/** Type of comp1_load register
- *  system timer comp1 conf sync register
- */
-typedef union {
-    struct {
-        /** timer_comp1_load : WT; bitpos: [0]; default: 0;
-         *  timer comp1 sync enable signal
-         */
-        uint32_t timer_comp1_load:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} systimer_comp1_load_reg_t;
-
-
-/** Group: SYSTEM TIMER COMP2 CONTROL AND CONFIGURATION REGISTER */
-/** Type of target2_hi register
- *  system timer comp2 value high register
- */
-typedef union {
-    struct {
-        /** timer_target2_hi : R/W; bitpos: [19:0]; default: 0;
-         *  timer taget2 high 20 bits
-         */
-        uint32_t timer_target2_hi:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_target2_hi_reg_t;
-
-/** Type of target2_lo register
- *  system timer comp2 value low register
- */
-typedef union {
-    struct {
-        /** timer_target2_lo : R/W; bitpos: [31:0]; default: 0;
-         *  timer taget2 low 32 bits
-         */
-        uint32_t timer_target2_lo:32;
-    };
-    uint32_t val;
-} systimer_target2_lo_reg_t;
-
-/** Type of target2_conf register
- *  system timer comp2 target mode register
- */
-typedef union {
-    struct {
-        /** target2_period : R/W; bitpos: [25:0]; default: 0;
-         *  target2 period
-         */
-        uint32_t target2_period:26;
-        uint32_t reserved_26:4;
-        /** target2_period_mode : R/W; bitpos: [30]; default: 0;
-         *  Set target2 to period mode
-         */
-        uint32_t target2_period_mode:1;
-        /** target2_timer_unit_sel : R/W; bitpos: [31]; default: 0;
-         *  select which unit to compare
-         */
-        uint32_t target2_timer_unit_sel:1;
-    };
-    uint32_t val;
-} systimer_target2_conf_reg_t;
-
-/** Type of comp2_load register
- *  system timer comp2 conf sync register
- */
-typedef union {
-    struct {
-        /** timer_comp2_load : WT; bitpos: [0]; default: 0;
-         *  timer comp2 sync enable signal
-         */
-        uint32_t timer_comp2_load:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} systimer_comp2_load_reg_t;
+} systimer_comp_load_reg_t;
 
 
 /** Group: SYSTEM TIMER INTERRUPT REGISTER */
 /** Type of int_ena register
- *  systimer interrupt enable register
+ *  Interrupt enable register of system timer
  */
 typedef union {
     struct {
         /** target0_int_ena : R/W; bitpos: [0]; default: 0;
-         *  interupt0 enable
+         *  Write 1 to enable SYSTIMER_TARGET0_INT.
          */
         uint32_t target0_int_ena:1;
         /** target1_int_ena : R/W; bitpos: [1]; default: 0;
-         *  interupt1 enable
+         *  Write 1 to enable SYSTIMER_TARGET1_INT.
          */
         uint32_t target1_int_ena:1;
         /** target2_int_ena : R/W; bitpos: [2]; default: 0;
-         *  interupt2 enable
+         *  Write 1 to enable SYSTIMER_TARGET2_INT.
          */
         uint32_t target2_int_ena:1;
         uint32_t reserved_3:29;
@@ -464,20 +276,20 @@ typedef union {
 } systimer_int_ena_reg_t;
 
 /** Type of int_raw register
- *  systimer interrupt raw register
+ *  Interrupt raw register of system timer
  */
 typedef union {
     struct {
         /** target0_int_raw : R/WTC/SS; bitpos: [0]; default: 0;
-         *  interupt0 raw
+         *  The raw interrupt status of SYSTIMER_TARGET0_INT.
          */
         uint32_t target0_int_raw:1;
         /** target1_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
-         *  interupt1 raw
+         *  The raw interrupt status of SYSTIMER_TARGET1_INT.
          */
         uint32_t target1_int_raw:1;
         /** target2_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
-         *  interupt2 raw
+         *  The raw interrupt status of SYSTIMER_TARGET2_INT.
          */
         uint32_t target2_int_raw:1;
         uint32_t reserved_3:29;
@@ -486,20 +298,20 @@ typedef union {
 } systimer_int_raw_reg_t;
 
 /** Type of int_clr register
- *  systimer interrupt clear register
+ *  Interrupt clear register of system timer
  */
 typedef union {
     struct {
         /** target0_int_clr : WT; bitpos: [0]; default: 0;
-         *  interupt0 clear
+         *  Write 1 to clear SYSTIMER_TARGET0_INT.
          */
         uint32_t target0_int_clr:1;
         /** target1_int_clr : WT; bitpos: [1]; default: 0;
-         *  interupt1 clear
+         *  Write 1 to clear SYSTIMER_TARGET1_INT.
          */
         uint32_t target1_int_clr:1;
         /** target2_int_clr : WT; bitpos: [2]; default: 0;
-         *  interupt2 clear
+         *  Write 1 to clear SYSTIMER_TARGET2_INT.
          */
         uint32_t target2_int_clr:1;
         uint32_t reserved_3:29;
@@ -508,20 +320,20 @@ typedef union {
 } systimer_int_clr_reg_t;
 
 /** Type of int_st register
- *  systimer interrupt status register
+ *  Interrupt status register of system timer
  */
 typedef union {
     struct {
         /** target0_int_st : RO; bitpos: [0]; default: 0;
-         *  interupt0 status
+         *  The interrupt status of SYSTIMER_TARGET0_INT.
          */
         uint32_t target0_int_st:1;
         /** target1_int_st : RO; bitpos: [1]; default: 0;
-         *  interupt1 status
+         *  The interrupt status of SYSTIMER_TARGET1_INT.
          */
         uint32_t target1_int_st:1;
         /** target2_int_st : RO; bitpos: [2]; default: 0;
-         *  interupt2 status
+         *  The interrupt status of SYSTIMER_TARGET2_INT.
          */
         uint32_t target2_int_st:1;
         uint32_t reserved_3:29;
@@ -531,143 +343,82 @@ typedef union {
 
 
 /** Group: SYSTEM TIMER COMP0 STATUS REGISTER */
-/** Type of real_target0_lo register
- *  system timer comp0 actual target value low register
+/** Type of real_target_lo register
+ *  Actual target value of COMP0, low 32 bits
  */
 typedef union {
     struct {
-        /** target0_lo_ro : RO; bitpos: [31:0]; default: 0;
-         *  actual target value value low 32bits
+        /** target_lo_ro : RO; bitpos: [31:0]; default: 0;
+         *  Represents the actual target value of COMP0, low 32 bits.
          */
-        uint32_t target0_lo_ro:32;
+        uint32_t target_lo_ro:32;
     };
     uint32_t val;
-} systimer_real_target0_lo_reg_t;
+} systimer_real_target_lo_reg_t;
 
-/** Type of real_target0_hi register
- *  system timer comp0 actual target value high register
+/** Type of real_target_hi register
+ *  Actual target value of COMP0, high 20 bits
  */
 typedef union {
     struct {
-        /** target0_hi_ro : RO; bitpos: [19:0]; default: 0;
-         *  actual target value value high 20bits
+        /** target_hi_ro : RO; bitpos: [19:0]; default: 0;
+         *  Represents the actual target value of COMP0, high 20 bits.
          */
-        uint32_t target0_hi_ro:20;
+        uint32_t target_hi_ro:20;
         uint32_t reserved_20:12;
     };
     uint32_t val;
-} systimer_real_target0_hi_reg_t;
-
-
-/** Group: SYSTEM TIMER COMP1 STATUS REGISTER */
-/** Type of real_target1_lo register
- *  system timer comp1 actual target value low register
- */
-typedef union {
-    struct {
-        /** target1_lo_ro : RO; bitpos: [31:0]; default: 0;
-         *  actual target value value low 32bits
-         */
-        uint32_t target1_lo_ro:32;
-    };
-    uint32_t val;
-} systimer_real_target1_lo_reg_t;
-
-/** Type of real_target1_hi register
- *  system timer comp1 actual target value high register
- */
-typedef union {
-    struct {
-        /** target1_hi_ro : RO; bitpos: [19:0]; default: 0;
-         *  actual target value value high 20bits
-         */
-        uint32_t target1_hi_ro:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_real_target1_hi_reg_t;
-
-
-/** Group: SYSTEM TIMER COMP2 STATUS REGISTER */
-/** Type of real_target2_lo register
- *  system timer comp2 actual target value low register
- */
-typedef union {
-    struct {
-        /** target2_lo_ro : RO; bitpos: [31:0]; default: 0;
-         *  actual target value value low 32bits
-         */
-        uint32_t target2_lo_ro:32;
-    };
-    uint32_t val;
-} systimer_real_target2_lo_reg_t;
-
-/** Type of real_target2_hi register
- *  system timer comp2 actual target value high register
- */
-typedef union {
-    struct {
-        /** target2_hi_ro : RO; bitpos: [19:0]; default: 0;
-         *  actual target value value high 20bits
-         */
-        uint32_t target2_hi_ro:20;
-        uint32_t reserved_20:12;
-    };
-    uint32_t val;
-} systimer_real_target2_hi_reg_t;
+} systimer_real_target_hi_reg_t;
 
 
 /** Group: VERSION REGISTER */
 /** Type of date register
- *  system timer version control register
+ *  Version control register
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [31:0]; default: 35655795;
-         *  systimer register version
+        /** date : R/W; bitpos: [31:0]; default: 36774432;
+         *  Version control register.
          */
         uint32_t date:32;
     };
     uint32_t val;
 } systimer_date_reg_t;
 
+typedef struct {
+    volatile systimer_unit_load_hi_reg_t hi;
+    volatile systimer_unit_load_lo_reg_t lo;
+} systimer_unit_load_val_reg_t;
+
+typedef struct {
+    volatile systimer_target_hi_reg_t hi;
+    volatile systimer_target_lo_reg_t lo;
+} systimer_target_val_reg_t;
+
+typedef struct {
+    volatile systimer_unit_value_hi_reg_t hi;
+    volatile systimer_unit_value_lo_reg_t lo;
+} systimer_unit_value_reg_t;
+
+typedef struct {
+    volatile systimer_real_target_hi_reg_t hi;
+    volatile systimer_real_target_lo_reg_t lo;
+} systimer_real_target_reg_t;
 
 typedef struct systimer_dev_t {
     volatile systimer_conf_reg_t conf;
-    volatile systimer_unit0_op_reg_t unit0_op;
-    volatile systimer_unit1_op_reg_t unit1_op;
-    volatile systimer_unit0_load_hi_reg_t unit0_load_hi;
-    volatile systimer_unit0_load_lo_reg_t unit0_load_lo;
-    volatile systimer_unit1_load_hi_reg_t unit1_load_hi;
-    volatile systimer_unit1_load_lo_reg_t unit1_load_lo;
-    volatile systimer_target0_hi_reg_t target0_hi;
-    volatile systimer_target0_lo_reg_t target0_lo;
-    volatile systimer_target1_hi_reg_t target1_hi;
-    volatile systimer_target1_lo_reg_t target1_lo;
-    volatile systimer_target2_hi_reg_t target2_hi;
-    volatile systimer_target2_lo_reg_t target2_lo;
-    volatile systimer_target0_conf_reg_t target0_conf;
-    volatile systimer_target1_conf_reg_t target1_conf;
-    volatile systimer_target2_conf_reg_t target2_conf;
-    volatile systimer_unit0_value_hi_reg_t unit0_value_hi;
-    volatile systimer_unit0_value_lo_reg_t unit0_value_lo;
-    volatile systimer_unit1_value_hi_reg_t unit1_value_hi;
-    volatile systimer_unit1_value_lo_reg_t unit1_value_lo;
-    volatile systimer_comp0_load_reg_t comp0_load;
-    volatile systimer_comp1_load_reg_t comp1_load;
-    volatile systimer_comp2_load_reg_t comp2_load;
-    volatile systimer_unit0_load_reg_t unit0_load;
-    volatile systimer_unit1_load_reg_t unit1_load;
+    volatile systimer_unit_op_reg_t unit_op[2];
+    volatile systimer_unit_load_val_reg_t unit_load_val[2];
+    volatile systimer_target_val_reg_t target_val[3];
+    volatile systimer_target_conf_reg_t target_conf[3];
+    volatile systimer_unit_value_reg_t unit_val[2];
+    volatile systimer_comp_load_reg_t comp_load[3];
+    volatile systimer_unit_load_reg_t unit_load[2];
     volatile systimer_int_ena_reg_t int_ena;
     volatile systimer_int_raw_reg_t int_raw;
     volatile systimer_int_clr_reg_t int_clr;
     volatile systimer_int_st_reg_t int_st;
-    volatile systimer_real_target0_lo_reg_t real_target0_lo;
-    volatile systimer_real_target0_hi_reg_t real_target0_hi;
-    volatile systimer_real_target1_lo_reg_t real_target1_lo;
-    volatile systimer_real_target1_hi_reg_t real_target1_hi;
-    volatile systimer_real_target2_lo_reg_t real_target2_lo;
-    volatile systimer_real_target2_hi_reg_t real_target2_hi;
+    volatile systimer_real_target_reg_t real_target[3];
     uint32_t reserved_08c[28];
     volatile systimer_date_reg_t date;
 } systimer_dev_t;

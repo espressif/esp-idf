@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,7 @@ typedef union {
          *  can check USB_SERIAL_JTAG_OUT_EP1_WR_ADDR USB_SERIAL_JTAG_OUT_EP0_RD_ADDR to know
          *  how many data is received, then read data from UART Rx FIFO.
          */
-        uint32_t rdwr_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rdwr_byte:32;
     };
     uint32_t val;
 } usb_serial_jtag_ep1_reg_t;
@@ -131,7 +130,7 @@ typedef union {
          */
         uint32_t test_enable:1;
         /** test_usb_oe : R/W; bitpos: [1]; default: 0;
-         *  USB pad oen in test
+         *  USB pad output enable in test
          */
         uint32_t test_usb_oe:1;
         /** test_tx_dp : R/W; bitpos: [2]; default: 0;
@@ -290,7 +289,7 @@ typedef union {
          */
         uint32_t serial_out_afifo_reset_rd:1;
         /** serial_out_afifo_rempty : RO; bitpos: [4]; default: 1;
-         *  CDC_ACM OUTOUT async FIFO empty signal in read clock domain.
+         *  CDC_ACM OUTPUT async FIFO empty signal in read clock domain.
          */
         uint32_t serial_out_afifo_rempty:1;
         /** serial_in_afifo_wfull : RO; bitpos: [5]; default: 0;

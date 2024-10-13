@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,10 +17,12 @@
 #include <utime.h>
 #include "unity.h"
 #include "esp_vfs.h"
+#include "esp_timer.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_fatfs_common.h"
+#include "ff.h"
 
 const char* fatfs_test_hello_str = "Hello, World!\n";
 const char* fatfs_test_hello_str_utf = "世界，你好！\n";
@@ -252,7 +255,7 @@ void test_fatfs_lseek(const char* filename)
 
 }
 
-void test_fatfs_truncate_file(const char* filename)
+void test_fatfs_truncate_file(const char* filename, bool allow_expanding_files)
 {
     int read = 0;
     int truncated_len = 0;
@@ -267,20 +270,54 @@ void test_fatfs_truncate_file(const char* filename)
 
     TEST_ASSERT_EQUAL(0, fclose(f));
 
+    struct stat st;
+    size_t size;
 
-    // Extending file beyond size is not supported
-    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
-    TEST_ASSERT_EQUAL(errno, EPERM);
+    stat(filename, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(strlen(input), size);
 
-    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
-    TEST_ASSERT_EQUAL(errno, EINVAL);
+    if (allow_expanding_files) {
+        size_t trunc_add = 2;
+        size_t new_size = strlen(input) + trunc_add;
+        TEST_ASSERT_EQUAL(0, truncate(filename, new_size));
 
+        stat(filename, &st);
+        size = st.st_size;
+        TEST_ASSERT_EQUAL(new_size, size);
+
+        f = fopen(filename, "rb");
+        TEST_ASSERT_NOT_NULL(f);
+
+        char expanded_output[sizeof(input) + trunc_add];
+        memset(expanded_output, 42, sizeof(expanded_output)); // set to something else than 0 (42)
+
+        read = fread(expanded_output, 1, sizeof(input) + trunc_add, f);
+        TEST_ASSERT_EQUAL(new_size, read);
+
+        TEST_ASSERT_EQUAL('Z',  expanded_output[strlen(input) - 1]); // 'Z' character
+        TEST_ASSERT_EQUAL('\0', expanded_output[sizeof(input) + trunc_add - 3]); // zeroed expanded space
+        TEST_ASSERT_EQUAL('\0', expanded_output[sizeof(input) + trunc_add - 2]); // zeroed expanded space
+        TEST_ASSERT_EQUAL(42,   expanded_output[sizeof(input) + trunc_add - 1]); // 42 set with memset, end of the array
+
+        TEST_ASSERT_EQUAL(0, fclose(f));
+    } else {
+        TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+        TEST_ASSERT_EQUAL(errno, EPERM);
+
+        TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+        TEST_ASSERT_EQUAL(errno, EINVAL);
+    }
 
     // Truncating should succeed
     const char truncated_1[] = "ABCDEFGHIJ";
     truncated_len = strlen(truncated_1);
 
     TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    stat(filename, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(strlen(truncated_1), size);
 
     f = fopen(filename, "rb");
     TEST_ASSERT_NOT_NULL(f);
@@ -293,27 +330,33 @@ void test_fatfs_truncate_file(const char* filename)
 
     TEST_ASSERT_EQUAL(0, fclose(f));
 
+    if (allow_expanding_files) {
+        TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len + 1));
+    } else {
+        // Once truncated, the new file size should be the basis
+        // whether truncation should succeed or not when `allow_expanding_files == false`
+        TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
+        TEST_ASSERT_EQUAL(EPERM, errno);
 
-    // Once truncated, the new file size should be the basis
-    // whether truncation should succeed or not
-    TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
-    TEST_ASSERT_EQUAL(EPERM, errno);
+        TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input)));
+        TEST_ASSERT_EQUAL(EPERM, errno);
 
-    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input)));
-    TEST_ASSERT_EQUAL(EPERM, errno);
-
-    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
-    TEST_ASSERT_EQUAL(EPERM, errno);
+        TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+        TEST_ASSERT_EQUAL(EPERM, errno);
+    }
 
     TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
     TEST_ASSERT_EQUAL(EINVAL, errno);
-
 
     // Truncating a truncated file should succeed
     const char truncated_2[] = "ABCDE";
     truncated_len = strlen(truncated_2);
 
     TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    stat(filename, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(strlen(truncated_2), size);
 
     f = fopen(filename, "rb");
     TEST_ASSERT_NOT_NULL(f);
@@ -327,29 +370,63 @@ void test_fatfs_truncate_file(const char* filename)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-void test_fatfs_ftruncate_file(const char* filename)
+void test_fatfs_ftruncate_file(const char* filename, bool allow_expanding_files)
 {
     int truncated_len = 0;
 
     const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     char output[sizeof(input)];
 
-    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC);
     TEST_ASSERT_NOT_EQUAL(-1, fd);
 
     TEST_ASSERT_EQUAL(strlen(input), write(fd, input, strlen(input)));
 
-    // Extending file beyond size is not supported
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
-    TEST_ASSERT_EQUAL(errno, EPERM);
+    struct stat st;
+    size_t size;
 
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
-    TEST_ASSERT_EQUAL(errno, EINVAL);
+    fstat(fd, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(strlen(input), size);
+
+    if (allow_expanding_files) {
+        size_t trunc_add = 2;
+        size_t new_size = strlen(input) + trunc_add;
+        TEST_ASSERT_EQUAL(0, ftruncate(fd, new_size));
+
+        fstat(fd, &st);
+        size = st.st_size;
+        TEST_ASSERT_EQUAL(new_size, size);
+
+        char expanded_output[sizeof(input) + trunc_add];
+        memset(expanded_output, 42, sizeof(expanded_output)); // set to something else than 0 (42)
+
+        lseek(fd, 0, SEEK_SET);
+        int r = read(fd, expanded_output, sizeof(input) + trunc_add);
+        TEST_ASSERT_NOT_EQUAL(-1, r);
+        TEST_ASSERT_EQUAL(new_size, r);
+
+        TEST_ASSERT_EQUAL('Z',  expanded_output[strlen(input) - 1]); // 'Z' character
+        TEST_ASSERT_EQUAL('\0', expanded_output[sizeof(input) + trunc_add - 3]);   // zeroed expanded space
+        TEST_ASSERT_EQUAL('\0', expanded_output[sizeof(input) + trunc_add - 2]); // zeroed expanded space
+        TEST_ASSERT_EQUAL(42,   expanded_output[sizeof(input) + trunc_add - 1]); // 42 set with memset, end of the array
+    } else {
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+        TEST_ASSERT_EQUAL(errno, EPERM);
+
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+        TEST_ASSERT_EQUAL(errno, EINVAL);
+    }
 
     // Truncating should succeed
     const char truncated_1[] = "ABCDEFGHIJ";
     truncated_len = strlen(truncated_1);
     TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+
+    fstat(fd, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(truncated_len, size);
+
     TEST_ASSERT_EQUAL(0, close(fd));
 
     // open file for reading and validate the content
@@ -367,25 +444,35 @@ void test_fatfs_ftruncate_file(const char* filename)
     // further truncate the file
     fd = open(filename, O_WRONLY);
     TEST_ASSERT_NOT_EQUAL(-1, fd);
-    // Once truncated, the new file size should be the basis
-    // whether truncation should succeed or not
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, truncated_len + 1));
-    TEST_ASSERT_EQUAL(EPERM, errno);
 
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input)));
-    TEST_ASSERT_EQUAL(EPERM, errno);
+    if (allow_expanding_files) {
+        TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len + 1));
+    } else {
+        // Once truncated, the new file size should be the basis
+        // whether truncation should succeed or not when `allow_expanding_files == false`
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, truncated_len + 1));
+        TEST_ASSERT_EQUAL(EPERM, errno);
 
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
-    TEST_ASSERT_EQUAL(EPERM, errno);
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input)));
+        TEST_ASSERT_EQUAL(EPERM, errno);
 
-    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
-    TEST_ASSERT_EQUAL(EINVAL, errno);
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+        TEST_ASSERT_EQUAL(EPERM, errno);
+
+        TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+        TEST_ASSERT_EQUAL(EINVAL, errno);
+    }
 
     // Truncating a truncated file should succeed
     const char truncated_2[] = "ABCDE";
     truncated_len = strlen(truncated_2);
 
     TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+
+    fstat(fd, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(truncated_len, size);
+
     TEST_ASSERT_EQUAL(0, close(fd));
 
     // open file for reading and validate the content
@@ -556,7 +643,7 @@ void test_fatfs_utime(const char* filename, const char* root_dir)
     TEST_ASSERT_EQUAL(0, stat(filename, &achieved_stat));
     TEST_ASSERT_EQUAL_UINT32(desired_time.modtime, achieved_stat.st_mtime);
 
-    //WARNING: it has the Unix Millenium bug (Y2K38)
+    //WARNING: it has the Unix Millennium bug (Y2K38)
 
     // 00:00:00. January 1st, 1970 - FATFS cannot handle years before 1980
     desired_tm.tm_mon = 1 - 1;
@@ -668,6 +755,65 @@ void test_fatfs_can_opendir(const char* path)
     TEST_ASSERT_TRUE(found);
     TEST_ASSERT_EQUAL(0, closedir(dir));
     unlink(name_dir_file);
+}
+
+void test_fatfs_readdir_stat(const char* dir_prefix)
+{
+    char name_dir_file[64];
+    char name_dir_stat[64];
+    int file_num = 25;
+
+    rmdir(dir_prefix);
+    TEST_ASSERT_EQUAL(0, mkdir(dir_prefix, 0755));
+
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix,i);
+        test_fatfs_create_file_with_text(name_dir_file, fatfs_test_hello_str);
+    }
+
+    printf("Start counting\n");
+    int64_t start = esp_timer_get_time();
+    DIR* dir = opendir(dir_prefix);
+    TEST_ASSERT_NOT_NULL(dir);
+    struct stat st;
+    struct dirent* de;
+    uint32_t dir_size = 0;
+
+    // Call readdir before stat function and record the time needed to calculate the directory size
+    while(1) {
+        de = readdir(dir);
+        if (!de) {
+            break;
+        }
+        snprintf(name_dir_stat, sizeof(dir_prefix)+sizeof(de->d_name), "%s/%s", dir_prefix, de->d_name);
+        TEST_ASSERT_EQUAL(0, stat(name_dir_stat, &st));
+        dir_size += st.st_size;
+    }
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    int64_t end = esp_timer_get_time();
+    int64_t total_time_readdir = end-start;
+    printf("Time in us for calculating directory size by calling readdir first and then stat func:  %lld \n",total_time_readdir);
+    printf("Size of the directory %s is %"PRIu32"bytes\n", dir_prefix, dir_size);
+    TEST_ASSERT_EQUAL(file_num*14, dir_size); //each file size is 14 bytes
+
+    // Call stat function directly and record the time needed to calculate the directory size
+    dir_size = 0;
+    start = esp_timer_get_time();
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix, i);
+        TEST_ASSERT_EQUAL(0, stat(name_dir_file, &st));
+        dir_size += st.st_size;
+    }
+    end = esp_timer_get_time();
+    int64_t total_time_stat = end-start;
+    printf("Time in us for calculating directory size by calling stat func:  %lld \n",total_time_stat);
+    printf("Size of the directory %s is %"PRIu32"bytes\n", dir_prefix, dir_size);
+    TEST_ASSERT_EQUAL(file_num*14, dir_size); //each file size is 14 bytes
+
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix,i);
+        unlink(name_dir_file);
+    }
 }
 
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix)
@@ -902,7 +1048,7 @@ void test_fatfs_concurrent(const char* filename_prefix)
     printf("writing f1 and f2\n");
 
     const int cpuid_0 = 0;
-    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    const int cpuid_1 = CONFIG_FREERTOS_NUMBER_OF_CORES - 1;
     const int stack_size = 4096;
     xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
     xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
@@ -1011,3 +1157,28 @@ void test_fatfs_info(const char* base_path, const char* filepath)
     ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_after_delete=%llu", total_bytes, free_bytes_new);
     TEST_ASSERT_EQUAL(free_bytes, free_bytes_new);
 }
+
+#if FF_USE_EXPAND
+void test_fatfs_create_contiguous_file(const char* base_path, const char* full_path)
+{
+    size_t desired_file_size = 64;
+
+    // Don't check for errors, file may not exist at first
+    remove(full_path); // esp_vfs_fat_create_contiguous_file will fail if the file already exists
+
+    esp_err_t err = esp_vfs_fat_create_contiguous_file(base_path, full_path, desired_file_size, true);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    struct stat st;
+    size_t size;
+
+    stat(full_path, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(desired_file_size, size);
+
+    bool is_contiguous = false;
+    err = esp_vfs_fat_test_contiguous_file(base_path, full_path, &is_contiguous);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    TEST_ASSERT_TRUE(is_contiguous);
+}
+#endif

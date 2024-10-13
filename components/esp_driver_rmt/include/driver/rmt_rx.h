@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,8 @@ typedef struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t allow_pd: 1;     /*!< If set, driver allows the power domain to be powered off when system enters sleep mode.
+                                       This can save power, but at the expense of more RAM being consumed to save register context. */
     } flags;                      /*!< RX channel config flags */
 } rmt_rx_channel_config_t;
 
@@ -53,7 +55,7 @@ typedef struct {
     uint32_t signal_range_max_ns; /*!< RMT will stop receiving if one symbol level has kept more than `signal_range_max_ns` */
 
     /// Receive specific flags
-    struct extra_flags {
+    struct extra_rmt_receive_flags {
         uint32_t en_partial_rx: 1; /*!< Set this flag if the incoming data is very long, and the driver can only receive the data piece by piece,
                                         because the user buffer is not sufficient to save all the data. */
     } flags;                       /*!< Receive specific config flags */

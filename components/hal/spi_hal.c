@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,31 +9,9 @@
 #include "hal/spi_hal.h"
 #include "hal/log.h"
 #include "hal/assert.h"
+#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-
-//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_GDMA_SUPPORTED
-#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB) && (SOC_AHB_GDMA_VERSION == 1)
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable);
-#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
-
-#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)   //TODO: IDF-6152, refactor spi hal layer
-#include "hal/axi_dma_ll.h"
-#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         axi_dma_ll_rx_enable_data_burst(&AXI_DMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         axi_dma_ll_tx_enable_data_burst(&AXI_DMA, chan, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         axi_dma_ll_rx_enable_descriptor_burst(&AXI_DMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         axi_dma_ll_tx_enable_descriptor_burst(&AXI_DMA, chan, enable);
-#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          axi_dma_ll_tx_enable_auto_write_back(&AXI_DMA, chan, enable);
-#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          axi_dma_ll_tx_set_eof_mode(&AXI_DMA, chan, enable);
-#endif
-#endif  //SOC_GDMA_SUPPORTED
 
 /* The tag may be unused if log level is set to NONE  */
 static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
@@ -44,36 +22,12 @@ static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
         return (ret_val); \
     }
 
-static void s_spi_hal_dma_init_config(const spi_hal_context_t *hal)
-{
-    spi_dma_ll_rx_enable_burst_data(hal->dma_in, hal->rx_dma_chan, 1);
-    spi_dma_ll_tx_enable_burst_data(hal->dma_out, hal->tx_dma_chan, 1);
-    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, hal->rx_dma_chan, 1);
-    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan, 1);
-}
-
-void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *config)
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
 {
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
-    hal->dma_in = config->dma_in;
-    hal->dma_out = config->dma_out;
-    hal->dma_enabled = config->dma_enabled;
-    hal->dmadesc_tx = config->dmadesc_tx;
-    hal->dmadesc_rx = config->dmadesc_rx;
-    hal->tx_dma_chan = config->tx_dma_chan;
-    hal->rx_dma_chan = config->rx_dma_chan;
-    hal->dmadesc_n = config->dmadesc_n;
-
-#if SPI_LL_MOSI_FREE_LEVEL
-    // Change default data line level to low which same as esp32
-    spi_ll_set_mosi_free_level(hw, 0);
-#endif
     spi_ll_master_init(hw);
-    if (config->dma_enabled) {
-        s_spi_hal_dma_init_config(hal);
-    }
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just
@@ -85,6 +39,15 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config
     spi_ll_apply_config(hw);
 }
 
+void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level)
+{
+#if SPI_LL_MOSI_FREE_LEVEL
+    // Config default output data line level when don't have transaction
+    spi_ll_set_mosi_free_level(hal->hw, level);
+    spi_ll_apply_config(hal->hw);
+#endif
+}
+
 void spi_hal_deinit(spi_hal_context_t *hal)
 {
     spi_dev_t *hw = hal->hw;
@@ -94,7 +57,27 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int *out_freq, spi_hal_timing_conf_t *timing_conf)
+#if SOC_SPI_SCT_SUPPORTED
+void spi_hal_sct_init(spi_hal_context_t *hal)
+{
+    spi_ll_conf_state_enable(hal->hw, true);
+    spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
+    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode should use sct_trans_done only
+    spi_ll_enable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_set_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+}
+
+void spi_hal_sct_deinit(spi_hal_context_t *hal)
+{
+    spi_ll_conf_state_enable(hal->hw, false);
+    spi_ll_disable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_clear_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_clear_int_stat(hal->hw);
+    spi_ll_enable_int(hal->hw); //recover trans_done intr
+}
+#endif  //#if SOC_SPI_SCT_SUPPORTED
+
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf = {};
 
@@ -115,11 +98,9 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
                   ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000 );
 #endif
 
+    temp_conf.real_freq = eff_clk_n;
     if (timing_conf) {
         *timing_conf = temp_conf;
-    }
-    if (out_freq) {
-        *out_freq = eff_clk_n;
     }
     return ESP_OK;
 }
@@ -135,7 +116,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
     const int apbclk_kHz = source_freq_hz / 1000;
     //how many apb clocks a period has
     const int spiclk_apb_n = source_freq_hz / eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
@@ -166,7 +150,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;

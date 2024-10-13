@@ -85,7 +85,7 @@ esp_err_t mcpwm_capture_timer_disable(mcpwm_cap_timer_handle_t cap_timer);
 esp_err_t mcpwm_capture_timer_start(mcpwm_cap_timer_handle_t cap_timer);
 
 /**
- * @brief Start MCPWM capture timer
+ * @brief Stop MCPWM capture timer
  *
  * @param[in] cap_timer MCPWM capture timer, allocated by `mcpwm_new_capture_timer()`
  * @return
@@ -138,7 +138,7 @@ typedef struct {
     uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
 
     /// Extra configuration flags for capture channel
-    struct extra_flags {
+    struct extra_capture_channel_flags {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
         uint32_t neg_edge: 1;          /*!< Whether to capture on negative edge */
         uint32_t pull_up: 1;           /*!< Whether to pull up internally */

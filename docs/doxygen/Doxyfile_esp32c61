@@ -1,0 +1,4 @@
+INPUT += \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_he_types.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_he.h \
+    $(PROJECT_PATH)/components/bt/include/esp32c6/include/esp_bt.h \

@@ -26,14 +26,12 @@ typedef struct {
     bool scl_pullup_en;         /*!< SCL line enable internal pullup. Can be configured if external pullup is not used. */
 } lp_core_i2c_pin_cfg_t;
 
-
 /**
  * @brief LP Core I2C timing config parameters
  */
 typedef struct {
     uint32_t clk_speed_hz;      /*!< LP I2C clock speed for master mode */
 } lp_core_i2c_timing_cfg_t;
-
 
 /**
  * @brief LP Core I2C config parameters

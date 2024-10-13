@@ -321,6 +321,14 @@ fail:
 	return -1;
 }
 
+#ifdef ESP_SUPPLICANT
+static int ap_sta_server_sm_deinit(struct hostapd_data *hapd,
+		struct sta_info *sta, void *ctx)
+{
+	ieee802_1x_free_station(hapd, sta);
+	return 0;
+}
+#endif /* ESP_SUPPLICANT */
 
 void hostapd_deinit_wps(struct hostapd_data *hapd)
 {
@@ -332,6 +340,11 @@ void hostapd_deinit_wps(struct hostapd_data *hapd)
 	}
 	wps_registrar_deinit(hapd->wps->registrar);
 	hapd->wps->registrar = NULL;
+
+#ifdef ESP_SUPPLICANT
+	ap_for_each_sta(hapd, ap_sta_server_sm_deinit, NULL);
+#endif /* ESP_SUPPLICANT */
+
 	eap_server_unregister_methods();
 	hapd->wps = NULL;
 	hostapd_wps_clear_ies(hapd, 1);

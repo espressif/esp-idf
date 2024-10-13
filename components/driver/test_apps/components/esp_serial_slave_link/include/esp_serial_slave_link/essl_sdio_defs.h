@@ -25,7 +25,6 @@ extern essl_sdio_def_t ESSL_SDIO_DEF_ESP32;
 /// Definitions of ESP32C6 SDIO Slave hardware
 extern essl_sdio_def_t ESSL_SDIO_DEF_ESP32C6;
 
-
 #ifdef __cplusplus
 }
 #endif

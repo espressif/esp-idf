@@ -115,7 +115,7 @@ typedef int                            timer_src_clk_t;
  *     - False Not do task yield at the end of ISR
  *
  * @note If you called FreeRTOS functions in callback, you need to return true or false based on
- *       the retrun value of argument `pxHigherPriorityTaskWoken`.
+ *       the return value of argument `pxHigherPriorityTaskWoken`.
  *       For example, `xQueueSendFromISR` is called in callback, if the return value `pxHigherPriorityTaskWoken`
  *       of any FreeRTOS calls is pdTRUE, return true; otherwise return false.
  */

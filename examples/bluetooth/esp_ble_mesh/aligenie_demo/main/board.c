@@ -13,11 +13,15 @@
 #include "esp_log.h"
 
 #include "iot_button.h"
-#include "light_driver.h"
+#include "lightbulb.h"
 
 #include "genie_event.h"
 
+#if CONFIG_IDF_TARGET_ESP32C3
+#define BUTTON_ON_OFF          9   /* on/off button */
+#else
 #define BUTTON_ON_OFF          0   /* on/off button */
+#endif
 #define BUTTON_ACTIVE_LEVEL    0
 
 static const char *TAG  = "board";
@@ -38,22 +42,37 @@ static void board_led_init(void)
      *  If the module has SPI flash, GPIOs 6-11 are connected to the module’s integrated SPI flash and PSRAM.
      *  If the module has PSRAM, GPIOs 16 and 17 are connected to the module’s integrated PSRAM.
      */
-    light_driver_config_t driver_config = {
-        .gpio_red        = CONFIG_LIGHT_GPIO_RED,
-        .gpio_green      = CONFIG_LIGHT_GPIO_GREEN,
-        .gpio_blue       = CONFIG_LIGHT_GPIO_BLUE,
-        .gpio_cold       = CONFIG_LIGHT_GPIO_COLD,
-        .gpio_warm       = CONFIG_LIGHT_GPIO_WARM,
-        .fade_period_ms  = CONFIG_LIGHT_FADE_PERIOD_MS,
-        .blink_period_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
+    lightbulb_config_t config = {
+        .type = DRIVER_ESP_PWM,
+        .driver_conf.pwm.freq_hz = 4000,
+        .capability.enable_fades = true,
+        .capability.fades_ms = CONFIG_LIGHT_FADE_PERIOD_MS,
+        .capability.enable_lowpower = false,
+        .capability.enable_mix_cct = false,
+        .capability.enable_status_storage = false,
+        .capability.mode_mask = COLOR_MODE,
+        .capability.storage_cb = NULL,
+        .capability.sync_change_brightness_value = true,
+        .io_conf.pwm_io.red = CONFIG_LIGHT_GPIO_RED,
+        .io_conf.pwm_io.green = CONFIG_LIGHT_GPIO_GREEN,
+        .io_conf.pwm_io.blue = CONFIG_LIGHT_GPIO_BLUE,
+        .io_conf.pwm_io.cold_cct = CONFIG_LIGHT_GPIO_COLD,
+        .io_conf.pwm_io.warm_brightness = CONFIG_LIGHT_GPIO_WARM,
+        .external_limit = NULL,
+        .gamma_conf = NULL,
+        .init_status.mode = WORK_COLOR,
+        .init_status.on = true,
+        .init_status.hue = 0,
+        .init_status.saturation = 100,
+        .init_status.value = 100,
     };
 
     /**
      * @brief Light driver initialization
      */
-    ESP_ERROR_CHECK(light_driver_init(&driver_config));
-    light_driver_set_mode(MODE_HSL);
-    // light_driver_set_switch(true);
+    ESP_ERROR_CHECK(lightbulb_init(&config));
+    vTaskDelay(pdMS_TO_TICKS(1000) * 1);
+    lightbulb_set_switch(true);
 
     button_handle_t dev_on_off_btn = iot_button_create(BUTTON_ON_OFF, BUTTON_ACTIVE_LEVEL);
     iot_button_set_evt_cb(dev_on_off_btn, BUTTON_CB_TAP, button_tap_cb, &dev_on_btn_num);
@@ -62,6 +81,62 @@ static void board_led_init(void)
 void board_init(void)
 {
     board_led_init();
+}
+
+static esp_err_t board_led_hsl2rgb(uint16_t hue, uint8_t saturation, uint8_t lightness,
+                                      uint8_t *red, uint8_t *green, uint8_t *blue)
+{
+    uint16_t hi = (hue / 60) % 6;
+    uint16_t C  = (100 - abs(2 * lightness - 100)) * saturation / 100;
+    uint16_t M  = 100 * (lightness - 0.5 * C) / 100;
+    uint16_t X  = C * (100 - abs((hue * 100 / 60 ) % 200 - 100)) / 100;
+
+    switch (hi) {
+        case 0: /* hue 0~60 */
+            *red   = C + M;
+            *green = X + M;
+            *blue  = M;
+            break;
+
+        case 1: /* hue 60~120 */
+            *red   = X + M;
+            *green = C + M;
+            *blue  = M;
+            break;
+
+        case 2: /* hue 120~180 */
+            *red   = M;
+            *green = C + M;
+            *blue  = X + M;
+            break;
+
+        case 3: /* hue 180~240 */
+            *red   = M;
+            *green = X + M;
+            *blue  = C + M;
+            break;
+
+        case 4: /* hue 240~300 */
+            *red   = X + M;
+            *green = M;
+            *blue  = C + M;
+            break;
+
+        case 5: /* hue 300~360 */
+            *red   = C + M;
+            *green = M;
+            *blue  = X + M;
+            break;
+
+        default:
+            return ESP_FAIL;
+    }
+
+    *red   = *red * 255 / 100;
+    *green = *green * 255 / 100;
+    *blue  = *blue * 255 / 100;
+
+    return ESP_OK;
 }
 
 /**
@@ -86,8 +161,14 @@ void board_led_hsl(uint8_t elem_index, uint16_t hue, uint16_t saturation, uint16
         uint8_t  actual_saturation = (float)last_saturation / (UINT16_MAX / 100.0);
         uint8_t  actual_lightness  = (float)last_lightness / (UINT16_MAX / 100.0);
 
+        uint8_t r, g, b;
+        uint16_t h;
+        uint8_t s, v;
+
         ESP_LOGD(TAG, "hsl: %d, %d, %d operation", actual_hue, actual_saturation, actual_lightness);
-        light_driver_set_hsl(actual_hue, actual_saturation, actual_lightness);
+        board_led_hsl2rgb(actual_hue, actual_saturation, actual_lightness, &r, &g, &b);
+        lightbulb_rgb2hsv(r, g, b, &h, &s, &v);
+        lightbulb_set_hsv(h, s, v);
     }
 }
 
@@ -105,7 +186,7 @@ void board_led_temperature(uint8_t elem_index, uint16_t temperature)
 
         uint16_t actual_temperature = (float)last_temperature / (UINT16_MAX / 100.0);
         ESP_LOGD(TAG, "temperature %d %%%d operation", last_temperature, actual_temperature);
-        light_driver_set_color_temperature(actual_temperature);
+        lightbulb_set_cct(actual_temperature);
     }
 }
 
@@ -123,7 +204,7 @@ void board_led_lightness(uint8_t elem_index, uint16_t actual)
 
         uint16_t actual_lightness = (float)last_acual / (UINT16_MAX / 100.0);
         ESP_LOGD(TAG, "lightness %d %%%d operation", last_acual, actual_lightness);
-        light_driver_set_lightness(actual_lightness);
+        lightbulb_set_brightness(actual_lightness);
     }
 }
 
@@ -139,10 +220,10 @@ void board_led_switch(uint8_t elem_index, uint8_t onoff)
         last_onoff = onoff;
         if (last_onoff) {
             ESP_LOGD(TAG, "onoff %d operation", last_onoff);
-            light_driver_set_switch(true);
+            lightbulb_set_switch(true);
         } else {
             ESP_LOGD(TAG, "onoff %d operation", last_onoff);
-            light_driver_set_switch(false);
+            lightbulb_set_switch(false);
         }
     }
 }

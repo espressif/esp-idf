@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,16 +53,16 @@ void gdma_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channel_di
     hal->enable_burst(hal, chan_id, dir, en_data_burst, en_desc_burst);
 }
 
-void gdma_hal_set_ext_mem_align(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint8_t align)
+void gdma_hal_set_burst_size(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz)
 {
-    if (hal->set_ext_mem_align) {
-        hal->set_ext_mem_align(hal, chan_id, dir, align);
+    if (hal->set_burst_size) {
+        hal->set_burst_size(hal, chan_id, dir, burst_sz);
     }
 }
 
-void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back)
+void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped)
 {
-    hal->set_strategy(hal, chan_id, dir, en_owner_check, en_desc_write_back);
+    hal->set_strategy(hal, chan_id, dir, en_owner_check, en_desc_write_back, eof_till_popped);
 }
 
 void gdma_hal_enable_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask, bool en_or_dis)
@@ -90,6 +90,13 @@ uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_c
     return hal->get_eof_desc_addr(hal, chan_id, dir, is_success);
 }
 
+void gdma_hal_enable_access_encrypt_mem(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
+{
+    if (hal->enable_access_encrypt_mem) {
+        hal->enable_access_encrypt_mem(hal, chan_id, dir, en_or_dis);
+    }
+}
+
 #if SOC_GDMA_SUPPORT_CRC
 void gdma_hal_clear_crc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
 {
@@ -106,3 +113,10 @@ uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_chan
     return hal->get_crc_result(hal, chan_id, dir);
 }
 #endif // SOC_GDMA_SUPPORT_CRC
+
+#if SOC_GDMA_SUPPORT_ETM
+void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
+{
+    hal->enable_etm_task(hal, chan_id, dir, en_or_dis);
+}
+#endif // SOC_GDMA_SUPPORT_ETM

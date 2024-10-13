@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include <string.h>
@@ -25,8 +25,6 @@
 
 #define ESP_APPTRACE_MAX_VPRINTF_ARGS 256
 #define ESP_APPTRACE_HOST_BUF_SIZE 256
-
-#define ESP_APPTRACE_PRINT_LOCK 0
 
 const static char *TAG = "esp_apptrace";
 
@@ -90,7 +88,7 @@ void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)
         return;
     }
     // currently down buffer is supported for JTAG interface only
-    // TODO: one more argument should be added to this function to specify HW inteface: JTAG, UART0 etc
+    // TODO: one more argument should be added to this function to specify HW interface: JTAG, UART0 etc
     ch = &s_trace_channels[ESP_APPTRACE_DEST_JTAG];
     if (ch->hw != NULL) {
         if (ch->hw->down_buffer_config != NULL) {
@@ -196,7 +194,7 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
     *size = 0;
     uint8_t *ptr = ch->hw->get_down_buffer(ch->hw_data, &act_sz, &tmo);
     if (ptr && act_sz > 0) {
-        ESP_APPTRACE_LOGD("Read %d bytes from host", act_sz);
+        ESP_APPTRACE_LOGD("Read %" PRIu32 " bytes from host", act_sz);
         memcpy(buf, ptr, act_sz);
         res = ch->hw->put_down_buffer(ch->hw_data, ptr, &tmo);
         *size = act_sz;
@@ -329,7 +327,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
-    ESP_APPTRACE_LOGD("fmt %x", fmt);
+    ESP_APPTRACE_LOGD("fmt %p", fmt);
     while ((p = (uint8_t *)strchr((char *)p, '%')) && nargs < ESP_APPTRACE_MAX_VPRINTF_ARGS) {
         p++;
         if (*p != '%' && *p != 0) {
@@ -355,7 +353,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
         uint32_t arg = va_arg(ap, uint32_t);
         *(uint32_t *)pout = arg;
         pout += sizeof(uint32_t);
-        ESP_APPTRACE_LOGD("arg %x", arg);
+        ESP_APPTRACE_LOGD("arg %" PRIx32, arg);
     }
 
     int ret = ch->hw->put_up_buffer(ch->hw_data, p, &tmo);

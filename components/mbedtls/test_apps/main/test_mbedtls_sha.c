@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -249,7 +249,7 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
-/* intended warning supression: is384 == true */
+/* intended warning suppression: is384 == true */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
     TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha384));

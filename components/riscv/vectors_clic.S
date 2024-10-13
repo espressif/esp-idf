@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,12 @@
 #else
     #define MEMPROT_ISR _interrupt_handler
 #endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    #define ASTDBG_ISR _panic_handler
+#else
+    #define ASTDBG_ISR _interrupt_handler
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 #if CONFIG_ESP_IPC_ISR_ENABLE
     #define IPC_ISR_HANDLER esp_ipc_isr_handler
@@ -109,7 +115,7 @@ _mtvt_table:
     .word _panic_handler            /* 40: ETS_INT_WDT_INUM (+16) panic-interrupt (soc-level panic) */
     .word _panic_handler            /* 41: ETS_CACHEERR_INUM (+16) panic-interrupt (soc-level panic) */
     .word MEMPROT_ISR               /* 42: ETS_MEMPROT_ERR_INUM (+16) handler (soc-level panic) */
-    .word _interrupt_handler        /* 43: Free interrupt number */
+    .word ASTDBG_ISR                /* 43: ETS_ASSIST_DEBUG_INUM (+16) handler (soc-level panic) */
     .word IPC_ISR_HANDLER           /* 44: ETS_IPC_ISR_INUM (+16) handler*/
     .word _interrupt_handler        /* 45: Free interrupt number */
     .word _interrupt_handler        /* 46: Free interrupt number */

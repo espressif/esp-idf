@@ -1,25 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include "bootloader_console.h"
+#include "soc/soc_caps.h"
 #include "soc/uart_periph.h"
 #include "soc/uart_channel.h"
 #include "soc/io_mux_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
-#include "hal/clk_gate_ll.h"
-#include "hal/gpio_hal.h"
+#include "hal/gpio_ll.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-#include "hal/usb_phy_ll.h"
+#if CONFIG_ESP_CONSOLE_USB_CDC
+#include "hal/usb_wrap_ll.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
@@ -44,15 +44,15 @@ void bootloader_console_init(void)
     esp_rom_install_uart_printf();
 
     // Wait for UART FIFO to be empty.
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
 
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
-    const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
-    const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
+    const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
+    const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
 
     // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
-    esp_rom_uart_set_as_console(uart_num);
+    esp_rom_output_set_as_console(uart_num);
 
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
@@ -60,17 +60,17 @@ void bootloader_console_init(void)
             uart_tx_gpio != UART_NUM_0_TXD_DIRECT_GPIO_NUM ||
             uart_rx_gpio != UART_NUM_0_RXD_DIRECT_GPIO_NUM) {
         // Change default UART pins back to GPIOs
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_RXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_TXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, UART_NUM_0_RXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, UART_NUM_0_TXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
         // Route GPIO signals to/from pins
         const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
         const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_rx_gpio], PIN_FUNC_GPIO);
-        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
+        gpio_ll_func_sel(&GPIO, uart_rx_gpio, PIN_FUNC_GPIO);
+        gpio_ll_input_enable(&GPIO, uart_rx_gpio);
         esp_rom_gpio_pad_pullup_only(uart_rx_gpio);
         esp_rom_gpio_connect_out_signal(uart_tx_gpio, tx_idx, 0, 0);
         esp_rom_gpio_connect_in_signal(uart_rx_gpio, rx_idx, 0);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_tx_gpio], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, uart_tx_gpio, PIN_FUNC_GPIO);
         // Enable the peripheral
         uart_ll_enable_bus_clock(uart_num, true);
         uart_ll_reset_register(uart_num);
@@ -102,19 +102,25 @@ void bootloader_console_init(void)
     rom_usb_cdc_set_descriptor_patch();
 #endif
 
-    esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
-    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_output_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
+    esp_rom_output_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-    usb_phy_ll_usb_wrap_pad_enable(&USB_WRAP, true);
-    usb_phy_ll_int_otg_enable(&USB_WRAP);
-#endif
+    // Ensure that the USB FSLS PHY is mapped to the USB WRAP
+    usb_wrap_ll_phy_enable_pad(&USB_WRAP, true);
+    usb_wrap_ll_phy_enable_external(&USB_WRAP, false);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC
 
 #ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 void bootloader_console_init(void)
 {
-    esp_rom_uart_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
+    esp_rom_output_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
+
+    /* Switch console channel to avoid output on UART and allow  */
+    esp_rom_output_set_as_console(ESP_ROM_USB_SERIAL_DEVICE_NUM);
+
+    /* ROM printf by default also prints to USB-Serial-JTAG on channel 2
+       need to disable to not print twice */
+    esp_rom_install_channel_putc(2, NULL);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG

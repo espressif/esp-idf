@@ -34,6 +34,8 @@ def prepare() -> t.Generator[None, None, None]:
             f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32-wrover-kit-3.3v.cfg',
             marks=[pytest.mark.esp32],
         ),
+    ], ids=[
+        'esp32',
     ],
     indirect=True,
 )

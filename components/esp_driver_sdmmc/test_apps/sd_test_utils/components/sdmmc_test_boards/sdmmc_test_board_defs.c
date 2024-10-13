@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,6 +316,90 @@ static const sdmmc_test_board_info_t s_board_info = {
         }
     },
     .card_power_set = card_power_set_esp32c3_breakout
+};
+
+#elif CONFIG_SDMMC_BOARD_ESP32P4_EV_BOARD
+
+static const sdmmc_test_board_info_t s_board_info = {
+    .name = "ESP32-P4 Function EV Board",
+    .slot = {
+        {
+            .slot_exists = false
+        },
+        {
+            .slot_exists = true,
+            .bus_width = 4,
+            .clk = 43,
+            .cmd_mosi = 44,
+            .d0_miso = 39,
+            .d1 = 40,
+            .d2 = 41,
+            .d3_cs = 42,
+            .d4 = GPIO_NUM_NC,
+            .d5 = GPIO_NUM_NC,
+            .d6 = GPIO_NUM_NC,
+            .d7 = GPIO_NUM_NC,
+            .cd = GPIO_NUM_NC,
+            .wp = GPIO_NUM_NC,
+            .unused_pin = 54,
+        }
+    },
+};
+
+#elif CONFIG_SDMMC_BOARD_ESP32P4_EV_BOARD_WITH_SDSPI
+
+static const sdmmc_test_board_info_t s_board_info = {
+    .name = "ESP32-P4 Function EV Board with SDSPI breakout",
+    .slot = {
+        {
+            .slot_exists = false
+        },
+        {
+            .slot_exists = true,
+            .bus_width = 1,
+            .clk = 53,
+            .cmd_mosi = 36,
+            .d0_miso = 47,
+            .d1 = GPIO_NUM_NC,
+            .d2 = GPIO_NUM_NC,
+            .d3_cs = 33,
+            .d4 = GPIO_NUM_NC,
+            .d5 = GPIO_NUM_NC,
+            .d6 = GPIO_NUM_NC,
+            .d7 = GPIO_NUM_NC,
+            .cd = CONFIG_SDMMC_BOARD_CUSTOM_CD,
+            .wp = CONFIG_SDMMC_BOARD_CUSTOM_WP,
+            .unused_pin = CONFIG_SDMMC_BOARD_CUSTOM_UNUSED,
+        }
+    },
+};
+
+#elif CONFIG_SDMMC_BOARD_ESP32C5_BREAKOUT
+
+static const sdmmc_test_board_info_t s_board_info = {
+    .name = "ESP32-C5 breakout board",
+    .slot = {
+        {
+            .slot_exists = false
+        },
+        {
+            .slot_exists = true,
+            .bus_width = 1,
+            .clk = 5,
+            .cmd_mosi = 4,
+            .d0_miso = 6,
+            .d1 = GPIO_NUM_NC,
+            .d2 = GPIO_NUM_NC,
+            .d3_cs = 1,
+            .d4 = GPIO_NUM_NC,
+            .d5 = GPIO_NUM_NC,
+            .d6 = GPIO_NUM_NC,
+            .d7 = GPIO_NUM_NC,
+            .cd = CONFIG_SDMMC_BOARD_CUSTOM_CD,
+            .wp = CONFIG_SDMMC_BOARD_CUSTOM_WP,
+            .unused_pin = CONFIG_SDMMC_BOARD_CUSTOM_UNUSED,
+        }
+    },
 };
 
 #elif CONFIG_SDMMC_BOARD_CUSTOM_SD

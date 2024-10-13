@@ -1,0 +1,7 @@
+[mapping:btdm]
+archive: libbtdm_app.a
+entries:
+    * (bt_default);
+        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),
+        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_common),
+        data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_data)

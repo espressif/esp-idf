@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"
 
@@ -51,18 +50,18 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
     if (!spi_flash_cache_enabled())
 #endif
     {
-       if (esp_ptr_in_drom(file)) {
-           file = CACHE_DISABLED_STR;
-       }
+        if (esp_ptr_in_drom(file)) {
+            file = CACHE_DISABLED_STR;
+        }
 
-       if (esp_ptr_in_drom(func)) {
-           ra_to_str(addr);
-           func = addr;
-       }
+        if (esp_ptr_in_drom(func)) {
+            ra_to_str(addr);
+            func = addr;
+        }
 
-       if (esp_ptr_in_drom(expr)) {
-           expr = CACHE_DISABLED_STR;
-       }
+        if (esp_ptr_in_drom(expr)) {
+            expr = CACHE_DISABLED_STR;
+        }
     }
 
     const char *str[] = {ASSERT_STR, func ? func : "\b", " ", file, ":", lbuf, " (", expr, ")"};

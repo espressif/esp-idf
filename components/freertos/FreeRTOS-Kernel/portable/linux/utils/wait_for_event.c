@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "wait_for_event.h"
 
@@ -47,7 +48,7 @@ struct event
 struct event * event_create(void)
 {
     struct event * ev = malloc( sizeof( struct event ) );
-
+    assert(ev != NULL);
     ev->event_triggered = false;
     pthread_mutex_init( &ev->mutex, NULL );
     pthread_cond_init( &ev->cond, NULL );

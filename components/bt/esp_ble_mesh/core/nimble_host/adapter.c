@@ -81,14 +81,15 @@ static struct bt_mesh_conn_cb *bt_mesh_gatts_conn_cb;
 static uint8_t bt_mesh_gatts_addr[6];
 #endif /* CONFIG_BLE_MESH_NODE */
 
+static bool g_host_init = false;
+
 int bt_mesh_host_init(void)
 {
-    static bool init = false;
     int rc;
 
-    if (init == true) {
+    if (g_host_init  == true) {
         BT_WARN("Already initialized host for mesh!");
-        return 0;
+        return -EALREADY;
     }
 
     rc = btc_init();
@@ -102,7 +103,30 @@ int bt_mesh_host_init(void)
     }
 
     osi_alarm_init();
-    init = true;
+    g_host_init  = true;
+
+    return 0;
+}
+
+int bt_mesh_host_deinit(void)
+{
+    int rc;
+
+    if (g_host_init == false) {
+        return -EALREADY;
+    }
+
+    osi_alarm_deinit();
+
+    rc = osi_alarm_delete_mux();
+    if (rc != 0) {
+        return -1;
+    }
+
+    btc_deinit();
+
+    g_host_init = false;
+
     return 0;
 }
 
@@ -758,15 +782,17 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len)
 {
+    struct ble_gap_adv_params adv_params;
+    uint8_t buf[BLE_HS_ADV_MAX_SZ];
+    uint16_t interval = 0;
+    uint8_t buf_len = 0;
+    int err;
+
 #if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_ADVERTISING)) {
         return -EALREADY;
     }
 #endif
-    uint8_t buf[BLE_HS_ADV_MAX_SZ];
-    uint8_t buf_len = 0;
-    int err;
-    struct ble_gap_adv_params adv_params;
 
     err = set_ad(ad, ad_len, buf, &buf_len);
     if (err) {
@@ -797,8 +823,6 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     }
 
     memset(&adv_params, 0, sizeof adv_params);
-    adv_params.itvl_min = param->interval_min;
-    adv_params.itvl_max = param->interval_max;
 
     if (param->options & BLE_MESH_ADV_OPT_CONNECTABLE) {
         adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
@@ -810,6 +834,25 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
     }
+
+    interval = param->interval_min;
+
+#if CONFIG_BLE_MESH_RANDOM_ADV_INTERVAL
+    /* If non-connectable mesh packets are transmitted with an adv interval
+     * not smaller than 10ms, then we will use a random adv interval between
+     * [interval / 2, interval] for them.
+     */
+    if (adv_params.conn_mode == BLE_GAP_CONN_MODE_NON &&
+        adv_params.disc_mode == BLE_GAP_DISC_MODE_NON && interval >= 16) {
+        interval >>= 1;
+        interval += (bt_mesh_get_rand() % (interval + 1));
+
+        BT_INFO("%u->%u", param->interval_min, interval);
+    }
+#endif
+
+    adv_params.itvl_min = interval;
+    adv_params.itvl_max = interval;
 
 again:
     err = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER, &adv_params,
@@ -876,7 +919,7 @@ int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
         break;
     case BLE_MESH_ADV_NONCONN_IND:
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
-        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
         break;
     case BLE_MESH_ADV_DIRECT_IND_LOW_DUTY:
         adv_params.conn_mode = BLE_GAP_CONN_MODE_DIR;
@@ -1266,7 +1309,6 @@ int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc)
 {
     int rc;
     uint16_t handle;
-    const ble_uuid_t *uuid;
 
     if (!svc) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1274,12 +1316,11 @@ int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc)
     }
 
     if (BLE_MESH_UUID_16(svc->attrs[0].user_data)->val == BT_UUID_MESH_PROXY_VAL) {
-        uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL);
+        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL), &handle);
     } else {
-        uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL);
+        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL), &handle);
     }
 
-    rc = ble_gatts_find_svc(uuid, &handle);
     assert(rc == 0);
     ble_gatts_svc_set_visibility(handle, 0);
 
@@ -1293,15 +1334,13 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc)
 {
     int rc;
     uint16_t handle;
-    const ble_uuid_t *uuid;
 
     if (BLE_MESH_UUID_16(svc->attrs[0].user_data)->val == BT_UUID_MESH_PROXY_VAL) {
-        uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL);
+        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROXY_VAL), &handle);
     } else {
-        uuid = BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL);
+        rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MESH_PROV_VAL), &handle);
     }
 
-    rc = ble_gatts_find_svc(uuid, &handle);
     assert(rc == 0);
     ble_gatts_svc_set_visibility(handle, 1);
 

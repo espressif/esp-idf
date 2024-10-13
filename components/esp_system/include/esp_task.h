@@ -42,7 +42,6 @@
 /* Ping Task */
 #define ESP_TASK_PING_STACK             (2048 + TASK_EXTRA_STACK_SIZE)
 
-
 /* idf task */
 #define ESP_TASK_TIMER_PRIO           (ESP_TASK_PRIO_MAX - 3)
 #define ESP_TASK_TIMER_STACK          (CONFIG_ESP_TIMER_TASK_STACK_SIZE +  TASK_EXTRA_STACK_SIZE)

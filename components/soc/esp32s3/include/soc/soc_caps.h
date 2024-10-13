@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,12 +25,15 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_UART_SUPPORTED              1
 #define SOC_PCNT_SUPPORTED              1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
+#define SOC_LCDCAM_I80_LCD_SUPPORTED    1
+#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -74,6 +77,11 @@
 #define SOC_MPU_SUPPORTED               1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
+#define SOC_RNG_SUPPORTED               1
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
+#define SOC_LP_PERIPH_SHARE_INTERRUPT   1   // LP peripherals sharing the same interrupt source
+#define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -133,6 +141,7 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FPU                 1
+#define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 
 #define SOC_CPU_BREAKPOINTS_NUM             2
 #define SOC_CPU_WATCHPOINTS_NUM             2
@@ -152,7 +161,8 @@
 /*-------------------------- GDMA CAPS ---------------------------------------*/
 #define SOC_AHB_GDMA_VERSION           1U
 #define SOC_GDMA_NUM_GROUPS_MAX        1U
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX   5
+#define SOC_GDMA_PAIRS_PER_GROUP       5 // esp32s3 has only one kind of GDMA, which is AHB GDMA, and it has 5 pairs in total.
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX   5 // when there're multiple GDMA instances, this macro represents the maximum number of GDMA pairs in the same group.
 #define SOC_AHB_GDMA_SUPPORT_PSRAM     1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
@@ -178,8 +188,12 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_26~GPIO_NUM_48)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0001FFFFFC000000ULL
 
-// The Clock Out singnal is binding to the pin's IO_MUX function
+// The Clock Out signal is binding to the pin's IO_MUX function
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
+#define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
+
+// RTC_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -188,7 +202,8 @@
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-S3 has 2 I2C
-#define SOC_I2C_NUM            (2)
+#define SOC_I2C_NUM                 (2U)
+#define SOC_HP_I2C_NUM              (2U)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
@@ -278,6 +293,10 @@
 #define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
 #define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
 #define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
+#define SOC_LCDCAM_I80_NUM_BUSES        (1U) /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
+#define SOC_LCDCAM_I80_BUS_WIDTH        (16) /*!< Intel 8080 bus max data width */
+#define SOC_LCDCAM_RGB_NUM_PANELS       (1U) /*!< LCD_CAM peripheral provides one RGB panel */
+#define SOC_LCDCAM_RGB_DATA_WIDTH       (16) /*!< RGB panel max data width */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
@@ -327,6 +346,12 @@
 #define SOC_SPI_MAX_PRE_DIVIDER                     16
 #define SOC_SPI_SUPPORT_OCT                         1
 
+#define SOC_SPI_SCT_SUPPORTED                     1
+#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  ((PERIPH_NUM==1) ? 1 : 0)    //Support Segmented-Configure-Transfer
+#define SOC_SPI_SCT_REG_NUM                       14
+#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
+#define SOC_SPI_SCT_CONF_BITLEN_MAX               0x3FFFA       //18 bits wide reg
+
 #define SOC_MEMSPI_SRC_FREQ_120M         1
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED          1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED          1
@@ -354,12 +379,15 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_VERSION            (2)  // Hardware version of touch sensor
-#define SOC_TOUCH_SENSOR_NUM                (15) /*! 15 Touch channels */
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)  /* Sopport touch proximity channel number. */
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1) /*Sopport touch proximity channel measure done interrupt type. */
+#define SOC_TOUCH_SENSOR_VERSION                    (2)  /*!< Hardware version of touch sensor */
+#define SOC_TOUCH_SENSOR_NUM                        (15) /*!< 15 Touch channels */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP               (1)  /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_WATERPROOF                (1)  /*!< Touch sensor supports waterproof */
+#define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)  /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)  /*!< Support touch proximity sensing channel number. */
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)  /*!< Support touch proximity sensing measure done interrupt type. */
 
-#define SOC_TOUCH_SAMPLER_NUM               (1U)    /*!< The sampler number in total, each sampler can be used to sample on one frequency */
+#define SOC_TOUCH_SAMPLE_CFG_NUM                    (1U) /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL
@@ -445,6 +473,7 @@
 
 #define SOC_PM_CPU_RETENTION_BY_RTCCNTL         (1)
 #define SOC_PM_MODEM_RETENTION_BY_BACKUPDMA     (1)
+#define SOC_PM_MODEM_PD_BY_SW                   (1)
 
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
@@ -498,6 +527,7 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 #define SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM             (1)
+#define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
@@ -529,6 +559,7 @@
 #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
 #define SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW   (1)    /*!< Support delta early time for rf phy on/off */
+#define SOC_WIFI_PHY_NEEDS_USB_WORKAROUND   (1)    /*!< SoC has WiFi and USB PHYs interference, needs a workaround */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */

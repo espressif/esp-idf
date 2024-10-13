@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- |
 
 # FTM Example
 
@@ -69,7 +69,7 @@ Issue `ftm -I` to initiate a session with default configuration of 32 FTM frames
 Where -
 * `-I` OR `--ftm_initiator`:  FTM Initiator mode
 * `-c` OR `--frm_count`: FTM frames to be exchanged (Valid values: 0=No preference, 8, 16, 24, 32, 64, default: 32)
-* `-p` OR `--burst_period`: Periodicity of FTM bursts in 100's of miliseconds (0: No preference, default: 2)
+* `-p` OR `--burst_period`: Periodicity of FTM bursts in 100's of milliseconds (0: No preference, default: 2)
 * `-s` OR `--ssid=SSID`: SSID of AP that supports FTM Responder mode
 
 Currently FTM is only supported in below configuration -

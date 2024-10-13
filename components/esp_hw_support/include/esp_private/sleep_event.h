@@ -32,8 +32,8 @@ typedef enum {
     SLEEP_EVENT_HW_FLASH_BBPLL_EN_START,  // Beginning of rtc_clk_bbpll_enable when using FLASH_PLL
     SLEEP_EVENT_HW_FLASH_BBPLL_EN_STOP,   // End of rtc_clk_bbpll_enable when using FLASH_PLL
 #endif
-    SLEEP_EVENT_HW_BBPLL_EN_START,        // Beginning of rtc_clk_bbpll_enable
-    SLEEP_EVENT_HW_BBPLL_EN_STOP,         // End of rtc_clk_bbpll_enable
+    SLEEP_EVENT_HW_PLL_EN_START,          // Beginning of rtc_clk_pll_enable
+    SLEEP_EVENT_HW_PLL_EN_STOP,           // End of rtc_clk_pll_enable
     SLEEP_EVENT_CB_INDEX_NUM,
 } esp_sleep_event_cb_index_t;
 

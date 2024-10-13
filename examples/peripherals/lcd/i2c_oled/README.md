@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # I2C OLED example
 
@@ -19,7 +19,7 @@ This example shows how to make use of the SSD1306 panel driver from `esp_lcd` co
 
 The connection between ESP Board and the LCD is as follows:
 
-```
+```text
       ESP Board                       OLED LCD (I2C)
 +------------------+              +-------------------+
 |               GND+--------------+GND                |
@@ -38,7 +38,7 @@ The GPIO number used by this example can be changed in [lvgl_example_main.c](mai
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A scrolling text will show up on the LCD as expected.
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from the ESP Component Registry into `managed_components` folder.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -48,17 +48,20 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ```bash
 ...
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (345) example: Initialize I2C bus
-I (345) example: Install panel IO
-I (345) example: Install SSD1306 panel driver
-I (455) example: Initialize LVGL library
-I (455) example: Register display driver to LVGL
-I (455) example: Install LVGL tick timer
-I (455) example: Display LVGL Scroll Text
+I (308) main_task: Started on CPU0
+I (318) main_task: Calling app_main()
+I (318) example: Initialize I2C bus
+I (318) gpio: GPIO[3]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
+I (328) gpio: GPIO[4]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
+I (338) example: Install panel IO
+I (338) example: Install SSD1306 panel driver
+I (448) example: Initialize LVGL
+I (448) LVGL: Starting LVGL task
+I (448) example: Display LVGL Scroll Text
+I (448) main_task: Returned from app_main()
 ...
 ```
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

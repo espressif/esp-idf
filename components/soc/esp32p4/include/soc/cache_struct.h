@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -5269,12 +5269,12 @@ typedef union {
     struct {
         /** l1_icache0_unalloc_clr : R/W; bitpos: [0]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 icache0 where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_icache0_unalloc_clr:1;
         /** l1_icache1_unalloc_clr : R/W; bitpos: [1]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 icache1 where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_icache1_unalloc_clr:1;
         /** l1_icache2_unalloc_clr : HRO; bitpos: [2]; default: 0;
@@ -5287,7 +5287,7 @@ typedef union {
         uint32_t l1_icache3_unalloc_clr:1;
         /** l1_dcache_unalloc_clr : R/W; bitpos: [4]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l1 dcache where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l1_dcache_unalloc_clr:1;
         uint32_t reserved_5:27;
@@ -5303,7 +5303,7 @@ typedef union {
         uint32_t reserved_0:5;
         /** l2_cache_unalloc_clr : R/W; bitpos: [5]; default: 0;
          *  The bit is used to clear the unallocate request buffer of l2 icache where the
-         *  unallocate request is responsed but not completed.
+         *  unallocate request is responded but not completed.
          */
         uint32_t l2_cache_unalloc_clr:1;
         uint32_t reserved_6:26;
@@ -5548,7 +5548,7 @@ typedef union {
 } cache_date_reg_t;
 
 
-typedef struct {
+typedef struct cache_dev_t {
     volatile cache_l1_icache_ctrl_reg_t l1_icache_ctrl;
     volatile cache_l1_dcache_ctrl_reg_t l1_dcache_ctrl;
     volatile cache_l1_bypass_cache_conf_reg_t l1_bypass_cache_conf;
@@ -5799,6 +5799,7 @@ typedef struct {
     volatile cache_date_reg_t date;
 } cache_dev_t;
 
+extern cache_dev_t CACHE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cache_dev_t) == 0x400, "Invalid size of cache_dev_t structure");

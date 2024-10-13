@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@ typedef struct {
     uint8_t* block_buf;
     /// semaphore of gpio interrupt
     SemaphoreHandle_t   semphr_int;
+    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
 } slot_info_t;
 
 // Reserved for old API to be back-compatible
@@ -215,6 +216,7 @@ static esp_err_t configure_spi_dev(slot_info_t *slot, int clock_speed_hz)
         // rather than a single SPI transaction.
         .spics_io_num = GPIO_NUM_NC,
         .queue_size = SDSPI_TRANSACTION_COUNT,
+        .duty_cycle_pos = slot->duty_cycle_pos,
     };
     return spi_bus_add_device(slot->host_id, &devcfg, &slot->spi_handle);
 }
@@ -337,6 +339,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
     *slot = (slot_info_t) {
         .host_id = slot_config->host_id,
         .gpio_cs = slot_config->gpio_cs,
+        .duty_cycle_pos = slot_config->duty_cycle_pos,
     };
 
     // Attach the SD card to the SPI bus
@@ -806,7 +809,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
             crc_of_data = sdspi_crc16(data, will_receive + extra_data_size);
             if (crc_of_data != crc) {
                 ESP_LOGE(TAG, "data CRC failed, got=0x%04x expected=0x%04x", crc_of_data, crc);
-                esp_log_buffer_hex(TAG, data, 16);
+                ESP_LOG_BUFFER_HEX(TAG, data, 16);
                 return ESP_ERR_INVALID_CRC;
             }
         }
@@ -996,5 +999,13 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
         gpio_intr_disable(slot->gpio_int);
         return ESP_ERR_TIMEOUT;
     }
+    return ESP_OK;
+}
+
+esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
+{
+    (void)slot;
+    dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
+    dma_mem_info->dma_alignment_bytes = 4;
     return ESP_OK;
 }

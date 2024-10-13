@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,9 +135,9 @@ static bool esp_apptrace_test_timer_isr_crash(gptimer_handle_t timer, const gpti
         memset(tim_arg->data.buf + 2 * sizeof(uint32_t), tim_arg->data.wr_cnt & tim_arg->data.mask, tim_arg->data.buf_sz - 2 * sizeof(uint32_t));
         int res = ESP_APPTRACE_TEST_WRITE_FROM_ISR(tim_arg->data.buf, tim_arg->data.buf_sz);
         if (res != ESP_OK) {
-            esp_rom_printf("tim-%x: Failed to write trace %d %x!\n", tim_arg->gptimer, res, tim_arg->data.wr_cnt & tim_arg->data.mask);
+            esp_rom_printf("tim-%p: Failed to write trace %d %" PRIx32 "!\n", tim_arg->gptimer, res, tim_arg->data.wr_cnt & tim_arg->data.mask);
         } else {
-            esp_rom_printf("tim-%x: Written chunk%d %d bytes, %x\n",
+            esp_rom_printf("tim-%p: Written chunk%" PRIu32 " %" PRIu32 " bytes, %" PRIx32 "\n",
                            timer, tim_arg->data.wr_cnt, tim_arg->data.buf_sz, tim_arg->data.wr_cnt & tim_arg->data.mask);
             tim_arg->data.wr_cnt++;
         }
@@ -153,7 +153,7 @@ static void esp_apptrace_dummy_task(void *p)
     esp_apptrace_test_task_arg_t *arg = (esp_apptrace_test_task_arg_t *) p;
     TickType_t tmo_ticks = arg->data.period / (1000 * portTICK_PERIOD_MS);
 
-    ESP_APPTRACE_TEST_LOGI("%x: run dummy task (period %u us, %u timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->timers_num);
+    ESP_APPTRACE_TEST_LOGI("%p: run dummy task (period %" PRIu32 " us, %" PRIu32 " timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->timers_num);
 
     for (int i = 0; i < arg->timers_num; i++) {
         gptimer_config_t timer_config = {
@@ -163,7 +163,7 @@ static void esp_apptrace_dummy_task(void *p)
         };
         TEST_ESP_OK(gptimer_new_timer(&timer_config, &arg->timers[i].gptimer));
         *(uint32_t *)arg->timers[i].data.buf = (uint32_t)arg->timers[i].gptimer | (1 << 31);
-        ESP_APPTRACE_TEST_LOGI("%x: start timer %x period %u us", xTaskGetCurrentTaskHandle(), arg->timers[i].gptimer, arg->timers[i].data.period);
+        ESP_APPTRACE_TEST_LOGI("%p: start timer %p period %" PRIu32 " us", xTaskGetCurrentTaskHandle(), arg->timers[i].gptimer, arg->timers[i].data.period);
         gptimer_alarm_config_t alarm_config = {
             .reload_count = 0,
             .alarm_count = arg->timers[i].data.period,
@@ -180,7 +180,7 @@ static void esp_apptrace_dummy_task(void *p)
 
     int i = 0;
     while (!arg->stop) {
-        ESP_APPTRACE_TEST_LOGD("%x: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), esp_cpu_get_core_id(), i++);
+        ESP_APPTRACE_TEST_LOGD("%p: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), esp_cpu_get_core_id(), i++);
         if (tmo_ticks) {
             vTaskDelay(tmo_ticks);
         }
@@ -202,7 +202,7 @@ static void esp_apptrace_test_task(void *p)
     int res;
     TickType_t tmo_ticks = arg->data.period / (1000 * portTICK_PERIOD_MS);
 
-    ESP_APPTRACE_TEST_LOGI("%x: run (period %u us, stamp mask %x, %u timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->data.mask, arg->timers_num);
+    ESP_APPTRACE_TEST_LOGI("%p: run (period %" PRIu32 " us, stamp mask %" PRIx8 ", %" PRIu32 " timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->data.mask, arg->timers_num);
 
     for (int i = 0; i < arg->timers_num; i++) {
         gptimer_config_t timer_config = {
@@ -212,7 +212,7 @@ static void esp_apptrace_test_task(void *p)
         };
         TEST_ESP_OK(gptimer_new_timer(&timer_config, &arg->timers[i].gptimer));
         *(uint32_t *)arg->timers[i].data.buf = ((uint32_t)arg->timers[i].gptimer) | (1 << 31) | (esp_cpu_get_core_id() ? 0x1 : 0);
-        ESP_APPTRACE_TEST_LOGI("%x: start timer %x period %u us", xTaskGetCurrentTaskHandle(), arg->timers[i].gptimer, arg->timers[i].data.period);
+        ESP_APPTRACE_TEST_LOGI("%p: start timer %p period %" PRIu32 " us", xTaskGetCurrentTaskHandle(), arg->timers[i].gptimer, arg->timers[i].data.period);
         gptimer_alarm_config_t alarm_config = {
             .reload_count = 0,
             .alarm_count = arg->timers[i].data.period,
@@ -242,14 +242,14 @@ static void esp_apptrace_test_task(void *p)
         }
         if (res) {
             if (1) { //arg->data.wr_err++ < ESP_APPTRACE_TEST_PRN_WRERR_MAX) {
-                ESP_APPTRACE_TEST_LOGE("%x: Failed to write trace %d %x!", xTaskGetCurrentTaskHandle(), res, arg->data.wr_cnt & arg->data.mask);
+                ESP_APPTRACE_TEST_LOGE("%p: Failed to write trace %d %" PRIx32 "!", xTaskGetCurrentTaskHandle(), res, arg->data.wr_cnt & arg->data.mask);
                 if (arg->data.wr_err == ESP_APPTRACE_TEST_PRN_WRERR_MAX) {
                     ESP_APPTRACE_TEST_LOGE("\n");
                 }
             }
         } else {
             if (0) {
-                ESP_APPTRACE_TEST_LOGD("%x:%x: Written chunk%d %d bytes, %x", xTaskGetCurrentTaskHandle(), *ts, arg->data.wr_cnt, arg->data.buf_sz, arg->data.wr_cnt & arg->data.mask);
+                ESP_APPTRACE_TEST_LOGD("%p:%" PRIx32 ": Written chunk%" PRIu32 " %" PRIu32 " bytes, %" PRIx32, xTaskGetCurrentTaskHandle(), *ts, arg->data.wr_cnt, arg->data.buf_sz, arg->data.wr_cnt & arg->data.mask);
             }
             arg->data.wr_err = 0;
         }
@@ -273,7 +273,7 @@ static void esp_apptrace_test_task_crash(void *p)
 {
     esp_apptrace_test_task_arg_t *arg = (esp_apptrace_test_task_arg_t *) p;
 
-    ESP_APPTRACE_TEST_LOGE("%x: run (period %u us, stamp mask %x, %u timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->data.mask, arg->timers_num);
+    ESP_APPTRACE_TEST_LOGE("%p: run (period %" PRIu32 " us, stamp mask %" PRIx8 ", %" PRIu32 " timers)", xTaskGetCurrentTaskHandle(), arg->data.period, arg->data.mask, arg->timers_num);
 
     arg->data.wr_cnt = 0;
     *(uint32_t *)arg->data.buf = (uint32_t)xTaskGetCurrentTaskHandle();
@@ -283,9 +283,9 @@ static void esp_apptrace_test_task_crash(void *p)
         memset(arg->data.buf + sizeof(uint32_t), arg->data.wr_cnt & arg->data.mask, arg->data.buf_sz - sizeof(uint32_t));
         int res = ESP_APPTRACE_TEST_WRITE(arg->data.buf, arg->data.buf_sz);
         if (res) {
-            ESP_APPTRACE_TEST_LOGE("%x: Failed to write trace %d %x!", xTaskGetCurrentTaskHandle(), res, arg->data.wr_cnt & arg->data.mask);
+            ESP_APPTRACE_TEST_LOGE("%p: Failed to write trace %d %" PRIx32 "!", xTaskGetCurrentTaskHandle(), res, arg->data.wr_cnt & arg->data.mask);
         } else {
-            ESP_APPTRACE_TEST_LOGD("%x: Written chunk%d %d bytes, %x", xTaskGetCurrentTaskHandle(), arg->data.wr_cnt, arg->data.buf_sz, arg->data.wr_cnt & arg->data.mask);
+            ESP_APPTRACE_TEST_LOGD("%p: Written chunk%" PRIu32 " %" PRIu32 " bytes, %" PRIx32, xTaskGetCurrentTaskHandle(), arg->data.wr_cnt, arg->data.buf_sz, arg->data.wr_cnt & arg->data.mask);
         }
         arg->data.wr_cnt++;
     }
@@ -315,7 +315,7 @@ static void esp_apptrace_test_ts_init(void)
         .resolution_hz = 10000000,
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &ts_gptimer));
-    ESP_APPTRACE_TEST_LOGI("Use timer %x for TS", ts_gptimer);
+    ESP_APPTRACE_TEST_LOGI("Use timer %p for TS", ts_gptimer);
     TEST_ESP_OK(gptimer_enable(ts_gptimer));
     TEST_ESP_OK(gptimer_start(ts_gptimer));
 }
@@ -368,7 +368,7 @@ static void esp_apptrace_test(esp_apptrace_test_cfg_t *test_cfg)
         TaskHandle_t thnd;
         sprintf(name, "apptrace_test%d", i);
         xTaskCreatePinnedToCore(test_cfg->tasks[i].task_func, name, 2048, &test_cfg->tasks[i], test_cfg->tasks[i].prio, &thnd, test_cfg->tasks[i].core);
-        ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+        ESP_APPTRACE_TEST_LOGI("Created task %p", thnd);
     }
     xTaskCreatePinnedToCore(esp_apptrace_dummy_task, "dummy0", 2048, &dummy_task_arg, dummy_task_arg.prio, NULL, 0);
 #if CONFIG_FREERTOS_UNICORE == 0
@@ -641,7 +641,7 @@ static void esp_logtrace_task(void *p)
 {
     esp_logtrace_task_t *arg = (esp_logtrace_task_t *) p;
 
-    ESP_APPTRACE_TEST_LOGI("%x: run log test task", xTaskGetCurrentTaskHandle());
+    ESP_APPTRACE_TEST_LOGI("%p: run log test task", xTaskGetCurrentTaskHandle());
 
     int i = 0;
     while (1) {
@@ -662,7 +662,7 @@ static void esp_logtrace_task(void *p)
         ESP_APPTRACE_TEST_LOGE("Failed to flush printf buf (%d)!", ret);
     }
 
-    ESP_APPTRACE_TEST_LOGI("%x: finished", xTaskGetCurrentTaskHandle());
+    ESP_APPTRACE_TEST_LOGI("%p: finished", xTaskGetCurrentTaskHandle());
 
     xSemaphoreGive(arg->done);
     vTaskDelay(1);
@@ -681,13 +681,13 @@ TEST_CASE("Log trace test (2 tasks)", "[trace][ignore]")
     };
 
     xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace0", 2048, &arg1, 3, &thnd, 0);
-    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+    ESP_APPTRACE_TEST_LOGI("Created task %p", thnd);
 #if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace1", 2048, &arg2, 3, &thnd, 1);
 #else
     xTaskCreatePinnedToCore(esp_logtrace_task, "logtrace1", 2048, &arg2, 3, &thnd, 0);
 #endif
-    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+    ESP_APPTRACE_TEST_LOGI("Created task %p", thnd);
 
     xSemaphoreTake(arg1.done, portMAX_DELAY);
     vSemaphoreDelete(arg1.done);
@@ -760,7 +760,7 @@ static void esp_sysviewtrace_test_task(void *p)
             xSemaphoreGive(*arg->sync);
         }
     }
-    ESP_APPTRACE_TEST_LOGI("%x: finished", xTaskGetCurrentTaskHandle());
+    ESP_APPTRACE_TEST_LOGI("%p: finished", xTaskGetCurrentTaskHandle());
 
     xSemaphoreGive(arg->done);
     vTaskDelay(1);
@@ -809,13 +809,13 @@ TEST_CASE("SysView trace test 1", "[trace][ignore]")
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &tim_arg2.gptimer));
 
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace0", 2048, &arg1, 3, &thnd, 0);
-    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+    ESP_APPTRACE_TEST_LOGI("Created task %p", thnd);
 #if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 5, &thnd, 1);
 #else
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 5, &thnd, 0);
 #endif
-    ESP_APPTRACE_TEST_LOGI("Created task %x", thnd);
+    ESP_APPTRACE_TEST_LOGI("Created task %p", thnd);
 
     xSemaphoreTake(arg1.done, portMAX_DELAY);
     vSemaphoreDelete(arg1.done);

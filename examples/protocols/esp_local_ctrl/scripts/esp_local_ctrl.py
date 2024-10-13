@@ -136,7 +136,7 @@ async def get_transport(sel_transport, service_name, check_hostname):
             tp = esp_prov.transport.Transport_HTTP(service_name, ssl_ctx)
         elif (sel_transport == 'ble'):
             tp = esp_prov.transport.Transport_BLE(
-                devname=service_name, service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
+                service_uuid='3d981e4a-31eb-42b4-8a68-75bd8d3bd521',
                 nu_lookup={'esp_local_ctrl/version': '0001',
                            'esp_local_ctrl/session': '0002',
                            'esp_local_ctrl/control': '0003'}

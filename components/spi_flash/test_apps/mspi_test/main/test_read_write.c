@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -280,28 +280,30 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40000000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40070000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40078000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
+#else
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)
 #define TEST_SOC_CACHE_RAM_BANK2_ADDR   (SOC_IRAM_LOW + 0x4000)
 #define TEST_SOC_CACHE_RAM_BANK3_ADDR   (SOC_IRAM_LOW + 0x6000)
 #define TEST_SOC_IRAM_ADDR              (SOC_IRAM_LOW + 0x8000)
-#define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
-#define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IROM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IRAM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK0_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK1_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK2_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, start, 16));
+#if SOC_RTC_FAST_MEM_SUPPORTED
+#define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
+#define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_IRAM_ADDR, start, 16));
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_DRAM_ADDR, start, 16));
-#else
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40000000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40070000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40078000, start, 16));
-    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
+#endif // SOC_RTC_FAST_MEM_SUPPORTED
 #endif
 }
 
@@ -340,12 +342,12 @@ TEST_CASE("esp_flash_write can write from external RAM buffer", "[spi_flash]")
 
     /* Write to flash from buf_ext */
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
-    TEST_ESP_OK(esp_flash_write(NULL, buf_ext, part->address, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), part->erase_size));
+    TEST_ESP_OK(esp_flash_write(NULL, buf_ext, part->address, part->erase_size));
 
     /* Read back to buf_int and compare */
-    TEST_ESP_OK(esp_flash_read(NULL, buf_int, part->address, SPI_FLASH_SEC_SIZE));
-    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_int, part->address, part->erase_size));
+    TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, part->erase_size));
 
     free(buf_ext);
     free(buf_int);
@@ -365,7 +367,7 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
     }
 
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), part->erase_size));
     TEST_ESP_OK(esp_flash_write(NULL, data_8, part->address, MIN_BLOCK_SIZE));
     TEST_ESP_OK(esp_flash_read(NULL, buf_ext_8, part->address, MIN_BLOCK_SIZE));
     TEST_ESP_OK(esp_flash_read(NULL, buf_int_8, part->address, MIN_BLOCK_SIZE));

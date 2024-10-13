@@ -7,4 +7,11 @@ menu "Example Configuration"
         help
             The size of array that will be used to retrieve the list of access points.
 
+    config EXAMPLE_USE_SCAN_CHANNEL_BITMAP
+        bool "Scan only non overlapping channels using Channel bitmap"
+        default 0
+        help
+            Enable this to scan only the non overlapping channels i.e 1,6,11 by mentioning a channel bitmap
+            in scan config. If you wish to scan a different set of specific channels, please edit the channel_list
+            array in scan.c. Channels for a 2.4 ghz network range should range from 1-14.
 endmenu

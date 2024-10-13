@@ -20,7 +20,6 @@ submodules:
     - "/components/esp_phy/lib/"
     - "/components/esp_wifi/lib/"
     - "/components/heap/tlsf/"
-    - "/components/ieee802154/lib/"
     - "/components/json/cJSON/"
     - "/components/lwip/lwip/"
     - "/components/mbedtls/mbedtls/"
@@ -39,7 +38,8 @@ components_not_formatted_temporary:
   #    To reformat the files:
   #    - Remove the directory from this exclude list
   #    - Run 'git add .astyle-rules.yml'
-  #    - Run 'pre-commit run --all-files'
+  #    - Run 'pre-commit run --all-files' to run all pre-commit hooks
+  #    - Run 'pre-commit run astyle_py --all-files' to run only the astyle_py hook
   # 2. If no, move it to 'components_not_formatted_permanent' section below.
   check: false
   include:
@@ -49,18 +49,10 @@ components_not_formatted_temporary:
     - "/components/bootloader/"
     - "/components/bt/"
     - "/components/cmock/"
-    - "/components/console/"
-    - "/components/cxx/"
-    - "/components/driver/"
     - "/components/efuse/"
-    - "/components/esp_app_format/"
-    - "/components/esp_bootloader_format/"
     - "/components/esp_coex/"
-    - "/components/esp_common/"
     - "/components/esp_eth/"
-    - "/components/esp_event/"
     - "/components/esp_gdbstub/"
-    - "/components/esp_hid/"
     - "/components/esp_http_client/"
     - "/components/esp_http_server/"
     - "/components/esp_https_ota/"
@@ -71,27 +63,18 @@ components_not_formatted_temporary:
     - "/components/esp_partition/"
     - "/components/esp_phy/"
     - "/components/esp_pm/"
-    - "/components/esp_ringbuf/"
     - "/components/esp_rom/"
-    - "/components/esp_system/"
-    - "/components/esp_timer/"
-    - "/components/esp_wifi/"
     - "/components/esp-tls/"
-    - "/components/espcoredump/"
     - "/components/esptool_py/"
     - "/components/fatfs/"
-    - "/components/freertos/"
     - "/components/hal/"
     - "/components/heap/"
     - "/components/idf_test/"
     - "/components/ieee802154/"
     - "/components/json/"
-    - "/components/linux/"
-    - "/components/log/"
     - "/components/lwip/"
     - "/components/mbedtls/"
     - "/components/mqtt/"
-    - "/components/newlib/"
     - "/components/nvs_flash/"
     - "/components/nvs_sec_provider/"
     - "/components/openthread/"
@@ -99,7 +82,6 @@ components_not_formatted_temporary:
     - "/components/perfmon/"
     - "/components/protobuf-c/"
     - "/components/protocomm/"
-    - "/components/pthread/"
     - "/components/riscv/"
     - "/components/sdmmc/"
     - "/components/soc/"
@@ -107,19 +89,15 @@ components_not_formatted_temporary:
     - "/components/spiffs/"
     - "/components/tcp_transport/"
     - "/components/touch_element/"
-    - "/components/ulp/"
     - "/components/unity/"
-    - "/components/usb/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
     - "/components/wifi_provisioning/"
-    - "/components/wpa_supplicant/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"
     - "/examples/common_components/"
     - "/examples/custom_bootloader/"
-    - "/examples/cxx/"
     - "/examples/ethernet/"
     - "/examples/get-started/"
     - "/examples/mesh/"
@@ -152,6 +130,8 @@ components_not_formatted_permanent:
     - "/components/xtensa/include/xtensa/"
     # FAT FS (upstream source code)
     - "/components/fatfs/src/"
+    # wpa_supplicant upstream code
+    - "/components/wpa_supplicant/src/"
     # Nginx HTTP parser (upstream source code)
     - "/components/http_parser/"
     # Argtable (upstream source code)
@@ -160,20 +140,27 @@ components_not_formatted_permanent:
     - "/components/console/linenoise/"
     # Catch (upstream source code)
     - "/tools/catch/catch.hpp"
-    # FreeRTOS kernel files (upstream source code).
+    # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"
-    - "/components/freertos/FreeRTOS-Kernel-V10.5.1/"
+    # FreeRTOS additions to the upstream source code
+    - "/components/freertos/esp_additions/"
+    # FreeRTOS config files maintained in upstream format
+    - "/components/freertos/config/"
     # Segger SystemView (upstream source code).
     # Could also try to find suitable astyle options, instead.
     - "/components/app_trace/sys_view/Config/"
     - "/components/app_trace/sys_view/Sample/"
     - "/components/app_trace/sys_view/SEGGER/"
+    # FreeRTOS-Plux-POSIX files (upstream source code)
+    - "/components/rt/"
     # SoC header files (generated)
     - "/components/soc/*/include/soc/"
     # Example resource files (generated)
     - "/examples/peripherals/lcd/i80_controller/main/images/"
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
+    # Coredump (generated)
+    - /components/espcoredump/include_core_dump/elf.h
 
 docs:
   # Docs directory contains some .inc files, which are not C include files

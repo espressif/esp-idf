@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/lp_aon_struct.h"
@@ -107,6 +108,50 @@ static inline void lp_core_ll_stall_at_sleep_request(bool enable)
 static inline void lp_core_ll_set_wakeup_source(uint32_t flags)
 {
     PMU.lp_ext.pwr1.wakeup_en = flags;
+}
+
+/**
+ * @brief Get wake-up sources for the LP-core
+ */
+static inline uint32_t lp_core_ll_get_wakeup_source(void)
+{
+    return PMU.lp_ext.pwr1.wakeup_en;
+}
+
+/**
+ * @brief Request PMU to put LP core to sleep
+ */
+static inline void lp_core_ll_request_sleep(void)
+{
+    PMU.lp_ext.pwr1.sleep_req = 1;
+}
+
+/**
+ * @brief Get which interrupts have triggered on the LP core
+ *
+ * @return uint8_t bit mask of triggered LP interrupt sources
+ */
+static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
+{
+    return LPPERI.interrupt_source.lp_interrupt_source;
+}
+
+/**
+ * @brief Get the flag that marks whether LP CPU is awakened by ETM
+ *
+ * @return Return true if lpcore is woken up by soc_etm
+ */
+static inline bool lp_core_ll_get_etm_wakeup_flag(void)
+{
+    return LP_AON.lpcore.lpcore_etm_wakeup_flag;
+}
+
+/**
+ * @brief Clear the flag that marks whether LP CPU is awakened by soc_etm
+ */
+static inline void lp_core_ll_clear_etm_wakeup_flag(void)
+{
+    LP_AON.lpcore.lpcore_etm_wakeup_flag_clr = 0x01;
 }
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "esp32p4/rom/rtc.h"
 
 static void esp_reset_reason_clear_hint(void);
@@ -23,24 +25,22 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_SW:
     case RESET_REASON_CORE_SW:
         if (reset_reason_hint == ESP_RST_PANIC ||
-            reset_reason_hint == ESP_RST_BROWNOUT ||
-            reset_reason_hint == ESP_RST_TASK_WDT ||
-            reset_reason_hint == ESP_RST_INT_WDT) {
+                reset_reason_hint == ESP_RST_BROWNOUT ||
+                reset_reason_hint == ESP_RST_TASK_WDT ||
+                reset_reason_hint == ESP_RST_INT_WDT) {
             return reset_reason_hint;
         }
         return ESP_RST_SW;
 
-    case RESET_REASON_SYS_PMU_PWR_DOWN:
-    case RESET_REASON_CPU_PMU_PWR_DOWN:
-        /* Check when doing sleep bringup TODO 	IDF-7529 */
+    case RESET_REASON_CORE_PMU_PWR_DOWN:
         return ESP_RST_DEEPSLEEP;
 
-    case RESET_REASON_SYS_HP_WDT:
-    case RESET_REASON_SYS_LP_WDT:
+    case RESET_REASON_CPU_MWDT:
+    case RESET_REASON_CPU_RWDT:
     case RESET_REASON_SYS_SUPER_WDT:
-    case RESET_REASON_CHIP_LP_WDT:
-    case RESET_REASON_CORE_HP_WDT:
-    case RESET_REASON_CORE_LP_WDT:
+    case RESET_REASON_SYS_RWDT:
+    case RESET_REASON_CORE_MWDT:
+    case RESET_REASON_CORE_RWDT:
         /* Code is the same for INT vs Task WDT */
         return ESP_RST_WDT;
 
@@ -53,6 +53,20 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CPU_JTAG:
         return ESP_RST_JTAG;
+
+    case RESET_REASON_CPU_LOCKUP:
+        return ESP_RST_CPU_LOCKUP;
+
+    case RESET_REASON_CORE_EFUSE_CRC:
+#if CONFIG_IDF_TARGET_ESP32P4
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+            return ESP_RST_DEEPSLEEP;
+        }
+#endif
+        return ESP_RST_EFUSE;
+
+    case RESET_REASON_CORE_PWR_GLITCH:
+        return ESP_RST_PWR_GLITCH;
 
     default:
         return ESP_RST_UNKNOWN;

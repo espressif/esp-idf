@@ -328,6 +328,7 @@ typedef struct {
     volatile pau_date_reg_t date;
 } pau_dev_t;
 
+extern pau_dev_t PAU;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(pau_dev_t) == 0x400, "Invalid size of pau_dev_t structure");

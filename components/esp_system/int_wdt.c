@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "hal/timer_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
+#include "esp_check.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -22,6 +23,10 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 
 #if SOC_TIMER_GROUPS > 1
 
@@ -47,6 +52,38 @@
 #endif // SOC_TIMER_GROUPS > 1
 
 #if CONFIG_ESP_INT_WDT
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+static const char* TAG = "int_wdt";
+static esp_err_t sleep_int_wdt_retention_init(void *arg)
+{
+    uint32_t group_id = *(uint32_t *)arg;
+    esp_err_t err = sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
+                                                   tg_wdt_regs_retention[group_id].link_num,
+                                                   REGDMA_LINK_PRI_SYS_PERIPH_LOW,
+                                                   (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
+    if (err == ESP_OK) {
+        ESP_LOGD(TAG, "Interrupt watchdog timer retention initialization");
+    }
+    ESP_RETURN_ON_ERROR(err, TAG, "Failed to create sleep retention linked list for interrupt watchdog timer");
+    return err;
+}
+
+static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
+{
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = { .create = { .handle = sleep_int_wdt_retention_init, .arg = &group_id } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+    };
+    esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT, &init_param);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_allocate((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for interrupt watchdog timer retention");
+        }
+    }
+    return err;
+}
+#endif
 
 static wdt_hal_context_t iwdt_context;
 
@@ -122,30 +159,34 @@ void esp_int_wdt_init(void)
     wdt_hal_enable(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    esp_int_wdt_retention_enable(IWDT_TIMER_GROUP);
+#endif
+
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
-    #define APB_DCRSET      (0x200c)
-    #define APB_ITCTRL      (0x3f00)
-    #define ERI_ADDR(APB)   (0x100000 + (APB))
-    #define _SYM2STR(x)     # x
-    #define SYM2STR(x)      _SYM2STR(x)
+#define APB_DCRSET      (0x200c)
+#define APB_ITCTRL      (0x3f00)
+#define ERI_ADDR(APB)   (0x100000 + (APB))
+#define _SYM2STR(x)     # x
+#define SYM2STR(x)      _SYM2STR(x)
 
     uint32_t eriadrs, scratch = 0, immediate = 0;
     if (soc_has_cache_lock_bug()) {
         if (xPortGetCoreID() != CONFIG_BTDM_CTRL_PINNED_TO_CORE) {
-            __asm__ __volatile__ (
+            __asm__ __volatile__(
                 /* Enable Xtensa Debug Module Integration Mode */
                 "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_ITCTRL)) "\n"
                 "rer    %[REG], %[ERI]\n"
                 "movi   %[IMM], 1\n"
                 "or     %[REG], %[IMM], %[REG]\n"
                 "wer    %[REG], %[ERI]\n"
-                /* Enable Xtensa Debug Module BreakIn signal */
+                /* Enable Xtensa Debug Module Break_In signal */
                 "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_DCRSET)) "\n"
                 "rer    %[REG], %[ERI]\n"
                 "movi   %[IMM], 0x10000\n"
                 "or     %[REG], %[IMM], %[REG]\n"
                 "wer    %[REG], %[ERI]\n"
-                : [ERI] "=r" (eriadrs), [REG] "+r" (scratch), [IMM] "+r" (immediate)
+                : [ERI] "=r"(eriadrs), [REG] "+r"(scratch), [IMM] "+r"(immediate)
             );
         }
     }

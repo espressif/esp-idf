@@ -123,6 +123,23 @@ char *http_utils_get_string_between(const char *str, const char *begin, const ch
     return NULL;
 }
 
+char *http_utils_get_string_after(const char *str, const char *begin)
+{
+    char *found = strcasestr(str, begin);
+    char *ret = NULL;
+    if (found) {
+        found += strlen(begin);
+        char *found_end = (char *)str + strlen(str);
+        if (found_end) {
+            ret = calloc(1, found_end - found + 1);
+            mem_check(ret);
+            memcpy(ret, found, found_end - found);
+            return ret;
+        }
+    }
+    return NULL;
+}
+
 int http_utils_str_starts_with(const char *str, const char *start)
 {
     int i;
