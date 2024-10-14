@@ -469,11 +469,10 @@ static IRAM_ATTR void isr_handle_ack_rx_done(void)
     NEEDS_NEXT_OPT(true);
 }
 
-static IRAM_ATTR void isr_handle_rx_phase_rx_abort(void)
+static IRAM_ATTR void isr_handle_rx_phase_rx_abort(ieee802154_ll_rx_abort_reason_t rx_abort_reason)
 {
     event_end_process();
     uint32_t rx_status = ieee802154_ll_get_rx_status();
-    ieee802154_ll_rx_abort_reason_t rx_abort_reason = ieee802154_ll_get_rx_abort_reason();
     switch (rx_abort_reason) {
     case IEEE802154_RX_ABORT_BY_RX_STOP:
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
@@ -508,13 +507,12 @@ static IRAM_ATTR void isr_handle_rx_phase_rx_abort(void)
     NEEDS_NEXT_OPT(true);
 }
 
-static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(void)
+static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_reason_t rx_abort_reason)
 {
     event_end_process();
 #if CONFIG_IEEE802154_TEST
     uint32_t rx_status = ieee802154_ll_get_rx_status();
 #endif
-    ieee802154_ll_rx_abort_reason_t rx_abort_reason = ieee802154_ll_get_rx_abort_reason();
     switch (rx_abort_reason) {
     case IEEE802154_RX_ABORT_BY_RX_STOP:
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
@@ -553,10 +551,9 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(void)
     NEEDS_NEXT_OPT(true);
 }
 
-static IRAM_ATTR void isr_handle_tx_abort(void)
+static IRAM_ATTR void isr_handle_tx_abort(ieee802154_ll_tx_abort_reason_t tx_abort_reason)
 {
     event_end_process();
-    ieee802154_ll_tx_abort_reason_t tx_abort_reason = ieee802154_ll_get_tx_abort_reason();
     switch (tx_abort_reason) {
     case IEEE802154_TX_ABORT_BY_RX_ACK_STOP:
     case IEEE802154_TX_ABORT_BY_TX_STOP:
@@ -636,6 +633,8 @@ static void ieee802154_isr(void *arg)
 {
     ieee802154_enter_critical();
     ieee802154_ll_events events = ieee802154_ll_get_events();
+    ieee802154_ll_rx_abort_reason_t rx_abort_reason = ieee802154_ll_get_rx_abort_reason();
+    ieee802154_ll_tx_abort_reason_t tx_abort_reason = ieee802154_ll_get_tx_abort_reason();
 
     IEEE802154_PROBE(events);
 
@@ -643,7 +642,7 @@ static void ieee802154_isr(void *arg)
 
     if (events & IEEE802154_EVENT_RX_ABORT) {
         // First phase rx abort process, will clear RX_ABORT event in second.
-        isr_handle_rx_phase_rx_abort();
+        isr_handle_rx_phase_rx_abort(rx_abort_reason);
     }
 
     if (events & IEEE802154_EVENT_RX_SFD_DONE) {
@@ -701,12 +700,12 @@ static void ieee802154_isr(void *arg)
 
     if (events & IEEE802154_EVENT_RX_ABORT) {
         // Second phase rx abort process, clears RX_ABORT event.
-        isr_handle_tx_ack_phase_rx_abort();
+        isr_handle_tx_ack_phase_rx_abort(rx_abort_reason);
         events &= (uint16_t)(~IEEE802154_EVENT_RX_ABORT);
     }
 
     if (events & IEEE802154_EVENT_TX_ABORT) {
-        isr_handle_tx_abort();
+        isr_handle_tx_abort(tx_abort_reason);
 
         events &= (uint16_t)(~IEEE802154_EVENT_TX_ABORT);
     }
