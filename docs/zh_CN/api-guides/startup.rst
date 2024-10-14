@@ -7,11 +7,15 @@
 
 宏观上，该启动流程可以分为如下 3 个步骤：
 
-1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
+.. list::
 
-2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+   1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
 
-3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 的调度器启动。
+   2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
+
+   :not SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
 
 下面会对上述过程进行更为详细的阐述。
 
