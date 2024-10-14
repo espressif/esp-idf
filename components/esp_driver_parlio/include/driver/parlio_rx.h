@@ -40,8 +40,7 @@ typedef struct {
                                                          the output clock will be controlled by the valid gpio,
                                                          i.e. high level of valid gpio to enable the clock output, low to disable */
         uint32_t            io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t            io_no_init: 1;          /*!< Set to skip initializing the GPIO, but only attach the pralio rx signals to those GPIOs via IO Matrix.
-                                                         So that the signals that have attached to those GPIO won't be overwritten. Mainly used for self communication or self monitoring */
+        uint32_t            io_no_init: 1 __attribute__((deprecated)); /*!< Deprecated. Driver won't change the GPIO configuration in inilization. */
     } flags;                                        /*!< RX driver flags */
 } parlio_rx_unit_config_t;
 

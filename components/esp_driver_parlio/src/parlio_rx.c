@@ -25,7 +25,6 @@
 #include "soc/parlio_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/parlio_ll.h"
-#include "hal/gpio_hal.h"
 #include "hal/dma_types.h"
 #include "hal/hal_utils.h"
 #include "driver/gpio.h"
@@ -252,24 +251,19 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 {
     int group_id = rx_unit->base.group->group_id;
     int unit_id = rx_unit->base.unit_id;
-    /* Default GPIO configuration */
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = true,
-    };
 
     /* When the source clock comes from external, enable the gpio input direction and connect to the clock input signal */
     if (config->clk_src == PARLIO_CLK_SRC_EXTERNAL) {
         ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_in_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
-        if (!config->flags.io_no_init) {
-            gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
-            gpio_conf.pin_bit_mask = BIT64(config->clk_in_gpio_num);
-            ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
-        } else {
-            gpio_ll_input_enable(&GPIO, config->clk_in_gpio_num);
+        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->clk_in_gpio_num);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_output_enable(config->clk_in_gpio_num);
         }
+
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
     }
@@ -277,9 +271,14 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
      * enable the gpio output direction and connect to the clock output signal */
     if (config->clk_out_gpio_num >= 0) {
 #if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
-        gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT;
-        gpio_conf.pin_bit_mask = BIT64(config->clk_out_gpio_num);
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
+        gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_input_enable(config->clk_out_gpio_num);
+        }
+
+        // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
 #else
@@ -287,15 +286,16 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 #endif // SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
     }
 
-    gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
     /* Initialize the valid GPIO as input */
     if (config->valid_gpio_num >= 0) {
-        if (!config->flags.io_no_init) {
-            gpio_conf.pin_bit_mask = BIT64(config->valid_gpio_num);
-            ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
-        } else {
-            gpio_ll_input_enable(&GPIO, config->valid_gpio_num);
+        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->valid_gpio_num);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_output_enable(config->valid_gpio_num);
         }
+
         /* Not connect the signal here, the signal is lazy connected until the delimiter takes effect */
     }
 
@@ -303,12 +303,14 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     for (int i = 0; i < config->data_width; i++) {
         /* Loop the data_gpio_nums to connect data and valid signals via GPIO matrix */
         if (config->data_gpio_nums[i] >= 0) {
-            if (!config->flags.io_no_init) {
-                gpio_conf.pin_bit_mask = BIT64(config->data_gpio_nums[i]);
-                ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
-            } else {
-                gpio_ll_input_enable(&GPIO, config->data_gpio_nums[i]);
+            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
+            gpio_input_enable(config->data_gpio_nums[i]);
+
+            // deprecated, to be removed in in esp-idf v6.0
+            if (config->flags.io_loop_back) {
+                gpio_output_enable(config->data_gpio_nums[i]);
             }
+
             esp_rom_gpio_connect_in_signal(config->data_gpio_nums[i],
                                            parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
         } else {
