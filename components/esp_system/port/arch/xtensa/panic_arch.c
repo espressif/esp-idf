@@ -213,7 +213,7 @@ static inline void print_cache_err_details(const void *f)
         }
         if (err.size) {
             panic_print_str(", error size: 0x");
-            panic_print_hex(err.vaddr);
+            panic_print_hex(err.size);
         }
     } else {
         // Default to cache disabled message if no specific error is found

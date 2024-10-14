@@ -232,6 +232,12 @@ static void IRAM_ATTR panic_enable_cache(void)
         esp_ipc_isr_stall_abort();
         spi_flash_enable_cache(core_id);
     }
+
+#if SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
+    // Some errors need to be cleared here to allow cache to operate normally again
+    // for certain circumstances.
+    esp_cache_err_acs_save_and_clr();
+#endif //SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
 }
 #endif
 

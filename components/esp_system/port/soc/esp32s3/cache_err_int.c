@@ -23,7 +23,9 @@
 #include "soc/periph_defs.h"
 #include "esp_rom_sys.h"
 #include "hal/cache_ll.h"
+#include "hal/mspi_ll.h"
 #include "soc/syscon_struct.h"
+#include "soc/extmem_reg.h"
 #include "esp_private/cache_err_int.h"
 
 static const char *TAG = "CACHE_ERR";
@@ -41,6 +43,10 @@ typedef struct {
     const uint32_t fault_addr_reg;
     const uint32_t fault_size_reg;
 } register_bit_t;
+
+static uint32_t access_error_intr_status;
+static uint32_t acs_fault_addr;
+static uint32_t cache_err_cpu_id;
 
 /* Define the array that contains the status (bits) to test on the register
  * EXTMEM_CACHE_ILG_INT_ST_REG. each bit is accompanied by a small
@@ -87,6 +93,15 @@ const register_bit_t ilg_int_st_bits[] = {
     },
 };
 
+const register_bit_t acs_int_st_bits[] = {
+    {
+        .bit = CACHE_LL_L1_ACCESS_EVENT_DBUS_REJECT,
+        .msg = "Dbus write to cache rejected",
+        .fault_addr_reg = (uint32_t) &acs_fault_addr,
+        .fault_size_reg = 0,
+    },
+};
+
 /**
  * Function to check each bits defined in the array reg_bits in the given
  * status register. The first bit from the array to be set in the status
@@ -124,6 +139,33 @@ void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 
     get_cache_error(illegal_intr_status, ilg_int_st_bits, DIM(ilg_int_st_bits), err_info);
 
+    // If no error reported above we check if the error came from ACS
+    if (err_info->err_str == NULL) {
+        uint32_t st = access_error_intr_status;
+        get_cache_error(st, acs_int_st_bits, DIM(acs_int_st_bits), err_info);
+    }
+}
+
+void esp_cache_err_acs_save_and_clr(void)
+{
+    if (cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK)) {
+        cache_err_cpu_id = PRO_CPU_NUM;
+    } else if (cache_ll_l1_get_access_error_intr_status(1, CACHE_LL_L1_ACCESS_EVENT_MASK)) {
+        cache_err_cpu_id = APP_CPU_NUM;
+    } else {
+        cache_err_cpu_id = -1;
+        return;
+    }
+
+    // Certain errors needs to be cleared if the cache is to continue functioning properly.
+    // E.g. for CACHE_LL_L1_ACCESS_EVENT_DBUS_REJECT errors the cache will sometimes end up in an invalid state
+    // where the panic handler will then be unable to access rodata from flash
+    // Store the error information before clearing, as it will be used later when reporting
+    access_error_intr_status = cache_ll_l1_get_access_error_intr_status(cache_err_cpu_id, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    if (access_error_intr_status & CACHE_LL_L1_ACCESS_EVENT_DBUS_REJECT) {
+        acs_fault_addr = cache_ll_get_acs_dbus_reject_vaddr(cache_err_cpu_id);
+        cache_ll_l1_clear_access_error_intr(cache_err_cpu_id, CACHE_LL_L1_ACCESS_EVENT_DBUS_REJECT);
+    }
 }
 
 void esp_cache_err_int_init(void)
@@ -167,18 +209,40 @@ void esp_cache_err_int_init(void)
         cache_ll_l1_enable_access_error_intr(1, CACHE_LL_L1_ACCESS_EVENT_MASK);
     }
 
+    if (core_id == 0) {
+        // Set up flash access permissions to disallow write from cache.
+        // Max flash size supported on ESP32-S3 is 1Gb.
+        // flash_aceN_size is in units of 64kB pages.
+        // This configuration covers the entire flash region.
+        uint32_t max_flash_size = 1024 * 1024 * 1024 / (64 * 1024);
+
+        mspi_ll_flash_ace_ctrl_t ctrl = {
+            .sec_x = 1,
+            .sec_r = 1,
+            .sec_w = 0,
+            .nsec_x = 1,
+            .nsec_r = 1,
+            .nsec_w = 0,
+            .spi1_r = 1,
+            .spi1_w = 1,
+        };
+
+        mspi_ll_set_flash_protection_addr(0, 0x0);
+        mspi_ll_set_flash_protection_size(0, max_flash_size);
+
+        // Set other flash_aceN_size to 0 to disable them.
+        mspi_ll_set_flash_protection_size(1, 0);
+        mspi_ll_set_flash_protection_size(2, 0);
+        mspi_ll_set_flash_protection_size(3, 0);
+
+        mspi_ll_set_flash_protection_access(0, ctrl);
+
+    }
+
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
 int esp_cache_err_get_cpuid(void)
 {
-    if (cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK)) {
-        return PRO_CPU_NUM;
-    }
-
-    if (cache_ll_l1_get_access_error_intr_status(1, CACHE_LL_L1_ACCESS_EVENT_MASK)) {
-        return APP_CPU_NUM;
-    }
-
-    return -1;
+    return cache_err_cpu_id;
 }

@@ -383,6 +383,10 @@ config SOC_CACHE_FREEZE_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
+    bool
+    default y
+
 config SOC_CPU_CORES_NUM
     int
     default 2
