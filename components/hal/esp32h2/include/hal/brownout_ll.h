@@ -69,7 +69,8 @@ static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait,
  */
 static inline void brownout_ll_set_threshold(uint8_t threshold)
 {
-    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD, threshold);
+    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD_L, threshold);
+    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD_H, threshold);
 }
 
 /**

@@ -10,7 +10,7 @@ menu "Brownout Detector"
 
     choice ESP_BROWNOUT_DET_LVL_SEL
         prompt "Brownout voltage level"
-        depends on ESP_BROWNOUT_DET
+        depends on ESP_BROWNOUT_DET && (ESP32P4_REV_MIN_FULL <= 1)
         default ESP_BROWNOUT_DET_LVL_SEL_7
         help
             The brownout detector will reset the chip when the supply voltage is approximately
@@ -33,13 +33,32 @@ menu "Brownout Detector"
             bool "3.27V"
     endchoice
 
+    choice ESP_BROWNOUT_DET_LVL_SEL_V2
+        prompt "Brownout voltage level"
+        default ESP_BROWNOUT_DET_LVL_SEL_7_V2
+        depends on ESP_BROWNOUT_DET && (ESP32P4_REV_MIN_FULL >= 100)
+        help
+            The brownout detector will reset the chip when the supply voltage is approximately
+            below this level. Note that there may be some variation of brownout voltage level
+            between each chip.
+
+            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+            #of the brownout threshold levels.
+        config ESP_BROWNOUT_DET_LVL_SEL_7_V2
+            bool "2.6V"
+        config ESP_BROWNOUT_DET_LVL_SEL_6_V2
+            bool "2.52V"
+        config ESP_BROWNOUT_DET_LVL_SEL_5_V2
+            bool "2.42V"
+    endchoice
+
     config ESP_BROWNOUT_DET_LVL
         int
         default 2 if ESP_BROWNOUT_DET_LVL_SEL_2
         default 3 if ESP_BROWNOUT_DET_LVL_SEL_3
         default 4 if ESP_BROWNOUT_DET_LVL_SEL_4
-        default 5 if ESP_BROWNOUT_DET_LVL_SEL_5
-        default 6 if ESP_BROWNOUT_DET_LVL_SEL_6
-        default 7 if ESP_BROWNOUT_DET_LVL_SEL_7
+        default 5 if ESP_BROWNOUT_DET_LVL_SEL_5 || ESP_BROWNOUT_DET_LVL_SEL_5_V2
+        default 6 if ESP_BROWNOUT_DET_LVL_SEL_6 || ESP_BROWNOUT_DET_LVL_SEL_6_V2
+        default 7 if ESP_BROWNOUT_DET_LVL_SEL_7 || ESP_BROWNOUT_DET_LVL_SEL_7_V2
 
 endmenu
