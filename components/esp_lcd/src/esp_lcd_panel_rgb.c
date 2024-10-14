@@ -79,7 +79,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
-static void lcd_default_isr_handler(void *args);
+static void rgb_lcd_default_isr_handler(void *args);
 
 struct esp_rgb_panel_t {
     esp_lcd_panel_t base;  // Base class of generic lcd panel
@@ -317,7 +317,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
-                                    LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
+                                    LCD_LL_EVENT_VSYNC_END, rgb_lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
@@ -1105,7 +1105,7 @@ IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
     portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
 }
 
-IRAM_ATTR static void lcd_default_isr_handler(void *args)
+IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
 {
     esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)args;
     bool need_yield = false;
