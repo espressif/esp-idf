@@ -5,6 +5,7 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
+ #ifdef ESP_SUPPLICANT
 
 #include "utils/includes.h"
 #include "utils/common.h"
@@ -1576,3 +1577,5 @@ int wpa_cipher_put_suites(u8 *pos, int ciphers)
 
 	return num_suites;
 }
+
+#endif // ESP_SUPPLICANT

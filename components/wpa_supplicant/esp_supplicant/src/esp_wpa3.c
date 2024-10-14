@@ -548,14 +548,15 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
             esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
             if (aid == 0) {
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
+            } else {
+                if (sta && sta->sae_data) {
+                    wpabuf_free(sta->sae_data);
+                    sta->sae_data = NULL;
+                }
             }
         }
     }
 done:
-    if (sta && sta->sae_data) {
-        wpabuf_free(sta->sae_data);
-        sta->sae_data = NULL;
-    }
     os_free(frm);
 }
 
