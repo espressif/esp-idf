@@ -7,7 +7,6 @@
 #include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
-#include "error.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
@@ -25,6 +24,7 @@
 #include "rom/ets_sys.h"
 
 #include "openthread-core-config.h"
+#include "openthread/error.h"
 #include "openthread/link.h"
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
