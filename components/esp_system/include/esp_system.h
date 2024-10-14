@@ -37,7 +37,7 @@ typedef enum {
     ESP_RST_JTAG,       //!< Reset by JTAG
     ESP_RST_EFUSE,      //!< Reset due to efuse error
     ESP_RST_PWR_GLITCH, //!< Reset due to power glitch detected
-    ESP_RST_CPU_LOCKUP, //!< Reset due to CPU lock up
+    ESP_RST_CPU_LOCKUP, //!< Reset due to CPU lock up (double exception)
 } esp_reset_reason_t;
 
 /**
