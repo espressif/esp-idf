@@ -67,8 +67,11 @@ This contains tests for the following features of the crypto peripherals:
         - SHA-512/256
         - SHA-512/t
 
-> **_NOTE:_** The verification tests for the HMAC and Digital Signature peripherals would get exercised only by enabling the example config in an FPGA environment.
+- XTS-AES peripheral
+    - XTS-AES-128
+    - XTS-AES-256
 
+> **_NOTE:_** The verification tests for the HMAC, Digital Signature, ECDSA and XTS-AES peripherals would get exercised only by enabling the example config in an FPGA environment.
 # Burning the HMAC key
 
 The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
@@ -111,6 +114,26 @@ The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY4` and `BLOCK
 espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
 
 espefuse.py -p $ESPPORT burn_key BLOCK_KEY5 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
+```
+
+# Burning the XTS-AES key
+
+By default, XTS-AES tests are disabled. You can enable it after disabling Digital Signature tests using `idf.py menuconfig -> Test App Configuration -> Enable XTS-AES Peripheral test cases`
+
+The XTS-AES tests contain tests for both the modes, XTS-AES-128 and XTS-AES-256, but as per the peripheral design we can test only one mode at a time. Thus, we need to burn one key at a time.
+
+These keys can be burned in the `BLOCK_KEY0` (for XTS-AES-128), whereas, `BLOCK_KEY0` and `BLOCK_KEY1` (for XTS-AES-256) of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+
+While running the XTS-AES-128 tests:
+
+```bash
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/xts_aes/xts_aes_128_key.bin XTS_AES_128_KEY
+```
+
+While running the XTS-AES-256 tests:
+
+```bash
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY0 main/xts_aes/xts_aes_256_key.bin XTS_AES_256_KEY
 ```
 
 # Building

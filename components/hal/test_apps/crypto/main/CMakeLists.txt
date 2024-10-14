@@ -73,6 +73,10 @@ if(CONFIG_SOC_SHA_SUPPORTED)
    endif()
 endif()
 
+if(CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES)
+   list(APPEND srcs "xts_aes/test_xts_aes.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES efuse mbedtls esp_security esp_mm bootloader_support spi_flash
                        REQUIRES test_utils unity
