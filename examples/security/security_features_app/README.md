@@ -1,25 +1,24 @@
 | Supported Targets | ESP32-C3 |
 | ----------------- | -------- |
 
+# Security Features Application
 
-# All Secure
-
-This example demonstrates how to enable all of the available security features on the esp32c3 target at once.
+This example demonstrates how to enable all of the available security features on the ESP32-C3 target at once.
 This example shall use combination of host based python tools and firmware for enabling all the related security eFuses.
-For simplicity the security features such as Secure Boot V2, Flash Encryption, NVS Encryption shall be enabled through host based python tools (e.g., espefuse).
+For simplicity, the security features such as Secure Boot V2, Flash Encryption, NVS Encryption shall be enabled through host based python tools (e.g., espefuse).
 Some additional security eFuses shall be enabled in the firmware.
 
 **The device that has followed all the steps mentioned below can be used for production use-cases.**
 
 > [!CAUTION]
-> The instructions in the example directly burn eFuses and once done, it cannot be reverted. Please go through the below steps carefully before executing the example. All the steps must be followed without any changes and in the exact sequence, otherwise the device may end up in an unrecoverable state.
+> The instructions in the example directly burn eFuses and once done, it cannot be reverted. Please go through the below steps carefully before executing the example. All the steps must be followed without any changes and in the exact sequence, otherwise the device may end up in an unrecoverable state. Follow the [QEMU workflow](#enable-security-features-with-help-of-qemu) if you want to test the example without the risk of bricking an actual device.
 
 ### Hardware Required
 
-* A development board with ESP32C3 SoC
+* A development board with ESP32-C3 SoC
 * A USB cable for power supply and programming
 
-**Note: The hardware is not required if you plan to run the example with help of QEMU.**
+**Note: The hardware is not required if you plan to run the example with help of [QEMU](#enable-security-features-with-help-of-qemu).**
 
 ## Pre-requisites
 
@@ -32,7 +31,7 @@ export ESPPORT=/* Serial port to which esp is connected */
 
 <details>
     <summary>Setup serial port for QEMU</summary>
-    If you are enabling eFuses on esp32c3 emulated using QEMU then we shall set the serial port as follows:
+    If you are enabling eFuses on ESP32-C3 emulated using QEMU then we shall set the serial port as follows:
 
     export ESPPORT=socket://localhost:5555
 
@@ -40,19 +39,23 @@ export ESPPORT=/* Serial port to which esp is connected */
 
 </details>
 
-**Please make sure to perform this step every time when you open a new terminal to use `esptool/espefuse` commands.**
+**Make sure to perform this step every time when you open a new terminal to use `esptool/espefuse` commands.**
 
 ### 2. Erase flash
 
 We shall erase the flash on the device to ensure a clean state.
 
-```idf.py -p $ESPPORT erase_flash```
+```
+idf.py -p $ESPPORT erase_flash
+```
 
 
 ### 3. Install esptool
 We shall require esptool utility which can be installed as follows:
 
-```pip install esptool```
+```
+pip install esptool
+```
 
 ### 4. Installing qemu (optional)
 
@@ -112,7 +115,8 @@ When the application is built (later in the workflow) the `bootloader` and `appl
 
 	```
 	espsecure.py sign_data --version 2 --keyfile 	/* Signing key placeholder */ --output bootloader-signed.bin build/bootloader/bootloader.bin
-
+	```
+	```
 	espsecure.py sign_data --version 2 --keyfile 	/* Signing key placeholder */ --output my-app-signed.bin build/security_features.bin
 	```
 
@@ -122,7 +126,7 @@ When the application is built (later in the workflow) the `bootloader` and `appl
 Details about the Flash Encryption protocol can be found at the [Flash Encryption documentation](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/security/flash-encryption.html)
 The indicates the status of Flash Encryption feature for the chip. The example also demonstrates writing and reading encrypted partitions in flash.
 
-Please follow below steps to enable Flash Encryption:
+Follow below steps to enable Flash Encryption:
 
 1. Generate Flash Encryption keys
 
@@ -163,9 +167,11 @@ It can be done with following commands:
 
 ```
 espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x0 --output encrypted_data/bootloader-enc.bin build/bootloader/bootloader.bin
-
+```
+```
 espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0xD000 --output encrypted_data/partition-table-enc.bin build/partition_table/partition-table.bin
-
+```
+```
 espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x20000 --output encrypted_data/security_features-enc.bin build/security_features_app.bin
 ```
 
@@ -200,7 +206,7 @@ We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partit
 	Execute following command to generate the encrypted NVS partition.
 
 	```
-	python3 nvs_partition_gen.py encrypt /* CSV placeholder */ nvs_encr_partition.bin /* NVS partition offset */ --inputkey keys/nvs_encr_key.bin
+	python3 $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py encrypt /* CSV placeholder */ nvs_encr_partition.bin /* NVS partition offset */ --inputkey keys/nvs_encr_key.bin
 	```
 	* `CSV placeholder`: CSV file which contains data of the NVS partition. See [CSV file format](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/storage/nvs_partition_gen.html#csv-file-format) for more details.
 	* `NVS partition offset`: NVS partition offset. Can be found out by executing `idf.py partition-table`
@@ -463,7 +469,7 @@ A hex file containing the eFuse configuration of ESP32C3 v0.3 (ECO3) has been ke
     
     This command shall start a serial connection with QEMU. Keep this running in one terminal and execute espefuse commands in an alternate terminal.
 
-    After espefuse commands are used to update the eFuses of the emulated esp the eFuse file generated in *Step 1* shall get ovwewritten. To revert to the original state, execute the command provided in *Step 1* once again.
+    After espefuse commands are used to update the eFuses of the emulated esp the eFuse file generated in *Step 1* shall get overwritten. To revert to the original state, execute the command provided in *Step 1* once again.
 
 
 3. Execute the commands to enable security features
