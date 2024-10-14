@@ -50,7 +50,7 @@ The most significant properties and features of above-mentioned file systems are
       - Integrated
       - Integrated
     * - Minimum partition size
-      - * 8 sectors with wear levelling on (4 FATFS sectors + 4 WL sectors with WL sector size=4096B)
+      - * 8 sectors with wear levelling on (4 FATFS sectors + 4 WL sectors with WL sector size = 4096B)
         * plus 4 sectors at least
         * real number given by WL configuration (Safe, Perf)
       - * 6 logical blocks
