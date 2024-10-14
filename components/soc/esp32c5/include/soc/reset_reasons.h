@@ -23,7 +23,6 @@ extern "C" {
 #endif
 
 
-// TODO: [ESP32C5] IDF-8660 Check reset reasons for MP version
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
