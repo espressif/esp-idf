@@ -113,10 +113,10 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 		os_mutex_delete(sta->lock);
 		sta->lock = NULL;
 	}
-        if (sta->sae_data) {
-            wpabuf_free(sta->sae_data);
-            sta->sae_data = NULL;
-        }
+	if (sta->sae_data) {
+		wpabuf_free(sta->sae_data);
+		sta->sae_data = NULL;
+	}
 #endif /* CONFIG_SAE */
 	wpa_auth_sta_deinit(sta->wpa_sm);
 #ifdef CONFIG_WPS_REGISTRAR
