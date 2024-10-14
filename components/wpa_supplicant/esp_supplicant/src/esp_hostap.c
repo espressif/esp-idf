@@ -358,7 +358,7 @@ uint8_t wpa_status_to_reason_code(int status)
 }
 
 bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
-                          uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
+                          uint8_t wpa_ie_len, uint8_t *rsnxe, uint16_t rsnxe_len,
                           bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
