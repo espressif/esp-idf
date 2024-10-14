@@ -7,5 +7,6 @@ components/mbedtls/test_apps:
     - if: CONFIG_NAME == "ecdsa_sign" and SOC_ECDSA_SUPPORTED != 1
   depends_components:
     - efuse
-  depends_filepatterns:
-    - components/mbedtls/port/ecdsa/*
+    - mbedtls
+    - esp_security
+    - esp_mm
