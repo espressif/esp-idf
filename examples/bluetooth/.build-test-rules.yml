@@ -19,7 +19,20 @@ examples/bluetooth/bluedroid/ble:
   <<: *bt_default_depends
   disable:
     - if: SOC_BT_SUPPORTED != 1
-
+  depends_components:
+    - bt
+    - esp_phy
+    - nvs_flash
+    - esp_coex
+    - esp_log
+    - esp_console
+    - mbedtls
+    - vfs
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
 
 examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   disable:
@@ -27,9 +40,43 @@ examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   depends_components:
     - esp_driver_gpio
 
+examples/bluetooth/bluedroid/ble/ble_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BT_SUPPORTED != 1
+  depends_components:
+    - bt
+    - esp_phy
+    - nvs_flash
+    - esp_coex
+    - esp_log
+    - esp_console
+    - mbedtls
+    - vfs
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble_throughput_test.py
+
 examples/bluetooth/bluedroid/ble_50:
+  <<: *bt_default_depends
   disable:
     - if: SOC_BLE_50_SUPPORTED != 1
+  depends_components:
+    - bt
+    - esp_phy
+    - nvs_flash
+    - esp_coex
+    - esp_log
+    - esp_console
+    - mbedtls
+    - vfs
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/classic_bt:
   disable:
