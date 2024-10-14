@@ -572,6 +572,17 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		}
 	}
 
+#ifdef CONFIG_SAE
+	if (wpa_auth->conf.ieee80211w == MGMT_FRAME_PROTECTION_OPTIONAL &&
+	    wpa_auth->conf.sae_require_mfp &&
+	    wpa_key_mgmt_sae(sm->wpa_key_mgmt) &&
+	    !(data.capabilities & WPA_CAPABILITY_MFPC)) {
+		wpa_printf(MSG_DEBUG,
+			   "Management frame protection required with SAE, but client did not enable it");
+		return WPA_MGMT_FRAME_PROTECTION_VIOLATION;
+	}
+#endif /* CONFIG_SAE */
+
 	if (wpa_auth->conf.ieee80211w == NO_MGMT_FRAME_PROTECTION ||
 	    !(data.capabilities & WPA_CAPABILITY_MFPC))
 		sm->mgmt_frame_prot = 0;
