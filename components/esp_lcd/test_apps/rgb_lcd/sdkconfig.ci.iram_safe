@@ -1,8 +1,5 @@
 CONFIG_COMPILER_DUMP_RTL_FILES=y
 CONFIG_LCD_RGB_ISR_IRAM_SAFE=y
-CONFIG_GDMA_CTRL_FUNC_IN_IRAM=y
-# bounce buffer mode relies on GDMA EOF interrupt to be service-able
-CONFIG_GDMA_ISR_IRAM_SAFE=y
 CONFIG_COMPILER_OPTIMIZATION_NONE=y
 # silent the error check, as the error string are stored in rodata, causing RTL check failure
 CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT=y

@@ -42,8 +42,6 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 
-#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
-
 #if defined(SOC_GDMA_TRIG_PERIPH_LCD0_BUS) && (SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AHB)
 #define LCD_GDMA_NEW_CHANNEL gdma_new_ahb_channel
 #define LCD_GDMA_DESCRIPTOR_ALIGN 4
@@ -75,7 +73,7 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc);
-static void lcd_default_isr_handler(void *args);
+static void i80_lcd_default_isr_handler(void *args);
 static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 struct esp_lcd_i80_bus_t {
@@ -156,18 +154,6 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // allocate i80 bus memory
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
-    size_t num_dma_nodes = bus_config->max_transfer_bytes / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-    // create DMA link list
-    gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = 1, // no special buffer alignment for LCD TX buffer
-        .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
-        .num_items = num_dma_nodes,
-        .flags = {
-            .check_owner = true,
-        },
-    };
-    ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_config, &bus->dma_link), err, TAG, "create DMA link list failed");
-    bus->num_dma_nodes = num_dma_nodes;
     bus->bus_width = bus_config->bus_width;
     bus->bus_id = -1;
     // allocate the format buffer from internal memory, with DMA capability
@@ -207,7 +193,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_i80_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
-                                    LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
+                                    LCD_LL_EVENT_TRANS_DONE, i80_lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
@@ -571,7 +557,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     xQueueSend(i80_device->trans_queue, &trans_desc, portMAX_DELAY);
     i80_device->num_trans_inflight++;
     // enable interrupt and go into isr handler, where we fetch the transactions from trans_queue and start it
-    // we will go into `lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
+    // we will go into `i80_lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
     esp_intr_enable(bus->intr);
     return ESP_OK;
 }
@@ -607,7 +593,7 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
     ret = LCD_GDMA_NEW_CHANNEL(&dma_chan_config, &bus->dma_chan);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc DMA channel failed");
+    ESP_RETURN_ON_ERROR(ret, TAG, "alloc DMA channel failed");
     gdma_connect(bus->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
     gdma_strategy_config_t strategy_config = {
         .auto_update_desc = true,
@@ -619,14 +605,23 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
         .max_data_burst_size = bus_config->dma_burst_size ? bus_config->dma_burst_size : 16, // Enable DMA burst transfer for better performance
         .access_ext_mem = true, // the LCD can carry pixel buffer from the external memory
     };
-    ESP_GOTO_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), err, TAG, "config DMA transfer failed");
+    ESP_RETURN_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
     gdma_get_alignment_constraints(bus->dma_chan, &bus->int_mem_align, &bus->ext_mem_align);
+
+    size_t num_dma_nodes = bus_config->max_transfer_bytes / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
+    // create DMA link list
+    gdma_link_list_config_t dma_link_config = {
+        .buffer_alignment = MAX(bus->int_mem_align, bus->ext_mem_align),
+        .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
+        .num_items = num_dma_nodes,
+        .flags = {
+            .check_owner = true,
+        },
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &bus->dma_link), TAG, "create DMA link list failed");
+    bus->num_dma_nodes = num_dma_nodes;
+
     return ESP_OK;
-err:
-    if (bus->dma_chan) {
-        gdma_del_channel(bus->dma_chan);
-    }
-    return ret;
 }
 
 void *esp_lcd_i80_alloc_draw_buffer(esp_lcd_panel_io_handle_t io, size_t size, uint32_t caps)
@@ -731,7 +726,7 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
     }
 }
 
-IRAM_ATTR static void lcd_default_isr_handler(void *args)
+IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
 {
     esp_lcd_i80_bus_t *bus = (esp_lcd_i80_bus_t *)args;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
