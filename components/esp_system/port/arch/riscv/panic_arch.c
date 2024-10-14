@@ -39,9 +39,11 @@
  */
 static inline void print_cache_err_details(const void *frame)
 {
-    const char* cache_err_msg = esp_cache_err_panic_string();
-    if (cache_err_msg) {
-        panic_print_str(cache_err_msg);
+    esp_cache_err_info_t err_info = {};
+    esp_cache_err_get_panic_info(&err_info);
+
+    if (err_info.err_str) {
+        panic_print_str(err_info.err_str);
     } else {
         panic_print_str("Cache error active, but failed to find a corresponding error message");
     }

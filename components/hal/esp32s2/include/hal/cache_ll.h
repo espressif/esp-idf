@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -549,6 +549,26 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     }
 
     return valid;
+}
+
+/**
+ * @brief Get cache debug status 0
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status0(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG);
+}
+
+/**
+ * @brief Get cache debug status 1
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status1(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG);
 }
 
 #ifdef __cplusplus

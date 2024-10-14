@@ -532,7 +532,7 @@ The backtrace should point to the function where stack smashing has occurred. Ch
 
     .. |CPU_EXCEPTIONS_LIST| replace:: Illegal Instruction, Load/Store Alignment Error, Load/Store Prohibited error, Double Exception.
     .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
-    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+    .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: Stack overflow
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
