@@ -1,0 +1,6 @@
+name: 'wpa_supplicant'
+version: '2.10'
+cpe: cpe:2.3:a:w1.fi:wpa_supplicant:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Person: Jouni Malinen'
+description: Espressif fork of wpa_supplicant - an open-source WPA/WPA2/WPA3/IEEE 802.1X Supplicant.
