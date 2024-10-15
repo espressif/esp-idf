@@ -109,7 +109,7 @@ extern "C" {
 #define MMC_R1_CURRENT_STATE_POS        (9)
 #define MMC_R1_CURRENT_STATE_MASK       (0x1E00)/* card current state */
 #define MMC_R1_CURRENT_STATE_TRAN       (4)
-#define MMC_R1_CURRENT_STATE_STATUS(status)     ((status & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS)
+#define MMC_R1_CURRENT_STATE_STATUS(status)     (((status) & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS)
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)
