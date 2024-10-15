@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
+#include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/mcpwm_cmpr.h"
@@ -15,6 +16,7 @@
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
 #include "test_mcpwm_utils.h"
+#include "esp_clk_tree.h"
 
 TEST_CASE("mcpwm_generator_install_uninstall", "[mcpwm]")
 {
@@ -46,6 +48,14 @@ TEST_CASE("mcpwm_generator_install_uninstall", "[mcpwm]")
 
 TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
 {
+    const int gen_gpio = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     // The operator can even work without the timer
     printf("create operator and generator\r\n");
     mcpwm_oper_handle_t oper = NULL;
@@ -55,10 +65,8 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
 
     mcpwm_gen_handle_t generator = NULL;
-    const int gen_gpio = TEST_PWMA_GPIO;
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gen_gpio,
-        .flags.io_loop_back = true, // loop back for test
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
@@ -78,12 +86,22 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
     printf("delete generator and operator\r\n");
     TEST_ESP_OK(mcpwm_del_generator(generator));
     TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(gpio_reset_pin(gen_gpio));
 }
 
 // mcpwm_generator_set_force_level acts before the dead time module
 // so the value output on the generator is a combined result
 TEST_CASE("mcpwm_force_level_and_dead_time", "[mcpwm]")
 {
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
+    printf("init gpios to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_a_gpio) | BIT(gen_b_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("create operator and generators\r\n");
     mcpwm_oper_handle_t oper = NULL;
     mcpwm_operator_config_t operator_config = {
@@ -93,11 +111,8 @@ TEST_CASE("mcpwm_force_level_and_dead_time", "[mcpwm]")
 
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
-    const int gen_a_gpio = TEST_PWMA_GPIO;
-    const int gen_b_gpio = TEST_PWMB_GPIO;
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gen_a_gpio,
-        .flags.io_loop_back = true, // loop back for test
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
@@ -128,10 +143,20 @@ TEST_CASE("mcpwm_force_level_and_dead_time", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen_a));
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(gpio_reset_pin(gen_a_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_b_gpio));
 }
 
 TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
 {
+    const int gen_gpio = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("create mcpwm timer\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -155,10 +180,8 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
 
     printf("create generator\r\n");
     mcpwm_gen_handle_t generator = NULL;
-    const int gen_gpio = TEST_PWMA_GPIO;
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gen_gpio,
-        .flags.io_loop_back = true, // loop back for test
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
@@ -195,11 +218,19 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(generator));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(gen_gpio));
 }
 
 TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
 {
     const int generator_gpio = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(generator_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("create timer and operator\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -224,7 +255,6 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
@@ -258,12 +288,26 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(generator_gpio));
+}
+
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_capture_callback(mcpwm_cap_channel_handle_t cap_channel, const mcpwm_capture_event_data_t *edata, void *user_data)
+{
+    uint32_t *cap_value = (uint32_t *)user_data;
+    if (edata->cap_edge == MCPWM_CAP_EDGE_NEG) {
+        cap_value[1] = edata->cap_value;
+    } else {
+        cap_value[0] = edata->cap_value;
+    }
+    return false;
 }
 
 typedef void (*set_gen_actions_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb);
 
 static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t period, mcpwm_timer_count_mode_t count_mode,
-                                           uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob, set_gen_actions_cb_t set_generator_actions)
+                                           uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob, set_gen_actions_cb_t set_generator_actions,
+                                           uint32_t *ret_capa, uint32_t *ret_capb)
 {
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -305,10 +349,72 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
 
     set_generator_actions(generator_a, generator_b, comparator_a, comparator_b);
 
+    // install mcpwm capture timer
+    mcpwm_cap_timer_handle_t cap_timer = NULL;
+    uint32_t clk_src_freq_hz;
+    esp_clk_tree_src_get_freq_hz(MCPWM_CAPTURE_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    mcpwm_capture_timer_config_t cap_timer_config = {
+        .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
+        .group_id = 0,
+        .resolution_hz = clk_src_freq_hz / 2,
+    };
+    TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
+
+    // install mcpwm capture channel
+    mcpwm_cap_channel_handle_t cap_channel_a;
+    mcpwm_cap_channel_handle_t cap_channel_b;
+    mcpwm_capture_channel_config_t cap_chan_config = {
+        .gpio_num = gpioa,
+        .prescale = 1,
+        .flags.pos_edge = true,
+        .flags.neg_edge = true,
+    };
+    TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel_a));
+    cap_chan_config.gpio_num = gpiob;
+    TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel_b));
+
+    // install callback for capture channel
+    mcpwm_capture_event_callbacks_t cbs = {
+        .on_cap = test_capture_callback,
+    };
+    uint32_t cap_value_a[2] = {0};
+    uint32_t cap_value_b[2] = {0};
+    TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel_a, &cbs, cap_value_a));
+    TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel_b, &cbs, cap_value_b));
+
+    // enable capture channel and timer
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel_a));
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel_b));
+    TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
+
+    // start timer and capture timer
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+    TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
     vTaskDelay(pdMS_TO_TICKS(100));
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
     vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_capture_timer_stop(cap_timer));
+
+    // calculate the actual capture time
+    uint32_t clk_src_res;
+    TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
+    clk_src_res /= 1000; // convert to kHz
+
+    if (cap_value_a[1] > cap_value_a[0]) {
+        // generator end with low level, calculate the high level time
+        *ret_capa = (cap_value_a[1] - cap_value_a[0]) * 1000 / clk_src_res;
+    } else {
+        // generator end with high level, calculate the low level time
+        *ret_capa = (cap_value_a[0] - cap_value_a[1]) * 1000 / clk_src_res;
+    }
+
+    if (cap_value_b[1] > cap_value_b[0]) {
+        // generator end with low level, calculate the high level time
+        *ret_capb = (cap_value_b[1] - cap_value_b[0]) * 1000 / clk_src_res;
+    } else {
+        // generator end with high level, calculate the low level time
+        *ret_capb = (cap_value_b[0] - cap_value_b[1]) * 1000 / clk_src_res;
+    }
 
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(generator_a));
@@ -317,6 +423,12 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_a));
+    TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_a));
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_b));
+    TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_b));
+    TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
+    TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
 }
 
 static void single_edge_active_high(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
@@ -392,41 +504,55 @@ static void dual_edge_complementary(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t 
 
 TEST_CASE("mcpwm_generator_action_on_compare_event", "[mcpwm]")
 {
+    uint32_t capa, capb;
     printf("[Asymmetric, SingleEdge, ActiveHigh]\r\n");
     // PWMA: high = [1->350], low = [351->499,0]
     // PWMB: high = [1->200], low = [201->499,0]
-    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 350, 200, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_high);
+    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 350, 200, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_high, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 150, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 300, capb);
 
     printf("[Asymmetric, SingleEdge, ActiveLow]\r\n");
     // PWMA: low = [0->300], high = [301->499]
     // PWMB: low = [0->150], high = [151->499]
-    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 300, 150, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_low);
+    mcpwm_gen_action_test_template(1000000, 500, MCPWM_TIMER_COUNT_MODE_UP, 300, 150, TEST_PWMA_GPIO, TEST_PWMB_GPIO, single_edge_active_low, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 200, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 350, capb);
 
     printf("[Asymmetric, PulsePlacement]\r\n");
     // PWMA: low = [0->200], high = [201->400], low = [401->599]
     // PWMB: high = [0->599], low = [0->599]
-    mcpwm_gen_action_test_template(1000000, 600, MCPWM_TIMER_COUNT_MODE_UP, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, pulse_placement);
+    mcpwm_gen_action_test_template(1000000, 600, MCPWM_TIMER_COUNT_MODE_UP, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, pulse_placement, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 200, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 600, capb);
 
     printf("[Asymmetric, DualEdge, ActiveLow]\r\n");
     // PWMA: low = [0->250], high = [251->599, 600->450], low = [451->1]
     // PWMB: low = [0->599], low = [600->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 250, 450, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_asym);
+    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 250, 450, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_asym, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 500, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 600, capb);
 
     printf("[Symmetric, DualEdge, ActiveLow]\r\n");
     // PWMA: low = [0->400], high = [401->599, 600->400], low = [399->1]
     // PWMB: low = [0->500], high = [501->599, 600->500], low = [499->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 400, 500, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_sym);
+    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 400, 500, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_active_low_sym, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 400, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 200, capb);
 
     printf("[Symmetric, DualEdge, Complementary]\r\n");
     // PWMA: low = [0->350], high = [351->599, 600->350], low = [349->1]
     // PWMB: low = [0->400], high = [401->599, 600->400], low = [399->1]
-    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 350, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_complementary);
+    mcpwm_gen_action_test_template(1000000, 1200, MCPWM_TIMER_COUNT_MODE_UP_DOWN, 350, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, dual_edge_complementary, &capa, &capb);
+    TEST_ASSERT_UINT_WITHIN(2, 500, capa);
+    TEST_ASSERT_UINT_WITHIN(2, 400, capb);
 }
 
 typedef void (*set_dead_time_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb);
 
 static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t period, uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob,
-                                         set_gen_actions_cb_t set_generator_actions, set_dead_time_cb_t set_dead_time)
+                                         set_gen_actions_cb_t set_generator_actions, set_dead_time_cb_t set_dead_time,
+                                         uint32_t ret_capa[2], uint32_t ret_capb[2])
 {
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -469,10 +595,61 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     set_generator_actions(generator_a, generator_b, comparator_a, comparator_b);
     set_dead_time(generator_a, generator_b);
 
+    // install mcpwm capture timer
+    mcpwm_cap_timer_handle_t cap_timer = NULL;
+    uint32_t clk_src_freq_hz;
+    esp_clk_tree_src_get_freq_hz(MCPWM_CAPTURE_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    mcpwm_capture_timer_config_t cap_timer_config = {
+        .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
+        .group_id = 0,
+        .resolution_hz = clk_src_freq_hz / 2,
+    };
+    TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
+
+    // install mcpwm capture channel
+    mcpwm_cap_channel_handle_t cap_channel_a;
+    mcpwm_cap_channel_handle_t cap_channel_b;
+    mcpwm_capture_channel_config_t cap_chan_config = {
+        .gpio_num = gpioa,
+        .prescale = 1,
+        .flags.pos_edge = true,
+        .flags.neg_edge = true,
+    };
+    TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel_a));
+    cap_chan_config.gpio_num = gpiob;
+    TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel_b));
+
+    // install callback for capture channel
+    mcpwm_capture_event_callbacks_t cbs = {
+        .on_cap = test_capture_callback,
+    };
+    uint32_t cap_value_a[2] = {0};
+    uint32_t cap_value_b[2] = {0};
+    TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel_a, &cbs, cap_value_a));
+    TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel_b, &cbs, cap_value_b));
+
+    // enable capture channel and timer
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel_a));
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel_b));
+    TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
+
+    // start timer and capture timer
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+    TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
     vTaskDelay(pdMS_TO_TICKS(100));
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
+    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_FULL));
     vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_capture_timer_stop(cap_timer));
+
+    // calculate the actual capture time
+    uint32_t clk_src_res;
+    TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
+    clk_src_res /= 1000; // convert to kHz
+
+    ret_capa[0] = cap_value_a[0] * 1000 / clk_src_res;
+    ret_capa[1] = cap_value_a[1] * 1000 / clk_src_res;
+    ret_capb[0] = cap_value_b[0] * 1000 / clk_src_res;
+    ret_capb[1] = cap_value_b[1] * 1000 / clk_src_res;
 
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(generator_a));
@@ -481,6 +658,12 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_a));
+    TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_a));
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel_b));
+    TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel_b));
+    TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
+    TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
 }
 
 static void ahc_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
@@ -663,34 +846,58 @@ static void invalid_reda_redb_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_h
 
 TEST_CASE("mcpwm_generator_deadtime_classical_configuration", "[mcpwm]")
 {
+    uint32_t capa[2], capb[2];
     printf("Active High Complementary\r\n");
-    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, ahc_set_generator_actions, ahc_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, ahc_set_generator_actions, ahc_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capa[0] - capb[1]);
+    TEST_ASSERT_UINT_WITHIN(2, 100, capb[0] - capa[1]);
 
     printf("Active Low Complementary\r\n");
-    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, alc_set_generator_actions, alc_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, alc_set_generator_actions, alc_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capa[1] - capb[0]);
+    TEST_ASSERT_UINT_WITHIN(2, 100, capb[1] - capa[0]);
 
     printf("Active High\r\n");
-    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, ah_set_generator_actions, ah_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, ah_set_generator_actions, ah_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capa[0] - capb[0]);
+    TEST_ASSERT_UINT_WITHIN(2, 100, capb[1] - capa[1]);
 
     printf("Active Low\r\n");
-    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, al_set_generator_actions, al_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 600, 200, 400, TEST_PWMA_GPIO, TEST_PWMB_GPIO, al_set_generator_actions, al_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capa[1] - capb[1]);
+    TEST_ASSERT_UINT_WITHIN(2, 100, capb[0] - capa[0]);
 
     printf("RED on A, Bypass B\r\n");
-    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, reda_only_set_generator_actions, reda_only_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, reda_only_set_generator_actions, reda_only_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capa[0] - capb[0]);
+    TEST_ASSERT_UINT_WITHIN(2, 0, capb[1] - capa[1]);
 
     printf("Bypass A, FED on B\r\n");
-    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, fedb_only_set_generator_actions, fedb_only_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, fedb_only_set_generator_actions, fedb_only_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capb[1] - capa[1]);
+    TEST_ASSERT_UINT_WITHIN(2, 0, capb[0] - capa[0]);
 
     printf("Bypass A, RED + FED on B\r\n");
-    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, redfedb_only_set_generator_actions, redfedb_only_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, redfedb_only_set_generator_actions, redfedb_only_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capb[0] - capa[0]);
+    TEST_ASSERT_UINT_WITHIN(2, 50, capb[1] - capa[1]);
 
     printf("Can't apply one delay module to multiple generators\r\n");
-    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, redfedb_only_set_generator_actions, invalid_reda_redb_set_dead_time);
+    mcpwm_deadtime_test_template(1000000, 500, 350, 350, TEST_PWMA_GPIO, TEST_PWMB_GPIO, redfedb_only_set_generator_actions, invalid_reda_redb_set_dead_time, capa, capb);
+    TEST_ASSERT_UINT_WITHIN(2, 0, capa[0] - capb[0]);
+    TEST_ASSERT_UINT_WITHIN(2, 0, capa[1] - capb[1]);
 }
 
 TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
 {
     const int gen_gpio_num = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_gpio_num),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     mcpwm_timer_handle_t timer;
     mcpwm_oper_handle_t oper;
     mcpwm_cmpr_handle_t comparator;
@@ -722,7 +929,6 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
     printf("install MCPWM generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = gen_gpio_num,
-        .flags.io_loop_back = true, // we want to read the output level as well
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
 
@@ -763,12 +969,30 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_comparator(comparator));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(gen_gpio_num));
 }
 
 TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
 {
     const int generator_gpio = TEST_PWMA_GPIO;
     const int fault_gpio_num[3] = {TEST_FAULT_GPIO0, TEST_FAULT_GPIO1, TEST_FAULT_GPIO2};
+
+    printf("init a gpio to read generator output and simulate fault signal\r\n");
+    gpio_config_t generator_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(generator_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&generator_gpio_conf));
+
+    gpio_config_t fault_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 0,
+    };
+    for (int i = 0; i < 3; i++) {
+        fault_gpio_conf.pin_bit_mask |= BIT(fault_gpio_num[i]);
+    }
+    TEST_ESP_OK(gpio_config(&fault_gpio_conf));
+
     printf("create timer and operator\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -796,7 +1020,6 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
         .flags.active_level = 1,
         .flags.pull_down = 1,
         .flags.pull_up = 0,
-        .flags.io_loop_back = 1, // so that we can write the GPIO value by GPIO driver
     };
     for (int i = 0 ; i < 3; i++) {
         gpio_trigger_config.gpio_num = fault_gpio_num[i];
@@ -806,7 +1029,6 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
@@ -839,11 +1061,22 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(generator_gpio));
+    for (int i = 0; i < 3; i++) {
+        TEST_ESP_OK(gpio_reset_pin(fault_gpio_num[i]));
+    }
 }
 
 TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
 {
     const int generator_gpio = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t generator_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(generator_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&generator_gpio_conf));
+
     printf("create timer and operator\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -879,7 +1112,6 @@ TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
@@ -905,11 +1137,19 @@ TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(generator_gpio));
 }
 
 TEST_CASE("mcpwm_generator_action_on_timer_sync_trigger_event", "[mcpwm]")
 {
     const int generator_gpio = TEST_PWMA_GPIO;
+    printf("init a gpio to read generator output\r\n");
+    gpio_config_t generator_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(generator_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&generator_gpio_conf));
+
     printf("create timer and operator\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -948,7 +1188,6 @@ TEST_CASE("mcpwm_generator_action_on_timer_sync_trigger_event", "[mcpwm]")
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
@@ -970,11 +1209,25 @@ TEST_CASE("mcpwm_generator_action_on_timer_sync_trigger_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(generator_gpio));
 }
 
 TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
 {
     const int generator_gpio = TEST_PWMA_GPIO;
+    const int sync_gpio = TEST_SYNC_GPIO;
+    printf("init a gpio to read generator output and simulate sync signal\r\n");
+    gpio_config_t generator_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(generator_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&generator_gpio_conf));
+    gpio_config_t sync_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(sync_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&sync_gpio_conf));
+
     printf("create timer and operator\r\n");
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -999,14 +1252,13 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
     mcpwm_sync_handle_t gpio_sync = NULL;
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
-        .gpio_num = TEST_SYNC_GPIO,
-        .flags.io_loop_back = true, // so that we can use gpio driver to simulate the sync signal
+        .gpio_num = sync_gpio,
         .flags.pull_down = true, // internally pull down
     };
     TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync));
 
     // put the GPIO into initial state
-    gpio_set_level(gpio_sync_config.gpio_num, 0);
+    gpio_set_level(sync_gpio, 0);
 
     mcpwm_timer_sync_phase_config_t sync_phase_config = {
         .count_value = 0,
@@ -1018,7 +1270,6 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
@@ -1028,8 +1279,8 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
                                                          MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_sync, MCPWM_GEN_ACTION_HIGH)));
 
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
-    gpio_set_level(gpio_sync_config.gpio_num, 1);
-    gpio_set_level(gpio_sync_config.gpio_num, 0);
+    gpio_set_level(sync_gpio, 1);
+    gpio_set_level(sync_gpio, 0);
     TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -1038,4 +1289,6 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(generator_gpio));
+    TEST_ESP_OK(gpio_reset_pin(sync_gpio));
 }

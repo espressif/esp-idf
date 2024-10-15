@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,11 @@
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
+#include "hal/gpio_hal.h"
 #include "driver/mcpwm_fault.h"
 #include "driver/gpio.h"
 #include "mcpwm_private.h"
+#include "esp_private/gpio.h"
 
 static const char *TAG = "mcpwm";
 
@@ -112,15 +114,21 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
 
     // GPIO configuration
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-        .pin_bit_mask = (1ULL << config->gpio_num),
-        .pull_down_en = config->flags.pull_down,
-        .pull_up_en = config->flags.pull_up,
-    };
-    ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config fault GPIO failed");
+    gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
+    gpio_input_enable(config->gpio_num);
     esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group_id].gpio_faults[fault_id].fault_sig, 0);
+
+    if (config->flags.pull_down) {
+        gpio_pulldown_en(config->gpio_num);
+    }
+    if (config->flags.pull_up) {
+        gpio_pullup_en(config->gpio_num);
+    }
+
+    // deprecated, to be removed in in esp-idf v6.0
+    if (config->flags.io_loop_back) {
+        gpio_ll_output_enable(&GPIO, config->gpio_num);
+    }
 
     // set fault detection polarity
     // different gpio faults share the same config register, using a group level spin lock
@@ -151,10 +159,10 @@ static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault)
     mcpwm_gpio_fault_t *gpio_fault = __containerof(fault, mcpwm_gpio_fault_t, base);
     mcpwm_group_t *group = fault->group;
     mcpwm_hal_context_t *hal = &group->hal;
+    int group_id = group->group_id;
     int fault_id = gpio_fault->fault_id;
 
     ESP_LOGD(TAG, "del GPIO fault (%d,%d)", group->group_id, fault_id);
-    gpio_reset_pin(gpio_fault->gpio_num);
 
     portENTER_CRITICAL(&group->spinlock);
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_FAULT_MASK(fault_id), false);
@@ -163,6 +171,10 @@ static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault)
 
     // disable fault detection
     mcpwm_ll_fault_enable_detection(hal->dev, fault_id, false);
+
+    // disconnect signal from the GPIO pin
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
+                                   mcpwm_periph_signals.groups[group_id].gpio_faults[fault_id].fault_sig, 0);
 
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_gpio_fault_destroy(gpio_fault), TAG, "destroy GPIO fault failed");

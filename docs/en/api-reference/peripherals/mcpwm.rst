@@ -122,8 +122,6 @@ You can allocate a MCPWM generator object by calling the :cpp:func:`mcpwm_new_ge
 
 - :cpp:member:`mcpwm_generator_config_t::gen_gpio_num` sets the GPIO number used by the generator.
 - :cpp:member:`mcpwm_generator_config_t::invert_pwm` sets whether to invert the PWM signal.
-- :cpp:member:`mcpwm_generator_config_t::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
-- :cpp:member:`mcpwm_generator_config_t::io_od_mode` configures the PWM GPIO as open-drain output.
 - :cpp:member:`mcpwm_generator_config_t::pull_up` and :cpp:member:`mcpwm_generator_config_t::pull_down` controls whether to enable the internal pull-up and pull-down resistors accordingly.
 
 The :cpp:func:`mcpwm_new_generator` will return a pointer to the allocated generator object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free generators in the MCPWM operator, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
@@ -142,7 +140,6 @@ To allocate a GPIO fault object, you can call the :cpp:func:`mcpwm_new_gpio_faul
 - :cpp:member:`mcpwm_gpio_fault_config_t::gpio_num` sets the GPIO number used by the fault.
 - :cpp:member:`mcpwm_gpio_fault_config_t::active_level` sets the active level of the fault signal.
 - :cpp:member:`mcpwm_gpio_fault_config_t::pull_up` and :cpp:member:`mcpwm_gpio_fault_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
-- :cpp:member:`mcpwm_gpio_fault_config_t::io_loop_back` sets whether to enable the loopback mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
 
 The :cpp:func:`mcpwm_new_gpio_fault` will return a pointer to the allocated fault object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free GPIO faults in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -163,7 +160,6 @@ To allocate a GPIO sync source, you can call the :cpp:func:`mcpwm_new_gpio_sync_
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::gpio_num` sets the GPIO number used by the sync source.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg` sets whether the sync signal is active on falling edges.
 - :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_up` and :cpp:member:`mcpwm_gpio_sync_src_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
-- :cpp:member:`mcpwm_gpio_sync_src_config_t::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
 
 The :cpp:func:`mcpwm_new_gpio_sync_src` will return a pointer to the allocated sync source object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there are no more free GPIO sync sources in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
@@ -207,8 +203,6 @@ Next, to allocate a capture channel, you can call the :cpp:func:`mcpwm_new_captu
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::neg_edge` set whether to capture on the positive and/or falling edge of the input signal.
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_up` and :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::pull_down` set whether to pull up and/or pull down the GPIO internally.
 - :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::invert_cap_signal` sets whether to invert the capture signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
-- :cpp:member:`mcpwm_capture_channel_config_t::extra_capture_channel_flags::keep_io_conf_at_exit` sets whether to keep the GPIO configuration when the capture channel is deleted.
 
 The :cpp:func:`mcpwm_new_capture_channel` will return a pointer to the allocated capture channel object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture channel left in the capture timer, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error.
 

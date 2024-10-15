@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,13 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     //   |
     //   v
     // timer0-->timer1-->timer2
+    const int gpio_num = TEST_SYNC_GPIO;
+    gpio_config_t sync_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(gpio_num),
+    };
+    TEST_ESP_OK(gpio_config(&sync_gpio_conf));
+
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
         .group_id = 0,
@@ -127,11 +134,9 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
         .direction = MCPWM_TIMER_DIRECTION_UP,
     };
     mcpwm_sync_handle_t gpio_sync_src;
-    const int gpio_num = TEST_SYNC_GPIO;
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
         .gpio_num = gpio_num,
-        .flags.io_loop_back = true, // so that we can use gpio driver to simulate the sync signal
         .flags.pull_down = true, // internally pull down
     };
     TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_src));
@@ -154,6 +159,7 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
         TEST_ESP_OK(mcpwm_del_sync_src(sync_srcs[i]));
         TEST_ESP_OK(mcpwm_del_timer(timers[i]));
     }
+    TEST_ESP_OK(gpio_reset_pin(gpio_num));
 }
 
 TEST_CASE("mcpwm_timer_sync_timer_phase_lock", "[mcpwm]")
