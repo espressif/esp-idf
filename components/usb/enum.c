@@ -1141,7 +1141,7 @@ esp_err_t enum_install(enum_config_t *config, void **client_ret)
     // Initialize ENUM objects
     urb_t *urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0);
     if (urb == NULL) {
-        ret = ESP_ERR_NOT_FINISHED;
+        ret = ESP_ERR_NO_MEM;
         goto alloc_err;
     }
 
@@ -1164,7 +1164,7 @@ esp_err_t enum_install(enum_config_t *config, void **client_ret)
 
     // Enumeration driver is single_threaded
     if (p_enum_driver != NULL) {
-        ret = ESP_ERR_NOT_FINISHED;
+        ret = ESP_ERR_INVALID_STATE;
         goto err;
     }
     p_enum_driver = enum_drv;
