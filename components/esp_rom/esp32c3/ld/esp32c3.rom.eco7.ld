@@ -172,7 +172,6 @@ r_bt_rtp_get_txpwr_idx_by_act = 0x40000c00;
 r_btdm_task_post = 0x40000c14;
 r_btdm_task_post_from_isr = 0x40000c18;
 r_btdm_task_recycle = 0x40000c1c;
-r_hci_register_vendor_desc_tab = 0x40000d9c;
 r_ke_task_schedule = 0x40000e80;
 r_llc_hci_command_handler = 0x40000ef0;
 r_llc_loc_ch_map_proc_continue = 0x40000f5c;
@@ -183,8 +182,6 @@ r_lld_con_sched = 0x40001118;
 r_lld_con_stop = 0x40001124;
 r_lld_llcp_rx_ind_handler = 0x400011b0;
 r_lld_per_adv_sched = 0x400011f8;
-r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
-r_register_esp_vendor_cmd_handler = 0x40001400;
 r_rf_txpwr_cs_get = 0x40001428;
 r_rf_txpwr_dbm_get = 0x4000142c;
 r_sch_arb_event_start_isr = 0x400014f8;
@@ -216,6 +213,9 @@ r_lld_scan_start_hook = 0x40001c74;
 r_lld_init_start_hook = 0x40001cb8;
 r_lld_scan_evt_start_cbk_eco = 0x40001d20;
 r_ke_task_handler_get_overwrite = 0x40001da8;
+r_hci_register_vendor_desc_tab = 0x40000d9c;
+r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
+r_register_esp_vendor_cmd_handler = 0x40001400;
 */
 
 
