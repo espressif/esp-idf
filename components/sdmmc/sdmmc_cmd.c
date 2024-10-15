@@ -416,6 +416,11 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
     return err;
 }
 
+static bool mmc_ready_for_data(uint32_t status)
+{
+    return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
+}
+
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
@@ -448,7 +453,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     uint32_t status = 0;
     size_t count = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
-    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
+    while (!host_is_spi(card) && !mmc_ready_for_data(status)) {
         // TODO: add some timeout here
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
@@ -543,7 +548,7 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
     }
     uint32_t status = 0;
     size_t count = 0;
-    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
+    while (!host_is_spi(card) && !mmc_ready_for_data(status)) {
         // TODO: add some timeout here
         err = sdmmc_send_cmd_send_status(card, &status);
         if (err != ESP_OK) {
