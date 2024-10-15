@@ -19,7 +19,9 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
+#include "soc/chip_revision.h"
 #include "esp_cpu.h"
+#include "hal/efuse_hal.h"
 #include "hal/wdt_hal.h"
 #if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_lpcon_ll.h"
@@ -214,6 +216,15 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                                                   : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 #endif
+
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        /* On ESP32-C5 ECO1, clearing BIT(31) of PCR_FPGA_DEBUG_REG is used to fix
+         * the issue where the modem module fails to transmit and receive packets
+         * due to the loss of the modem root clock caused by automatic clock gating
+         * during soc root clock source switching. For detailed information, refer
+         * to IDF-11064. */
+        REG_CLR_BIT(PCR_FPGA_DEBUG_REG, BIT(31));
+    }
 
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 #if 0  // TODO: [ESP32C5] IDF-8844
