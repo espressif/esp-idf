@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -161,6 +161,9 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     if (sample_rate >= 96000) {
         i2s_tdm_config.clk_cfg.bclk_div = 12;
     }
+#if SOC_I2S_SUPPORTS_APLL
+    i2s_tdm_config.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+#endif
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
@@ -254,6 +257,8 @@ static void test_i2s_tdm_slave_48k_16bits_8slots(void)
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_8slots", "[I2S_TDM]",
                            test_i2s_tdm_master_48k_16bits_8slots, test_i2s_tdm_slave_48k_16bits_8slots);
 
+// The max clock source APLL on P4 is 125M which can't satisfy the following config in slave mode
+#if !CONFIG_IDF_TARGET_ESP32P4
 static void test_i2s_tdm_master_96k_16bits_4slots(void)
 {
     test_i2s_tdm_master(96000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
@@ -266,6 +271,7 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
                            test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
+#endif  // !CONFIG_IDF_TARGET_ESP32P4
 #endif  // !CONFIG_IDF_TARGET_ESP32H2
 
 static void test_i2s_external_clk_src(bool is_master, bool is_external)
