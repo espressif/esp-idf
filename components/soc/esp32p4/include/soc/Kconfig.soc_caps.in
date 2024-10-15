@@ -887,6 +887,10 @@ config SOC_ISP_COLOR_SUPPORTED
     bool
     default y
 
+config SOC_ISP_LSC_SUPPORTED
+    bool
+    default y
+
 config SOC_ISP_SHARE_CSI_BRG
     bool
     default y
@@ -998,6 +1002,18 @@ config SOC_ISP_HIST_SEGMENT_NUMS
 config SOC_ISP_HIST_INTERVAL_NUMS
     int
     default 15
+
+config SOC_ISP_LSC_GRAD_RATIO_INT_BITS
+    int
+    default 2
+
+config SOC_ISP_LSC_GRAD_RATIO_DEC_BITS
+    int
+    default 8
+
+config SOC_ISP_LSC_GRAD_RATIO_RES_BITS
+    int
+    default 22
 
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool

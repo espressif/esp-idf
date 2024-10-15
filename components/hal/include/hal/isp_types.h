@@ -393,6 +393,31 @@ typedef union {
     uint32_t val;       ///< 32-bit color saturation value
 } isp_color_saturation_t;
 
+/*---------------------------------------------------------------
+                      LSC
+---------------------------------------------------------------*/
+#if SOC_ISP_LSC_SUPPORTED
+#define ISP_LSC_GRAD_RATIO_INT_BITS    SOC_ISP_LSC_GRAD_RATIO_INT_BITS
+#define ISP_LSC_GRAD_RATIO_DEC_BITS    SOC_ISP_LSC_GRAD_RATIO_DEC_BITS
+#define ISP_LSC_GRAD_RATIO_RES_BITS    SOC_ISP_LSC_GRAD_RATIO_RES_BITS
+#else
+#define ISP_LSC_GRAD_RATIO_INT_BITS    2
+#define ISP_LSC_GRAD_RATIO_DEC_BITS    8
+#define ISP_LSC_GRAD_RATIO_RES_BITS    22
+#endif
+
+/**
+ * @brief LSC gain
+ */
+typedef union {
+    struct {
+        uint32_t decimal:8;    ///< Integer part
+        uint32_t integer:2;    ///< Decimal part
+        uint32_t reserved:ISP_LSC_GRAD_RATIO_RES_BITS;   ///< Reserved
+    };
+    uint32_t val;    ///< 32-bit gradient ratio value
+} isp_lsc_gain_t;
+
 #ifdef __cplusplus
 }
 #endif

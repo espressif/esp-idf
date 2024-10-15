@@ -34,6 +34,10 @@ if(CONFIG_SOC_ISP_COLOR_SUPPORTED)
     list(APPEND srcs "src/isp_color.c")
 endif()
 
+if(CONFIG_SOC_ISP_LSC_SUPPORTED)
+    list(APPEND srcs "src/isp_lsc.c")
+endif()
+
 if(NOT ${target} STREQUAL "linux")
     list(APPEND requires esp_mm)
 endif()
