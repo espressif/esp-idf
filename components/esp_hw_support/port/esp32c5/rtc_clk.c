@@ -268,7 +268,8 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
         if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-            // ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
+            /* ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
+             * For detailed information, refer to IDF-11064 */
             source = SOC_CPU_CLK_SRC_PLL_F240M;
             source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
             divider = 3;
