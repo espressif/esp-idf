@@ -230,6 +230,14 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
                           TAG, "install interrupt service failed");
     }
 
+    // PCNT uses the APB as its function clock,
+    // and its filter module is sensitive to the clock frequency
+#if CONFIG_PM_ENABLE
+    sprintf(unit->pm_lock_name, "pcnt_%d_%d", group_id, unit_id); // e.g. pcnt_0_0
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, unit->pm_lock_name, &unit->pm_lock), err, TAG, "install pm lock failed");
+    ESP_LOGD(TAG, "install APB_FREQ_MAX lock for unit (%d,%d)", group_id, unit_id);
+#endif
+
     // some events are enabled by default, disable them all
     pcnt_ll_disable_all_events(group->hal.dev, unit_id);
     // disable filter by default
@@ -340,15 +348,6 @@ esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch
     if (config) {
         glitch_filter_thres = esp_clk_apb_freq() / 1000000 * config->max_glitch_ns / 1000;
         ESP_RETURN_ON_FALSE(glitch_filter_thres <= PCNT_LL_MAX_GLITCH_WIDTH, ESP_ERR_INVALID_ARG, TAG, "glitch width out of range");
-
-        // The filter module is working against APB clock, so lazy install PM lock
-#if CONFIG_PM_ENABLE
-        if (!unit->pm_lock) {
-            sprintf(unit->pm_lock_name, "pcnt_%d_%d", group->group_id, unit->unit_id); // e.g. pcnt_0_0
-            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, unit->pm_lock_name, &unit->pm_lock), TAG, "install pm lock failed");
-            ESP_LOGD(TAG, "install APB_FREQ_MAX lock for unit (%d,%d)", group->group_id, unit->unit_id);
-        }
-#endif
     }
 
     // filter control bit is mixed with other PCNT control bits in the same register

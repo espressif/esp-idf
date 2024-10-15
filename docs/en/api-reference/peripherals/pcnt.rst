@@ -192,7 +192,7 @@ This function should be called when the unit is in the init state. Otherwise, it
 
 .. note::
 
-    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80 MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter does not work as expect in that case. So the driver installs a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`pcnt-power-management`.
+    The glitch filter operates using the APB clock. To ensure the counter does not miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (typically 12.5 ns if APB is 80 MHz). Since the APB frequency can change with Dynamic Frequency Scaling (DFS), the filter may not function as expected in such cases. Therefore, the driver installs a power management lock for each PCNT unit. For more details on the power management strategy used in the PCNT driver, please refer to :ref:`pcnt-power-management`.
 
 .. code:: c
 
@@ -236,7 +236,7 @@ Before doing IO control to the PCNT unit, you need to enable it first, by callin
 
 * switches the PCNT driver state from **init** to **enable**.
 * enables the interrupt service if it has been lazy installed in :cpp:func:`pcnt_unit_register_event_callbacks`.
-* acquires a proper power management lock if it has been lazy installed in :cpp:func:`pcnt_unit_set_glitch_filter`. See also :ref:`pcnt-power-management` for more information.
+* acquires a proper power management lock if it has been installed. See also :ref:`pcnt-power-management` for more information.
 
 On the contrary, calling :cpp:func:`pcnt_unit_disable` will do the opposite, that is, put the PCNT driver back to the **init** state, disable the interrupts service and release the power management lock.
 
@@ -291,9 +291,9 @@ The internal hardware counter will be cleared to zero automatically when it reac
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the behavior of PCNT glitch filter and leading to valid signal being treated as noise.
+When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system adjusts the APB frequency before entering light sleep, which can cause the PCNT glitch filter to misinterpret valid signals as noise.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever you enable the glitch filter by :cpp:func:`pcnt_unit_set_glitch_filter`, the driver guarantees that the power management lock is acquired after the PCNT unit is enabled by :cpp:func:`pcnt_unit_enable`. Likewise, the driver releases the lock after :cpp:func:`pcnt_unit_disable` is called.
+To prevent this, the driver can acquire a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`, ensuring the APB frequency remains constant. This lock is acquired when the PCNT unit is enabled via :cpp:func:`pcnt_unit_enable` and released when the unit is disabled via :cpp:func:`pcnt_unit_disable`.
 
 .. _pcnt-iram-safe:
 
