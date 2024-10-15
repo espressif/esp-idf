@@ -1347,10 +1347,6 @@ config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
 
-config SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-    bool
-    default y
-
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
     bool
     default y
