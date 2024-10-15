@@ -133,6 +133,33 @@ static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len
     return to_read;
 }
 
+static int esp_transport_read_blocking(transport_ws_t *ws, char *buffer, int len, int timeout_ms)
+{
+    int orig_len = len;
+    int did_read = 0;
+
+    //Sometimes we get 1B/read, sometimes we need 8B?
+    //Never seen this need >2 reads, better be safe though - need those headers.
+    const unsigned MAX_ATTEMPT = 8;
+    //TODO: change this(or the underlying transports) to retry only until timeout_ms expires.
+    unsigned attempt = 0;
+    for(attempt = 0; attempt < MAX_ATTEMPT && len > 0; ++attempt){
+        int tmp = esp_transport_read_internal(ws, buffer, len, timeout_ms);
+        if(tmp < 0){
+            return tmp;
+        }
+
+        buffer += tmp;
+        len -= tmp;
+        did_read += tmp;
+    }
+
+    if(attempt > 1){
+        ESP_LOGI(TAG, "tried %u attempts to read %i bytes. did read %i bytes", attempt, orig_len, did_read);
+    }
+    return did_read;
+}
+
 static char *trimwhitespace(char *str)
 {
     char *end;
@@ -486,7 +513,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     // Receive and process header first (based on header size)
     int header = 2;
     int mask_len = 4;
-    if ((rlen = esp_transport_read_internal(ws, data_ptr, header, timeout_ms)) <= 0) {
+    if ((rlen = esp_transport_read_blocking(ws, data_ptr, header, timeout_ms)) < header) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
@@ -500,7 +527,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d", ws->frame_state.opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
-        if ((rlen = esp_transport_read_internal(ws, data_ptr, header, timeout_ms)) <= 0) {
+        if ((rlen = esp_transport_read_blocking(ws, data_ptr, header, timeout_ms)) < header) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
@@ -508,7 +535,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     } else if (payload_len == 127) {
         // headerLen += 8;
         header = 8;
-        if ((rlen = esp_transport_read_internal(ws, data_ptr, header, timeout_ms)) <= 0) {
+        if ((rlen = esp_transport_read_blocking(ws, data_ptr, header, timeout_ms)) < header) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
@@ -523,7 +550,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
 
     if (mask) {
         // Read and store mask
-        if (payload_len != 0 && (rlen = esp_transport_read_internal(ws, buffer, mask_len, timeout_ms)) <= 0) {
+        if (payload_len != 0 && (rlen = esp_transport_read_blocking(ws, buffer, mask_len, timeout_ms)) < mask_len) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
