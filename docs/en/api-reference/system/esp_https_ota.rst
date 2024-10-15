@@ -41,11 +41,11 @@ Please refer to :ref:`ESP-TLS: TLS Server Verification <esp_tls_server_verificat
 Partial Image Download over HTTPS
 ---------------------------------
 
-To use the partial image download feature, enable ``partial_http_download`` configuration in ``esp_https_ota_config_t``. When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting ``max_http_request_size`` to the required value.
+To use the partial image download feature, enable partial_http_download configuration in esp_https_ota_config_t. When this configuration is enabled, the firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting max_http_request_size to the required value.
 
-This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
+This option is useful while fetching an image from a service like AWS S3, where the mbedTLS RX buffer size (:ref:CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN) can be set to a lower value. However, note that reducing the buffer size below 16 KB may lead to memory leaks or unexpected behavior if the incoming fragment size exceeds the RX buffer capacity, as mbedTLS requires a minimum of 16KB for the RX buffer to ensure proper handling of incoming messages.
 
-Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
+By default, the mbedTLS RX buffer size is set to 16 KB. If the partial_http_download feature is used with a max_http_request_size of 4 KB, the RX buffer size can be reduced accordingly, but caution should be taken when using smaller buffer sizes.
 
 
 Signature Verification
