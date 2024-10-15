@@ -29,14 +29,12 @@
 #include "riscv/rvruntime-frames.h"
 #endif //CONFIG_IDF_TARGET_ARCH_RISCV
 
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-#include "esp_private/eh_frame_parser.h"
-#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-
-#if CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
-/* Function used to print all the registers pointed by the given frame .*/
-extern void panic_print_registers(const void *frame, int core);
-#endif // CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#if CONFIG_ESP_SYSTEM_NO_BACKTRACE
+/* If the target doesn't support backtrace, we will show CPU registers*/
+#define BACKTRACE_MSG   "registers"
+#else // !CONFIG_ESP_SYSTEM_NO_BACKTRACE
+#define BACKTRACE_MSG   "backtrace"
+#endif
 
 /* We will use this function in order to simulate an `abort()` occurring in
  * a different context than the one it's called from. */
@@ -390,13 +388,11 @@ void task_wdt_timeout_abort(bool current_core)
     g_twdt_isr = true;
     void *frame = (void *) snapshot.pxTopOfStack;
 
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME | CONFIG_IDF_TARGET_ARCH_XTENSA
     if (current_core) {
-        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", xPortGetCoreID());
+        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) " BACKTRACE_MSG, xPortGetCoreID());
     } else {
-        ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", xPortGetCoreID());
+        ESP_EARLY_LOGE(TAG, "Print CPU %d " BACKTRACE_MSG, xPortGetCoreID());
     }
-#endif
 
     xt_unhandled_exception(frame);
 }
@@ -412,7 +408,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
         if ((cores_fail & BIT(0)) && (cores_fail & BIT(1))) {
             /* In the case where both CPUs have failing tasks, print the current CPU backtrace and then let the
              * other core fail. */
-            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) " BACKTRACE_MSG, current_core);
             esp_backtrace_print(100);
             /* TODO: the interrupt we send should have the highest priority */
             esp_crosscore_int_send_twdt_abort(other_core);
@@ -430,13 +426,13 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
     } else {
         /* Print backtrace of the core that failed to reset the watchdog */
         if (cores_fail & BIT(current_core)) {
-            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) " BACKTRACE_MSG, current_core);
             esp_backtrace_print(100);
         }
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         const int other_core = !current_core;
         if (cores_fail & BIT(other_core)) {
-            ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", other_core);
+            ESP_EARLY_LOGE(TAG, "Print CPU %d " BACKTRACE_MSG, other_core);
             esp_crosscore_int_send_print_backtrace(other_core);
         }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

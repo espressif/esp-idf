@@ -17,12 +17,14 @@
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
-#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
-#if !CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#elif CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+extern void esp_fp_print_backtrace(const void*);
+
+#else // !CONFIG_ESP_SYSTEM_USE_EH_FRAME && !
 /* Function used to print all the registers pointed by the given frame .*/
 extern void panic_print_registers(const void *frame, int core);
-#endif // !CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
 /* Targets based on a RISC-V CPU cannot perform backtracing that easily.
     * We have two options here:
@@ -54,10 +56,10 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     memcpy(&backtrace_frame, frame, sizeof(esp_cpu_frame_t));
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) backtrace\n", current_core);
     esp_eh_frame_print_backtrace(frame);
+#elif CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+    esp_fp_print_backtrace(frame);
 #else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    esp_rom_printf("esp_backtrace_print: Print CPU %d (current core) registers\n", current_core);
     panic_prepare_frame_from_ctx(&backtrace_frame);
 
     panic_print_registers(&backtrace_frame, current_core);
