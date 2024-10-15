@@ -528,7 +528,7 @@ static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_d
     usb_device_info_t dev_info;
     ESP_ERROR_CHECK(usbh_dev_get_info(config->dev_hdl, &dev_info));
     if (dev_info.parent.dev_hdl) {
-        ESP_LOGW(EXT_HUB_TAG, "Multiple Hubs not supported, use menuconfig to enable feature");
+        ESP_LOGW(EXT_HUB_TAG, "Multiple Hubs support disabled, Hub device was not initialized");
         ret = ESP_ERR_NOT_SUPPORTED;
         goto fail;
     }

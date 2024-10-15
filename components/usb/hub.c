@@ -778,14 +778,35 @@ esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
     return ret;
 }
 
-#if ENABLE_USB_HUBS
 esp_err_t hub_notify_new_dev(uint8_t dev_addr)
 {
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
 
-    return ext_hub_new_dev(dev_addr);
+    esp_err_t ret;
+#if ENABLE_USB_HUBS
+    ret = ext_hub_new_dev(dev_addr);
+#else
+    // Verify the device descriptor and if the bDeviceClass is a Hub class,
+    // show the warning message, that Hub support feature is not enabled
+    usb_device_handle_t dev_hdl = NULL;
+    const usb_device_desc_t *device_desc = NULL;
+    // Open device
+    if (usbh_devs_open(dev_addr, &dev_hdl) == ESP_OK) {
+        // Get Device Descriptor
+        if (usbh_dev_get_desc(dev_hdl, &device_desc) == ESP_OK) {
+            if (device_desc->bDeviceClass == USB_CLASS_HUB) {
+                ESP_LOGW(HUB_DRIVER_TAG, "External Hubs support disabled, Hub device was not initialized");
+            }
+        }
+        // Close device
+        usbh_dev_close(dev_hdl);
+    }
+    // Logic should not stop the flow, so no error to return
+    ret = ESP_OK;
+#endif // ENABLE_USB_HUBS
+    return ret;
 }
 
 esp_err_t hub_notify_dev_gone(uint8_t dev_addr)
@@ -794,9 +815,17 @@ esp_err_t hub_notify_dev_gone(uint8_t dev_addr)
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
 
-    return ext_hub_dev_gone(dev_addr);
+    esp_err_t ret;
+#if ENABLE_USB_HUBS
+    ret = ext_hub_dev_gone(dev_addr);
+#else
+    // Nothing to do, while Hubs support is not enabled
+    ret = ESP_OK;
+#endif // ENABLE_USB_HUBS
+    return ret;
 }
 
+#if (ENABLE_USB_HUBS)
 esp_err_t hub_notify_all_free(void)
 {
     HUB_DRIVER_ENTER_CRITICAL();
