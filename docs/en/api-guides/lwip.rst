@@ -31,9 +31,9 @@ Some common lwIP app APIs are supported indirectly by ESP-IDF:
 
     DNS server configuration in lwIP is global, not interface-specific. If you are using multiple network interfaces with distinct DNS servers, exercise caution to prevent inadvertent overwrites of one interface's DNS settings when acquiring a DHCP lease from another interface.
 
-- Simple Network Time Protocol (SNTP) is also supported via the :doc:`/api-reference/network/esp_netif`, or directly via the :component_file:`lwip/include/apps/esp_sntp.h` functions, which also provide thread-safe API to :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` functions, see also :ref:`system-time-sntp-sync`.
+- Simple Network Time Protocol (SNTP) is also supported via the :doc:`/api-reference/network/esp_netif`, or directly via the :component_file:`lwip/include/apps/esp_sntp.h` functions, which also provide thread-safe API to :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` functions, see also :ref:`system-time-sntp-sync`. For implementation details, see :example:`protocols/sntp`. This example demonstrates how to use the LwIP SNTP module to obtain time from internet servers, configure the synchronization method and interval, and retrieve time using the SNTP-over-DHCP module.
 - ICMP Ping is supported using a variation on the lwIP ping API, see :doc:`/api-reference/protocols/icmp_echo`.
-- ICMPv6 Ping, supported by lwIP's ICMPv6 Echo API, is used to test IPv6 network connectivity. For more information, see :example:`protocols/sockets/icmpv6_ping`.
+- ICMPv6 Ping, supported by lwIP's ICMPv6 Echo API, is used to test IPv6 network connectivity. For more information, see :example:`protocols/sockets/icmpv6_ping`. This example demonstrates how to use the network interface to discover an IPv6 address, create a raw ICMPv6 socket, send an ICMPv6 Echo Request to a destination IPv6 address, and wait for an Echo Reply from the target.
 - NetBIOS lookup is available using the standard lwIP API. :example:`protocols/http_server/restful_server` has the option to demonstrate using NetBIOS to look up a host on the LAN.
 - mDNS uses a different implementation to the lwIP default mDNS, see :doc:`/api-reference/protocols/mdns`. But lwIP can look up mDNS hosts using standard APIs such as ``gethostbyname()`` and the convention ``hostname.local``, provided the :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` setting is enabled.
 - The PPP implementation in lwIP can be used to create PPPoS (PPP over serial) interface in ESP-IDF. Please refer to the documentation of the :doc:`/api-reference/network/esp_netif` component to create and configure a PPP network interface, by means of the ``ESP_NETIF_DEFAULT_PPP()`` macro defined in :component_file:`esp_netif/include/esp_netif_defaults.h`. Additional runtime settings are provided via :component_file:`esp_netif/include/esp_netif_ppp.h`. PPPoS interfaces are typically used to interact with NBIoT/GSM/LTE modems. More application-level friendly API is supported by the `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ library, which uses this PPP lwIP module behind the scenes.
@@ -53,17 +53,24 @@ A wide range of BSD Sockets reference materials are available, including:
 - `Single UNIX Specification - BSD Sockets page <https://pubs.opengroup.org/onlinepubs/007908799/xnsix.html>`_
 - `Berkeley Sockets - Wikipedia page <https://en.wikipedia.org/wiki/Berkeley_sockets>`_
 
-Examples
-^^^^^^^^
+Application Examples
+^^^^^^^^^^^^^^^^^^^^
 
 A number of ESP-IDF examples show how to use the BSD Sockets APIs:
 
-- :example:`protocols/sockets/tcp_server`
-- :example:`protocols/sockets/tcp_client`
-- :example:`protocols/sockets/udp_server`
-- :example:`protocols/sockets/udp_client`
-- :example:`protocols/sockets/udp_multicast`
-- :example:`protocols/http_request`: this simplified example uses a TCP socket to send an HTTP request, but :doc:`/api-reference/protocols/esp_http_client` is a much better option for sending HTTP requests
+- :example:`protocols/sockets/non_blocking` demonstrates how to configure and run a non-blocking TCP client and server, supporting both IPv4 and IPv6 protocols.
+
+- :example:`protocols/sockets/tcp_server` demonstrates how to create a TCP server that accepts client connection requests and receives data.
+
+- :example:`protocols/sockets/tcp_client` demonstrates how to create a TCP client that connects to a server using a predefined IP address and port.
+
+- :example:`protocols/sockets/tcp_client_multi_net` demonstrates how to use Ethernet and Wi-Fi interfaces together, connect to both simultaneously, create a TCP client for each interface, and send a basic HTTP request and response.
+
+- :example:`protocols/sockets/udp_server` demonstrates how to create a UDP server that receives client connection requests and data.
+
+- :example:`protocols/sockets/udp_client` demonstrates how to create a UDP client that connects to a server using a predefined IP address and port.
+
+- :example:`protocols/sockets/udp_multicast` demonstrates how to use the IPV4 and IPV6 UDP multicast features via the BSD-style sockets interface.
 
 Supported Functions
 ^^^^^^^^^^^^^^^^^^^
