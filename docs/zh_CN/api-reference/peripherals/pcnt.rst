@@ -192,7 +192,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 .. note::
 
-    毛刺滤波器的时钟信息来自 APB。为确保 PCNT 单元不会滤除脉冲信号，最大毛刺宽度应大于一个 APB_CLK 周期（如果 APB 的频率为 80 MHz，则最大毛刺宽度为 12.5 ns）。使能动态频率缩放 (DFS) 后，APB 的频率会发生变化，从而最大毛刺宽度也会发生变化，这会导致计数器无法正常工作。因此，第一次使能毛刺滤波器时，驱动会为 PCNT 单元安装 PM 锁。关于 PCNT 驱动的电源管理的更多信息，请参考 :ref:`pcnt-power-management`。
+    毛刺滤波器的时钟信息来自 APB。为确保 PCNT 单元不会滤除脉冲信号，最大毛刺宽度应大于一个 APB_CLK 周期（如果 APB 的频率为 80 MHz，则最大毛刺宽度为 12.5 ns）。使能动态频率缩放 (DFS) 后，APB 的频率会发生变化，从而最大毛刺宽度也会发生变化，这会导致计数器无法正常工作。因此，驱动会为每个 PCNT 单元安装电源锁。关于 PCNT 驱动的电源管理的更多信息，请参考 :ref:`pcnt-power-management`。
 
 .. code:: c
 
@@ -236,7 +236,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 * 将 PCNT 单元的驱动状态从 **初始** 切换到 **使能** 。
 * 如果中断服务已经在 :cpp:func:`pcnt_unit_register_event_callbacks` 延迟安装，使能中断服务。
-* 如果电源管理锁已经在 :cpp:func:`pcnt_unit_set_glitch_filter` 延迟安装，获取该电源管理锁。请参考 :ref:`pcnt-power-management` 获取更多信息。
+* 如果电源管理锁已经安装，获取该电源管理锁。请参考 :ref:`pcnt-power-management` 获取更多信息。
 
 调用函数 :cpp:func:`pcnt_unit_disable` 会进行相反的操作，即将 PCNT 单元的驱动状态切换回 **初始** 状态，禁用中断服务并释放电源管理锁。
 
@@ -291,9 +291,9 @@ PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清�
 电源管理
 ^^^^^^^^^^
 
-使能电源管理（即 :ref:`CONFIG_PM_ENABLE` 开启）后，在进入 Light-sleep 模式之前，系统会调整 APB 的频率。这会改变 PCNT 毛刺滤波器的参数，从而可能导致有效信号被滤除。
+当电源管理使能（即 :ref:`CONFIG_PM_ENABLE` 开启）时，系统会在进入 Light-sleep 模式之前调整 APB 的频率，这可能导致 PCNT 毛刺滤波器将有效信号误认为噪声。
 
-驱动通过获取 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 类型的电源管理锁来防止系统修改 APB 频率。每当通过 :cpp:func:`pcnt_unit_set_glitch_filter` 使能毛刺滤波器时，驱动可以保证系统在 :cpp:func:`pcnt_unit_enable` 使能 PCNT 单元后获取电源管理锁。而系统调用 :cpp:func:`pcnt_unit_disable` 之后，驱动会释放电源管理锁。
+为了防止这种情况发生，驱动程序可以获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁，以确保 APB 频率保持不变。该锁在通过 :cpp:func:`pcnt_unit_enable` 使能 PCNT 单元时获取，并在通过 :cpp:func:`pcnt_unit_disable` 禁用单元时释放。
 
 .. _pcnt-iram-safe:
 
