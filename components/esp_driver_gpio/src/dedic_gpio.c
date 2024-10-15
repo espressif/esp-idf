@@ -269,6 +269,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     if (config->flags.in_en) {
         for (size_t i = 0; i < config->array_size; i++) {
             gpio_func_sel(config->gpio_array[i], PIN_FUNC_GPIO);
+            gpio_input_enable(config->gpio_array[i]);
             esp_rom_gpio_connect_in_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].in_sig_per_channel[in_offset + i], config->flags.in_invert);
         }
     }
@@ -324,6 +325,17 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
         recycle_all = true;
     }
     portEXIT_CRITICAL(&s_platform[core_id]->spinlock);
+
+    if (bundle->in_mask > 0) {
+        for (size_t i = 0; i < bundle->nr_gpio; i++) {
+            esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, dedic_gpio_periph_signals.cores[core_id].in_sig_per_channel[bundle->in_offset + i], 0);
+        }
+    }
+    if (bundle->out_mask > 0) {
+        for (size_t i = 0; i < bundle->nr_gpio; i++) {
+            gpio_output_disable(bundle->gpio_array[i]);
+        }
+    }
 
     free(bundle);
 
