@@ -1,10 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/system/app_trace_basic:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not ready yet. IDF-8107
   disable_test:
     - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true

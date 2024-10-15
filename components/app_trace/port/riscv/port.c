@@ -57,7 +57,13 @@ static bool esp_apptrace_riscv_host_data_pending(void);
 
 const static char *TAG = "esp_apptrace";
 
-static esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[CONFIG_FREERTOS_NUMBER_OF_CORES];
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define APPTRACE_DRAM_ATTR TCM_DRAM_ATTR
+#else
+#define APPTRACE_DRAM_ATTR
+#endif
+
+static APPTRACE_DRAM_ATTR esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {
@@ -92,7 +98,7 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 }
 
 /* Advertises apptrace control block address to host.
-   This function can be overriden with custom implementation,
+   This function can be overridden with custom implementation,
    e.g. OpenOCD flasher stub use own implementation of it. */
 __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_addr)
 {
@@ -103,7 +109,7 @@ __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_add
 }
 
 /* Returns up buffers config.
-   This function can be overriden with custom implementation,
+   This function can be overridden with custom implementation,
    e.g. OpenOCD flasher stub use own implementation of it. */
 __attribute__((weak)) void esp_apptrace_get_up_buffers(esp_apptrace_mem_block_t mem_blocks_cfg[2])
 {
@@ -165,7 +171,7 @@ static esp_err_t esp_apptrace_riscv_init(esp_apptrace_riscv_data_t *hw_data)
     }
     // notify host about control block address
     int res = esp_apptrace_advertise_ctrl_block(&s_tracing_ctrl[core_id]);
-    assert(res == 0 && "Falied to send config to host!");
+    assert(res == 0 && "Failed to send config to host!");
 
     return ESP_OK;
 }
