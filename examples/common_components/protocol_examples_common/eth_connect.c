@@ -103,7 +103,9 @@ static esp_netif_t *eth_start(void)
     esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
     esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
     s_mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
-#if CONFIG_EXAMPLE_ETH_PHY_IP101
+#if CONFIG_EXAMPLE_ETH_PHY_GENERIC
+    s_phy = esp_eth_phy_new_generic(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_IP101
     s_phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
     s_phy = esp_eth_phy_new_rtl8201(&phy_config);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,15 +149,6 @@ err:
     return ret;
 }
 
-static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
-{
-    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
-    esp_err_t ret = esp_eth_phy_802_3_reset_hw(phy_802_3, RTL8201_PHY_RESET_ASSERTION_TIME_US);
-    vTaskDelay(pdMS_TO_TICKS(RTL8201_PHY_POST_RESET_INIT_TIME_MS));
-    return ret;
-}
-
-
 static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -183,7 +174,15 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     esp_eth_phy_t *ret = NULL;
     phy_rtl8201_t *rtl8201 = calloc(1, sizeof(phy_rtl8201_t));
     ESP_GOTO_ON_FALSE(rtl8201, NULL, err, TAG, "calloc rtl8201 failed");
-    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&rtl8201->phy_802_3, config) == ESP_OK,
+    eth_phy_config_t rtl8201_config = *config;
+    // default chip specific configuration
+    if (config->hw_reset_assert_time_us == 0) {
+        rtl8201_config.hw_reset_assert_time_us = RTL8201_PHY_RESET_ASSERTION_TIME_US;
+    }
+    if (config->post_hw_reset_delay_ms == 0) {
+        rtl8201_config.post_hw_reset_delay_ms = RTL8201_PHY_POST_RESET_INIT_TIME_MS;
+    }
+    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&rtl8201->phy_802_3, &rtl8201_config) == ESP_OK,
                         NULL, err, TAG, "configuration initialization of PHY 802.3 failed");
 
     // redefine functions which need to be customized for sake of RTL8201
@@ -191,7 +190,6 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->phy_802_3.parent.get_link = rtl8201_get_link;
     rtl8201->phy_802_3.parent.autonego_ctrl = rtl8201_autonego_ctrl;
     rtl8201->phy_802_3.parent.loopback = rtl8201_loopback;
-    rtl8201->phy_802_3.parent.reset_hw = rtl8201_reset_hw;
 
     return &rtl8201->phy_802_3.parent;
 err:

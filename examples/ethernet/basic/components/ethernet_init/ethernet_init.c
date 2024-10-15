@@ -83,7 +83,9 @@ static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t
     // Create new ESP32 Ethernet MAC instance
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     // Create new PHY instance based on board configuration
-#if CONFIG_EXAMPLE_ETH_PHY_IP101
+#if CONFIG_EXAMPLE_ETH_PHY_GENERIC
+    esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_IP101
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
     esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);

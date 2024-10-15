@@ -173,14 +173,6 @@ err:
     return ret;
 }
 
-static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
-{
-    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
-    esp_err_t ret = esp_eth_phy_802_3_reset_hw(phy_802_3, IP101_PHY_RESET_ASSERTION_TIME_US);
-    vTaskDelay(pdMS_TO_TICKS(IP101_PHY_POST_RESET_INIT_TIME_MS));
-    return ret;
-}
-
 static esp_err_t ip101_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -206,13 +198,20 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     esp_eth_phy_t *ret = NULL;
     phy_ip101_t *ip101 = calloc(1, sizeof(phy_ip101_t));
     ESP_GOTO_ON_FALSE(ip101, NULL, err, TAG, "calloc ip101 failed");
-    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&ip101->phy_802_3, config) == ESP_OK,
+    eth_phy_config_t ip101_config = *config;
+    // default chip specific configuration
+    if (config->hw_reset_assert_time_us == 0) {
+        ip101_config.hw_reset_assert_time_us = IP101_PHY_RESET_ASSERTION_TIME_US;
+    }
+    if (config->post_hw_reset_delay_ms == 0) {
+        ip101_config.post_hw_reset_delay_ms = IP101_PHY_POST_RESET_INIT_TIME_MS;
+    }
+    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&ip101->phy_802_3, &ip101_config) == ESP_OK,
                         NULL, err, TAG, "configuration initialization of PHY 802.3 failed");
 
     // redefine functions which need to be customized for sake of IP101
     ip101->phy_802_3.parent.init = ip101_init;
     ip101->phy_802_3.parent.get_link = ip101_get_link;
-    ip101->phy_802_3.parent.reset_hw = ip101_reset_hw;
 
     return &ip101->phy_802_3.parent;
 err:

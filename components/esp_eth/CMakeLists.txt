@@ -30,6 +30,7 @@ if(CONFIG_ETH_ENABLED)
         list(APPEND srcs "src/mac/esp_eth_mac_esp.c"
                          "src/mac/esp_eth_mac_esp_dma.c"
                          "src/mac/esp_eth_mac_esp_gpio.c"
+                         "src/phy/esp_eth_phy_generic.c"
                          "src/phy/esp_eth_phy_dp83848.c"
                          "src/phy/esp_eth_phy_ip101.c"
                          "src/phy/esp_eth_phy_ksz80xx.c"

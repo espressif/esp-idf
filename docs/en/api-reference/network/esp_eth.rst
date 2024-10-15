@@ -269,6 +269,10 @@ Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
     * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
 
+    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`: Time the PHY reset pin is asserted in usec. Set this field to ``0`` to use chip specific default timing.
+
+    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`: Time to wait after the PHY hardware reset is done in msec. Set this field to ``0`` to use chip specific default timing. Set this field to ``-1`` to not wait after the PHY hardware reset.
+
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
 
@@ -288,18 +292,22 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // apply default common MAC configuration
         eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
-        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
-        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
+        esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
+        esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
         phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
         phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
-        esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);     // create PHY instance
-        // ESP-IDF officially supports several different Ethernet PHY chip driver
+        esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);   // create generic PHY instance
+        // ESP-IDF officially supports several different specific Ethernet PHY chip driver
+        // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+
+    .. note::
+        Any Ethernet PHY chip compliant with IEEE 802.3 can be used when creating new PHY instance with :cpp:func:`esp_eth_phy_new_generic`. However, while basic functionality should always work, some specific features might be limited, even if the PHY meets IEEE 802.3 standard. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is the concern and you need PHY driver specifically tailored to your chip needs, use drivers for PHY chips the ESP-IDF already officially supports or consult with :ref:`Custom PHY Driver <custom-phy-driver>` section to create a new custom driver.
 
     Optional Runtime MAC Clock Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -557,10 +565,12 @@ Application Examples
 Advanced Topics
 ---------------
 
+.. _custom-phy-driver:
+
 Custom PHY Driver
 ^^^^^^^^^^^^^^^^^
 
-There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
+There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF supports ``Generic PHY`` and also several specific PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
 
 Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
 
