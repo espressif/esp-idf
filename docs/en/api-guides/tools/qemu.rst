@@ -46,7 +46,7 @@ Then install the pre-built binaries with the following command:
 
 After installing QEMU, make sure it is added to PATH by running ``. ./export.sh`` in the IDF directory.
 
-If you are using a different platform, you need to build QEMU from source. Refer to official QEMU documentation for instructions.
+If you are using a different platform, you need to build QEMU from source `for the Xtensa and RISC-V targets <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md>`_ using the `Espressif QEMU work-in-progress fork <https://github.com/espressif/qemu>`_ containing ``xtensa-softmmu`` and ``riscv32-softmmu`` support.  Ultimately, the Xtensa and ``esp32c3`` RISC-V targets are intended to be mainlined into QEMU upstream. Refer to official QEMU documentation for additional build instructions.
 
 Usage
 -----
