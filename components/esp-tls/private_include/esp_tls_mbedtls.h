@@ -70,6 +70,22 @@ void *esp_mbedtls_get_ssl_context(esp_tls_t *tls);
 int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
 
 /**
+ * Initialization part of internal callback for mbedtls_server_session_create
+ *
+ * /note :- The function can only be used with mbedtls ssl library
+ */
+int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+
+/**
+ * Asynchronous continue of internal callback for mbedtls_server_session_create,
+ * to be called in a loop by the user until it returns 0,
+ * ESP_TLS_ERR_SSL_WANT_READ or ESP_TLS_ERR_SSL_WANT_WRITE
+ *
+ * /note :- The function can only be used with mbedtls ssl library
+ */
+int esp_mbedtls_server_session_continue_async(esp_tls_t *tls);
+
+/**
  * Internal Callback for mbedtls_server_session_delete
  *
  * /note :- The function can only be used with mbedtls ssl library

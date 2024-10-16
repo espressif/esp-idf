@@ -73,6 +73,8 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_free_client_session        esp_mbedtls_free_client_session
 #define _esp_tls_get_ssl_context            esp_mbedtls_get_ssl_context
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
+#define _esp_tls_server_session_init        esp_mbedtls_server_session_init
+#define _esp_tls_server_session_continue_async     esp_mbedtls_server_session_continue_async
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
 #define _esp_tls_server_session_ticket_ctx_init    esp_mbedtls_server_session_ticket_ctx_init
 #define _esp_tls_server_session_ticket_ctx_free    esp_mbedtls_server_session_ticket_ctx_free
@@ -90,6 +92,8 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
 #define _esp_tls_net_init                   esp_wolfssl_net_init
 #define _esp_tls_server_session_create      esp_wolfssl_server_session_create
+#define _esp_tls_server_session_init        esp_wolfssl_server_session_init
+#define _esp_tls_server_session_continue_async     esp_wolfssl_server_session_continue_async
 #define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
 #define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
@@ -702,6 +706,22 @@ void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
 int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
     return _esp_tls_server_session_create(cfg, sockfd, tls);
+}
+/**
+ * @brief      Initialization part of esp_tls_server_session_create
+ */
+int esp_tls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+{
+    return _esp_tls_server_session_init(cfg, sockfd, tls);
+}
+/**
+ * @brief      Asynchronous continue of esp_tls_server_session_create, to be
+ *             called in a loop by the user until it returns 0,
+ *             ESP_TLS_ERR_SSL_WANT_READ or ESP_TLS_ERR_SSL_WANT_WRITE
+ */
+int esp_tls_server_session_continue_async(esp_tls_t *tls)
+{
+    return _esp_tls_server_session_continue_async(tls);
 }
 /**
  * @brief      Close the server side TLS/SSL connection and free any allocated resources.
