@@ -125,6 +125,8 @@ The following functions were modified to accommodate SMP behavior:
   - Added extra check to see if current blocking task has already been deleted by the other core.
 - `xStreamBufferReceive()`
   - Added a critical section for setting `xTaskWaitingToReceive` to `NULL` so that the write is SMP safe.
+- `xStreamBufferSend()`
+  - Added a critical section for setting `xTaskWaitingToSend` to `NULL` so that the write is SMP safe.
 
 ### Critical Section Changes
 
