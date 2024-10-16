@@ -924,6 +924,23 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
  */
 int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
+    int ret = 0;
+    if ((ret = esp_mbedtls_server_session_init(cfg, sockfd, tls)) != 0) {
+        return ret;
+    }
+    while ((ret = esp_mbedtls_server_session_continue_async(tls)) != 0) {
+        if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief      Initialization part of esp_mbedtls_server_session_create
+ */
+int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+{
     if (tls == NULL || cfg == NULL) {
         return -1;
     }
@@ -941,19 +958,28 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
 
     tls->read = esp_mbedtls_read;
     tls->write = esp_mbedtls_write;
-    int ret;
-    while ((ret = mbedtls_ssl_handshake(&tls->ssl)) != 0) {
-        if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-            ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%04X", -ret);
-            mbedtls_print_error_msg(ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
-            tls->conn_state = ESP_TLS_FAIL;
-            return ret;
-        }
-    }
     return 0;
 }
+
+/**
+ * @brief      Asynchronous continue of esp_mbedtls_server_session_create, to be
+ *             called in a loop by the user until it returns 0, ESP_TLS_ERR_SSL_WANT_READ
+ *             or ESP_TLS_ERR_SSL_WANT_WRITE
+ */
+int esp_mbedtls_server_session_continue_async(esp_tls_t *tls)
+{
+    int ret = mbedtls_ssl_handshake(&tls->ssl);
+    if (ret != 0 && ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
+        ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
+        tls->conn_state = ESP_TLS_FAIL;
+        return ret;
+    }
+    return ret;
+}
+
 /**
  * @brief      Close the server side TLS/SSL connection and free any allocated resources.
  */
