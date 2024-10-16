@@ -227,11 +227,20 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list)
     return (uintptr_t)(list->items);
 }
 
+esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_item_index, gdma_link_list_handle_t second_link, int second_link_item_index)
+{
+    ESP_RETURN_ON_FALSE(first_link && second_link, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    gdma_link_list_item_t *lli_nc = NULL;
+    lli_nc = (gdma_link_list_item_t *)(first_link->items_nc + (first_link->num_items + first_link_item_index) % first_link->num_items * first_link->item_size);
+    lli_nc->next = (gdma_link_list_item_t *)(second_link->items + (second_link->num_items + second_link_item_index) % second_link->num_items * second_link->item_size);
+    return ESP_OK;
+}
+
 esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma_lli_owner_t owner)
 {
     ESP_RETURN_ON_FALSE_ISR(list, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(item_index < list->num_items, ESP_ERR_INVALID_ARG, TAG, "invalid item index");
-    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + (list->num_items + item_index) % list->num_items * list->item_size);
     lli->dw0.owner = owner;
     return ESP_OK;
 }
@@ -240,7 +249,7 @@ esp_err_t gdma_link_get_owner(gdma_link_list_handle_t list, int item_index, gdma
 {
     ESP_RETURN_ON_FALSE_ISR(list && owner, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(item_index < list->num_items, ESP_ERR_INVALID_ARG, TAG, "invalid item index");
-    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + (list->num_items + item_index) % list->num_items * list->item_size);
     *owner = lli->dw0.owner;
     return ESP_OK;
 }
