@@ -44,6 +44,12 @@
 #include "hal/lcd_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "rgb_lcd_rotation_sw.h"
+
+// hardware issue workaround
+#if CONFIG_IDF_TARGET_ESP32S3
+#define RGB_LCD_NEEDS_SEPARATE_RESTART_LINK 1
+#endif
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define LCD_RGB_INTR_ALLOC_FLAGS     (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
@@ -66,16 +72,6 @@
 #define RGB_LCD_PANEL_MAX_FB_NUM         3 // maximum supported frame buffer number
 #define RGB_LCD_PANEL_BOUNCE_BUF_NUM     2 // bounce buffer number
 
-#define RGB_PANEL_SWAP_XY  0
-#define RGB_PANEL_MIRROR_Y 1
-#define RGB_PANEL_MIRROR_X 2
-
-typedef enum {
-    ROTATE_MASK_SWAP_XY = BIT(RGB_PANEL_SWAP_XY),
-    ROTATE_MASK_MIRROR_Y = BIT(RGB_PANEL_MIRROR_Y),
-    ROTATE_MASK_MIRROR_X = BIT(RGB_PANEL_MIRROR_X),
-} panel_rotate_mask_t;
-
 static const char *TAG = "lcd_panel.rgb";
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
@@ -89,10 +85,10 @@ static esp_err_t rgb_panel_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mi
 static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
 static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool off);
-static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
+static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_clock_source_t clk_src);
 static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel);
 static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel);
-static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
+static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
 static void rgb_lcd_default_isr_handler(void *args);
 
@@ -112,7 +108,9 @@ struct esp_rgb_panel_t {
     gdma_channel_handle_t dma_chan; // DMA channel handle
     gdma_link_list_handle_t dma_fb_links[RGB_LCD_PANEL_MAX_FB_NUM]; // DMA link lists for multiple frame buffers
     gdma_link_list_handle_t dma_bb_link; // DMA link list for bounce buffer
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     gdma_link_list_handle_t dma_restart_link; // DMA link list for restarting the DMA
+#endif
     uint8_t *fbs[RGB_LCD_PANEL_MAX_FB_NUM]; // Frame buffers
     uint8_t *bounce_buffer[RGB_LCD_PANEL_BOUNCE_BUF_NUM]; // Pointer to the bounce buffers
     size_t fb_size;        // Size of frame buffer, in bytes
@@ -121,15 +119,16 @@ struct esp_rgb_panel_t {
     uint8_t bb_fb_index;  // Current frame buffer index which used by bounce buffer
     size_t int_mem_align;  // DMA buffer alignment for internal memory
     size_t ext_mem_align;  // DMA buffer alignment for external memory
-    int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
+    int data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
     size_t bb_eof_count;            // record the number we received the DMA EOF event, compare with `expect_eof_count` in the VSYNC_END ISR
     size_t expect_eof_count;        // record the number of DMA EOF event we expected to receive
+    esp_lcd_rgb_panel_draw_buf_complete_cb_t on_color_trans_done; // draw buffer completes
+    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete; // callback used to notify when the bounce buffer finish copying the entire frame
     esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
-    esp_lcd_rgb_panel_bounce_buf_finish_cb_t on_bounce_frame_finish; // callback used to notify when the bounce buffer finish copying the entire frame
     void *user_ctx;                 // Reserved user's data of callback functions
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
@@ -142,7 +141,6 @@ struct esp_rgb_panel_t {
         uint32_t fb_in_psram: 1;         // Whether the frame buffer is in PSRAM
         uint32_t need_update_pclk: 1;    // Whether to update the PCLK before start a new transaction
         uint32_t need_restart: 1;        // Whether to restart the LCD controller and the DMA
-        uint32_t bb_invalidate_cache: 1; // Whether to do cache invalidation in bounce buffer mode
         uint32_t fb_behind_cache: 1;     // Whether the frame buffer is behind the cache
         uint32_t bb_behind_cache: 1;     // Whether the bounce buffer is behind the cache
     } flags;
@@ -229,9 +227,11 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
     if (rgb_panel->dma_bb_link) {
         gdma_del_link_list(rgb_panel->dma_bb_link);
     }
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     if (rgb_panel->dma_restart_link) {
         gdma_del_link_list(rgb_panel->dma_restart_link);
     }
+#endif
     if (rgb_panel->intr) {
         esp_intr_free(rgb_panel->intr);
     }
@@ -262,8 +262,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
                         ESP_ERR_INVALID_ARG, TAG, "num_fbs conflicts with no_fb");
     ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.no_fb && rgb_panel_config->bounce_buffer_size_px == 0),
                         ESP_ERR_INVALID_ARG, TAG, "must set bounce buffer if there's no frame buffer");
-    ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.refresh_on_demand && rgb_panel_config->bounce_buffer_size_px),
-                        ESP_ERR_INVALID_ARG, TAG, "refresh on demand is not supported under bounce buffer mode");
 
     // determine number of framebuffers
     size_t num_fbs = 1;
@@ -287,9 +285,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     size_t bb_size = rgb_panel_config->bounce_buffer_size_px * fb_bits_per_pixel / 8;
     size_t expect_bb_eof_count = 0;
     if (bb_size) {
-        // we want the bounce can always end in the second buffer
-        ESP_RETURN_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, TAG,
-                            "fb size must be even multiple of bounce buffer size");
+        ESP_RETURN_ON_FALSE(fb_size % bb_size == 0, ESP_ERR_INVALID_ARG, TAG, "frame buffer size must be multiple of bounce buffer size");
         expect_bb_eof_count = fb_size / bb_size;
     }
 
@@ -364,7 +360,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
-    rgb_panel->flags.bb_invalidate_cache = rgb_panel_config->flags.bb_invalidate_cache;
     rgb_panel->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // fill function table
     rgb_panel->base.del = rgb_panel_del;
@@ -401,19 +396,23 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (callbacks->on_vsync) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_vsync), ESP_ERR_INVALID_ARG, TAG, "on_vsync callback not in IRAM");
     }
+    if (callbacks->on_color_trans_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
+    }
+    if (callbacks->on_frame_buf_complete) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_frame_buf_complete), ESP_ERR_INVALID_ARG, TAG, "on_frame_buf_complete callback not in IRAM");
+    }
     if (callbacks->on_bounce_empty) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_bounce_empty), ESP_ERR_INVALID_ARG, TAG, "on_bounce_empty callback not in IRAM");
-    }
-    if (callbacks->on_bounce_frame_finish) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_bounce_frame_finish), ESP_ERR_INVALID_ARG, TAG, "on_bounce_frame_finish callback not in IRAM");
     }
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
     rgb_panel->on_vsync = callbacks->on_vsync;
+    rgb_panel->on_color_trans_done = callbacks->on_color_trans_done;
+    rgb_panel->on_frame_buf_complete = callbacks->on_frame_buf_complete;
     rgb_panel->on_bounce_empty = callbacks->on_bounce_empty;
-    rgb_panel->on_bounce_frame_finish = callbacks->on_bounce_frame_finish;
     rgb_panel->user_ctx = user_ctx;
     return ESP_OK;
 }
@@ -554,7 +553,8 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // enable RGB mode and set data width
     lcd_ll_enable_rgb_mode(rgb_panel->hal.dev, true);
     lcd_ll_set_dma_read_stride(rgb_panel->hal.dev, rgb_panel->data_width);
-    lcd_ll_set_phase_cycles(rgb_panel->hal.dev, 0, 0, 1); // enable data phase only
+    // enable data phase only
+    lcd_ll_set_phase_cycles(rgb_panel->hal.dev, 0, 0, 1);
     // number of data cycles is controlled by DMA buffer size
     lcd_ll_enable_output_always_on(rgb_panel->hal.dev, true);
     // configure HSYNC, VSYNC, DE signal idle state level
@@ -572,7 +572,8 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     lcd_ll_enable_output_hsync_in_porch_region(rgb_panel->hal.dev, true);
     // generate the hsync at the very beginning of line
     lcd_ll_set_hsync_position(rgb_panel->hal.dev, 0);
-    // send next frame automatically in stream mode
+    // in stream mode, after finish one frame, the LCD controller will ask for data automatically from the DMA
+    // DMA should prepare the next frame data within porch region
     lcd_ll_enable_auto_next_frame(rgb_panel->hal.dev, rgb_panel->flags.stream_mode);
     // trigger interrupt on the end of frame
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, true);
@@ -586,157 +587,18 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     return ret;
 }
 
-__attribute__((always_inline))
-static inline void copy_pixel_8bpp(uint8_t *to, const uint8_t *from)
-{
-    *to++ = *from++;
-}
-
-__attribute__((always_inline))
-static inline void copy_pixel_16bpp(uint8_t *to, const uint8_t *from)
-{
-    *to++ = *from++;
-    *to++ = *from++;
-}
-
-__attribute__((always_inline))
-static inline void copy_pixel_24bpp(uint8_t *to, const uint8_t *from)
-{
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-}
-
-#define COPY_PIXEL_CODE_BLOCK(_bpp)                                                               \
-    switch (rgb_panel->rotate_mask)                                                               \
-    {                                                                                             \
-    case 0:                                                                                       \
-    {                                                                                             \
-        uint8_t *to = fb + (y_start * h_res + x_start) * bytes_per_pixel;                         \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            memcpy(to, from, copy_bytes_per_line);                                                \
-            to += bytes_per_line;                                                                 \
-            from += copy_bytes_per_line;                                                          \
-        }                                                                                         \
-        bytes_to_flush = (y_end - y_start) * bytes_per_line;                                      \
-        flush_ptr = fb + y_start * bytes_per_line;                                                \
-    }                                                                                             \
-    break;                                                                                        \
-    case ROTATE_MASK_MIRROR_X:                                                                    \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            uint32_t index = (y * h_res + (h_res - 1 - x_start)) * bytes_per_pixel;               \
-            for (size_t x = x_start; x < x_end; x++)                                              \
-            {                                                                                     \
-                copy_pixel_##_bpp##bpp(to + index, from);                                         \
-                index -= bytes_per_pixel;                                                         \
-                from += bytes_per_pixel;                                                          \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (y_end - y_start) * bytes_per_line;                                      \
-        flush_ptr = fb + y_start * bytes_per_line;                                                \
-        break;                                                                                    \
-    case ROTATE_MASK_MIRROR_Y:                                                                    \
-    {                                                                                             \
-        uint8_t *to = fb + ((v_res - 1 - y_start) * h_res + x_start) * bytes_per_pixel;           \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            memcpy(to, from, copy_bytes_per_line);                                                \
-            to -= bytes_per_line;                                                                 \
-            from += copy_bytes_per_line;                                                          \
-        }                                                                                         \
-        bytes_to_flush = (y_end - y_start) * bytes_per_line;                                      \
-        flush_ptr = fb + (v_res - y_end) * bytes_per_line;                                        \
-    }                                                                                             \
-    break;                                                                                        \
-    case ROTATE_MASK_MIRROR_X | ROTATE_MASK_MIRROR_Y:                                             \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            uint32_t index = ((v_res - 1 - y) * h_res + (h_res - 1 - x_start)) * bytes_per_pixel; \
-            for (size_t x = x_start; x < x_end; x++)                                              \
-            {                                                                                     \
-                copy_pixel_##_bpp##bpp(to + index, from);                                         \
-                index -= bytes_per_pixel;                                                         \
-                from += bytes_per_pixel;                                                          \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (y_end - y_start) * bytes_per_line;                                      \
-        flush_ptr = fb + (v_res - y_end) * bytes_per_line;                                        \
-        break;                                                                                    \
-    case ROTATE_MASK_SWAP_XY:                                                                     \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            for (int x = x_start; x < x_end; x++)                                                 \
-            {                                                                                     \
-                uint32_t j = y * copy_bytes_per_line + x * bytes_per_pixel - offset;              \
-                uint32_t i = (x * h_res + y) * bytes_per_pixel;                                   \
-                copy_pixel_##_bpp##bpp(to + i, from + j);                                         \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (x_end - x_start) * bytes_per_line;                                      \
-        flush_ptr = fb + x_start * bytes_per_line;                                                \
-        break;                                                                                    \
-    case ROTATE_MASK_SWAP_XY | ROTATE_MASK_MIRROR_X:                                              \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            for (int x = x_start; x < x_end; x++)                                                 \
-            {                                                                                     \
-                uint32_t j = y * copy_bytes_per_line + x * bytes_per_pixel - offset;              \
-                uint32_t i = (x * h_res + h_res - 1 - y) * bytes_per_pixel;                       \
-                copy_pixel_##_bpp##bpp(to + i, from + j);                                         \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (x_end - x_start) * bytes_per_line;                                      \
-        flush_ptr = fb + x_start * bytes_per_line;                                                \
-        break;                                                                                    \
-    case ROTATE_MASK_SWAP_XY | ROTATE_MASK_MIRROR_Y:                                              \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            for (int x = x_start; x < x_end; x++)                                                 \
-            {                                                                                     \
-                uint32_t j = y * copy_bytes_per_line + x * bytes_per_pixel - offset;              \
-                uint32_t i = ((v_res - 1 - x) * h_res + y) * bytes_per_pixel;                     \
-                copy_pixel_##_bpp##bpp(to + i, from + j);                                         \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (x_end - x_start) * bytes_per_line;                                      \
-        flush_ptr = fb + (v_res - x_end) * bytes_per_line;                                        \
-        break;                                                                                    \
-    case ROTATE_MASK_SWAP_XY | ROTATE_MASK_MIRROR_X | ROTATE_MASK_MIRROR_Y:                       \
-        for (int y = y_start; y < y_end; y++)                                                     \
-        {                                                                                         \
-            for (int x = x_start; x < x_end; x++)                                                 \
-            {                                                                                     \
-                uint32_t j = y * copy_bytes_per_line + x * bytes_per_pixel - offset;              \
-                uint32_t i = ((v_res - 1 - x) * h_res + h_res - 1 - y) * bytes_per_pixel;         \
-                copy_pixel_##_bpp##bpp(to + i, from + j);                                         \
-            }                                                                                     \
-        }                                                                                         \
-        bytes_to_flush = (x_end - x_start) * bytes_per_line;                                      \
-        flush_ptr = fb + (v_res - x_end) * bytes_per_line;                                        \
-        break;                                                                                    \
-    default:                                                                                      \
-        break;                                                                                    \
-    }
-
 static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(rgb_panel->num_fbs > 0, ESP_ERR_NOT_SUPPORTED, TAG, "no frame buffer installed");
+    esp_lcd_rgb_panel_draw_buf_complete_cb_t cb = rgb_panel->on_color_trans_done;
 
-    // check if we need to copy the draw buffer (pointed by the color_data) to the driver's frame buffer
-    bool do_copy = false;
-    if (color_data == rgb_panel->fbs[0]) {
-        rgb_panel->cur_fb_index = 0;
-    } else if (color_data == rgb_panel->fbs[1]) {
-        rgb_panel->cur_fb_index = 1;
-    } else if (color_data == rgb_panel->fbs[2]) {
-        rgb_panel->cur_fb_index = 2;
-    } else {
-        // we do the copy only if the color_data is different from either frame buffer
-        do_copy = true;
-    }
+    uint8_t *draw_buffer = (uint8_t *)color_data;
+    size_t fb_size = rgb_panel->fb_size;
+    int h_res = rgb_panel->timings.h_res;
+    int v_res = rgb_panel->timings.v_res;
+    int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
+    uint32_t bytes_per_line = bytes_per_pixel * h_res;
 
     // adjust the flush window by adding extra gap
     x_start += rgb_panel->x_gap;
@@ -745,8 +607,6 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     y_end += rgb_panel->y_gap;
 
     // clip to boundaries
-    int h_res = rgb_panel->timings.h_res;
-    int v_res = rgb_panel->timings.v_res;
     if (rgb_panel->rotate_mask & ROTATE_MASK_SWAP_XY) {
         x_start = MAX(x_start, 0);
         x_end = MIN(x_end, v_res);
@@ -759,15 +619,24 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         y_end = MIN(y_end, v_res);
     }
 
-    int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
-    int pixels_per_line = rgb_panel->timings.h_res;
-    uint32_t bytes_per_line = bytes_per_pixel * pixels_per_line;
-    uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
-    size_t bytes_to_flush = v_res * h_res * bytes_per_pixel;
-    uint8_t *flush_ptr = fb;
+    // check if we want to copy the draw buffer to the internal frame buffer
+    bool draw_buf_copy_to_fb = true;
+    uint8_t draw_buf_fb_index = 0;
+    for (int i = 0; i < rgb_panel->num_fbs; i++) {
+        if (draw_buffer >= rgb_panel->fbs[i] && draw_buffer < rgb_panel->fbs[i] + fb_size) {
+            draw_buf_fb_index = i;
+            draw_buf_copy_to_fb = false;
+            break;
+        }
+    }
 
-    if (do_copy) {
-        // copy the UI draw buffer into internal frame buffer
+    if (draw_buf_copy_to_fb) {
+        // sync the draw buffer with the frame buffer by CPU copy
+        ESP_LOGV(TAG, "copy draw buffer to frame buffer by CPU");
+        uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
+        size_t bytes_to_flush = v_res * bytes_per_line;
+        uint8_t *flush_ptr = fb;
+
         const uint8_t *from = (const uint8_t *)color_data;
         uint32_t copy_bytes_per_line = (x_end - x_start) * bytes_per_pixel;
         size_t offset = y_start * copy_bytes_per_line + x_start * bytes_per_pixel;
@@ -779,12 +648,29 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         } else if (3 == bytes_per_pixel) {
             COPY_PIXEL_CODE_BLOCK(24)
         }
-    }
-
-    // Note that if we use a bounce buffer, the data gets read by the CPU as well so no need to write back
-    if (rgb_panel->flags.fb_in_psram && !rgb_panel->bb_size) {
-        // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
-        ESP_RETURN_ON_ERROR(esp_cache_msync(flush_ptr, bytes_to_flush, 0), TAG, "flush cache buffer failed");
+        // do memory sync only when the frame buffer is mounted to the DMA link list and behind the cache
+        if (!rgb_panel->bb_size && rgb_panel->flags.fb_behind_cache) {
+            esp_cache_msync(flush_ptr, bytes_to_flush, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        }
+        // after the draw buffer finished copying, notify the user to recycle the draw buffer
+        if (cb) {
+            cb(&rgb_panel->base, NULL, rgb_panel->user_ctx);
+        }
+    } else {
+        ESP_LOGV(TAG, "draw buffer is part of the frame buffer");
+        // the new frame buffer index is changed
+        rgb_panel->cur_fb_index = draw_buf_fb_index;
+        // when this function is called, the frame buffer already reflects the draw buffer changes
+        // if the frame buffer is also mounted to the DMA, we need to do the sync between them
+        if (!rgb_panel->bb_size && rgb_panel->flags.fb_behind_cache) {
+            uint8_t *cache_sync_start = rgb_panel->fbs[draw_buf_fb_index] + (y_start * h_res) * bytes_per_pixel;
+            size_t cache_sync_size = (y_end - y_start) * bytes_per_line;
+            esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        }
+        // after the draw buffer finished copying, notify the user to recycle the draw buffer
+        if (cb) {
+            cb(&rgb_panel->base, NULL, rgb_panel->user_ctx);
+        }
     }
 
     if (!rgb_panel->bb_size) {
@@ -895,24 +781,24 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
     return ESP_OK;
 }
 
-static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
+static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_clock_source_t clk_src)
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
-    panel->src_clk_hz = src_clk_hz;
+    rgb_panel->src_clk_hz = src_clk_hz;
     esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     LCD_CLOCK_SRC_ATOMIC() {
-        lcd_ll_select_clk_src(panel->hal.dev, clk_src);
+        lcd_ll_select_clk_src(rgb_panel->hal.dev, clk_src);
     }
 
     // create pm lock based on different clock source
     // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &panel->pm_lock), TAG, "create pm lock failed");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &rgb_panel->pm_lock), TAG, "create pm lock failed");
     // hold the lock during the whole lifecycle of RGB panel
-    esp_pm_lock_acquire(panel->pm_lock);
+    esp_pm_lock_acquire(rgb_panel->pm_lock);
     ESP_LOGD(TAG, "installed pm lock and hold the lock during the whole panel lifecycle");
 #endif
 
@@ -923,52 +809,73 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
 {
     bool need_yield = false;
     int bytes_per_pixel = panel->fb_bits_per_pixel / 8;
-    if (panel->num_fbs == 0) {
+    if (unlikely(panel->num_fbs == 0)) {
+        // driver doesn't maintain a frame buffer, so ask the user to fill the bounce buffer
         if (panel->on_bounce_empty) {
-            // We don't have a frame buffer here; we need to call a callback to refill the bounce buffer
             if (panel->on_bounce_empty(&panel->base, buffer, panel->bounce_pos_px, panel->bb_size, panel->user_ctx)) {
                 need_yield = true;
             }
         }
     } else {
-        // We do have frame buffer; copy from there.
-        // Note: if the cache is disabled, and accessing the PSRAM by DCACHE will crash.
+        // copy partial frame buffer to the bounce buffer
+        // Note: if the frame buffer is behind a cache, and the cache is disabled, crash would happen here when auto write back happens
         memcpy(buffer, &panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
-        if (panel->flags.bb_invalidate_cache) {
-            // We don't need the bytes we copied from the psram anymore
-            // Make sure that if anything happened to have changed (because the line already was in cache) we write the data back.
-            esp_cache_msync(&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], (size_t)panel->bb_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        }
     }
+    // do memory sync if the bounce buffer is behind the cache
+    if (panel->flags.bb_behind_cache) {
+        esp_cache_msync(buffer, panel->bb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    }
+
     panel->bounce_pos_px += panel->bb_size / bytes_per_pixel;
     // If the bounce pos is larger than the frame buffer size, wrap around so the next isr starts pre-loading the next frame.
     if (panel->bounce_pos_px >= panel->fb_size / bytes_per_pixel) {
         panel->bounce_pos_px = 0;
         panel->bb_fb_index = panel->cur_fb_index;
-        if (panel->on_bounce_frame_finish) {
-            if (panel->on_bounce_frame_finish(&panel->base, NULL, panel->user_ctx)) {
+        esp_lcd_rgb_panel_frame_buf_complete_cb_t cb = panel->on_frame_buf_complete;
+        if (cb) {
+            if (cb(&panel->base, NULL, panel->user_ctx)) {
                 need_yield = true;
             }
         }
     }
-    if (panel->num_fbs > 0) {
-        // Preload the next bit of buffer from psram
+
+    // Preload the next bit of buffer to the cache memory, this can improve the performance
+    if (panel->num_fbs > 0 && panel->flags.fb_behind_cache) {
+#if CONFIG_IDF_TARGET_ESP32S3
         Cache_Start_DCache_Preload((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
                                    panel->bb_size, 0);
+#elif CONFIG_IDF_TARGET_ESP32P4
+        Cache_Start_L2_Cache_Preload((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
+                                     panel->bb_size, 0);
+#else
+#error "Unsupported target"
+#endif
     }
     return need_yield;
 }
 
-// This is called in bounce buffer mode, when one bounce buffer has been fully sent to the LCD peripheral.
 static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
-    esp_rgb_panel_t *panel = (esp_rgb_panel_t *)user_data;
-    // Figure out which bounce buffer to write to.
-    portENTER_CRITICAL_ISR(&panel->spinlock);
-    int bb = panel->bb_eof_count % RGB_LCD_PANEL_BOUNCE_BUF_NUM;
-    panel->bb_eof_count++;
-    portEXIT_CRITICAL_ISR(&panel->spinlock);
-    return lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[bb]);
+    bool need_yield = false;
+    esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)user_data;
+
+    if (rgb_panel->bb_size) {
+        // in bounce buffer mode, the DMA EOF means time to fill the finished bounce buffer
+        // Figure out which bounce buffer to write to
+        portENTER_CRITICAL_ISR(&rgb_panel->spinlock);
+        int bb = rgb_panel->bb_eof_count % RGB_LCD_PANEL_BOUNCE_BUF_NUM;
+        rgb_panel->bb_eof_count++;
+        portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
+        need_yield = lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[bb]);
+    } else {
+        // if not bounce buffer, the DMA EOF event means the end of a frame has been sent out to the LCD controller
+        if (rgb_panel->on_frame_buf_complete) {
+            if (rgb_panel->on_frame_buf_complete(&rgb_panel->base, NULL, rgb_panel->user_ctx)) {
+                need_yield = true;
+            }
+        }
+    }
+    return need_yield;
 }
 
 static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
@@ -995,25 +902,27 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     // get the memory alignment required by the DMA
     gdma_get_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align);
 
-    // we need to refill the bounce buffer in the DMA EOF interrupt, so only register the callback for bounce buffer mode
-    if (rgb_panel->bb_size) {
-        gdma_tx_event_callbacks_t cbs = {
-            .on_trans_eof = lcd_rgb_panel_eof_handler,
-        };
-        gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel);
-    }
+    // register DMA EOF callback
+    gdma_tx_event_callbacks_t cbs = {
+        .on_trans_eof = lcd_rgb_panel_eof_handler,
+    };
+    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel), TAG, "register DMA EOF callback failed");
 
     return ESP_OK;
 }
 
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
 // If we restart GDMA, the data sent to the LCD peripheral needs to start LCD_FIFO_PRESERVE_SIZE_PX pixels after the FB start
 // so we use a dedicated DMA link (called restart link) to restart the transaction
 #define LCD_FIFO_PRESERVE_SIZE_PX (LCD_LL_FIFO_DEPTH + 1)
+#endif
 
 static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
 {
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     // the restart link shares the same buffer with the frame/bounce buffer but start from a different offset
     int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * (rgb_panel->fb_bits_per_pixel / 8);
+#endif
     if (rgb_panel->bb_size) {
         // DMA is used to convey the bounce buffer
         size_t num_dma_nodes_per_bounce_buffer = (rgb_panel->bb_size + LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
@@ -1035,6 +944,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         }
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_bb_link, 0, mount_cfgs, RGB_LCD_PANEL_BOUNCE_BUF_NUM, NULL),
                             TAG, "mount DMA bounce buffers failed");
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
             .buffer_alignment = rgb_panel->int_mem_align,
@@ -1054,6 +964,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
 
         // Magic here: we use the restart link to restart the bounce buffer link list, so concat them
         gdma_link_concat(rgb_panel->dma_restart_link, 0, rgb_panel->dma_bb_link, 1);
+#endif
     } else {
         // DMA is used to convey the frame buffer
         size_t num_dma_nodes = (rgb_panel->fb_size + LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
@@ -1079,6 +990,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
             ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_fb_links[i], 0, &mount_cfg, 1, NULL),
                                 TAG, "mount DMA frame buffer failed");
         }
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
             .buffer_alignment = rgb_panel->flags.fb_in_psram ? rgb_panel->ext_mem_align : rgb_panel->int_mem_align,
@@ -1098,6 +1010,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
 
         // Magic here: we use the restart link to restart the frame buffer link list, so concat them
         gdma_link_concat(rgb_panel->dma_restart_link, 0, rgb_panel->dma_fb_links[0], 1);
+#endif
     }
 
     return ESP_OK;
@@ -1145,8 +1058,17 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
     }
 
     gdma_reset(panel->dma_chan);
+    lcd_ll_fifo_reset(panel->hal.dev);
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     // restart the DMA by a special DMA node
     gdma_start(panel->dma_chan, gdma_link_get_head_addr(panel->dma_restart_link));
+#else
+    if (panel->bb_size) {
+        gdma_start(panel->dma_chan, gdma_link_get_head_addr(panel->dma_bb_link));
+    } else {
+        gdma_start(panel->dma_chan, gdma_link_get_head_addr(panel->dma_fb_links[panel->cur_fb_index]));
+    }
+#endif
 
     if (panel->bb_size) {
         // Fill 2nd bounce buffer while 1st is being sent out, if needed.
@@ -1162,6 +1084,7 @@ static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
     // reset FIFO of DMA and LCD, in case there remains old frame data
     gdma_reset(rgb_panel->dma_chan);
     lcd_ll_stop(rgb_panel->hal.dev);
+    lcd_ll_reset(rgb_panel->hal.dev);
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
 
     // pre-fill bounce buffers if needed
@@ -1203,8 +1126,11 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
     esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)args;
     bool need_yield = false;
 
+    // clear the interrupt status
     uint32_t intr_status = lcd_ll_get_interrupt_status(rgb_panel->hal.dev);
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, intr_status);
+
+    // VSYNC event happened
     if (intr_status & LCD_LL_EVENT_VSYNC_END) {
         // call user registered callback
         if (rgb_panel->on_vsync) {
@@ -1222,6 +1148,7 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
         }
 
     }
+    // yield if needed
     if (need_yield) {
         portYIELD_FROM_ISR();
     }

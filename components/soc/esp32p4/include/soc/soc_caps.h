@@ -29,9 +29,9 @@
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_LCDCAM_SUPPORTED            1
-#define SOC_LCDCAM_CAM_SUPPORTED        1
+#define SOC_LCDCAM_CAM_SUPPORTED        1 // support the camera driver based on the LCD_CAM peripheral
 #define SOC_LCDCAM_I80_LCD_SUPPORTED    1 // support the Intel 8080 bus driver based on the LCD_CAM peripheral
-// #define SOC_LCDCAM_RGB_LCD_SUPPORTED    1 // TODO: IDF-7465
+#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1 // support the RGB LCD driver based on the LCD_CAM peripheral
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
@@ -428,11 +428,12 @@
 /*-------------------------- LCD CAPS ----------------------------------------*/
 /* I80 bus and RGB timing generator can't work at the same time in the LCD_CAM peripheral */
 #define SOC_LCD_I80_SUPPORTED              1  /*!< support intel 8080 driver */
+#define SOC_LCD_RGB_SUPPORTED              1  /*!< RGB LCD is supported */
 #define SOC_LCDCAM_I80_NUM_BUSES           1U /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
 #define SOC_LCDCAM_I80_BUS_WIDTH           24 /*!< Intel 8080 bus max data width */
 #define SOC_LCDCAM_RGB_NUM_PANELS          1U /*!< Support one RGB LCD panel */
-// #define SOC_LCD_RGB_DATA_WIDTH          24 /*!< Number of LCD data lines */
-// #define SOC_LCD_SUPPORT_RGB_YUV_CONV    1  /*!< Support color format conversion between RGB and YUV */
+#define SOC_LCDCAM_RGB_DATA_WIDTH          24 /*!< Number of LCD data lines */
+#define SOC_LCD_SUPPORT_RGB_YUV_CONV       1  /*!< Support color format conversion between RGB and YUV */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (2U)   ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)

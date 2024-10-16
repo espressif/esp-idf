@@ -115,6 +115,10 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list);
  *                          v item_index
  *        Link B: B1 --> B2 --> B3 --> B4
  *
+ *      After concatenation:
+ *       Link A: A1 --> B3 --> B4
+ *       Link B: B1 --> B2 --> B3 --> B4
+ *
  * @param[in] first_link First link list handle, allocated by `gdma_new_link_list`
  * @param[in] first_link_item_index Index of the item in the first link list (-1 means the last item)
  * @param[in] second_link Second link list handle, allocated by `gdma_new_link_list`

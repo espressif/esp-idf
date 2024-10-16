@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-// FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
+// Refresh Rate = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
 #define MIPI_DSI_DPI_CLK_MHZ  80
 #define MIPI_DSI_LCD_H_RES    800
 #define MIPI_DSI_LCD_V_RES    1280
