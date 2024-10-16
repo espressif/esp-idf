@@ -444,6 +444,15 @@ config BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
         minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
 
+config BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
+
+
 config BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
     depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
