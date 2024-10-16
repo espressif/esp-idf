@@ -290,39 +290,19 @@ ADC 连续转换模式驱动使用内部缓冲池保存转换结果，缓冲池�
 硬件限制
 ^^^^^^^^^^^^^^^^^^^^
 
-- 一个 ADC 单元一次只能运行一种操作模式，即连续模式或单次模式。:cpp:func:`adc_continuous_start` 提供了保护措施。
+.. list::
 
-- 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 连续转换模式驱动从 RNG 生成随机数时，随机性会减弱。
+    - 一个 ADC 单元一次只能运行一种操作模式，即连续模式或单次模式。:cpp:func:`adc_continuous_start` 提供了保护措施。
+    - 随机数生成器 (RNG) 以 ADC 为输入源。使用 ADC 连续转换模式驱动从 RNG 生成随机数时，随机性会减弱。
+    :esp32 or esp32s2: - Wi-Fi 也使用 ADC2，:cpp:func:`adc_continuous_start` 提供了 Wi-Fi 驱动和 ADC 连续转换模式驱动之间的保护。
+    :esp32: - ADC 连续转换模式驱动使用 I2S0 外设作为硬件 DMA FIFO。因此，如果 I2S0 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
+    :esp32: - ESP32 DevKitC：由于存在外部自动烧录电路，GPIO 0 不能用于 ADC 连续转换模式。
+    :esp32: - ESP-WROVER-KIT：由于部分 GPIO 管脚可能已经用于其他目的，GPIO 0、2、4 和 15 不能用于 ADC 连续转换模式。
+    :esp32s2: - ADC 连续转换模式驱动使用 SPI3 外设作为硬件 DMA FIFO。因此，如果 SPI3 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
+    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
+    :esp32s3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-S3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
 
-.. only:: esp32 or esp32s2
-
-    - Wi-Fi 也使用 ADC2，:cpp:func:`adc_continuous_start` 提供了 Wi-Fi 驱动和 ADC 连续转换模式驱动之间的保护。
-
-.. only:: esp32
-
-    - ADC 连续转换模式驱动使用 I2S0 外设作为硬件 DMA FIFO。因此，如果 I2S0 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
-
-    - ESP32 DevKitC：由于存在外部自动烧录电路，GPIO 0 不能用于 ADC 连续转换模式。
-
-    - ESP-WROVER-KIT：由于部分 GPIO 管脚可能已经用于其他目的，GPIO 0、2、4 和 15 不能用于 ADC 连续转换模式。
-
-.. only:: esp32s2
-
-    - ADC 连续转换模式驱动使用 SPI3 外设作为硬件 DMA FIFO。因此，如果 SPI3 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
-
-.. only:: esp32c3
-
-    - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
-
-.. only:: esp32s3
-
-    - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-S3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
-
-    .. _adc-continuous-power-management:
-
-.. only:: not esp32s3
-
-    .. _adc-continuous-power-management:
+.. _adc-continuous-power-management:
 
 电源管理
 ^^^^^^^^^^^^^^^^
