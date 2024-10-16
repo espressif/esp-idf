@@ -14,6 +14,9 @@
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
+    # Since the version 3.21 CMake passes source files and include dirs to ninja using absolute paths.
+    # Needed for pytest junit reports.
+    INSTALL_EXTRA_TOOLS: cmake
   needs:
     - pipeline: $PARENT_PIPELINE_ID
       job: generate_build_child_pipeline
@@ -52,6 +55,7 @@
     PYTEST_NODES: ""
     TARGET_SELECTOR: ""
     ENV_MARKERS: ""
+    INSTALL_EXTRA_TOOLS: "xtensa-esp-elf-gdb riscv32-esp-elf-gdb openocd-esp32 esp-rom-elfs"
     PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER} --capture=fd --verbosity=0"
   cache:
     # Usually do not need submodule-cache in target_test
@@ -71,10 +75,10 @@
     expire_in: 1 week
   script:
     # get known failure cases
-    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd python tools/ci/get_known_failure_cases_file.py
     # get runner env config file
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - run_cmd python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # CI specific options start from "--known-failure-cases-file xxx". could ignore when running locally
     - run_cmd pytest ${PYTEST_NODES}
       --target ${TARGET_SELECTOR}
@@ -86,4 +90,7 @@
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
   after_script:
-    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
+    - source tools/ci/utils.sh
+    - section_start "upload_junit_reports"
+    - run_cmd python tools/ci/artifacts_handler.py upload --type logs junit_reports
+    - section_end "upload_junit_reports"
