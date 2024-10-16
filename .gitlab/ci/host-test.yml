@@ -195,7 +195,7 @@ test_tools:
       junit: ${IDF_PATH}/XUNIT_*.xml
   variables:
     LC_ALL: C.UTF-8
-    INSTALL_QEMU: 1  # for test_idf_qemu.py
+    INSTALL_EXTRA_TOOLS: "qemu-xtensa qemu-riscv32"  # for test_idf_qemu.py
   script:
     - stat=0
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
@@ -282,9 +282,10 @@ test_pytest_qemu:
       junit: XUNIT_RESULT.xml
   parallel:
     matrix:
-      - IDF_TARGET: [esp32, esp32c3]
-  variables:
-    INSTALL_QEMU: 1
+      - IDF_TARGET: "esp32"
+        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+      - IDF_TARGET: "esp32c3"
+        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
@@ -348,7 +349,7 @@ test_pytest_macos:
   variables:
     PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
       -m \"host_test and macos_shell\"
