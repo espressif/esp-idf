@@ -122,6 +122,7 @@ endfunction()
 # keeps a list of all its properties.
 #
 function(__component_write_properties output_file)
+    set(component_properties_text "")
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
     foreach(component_target ${component_targets})
         __component_get_property(component_properties ${component_target} __COMPONENT_PROPERTIES)
@@ -130,8 +131,8 @@ function(__component_write_properties output_file)
             set(component_properties_text
                 "${component_properties_text}\nset(__component_${component_target}_${property} \"${val}\")")
         endforeach()
-        file(WRITE ${output_file} "${component_properties_text}")
     endforeach()
+    file(WRITE ${output_file} "${component_properties_text}")
 endfunction()
 
 #
