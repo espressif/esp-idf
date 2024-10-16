@@ -1826,6 +1826,8 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     bool chan_allocated = usb_dwc_hal_chan_alloc(port->hal, pipe->chan_obj, (void *) pipe);
     if (!chan_allocated) {
         HCD_EXIT_CRITICAL();
+        // The only reason why alloc channel could return false is no more free channels
+        ESP_LOGE(HCD_DWC_TAG, "No more HCD channels available");
         ret = ESP_ERR_NOT_SUPPORTED;
         goto err;
     }

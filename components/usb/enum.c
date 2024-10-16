@@ -765,9 +765,15 @@ static esp_err_t control_response_handling(enum_stage_t stage)
     usb_transfer_t *ctrl_xfer = &p_enum_driver->constant.urb->transfer;
 
     if (ctrl_xfer->status != USB_TRANSFER_STATUS_COMPLETED) {
-        ESP_LOGE(ENUM_TAG, "Bad transfer status %d: %s",
-                 ctrl_xfer->status,
-                 enum_stage_strings[stage]);
+        if (ctrl_xfer->status == USB_TRANSFER_STATUS_STALL &&
+                stage >= ENUM_STAGE_CHECK_SHORT_LANGID_TABLE &&
+                stage <= ENUM_STAGE_CHECK_FULL_SER_STR_DESC) {
+            // String Descriptor request could be STALLed, if the device doesn't have them
+        } else {
+            ESP_LOGE(ENUM_TAG, "Bad transfer status %d: %s",
+                     ctrl_xfer->status,
+                     enum_stage_strings[stage]);
+        }
         return ret;
     }
 
@@ -1015,10 +1021,6 @@ static bool set_next_stage(bool last_stage_pass)
                 next_stage = last_stage + 1;
             }
         } else {
-            ESP_LOGE(ENUM_TAG, "[%d:%d] %s FAILED",
-                     p_enum_driver->single_thread.parent_dev_addr,
-                     p_enum_driver->single_thread.parent_port_num,
-                     enum_stage_strings[last_stage]);
             // These stages cannot fail
             assert(last_stage != ENUM_STAGE_SET_ADDR_RECOVERY &&
                    last_stage != ENUM_STAGE_SELECT_CONFIG &&
@@ -1055,6 +1057,10 @@ static bool set_next_stage(bool last_stage_pass)
                 break;
             default:
                 // Stage is not allowed to failed. Cancel enumeration.
+                ESP_LOGE(ENUM_TAG, "[%d:%d] %s FAILED",
+                         p_enum_driver->single_thread.parent_dev_addr,
+                         p_enum_driver->single_thread.parent_port_num,
+                         enum_stage_strings[last_stage]);
                 next_stage = ENUM_STAGE_CANCEL;
                 break;
             }
