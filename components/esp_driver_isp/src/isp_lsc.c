@@ -15,6 +15,8 @@
 #include "driver/isp_bf.h"
 #include "driver/isp_lsc.h"
 #include "esp_private/isp_private.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 
 /*---------------------------------------------------------------
                       LSC
@@ -51,6 +53,13 @@ esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_ls
 
 esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_config_t *config)
 {
+#if CONFIG_IDF_TARGET_ESP32P4
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 100)) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "LSC is not supported on ESP32P4 chips prior than ECO2");
+    }
+#endif
+
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     int num_grids_x_max = ISP_LSC_GET_GRIDS(ISP_LL_HSIZE_MAX);

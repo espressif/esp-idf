@@ -58,6 +58,7 @@ esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_ls
  *        - ESP_OK                 On success
  *        - ESP_ERR_INVALID_STATE  Not allowed to be called under current state
  *        - ESP_ERR_INVALID_ARG    If the combination of arguments is invalid
+ *        - ESP_ERR_NOT_SUPPORTED  Not supported
  */
 esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_config_t *config);
 

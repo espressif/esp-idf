@@ -347,6 +347,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_color_configure(isp_proc, &color_config));
     ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
 
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 100
     esp_isp_lsc_gain_array_t gain_array = {};
     esp_isp_lsc_config_t lsc_config = {
         .gain_array = &gain_array,
@@ -366,6 +367,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
     ESP_ERROR_CHECK(esp_isp_lsc_enable(isp_proc));
+#endif
 
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
