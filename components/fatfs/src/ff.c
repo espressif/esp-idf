@@ -34,7 +34,6 @@
 #error Wrong include file (ff.h).
 #endif
 
-
 /* Limits and boundaries */
 #define MAX_DIR		0x200000		/* Max size of FAT directory */
 #define MAX_DIR_EX	0x10000000		/* Max size of exFAT directory */
@@ -42,6 +41,10 @@
 #define MAX_FAT16	0xFFF5			/* Max FAT16 clusters (differs from specs, but right for real DOS/Windows behavior) */
 #define MAX_FAT32	0x0FFFFFF5		/* Max FAT32 clusters (not specified, practical limit) */
 #define MAX_EXFAT	0x7FFFFFFD		/* Max exFAT clusters (differs from specs, implementation limit) */
+
+#define MIN_FAT12_SEC_VOL         4  /* Min size of the FAT sector volume
+                                        1 FAT, 1 root dir, 1 reserved, 1 data sector */
+#define MIN_FAT12_DATA_SEC        1  /* Min FAT data sectors */
 
 
 /* Character code support macros */
@@ -3318,7 +3321,7 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 			&& ld_word(fs->win + BPB_RsvdSecCnt) != 0	/* Properness of reserved sectors (MNBZ) */
 			&& (UINT)fs->win[BPB_NumFATs] - 1 <= 1		/* Properness of FATs (1 or 2) */
 			&& ld_word(fs->win + BPB_RootEntCnt) != 0	/* Properness of root dir entries (MNBZ) */
-			&& (ld_word(fs->win + BPB_TotSec16) >= 128 || ld_dword(fs->win + BPB_TotSec32) >= 0x10000)	/* Properness of volume sectors (>=128) */
+			&& (ld_word(fs->win + BPB_TotSec16) >= MIN_FAT12_SEC_VOL || ld_dword(fs->win + BPB_TotSec32) >= 0x10000)	/* Properness of volume sectors (>=MIN_FAT12_SEC_VOL) */
 			&& ld_word(fs->win + BPB_FATSz16) != 0) {	/* Properness of FAT size (MNBZ) */
 				return 0;	/* It can be presumed an FAT VBR */
 		}
@@ -6034,7 +6037,11 @@ FRESULT f_mkfs (
 			}
 		}
 	}
-	if (sz_vol < 128) LEAVE_MKFS(FR_MKFS_ABORTED);	/* Check if volume size is >=128s */
+	if (n_fat == 1) {
+			if (sz_vol < MIN_FAT12_SEC_VOL) LEAVE_MKFS(FR_MKFS_ABORTED); /* Check if volume size is >= MIN_FAT12_SEC_VOLs */
+	} else {
+			if (sz_vol < (MIN_FAT12_SEC_VOL + 1)) LEAVE_MKFS(FR_MKFS_ABORTED); /* Check if volume size is >= (MIN_FAT12_SEC_VOL+1)s */
+	}
 
 	/* Now start to create an FAT volume at b_vol and sz_vol */
 
@@ -6265,7 +6272,7 @@ FRESULT f_mkfs (
 			}
 
 			/* Determine number of clusters and final check of validity of the FAT sub-type */
-			if (sz_vol < b_data + pau * 16 - b_vol) LEAVE_MKFS(FR_MKFS_ABORTED);	/* Too small volume? */
+			if (sz_vol < b_data + pau * MIN_FAT12_DATA_SEC - b_vol) LEAVE_MKFS(FR_MKFS_ABORTED);	/* Too small volume? */
 			n_clst = ((DWORD)sz_vol - sz_rsv - sz_fat * n_fat - sz_dir) / pau;
 			if (fsty == FS_FAT32) {
 				if (n_clst <= MAX_FAT16) {	/* Too few clusters for FAT32? */
