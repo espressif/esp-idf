@@ -9,3 +9,4 @@
     gcc
     system
     bluetooth-classic
+    storage
