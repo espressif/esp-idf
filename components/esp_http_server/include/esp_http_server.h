@@ -487,7 +487,7 @@ typedef struct httpd_uri {
  * // URI handler structure
  * httpd_uri_t my_uri {
  *     .uri      = "/my_uri/path/xyz",
- *     .method   = HTTPD_GET,
+ *     .method   = HTTP_GET,
  *     .handler  = my_uri_handler,
  *     .user_ctx = NULL
  * };
