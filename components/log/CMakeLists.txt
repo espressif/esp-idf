@@ -1,6 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(BOOTLOADER_BUILD)
+if(non_os_build)
     set(system_target "noos")
 else()
     if(${target} STREQUAL "linux")
@@ -15,7 +16,7 @@ set(srcs "src/${system_target}/log_timestamp.c"
          "src/${system_target}/log_lock.c")
 set(priv_requires "")
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     list(APPEND priv_requires soc hal esp_hw_support)
 
     list(APPEND srcs "src/os/log_write.c")

@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
 if(CONFIG_EFUSE_VIRTUAL)
     message(STATUS "Efuse virtual mode is enabled. If Secure boot or Flash encryption is on"
@@ -28,7 +29,7 @@ list(APPEND srcs "src/esp_efuse_api.c"
                  "src/esp_efuse_utility.c"
                  "src/efuse_controller/keys/${type}/esp_efuse_api_key.c")
 
-if(BOOTLOADER_BUILD)
+if(non_os_build)
     idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES bootloader_support soc spi_flash
                     INCLUDE_DIRS "${include_dirs}"

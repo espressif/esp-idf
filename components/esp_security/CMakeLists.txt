@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
@@ -8,7 +9,7 @@ set(srcs "")
 set(priv_requires "")
 set(priv_includes "")
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     list(APPEND srcs "src/init.c")
     list(APPEND priv_includes "src/${IDF_TARGET}")
 
@@ -37,6 +38,6 @@ idf_component_register(SRCS ${srcs}
                     PRIV_INCLUDE_DIRS ${priv_includes}
                     PRIV_REQUIRES ${priv_requires})
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_security_init_include_impl")
 endif()

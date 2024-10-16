@@ -1,4 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
 set(priv_req)
 if(NOT ${target} STREQUAL "linux")
     list(APPEND priv_req esptool_py)
@@ -6,7 +8,7 @@ endif()
 
 idf_component_register(PRIV_REQUIRES ${priv_req})
 
-if(BOOTLOADER_BUILD)
+if(non_os_build)
     return()
 endif()
 
