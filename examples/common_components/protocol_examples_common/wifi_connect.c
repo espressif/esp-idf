@@ -171,10 +171,14 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
     if (wait) {
         ESP_LOGI(TAG, "Waiting for IP(s)");
 #if CONFIG_EXAMPLE_CONNECT_IPV4
-        xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+        if (xSemaphoreTake(s_semph_get_ip_addrs, pdMS_TO_TICKS(10000)) == pdFALSE) {
+            ESP_LOGW(TAG, "Gave up waiting for IPv4 address.");
+        }
 #endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
-        xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+        if (xSemaphoreTake(s_semph_get_ip6_addrs, pdMS_TO_TICKS(10000)) == pdFALSE) {
+            ESP_LOGW(TAG, "Gave up waiting for (preferred) IPv6 address.");
+        }
 #endif
         if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
             return ESP_FAIL;
