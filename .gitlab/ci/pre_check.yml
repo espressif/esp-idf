@@ -117,8 +117,10 @@ check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
     - .before_script:build
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    # required pytest related packages
+    # requires basic pytest dependencies
     - run_cmd bash install.sh --enable-pytest
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
 

@@ -309,7 +309,11 @@ generate_build_child_pipeline:
       - non_test_related_apps.txt
     expire_in: 1 week
     when: always
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
+    # requires basic pytest dependencies
+    - run_cmd bash install.sh --enable-pytest
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
 
 build_child_pipeline:
