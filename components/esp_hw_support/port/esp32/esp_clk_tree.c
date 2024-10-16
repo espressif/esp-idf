@@ -55,7 +55,7 @@ uint32_t *freq_value)
         clk_src_freq = esp_clk_tree_xtal32k_get_freq_hz(precision);
         break;
     case SOC_MOD_CLK_REF_TICK:
-        clk_src_freq = 1 * MHZ;
+        clk_src_freq = REF_CLK_FREQ;
         break;
     case SOC_MOD_CLK_APLL:
         clk_src_freq = clk_hal_apll_get_freq_hz();
