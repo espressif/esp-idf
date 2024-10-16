@@ -94,14 +94,14 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1:
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    default:
+        return false;
+    }
 }
 
 /**
@@ -194,18 +194,18 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_clk)
 {
     switch (source_clk) {
-        case UART_SCLK_PLL_F48M:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 1);
-            break;
-        case UART_SCLK_RTC:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 2);
-            break;
-        case UART_SCLK_XTAL:
-            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 3);
-            break;
-        default:
-            // Invalid UART clock source
-            abort();
+    case UART_SCLK_PLL_F48M:
+        UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 1);
+        break;
+    case UART_SCLK_RTC:
+        UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 2);
+        break;
+    case UART_SCLK_XTAL:
+        UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 3);
+        break;
+    default:
+        // Invalid UART clock source
+        abort();
     }
 }
 
@@ -220,16 +220,16 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
 FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk)
 {
     switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
-        default:
-        case 1:
-            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F48M;
-            break;
-        case 2:
-            *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
-            break;
-        case 3:
-            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
-            break;
+    default:
+    case 1:
+        *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F48M;
+        break;
+    case 2:
+        *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
+        break;
+    case 3:
+        *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
+        break;
     }
 }
 
@@ -248,7 +248,9 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
     uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
 
-    if (sclk_div == 0) abort();
+    if (sclk_div == 0) {
+        abort();
+    }
 
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
@@ -844,22 +846,22 @@ FORCE_INLINE_ATTR void uart_ll_set_mode_irda(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
 {
     switch (mode) {
-        default:
-        case UART_MODE_UART:
-            uart_ll_set_mode_normal(hw);
-            break;
-        case UART_MODE_RS485_COLLISION_DETECT:
-            uart_ll_set_mode_collision_detect(hw);
-            break;
-        case UART_MODE_RS485_APP_CTRL:
-            uart_ll_set_mode_rs485_app_ctrl(hw);
-            break;
-        case UART_MODE_RS485_HALF_DUPLEX:
-            uart_ll_set_mode_rs485_half_duplex(hw);
-            break;
-        case UART_MODE_IRDA:
-            uart_ll_set_mode_irda(hw);
-            break;
+    default:
+    case UART_MODE_UART:
+        uart_ll_set_mode_normal(hw);
+        break;
+    case UART_MODE_RS485_COLLISION_DETECT:
+        uart_ll_set_mode_collision_detect(hw);
+        break;
+    case UART_MODE_RS485_APP_CTRL:
+        uart_ll_set_mode_rs485_app_ctrl(hw);
+        break;
+    case UART_MODE_RS485_HALF_DUPLEX:
+        uart_ll_set_mode_rs485_half_duplex(hw);
+        break;
+    case UART_MODE_IRDA:
+        uart_ll_set_mode_irda(hw);
+        break;
     }
 }
 
@@ -957,7 +959,7 @@ FORCE_INLINE_ATTR void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
 {
     hw->swfc_conf0_sync.force_xon = 1;
     uart_ll_update(hw);
-    if(!always_on) {
+    if (!always_on) {
         hw->swfc_conf0_sync.force_xon = 0;
         uart_ll_update(hw);
     }
@@ -1003,7 +1005,7 @@ FORCE_INLINE_ATTR void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 {
     uint16_t tout_val = tout_thrd;
-    if(tout_thrd > 0) {
+    if (tout_thrd > 0) {
         hw->tout_conf_sync.rx_tout_thrhd = tout_val;
         hw->tout_conf_sync.rx_tout_en = 1;
     } else {
@@ -1022,7 +1024,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 FORCE_INLINE_ATTR uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
 {
     uint16_t tout_thrd = 0;
-    if(hw->tout_conf_sync.rx_tout_en > 0) {
+    if (hw->tout_conf_sync.rx_tout_en > 0) {
         tout_thrd = hw->tout_conf_sync.rx_tout_thrhd;
     }
     return tout_thrd;

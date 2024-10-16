@@ -12,6 +12,7 @@
 
 #include "esp_attr.h"
 #include "esp_rom_caps.h"
+#include "esp_macros.h"
 #include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -1215,9 +1216,7 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     } else {
         // Because RTC is in a slower clock domain than the CPU, it
         // can take several CPU cycles for the sleep mode to start.
-        while (1) {
-            ;
-        }
+        ESP_INFINITE_LOOP();
     }
     // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_stall_resume();
