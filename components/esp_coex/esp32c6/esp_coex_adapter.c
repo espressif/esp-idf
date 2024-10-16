@@ -152,6 +152,11 @@ static int esp_coexist_debug_matrix_init_wrapper(int evt, int sig, bool rev)
 #endif
 }
 
+static IRAM_ATTR int esp_coex_common_xtal_freq_get_wrapper(void)
+{
+    return rtc_clk_xtal_freq_get();
+}
+
 coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._version = COEX_ADAPTER_VERSION,
     ._task_yield_from_isr = esp_coex_common_task_yield_from_isr_wrapper,
@@ -171,5 +176,6 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._timer_setfn = esp_coex_common_timer_setfn_wrapper,
     ._timer_arm_us = esp_coex_common_timer_arm_us_wrapper,
     ._debug_matrix_init = esp_coexist_debug_matrix_init_wrapper,
+    ._xtal_freq_get = esp_coex_common_xtal_freq_get_wrapper,
     ._magic = COEX_ADAPTER_MAGIC,
 };
