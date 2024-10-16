@@ -208,18 +208,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2active_backup_en      = 0, \
         .hp_modem2active_backup_en      = 0, \
     }, \
-    .backup_clk = ( \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_MEM)     | \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_SYS)     | \
-        BIT(PMU_ICG_FUNC_ENA_REGDMA)        | \
-        BIT(PMU_ICG_FUNC_ENA_HP_CLKRST)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSREG_APB)    | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_CPU)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_APB)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_SYS)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_MEM)       | \
-        BIT(PMU_ICG_FUNC_ENA_INTRMTX_APB) \
-    ) \
+    .backup_clk = 0xffffffff,   \
 }
 
 #define PMU_HP_SLEEP_RETENTION_CONFIG_DEFAULT() {   \
@@ -236,18 +225,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2sleep_backup_en       = 0, \
         .hp_active2sleep_backup_en      = 0, \
     }, \
-    .backup_clk = ( \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_MEM)     | \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_SYS)     | \
-        BIT(PMU_ICG_FUNC_ENA_REGDMA)        | \
-        BIT(PMU_ICG_FUNC_ENA_HP_CLKRST)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSREG_APB)    | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_CPU)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_APB)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_SYS)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_MEM)       | \
-        BIT(PMU_ICG_FUNC_ENA_INTRMTX_APB) \
-    ) \
+    .backup_clk = 0xffffffff,   \
 }
 
 const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pmu_hp_mode_t mode)
