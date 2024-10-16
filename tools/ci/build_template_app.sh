@@ -54,7 +54,7 @@ build_stage2() {
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
     export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
     export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
-    python -m idf_build_apps build -vv \
+    python -m idf_build_apps build -v \
         -p ${TEMPLATE_APP_PATH} \
         -t all \
         ${CONFIG_STR} \
@@ -69,7 +69,7 @@ build_stage2() {
 
 build_stage1() {
     CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
-    python -m idf_build_apps build -vv \
+    python -m idf_build_apps build -v \
         -p ${TEMPLATE_APP_PATH} \
         -t all \
         ${CONFIG_STR} \

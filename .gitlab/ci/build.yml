@@ -126,7 +126,7 @@ gcc_static_analyzer:
     ANALYZING_APP: "examples/get-started/hello_world"
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - python -m idf_build_apps build -vv -p ${ANALYZING_APP} -t all
+    - python -m idf_build_apps build -v -p ${ANALYZING_APP} -t all
 
 ########################################
 # Clang Build Apps Without Tests Cases #
