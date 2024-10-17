@@ -21,8 +21,9 @@ extern "C" {
  * `rtc_clk_cpu_freq_set_xtal` instead. It will always disable the corresponding PLL after switching the CPU clock
  * source to XTAL (except for S2).
  *
- * Currently, this function should only be called in `esp_restart_noos` and `esp_restart_noos_dig` to switch the CPU
- * clock source back to XTAL (by default) before reset.
+ * Currently, this function is only called in `esp_restart_noos` and `esp_restart_noos_dig` to switch the CPU
+ * clock source back to XTAL (by default) before reset, and in `esp_sleep_start` to switch CPU clock source to XTAL
+ * before entering sleep for PMU supported chips.
  */
 void rtc_clk_cpu_set_to_default_config(void);
 
