@@ -32,6 +32,8 @@ extern "C" {
 #define LP_I2S_LL_EVENT_RX_DONE_INT             (1<<0)
 #define LP_I2S_LL_EVENT_RX_HUNG_INT_INT         (1<<1)
 #define LP_I2S_LL_EVENT_RX_FIFOMEM_UDF_INT      (1<<2)
+#define LP_I2S_LL_EVENT_VAD_DONE_INT            (1<<3)
+#define LP_I2S_LL_EVENT_VAD_RESET_DONE_INT      (1<<4)
 #define LP_I2S_LL_EVENT_RX_MEM_THRESHOLD_INT    (1<<5)
 #define LP_I2S_LL_TDM_CH_MASK                   (0x03UL)
 
@@ -709,9 +711,9 @@ static inline uint32_t lp_i2s_ll_get_intr_status_reg_addr(lp_i2s_dev_t *hw)
 /**
  * @brief Enable LP I2S RX channel interrupt
  *
- * @param hw         LP I2S hardware instance
- * @param mask       mask
- * @param enable     enable or disable
+ * @param[in] hw         LP I2S hardware instance
+ * @param[in] mask       mask
+ * @param[in] enable     enable or disable
  */
 static inline void lp_i2s_ll_rx_enable_interrupt(lp_i2s_dev_t *hw, uint32_t mask, bool enable)
 {
@@ -727,13 +729,107 @@ static inline void lp_i2s_ll_rx_enable_interrupt(lp_i2s_dev_t *hw, uint32_t mask
 /**
  * @brief Clear LP I2S RX channel interrupt
  *
- * @param hw         LP I2S hardware instance
- * @param mask       mask
+ * @param[in] hw         LP I2S hardware instance
+ * @param[in] mask       mask
  */
 __attribute__((always_inline))
 static inline void lp_i2s_ll_rx_clear_interrupt_status(lp_i2s_dev_t *hw, uint32_t mask)
 {
     hw->int_clr.val = mask;
+}
+
+/*---------------------------------------------------------------
+                      VAD
+---------------------------------------------------------------*/
+#define LP_VAD_LL_INIT_FRAME_MIN    100
+#define LP_VAD_LL_INIT_FRAME_MAX    200
+
+/**
+ * @brief Set VAD init frame number
+ *
+ * @param[in] hw         LP I2S hardware instance
+ * @param[in] frame_num  Frame number
+ */
+static inline void lp_vad_ll_set_init_frame_num(lp_i2s_dev_t *hw, int frame_num)
+{
+    hw->vad_param0.param_init_frame_num = frame_num;
+}
+
+/**
+ * @brief Set VAD min energy
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] min_energy  Min energy
+ */
+static inline void lp_vad_ll_set_init_min_energy(lp_i2s_dev_t *hw, int min_energy)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->vad_param0, param_min_energy, min_energy);
+}
+
+/**
+ * @brief Set VAD speak activity thresh
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] thresh      Threshold
+ */
+static inline void lp_vad_ll_set_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
+{
+    hw->vad_param1.param_hangover_speech = thresh;
+}
+
+/**
+ * @brief Set VAD non speak activity thresh
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] thresh      Threshold
+ */
+static inline void lp_vad_ll_set_non_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
+{
+    hw->vad_param1.param_hangover_silent = thresh;
+}
+
+/**
+ * @brief Set VAD min speak activity thresh
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] thresh      Threshold
+ */
+static inline void lp_vad_ll_set_min_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
+{
+    hw->vad_param1.param_min_speech_count = thresh;
+}
+
+/**
+ * @brief Set VAD max speak activity thresh
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] thresh      Threshold
+ */
+static inline void lp_vad_ll_set_max_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
+{
+    hw->vad_param1.param_max_speech_count = thresh;
+}
+
+/**
+ * @brief Skip band energy check
+ *
+ * @param[in] hw          LP I2S hardware instance
+ * @param[in] skip        1: skip; 0: not skip
+ */
+static inline void lp_vad_ll_skip_band_energy(lp_i2s_dev_t *hw, bool skip)
+{
+    hw->vad_param1.param_skip_band_energy = skip;
+}
+
+/**
+ * @brief Enable LP I2S 24 fill
+ *
+ * @param[in] hw         LP I2S hardware instance
+ * @param[in] en         enable or disable
+ */
+static inline void lp_vad_ll_enable(lp_i2s_dev_t *hw, bool en)
+{
+    hw->vad_conf.vad_en = en;
 }
 
 #ifdef __cplusplus

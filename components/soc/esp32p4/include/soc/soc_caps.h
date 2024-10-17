@@ -83,6 +83,7 @@
 #define SOC_LP_I2S_SUPPORTED            1
 #define SOC_LP_SPI_SUPPORTED            1
 #define SOC_LP_ADC_SUPPORTED            1
+#define SOC_LP_VAD_SUPPORTED            1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
 #define SOC_SDMMC_HOST_SUPPORTED        1
@@ -662,6 +663,9 @@
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
+/*-------------------------- LP_VAD CAPS -------------------------------------*/
+#define SOC_LP_I2S_SUPPORT_VAD           (1)
+
 // TODO: IDF-5679 (Copy from esp32c3, need check)
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
@@ -698,6 +702,8 @@
 #define SOC_CPU_IN_TOP_DOMAIN           (1)
 
 #define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
+#define SOC_SLEEP_SYSTIMER_STALL_WORKAROUND 1    //TODO IDF-11381: replace with all xtal field clk gate control
+#define SOC_SLEEP_TGWDT_STOP_WORKAROUND     1    //TODO IDF-11381: replace with all xtal field clk gate control
 
 /*-------------------------- PSRAM CAPS ----------------------------*/
 #define SOC_PSRAM_VDD_POWER_MPLL    (1)
@@ -747,3 +753,4 @@
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
 #define SOC_LP_CORE_SUPPORT_LP_ADC            (1) /*!< LP ADC can be accessed from the LP-Core */
+#define SOC_LP_CORE_SUPPORT_LP_VAD            (1) /*!< LP VAD can be accessed from the LP-Core */

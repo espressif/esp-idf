@@ -22,6 +22,7 @@ extern "C" {
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_IO     BIT(2) // Enable wake-up by LP IO interrupt
 #define ULP_LP_CORE_WAKEUP_SOURCE_ETM       BIT(3) // Enable wake-up by ETM event
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER  BIT(4) // Enable wake-up by LP timer
+#define ULP_LP_CORE_WAKEUP_SOURCE_LP_VAD    BIT(5) // Enable wake-up by LP VAD
 
 /**
  * @brief ULP LP core init parameters

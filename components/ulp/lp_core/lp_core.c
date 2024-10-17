@@ -35,7 +35,7 @@ extern uint32_t _rtc_ulp_memory_start;
 
 const static char* TAG = "ulp-lp-core";
 
-#define WAKEUP_SOURCE_MAX_NUMBER 5
+#define WAKEUP_SOURCE_MAX_NUMBER 6
 
 #define RESET_HANDLER_ADDR (intptr_t)(&_rtc_ulp_memory_start + 0x80 / 4) // Placed after the 0x80 byte long vector table
 
@@ -46,6 +46,9 @@ static uint32_t wakeup_src_sw_to_hw_flag_lookup[WAKEUP_SOURCE_MAX_NUMBER] = {
     LP_CORE_LL_WAKEUP_SOURCE_LP_IO,
     LP_CORE_LL_WAKEUP_SOURCE_ETM,
     LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER,
+#if SOC_LP_VAD_SUPPORTED
+    LP_CORE_LL_WAKEUP_SOURCE_LP_VAD,
+#endif
 };
 
 /* Convert the wake-up sources defined in ulp_lp_core.h to the actual HW wake-up source values */

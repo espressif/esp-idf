@@ -30,6 +30,10 @@ if(CONFIG_SOC_LP_I2S_SUPPORTED)
     list(APPEND srcs "lp_i2s.c" "lp_i2s_std.c" "lp_i2s_pdm.c")
 endif()
 
+if(CONFIG_SOC_LP_I2S_SUPPORT_VAD)
+    list(APPEND srcs "lp_i2s_vad.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
                     PRIV_REQUIRES esp_driver_gpio esp_pm esp_mm
