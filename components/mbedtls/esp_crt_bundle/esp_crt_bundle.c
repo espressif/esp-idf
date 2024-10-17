@@ -54,7 +54,7 @@ static const char *TAG = "esp-x509-crt-bundle";
 
 /* a dummy certificate so that
  * cacert_ptr passes non-NULL check during handshake */
-static mbedtls_x509_crt s_dummy_crt;
+static const mbedtls_x509_crt s_dummy_crt;
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
@@ -367,4 +367,9 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf)
 esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size)
 {
     return esp_crt_bundle_init(x509_bundle, bundle_size);
+}
+
+bool esp_crt_bundle_in_use(const mbedtls_x509_crt* ca_chain)
+{
+    return ((ca_chain == &s_dummy_crt) ? true : false);
 }
