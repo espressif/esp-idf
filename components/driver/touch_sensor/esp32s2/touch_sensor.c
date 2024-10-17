@@ -22,7 +22,7 @@
 #include "sdkconfig.h"
 #include "esp_check.h"
 
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #include "hal/touch_sensor_hal.h"
 
 #ifndef NDEBUG
@@ -690,9 +690,9 @@ esp_err_t touch_pad_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t m
  */
 static __attribute__((constructor)) void check_touch_driver_conflict(void)
 {
-    extern __attribute__((weak)) esp_err_t touch_del_channel(void *handle);
-    /* If the new I2S driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
-    if ((void *)touch_del_channel != NULL) {
+    extern __attribute__((weak)) esp_err_t touch_sensor_new_controller(const void*, void *);
+    /* If the new Touch driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
+    if ((void *)touch_sensor_new_controller != NULL) {
         ESP_EARLY_LOGE("legacy_touch_driver", "CONFLICT! The new touch driver can't work along with the legacy touch driver");
         abort();
     }

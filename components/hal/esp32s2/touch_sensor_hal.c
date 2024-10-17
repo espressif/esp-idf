@@ -9,7 +9,7 @@
 #include "soc/soc_pins.h"
 #include "soc/touch_sensor_pins.h"
 #include "hal/touch_sensor_hal.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 
 static int s_sleep_cycle = -1;
 static int s_meas_times = -1;

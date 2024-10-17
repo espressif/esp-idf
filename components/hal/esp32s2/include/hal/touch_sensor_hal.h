@@ -15,7 +15,7 @@
 #pragma once
 
 #include "hal/touch_sensor_ll.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 
 #include_next "hal/touch_sensor_hal.h"
 

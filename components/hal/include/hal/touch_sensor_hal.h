@@ -10,14 +10,14 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The HAL layer for touch sensor (common part)
+// The legacy HAL layer for touch sensor (common part)
 
 #pragma once
 
 #include "soc/soc_caps.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_ll.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #endif
 
 #ifdef __cplusplus

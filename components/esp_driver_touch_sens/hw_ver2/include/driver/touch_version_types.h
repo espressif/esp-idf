@@ -88,12 +88,12 @@ typedef enum {
  */
 typedef struct {
     uint32_t                        charge_times;       /*!< The charge and discharge times of this sample configuration, the read data are positive correlation to the charge_times */
-    touch_volt_lim_h_t              charge_volt_lim_h;  /*!< The upper voltage limit while charging a touch pad */
-    touch_volt_lim_l_t              charge_volt_lim_l;  /*!< The lower voltage limit while charging a touch pad */
+    touch_volt_lim_h_t              charge_volt_lim_h;  /*!< The upper voltage limit while charging a touch pad. i.e., the touch controller won't charge the touch pad higher than this high voltage limitation. */
+    touch_volt_lim_l_t              charge_volt_lim_l;  /*!< The lower voltage limit while discharging a touch pad. i.e., the touch controller won't discharge the touch pad lower than this low voltage limitation. */
     touch_idle_conn_t               idle_conn;          /*!< The connection of the idle touch channels.
-                                                         *   The idle touch channel is a channel which is enabled but not under measuring.
+                                                         *   The idle touch channel is a channel which is enabled and power-on but not under measuring.
                                                          */
-    touch_bias_type_t               bias_type;          /*!< The type of the touch sensor bias */
+    touch_bias_type_t               bias_type;          /*!< The type of the touch sensor bias. Which affects the charge/discharge stability and power consumption */
 } touch_sensor_sample_config_t;
 
 /**
@@ -241,7 +241,7 @@ typedef struct {
     touch_charge_speed_t            charge_speed;       /*!< The speed of charging and discharging the denoise touch channel, the higher the speed, the faster charging and discharging */
     touch_init_charge_volt_t        init_charge_volt;   /*!< The initial voltage before starting charging/discharging the denoise channel */
     touch_denoise_chan_cap_t        ref_cap;            /*!< The reference capacitance of the denoise channel. */
-    touch_denoise_chan_res_t        resolution;         /*!< The noise suppression resolution of the denoise channel.
+    touch_denoise_chan_resolution_t resolution;         /*!< The noise suppression resolution of the denoise channel.
                                                          *   The higher the resolution, the better the suppression effect,
                                                          *   but at the same time, the attenuation of other touch channel sampling values also increases.
                                                          */

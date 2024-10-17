@@ -29,6 +29,7 @@
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
+#include "esp_log.h"
 #include "esp_check.h"
 
 #define TOUCH_DENOISE_CHAN_ID       0           /*!< The touch channel that can be used as the denoise channel */
@@ -223,7 +224,7 @@ esp_err_t touch_priv_deinit_controller(touch_sensor_handle_t sens_handle)
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch_chan_data_type_t type, uint32_t *data)
+esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch_chan_data_type_t type, uint32_t *data)
 {
     ESP_RETURN_ON_FALSE_ISR(type >= TOUCH_CHAN_DATA_TYPE_RAW && type <= TOUCH_CHAN_DATA_TYPE_PROXIMITY,
                             ESP_ERR_INVALID_ARG, TAG, "The channel data type is invalid");
@@ -270,7 +271,7 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     }
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
 
     if (filter_cfg) {
@@ -290,7 +291,7 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     }
 
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -303,7 +304,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     touch_hal_config_t hal_cfg = {};
     touch_hal_config_t *hal_cfg_ptr = NULL;
 
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (sleep_cfg) {
@@ -351,7 +352,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -361,7 +362,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
     TOUCH_NULL_POINTER_CHECK(sens_handle);
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
@@ -391,7 +392,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -400,7 +401,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     TOUCH_NULL_POINTER_CHECK(sens_handle);
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
@@ -435,7 +436,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -443,7 +444,7 @@ esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle,
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
@@ -465,6 +466,6 @@ esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle,
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }

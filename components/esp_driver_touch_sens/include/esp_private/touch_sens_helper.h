@@ -22,7 +22,7 @@ typedef struct {
     int chan_id;                    /*!< Touch channel number */
     int chan_gpio;                  /*!< Corresponding GPIO of this channel */
     struct {
-        uint32_t is_dp_slp: 1;      /*!< Whether this channel can wakeup from deep sleep */
+        uint32_t can_wake_dp_slp: 1;/*!< Whether this channel can wakeup from deep sleep */
         uint32_t is_proxi: 1;       /*!< Whether this channel is used for proximity sensing */
         uint32_t is_guard: 1;       /*!< Whether this channel is used for waterproof guard channel */
         uint32_t is_shield: 1;      /*!< Whether this channel is used for waterproof shield channel */

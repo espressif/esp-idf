@@ -5,6 +5,12 @@ Touch Sensor
 
 {IDF_TARGET_TOUCH_SENSOR_VERSION:default="v2", esp32="v1"}
 
+.. only:: esp32s2 or esp32s3
+
+    .. warning::
+
+        The touch driver in this document has been deprecated, please move to the new document for the latest touch driver: :doc:`Capacitive Touch Sensor </api-reference/peripherals/cap_touch_sens>`.
+
 Introduction
 ------------
 
@@ -146,8 +152,6 @@ Touch State Measurements
 
     It can also be used, for example, to evaluate a particular touch pad design by checking the range of sensor readings when a pad is touched or released. This information can be then used to establish a touch threshold.
 
-For the demonstration of how to read the touch pad data, check the application example :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
-
 Method of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -250,7 +254,7 @@ Touch detection is implemented in ESP32's hardware based on the user-configured 
 
 Hardware touch detection can also be wired to interrupts. This is described in the next section.
 
-If measurements are noisy and capacity changes are small, hardware touch detection might be unreliable. To resolve this issue, instead of using hardware detection/provided interrupts, implement measurement filtering and perform touch detection in your own application. For sample implementation of both methods of touch detection, see :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
+If measurements are noisy and capacity changes are small, hardware touch detection might be unreliable. To resolve this issue, instead of using hardware detection/provided interrupts, implement measurement filtering and perform touch detection in your own application.
 
 Touch Triggered Interrupts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -300,9 +304,9 @@ Application Examples
 
 .. only:: esp32s2 or esp32s3
 
-    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_read` demonstrates how to read and display raw values from capacitive touch pad sensors on {IDF_TARGET_NAME}, including how to calibrate the sensors and detect touch actions.
-    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_interrupt` demonstrates how to set up {IDF_TARGET_NAME}'s capacitive touch pad peripheral to trigger an interrupt when a pad is touched, and how to detect the touch event by the software for sensor designs when greater touch detection sensitivity is required.
+    .. warning::
 
+        The example that uses legacy driver is removed, please see :example:`peripherals/touch_sensor/touch_sens_basic` for the usage of the new driver.
 
 .. _touch_pad-api-reference:
 
@@ -321,4 +325,4 @@ Some useful macros can be used to specified the GPIO number of a touch pad chann
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` is the channel number of GPIO 4 (channel 0).
 
 .. include-build-file:: inc/touch_sensor_channel.inc
-.. include-build-file:: inc/touch_sensor_types.inc
+.. include-build-file:: inc/touch_sensor_legacy_types.inc

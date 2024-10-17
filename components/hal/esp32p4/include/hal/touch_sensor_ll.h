@@ -24,7 +24,6 @@
 #include "soc/touch_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
-#include "hal/touch_sensor_types.h"
 #include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
@@ -175,17 +174,6 @@ static inline void touch_ll_enable_fsm_timer(bool enable)
 }
 
 /**
- * Get touch sensor FSM mode.
- *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
- *
- * @param mode FSM mode.
- */
-static inline void touch_ll_get_fsm_mode(touch_fsm_mode_t *mode)
-{
-    *mode = (touch_fsm_mode_t)LP_ANA_PERI.touch_mux0.touch_fsm_en;
-}
-
-/**
  * Is touch sensor FSM using hardware timer to trigger scanning.
  *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
  *
@@ -254,6 +242,7 @@ static inline void touch_ll_stop_fsm_repeated_timer(void)
  *      - true: enabled
  *      - true: disabled
  */
+__attribute__((always_inline))
 static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
 {
     return (bool)(PMU.touch_pwr_cntl.sleep_timer_en);
@@ -304,7 +293,7 @@ __attribute__((always_inline))
 static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
 {
     // Channel shift workaround: the lowest bit takes no effect
-    uint16_t mask = (chan_mask << 1) & TOUCH_PAD_BIT_MASK_ALL;
+    uint16_t mask = (chan_mask << 1) & TOUCH_LL_FULL_CHANNEL_MASK;
     uint16_t prev_mask = LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map;
     if (enable) {
         LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask | mask;
@@ -328,7 +317,7 @@ static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
 static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {
     // Channel shift workaround: the lowest bit takes no effect
-    uint16_t mask = (enable_mask << 1) & TOUCH_PAD_BIT_MASK_ALL;
+    uint16_t mask = (enable_mask << 1) & TOUCH_LL_FULL_CHANNEL_MASK;
     LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = mask;
     LP_ANA_PERI.touch_filter2.touch_outen = mask;
 }
@@ -478,7 +467,7 @@ static inline void touch_ll_set_clock_div(uint8_t sample_cfg_id, uint32_t div_nu
  *
  * @param type  Select idle channel connect to high resistance state or ground. (No effect)
  */
-static inline void touch_ll_set_idle_channel_connect(touch_pad_conn_type_t type)
+static inline void touch_ll_set_idle_channel_connect(touch_idle_conn_t type)
 {
     (void)type;
 }
@@ -526,7 +515,7 @@ static inline void touch_ll_interrupt_disable(uint32_t int_mask)
  * @param int_mask Pad mask to clear interrupts
  */
 __attribute__((always_inline))
-static inline void touch_ll_interrupt_clear(touch_pad_intr_mask_t int_mask)
+static inline void touch_ll_interrupt_clear(uint32_t int_mask)
 {
     LP_TOUCH.int_clr.val = int_mask;
 }
@@ -659,9 +648,9 @@ static inline void touch_ll_reset_chan_benchmark(uint32_t chan_mask)
  * Set filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
+ * @param mode Filter mode type. Refer to ``touch_benchmark_filter_mode_t``.
  */
-static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
+static inline void touch_ll_filter_set_filter_mode(touch_benchmark_filter_mode_t mode)
 {
     LP_ANA_PERI.touch_filter1.touch_filter_mode = mode;
 }
@@ -670,9 +659,9 @@ static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
  * Set filter mode. The input to the filter is raw data and the output is the smooth data.
  * The smooth data is used to determine the touch status.
  *
- * @param mode Filter mode type. Refer to ``touch_smooth_mode_t``.
+ * @param mode Filter mode type. Refer to ``touch_smooth_filter_mode_t``.
  */
-static inline void touch_ll_filter_set_smooth_mode(touch_smooth_mode_t mode)
+static inline void touch_ll_filter_set_smooth_mode(touch_smooth_filter_mode_t mode)
 {
     LP_ANA_PERI.touch_filter1.touch_smooth_lvl = mode;
 }
@@ -797,7 +786,7 @@ static inline void touch_ll_waterproof_set_shield_chan_mask(uint32_t mask)
  *
  * @param driver_level The driver level of the touch buff
  */
-static inline void touch_ll_waterproof_set_shield_driver(touch_pad_shield_driver_t driver_level)
+static inline void touch_ll_waterproof_set_shield_driver(touch_chan_shield_cap_t driver_level)
 {
     LP_ANA_PERI.touch_ana_para.touch_touch_buf_drv = driver_level;
 }

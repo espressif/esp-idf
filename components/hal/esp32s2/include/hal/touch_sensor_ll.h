@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "esp_bit_defs.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/touch_sensor_periph.h"
@@ -23,7 +24,6 @@
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_struct.h"
-#include "hal/touch_sensor_types.h"
 #include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
@@ -137,7 +137,7 @@ static inline uint32_t touch_ll_get_intr_status_mask(void)
  *      - touch channel number
  */
 __attribute__((always_inline))
-static inline uint32_t IRAM_ATTR touch_ll_get_current_meas_channel(void)
+static inline uint32_t touch_ll_get_current_meas_channel(void)
 {
     return SENS.sar_touch_status0.touch_scan_curr;
 }
@@ -176,7 +176,7 @@ static inline void touch_ll_get_active_channel_mask(uint32_t *active_mask)
 __attribute__((always_inline))
 static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
 {
-    uint16_t mask = chan_mask & TOUCH_PAD_BIT_MASK_ALL;
+    uint16_t mask = chan_mask & TOUCH_LL_FULL_CHANNEL_MASK;
     uint16_t prev_mask = RTCCNTL.touch_scan_ctrl.touch_scan_pad_map;
     if (enable) {
         RTCCNTL.touch_scan_ctrl.touch_scan_pad_map = prev_mask | mask;
@@ -211,7 +211,6 @@ static inline void touch_ll_set_power_on_wait_cycle(uint32_t wait_cycles)
     HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl2, touch_xpd_wait, wait_cycles); //wait volt stable
 }
 
-// HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num, meas_time);
 /**
  * Set touch sensor touch sensor charge and discharge times of every measurement on a pad.
  *
@@ -237,27 +236,56 @@ static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
     HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles, interval_ticks);
 }
 
+/**
+ * Set the Touch pad charge speed.
+ *
+ * @param touch_num     Touch channel number
+ * @param charge_speed  Charge speed of this touch channel
+ */
 static inline void touch_ll_set_charge_speed(uint32_t touch_num, touch_charge_speed_t charge_speed)
 {
     RTCIO.touch_pad[touch_num].dac = charge_speed;
 }
 
+/**
+ * Set the upper limitation of the touch channel voltage while charging
+ *
+ * @param high_lim      The high(upper) limitation of charge
+ */
 static inline void touch_ll_set_charge_voltage_high_limit(touch_volt_lim_h_t high_lim)
 {
     RTCCNTL.touch_ctrl2.touch_drefh = (uint32_t)high_lim & 0x3;
     RTCCNTL.touch_ctrl2.touch_drange = (uint32_t)high_lim >> 2;
 }
 
+/**
+ * Set the lower limitation of the touch channel voltage while discharging
+ *
+ * @param low_lim      The lower limitation of discharge
+ */
 static inline void touch_ll_set_charge_voltage_low_limit(touch_volt_lim_l_t low_lim)
 {
     RTCCNTL.touch_ctrl2.touch_drefl = low_lim;
 }
 
+/**
+ * Set the initial charge voltage of touch channel
+ * i.e., the touch pad measurement start from a low voltage or a high voltage
+ *
+ * @param touch_num         Touch channel number
+ * @param init_charge_volt  The initial charge voltage
+ */
 static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_init_charge_volt_t init_charge_volt)
 {
     RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
 }
 
+/**
+ * Set the connection of the idle channel
+ * The idle channel is the channel that is enabled and powered on but not under measurement.
+ *
+ * @param idle_conn
+ */
 static inline void touch_ll_set_idle_channel_connection(touch_idle_conn_t idle_conn)
 {
     RTCCNTL.touch_scan_ctrl.touch_inactive_connection = idle_conn;
@@ -385,6 +413,7 @@ static inline void touch_ll_stop_fsm_repeated_timer(void)
  *      - true: enabled
  *      - false: disabled
  */
+__attribute__((always_inline))
 static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
 {
     return (bool)RTCCNTL.touch_ctrl2.touch_slp_timer_en;
@@ -467,9 +496,9 @@ static inline void touch_ll_filter_enable(bool enable)
  * Set filter mode. The input of the filter is the raw value of touch reading,
  * and the output of the filter is involved in the judgment of the touch state.
  *
- * @param mode Filter mode type. Refer to ``touch_filter_mode_t``.
+ * @param mode Filter mode type. Refer to ``touch_benchmark_filter_mode_t``.
  */
-static inline void touch_ll_filter_set_filter_mode(touch_filter_mode_t mode)
+static inline void touch_ll_filter_set_filter_mode(touch_benchmark_filter_mode_t mode)
 {
     RTCCNTL.touch_filter_ctrl.touch_filter_mode = mode;
 }
@@ -490,12 +519,21 @@ static inline void touch_ll_filter_set_jitter_step(uint32_t step)
  * Set the denoise coefficient regarding the denoise level.
  *
  * @param denoise_lvl   Range [0 ~ 4]. 0 = no noise resistance, otherwise higher denoise_lvl means more noise resistance.
+ *                      0 = no noise resistance
+ *                      1 = noise resistance is 1/4 benchmark
+ *                      2 = noise resistance is 3/8 benchmark
+ *                      3 = noise resistance is 1/2 benchmark
+ *                      4 = noise resistance is 1 benchmark
  */
 static inline void touch_ll_filter_set_denoise_level(int denoise_lvl)
 {
     HAL_ASSERT(denoise_lvl >= 0 && denoise_lvl <= 4);
     bool always_update = denoise_lvl == 0;
-    // Map denoise level to actual noise threshold coefficients
+    /* Map denoise level to actual noise threshold coefficients
+       denoise_lvl=1 -> noise_thresh=2, 1/4 benchmark
+       denoise_lvl=2 -> noise_thresh=1, 3/8 benchmark
+       denoise_lvl=3 -> noise_thresh=0, 1/2 benchmark
+       denoise_lvl=4 -> noise_thresh=3, 1   benchmark */
     uint32_t noise_thresh = denoise_lvl == 4 ? 3 : 3 - denoise_lvl;
 
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = always_update ? 0 : noise_thresh;
@@ -519,9 +557,9 @@ static inline void touch_ll_filter_set_active_hysteresis(uint32_t hysteresis)
  * Set filter mode. The input to the filter is raw data and the output is the smooth data.
  * The smooth data is used to determine the touch status.
  *
- * @param mode Filter mode type. Refer to ``touch_smooth_mode_t``.
+ * @param mode Filter mode type. Refer to ``touch_smooth_filter_mode_t``.
  */
-static inline void touch_ll_filter_set_smooth_mode(touch_smooth_mode_t mode)
+static inline void touch_ll_filter_set_smooth_mode(touch_smooth_filter_mode_t mode)
 {
     RTCCNTL.touch_filter_ctrl.touch_smooth_lvl = mode;
 }
@@ -599,9 +637,9 @@ static inline void touch_ll_waterproof_set_guard_chan(uint32_t pad_num)
  * The equivalent capacitance of the shielded channel can be calculated
  * from the reading of denoise channel.
  *
- * @param pad_num Touch sensor channel number.
+ * @param pad_num Touch sensor channel number. Refer to ``touch_chan_shield_cap_t``
  */
-static inline void touch_ll_waterproof_set_shield_driver(touch_pad_shield_driver_t driver_level)
+static inline void touch_ll_waterproof_set_shield_driver(touch_chan_shield_cap_t driver_level)
 {
     RTCCNTL.touch_scan_ctrl.touch_bufdrv = driver_level;
 }
@@ -707,7 +745,7 @@ static inline void touch_ll_denoise_set_reference_cap(touch_denoise_chan_cap_t c
  *
  * @param resolution Denoise resolution of denoise channel.
  */
-static inline void touch_ll_denoise_set_resolution(touch_denoise_chan_res_t resolution)
+static inline void touch_ll_denoise_set_resolution(touch_denoise_chan_resolution_t resolution)
 {
     RTCCNTL.touch_scan_ctrl.touch_denoise_res = resolution;
 }
@@ -723,8 +761,9 @@ static inline void touch_ll_denoise_read_data(uint32_t *data)
 }
 
 /******************************************************************************/
-/*                                 Legacy APIs                                */
+/*                   Legacy APIs (to be removed in esp-idf v6.0)              */
 /******************************************************************************/
+#include "hal/touch_sensor_legacy_types.h"
 /**
  * Set touch sensor touch sensor times of charge and discharge.
  *

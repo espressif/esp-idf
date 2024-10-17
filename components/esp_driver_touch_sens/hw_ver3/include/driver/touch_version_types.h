@@ -89,7 +89,9 @@ typedef enum {
  *
  */
 typedef struct {
-    uint32_t                        div_num;            /*!< Division of the touch output pulse, `touch_out_pulse / div_num = charge_times` */
+    uint32_t                        div_num;            /*!< Division of the touch output pulse.
+                                                         *   It is proportional to the gain of the read data, the greater the div_num, the higher gain of the read data.
+                                                         *   If the read data is exceeded the maximum range, please reduce the div_num. */
     uint32_t                        charge_times;       /*!< The charge and discharge times of this sample configuration, the read data are positive correlation to the charge_times */
     uint8_t                         rc_filter_res;      /*!< The resistance of the RC filter of this sample configuration, range [0, 3], while 0 = 0K, 1 = 1.5K, 2 = 3K, 3 = 4.5K */
     uint8_t                         rc_filter_cap;      /*!< The capacitance of the RC filter of this sample configuration, range [0, 127], while 0 = 0pF, 1 = 20fF, ..., 127 = 2.54pF */

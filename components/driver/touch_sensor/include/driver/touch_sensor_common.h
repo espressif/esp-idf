@@ -8,7 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -22,7 +22,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
-#include "driver/touch_sensor_legacy.h"
+#include "driver/touch_sensor.h"
 #include "esp_rom_sys.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"

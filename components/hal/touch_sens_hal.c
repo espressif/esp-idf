@@ -73,8 +73,8 @@ static void s_touch_hal_apply_sleep_config(void)
     }
     /* Whether to enable touch sensor wake-up the chip from deep sleep */
     if (s_touch_slp_obj.deep_slp_chan >= 0) {
-        // touch_ll_sleep_set_channel_num(s_touch_slp_obj.deep_slp_chan);
-        // touch_ll_enable_channel_mask(BIT(s_touch_slp_obj.deep_slp_chan));
+        touch_ll_sleep_set_channel_num(s_touch_slp_obj.deep_slp_chan);
+        touch_ll_enable_channel_mask(BIT(s_touch_slp_obj.deep_slp_chan));
     } else {
         touch_ll_sleep_set_channel_num(TOUCH_LL_NULL_CHANNEL);
     }
