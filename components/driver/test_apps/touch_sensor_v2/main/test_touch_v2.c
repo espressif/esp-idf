@@ -12,7 +12,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include "esp_system.h"
-#include "driver/touch_pad.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -20,8 +19,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_cntl_struct.h"
+#include "soc/soc_caps.h"
 #include "soc/sens_reg.h"
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_reg.h"
@@ -30,6 +28,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/syscon_reg.h"
 #include "driver/rtc_io.h"
+#include "driver/touch_sensor_legacy.h"
 #include "esp_rom_sys.h"
 
 static const char *TAG = "test_touch";
