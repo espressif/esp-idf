@@ -30,7 +30,7 @@ def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
     dut.gdb.write('mon esp sysview stop', non_blocking=True)
     dut.gdb.write('end')
 
-    dut.gdb.write('c')
+    dut.gdb.write('c', non_blocking=True)
     dut.expect('esp_apptrace: Initialized TRAX on CPU0')
 
     time.sleep(1)  # make sure that the sysview file has been generated
