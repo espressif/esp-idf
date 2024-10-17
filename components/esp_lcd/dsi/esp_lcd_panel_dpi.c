@@ -17,6 +17,7 @@
 #include "esp_async_fbcpy.h"
 #include "esp_memory_utils.h"
 #include "esp_private/dw_gdma.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 
@@ -232,6 +233,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                                                    &dpi_clk_src_freq_hz), err, TAG, "get clock source frequency failed");
     // divide the source clock to get the final DPI clock
     uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_hz / 1000 / 1000, panel_config->dpi_clock_freq_mhz);
+    esp_clk_tree_enable_src((soc_module_clk_t)dpi_clk_src, true);
     // set the clock source, set the divider, and enable the dpi clock
     DSI_CLOCK_SRC_ATOMIC() {
         mipi_dsi_ll_set_dpi_clock_source(bus_id, dpi_clk_src);
@@ -446,7 +448,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     }
 
     if (!do_copy) { // no copy, just do cache memory write back
-        ESP_LOGD(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
+        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
         // only write back the LCD lines that updated by the draw buffer
         uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
         size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
@@ -459,7 +461,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
         }
     } else if (!dpi_panel->fbcpy_handle) { // copy by CPU
-        ESP_LOGD(TAG, "copy draw buffer by CPU");
+        ESP_LOGV(TAG, "copy draw buffer by CPU");
         const uint8_t *from = draw_buffer;
         uint8_t *to = frame_buffer + (y_start * dpi_panel->h_pixels + x_start) * bits_per_pixel / 8;
         uint32_t copy_bytes_per_line = (x_end - x_start) * bits_per_pixel / 8;
@@ -480,7 +482,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
         }
     } else { // copy by DMA2D
-        ESP_LOGD(TAG, "copy draw buffer by DMA2D");
+        ESP_LOGV(TAG, "copy draw buffer by DMA2D");
         // ensure the previous draw operation is finished
         ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE,
                             TAG, "previous draw operation is not finished");

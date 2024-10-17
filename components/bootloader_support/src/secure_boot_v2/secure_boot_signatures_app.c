@@ -44,6 +44,10 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         || block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
         return ESP_FAIL;
     }
+    if (block->version != ESP_SECURE_BOOT_SCHEME) {
+        ESP_LOGE(TAG, "%s signing scheme selected but signature block generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), esp_secure_boot_get_scheme_name(block->version));
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 

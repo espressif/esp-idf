@@ -70,6 +70,29 @@ void wifi_prov_scheme_ble_event_cb_free_bt  (void *user_data, wifi_prov_cb_event
 esp_err_t wifi_prov_scheme_ble_set_service_uuid(uint8_t *uuid128);
 
 /**
+ * @brief   Keep the BLE on after provisioning
+ *
+ * This API is used to specify whether the BLE should remain on
+ * after the provisioning process has stopped.
+ *
+ * This must be called before starting provisioning, i.e. before
+ * making a call to wifi_prov_mgr_start_provisioning(), otherwise
+ * the default behavior will be used.
+ *
+ * @note    The value being pointed to by the argument must be valid
+ *          at least until provisioning is started. Upon start, the
+ *          manager will store an internal copy of this value, and
+ *          this data can be freed or invalidated afterwards.
+ *
+ * @param[in] is_on_after_ble_stop  A boolean indicating if BLE should remain on after provisioning
+ *
+ * @return
+ *  - ESP_OK              : Success
+ *  - ESP_ERR_INVALID_ARG : Null argument
+ */
+esp_err_t wifi_prov_mgr_keep_ble_on(uint8_t is_on_after_ble_stop);
+
+/**
  * @brief   Set manufacturer specific data in scan response
  *
  * This must be called before starting provisioning, i.e. before

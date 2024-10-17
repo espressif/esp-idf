@@ -4,3 +4,4 @@ CONFIG_ESP_TASK_WDT_INIT=n
 # esp_sleep_enable_gpio_switch() has the change to break UART RX during light sleep stress tests
 # Remove this when IDF-4897 is fixed
 CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND=n
+CONFIG_ESP_SLEEP_DEBUG=y

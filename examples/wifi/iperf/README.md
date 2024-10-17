@@ -1,12 +1,16 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # Iperf Example
 
 ## Note about iperf version
 The iperf example doesn't support all features in standard iperf. It's compatible with iperf version 2.x.
 
+<<<<<<< HEAD
 - Refer to the components registry iperf-cmd page for more information: https://components.espressif.com/components/espressif/iperf-cmd
+=======
+- Refer to the ESP Component Registry iperf-cmd page for more information: https://components.espressif.com/components/espressif/iperf-cmd
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 ## Note about 80MHz flash frequency (ESP32)
 The iperf can get better throughput if the SPI flash frequency is set to 80MHz, but the system may crash in 80MHz mode for ESP-WROVER-KIT.

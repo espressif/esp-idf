@@ -177,6 +177,15 @@ ble_transport_ll_init(void)
 
 }
 
+<<<<<<< HEAD
+=======
+void
+ble_transport_ll_deinit(void)
+{
+
+}
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 int
 ble_transport_to_ll_acl_impl(struct os_mbuf *om)
 {

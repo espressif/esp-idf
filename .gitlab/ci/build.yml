@@ -56,7 +56,7 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/cxx_pthread_bluetooth
+    TEST_DIR: tools/test_apps/system/clang_build_test
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -112,6 +112,22 @@ fast_template_app:
     BUILD_COMMAND_ARGS: "-p"
 #------------------------------------------------------------------------------
 
+#######################
+# gnu_static_analyzer #
+#######################
+gcc_static_analyzer:
+  extends:
+    - .build_template_app_template
+    - .rules:build:target_test
+  stage: pre_check
+  tags: [build, shiny]
+  variables:
+    CI_CCACHE_DISABLE: 1
+    ANALYZING_APP: "examples/get-started/hello_world"
+  script:
+    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
+    - python -m idf_build_apps build -vv -p ${ANALYZING_APP} -t all
+
 ########################################
 # Clang Build Apps Without Tests Cases #
 ########################################
@@ -140,11 +156,12 @@ build_clang_test_apps_esp32s3:
   extends:
     - .build_cmake_clang_template
   variables:
-    # For RISCV clang generates '.linker-options' sections of type 'llvm_linker_options' in asm files.
-    # See (https://llvm.org/docs/Extensions.html#linker-options-section-linker-options).
-    # Binutils gas ignores them with warning.
-    # TODO: LLVM-112, Use integrated assembler.
-    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'Warning: unrecognized section type'"
+    # https://reviews.llvm.org/D90108.
+    # GNU 'as' lets .weak override .globl since binutils-gdb
+    # https://github.com/bminor/binutils-gdb/commit/5ca547dc2399a0a5d9f20626d4bf5547c3ccfddd (1996)
+    # while MC lets the last directive win (PR38921).
+    # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
+    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
 
 build_clang_test_apps_esp32c3:
   extends:
@@ -164,10 +181,29 @@ build_clang_test_apps_esp32c6:
   extends:
     - .build_clang_test_apps_riscv
     - .rules:build
-  # TODO: c6 builds fail in master due to missing headers
-  allow_failure: true
   variables:
     IDF_TARGET: esp32c6
+
+build_clang_test_apps_esp32c5:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32c5
+
+build_clang_test_apps_esp32h2:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32h2
+
+build_clang_test_apps_esp32p4:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32p4
 
 ######################
 # Build System Tests #
@@ -264,6 +300,8 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
+    - job: baseline_manifest_sha
+      optional: true
   artifacts:
     paths:
       - build_child_pipeline.yml
@@ -288,6 +326,7 @@ build_child_pipeline:
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
     BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
+    REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false

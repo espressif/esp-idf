@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 #include "test_utils.h"
+#include "esp_random.h"
 #include "esp_sleep.h"
 #include "esp_system.h"
 #include "esp_private/esp_clk.h"
@@ -118,6 +119,26 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     CALIBRATE_ONE(RTC_CAL_32K_XTAL);
 #endif
 }
+
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+TEST_CASE("Test RTC_SLOW_CLK sources switching", "[rtc_clk]")
+{
+    soc_rtc_slow_clk_src_t clk_src_before_switch = rtc_clk_slow_src_get();
+    soc_rtc_slow_clk_src_t switching_sources[] = {SOC_RTC_SLOW_CLK_SRC_RC_SLOW, SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256};
+
+    for (uint32_t test_cnt = 0; test_cnt < 100; test_cnt++) {
+        uint32_t src_id = esp_random() % 2;
+        if (switching_sources[src_id] == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
+            rtc_clk_8m_enable(true, true);
+        }
+        rtc_clk_slow_src_set(switching_sources[src_id]);
+        esp_rom_delay_us(10*1000);
+        TEST_ASSERT_EQUAL(switching_sources[src_id], rtc_clk_slow_src_get());
+    }
+    rtc_clk_slow_src_set(clk_src_before_switch);
+    printf("done\n");
+}
+#endif
 
 /* The following two are not unit tests, but are added here to make it easy to
  * check the frequency of 150k/32k oscillators. The following two "tests" will

@@ -9,6 +9,7 @@
 #include <lwip/ip_addr.h>
 #include <lwip/sockets.h>
 
+#include "esp_compiler.h"
 #include "esp_check.h"
 #include "esp_netif_lwip_internal.h"
 #include "lwip/esp_netif_net_stack.h"
@@ -112,16 +113,6 @@ do {                                                                            
     ESP_LOGE(TAG, "%s not supported, please enable it in lwIP component configuration", proto); \
     action;                                                                                     \
 } while(0)
-
-//
-//  Internal types
-//
-typedef enum esp_netif_action {
-    ESP_NETIF_UNDEF,
-    ESP_NETIF_STARTED,
-    ESP_NETIF_STOPPED,
-    ESP_NETIF_SET_DEFAULT,
-} esp_netif_action_t;
 
 //
 //  Internal variables for this module
@@ -306,6 +297,11 @@ static void esp_netif_set_default_netif_internal(esp_netif_t *esp_netif)
     } else {
         netif_set_default(esp_netif->lwip_netif);
     }
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+    for (int i = 0; i < DNS_MAX_SERVERS; ++i) {
+        dns_setserver(i, &esp_netif->dns[i]);
+    }
+#endif
 }
 
 /**
@@ -316,7 +312,7 @@ static void esp_netif_set_default_netif_internal(esp_netif_t *esp_netif)
 static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
-    esp_netif_action_t action = (esp_netif_action_t)msg->data;
+    esp_netif_route_prio_action_t action = (esp_netif_route_prio_action_t)msg->data;
 
     ESP_LOGD(TAG, "%s %p", __func__, esp_netif);
 
@@ -336,6 +332,7 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
             esp_netif_set_default_netif_internal(s_last_default_esp_netif);
         break;
         case ESP_NETIF_STARTED:
+        case ESP_NETIF_GOT_IP:
         {
             // check if previously default interface hasn't been destroyed in the meantime
             s_last_default_esp_netif = esp_netif_is_active(s_last_default_esp_netif);
@@ -351,6 +348,7 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
 
         default:
         case ESP_NETIF_STOPPED:
+        case ESP_NETIF_LOST_IP:
         {
             s_last_default_esp_netif = NULL;
             esp_netif_t *netif = esp_netif_next_unsafe(NULL);
@@ -382,7 +380,7 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
  * @param esp_netif current interface which just updated state
  * @param action updating action (on-off)
  */
-static esp_err_t esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_action_t action)
+esp_err_t esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_route_prio_action_t action)
 {
     return esp_netif_lwip_ipc_call(esp_netif_update_default_netif_lwip, esp_netif, (void*)action);
 }
@@ -502,6 +500,24 @@ void* esp_netif_get_netif_impl(esp_netif_t *esp_netif)
     return NULL;
 }
 
+#if CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+static void store_dnsserver_info(struct netif* netif, u8_t numdns, const ip_addr_t *dnsserver)
+{
+    if (netif == NULL) {
+        return;
+    }
+    esp_netif_t *esp_netif = lwip_get_esp_netif(netif);
+    if (esp_netif == NULL || !esp_netif_is_netif_listed(esp_netif)) {
+        return;
+    }
+    if (!ip_addr_isany(dnsserver)) {
+        ip_addr_copy(esp_netif->dns[numdns], *dnsserver);
+    } else {
+        ip_addr_copy(esp_netif->dns[numdns], *IP_ADDR_ANY);
+    }
+}
+#endif
+
 static void tcpip_init_done(void *arg)
 {
     sys_sem_t *init_sem = arg;
@@ -545,6 +561,12 @@ esp_err_t esp_netif_init(void)
         sys_sem_wait(&init_sem);
         sys_sem_free(&init_sem);
         ESP_LOGD(TAG, "LwIP stack has been initialized");
+#if CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        if (dns_setserver_callback(store_dnsserver_info) != ERR_OK) {
+            ESP_LOGE(TAG, "Feiled to configure DNS set server callback");
+            return ESP_FAIL;
+        }
+#endif
     }
 
 #if !LWIP_TCPIP_CORE_LOCKING
@@ -859,12 +881,15 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
 
 static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 {
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak"); // False-positive detection. TODO GCC-366
     if (esp_netif->lwip_netif == NULL) {
         esp_netif->lwip_netif = calloc(1, sizeof(struct netif));
         if (esp_netif->lwip_netif == NULL) {
             return ESP_ERR_NO_MEM;
         }
     }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak");
+
     if (esp_netif->flags & ESP_NETIF_FLAG_IS_PPP) {
 #if CONFIG_PPP_SUPPORT
         err_t err = esp_netif->lwip_init_fn(NULL);
@@ -1071,11 +1096,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
     ESP_LOGD(TAG, "%s %p", __func__, esp_netif);
     if (ESP_NETIF_IS_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
 #if CONFIG_PPP_SUPPORT
-        esp_err_t ret = esp_netif_start_ppp(esp_netif);
-        if (ret == ESP_OK) {
-            esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
-        }
-        return ret;
+        return esp_netif_start_ppp(esp_netif);
 #endif
     }
 
@@ -1084,7 +1105,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
     ESP_ERROR_CHECK(esp_netif_lwip_add(esp_netif));
 
 #if ESP_IPV6_AUTOCONFIG
-    esp_netif->lwip_netif->ip6_autoconfig_enabled = 1;
+    esp_netif->lwip_netif->ip6_autoconfig_enabled = (esp_netif->flags & ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED) ? 1 : 0;
 #endif
     if (esp_netif->flags&ESP_NETIF_FLAG_GARP) {
 #if ESP_GRATUITOUS_ARP
@@ -1133,27 +1154,17 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
 #endif
-    } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
-#if CONFIG_LWIP_IPV4
-        if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
-            if (p_netif != NULL) {
-                struct dhcp *dhcp_data = NULL;
-                dhcp_data = netif_dhcp_data(p_netif);
-                if (dhcp_data == NULL) {
-                    dhcp_data = (struct dhcp *)malloc(sizeof(struct dhcp));
-                    if (dhcp_data == NULL) {
-                        return ESP_ERR_NO_MEM;
-                    }
-                    dhcp_set_struct(p_netif, dhcp_data);
-                }
-            }
-        }
-#else
-        LOG_NETIF_DISABLED_AND_DO("IPv4's DHCP Client", return ESP_ERR_NOT_SUPPORTED);
-#endif
     }
+#ifndef CONFIG_LWIP_IPV4
+    else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
+        LOG_NETIF_DISABLED_AND_DO("IPv4's DHCP Client", return ESP_ERR_NOT_SUPPORTED);
+    }
+#endif
 
-    esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
+    // For netifs with (active) DHCP client: we update the default netif after getting a valid IP
+    if (!((esp_netif->flags & ESP_NETIF_DHCP_CLIENT) && esp_netif->dhcpc_status != ESP_NETIF_DHCP_STOPPED)) {
+        esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
+    }
 
     return ESP_OK;
 }
@@ -1241,18 +1252,83 @@ void esp_netif_free_rx_buffer(void *h, void* buffer)
     esp_netif->driver_free_rx_buffer(esp_netif->driver_handle, buffer);
 }
 
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+static esp_err_t esp_netif_tx_rx_event_api(esp_netif_api_msg_t *msg)
+{
+    bool enable = (bool)msg->data;
+    esp_netif_t *esp_netif = msg->esp_netif;
+    if (esp_netif == NULL) {
+        ESP_LOGE(TAG, "Invalid esp_netif");
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    esp_netif->tx_rx_events_enabled = enable;
+
+    return ESP_OK;
+}
+#endif
+
+esp_err_t esp_netif_tx_rx_event_enable(esp_netif_t *esp_netif)
+{
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    return esp_netif_lwip_ipc_call(esp_netif_tx_rx_event_api, esp_netif, (void*)true /* Enable */);
+#else
+    return ESP_FAIL;
+#endif
+}
+
+esp_err_t esp_netif_tx_rx_event_disable(esp_netif_t *esp_netif)
+{
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    return esp_netif_lwip_ipc_call(esp_netif_tx_rx_event_api, esp_netif, (void*)false /* Disable */);
+#else
+    return ESP_FAIL;
+#endif
+}
+
 esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_TX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
+#endif
     return (esp_netif->driver_transmit)(esp_netif->driver_handle, data, len);
 }
 
 esp_err_t esp_netif_transmit_wrap(esp_netif_t *esp_netif, void *data, size_t len, void *pbuf)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_TX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
+#endif
     return (esp_netif->driver_transmit_wrap)(esp_netif->driver_handle, data, len, pbuf);
 }
 
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_RX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
+#endif
 #ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
     return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
 #else
@@ -1302,7 +1378,7 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif)
             if (memcmp(ip_info, ip_info_old, sizeof(esp_netif_ip_info_t))) {
                 evt.ip_changed = true;
             }
-
+            esp_netif_update_default_netif(esp_netif, ESP_NETIF_GOT_IP);
             memcpy(&evt.ip_info, ip_info, sizeof(esp_netif_ip_info_t));
             memcpy(ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
             ESP_LOGD(TAG, "if%p ip changed=%d", esp_netif, evt.ip_changed);
@@ -1343,7 +1419,7 @@ static void esp_netif_ip_lost_timer(void *arg)
                 .esp_netif = esp_netif,
         };
         int ret;
-
+        esp_netif_update_default_netif(esp_netif, ESP_NETIF_LOST_IP);
         ESP_LOGD(TAG, "if%p ip lost tmr: raise ip lost event", esp_netif);
         memset(esp_netif->ip_info_old, 0, sizeof(esp_netif_ip_info_t));
         if (esp_netif->lost_ip_event) {
@@ -1662,7 +1738,10 @@ static esp_err_t esp_netif_up_api(esp_netif_api_msg_t *msg)
     netif_set_up(lwip_netif);
     netif_set_link_up(lwip_netif);
 
-    esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
+    // For netifs with (active) DHCP client: we update the default netif after getting a valid IP
+    if (!((esp_netif->flags & ESP_NETIF_DHCP_CLIENT) && esp_netif->dhcpc_status != ESP_NETIF_DHCP_STOPPED)) {
+        esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
+    }
 
     return ESP_OK;
 }
@@ -1841,7 +1920,7 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
                 if (memcmp(ip_info, esp_netif->ip_info_old, sizeof(esp_netif_ip_info_t))) {
                     evt.ip_changed = true;
                 }
-
+                esp_netif_update_default_netif(esp_netif, ESP_NETIF_GOT_IP);
                 memcpy(&evt.ip_info, ip_info, sizeof(esp_netif_ip_info_t));
                 memcpy(esp_netif->ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
                 ret = esp_event_post(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
@@ -1902,7 +1981,7 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 
     ip_addr_t lwip_ip = {};
     ESPIP_TO_IP(&dns->ip, &lwip_ip);
-    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+    if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         // if DHCP server configured to set DNS in dhcps API
         if (type != ESP_NETIF_DNS_MAIN) {
@@ -1915,7 +1994,17 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
 #endif
     } else {
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        if (esp_netif) {
+            store_dnsserver_info(esp_netif->lwip_netif, type, &lwip_ip);
+        }
+        if (esp_netif == s_last_default_esp_netif ||    // if this is the default one -> need to update global DNS servers
+            esp_netif == NULL) {                        // if the netif ptr is set to NULL -> we explicitly require the update
+            dns_setserver(type, &lwip_ip);
+        }
+#else
         dns_setserver(type, &lwip_ip);
+#endif
     }
 
     return ESP_OK;
@@ -1923,9 +2012,11 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_set_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns)
 {
+#ifndef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
     if (esp_netif == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
+#endif
 
     if (dns == NULL) {
         ESP_LOGD(TAG, "set dns null dns");
@@ -1953,7 +2044,7 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
 
     ESP_LOGD(TAG, "esp_netif_get_dns_info: esp_netif=%p type=%d", esp_netif, type);
 
-    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
+    if (esp_netif && esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         ip4_addr_t dns_ip;
         dhcps_dns_getserver(esp_netif->dhcps, &dns_ip);
@@ -1964,7 +2055,15 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
 #endif
     } else {
         const ip_addr_t*  dns_ip = NULL;
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+        if (esp_netif == NULL) {    // by setting esp_netif to NULL we require the global DNS server entry
+            dns_ip = dns_getserver(type);
+        } else {
+            dns_ip = &esp_netif->dns[type];
+        }
+#else
         dns_ip = dns_getserver(type);
+#endif
         if(dns_ip != NULL) {
             IP_TO_ESPIP(dns_ip, &dns->ip);
         }
@@ -1975,9 +2074,11 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns)
 {
+#ifndef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
     if (esp_netif == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
+#endif
 
     if (dns == NULL) {
         ESP_LOGE(TAG, "%s: dns_info cannot be NULL", __func__);
@@ -2073,7 +2174,7 @@ static void esp_netif_internal_nd6_cb(struct netif *netif, uint8_t ip_index)
         ESP_LOGW(TAG,"CONFIG_LWIP_ESP_MLDV6_REPORT not enabled, but esp-netif configured with ESP_NETIF_FLAG_MLDV6_REPORT");
 #endif
     }
-
+    esp_netif_update_default_netif(esp_netif, ESP_NETIF_GOT_IP);
     memcpy(&evt.ip6_info, &ip6_info, sizeof(esp_netif_ip6_info_t));
     int ret = esp_event_post(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
@@ -2153,6 +2254,33 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
     if (p_netif != NULL && netif_is_up(p_netif)) {
         for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
             if (ip6_addr_isvalid(netif_ip6_addr_state(p_netif, i)) && !ip_addr_cmp(&p_netif->ip6_addr[i], IP6_ADDR_ANY)) {
+<<<<<<< HEAD
+=======
+                memcpy(&if_ip6[addr_count++], &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
+            }
+        }
+    }
+    return addr_count;
+}
+
+int esp_netif_get_all_preferred_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
+{
+    ESP_LOGV(TAG, "%s esp-netif:%p", __func__, esp_netif);
+
+    if (esp_netif == NULL || if_ip6 == NULL) {
+        return 0;
+    }
+
+    int addr_count = 0;
+    struct netif *p_netif = esp_netif->lwip_netif;
+
+    if (p_netif != NULL && netif_is_up(p_netif)) {
+        for (int i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+            // Only return the IPs which are:
+            // 1. the state is preferred
+            // 2. not the IP6_ADDR_ANY(all bits are `0`)
+            if (ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, i)) && !ip_addr_cmp(&p_netif->ip6_addr[i], IP6_ADDR_ANY)) {
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
                 memcpy(&if_ip6[addr_count++], &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
             }
         }
@@ -2341,6 +2469,10 @@ esp_err_t esp_netif_dhcps_option_api(esp_netif_api_msg_t *msg)
                 }
                 break;
             }
+            case ESP_NETIF_CAPTIVEPORTAL_URI: {
+                opt_info = (char *)opt->val;
+                break;
+            }
 
             default:
                 break;
@@ -2468,7 +2600,7 @@ static esp_err_t esp_netif_napt_control_api(esp_netif_api_msg_t *msg)
         /* Disable napt on all other interface */
         esp_netif_t *netif = esp_netif_next_unsafe(NULL);
         while (netif) {
-            if (netif != esp_netif) {
+            if (netif != esp_netif && netif->lwip_netif->napt == 1) {
                 ip_napt_enable_netif(netif->lwip_netif, 0); // Fails only if netif is down
                 ESP_LOGW(TAG, "napt disabled on esp_netif:%p", esp_netif);
             }
@@ -2515,15 +2647,6 @@ esp_err_t esp_netif_ppp_set_auth(esp_netif_t *esp_netif, esp_netif_auth_type_t a
 {
     set_auth_msg_t msg = { .authtype = authtype, .user = user, .passwd = passwd };
     return esp_netif_lwip_ipc_call(esp_netif_ppp_set_auth_api, esp_netif, &msg);
-#if PPP_AUTH_SUPPORT
-        lwip_peer2peer_ctx_t *ppp_ctx = (lwip_peer2peer_ctx_t *)netif->related_data;
-    assert(ppp_ctx->base.netif_type == PPP_LWIP_NETIF);
-    pppapi_set_auth(ppp_ctx->ppp, authtype, user, passwd);
-    return ESP_OK;
-#else
-    ESP_LOGE(TAG, "%s failed: No authorisation enabled in menuconfig", __func__);
-    return ESP_ERR_ESP_NETIF_IF_NOT_READY;
-#endif
 }
 
 esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif)
@@ -2612,7 +2735,7 @@ static esp_err_t esp_netif_add_ip6_address_api(esp_netif_api_msg_t *msg)
     err_t err = netif_add_ip6_address(msg->esp_netif->lwip_netif, &ip6addr, &index);
     ESP_RETURN_ON_FALSE(err == ERR_OK && index >= 0, ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED, TAG,
                         "Failed to add ip6 address");
-
+    esp_netif_update_default_netif(msg->esp_netif, ESP_NETIF_GOT_IP);
     netif_ip6_addr_set_state(msg->esp_netif->lwip_netif, index,
                              addr->preferred ? IP6_ADDR_PREFERRED : IP6_ADDR_DEPRECATED);
     ip_event_got_ip6_t evt = {.esp_netif = msg->esp_netif, .ip_index = index};

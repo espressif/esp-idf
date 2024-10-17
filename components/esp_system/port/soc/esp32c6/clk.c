@@ -234,7 +234,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             && (rst_reason != RESET_REASON_CPU0_JTAG)) {
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
         uart_ll_enable_bus_clock(UART_NUM_0, false);
+        uart_ll_sclk_disable(&UART0);
 #elif CONFIG_ESP_CONSOLE_UART_NUM != 1
+        uart_ll_sclk_disable(&UART1);
         uart_ll_enable_bus_clock(UART_NUM_1, false);
 #endif
         i2c_ll_enable_bus_clock(0, false);
@@ -262,7 +264,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         parlio_ll_tx_enable_clock(&PARL_IO, false);
         parlio_ll_enable_bus_clock(0, false);
         gdma_ll_force_enable_reg_clock(&GDMA, false);
-        gdma_ll_enable_bus_clock(0, false);
+        _gdma_ll_enable_bus_clock(0, false);
 #if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         spi_ll_enable_bus_clock(SPI1_HOST, false);
 #endif
@@ -305,6 +307,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         _lp_i2c_ll_enable_bus_clock(0, false);
         _lp_uart_ll_enable_bus_clock(0, false);
+        lp_uart_ll_sclk_disable(0);
         lp_core_ll_enable_bus_clock(false);
         _lp_clkrst_ll_enable_rng_clock(false);
 

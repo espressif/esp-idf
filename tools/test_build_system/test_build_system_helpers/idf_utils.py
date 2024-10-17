@@ -1,14 +1,13 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
-import re
 import shutil
 import subprocess
 import sys
 import typing
-from pathlib import Path, WindowsPath
-from typing import Pattern, Union
+from pathlib import Path
+from typing import Union
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
@@ -91,10 +90,17 @@ def run_idf_py(*args: str,
     ]
     cmd += args  # type: ignore
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
-    return subprocess.run(
-        cmd, env=env, cwd=workdir,
-        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+    try:
+        return subprocess.run(
+            cmd, env=env, cwd=workdir,
+            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+    except subprocess.CalledProcessError as e:
+        logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
+        logging.error('Working directory: {}'.format(workdir))
+        logging.error('Stdout: {}'.format(e.stdout))
+        logging.error('Stderr: {}'.format(e.stderr))
+        raise
 
 
 def run_cmake(*cmake_args: str,
@@ -121,10 +127,17 @@ def run_cmake(*cmake_args: str,
     cmd = ['cmake'] + list(cmake_args)
 
     logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
-    return subprocess.run(
-        cmd, env=env, cwd=build_dir,
-        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, encoding='utf-8', errors='backslashreplace')
+    try:
+        return subprocess.run(
+            cmd, env=env, cwd=build_dir,
+            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, encoding='utf-8', errors='backslashreplace')
+    except subprocess.CalledProcessError as e:
+        logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
+        logging.error('Working directory: {}'.format(workdir))
+        logging.error('Stdout: {}'.format(e.stdout))
+        logging.error('Stderr: {}'.format(e.stderr))
+        raise
 
 
 def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
@@ -135,34 +148,3 @@ def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) 
     """
     run_cmake(*cmake_args, env=env)
     run_cmake('--build', '.')
-
-
-def file_contains(filename: Union[str, Path], what: Union[Union[str, Path], Pattern]) -> bool:
-    """
-    Returns true if file contains required object
-    :param filename: path to file where lookup is executed
-    :param what: searched substring or regex object
-    """
-    with open(filename, 'r', encoding='utf-8') as f:
-        data = f.read()
-        if isinstance(what, Pattern):
-            return re.search(what, data) is not None
-        else:
-            what_str = str(what)
-            # In case of windows path, try both single-slash `\` and double-slash '\\' paths
-            if isinstance(what, WindowsPath):
-                what_double_slash = what_str.replace('\\', '\\\\')
-                return what_str in data or what_double_slash in data
-
-            return what_str in data
-
-
-def bin_file_contains(filename: Union[str, Path], what: bytearray) -> bool:
-    """
-    Returns true if the binary file contains the given string
-    :param filename: path to file where lookup is executed
-    :param what: searched bytes
-    """
-    with open(filename, 'rb') as f:
-        data = f.read()
-        return data.find(what) != -1

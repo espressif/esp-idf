@@ -14,6 +14,7 @@ components/esp_hw_support/test_apps/dma2d:
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
 
+<<<<<<< HEAD
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
@@ -28,6 +29,8 @@ components/esp_hw_support/test_apps/etm:
     - esp_timer
     - esp_driver_ana_cmpr
 
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
@@ -46,9 +49,9 @@ components/esp_hw_support/test_apps/rtc_8md256:
 
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
       temporary: true
-      reason: Unsupported on C6 for now. TODO IDF-5645, TODO IDF-7514, TODO C5 IDF-8667
+      reason: Unsupported on C6 for now. TODO IDF-5645, TODO IDF-7514, TODO C5 IDF-8667, TODO C61 IDF-9274
 
 components/esp_hw_support/test_apps/rtc_power_modes:
   enable:
@@ -58,4 +61,4 @@ components/esp_hw_support/test_apps/rtc_power_modes:
 
 components/esp_hw_support/test_apps/wakeup_tests:
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux"]
+    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux", "esp32c61"]

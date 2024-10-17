@@ -22,10 +22,14 @@
 #include "soc/spi_periph.h"
 #include "soc/spi1_mem_c_struct.h"
 #include "soc/spi1_mem_c_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/assert.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "hal/misc.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
+#include "hal/clk_tree_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -221,10 +225,9 @@ static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint3
  */
 static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dly_val)
 {
-    // dev->ctrl1.cs_hold_dly_res = dly_val;
-    // dev->sus_status.pes_dly_128 = 1;
-    // dev->sus_status.per_dly_128 = 1;
-    abort();
+    dev->ctrl1.cs_hold_dly_res = dly_val;
+    dev->sus_status.flash_pes_dly_128 = 1;
+    dev->sus_status.flash_per_dly_128 = 1;
 }
 
 /**
@@ -235,8 +238,7 @@ static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dl
  */
 static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t cs_hold_delay)
 {
-    // SPIMEM0.ctrl2.cs_hold_delay = cs_hold_delay;
-    abort();
+    SPIMEM0.ctrl2.cs_hold_delay = cs_hold_delay;
 }
 
 /**
@@ -290,9 +292,8 @@ static inline bool spimem_flash_ll_sus_status(spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_sus_set_spi0_lock_trans(spi_mem_dev_t *dev, uint32_t lock_time)
 {
-    // dev->sus_status.spi0_lock_en = 1;
-    // SPIMEM0.fsm.cspi_lock_delay_time = lock_time;
-    abort();
+    dev->sus_status.spi0_lock_en = 1;
+    SPIMEM0.fsm.lock_delay_time = lock_time;
 }
 
 /**
@@ -303,14 +304,13 @@ static inline void spimem_flash_ll_sus_set_spi0_lock_trans(spi_mem_dev_t *dev, u
  */
 static inline uint32_t spimem_flash_ll_get_tsus_unit_in_cycles(spi_mem_dev_t *dev)
 {
-    // uint32_t tsus_unit = 0;
-    // if (dev->sus_status.pes_dly_128 == 1) {
-    //     tsus_unit = 128;
-    // } else {
-    //     tsus_unit = 4;
-    // }
-    // return tsus_unit;
-    abort();
+    uint32_t tsus_unit = 0;
+    if (dev->sus_status.flash_pes_dly_128 == 1) {
+        tsus_unit = 128;
+    } else {
+        tsus_unit = 4;
+    }
+    return tsus_unit;
 }
 
 /**
@@ -335,6 +335,7 @@ static inline void spimem_flash_ll_set_write_protect(spi_mem_dev_t *dev, bool wp
  * @param buffer Buffer to hold the output data
  * @param read_len Length to get out of the buffer
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buffer, uint32_t read_len)
 {
     if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
@@ -360,6 +361,7 @@ static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buf
  * @param buffer Buffer holding the data
  * @param length Length of data in bytes.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_buffer_data(spi_mem_dev_t *dev, const void *buffer, uint32_t length)
 {
     // Load data registers, word at a time
@@ -512,6 +514,7 @@ static inline void spimem_flash_ll_set_miso_bitlen(spi_mem_dev_t *dev, uint32_t 
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of output, in bits.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user.usr_mosi = bitlen > 0;
@@ -552,8 +555,13 @@ static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of the address, in bits
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (ESP_CHIP_REV_ABOVE(chip_version, 1)) {
+        dev->cache_fctrl.cache_usr_addr_4byte = (bitlen == 32) ? 1 : 0;
+    }
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
 }
@@ -587,6 +595,7 @@ static inline void spimem_flash_ll_set_address(spi_mem_dev_t *dev, uint32_t addr
  * @param dev Beginning address of the peripheral registers.
  * @param addr Address to send
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
     (void)bitlen;
@@ -642,7 +651,26 @@ static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t 
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-    return 80;
+    // return 80;
+    int source_clk_mhz = 0;
+
+    switch (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel)
+    {
+    case 0:
+        source_clk_mhz = clk_ll_xtal_load_freq_mhz();
+        break;
+    case 1:
+        source_clk_mhz = CLK_LL_PLL_480M_FREQ_MHZ; // SPLL
+        break;
+    case 2:
+        source_clk_mhz = CLK_LL_PLL_400M_FREQ_MHZ; // CPLL
+        break;
+    default:
+        break;
+    }
+
+    uint8_t clock_val = source_clk_mhz / (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_div_num + 1);
+    return clock_val;
 }
 
 /**
@@ -682,6 +710,137 @@ static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
 static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
 {
     return dev->ctrl.val;
+}
+
+/**
+ * Set D/Q output level during dummy phase
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param out_en whether to enable IO output for dummy phase
+ * @param out_level dummy output level
+ */
+static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t out_en, uint32_t out_lev)
+{
+    dev->ctrl.fdummy_rin = out_en;
+    dev->ctrl.q_pol = out_lev;
+    dev->ctrl.d_pol = out_lev;
+    dev->ctrl.wp_reg = out_lev;
+}
+
+/*
+ * @brief Select FLASH clock source
+ *
+ * @param mspi_id      mspi_id
+ * @param clk_src      clock source, see valid sources in type `soc_periph_flash_clk_src_t`
+ */
+__attribute__((always_inline))
+static inline void _spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
+{
+    (void)mspi_id;
+    uint32_t clk_val = 0;
+    switch (clk_src) {
+    case FLASH_CLK_SRC_XTAL:
+        clk_val = 0;
+        break;
+    case FLASH_CLK_SRC_SPLL:
+        clk_val = 1;
+        break;
+    case FLASH_CLK_SRC_CPLL:
+        clk_val = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel = clk_val;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spimem_flash_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_flash_ll_select_clk_source(__VA_ARGS__)
+
+/**
+ * @brief Set FLASH core clock
+ *
+ * @param mspi_id  mspi_id
+ * @param freqdiv  Divider value
+ */
+__attribute__((always_inline))
+static inline void _spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t freqdiv)
+{
+    (void)mspi_id;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, freqdiv - 1);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spimem_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_set_core_clock(__VA_ARGS__)
+
+/**
+ * @brief Disable FLASH MSPI clock
+ *
+ * @param mspi_id  mspi_id
+ */
+__attribute__((always_inline))
+static inline void _spimem_ctrlr_ll_unset_clock(uint8_t mspi_id)
+{
+    (void)mspi_id;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 0;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 0;
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spimem_ctrlr_ll_unset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_unset_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset whole memory spi
+ */
+static inline void spimem_flash_ll_sync_reset(void)
+{
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+    SPIMEM1.ctrl2.sync_reset = 1;
+    SPIMEM0.ctrl2.sync_reset = 1;
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+}
+
+/**
+ * @brief Get common command related registers
+ *
+ * @param ctrl_reg ctrl_reg
+ * @param user_reg user_reg
+ * @param user1_reg user1_reg
+ * @param user2_reg user2_reg
+ */
+static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_t *dev, uint32_t *ctrl_reg, uint32_t *user_reg, uint32_t *user1_reg, uint32_t *user2_reg)
+{
+    *ctrl_reg = dev->ctrl.val;
+    *user_reg = dev->user.val;
+    *user1_reg = dev->user1.val;
+    *user2_reg = dev->user2.val;
+}
+
+/**
+ * @brief Set common command related registers
+ *
+ * @param ctrl_reg ctrl_reg
+ * @param user_reg user_reg
+ * @param user1_reg user1_reg
+ * @param user2_reg user2_reg
+ */
+static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_t *dev, uint32_t ctrl_reg, uint32_t user_reg, uint32_t user1_reg, uint32_t user2_reg)
+{
+    dev->ctrl.val = ctrl_reg;
+    dev->user.val = user_reg;
+    dev->user1.val = user1_reg;
+    dev->user2.val = user2_reg;
 }
 
 #ifdef __cplusplus

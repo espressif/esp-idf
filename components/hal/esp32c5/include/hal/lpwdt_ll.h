@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,9 +68,7 @@ ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == LP_WDT_RESET_LENGTH_3200_NS, "Ad
  */
 FORCE_INLINE_ATTR void lpwdt_ll_enable(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_en = 1;
-    abort();
+    hw->config0.wdt_en = 1;
 }
 
 /**
@@ -83,9 +81,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_enable(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_disable(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_en = 0;
-    abort();
+    hw->config0.wdt_en = 0;
 }
 
 /**
@@ -96,10 +92,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_disable(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR bool lpwdt_ll_check_if_enabled(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // return (hw->config0.wdt_en) ? true : false;
-    abort();
-    return (bool)0;
+    return (hw->config0.wdt_en) ? true : false;
 }
 
 /**
@@ -122,29 +115,27 @@ FORCE_INLINE_ATTR bool lpwdt_ll_check_if_enabled(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_config_stage(lp_wdt_dev_t *hw, wdt_stage_t stage, uint32_t timeout_ticks, wdt_stage_action_t behavior)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->config0.wdt_stg0 = behavior;
-    //     //Account of implicty multiplier applied to stage 0 timeout tick config value
-    //     hw->config1.val = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->config0.wdt_stg1 = behavior;
-    //     hw->config2.val = timeout_ticks;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->config0.wdt_stg2 = behavior;
-    //     hw->config3.val = timeout_ticks;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->config0.wdt_stg3 = behavior;
-    //     hw->config4.val = timeout_ticks;
-    //     break;
-    // default:
-    //     abort();
-    // }
-    abort();
+    switch (stage) {
+    case WDT_STAGE0:
+        hw->config0.wdt_stg0 = behavior;
+        //Account of implicty multiplier applied to stage 0 timeout tick config value
+        hw->config1.val = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
+        break;
+    case WDT_STAGE1:
+        hw->config0.wdt_stg1 = behavior;
+        hw->config2.val = timeout_ticks;
+        break;
+    case WDT_STAGE2:
+        hw->config0.wdt_stg2 = behavior;
+        hw->config3.val = timeout_ticks;
+        break;
+    case WDT_STAGE3:
+        hw->config0.wdt_stg3 = behavior;
+        hw->config4.val = timeout_ticks;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
@@ -155,24 +146,22 @@ FORCE_INLINE_ATTR void lpwdt_ll_config_stage(lp_wdt_dev_t *hw, wdt_stage_t stage
  */
 FORCE_INLINE_ATTR void lpwdt_ll_disable_stage(lp_wdt_dev_t *hw, wdt_stage_t stage)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->config0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->config0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->config0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->config0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // default:
-    //     abort();
-    // }
-    abort();
+    switch (stage) {
+    case WDT_STAGE0:
+        hw->config0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE1:
+        hw->config0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE2:
+        hw->config0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE3:
+        hw->config0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
@@ -183,9 +172,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_disable_stage(lp_wdt_dev_t *hw, wdt_stage_t stag
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_cpu_reset_length(lp_wdt_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_cpu_reset_length = length;
-    abort();
+    hw->config0.wdt_cpu_reset_length = length;
 }
 
 /**
@@ -196,9 +183,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_cpu_reset_length(lp_wdt_dev_t *hw, wdt_reset
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_sys_reset_length(lp_wdt_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_sys_reset_length = length;
-    abort();
+    hw->config0.wdt_sys_reset_length = length;
 }
 
 /**
@@ -213,9 +198,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_sys_reset_length(lp_wdt_dev_t *hw, wdt_reset
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_flashboot_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
 }
 
 /**
@@ -226,9 +209,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_flashboot_en(lp_wdt_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_procpu_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_procpu_reset_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_procpu_reset_en = (enable) ? 1 : 0;
 }
 
 /**
@@ -239,9 +220,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_procpu_reset_en(lp_wdt_dev_t *hw, bool enabl
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_appcpu_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_appcpu_reset_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_appcpu_reset_en = (enable) ? 1 : 0;
 }
 
 /**
@@ -252,9 +231,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_appcpu_reset_en(lp_wdt_dev_t *hw, bool enabl
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_pause_in_sleep_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_pause_in_slp = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_pause_in_slp = (enable) ? 1 : 0;
 }
 
 /**
@@ -268,9 +245,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_pause_in_sleep_en(lp_wdt_dev_t *hw, bool ena
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->config0.wdt_chip_reset_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_chip_reset_en = (enable) ? 1 : 0;
 }
 
 /**
@@ -281,9 +256,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_en(lp_wdt_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_width(lp_wdt_dev_t *hw, uint32_t width)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->config0, wdt_chip_reset_width, width);
-    abort();
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->config0, wdt_chip_reset_width, width);
 }
 
 /**
@@ -295,9 +268,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_width(lp_wdt_dev_t *hw, uint32_t 
  */
 FORCE_INLINE_ATTR void lpwdt_ll_feed(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->feed.rtc_wdt_feed = 1;
-    abort();
+    hw->feed.rtc_wdt_feed = 1;
 }
 
 /**
@@ -307,9 +278,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_feed(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_write_protect_enable(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->wprotect.val = 0;
-    abort();
+    hw->wprotect.val = 0;
 }
 
 /**
@@ -319,9 +288,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_write_protect_enable(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_write_protect_disable(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->wprotect.val = LP_WDT_WKEY_VALUE;
-    abort();
+    hw->wprotect.val = LP_WDT_WKEY_VALUE;
 }
 
 /**
@@ -332,9 +299,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_write_protect_disable(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_intr_enable(lp_wdt_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->int_ena.lp_wdt_int_ena = (enable) ? 1 : 0;
-    abort();
+    hw->int_ena.lp_wdt_int_ena = (enable) ? 1 : 0;
 }
 
 /**
@@ -345,10 +310,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_intr_enable(lp_wdt_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR bool lpwdt_ll_check_intr_status(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // return (hw->int_st.lp_wdt_int_st) ? true : false;
-    abort();
-    return (bool)0;
+    return (hw->int_st.lp_wdt_int_st) ? true : false;
 }
 
 /**
@@ -358,9 +320,7 @@ FORCE_INLINE_ATTR bool lpwdt_ll_check_intr_status(lp_wdt_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_clear_intr_status(lp_wdt_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8635
-    // hw->int_clr.lp_wdt_int_clr = 1;
-    abort();
+    hw->int_clr.lp_wdt_int_clr = 1;
 }
 
 #ifdef __cplusplus

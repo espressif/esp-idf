@@ -11,3 +11,6 @@ CONFIG_WL_SECTOR_SIZE_512=y
 CONFIG_WL_SECTOR_MODE_PERF=y
 
 CONFIG_FATFS_LFN_HEAP=y
+
+# On chips with USB Serial JTAG, disable secondary console which does not make sense when using console component
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y

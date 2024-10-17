@@ -52,7 +52,8 @@ endif()
 if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     list(APPEND srcs
         "lp_core/lp_core.c"
-        "lp_core/shared/ulp_lp_core_memory_shared.c")
+        "lp_core/shared/ulp_lp_core_memory_shared.c"
+        "lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
     if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
         list(APPEND srcs "lp_core/lp_core_uart.c")
@@ -73,6 +74,13 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     if(CONFIG_SOC_LP_CORE_SUPPORT_ETM)
         list(APPEND srcs "lp_core/lp_core_etm.c")
     endif()
+<<<<<<< HEAD
+=======
+
+    if(CONFIG_SOC_LP_ADC_SUPPORTED)
+        list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_adc_shared.c")
+    endif()
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 endif()
 
 idf_component_register(SRCS ${srcs}

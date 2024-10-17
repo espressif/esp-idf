@@ -267,7 +267,10 @@ menu "Wi-Fi"
             range 6 32
             default 32
             help
-                Set the number of WiFi management short buffer.
+                Set the maximum number of Wi-Fi management short buffers. These buffers are dynamically allocated,
+                with their size determined by the length of the management packet to be sent. When a management
+                packet is less than 64 bytes, the Wi-Fi driver classifies it as a short management packet and
+                assigns it to one of these buffers.
 
         config ESP_WIFI_IRAM_OPT
             bool "WiFi IRAM speed optimization"
@@ -654,28 +657,28 @@ menu "Wi-Fi"
 
         config ESP_WIFI_ENABLE_DUMP_HESIGB
             bool "Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs.
 
         config ESP_WIFI_ENABLE_DUMP_MU_CFO
             bool "Enable Wi-Fi dump MU CFO"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump MU CFO.
 
         config ESP_WIFI_ENABLE_DUMP_CTRL_NDPA
             bool "Enable Wi-Fi dump NDPA frames"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump NDPA frames.
 
         config ESP_WIFI_ENABLE_DUMP_CTRL_BFRP
             bool "Enable Wi-Fi dump BFRP frames"
-            depends on SOC_WIFI_HE_SUPPORT_5G
+            depends on SOC_WIFI_SUPPORT_5G
             default "n"
             help
                 Enable Wi-Fi dump BFRP frames.

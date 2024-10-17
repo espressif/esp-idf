@@ -17,6 +17,8 @@
 #include "hal/spi_flash_hal.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "sdkconfig.h"
 
 #define ADDRESS_MASK_24BIT 0xFFFFFF
@@ -133,6 +135,22 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
 #else
     gpspi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
 #endif
+<<<<<<< HEAD
+=======
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    // TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used. IDF-10019
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (unlikely(!ESP_CHIP_REV_ABOVE(chip_version, 1))) {
+        if (conf_required) {
+            int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
+            dummy_cyclelen_base -= SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS / line_width;
+            addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
+            spi_flash_ll_set_extra_address(dev, 0);
+        }
+    }
+#endif
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     if (command >= 0x100) {
         spi_flash_ll_set_command(dev, command, 16);

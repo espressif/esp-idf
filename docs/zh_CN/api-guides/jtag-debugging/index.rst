@@ -180,7 +180,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
     :start-after: run-openocd
     :end-before: ---
 
-{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg"}
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg", esp32p4="board/esp32p4-ftdi.cfg", esp32c5="board/esp32c5-ftdi.cfg", esp32c61="board/esp32c61-ftdi.cfg"}
 
 .. note::
 
@@ -226,6 +226,8 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 -  ``exit`` - 烧写完成后退出 OpenOCD（可选）
 - ``compress`` - 烧写开始前压缩镜像文件（可选）
 - ``encrypt`` - 烧写到 flash 前加密二进制文件，与 ``idf.py encrypted-flash`` 功能相同（可选）
+- ``no_clock_boost`` - 禁用在烧写前将目标时钟频率设置为其最大可能值（可选）。默认情况下禁用该选项，即默认启用时钟提升。
+- ``restore_clock`` - 可选。烧写完成后将时钟频率恢复到初始值。默认情况下不启用。
 
 现在可以调试应用程序了，请按照以下章节中的步骤进行操作。
 

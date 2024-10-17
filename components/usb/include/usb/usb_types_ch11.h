@@ -44,6 +44,28 @@ typedef enum {
 } usb_hub_class_request_t ;
 
 /**
+ * @brief USB Hub Port state
+ *
+ * See USB 2.0 spec, 11.5.1 Downstream Facing Port State Descriptions
+ */
+typedef enum {
+    USB_PORT_STATE_NOT_CONFIGURED = 0x00,       /**< The hub is not configured. A port transitions to and remains in this state whenever the value of the hub configuration is zero. */
+    USB_PORT_STATE_POWERED_OFF,                 /**< Powered_off: Port requires explicit request to transition. */
+    USB_PORT_STATE_DISCONNECTED,                /**< In the Disconnected state, the port’s differential transmitter and receiver are disabled and only connection detection is possible.*/
+    USB_PORT_STATE_DISABLED,                    /**< A port in the Disabled state will not propagate signaling in either the upstream or the downstream direction */
+    USB_PORT_STATE_RESETTING,                   /**< The duration of the Resetting state is nominally 10 ms to 20 ms (10 ms is preferred). */
+    USB_PORT_STATE_ENABLED,                     /**< While in this state, the output of the port’s differential receiver is available to the Hub Repeater so that appropriate signaling transitions can establish upstream connectivity*/
+    USB_PORT_STATE_TRANSMIT,                    /**< This state is entered from the Enabled state on the transition of the Hub Repeater to the WFEOPFU state */
+    USB_PORT_STATE_TRANSMIT_R,                  /**< When in this state, the port repeats the resume ‘K’ at the upstream facing port to the downstream facing port. */
+    USB_PORT_STATE_SUSPENDED,                   /**< While a port is in the Suspended state, the port's differential transmitter is disabled. */
+    USB_PORT_STATE_RESUMING,                    /**< While in this state, the hub drives a 'K' on the port. */
+    USB_PORT_STATE_SEND_EOR,                    /**< This state is entered from the Resuming state if the 20 ms timer expires. */
+    USB_PORT_STATE_RESTART_S,                   /**< A port enters the Restart_S state from the Suspended state when an SE0 or ‘K’ is seen at the port and the Receiver is in the Suspended state */
+    USB_PORT_STATE_RESTART_E,                   /**< A port enters the Restart_E state from the Enabled state when an ‘SE0’ or ‘K’ is seen at the port and the Receiver is in the Suspended state. */
+    USB_PORT_STATE_TESTING,                     /**< A port transitions to this state from any state when the port sees SetTest. */
+} usb_hub_port_state_t;
+
+/**
  * @brief USB Hub Port feature selector codes
  *
  * See USB 2.0 spec Table 11-17
@@ -66,7 +88,34 @@ typedef enum {
 } usb_hub_port_feature_t;
 
 /**
- * @brief Size of a USB Hub Port Status and Hub Change results
+ * @brief USB Hub characteristics
+ *
+ * See USB 2.0 spec Table 11-13, offset 3
+ */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_ALL           (0)     /**< All ports power control at once */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_INDV          (1)     /**< Individual port power control */
+#define USB_W_HUB_CHARS_PORT_PWR_CTRL_NO            (2)     /**< No power switching */
+
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_ALL          (0)     /**< All ports Over-Current reporting */
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_INDV         (1)     /**< Individual port Over-current reporting */
+#define USB_W_HUB_CHARS_PORT_OVER_CURR_NO           (2)     /**< No Over-current Protection support */
+
+#define USB_W_HUB_CHARS_TTTT_8_BITS                 (0)     /**< TT requires at most 8 FS bit times of inter transaction gap on a full-/low-speed downstream bus */
+#define USB_W_HUB_CHARS_TTTT_16_BITS                (1)     /**< TT requires at most 16 FS bit times */
+#define USB_W_HUB_CHARS_TTTT_24_BITS                (2)     /**< TT requires at most 24 FS bit times */
+#define USB_W_HUB_CHARS_TTTT_32_BITS                (3)     /**< TT requires at most 32 FS bit times */
+
+/**
+ * @brief USB Hub bDeviceProtocol
+ */
+#define USB_B_DEV_PROTOCOL_HUB_FS                   (0)     /**< Full speed hub */
+#define USB_B_DEV_PROTOCOL_HUB_HS_NO_TT             (0)     /**< Hi-speed hub without TT */
+#define USB_B_DEV_PROTOCOL_HUB_HS_SINGLE_TT         (1)     /**< Hi-speed hub with single TT */
+#define USB_B_DEV_PROTOCOL_HUB_HS_MULTI_TT          (2)     /**< Hi-speed hub with multiple TT */
+#define USB_B_DEV_PROTOCOL_HUB_SS                   (3)     /**< Super speed hub */
+
+/**
+ * @brief USB Hub Port Status and Hub Change results size
  */
 #define USB_PORT_STATUS_SIZE            4
 
@@ -148,7 +197,17 @@ typedef struct {
     uint8_t  bDescLength;                   /**< Number of bytes in this descriptor, including this byte */
     uint8_t  bDescriptorType;               /**< Descriptor Type, value: 29H for Hub descriptor */
     uint8_t  bNbrPorts;                     /**< Number of downstream facing ports that this Hub supports */
-    uint16_t wHubCharacteristics;           /**< Logical Power Switching Mode, Compound Device, Over-current Protection Mode, TT Think Time, Port Indicators Supported */
+    union {
+        struct {
+            uint16_t power_switching:       2;
+            uint16_t compound:              1;
+            uint16_t ovr_current_protect:   2;
+            uint16_t tt_think_time:         2;
+            uint16_t indicator_support:     1;
+            uint16_t reserved:              8;
+        };
+        uint16_t val;                       /**< Hub Characteristics value */
+    } wHubCharacteristics;                  /**< Hub Characteristics */
     uint8_t  bPwrOn2PwrGood;                /**< Time (in 2 ms intervals) from the time the power-on sequence begins on a port until power is good on that port */
     uint8_t  bHubContrCurrent;              /**< Maximum current requirements of the Hub Controller electronics in mA. */
 } __attribute__((packed)) usb_hub_descriptor_t;

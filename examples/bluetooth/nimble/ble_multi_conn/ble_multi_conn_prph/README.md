@@ -1,9 +1,11 @@
-| Supported Targets | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 |
+| ----------------- | -------- | -------- | --------- | -------- |
 
 # BLE Multiple Connection Peripheral Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
+
+**This example relies on the BLE controller. Currently, the ESP32/ESP32-C3/ESP32-S3/ESP32-C2 does not support the relevant vendor HCI, so please use the chip modules listed under Supported Targets.**
 
 Please check the [tutorial](tutorial/Ble_Multiple_Connections_Peripheral_Example_Walkthrough.md) for more information about this example.
 

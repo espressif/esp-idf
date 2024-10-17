@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 | Supported Targets | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
 | ----------------- | -------- | -------- | -------- | -------- | -------- |
+=======
+| Supported Targets | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 # USB SERIAL JTAG Echo Example
 

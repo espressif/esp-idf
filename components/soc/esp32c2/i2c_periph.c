@@ -17,6 +17,5 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .scl_out_sig = I2CEXT0_SCL_OUT_IDX,
         .scl_in_sig = I2CEXT0_SCL_IN_IDX,
         .irq = ETS_I2C_EXT0_INTR_SOURCE,
-        .module = PERIPH_I2C0_MODULE,
     },
 };

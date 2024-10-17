@@ -44,7 +44,8 @@ Set the frequency division factor of ref_tick
 The FOSC of rtc calibration uses the 32 frequency division clock for ECO1,
 So the frequency division factor of ref_tick must be greater than or equal to 32
 */
-#define REG_FOSC_TICK_NUM  255
+#define CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS        5
+#define REG_FOSC_TICK_NUM                   255
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -718,7 +719,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
@@ -810,7 +811,7 @@ Set the frequency division factor of ref_tick
 */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-    PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ctrl_tick_conf, fosc_tick_num, REG_FOSC_TICK_NUM); // enable a division of 32 to the fosc clock
 }
 
 

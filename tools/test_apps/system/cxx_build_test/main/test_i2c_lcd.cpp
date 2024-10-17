@@ -52,6 +52,10 @@ void test_i2c_lcd_apis(void)
         .trans_queue_depth = 4,
         .flags = {
             .enable_internal_pullup = true,
+<<<<<<< HEAD
+=======
+            .allow_pd = false,
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         }
     };
 

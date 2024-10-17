@@ -143,7 +143,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
-    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
+    * Some PHY chip uses an externally connected 50 MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
     * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
@@ -164,6 +164,9 @@ The Ethernet driver is composed of two parts: MAC and PHY.
             * Disable or power down the crystal oscillator (as the case **b** in the picture).
 
             * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
+
+        .. warning::
+            If you want the **Ethernet to work with Wi-Fi**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
 
     .. only:: not esp32
 
@@ -191,7 +194,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
     .. only:: not SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
-            Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+            Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to `ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html>`_ for hardware design example.
 
     .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 
@@ -531,11 +534,21 @@ One thing that should be kept in mind is that the pause frame ability is adverti
 Application Examples
 --------------------
 
-  * Ethernet basic example: :example:`ethernet/basic`
-  * Ethernet iperf example: :example:`ethernet/iperf`
-  * Ethernet to Wi-Fi AP "router": :example:`network/eth2ap`
-  * Wi-Fi station to Ethernet "bridge": :example:`network/sta2eth`
-  * Most protocol examples should also work for Ethernet: :example:`protocols`
+  * :example:`ethernet/basic` demonstrates how to use the Ethernet driver, covering driver installation, attaching it to `esp_netif`, sending DHCP requests, and obtaining a pingable IP address.
+
+  * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
+
+  * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
+
+  * :example:`network/sta2eth` demonstrates how to create a 1-to-1 bridge using a Wi-Fi station and a wired interface such as Ethernet or USB.
+
+  * :example:`network/simple_sniffer` demonstrates how to use Wi-Fi and Ethernet in sniffer mode to capture packets and save them in PCAP format.
+
+  * :example:`network/eth2ap` demonstrates how to implement a bridge that forwards packets between an Ethernet port and a Wi-Fi AP interface. It uses {IDF_TARGET_NAME} to create a 1-to-many connection between Ethernet and Wi-Fi without initializing the TCP/IP stack.
+
+  * :example:`network/bridge` demonstrates how to use the LwIP IEEE 802.1D bridge to forward Ethernet frames between multiple network segments based on MAC addresses.
+
+  * Most protocol examples should also work for Ethernet: :example:`protocols`.
 
 .. ------------------------------ Advanced Topics -------------------------------
 
@@ -571,7 +584,7 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 3. Define chip-specific management call-back functions.
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.
 
-Once you finish the new custom PHY driver implementation, consider sharing it among other users via `IDF Component Registry <https://components.espressif.com/>`_.
+Once you finish the new custom PHY driver implementation, consider sharing it among other users via `ESP Component Registry <https://components.espressif.com/>`_.
 
 .. ---------------------------- API Reference ----------------------------------
 

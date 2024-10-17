@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+// size of the internal buffer to transform the data into a proper format (e.g. data endian)
+#define LCD_I80_IO_FORMAT_BUF_SIZE  32
+
 #define LCD_I80_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
 #define LCD_I80_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
 
@@ -29,6 +32,8 @@ extern "C" {
 #else
 #define LCD_CLOCK_SRC_ATOMIC()
 #endif
+
+#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 #if SOC_LCDCAM_SUPPORTED
 

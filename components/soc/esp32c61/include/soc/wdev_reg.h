@@ -10,4 +10,4 @@
 #include "soc/lpperi_reg.h"
 
 /* Hardware random number generator register */
-#define WDEV_RND_REG LPPERI_RNG_DATA_REG
+#define WDEV_RND_REG LPPERI_RNG_DATA_SYNC_REG

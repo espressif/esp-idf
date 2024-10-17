@@ -130,11 +130,10 @@ Kconfig 选项
 应用示例
 --------
 
-``单次模式``、 ``连续模式`` 和 ``余弦模式`` 的基本示例如下所示：
-
-- :example:`peripherals/dac/dac_oneshot`
-- :example:`peripherals/dac/dac_continuous`
-- :example:`peripherals/dac/dac_cosine_wave`
+- :example:`peripherals/dac/dac_continuous/signal_generator` 演示了在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序输出连续电压的两种方式：通过 DMA 传输、以及通过定时器中断。两种方式可以生成不同的波形，如正弦波、三角波、锯齿波和方波。
+- :example:`peripherals/dac/dac_continuous/dac_audio` 演示了如何在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序播放存储在 buffer 中的音频，每秒钟通过扬声器或耳机播放一次。
+- :example:`peripherals/dac/dac_cosine_wave` 演示了如何在 {IDF_TARGET_NAME} 开发板上使用 DAC 驱动程序在两个通道上输出余弦波，并且可以通过示波器或内部的 ADC 通道进行监控。
+- :example:`peripherals/dac/dac_oneshot` 演示了如何在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序输出每 500 毫秒阶跃增加一次的电压，并且会定期复位为 0。输出的电压可通过 ADC 或可选的示波器进行监测。
 
 API 参考
 --------

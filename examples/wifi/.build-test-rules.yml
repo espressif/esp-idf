@@ -12,8 +12,7 @@
     - nvs_flash
     - console
     - esp_pm
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
+    - protocol_examples_common
 
 examples/wifi:
   <<: *wifi_depends_default
@@ -30,18 +29,15 @@ examples/wifi/getting_started:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET not in  ["esp32", "esp32c3", "esp32c2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
   depends_filepatterns:
     - examples/wifi/getting_started/**/*
 
 examples/wifi/iperf:
   disable:
-    - if: SOC_WIFI_SUPPORTED != 1
+    - if: (SOC_WIFI_SUPPORTED != 1) and (SOC_WIRELESS_HOST_SUPPORTED != 1)
+    - if: (IDF_TARGET == "esp32p4") and CONFIG_NAME in ["defaults", "99"]
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
   depends_components:
@@ -52,9 +48,6 @@ examples/wifi/iperf:
     - esp_event
     - esp_coex
     - wpa_supplicant
-  depends_filepatterns:
-    - examples/common_components/iperf/**/*
-    - examples/system/console/advanced/components/cmd_system/**/*
 
 examples/wifi/itwt:
   <<: *wifi_depends_default
@@ -65,7 +58,16 @@ examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+      temporary: true
+      reason: requires hardware support
   depends_components:
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - lwip
+    - esp_event
+    - esp_coex
+    - wpa_supplicant
     - esp_driver_uart
 
 examples/wifi/wifi_aware:

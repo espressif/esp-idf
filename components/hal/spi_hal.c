@@ -9,6 +9,7 @@
 #include "hal/spi_hal.h"
 #include "hal/log.h"
 #include "hal/assert.h"
+#include "hal/gpio_ll.h"    //for GPIO_LL_MATRIX_DELAY_NS
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 
@@ -26,11 +27,6 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
-
-#if SPI_LL_MOSI_FREE_LEVEL
-    // Change default data line level to low which same as esp32
-    spi_ll_set_mosi_free_level(hw, 0);
-#endif
     spi_ll_master_init(hw);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
@@ -41,6 +37,15 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     spi_ll_set_int_stat(hw);
     spi_ll_set_mosi_delay(hw, 0, 0);
     spi_ll_apply_config(hw);
+}
+
+void spi_hal_config_io_default_level(spi_hal_context_t *hal, bool level)
+{
+#if SPI_LL_MOSI_FREE_LEVEL
+    // Config default output data line level when don't have transaction
+    spi_ll_set_mosi_free_level(hal->hw, level);
+    spi_ll_apply_config(hal->hw);
+#endif
 }
 
 void spi_hal_deinit(spi_hal_context_t *hal)
@@ -57,7 +62,7 @@ void spi_hal_sct_init(spi_hal_context_t *hal)
 {
     spi_ll_conf_state_enable(hal->hw, true);
     spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
-    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode shoud use sct_trans_done only
+    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode should use sct_trans_done only
     spi_ll_enable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
     spi_ll_set_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
 }
@@ -111,7 +116,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
     const int apbclk_kHz = source_freq_hz / 1000;
     //how many apb clocks a period has
     const int spiclk_apb_n = source_freq_hz / eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
@@ -142,7 +150,10 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
-    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
+    int gpio_delay_ns = 0;
+#if GPIO_LL_MATRIX_DELAY_NS
+    gpio_delay_ns = gpio_is_used ? GPIO_LL_MATRIX_DELAY_NS : 0;
+#endif
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;

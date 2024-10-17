@@ -1,0 +1,56 @@
+menu "Format"
+
+    config LOG_COLORS
+        bool "Color"
+        default n
+        help
+            Enable ANSI terminal color codes.
+            In order to view these, your terminal program must support ANSI color codes.
+
+    choice LOG_TIMESTAMP_SOURCE
+        prompt "Timestamp"
+        default LOG_TIMESTAMP_SOURCE_RTOS
+        help
+            Choose what sort of timestamp is displayed in the log output:
+
+            - "None" - The log will only contain the actual log messages themselves
+              without any time-related information. Avoiding timestamps can help conserve
+              processing power and memory. It might useful when you
+              perform log analysis or debugging, sometimes it's more straightforward
+              to work with logs that lack timestamps, especially if the time of occurrence
+              is not critical for understanding the issues.
+
+            - "Milliseconds since boot" is calculated from the RTOS tick count multiplied
+              by the tick period. This time will reset after a software reboot.
+              e.g. (90000)
+
+            - "System time (HH:MM:SS.sss)" is taken from POSIX time functions which use the chip's
+              RTC and high resolution timers to maintain an accurate time. The system time is
+              initialized to 0 on startup, it can be set with an SNTP sync, or with
+              POSIX time functions. This time will not reset after a software reboot.
+              e.g. (00:01:30.000)
+
+            - "System time (YY-MM-DD HH:MM:SS.sss)" it is the same as the above,
+              but also prints the date as well.
+
+            - NOTE: Currently this will not get used in logging from binary blobs
+              (i.e WiFi & Bluetooth libraries), these will always print
+              milliseconds since boot.
+
+        config LOG_TIMESTAMP_SOURCE_NONE
+            bool "None"
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
+        config LOG_TIMESTAMP_SOURCE_RTOS
+            bool "Milliseconds Since Boot"
+
+        config LOG_TIMESTAMP_SOURCE_SYSTEM
+            bool "System Time (HH:MM:SS.sss)"
+
+        config LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
+            bool "System Time (YY-MM-DD HH:MM:SS.sss)"
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
+    endchoice # LOG_TIMESTAMP_SOURCE
+
+endmenu

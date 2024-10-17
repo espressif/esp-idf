@@ -3,9 +3,12 @@
 components/esp_driver_parlio/test_apps/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
+<<<<<<< HEAD
   disable_test:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
       reason: IDF-9806 waiting for the fix of the bit shift issue after reset
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
   depends_components:
     - esp_driver_parlio

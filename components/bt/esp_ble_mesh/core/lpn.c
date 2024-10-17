@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include "crypto.h"
+#include "tag.h"
 #include "adv.h"
 #include "scan.h"
 #include "mesh.h"
@@ -23,7 +24,9 @@
 #include "mesh/cfg_srv.h"
 #include "heartbeat.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #ifdef CONFIG_BLE_MESH_LOW_POWER
 

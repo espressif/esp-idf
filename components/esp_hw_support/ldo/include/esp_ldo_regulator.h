@@ -30,6 +30,7 @@ typedef struct {
     /// Extra flags of a LDO channel
     struct ldo_extra_flags {
         uint32_t adjustable : 1; /*!< Whether the LDO channel is adjustable, and the voltage can be updated by `esp_ldo_channel_adjust_voltage` */
+        uint32_t owned_by_hw: 1; /*!< If the LDO channel is owned by hardware, then software configurations will be overridden by hardware */
     } flags; /*!< Flags for the LDO channel */
 } esp_ldo_channel_config_t;
 

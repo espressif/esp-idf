@@ -106,23 +106,8 @@ typedef struct {
 typedef struct {
     bool owner_check;      /*!< If set / clear, DMA channel enables / disables checking owner validity */
     bool auto_update_desc; /*!< If set / clear, DMA channel enables / disables hardware to update descriptor automatically (TX channel only) */
+    bool eof_till_data_popped;   /*!< If set / clear, DMA channel out_eof event is triggered on out / in DMA hardware fifo */
 } gdma_strategy_config_t;
-
-/** @cond */
-/**
- * @brief Create GDMA channel (only create AHB GDMA channel)
- * @note This API is going to be deprecated, please use `gdma_new_ahb_channel` or `gdma_new_axi_channel` instead.
- *
- * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
- * @param[out] ret_chan Returned channel handle
- * @return
- *      - ESP_OK: Create DMA channel successfully
- *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
- *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
- *      - ESP_FAIL: Create DMA channel failed because of other error
- */
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan);
-/** @endcond */
 
 /**
  * @brief Create AHB-GDMA channel
@@ -264,19 +249,22 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority);
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan);
 
 /**
- * @brief Get the channel ID
+ * @brief Get the group ID and the channel ID
  *
  * @note This API breaks the encapsulation of GDMA Channel Object.
- *       With the returned channel ID, you can even bypass all other GDMA driver API and access Low Level API directly.
+ *       With the returned group/channel ID, you can even bypass all other GDMA driver API and access Low Level API directly.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[out] group_id Returned group ID
  * @param[out] channel_id Returned channel ID
  * @return
- *      - ESP_OK: Get GDMA channel ID successfully
- *      - ESP_ERR_INVALID_ARG: Get GDMA channel ID failed because of invalid argument
+ *      - ESP_OK: Get GDMA channel/group ID successfully
+ *      - ESP_ERR_INVALID_ARG: Get GDMA channel/group ID failed because of invalid argument
  *      - ESP_FAIL: Get GDMA channel ID failed because of other error
  */
-esp_err_t gdma_get_channel_id(gdma_channel_handle_t dma_chan, int *channel_id);
+esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_id, int *channel_id);
+
+#define gdma_get_channel_id(dma_chan, channel_id) gdma_get_group_channel_id(dma_chan, NULL, channel_id)
 
 /**
  * @brief Set GDMA event callbacks for TX channel
@@ -474,9 +462,30 @@ esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
 #endif // SOC_GDMA_SUPPORT_CRC
 
 /****************************************************************************************
+<<<<<<< HEAD
  * Deprecated APIs
  ****************************************************************************************/
 
+=======
+ * Deprecated APIs (will be removed in esp-idf 6.0)
+ ****************************************************************************************/
+
+/** @cond */
+/**
+ * @brief Create GDMA channel (Legacy API)
+ *
+ * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
+ * @param[out] ret_chan Returned channel handle
+ * @return
+ *      - ESP_OK: Create DMA channel successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
+ *      - ESP_FAIL: Create DMA channel failed because of other error
+ */
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
+__attribute__((deprecated("please use gdma_new_ahb_channel or gdma_new_axi_channel respectively")));
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 /**
  * @brief GDMA transfer ability
  *
@@ -502,6 +511,10 @@ typedef struct {
  */
 esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability)
 __attribute__((deprecated("please use gdma_config_transfer instead")));
+<<<<<<< HEAD
+=======
+/** @endcond */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #ifdef __cplusplus
 }

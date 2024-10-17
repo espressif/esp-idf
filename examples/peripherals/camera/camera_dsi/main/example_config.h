@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #define EXAMPLE_RGB565_BITS_PER_PIXEL           16
+<<<<<<< HEAD
 #define EXAMPLE_MIPI_SCCB_FREQ                  (100000)
 #define EXAMPLE_MIPI_SCCB_SCL_IO                (8)
 #define EXAMPLE_MIPI_SCCB_SDA_IO                (7)
@@ -18,6 +19,11 @@ extern "C" {
 #define EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS      200 //line_rate = pclk * 4
 
 #define EXAMPLE_OV5647_DEV_ADDR                 0x36
+=======
+#define EXAMPLE_MIPI_IDI_CLOCK_RATE             (50000000)
+#define EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS      200 //line_rate = pclk * 4
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #ifdef __cplusplus
 }
 #endif

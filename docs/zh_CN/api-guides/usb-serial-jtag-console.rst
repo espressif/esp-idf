@@ -19,8 +19,8 @@ ESP 芯片通常使用 UART 实现串口，并可以通过外部 USB-UART 桥接
 硬件要求
 =====================
 
-{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27"}
-{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26"}
+{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13"}
+{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12"}
 
 将 {IDF_TARGET_NAME} 连接到 USB 端口，连接方式如下：
 
@@ -122,3 +122,9 @@ Light-sleep
 如果通过 :cpp:func:`esp_light_sleep_start` 或 :cpp:func:`esp_deep_sleep_start` 手动进入睡眠模式，需注意，USB 串行/JTAG 控制器在睡眠期间不工作。ESP-IDF **没有添加任何拒绝进入睡眠的安全检查**，即使 USB 串行/JTAG 控制器已连接，也会进入睡眠模式。如果在连接了 USB 串行/JTAG 控制器的情况下进入睡眠，可以通过拔出并重新插入 USB 电缆来重新建立连接。
 
 如果通过 :cpp:func:`esp_pm_configure` 自动进入睡眠模式，请启用 :ref:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` 选项，该选项支持 {IDF_TARGET_NAME} 自动检测 USB 串行/JTAG 控制器与主机的连接情况，并在连接持续时，阻止程序自动进入睡眠模式。注意，此选项会增加功耗。
+
+
+应用示例
+====================
+
+- :example:`peripherals/usb_serial_jtag/usb_serial_jtag_echo` 演示了使用 USB_SERIAL_JTAG 接口回显其接收到的数据。

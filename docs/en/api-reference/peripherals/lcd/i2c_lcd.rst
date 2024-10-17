@@ -1,6 +1,8 @@
 I2C Interfaced LCD
 ------------------
 
+:link_to_translation:`zh_CN:[中文]`
+
 #. Create I2C bus. Please refer to :doc:`I2C API doc </api-reference/peripherals/i2c>` for more details.
 
     .. code-block:: c
@@ -20,7 +22,7 @@ I2C Interfaced LCD
 
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::dev_addr` sets the I2C device address of the LCD controller chip. The LCD driver uses this address to communicate with the LCD controller chip.
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::scl_speed_hz` sets the I2C clock frequency in Hz. The value should not exceed the range recommended in the LCD spec.
-    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
 
     .. code-block:: c
 

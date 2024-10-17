@@ -119,6 +119,13 @@ void spi_flash_set_erasing_flag(bool status);
  */
 bool spi_flash_brownout_need_reset(void);
 
+/**
+ * @brief Check whether esp-chip supports 32bit address properly
+ *
+ * @return ESP_OK for supported, ESP_ERR_NOT_SUPPORTED for not supported
+*/
+esp_err_t esp_mspi_32bit_address_flash_feature_check(void);
+
 #if CONFIG_SPI_FLASH_HPM_ON
 /**
  * @brief Enable SPI flash high performance mode.

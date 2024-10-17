@@ -9,7 +9,7 @@ Mbed TLS
 
     ESP-IDF 使用的 Mbed TLS `复刻仓库 <https://github.com/espressif/mbedtls>`_ 中包含对原生 Mbed TLS 的补丁。这些补丁与某些模块的硬件例程有关，如 ``bignum (MPI)`` 和 ``ECC``。
 
-Mbed TLS 提供以下功能：
+Mbed TLS 通过提供以下内容支持 TLS 1.2、TLS 1.3 和 DTLS 1.2 通信：
 
 - TCP/IP 通信功能：监听、连接、接收、读/写。
 - SSL/TLS 通信功能：初始化、握手、读/写。
@@ -18,8 +18,9 @@ Mbed TLS 提供以下功能：
 - 哈希
 - 加密/解密
 
-TLS 版本支持 SSL 3.0, TLS 1.0、TLS 1.1、TLS 1.2 和 TLS 1.3，但是最新的 ESP-IDF 上 Mbed TLS 已经移除了 SSL 3.0、TLS 1.0 和 TLS 1.1。DTLS 版本支持 DTLS 1.0、DTLS 1.1 和 DTLS 1.2，但最新的 ESP-IDF 上 Mbed TLS 已经移除了 DTLS 1.0。
+.. note::
 
+    Mbed TLS v3.x.x 系列仅支持 TLS 1.2 和 TLS 1.3 协议。对 SSL 3.0、TLS 1.0/1.1 和 DTLS 1.0 的支持已被删除（弃用）。从 Mbed TLS v3.6.0 版本开始完全支持 TLS 1.3，在此版本之前，某些功能仍处于试验状态。有关更多详细信息，请参阅 :component_file:`Mbed TLS ChangeLog <mbedtls/mbedtls/ChangeLog>`。
 
 Mbed TLS 文档
 ------------------
@@ -45,7 +46,7 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
 
 参考示例 :example:`protocols/https_server/simple` （简单的 HTTPS 服务器）和 :example:`protocols/https_request` （发出 HTTPS 请求）了解更多信息。
 
-如需直接使用 Mbed TLS API，请参考示例 :example:`protocols/https_mbedtls`。
+如需直接使用 Mbed TLS API，请参考示例 :example:`protocols/https_mbedtls`。该示例演示了如何通过 Mbed TLS 设置安全套接字，并使用证书包进行验证，从而建立 HTTPS 连接。
 
 
 其他选项
@@ -72,11 +73,6 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
     :SOC_AES_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_AES`: 支持硬件 AES 加速
     :SOC_MPI_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_MPI`: 支持硬件 MPI (bignum) 加速
     :SOC_ECC_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_ECC`: 支持硬件 ECC 加速
-
-.. note::
-
-    Mbed TLS v3.0.0 及其更新版本仅支持 TLS 1.2 和 TLS 1.3，不支持 SSL 3.0、TLS 1.0、TLS 1.1、和 DTLS 1.0)。TLS 1.3 尚在试验阶段，仅支持客户端。要了解更多信息，请点击 `此处 <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/architecture/tls13-support.md>`__。
-
 
 性能和内存调整
 ------------------
@@ -122,5 +118,5 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
 在 ``Component Config -> mbedTLS`` 中，有多个 Mbed TLS 功能默认为启用状态。如果不需要这些功能，可将其禁用以减小固件大小。要了解更多信息，请参考 :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` 文档。
 
 
-.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.4.1/
+.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.1/
 .. _`Knowledge Base`: https://mbed-tls.readthedocs.io/en/latest/kb/

@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -15,9 +16,14 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
+
+#if CONFIG_SECURE_BOOT || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_secure_boot.h"
+#endif
+
+#if CONFIG_SECURE_FLASH_ENC_ENABLED || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
+#endif
 
 static const char* TAG = "example";
 
@@ -28,7 +34,7 @@ typedef struct {
     uint8_t setting_1;             /*!< Setting 1: length 6 bits */
     uint8_t setting_2;             /*!< Setting 2: length 5 bits */
     size_t custom_secure_version;  /*!< Custom secure version: length 16 bits */
-    uint16_t reserv;               /*!< Reserv */
+    uint16_t reserve;               /*!< Reserve */
 } device_desc_t;
 
 
@@ -46,7 +52,7 @@ static void print_device_desc(device_desc_t *desc)
     }
     ESP_LOGI(TAG, "setting_1 = %d", desc->setting_1);
     ESP_LOGI(TAG, "setting_2 = %d", desc->setting_2);
-    ESP_LOGI(TAG, "custom_secure_version = %d", desc->custom_secure_version);
+    ESP_LOGI(TAG, "custom_secure_version = %u", (unsigned)desc->custom_secure_version);
 }
 
 
@@ -71,7 +77,7 @@ static void read_efuse_fields(device_desc_t *desc)
 
     size_t secure_version = 0;
     ESP_ERROR_CHECK(esp_efuse_read_field_cnt(ESP_EFUSE_SECURE_VERSION, &secure_version));
-    ESP_LOGI(TAG, "2. read secure_version: %d", secure_version);
+    ESP_LOGI(TAG, "2. read secure_version: %u", (unsigned)secure_version);
 
     ESP_LOGI(TAG, "3. read custom fields");
     read_device_desc_efuse_fields(desc);

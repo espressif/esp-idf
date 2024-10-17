@@ -15,6 +15,7 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "esp_hw_log.h"
+#include "soc/clk_tree_defs.h"
 
 static __attribute__((unused)) const char *TAG = "pmu_param";
 
@@ -99,18 +100,18 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     return &hp_power[mode];
 }
 
-#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {  \
-    .icg_func   = 0xffffffff,                   \
-    .icg_apb    = 0xffffffff,                   \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE    \
+#define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {    \
+    .icg_func   = 0xffffffff,                     \
+    .icg_apb    = 0xffffffff,                     \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE      \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 1,                  \
-        .sysclk_slp_sel   = 0,                  \
-        .icg_slp_sel      = 0,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 1,                    \
+        .sysclk_slp_sel   = 0,                    \
+        .icg_slp_sel      = 0,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
@@ -125,22 +126,22 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
         .icg_sysclk_en    = 1,                  \
         .sysclk_slp_sel   = 1,                  \
         .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_PLL   \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_PLL \
     } \
 }
 
-#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {   \
-    .icg_func   = 0,                            \
-    .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_SLEEP     \
+#define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {     \
+    .icg_func   = 0,                              \
+    .icg_apb    = 0,                              \
+    .icg_modem  = {                               \
+        .code = PMU_HP_ICG_MODEM_CODE_SLEEP       \
     }, \
-    .sysclk     = {                             \
-        .dig_sysclk_nodiv = 0,                  \
-        .icg_sysclk_en    = 0,                  \
-        .sysclk_slp_sel   = 1,                  \
-        .icg_slp_sel      = 1,                  \
-        .dig_sysclk_sel   = PMU_HP_SYSCLK_XTAL  \
+    .sysclk     = {                               \
+        .dig_sysclk_nodiv = 0,                    \
+        .icg_sysclk_en    = 0,                    \
+        .sysclk_slp_sel   = 1,                    \
+        .icg_slp_sel      = 1,                    \
+        .dig_sysclk_sel   = SOC_CPU_CLK_SRC_XTAL  \
     } \
 }
 
@@ -283,8 +284,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_active_retention_mode       = 0, \
         .hp_sleep2active_retention_en   = 0, \
         .hp_modem2active_retention_en   = 0, \
-        .hp_sleep2active_backup_clk_sel = 0, \
-        .hp_modem2active_backup_clk_sel = 1, \
+        .hp_sleep2active_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL, \
+        .hp_modem2active_backup_clk_sel = SOC_CPU_CLK_SRC_PLL,  \
         .hp_sleep2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 0), \
         .hp_modem2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 2), \
         .hp_sleep2active_backup_en      = 0, \
@@ -309,7 +310,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2modem_backup_modem_clk_code  = 1, \
         .hp_modem_retention_mode        = 0, \
         .hp_sleep2modem_retention_en    = 0, \
-        .hp_sleep2modem_backup_clk_sel  = 0, \
+        .hp_sleep2modem_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
         .hp_sleep2modem_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(0, 1), \
         .hp_sleep2modem_backup_en       = 0, \
     }, \
@@ -333,8 +334,8 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep_retention_mode        = 0, \
         .hp_modem2sleep_retention_en    = 0, \
         .hp_active2sleep_retention_en   = 0, \
-        .hp_modem2sleep_backup_clk_sel  = 0, \
-        .hp_active2sleep_backup_clk_sel = 0, \
+        .hp_modem2sleep_backup_clk_sel  = SOC_CPU_CLK_SRC_XTAL, \
+        .hp_active2sleep_backup_clk_sel = SOC_CPU_CLK_SRC_XTAL, \
         .hp_modem2sleep_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(1, 1), \
         .hp_active2sleep_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(1, 0), \
         .hp_modem2sleep_backup_en       = 0, \

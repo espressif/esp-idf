@@ -18,4 +18,101 @@ menu "Example Configuration"
         help
             Enable this option, the example will use a pair of semaphores to avoid the tearing effect.
             Note, if the Double Frame Buffer is used, then we can also avoid the tearing effect without the lock.
+
+    choice EXAMPLE_LCD_DATA_LINES
+        prompt "RGB LCD Data Lines"
+        default EXAMPLE_LCD_DATA_LINES_16
+        help
+            Select the number of data lines of the RGB LCD.
+
+        config EXAMPLE_LCD_DATA_LINES_16
+            bool "16 data lines"
+    endchoice
+
+    config EXAMPLE_LCD_DATA_LINES
+        int
+        default 16 if EXAMPLE_LCD_DATA_LINES_16
+
+    menu "GPIO assignment"
+        config EXAMPLE_LCD_VSYNC_GPIO
+            int "VSYNC GPIO"
+            help
+                GPIO pin number for VSYNC signal.
+        config EXAMPLE_LCD_HSYNC_GPIO
+            int "HSYNC GPIO"
+            help
+                GPIO pin number for HSYNC signal.
+        config EXAMPLE_LCD_DE_GPIO
+            int "DE GPIO"
+            help
+                GPIO pin number for DE signal.
+        config EXAMPLE_LCD_PCLK_GPIO
+            int "PCLK GPIO"
+            help
+                GPIO pin number for PCLK signal.
+        config EXAMPLE_LCD_DATA0_GPIO
+            int "DATA0 GPIO"
+            help
+                GPIO pin number for data bus[0].
+        config EXAMPLE_LCD_DATA1_GPIO
+            int "DATA1 GPIO"
+            help
+                GPIO pin number for data bus[1].
+        config EXAMPLE_LCD_DATA2_GPIO
+            int "DATA2 GPIO"
+            help
+                GPIO pin number for data bus[2].
+        config EXAMPLE_LCD_DATA3_GPIO
+            int "DATA3 GPIO"
+            help
+                GPIO pin number for data bus[3].
+        config EXAMPLE_LCD_DATA4_GPIO
+            int "DATA4 GPIO"
+            help
+                GPIO pin number for data bus[4].
+        config EXAMPLE_LCD_DATA5_GPIO
+            int "DATA5 GPIO"
+            help
+                GPIO pin number for data bus[5].
+        config EXAMPLE_LCD_DATA6_GPIO
+            int "DATA6 GPIO"
+            help
+                GPIO pin number for data bus[6].
+        config EXAMPLE_LCD_DATA7_GPIO
+            int "DATA7 GPIO"
+            help
+                GPIO pin number for data bus[7].
+        config EXAMPLE_LCD_DATA8_GPIO
+            int "DATA8 GPIO"
+            help
+                GPIO pin number for data bus[8].
+        config EXAMPLE_LCD_DATA9_GPIO
+            int "DATA9 GPIO"
+            help
+                GPIO pin number for data bus[9].
+        config EXAMPLE_LCD_DATA10_GPIO
+            int "DATA10 GPIO"
+            help
+                GPIO pin number for data bus[10].
+        config EXAMPLE_LCD_DATA11_GPIO
+            int "DATA11 GPIO"
+            help
+                GPIO pin number for data bus[11].
+        config EXAMPLE_LCD_DATA12_GPIO
+            int "DATA12 GPIO"
+            help
+                GPIO pin number for data bus[12].
+        config EXAMPLE_LCD_DATA13_GPIO
+            int "DATA13 GPIO"
+            help
+                GPIO pin number for data bus[13].
+        config EXAMPLE_LCD_DATA14_GPIO
+            int "DATA14 GPIO"
+            help
+                GPIO pin number for data bus[14].
+        config EXAMPLE_LCD_DATA15_GPIO
+            int "DATA15 GPIO"
+            help
+                GPIO pin number for data bus[15].
+    endmenu
 endmenu

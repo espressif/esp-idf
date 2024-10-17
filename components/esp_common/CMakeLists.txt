@@ -2,13 +2,11 @@ idf_build_get_property(target IDF_TARGET)
 
 if(${target} STREQUAL "linux")
     set(ldfragments)
-    set(srcs "src/esp_err_check_linux.c")
 else()
     set(ldfragments common.lf soc.lf)
-    set(srcs)
 endif()
 
-list(APPEND srcs "src/esp_err_to_name.c")
+set(srcs "src/esp_err_to_name.c")
 
 # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
 idf_component_register(SRCS "${srcs}"

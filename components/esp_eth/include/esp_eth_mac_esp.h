@@ -51,6 +51,11 @@ typedef enum {
 /**
  * @brief RMII Clock GPIO number Options for ESP32
  *
+<<<<<<< HEAD
+=======
+ * @warning If you want the Ethernet to work with WiFi, don’t select ESP32 as RMII CLK output as it would result in clock instability.
+ *
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  */
 typedef enum {
     /**
@@ -64,10 +69,15 @@ typedef enum {
     /**
      * @brief Output RMII Clock from internal APLL Clock available at GPIO0
      *
+<<<<<<< HEAD
      * @note GPIO0 can be set to output a pre-divided PLL clock (test only!). Enabling this option will configure GPIO0 to output a 50MHz clock.
      * In fact this clock doesn’t have directly relationship with EMAC peripheral. Sometimes this clock won’t work well with your PHY chip.
      * You might need to add some extra devices after GPIO0 (e.g. inverter). Note that outputting RMII clock on GPIO0 is an experimental practice.
      * If you want the Ethernet to work with WiFi, don’t select GPIO0 output mode for stability.
+=======
+     * @note GPIO0 can be set to output a pre-divided PLL clock. Enabling this option will configure GPIO0 to output a 50MHz clock.
+     * In fact this clock doesn’t have directly relationship with EMAC peripheral. Sometimes this clock may not work well with your PHY chip.
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
      *
      */
     EMAC_APPL_CLK_OUT_GPIO = 0,
@@ -217,6 +227,7 @@ typedef enum {
 #error "Unsupported RMII clock mode"
 #endif // CONFIG_ETH_RMII_CLK_INPUT
 
+<<<<<<< HEAD
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
     {                                                 \
         .smi_gpio =                                   \
@@ -275,6 +286,66 @@ typedef enum {
                 .rxd1_num = 30                        \
             }                                         \
         },                                            \
+=======
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
+    {                                                                         \
+        .smi_gpio =                                                           \
+        {                                                                     \
+            .mdc_num = 23,                                                    \
+            .mdio_num = 18                                                    \
+        },                                                                    \
+        .interface = EMAC_DATA_INTERFACE_RMII,                                \
+        .clock_config =                                                       \
+        {                                                                     \
+            .rmii =                                                           \
+            {                                                                 \
+                .clock_mode = DEFAULT_RMII_CLK_MODE,                          \
+                .clock_gpio = (emac_rmii_clock_gpio_t) DEFAULT_RMII_CLK_GPIO  \
+            }                                                                 \
+        },                                                                    \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
+        .intr_priority = 0,                                                   \
+    }
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
+    {                                                                         \
+        .smi_gpio =                                                           \
+        {                                                                     \
+            .mdc_num = 31,                                                    \
+            .mdio_num = 27                                                    \
+        },                                                                    \
+        .interface = EMAC_DATA_INTERFACE_RMII,                                \
+        .clock_config =                                                       \
+        {                                                                     \
+            .rmii =                                                           \
+            {                                                                 \
+                .clock_mode = EMAC_CLK_EXT_IN,                                \
+                .clock_gpio = (emac_rmii_clock_gpio_t) 50                     \
+            }                                                                 \
+        },                                                                    \
+        .clock_config_out_in =                                                \
+        {                                                                     \
+            .rmii =                                                           \
+            {                                                                 \
+                .clock_mode = EMAC_CLK_EXT_IN,                                \
+                .clock_gpio = (emac_rmii_clock_gpio_t) -1                     \
+            }                                                                 \
+        },                                                                    \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
+        .intr_priority = 0,                                                   \
+        .emac_dataif_gpio =                                                   \
+        {                                                                     \
+            .rmii =                                                           \
+            {                                                                 \
+                .tx_en_num = 49,                                              \
+                .txd0_num = 34,                                               \
+                .txd1_num = 35,                                               \
+                .crs_dv_num = 28,                                             \
+                .rxd0_num = 29,                                               \
+                .rxd1_num = 30                                                \
+            }                                                                 \
+        },                                                                    \
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     }
 #endif // CONFIG_IDF_TARGET_ESP32P4
 

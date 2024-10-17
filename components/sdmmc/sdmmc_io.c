@@ -120,6 +120,48 @@ esp_err_t sdmmc_init_io(sdmmc_card_t* card)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t *card_cap)
+{
+    esp_err_t err = ESP_OK;
+
+    err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CARD_CAP,
+            SD_ARG_CMD52_READ, card_cap);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read SD_IO_CCCR_CARD_CAP) returned 0x%0x", __func__, err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t *card_cap)
+{
+    esp_err_t err = ESP_OK;
+    /*
+     * Integrity check required if card is switched to HS mode
+     * For frequency less than SDMMC_FREQ_HIGHSPEED, see sdmmc_io_enable_hs_mode()
+     */
+    if (card->max_freq_khz < SDMMC_FREQ_HIGHSPEED) {
+        return ESP_OK;
+    }
+
+    /* If frequency switch has been performed, read card capabilities from CCCR to confirm
+     * that data can be read correctly at the new frequency.
+     */
+    uint8_t temp_card_cap = 0;
+    err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CARD_CAP,
+            SD_ARG_CMD52_READ, &temp_card_cap);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read SD_IO_CCCR_CARD_CAP) returned 0x%0x", __func__, err);
+        return err;
+    }
+    if (*card_cap != temp_card_cap) {
+        ESP_LOGE(TAG, "%s: got corrupted data after increasing clock frequency", __func__);
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+    return ESP_OK;
+}
+
 esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card)
 {
     esp_err_t err;
@@ -285,7 +327,9 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
             return ESP_ERR_INVALID_ARG;
         }
         memset(card->host.dma_aligned_buffer, 0xcc, SDMMC_IO_BLOCK_SIZE);
-        memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        if (arg & SD_ARG_CMD53_WRITE) {
+            memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        }
         cmd.data = card->host.dma_aligned_buffer;
         cmd.buflen = SDMMC_IO_BLOCK_SIZE;
     }
@@ -320,7 +364,10 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 
     err = sdmmc_send_cmd(card, &cmd);
 
-    if (datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
+    // Cannot do a normal bitmask check (arg & SD_ARG_CMD53_READ)
+    // since SD_ARG_CMD53_READ (0<<31) is 0
+    if (!(arg & SD_ARG_CMD53_WRITE) &&
+            datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
         assert(datalen <= SDMMC_IO_BLOCK_SIZE);
         memcpy(datap, card->host.dma_aligned_buffer, datalen);
     }
@@ -627,7 +674,7 @@ static bool check_tuples_in_buffer(uint8_t* buf, int buffer_size, int* inout_cis
 esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t buffer_size, size_t* inout_cis_size)
 {
     esp_err_t ret = ESP_OK;
-    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE];
+    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE] = {0};
 
     /* Pointer to size is a mandatory parameter */
     assert(inout_cis_size);

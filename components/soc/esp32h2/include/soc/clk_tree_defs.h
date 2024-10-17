@@ -19,7 +19,7 @@ extern "C" {
  *
  * 2) External 32MHz Crystal Clock: XTAL
  *
- * 3) Internal 136kHz RC Oscillator: RC_SLOW (usually referrred as SOSC in TRM or reg. description)
+ * 3) Internal 136kHz RC Oscillator: RC_SLOW (usually referred as SOSC in TRM or reg. description)
  *
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
@@ -332,7 +332,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SPI
  */
-#define SOC_SPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F48M}
+#define SOC_SPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief Type of SPI clock source.

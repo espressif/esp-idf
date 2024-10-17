@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include "soc/reset_reasons.h"
 
 #ifdef __cplusplus
@@ -33,7 +34,7 @@ void esp_rom_software_reset_system(void);
 void esp_rom_software_reset_cpu(int cpu_no);
 
 /**
- * @brief Print formated string to console device
+ * @brief Print formatted string to console device
  * @note float and long long data are not supported!
  *
  * @param fmt Format string
@@ -41,6 +42,16 @@ void esp_rom_software_reset_cpu(int cpu_no);
  * @return int: Total number of characters written on success; A negative number on failure.
  */
 int esp_rom_printf(const char *fmt, ...);
+
+/**
+ * @brief Print formatted string to console device
+ * @note float and long long data are not supported!
+ *
+ * @param fmt Format string
+ * @param ap List of arguments.
+ * @return int: Total number of characters written on success; A negative number on failure.
+ */
+int esp_rom_vprintf(const char *fmt, va_list ap);
 
 /**
  * @brief Pauses execution for us microseconds
@@ -53,10 +64,18 @@ void esp_rom_delay_us(uint32_t us);
  * @brief esp_rom_printf can print message to different channels simultaneously.
  *        This function can help install the low level putc function for esp_rom_printf.
  *
- * @param channel Channel number (startting from 1)
+ * @param channel Channel number (starting from 1)
  * @param putc Function pointer to the putc implementation. Set NULL can disconnect esp_rom_printf with putc.
  */
 void esp_rom_install_channel_putc(int channel, void (*putc)(char c));
+
+/**
+ * @brief It outputs a character to different channels simultaneously.
+ *        This function is used by esp_rom_printf/esp_rom_vprintf.
+ *
+ * @param c Char to output.
+ */
+void esp_rom_output_to_channels(char c);
 
 /**
  * @brief Install UART1 as the default console channel, equivalent to `esp_rom_install_channel_putc(1, esp_rom_output_putc)`

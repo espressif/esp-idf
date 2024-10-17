@@ -100,19 +100,18 @@ menu "ESP-TLS"
             with a server which has a fake identity, provided that the server certificate
             is not provided either through API or other mechanism like ca_store etc.
 
-    config ESP_WOLFSSL_SMALL_CERT_VERIFY
-        bool "Enable SMALL_CERT_VERIFY"
-        depends on ESP_TLS_USING_WOLFSSL
-        default y
-        help
-            Enables server verification with Intermediate CA cert, does not authenticate full chain
-            of trust upto the root CA cert (After Enabling this option client only needs to have Intermediate
-            CA certificate of the server to authenticate server, root CA cert is not necessary).
-
     config ESP_DEBUG_WOLFSSL
         bool "Enable debug logs for wolfSSL"
         depends on ESP_TLS_USING_WOLFSSL
         help
             Enable detailed debug prints for wolfSSL SSL library.
+
+    config ESP_TLS_OCSP_CHECKALL
+        bool "Enabled full OCSP checks for ESP-TLS"
+        depends on ESP_TLS_USING_WOLFSSL
+        default y
+        help
+            Enable a fuller set of OCSP checks: checking revocation status of intermediate certificates,
+            optional fallbacks to CRLs, etc.
 
 endmenu

@@ -154,7 +154,11 @@ hci_driver_uart_deinit(void)
 
     ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_env.hci_uart_params->hci_uart_port));
 
+<<<<<<< HEAD
     if (!s_hci_driver_uart_env.tx_sem) {
+=======
+    if (s_hci_driver_uart_env.tx_sem) {
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         vSemaphoreDelete(s_hci_driver_uart_env.tx_sem);
     }
 

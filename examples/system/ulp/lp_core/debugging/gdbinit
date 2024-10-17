@@ -1,0 +1,16 @@
+set pagination off
+target extended-remote :3333
+
+mon reset halt
+maintenance flush register-cache
+
+add-symbol build/esp-idf/main/ulp_debug_example/ulp_debug_example.elf
+
+thb main
+commands
+b do_crash
+b do_things
+b ulp_lp_core_delay_us
+c
+end
+c

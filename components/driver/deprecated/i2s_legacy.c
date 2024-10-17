@@ -22,6 +22,7 @@
 
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/gpio_hal.h"
 #include "driver/i2s_types_legacy.h"
 #include "hal/i2s_hal.h"
@@ -370,7 +371,7 @@ static esp_err_t i2s_dma_intr_init(i2s_port_t i2s_num, int intr_flag)
     if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_TX;
         /* Register a new GDMA tx channel */
-        ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->tx_dma_chan), TAG, "Register tx dma channel error");
+        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &p_i2s[i2s_num]->tx_dma_chan), TAG, "Register tx dma channel error");
         ESP_RETURN_ON_ERROR(gdma_connect(p_i2s[i2s_num]->tx_dma_chan, trig), TAG, "Connect tx dma channel error");
         gdma_tx_event_callbacks_t cb = {.on_trans_eof = i2s_dma_tx_callback};
         /* Set callback function for GDMA, the interrupt is triggered by GDMA, then the GDMA ISR will call the  callback function */
@@ -379,7 +380,7 @@ static esp_err_t i2s_dma_intr_init(i2s_port_t i2s_num, int intr_flag)
     if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_RX;
         /* Register a new GDMA rx channel */
-        ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_cfg, &p_i2s[i2s_num]->rx_dma_chan), TAG, "Register rx dma channel error");
+        ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_cfg, &p_i2s[i2s_num]->rx_dma_chan), TAG, "Register rx dma channel error");
         ESP_RETURN_ON_ERROR(gdma_connect(p_i2s[i2s_num]->rx_dma_chan, trig), TAG, "Connect rx dma channel error");
         gdma_rx_event_callbacks_t cb = {.on_recv_eof = i2s_dma_rx_callback};
         /* Set callback function for GDMA, the interrupt is triggered by GDMA, then the GDMA ISR will call the  callback function */
@@ -1636,7 +1637,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #endif
     /* Disable module clock */
-    i2s_platform_release_occupation(i2s_num);
+    i2s_platform_release_occupation(I2S_CTLR_HP, i2s_num);
     free(obj);
     p_i2s[i2s_num] = NULL;
     return ESP_OK;
@@ -1655,7 +1656,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     /* Step 2: Allocate driver object and register to platform */
     i2s_obj_t *i2s_obj = calloc(1, sizeof(i2s_obj_t));
     ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NO_MEM, TAG, "no mem for I2S driver");
-    if (i2s_platform_acquire_occupation(i2s_num, "i2s_legacy") != ESP_OK) {
+    if (i2s_platform_acquire_occupation(I2S_CTLR_HP, i2s_num, "i2s_legacy") != ESP_OK) {
         free(i2s_obj);
         ESP_LOGE(TAG, "register I2S object to platform failed");
         return ESP_ERR_INVALID_STATE;
@@ -1851,7 +1852,7 @@ static void gpio_matrix_out_check_and_set(gpio_num_t gpio, uint32_t signal_idx, 
 {
     //if pin = -1, do not need to configure
     if (gpio != -1) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_func_sel(gpio, PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(gpio, signal_idx, out_inv, oen_inv);
     }
@@ -1860,7 +1861,7 @@ static void gpio_matrix_out_check_and_set(gpio_num_t gpio, uint32_t signal_idx, 
 static void gpio_matrix_in_check_and_set(gpio_num_t gpio, uint32_t signal_idx, bool inv)
 {
     if (gpio != -1) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_func_sel(gpio, PIN_FUNC_GPIO);
         /* Set direction, for some GPIOs, the input function are not enabled as default */
         gpio_set_direction(gpio, GPIO_MODE_INPUT);
         esp_rom_gpio_connect_in_signal(gpio, signal_idx, inv);

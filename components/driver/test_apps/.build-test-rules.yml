@@ -30,13 +30,7 @@ components/driver/test_apps/legacy_adc_driver:
 
 components/driver/test_apps/legacy_i2c_driver:
   disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8694
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner
+    - if: SOC_I2C_SUPPORTED != 1
   depends_filepatterns:
     - components/driver/i2c/**
     # Following dependency is needed because they might increase lazy installed memory
@@ -95,10 +89,6 @@ components/driver/test_apps/touch_sensor_v2:
 components/driver/test_apps/twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8966
   depends_filepatterns:
     - components/driver/twai/**/*
   depends_components:

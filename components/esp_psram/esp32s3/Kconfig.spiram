@@ -38,16 +38,6 @@ menu "SPI RAM config"
             bool "ESP-PSRAM64 , LY68L6400 or APS6408"
     endchoice
 
-    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        bool "Allow external memory as an argument to xTaskCreateStatic"
-        default y
-        help
-            Accessing memory in SPIRAM has certain restrictions, so task stacks allocated by xTaskCreate
-            are by default allocated from internal RAM.
-
-            This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
-            This should only be used for tasks where the stack is never accessed while the cache is disabled.
-
     config SPIRAM_CLK_IO
         int
         default 30
@@ -116,6 +106,25 @@ menu "SPI RAM config"
         config SPIRAM_SPEED_40M
             bool "40Mhz clock speed"
     endchoice
+
+    config SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        depends on SPIRAM_SPEED_120M && SPIRAM_MODE_OCT && IDF_EXPERIMENTAL_FEATURES
+        bool "Adjust PSRAM timing tuning point via on-chip temperature sensor in real-time"
+        default n
+        help
+            Temperature would influence the source clock frequency so that the timing tuning point set in start-up
+            might not be always proper when temperature varies in high range. This configuration would help checking
+            the temperature in real-time, and adjust timing point automatically when temperature change.
+            (see External RAM documentation for more details)
+
+    config SPIRAM_TIMING_MEASURE_TEMPERATURE_INTERVAL_SECOND
+        depends on SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        int "PSRAM timing tuning measure temperature interval (unit: second)"
+        default 5
+        help
+            Due to adjusting timing point automatically when temperature change, the task will measure current
+            temperature value in some specific interval. This configuration option would help you to set the
+            proper interval. The interval unit is second.
 
     config SPIRAM_SPEED
         int

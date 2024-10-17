@@ -13,10 +13,12 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_reg.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_cpll.h"
+#include "soc/regi2c_apll.h"
 #include "soc/regi2c_mpll.h"
 #include "soc/regi2c_bias.h"
 #include "hal/assert.h"
@@ -45,8 +47,17 @@ extern "C" {
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 #define CLK_LL_PLL_500M_FREQ_MHZ   (500)
 
+/* APLL configuration parameters */
+#define CLK_LL_APLL_SDM_STOP_VAL_1         0x09
+#define CLK_LL_APLL_SDM_STOP_VAL_2_REV0    0x69
+#define CLK_LL_APLL_SDM_STOP_VAL_2_REV1    0x49
+
+/* APLL calibration parameters */
+#define CLK_LL_APLL_CAL_DELAY_1            0x0f
+#define CLK_LL_APLL_CAL_DELAY_2            0x3f
+#define CLK_LL_APLL_CAL_DELAY_3            0x1f
+
 /* APLL multiplier output frequency range */
-// TODO: IDF-8884 check if the APLL frequency range is same as before
 // apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
 #define CLK_LL_APLL_MULTIPLIER_MIN_HZ (350000000) // 350 MHz
 #define CLK_LL_APLL_MULTIPLIER_MAX_HZ (500000000) // 500 MHz
@@ -100,6 +111,26 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_disable(void)
 }
 
 /**
+ * @brief Power up APLL circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_apll_enable(void)
+{
+    SET_PERI_REG_MASK(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_AUDIO_PLL_CLK_EN);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_APLL | PMU_TIE_HIGH_XPD_APLL_I2C);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_APLL_ICG);
+}
+
+/**
+ * @brief Power down APLL circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_apll_disable(void)
+{
+    CLEAR_PERI_REG_MASK(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_AUDIO_PLL_CLK_EN);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_APLL_ICG) ;
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_APLL | PMU_TIE_LOW_XPD_APLL_I2C);
+}
+
+/**
  * @brief Enable the internal oscillator output for LP_PLL_CLK
  */
 static inline __attribute__((always_inline)) void clk_ll_lp_pll_enable(void)
@@ -123,6 +154,7 @@ static inline __attribute__((always_inline)) void clk_ll_lp_pll_disable(void)
 static inline __attribute__((always_inline)) void clk_ll_mpll_enable(void)
 {
     REG_SET_BIT(PMU_RF_PWC_REG, PMU_MSPI_PHY_XPD);
+    REG_SET_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
 }
 
 /**
@@ -422,6 +454,60 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
     uint8_t div = mpll_freq_mhz / 20 - 1;
     uint8_t val = ((div << 3) | ref_div);
     REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR, val);
+}
+
+/**
+ * @brief Get APLL configuration which can be used to calculate APLL frequency
+ *
+ * @param[out] o_div  Frequency divider, 0..31
+ * @param[out] sdm0  Frequency adjustment parameter, 0..255
+ * @param[out] sdm1  Frequency adjustment parameter, 0..255
+ * @param[out] sdm2  Frequency adjustment parameter, 0..63
+ */
+static inline __attribute__((always_inline)) void clk_ll_apll_get_config(uint32_t *o_div, uint32_t *sdm0, uint32_t *sdm1, uint32_t *sdm2)
+{
+    *o_div = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_OR_OUTPUT_DIV);
+    *sdm0 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM0);
+    *sdm1 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM1);
+    *sdm2 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM2);
+}
+
+/**
+ * @brief Set APLL configuration
+ *
+ * @param o_div  Frequency divider, 0..31
+ * @param sdm0  Frequency adjustment parameter, 0..255
+ * @param sdm1  Frequency adjustment parameter, 0..255
+ * @param sdm2  Frequency adjustment parameter, 0..63
+ */
+static inline __attribute__((always_inline)) void clk_ll_apll_set_config(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2)
+{
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM2, sdm2);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM0, sdm0);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM1, sdm1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, CLK_LL_APLL_SDM_STOP_VAL_1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, CLK_LL_APLL_SDM_STOP_VAL_2_REV1);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_OR_OUTPUT_DIV, o_div);
+}
+
+/**
+ * @brief Set APLL calibration parameters
+ */
+static inline __attribute__((always_inline)) void clk_ll_apll_set_calibration(void)
+{
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, CLK_LL_APLL_CAL_DELAY_1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, CLK_LL_APLL_CAL_DELAY_2);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, CLK_LL_APLL_CAL_DELAY_3);
+}
+
+/**
+ * @brief Check whether APLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_apll_calibration_is_done(void)
+{
+    return REGI2C_READ_MASK(I2C_APLL, I2C_APLL_OR_CAL_END);
 }
 
 /**
@@ -765,7 +851,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uin
 /**
  * @brief Get RC_FAST_CLK divider
  *
- * @return Divider. Divider = (CK8M_DIV_SEL + 1).
+ * @return Divider
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {

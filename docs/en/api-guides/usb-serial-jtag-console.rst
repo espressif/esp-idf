@@ -19,8 +19,13 @@ Generally, ESP chips implement a serial port using UART and can be connected to 
 Hardware Requirements
 =====================
 
+<<<<<<< HEAD
 {IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27"}
 {IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26"}
+=======
+{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13"}
+{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12"}
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 Connect {IDF_TARGET_NAME} to the USB port as follows:
 
@@ -122,3 +127,9 @@ Automatic and Manual Sleep Entry
 If users enter sleep manually (via :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start`), users should be cognizant of the fact that USB Serial/JTAG controller does not work during sleep. ESP-IDF **does not add any safety check to reject entry to sleep** even if the USB Serial/JTAG controller is connected. In the case where sleep is entered while the USB Serial/JTAG controller is connected, the connection can be re-established by unplugging and re-plugging the USB cable.
 
 If users enter sleep automatically (via :cpp:func:`esp_pm_configure`), enabling the :ref:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` option allows the {IDF_TARGET_NAME} to automatically detect whether the USB Serial/JTAG controller is currently connected to a host, and prevent automatic entry to sleep as long as the connection persists. However, note that this option increases power consumption.
+
+
+Application Examples
+====================
+
+- :example:`peripherals/usb_serial_jtag/usb_serial_jtag_echo` demonstrates how to use the USB_SERIAL_JTAG interfaces to echo back any data received on it.

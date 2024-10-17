@@ -90,8 +90,13 @@ void vPortEnterCritical(void)
 
 void vPortExitCritical(void)
 {
+
+    /* Critical section nesting coung must never be negative */
+    configASSERT( port_uxCriticalNestingIDF > 0 );
+
     if (port_uxCriticalNestingIDF > 0) {
         port_uxCriticalNestingIDF--;
+
         if (port_uxCriticalNestingIDF == 0) {
             // Restore the saved interrupt threshold
             vPortClearInterruptMask((int)port_uxCriticalOldInterruptStateIDF);

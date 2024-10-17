@@ -1,3 +1,9 @@
 dependencies:
+<<<<<<< HEAD
   lvgl/lvgl: "^9.0.0"
   esp_lcd_ili9881c: "~0.2.0"
+=======
+  lvgl/lvgl: "~9.2.0"
+  esp_lcd_ili9881c: "^1.0.0"
+  esp_lcd_ek79007: "^1.0.0"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

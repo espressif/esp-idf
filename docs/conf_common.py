@@ -16,21 +16,29 @@ from esp_docs.conf_docs import *  # noqa: F403,F401
 if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
-BT_DOCS = ['api-guides/bluetooth.rst',
-           'api-reference/bluetooth/bt_le.rst',
-           'api-reference/bluetooth/esp_bt_defs.rst',
+BT_DOCS = ['api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
            'api-reference/bluetooth/esp_bt_main.rst',
            'api-reference/bluetooth/bt_common.rst',
            'api-reference/bluetooth/controller_vhci.rst',
-           'api-reference/bluetooth/esp_gap_ble.rst',
-           'api-reference/bluetooth/esp_gatt_defs.rst',
-           'api-reference/bluetooth/esp_gatts.rst',
-           'api-reference/bluetooth/esp_gattc.rst',
-           'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst']
+           'api-reference/bluetooth/index.rst']
 
-BLE_DOCS = ['migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
+BLE_DOCS = ['api-guides/ble/index.rst',
+            'api-guides/ble/overview.rst',
+            'api-guides/ble/ble-feature-support-status.rst',
+            'api-guides/ble/host-feature-support-status.rst',
+            'api-reference/bluetooth/bt_le.rst',
+            'api-guides/ble/get-started/ble-introduction.rst',
+            'api-guides/ble/get-started/ble-device-discovery.rst',
+            'api-guides/ble/get-started/ble-connection.rst',
+            'api-guides/ble/get-started/ble-data-exchange.rst',
+            'api-reference/bluetooth/esp_gap_ble.rst',
+            'api-reference/bluetooth/esp_gatt_defs.rst',
+            'api-reference/bluetooth/esp_gatts.rst',
+            'api-reference/bluetooth/esp_gattc.rst',
+            'api-reference/bluetooth/nimble/index.rst',
+            'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
+
 
 BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
@@ -39,7 +47,9 @@ BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
                  'api-reference/bluetooth/esp-ble-mesh.rst']
 
-CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
+CLASSIC_BT_DOCS = ['api-guides/classic-bt/index.rst',
+                   'api-guides/classic-bt/overview.rst',
+                   'api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
                    'api-reference/bluetooth/esp_avrc.rst',
                    'api-reference/bluetooth/esp_hidd.rst',
@@ -53,10 +63,11 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
                    'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
 
-BLUFI_DOCS = ['api-guides/blufi.rst',
+BLUFI_DOCS = ['api-guides/ble/blufi.rst',
               'api-reference/bluetooth/esp_blufi.rst']
 
-WIFI_DOCS = ['api-guides/wifi.rst',
+WIFI_DOCS = ['api-guides/low-power-mode/low-power-mode-wifi.rst',
+             'api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst',
              'api-reference/network/esp_now.rst',
@@ -116,7 +127,13 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_design.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
+<<<<<<< HEAD
             'api-reference/peripherals/usb_host/usb_host_notes_usbh.rst']
+=======
+            'api-reference/peripherals/usb_host/usb_host_notes_usbh.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_enum.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst']
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
 RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']
@@ -162,7 +179,7 @@ I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
 ISP_DOCS = ['api-reference/peripherals/isp.rst']
 
-RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
+DSLP_STUB_DOCS = ['api-guides/deep-sleep-stub.rst']
 
 ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
             'api-reference/peripherals/adc_calibration.rst']
@@ -205,7 +222,7 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/peripherals/touch_pad.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst',
-                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
+                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS + QEMU_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
@@ -215,7 +232,9 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst',
                 'api-guides/phy.rst']
 
-ESP32C5_DOCS = ['']
+ESP32C5_DOCS = ['api-guides/phy.rst']
+
+ESP32C61_DOCS = ['api-guides/phy.rst']
 
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
@@ -271,7 +290,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_GPSPI_SUPPORTED':SPI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
                             'SOC_ISP_SUPPORTED':ISP_DOCS,
-                            'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
+                            'ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB': DSLP_STUB_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
                             'SOC_ANA_CMPR_SUPPORTED': ANA_CMPR_DOCS,
@@ -290,6 +309,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'esp32c3':ESP32C3_DOCS,
                             'esp32c5':ESP32C5_DOCS,
                             'esp32c6':ESP32C6_DOCS,
+                            'esp32c61':ESP32C61_DOCS,
                             'esp32h2':ESP32H2_DOCS,
                             'esp32p4':ESP32P4_DOCS}
 
@@ -305,6 +325,7 @@ extensions += ['sphinx_copybutton',
                'esp_docs.idf_extensions.kconfig_reference',
                'esp_docs.idf_extensions.gen_idf_tools_links',
                'esp_docs.esp_extensions.run_doxygen',
+               'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
                ]
 
 # Use wavedrompy as backend, instead of wavedrom-cli
@@ -362,6 +383,9 @@ html_static_path = ['../_static']
 
 idf_build_system = {'doxygen_component_info': True, 'component_info_ignore_file': Path(os.environ['IDF_PATH']) / 'docs' / 'component_info_ignore_file.txt'}
 
+# Please update following list to enable Qemu doc guide (and cross references) for a new target
+QEMU_TARGETS = ['esp32', 'esp32c3', 'esp32s3']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
@@ -369,6 +393,10 @@ def conf_setup(app, config):
     config.add_warnings_content = 'This document is not updated for {} yet, so some of the content may not be correct.'.format(config.idf_target.upper())
 
     add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+
+    if config.idf_target in QEMU_TARGETS:
+        app.tags.add('TARGET_SUPPORT_QEMU')
+
     try:
         with open(add_warnings_file) as warning_file:
             config.add_warnings_pages = warning_file.read().splitlines()

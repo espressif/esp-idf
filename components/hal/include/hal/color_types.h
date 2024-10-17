@@ -188,6 +188,23 @@ typedef union {
     uint16_t val;           /*!< 16-bit RGB565 value */
 } color_pixel_rgb565_data_t;
 
+<<<<<<< HEAD
+=======
+/*---------------------------------------------------------------
+                        Color Components
+---------------------------------------------------------------*/
+
+/**
+ * @brief Color component
+ */
+typedef enum {
+    COLOR_COMPONENT_R,          /*!< R component */
+    COLOR_COMPONENT_G,          /*!< G component */
+    COLOR_COMPONENT_B,          /*!< B component */
+    COLOR_COMPONENT_INVALID,    /*!< Invalid color component */
+} color_component_t;
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #ifdef __cplusplus
 }
 #endif

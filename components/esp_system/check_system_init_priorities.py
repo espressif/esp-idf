@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file is used to check the order of execution of ESP_SYSTEM_INIT_FN functions.
 # It compares the priorities found in .c source files to the contents of system_init_fn.txt
 # In case of an inconsistency, the script prints the differences found and returns with a
 # non-zero exit code.
-
 import difflib
 import glob
 import itertools
@@ -73,11 +72,14 @@ def main() -> None:
             startup_entries.append(entry)
 
     #
-    # 2. Sort the ESP_SYSTEM_INIT_FN functions in C source files by stage and then priority
+    # 2. Sort the ESP_SYSTEM_INIT_FN functions in C source files.
+    #    In addition to the stage and priority, we also add filename to the sort key,
+    #    to have a stable sorting order in case when the same startup function is defined in multiple files,
+    #    for example for different targets.
     #
-    def sort_key(entry: StartupEntry) -> typing.Tuple[str, int]:
+    def sort_key(entry: StartupEntry) -> typing.Tuple[str, int, str]:
         # luckily 'core' and 'secondary' are in alphabetical order, so we can return the string
-        return (entry.stage, entry.priority)
+        return (entry.stage, entry.priority, entry.filename)
 
     startup_entries = list(sorted(startup_entries, key=sort_key))
     startup_entries_lines = [str(entry) for entry in startup_entries]

@@ -415,26 +415,13 @@ This galvanically isolated circuit does not require RTS pin control by a softwar
 Application Examples
 --------------------
 
-The table below describes the code examples available in the directory :example:`peripherals/uart/`.
-
-.. list-table::
-   :widths: 35 65
-   :header-rows: 1
-
-   * - Code Example
-     - Description
-   * - :example:`peripherals/uart/uart_echo`
-     - Configuring UART settings, installing the UART driver, and reading/writing over the UART1 interface.
-   * - :example:`peripherals/uart/uart_events`
-     - Reporting various communication events, using pattern detection interrupts.
-   * - :example:`peripherals/uart/uart_async_rxtxtasks`
-     - Transmitting and receiving data in two separate FreeRTOS tasks over the same UART.
-   * - :example:`peripherals/uart/uart_select`
-     - Using synchronous I/O multiplexing for UART file descriptors.
-   * - :example:`peripherals/uart/uart_echo_rs485`
-     - Setting up UART driver to communicate over RS485 interface in half-duplex mode. This example is similar to :example:`peripherals/uart/uart_echo` but allows communication through an RS485 interface chip connected to {IDF_TARGET_NAME} pins.
-   * - :example:`peripherals/uart/nmea0183_parser`
-     - Obtaining GPS information by parsing NMEA0183 statements received from GPS via the UART peripheral.
+* :example:`peripherals/uart/uart_async_rxtxtasks` demonstrates how to use two asynchronous tasks for communication via the same UART interface, with one task transmitting "Hello world" periodically and the other task receiving and printing data from the UART.
+* :example:`peripherals/uart/uart_echo` demonstrates how to use the UART interfaces to echo back any data received on the configured UART.
+* :example:`peripherals/uart/uart_echo_rs485` demonstrates how to use the ESP32's UART software driver in RS485 half duplex transmission mode to echo any data it receives on UART port back to the sender in the RS485 network, requiring external connection of bus drivers.
+* :example:`peripherals/uart/uart_events` demonstrates how to use the UART driver to handle special UART events, read data from UART0, and echo it back to the monitoring console.
+* :example:`peripherals/uart/uart_repl` demonstrates how to use and connect two UARTs, allowing the UART used for stdout to send commands and receive replies from another console UART without human interaction.
+* :example:`peripherals/uart/uart_select` demonstrates the use of ``select()`` for synchronous I/O multiplexing on the UART interface, allowing for non-blocking read and write from/to various sources such as UART and sockets, where a ready resource can be served without being blocked by a busy resource.
+* :example:`peripherals/uart/nmea0183_parser` demonstrates how to parse NMEA-0183 data streams from GPS/BDS/GLONASS modules using the ESP UART Event driver and ESP event loop library, and output common information such as UTC time, latitude, longitude, altitude, and speed.
 
 
 API Reference

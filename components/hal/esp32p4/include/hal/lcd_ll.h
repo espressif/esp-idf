@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -507,7 +507,8 @@ static inline void lcd_ll_reverse_wire_bit_order(lcd_cam_dev_t *dev, bool en)
  * @brief Whether to swap adjacent two bytes
  *
  * @note This acts before the YUV-RGB converter, mainly to change the data endian.
- *       {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
+ *       e.g. {B1,B0},{B3,B2} => {B0,B1}{B2,B3}.
+ *       Only valid when `lcd_ll_set_dma_read_stride` set the DMA read stride >= 16 bits
  *
  * @param dev LCD register base address
  * @param en True to swap the byte order, False to not swap
@@ -606,7 +607,7 @@ static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, u
 }
 
 /**
- * @brief Wether to enable RGB interface
+ * @brief Whether to enable RGB interface
  *
  * @param dev LCD register base address
  * @param en True to enable RGB interface, False to disable RGB interface
@@ -629,7 +630,7 @@ static inline void lcd_ll_enable_auto_next_frame(lcd_cam_dev_t *dev, bool en)
 }
 
 /**
- * @brief Wether to output HSYNC signal in porch resion
+ * @brief Whether to output HSYNC signal in porch resion
  *
  * @param dev LCD register base address
  * @param en True to enable, False to disable
@@ -746,7 +747,7 @@ static inline uint32_t lcd_ll_get_interrupt_status(lcd_cam_dev_t *dev)
  * @brief Clear interrupt status by mask
  *
  * @param dev LCD register base address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void lcd_ll_clear_interrupt_status(lcd_cam_dev_t *dev, uint32_t mask)

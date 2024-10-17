@@ -58,6 +58,13 @@ menu "Example Configuration"
         default 1 if EXAMPLE_PROV_TRANSPORT_BLE
         default 2 if EXAMPLE_PROV_TRANSPORT_SOFTAP
 
+    config EXAMPLE_PROV_ENABLE_APP_CALLBACK
+        bool "Enable provisioning manager app callback"
+        default n
+        help
+            This is for advanced use-cases like modifying Wi-Fi configuration parameters. This
+            executes a blocking app callback when any provisioning event is triggered.
+
     config EXAMPLE_RESET_PROVISIONED
         bool
         default n
@@ -71,13 +78,13 @@ menu "Example Configuration"
         default y
         prompt "Reset provisioned credentials and state machine after session failure"
         help
-            Enable reseting provisioned credentials and state machine after session failure.
+            Enable resetting provisioned credentials and state machine after session failure.
             This will restart the provisioning service after retries are exhausted.
 
     config EXAMPLE_PROV_MGR_MAX_RETRY_CNT
         int
         default 5
-        prompt "Max retries before reseting provisioning state machine"
+        prompt "Max retries before resetting provisioning state machine"
         depends on EXAMPLE_RESET_PROV_MGR_ON_FAILURE
         help
             Set the Maximum retry to avoid reconnecting to an inexistent AP or if credentials

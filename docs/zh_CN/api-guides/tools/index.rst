@@ -11,4 +11,5 @@
    idf-component-manager
    idf-clang-tidy
    idf-tools
-   :esp32 or esp32c3: qemu
+   idf-size
+   :TARGET_SUPPORT_QEMU: qemu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,20 +21,26 @@
  * ESP32S3 MEMORY PROTECTION MODULE TEST
  * =====================================
  *
- * In order to safely test all the memprot features, this test application uses memprot default settings
- * plus proprietary testing buffers:
- *      - s_iram_test_buffer (.iram_end_test, 1kB) - all IRAM/DRAM low region operations, test-only section
- *      - s_dram_test_buffer (.dram0.data, 1kB) - all IRAM/DRAM high region operations, standard section
- *      - s_rtc_text_test_buffer (.rtc_text_end_test, 1kB) - all RTCFAST low region operations, test-only section
- *      - s_rtc_data_test_buffer (.rtc.data, 1kB) - all RTCFAST high region operations, standard section
- * Testing addresses are set to the middle of the testing buffers:
+ * In order to safely test all the memory protection features in guarded regions, this test application uses the default Memprot settings,
+ * and deploys the following buffers and testing sections:
+ *      - s_iram_test_buffer (.iram_end_test, 1kB) - all IRAM/DRAM low region operations, test-only section, code
+ *      - s_dram_test_buffer (.dram0.data, 1kB) - all IRAM/DRAM high region operations, standard section, data
+ *      - s_rtc_text_test_buffer (.rtc_text_end_test, 1kB) - all RTCFAST low region operations, test-only section, code
+ *      - s_rtc_data_test_buffer (.rtc.force_fast, 1kB) - all RTCFAST high region operations, standard section, data
+ * The testing addresses are used for direct verification of R/W/X permissions setup, as given by the Memprot default setup
+ *      for each memory type guarded
+ * The addresses are set to the "middle" of the testing buffers:
  *      - test_ptr_low = (s_iram_test_buffer | s_rtc_text_test_buffer) + 0x200
  *      - test_ptr_high = (s_dram_test_buffer | s_rtc_data_test_buffer) + 0x200
- * Each operation is tested at both low & high region addresses.
- * Each test result checked against expected status of PMS violation interrupt status and
- * against expected value stored in the memory tested (where applicable)
+ * Each operation is tested at both low & high regions, though each section is considered a standalone test
+ * Each test result is checked against expected status of the PMS violation interrupt and possibly
+ *      against expected value possibly stored at the concerned address
  *
- * Testing scheme is depicted below:
+ * NOTE: RTCFAST split-line is always set to _rtc_text_end address, unlike D/IRAM memory (configurable split-lines). Always check
+ *       the corresponding MAP file for real addresses, offsets and alignments, or/and to verify given section existence
+ *       (see the GNU LD manual for memory sections generation rules)
+ *
+ * The testing memory disposition is depicted below:
  *
  *                            DRam0/DMA                                     IRam0
  *                              -----------------------------------------------
@@ -46,7 +52,7 @@
  * DRam0_DMA_line0_Split_addr   |               -- test_ptr_low --            |             =
  *               =              ===============================================   IRam0_line0_Split_addr
  * DRam0_DMA_line1_Split_addr   |                                             |             =
- *                              | - - - - - - - s_dram_test_buffer - - - - - --|   IRam0_DRam0_Split_addr (main I/D)
+ *                              | - - - - - - - s_dram_test_buffer - - - - - -|   IRam0_DRam0_Split_addr (main I/D)
  *                              |              -- test_ptr_high --            |
  *                              | - - - - - - - - - - - - - - - - - - - - - - |
  *                              |                                             |
@@ -55,20 +61,18 @@
  *                              |                                             |
  *                              |                     ...                     |
  *                              |                                             |
- *                              ===============================================   SOC_RTC_IRAM_LOW (0x50000000)
+ *                              ===============================================   SOC_RTC_IRAM_LOW (0x600FE000)
  *                              |               -- test_ptr_low --            |
- *                              | - - - - - - s_rtc_text_test_buffer - - - - -|   RtcFast_Split_addr (_rtc_text_end)
- *                              |               -- .rtc.dummy --              |      (UNUSED - PADDING)
- *           8 kB               | - - - - - - - - - - - - - - - - - - - - - - |   [_rtc_dummy_end = _rtc_force_fast_start]
- *                              |             -- .rtc.force_fast --           |      (NOT USED IN THIS TEST)
- *                              | - - - - - - s_rtc_data_test_buffer - - - - -|   [_rtc_force_fast_end = _rtc_data_start]
- *                              |              -- test_ptr_high --            |
- *                              | - - - - - - - - - - - - - - - - - - - - - - |
- *                              ===============================================   SOC_RTC_IRAM_HIGH (0x50001FFF)
+ *                              |                   .rtc.text                 |   RTC FAST code (s_rtc_text_test_buffer, own rtc_text_end_test section)
  *                              |                                             |
- *                              -----------------------------------------------
+ *           8 kB               | - - - - - - - - - - - - - - - - - - - - - - |   RtcFast_Split_addr (_rtc_text_end, fixed)
+ *                              |               -- test_ptr_high --           |   [_rtc_text_end = _rtc_force_fast_start]
+ *                              |                 .rtc.force_fast             |
+ *                              |                                             |   RTC FAST data (s_rtc_data_test_buffer)
+ *                              | - - - - - - - - - - - - - - - - - - - - - - |
+ *                              |                     ...                     |
+ *                              ===============================================
  */
-
 
 /* !!!IMPORTANT!!!
  * a0 needs to be saved/restored manually (not clobbered) to avoid return address corruption
@@ -96,41 +100,39 @@
     ret.n
  */
 
-/* disabled unless IDF-5519 gets merged */
-//static uint8_t s_fnc_buff[] = {0xf0, 0x22, 0x11, 0x0d, 0xf0, 0x00, 0x00, 0x00};
+static uint8_t s_fnc_buff[] = {0xf0, 0x22, 0x11, 0x0d, 0xf0, 0x00, 0x00, 0x00};
 typedef int (*fnc_ptr)(int);
 
 //testing buffers
-#define SRAM_TEST_BUFFER_SIZE      0x400
-#define SRAM_TEST_OFFSET           0x200
+#define MEMPROT_TEST_BUFFER_SIZE        0x400
+#define MEMPROT_TEST_OFFSET             0x200
 
-static uint8_t __attribute__((section(".iram_end_test"))) s_iram_test_buffer[SRAM_TEST_BUFFER_SIZE] = {0};
-static uint8_t __attribute__((section(".rtc_text_end_test"))) s_rtc_text_test_buffer[SRAM_TEST_BUFFER_SIZE] = {0};
-static uint8_t RTC_DATA_ATTR s_rtc_data_test_buffer[SRAM_TEST_BUFFER_SIZE] = {0};
-static uint8_t s_dram_test_buffer[SRAM_TEST_BUFFER_SIZE] = {0};
+static uint8_t __attribute__((section(".iram_end_test"))) s_iram_test_buffer[MEMPROT_TEST_BUFFER_SIZE] = {0};
+static uint8_t __attribute__((section(".rtc_text_end_test"))) s_rtc_code_test_buffer[MEMPROT_TEST_BUFFER_SIZE] = {0};
+static uint8_t RTC_FAST_ATTR s_rtc_data_test_buffer[MEMPROT_TEST_BUFFER_SIZE] = {0};
+static uint8_t s_dram_test_buffer[MEMPROT_TEST_BUFFER_SIZE] = {0};
 
 //auxiliary defines
-#define LOW_REGION                 true
-#define HIGH_REGION                false
-#define READ_ENA                   true
-#define READ_DIS                   false
-#define WRITE_ENA                  true
-#define WRITE_DIS                  false
-#define EXEC_ENA                   true
-#define EXEC_DIS                   false
+#define LOW_REGION                      true
+#define HIGH_REGION                     false
+#define READ_ENA                        true
+#define READ_DIS                        false
+#define WRITE_ENA                       true
+#define WRITE_DIS                       false
+#define EXEC_ENA                        true
+#define EXEC_DIS                        false
 
 volatile bool g_override_illegal_instruction;
-
 
 static void *test_mprot_addr_low(esp_mprot_mem_t mem_type)
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
-        return (void *)((uint32_t)s_iram_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)((uint32_t)s_iram_test_buffer + MEMPROT_TEST_OFFSET);
     case MEMPROT_TYPE_DRAM0_SRAM:
-        return (void *)MAP_IRAM_TO_DRAM((uint32_t)s_iram_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)MAP_IRAM_TO_DRAM((uint32_t)s_iram_test_buffer + MEMPROT_TEST_OFFSET);
     case MEMPROT_TYPE_IRAM0_RTCFAST:
-        return (void *)((uint32_t)s_rtc_text_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)((uint32_t)s_rtc_code_test_buffer + MEMPROT_TEST_OFFSET);
     default:
         abort();
     }
@@ -140,11 +142,11 @@ static void *test_mprot_addr_high(esp_mprot_mem_t mem_type)
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
-        return (void *)MAP_DRAM_TO_IRAM((uint32_t)s_dram_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)MAP_DRAM_TO_IRAM((uint32_t)s_dram_test_buffer + MEMPROT_TEST_OFFSET);
     case MEMPROT_TYPE_DRAM0_SRAM:
-        return (void *)((uint32_t)s_dram_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)((uint32_t)s_dram_test_buffer + MEMPROT_TEST_OFFSET);
     case MEMPROT_TYPE_IRAM0_RTCFAST:
-        return (void *)((uint32_t)s_rtc_data_test_buffer + SRAM_TEST_OFFSET);
+        return (void *)((uint32_t)s_rtc_data_test_buffer + MEMPROT_TEST_OFFSET);
     default:
         abort();
     }
@@ -192,7 +194,7 @@ static void __attribute__((unused)) test_mprot_dump_status_register(esp_mprot_me
         }
     }
 
-    esp_rom_printf( "]\n" );
+    esp_rom_printf("]\n");
 }
 
 static void test_mprot_check_test_result(esp_mprot_mem_t mem_type, bool expected_status)
@@ -359,7 +361,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type, const int core)
     test_mprot_set_permissions(LOW_REGION, mem_type, read_perm_low, write_perm_low, is_exec_mem ? &exec_perm_low : NULL, core);
     test_mprot_set_permissions(HIGH_REGION, mem_type, read_perm_high, write_perm_high, is_exec_mem ? &exec_perm_high : NULL, core);
 
-    //reenable monitoring
+    //re-enable monitoring
     err = esp_mprot_set_monitor_en(mem_type, true, core);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_read\n", esp_err_to_name(err));
@@ -377,7 +379,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type, const int core)
     volatile uint32_t val = *ptr_low;
 
     if (read_perm_low && val != test_val) {
-        esp_rom_printf( "UNEXPECTED VALUE 0x%08X -", val );
+        esp_rom_printf("UNEXPECTED VALUE 0x%08X -", val);
         test_mprot_dump_status_register(mem_type, core);
     } else {
         test_mprot_check_test_result(mem_type, read_perm_low);
@@ -394,14 +396,13 @@ static void test_mprot_read(esp_mprot_mem_t mem_type, const int core)
     val = *ptr_high;
 
     if (read_perm_high && val != (test_val + 1)) {
-        esp_rom_printf( "UNEXPECTED VALUE 0x%08X -", val);
+        esp_rom_printf("UNEXPECTED VALUE 0x%08X -", val);
         test_mprot_dump_status_register(mem_type, core);
     } else {
         test_mprot_check_test_result(mem_type, read_perm_high);
     }
 
     esp_mprot_monitor_clear_intr(mem_type, core);
-    //test_mprot_dump_status_register(mem_type, core);
 }
 
 static void test_mprot_write(esp_mprot_mem_t mem_type, const int core)
@@ -451,7 +452,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type, const int core)
     val = *ptr_low;
 
     if (write_perm_low && val != test_val) {
-        esp_rom_printf( "UNEXPECTED VALUE 0x%08X -", val);
+        esp_rom_printf("UNEXPECTED VALUE 0x%08X -", val);
         test_mprot_dump_status_register(mem_type, core);
     } else {
         test_mprot_check_test_result(mem_type, write_perm_low);
@@ -470,7 +471,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type, const int core)
     val = *ptr_high;
 
     if (val != (test_val + 1) && write_perm_high) {
-        esp_rom_printf( "UNEXPECTED VALUE 0x%08X -", val);
+        esp_rom_printf("UNEXPECTED VALUE 0x%08X -", val);
         test_mprot_dump_status_register(mem_type, core);
     } else {
         test_mprot_check_test_result(mem_type, write_perm_high);
@@ -495,11 +496,10 @@ static void test_mprot_write(esp_mprot_mem_t mem_type, const int core)
     esp_mprot_monitor_clear_intr(mem_type, core);
 }
 
-#if 0 /* disabled unless IDF-5519 gets merged */
 static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
 {
     if (!(mem_type & MEMPROT_TYPE_IRAM0_ANY)) {
-        esp_rom_printf("Error: EXEC test available only for IRAM access.\n" );
+        esp_rom_printf("Error: EXEC test available only for IRAM access.\n");
         return;
     }
 
@@ -538,7 +538,7 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
         fnc_ptr_low = (void *) MAP_DRAM_TO_IRAM(fnc_ptr_low);
         fnc_ptr_high = (void *) MAP_DRAM_TO_IRAM(fnc_ptr_high);
 
-        //reenable DBUS protection
+        //re-enable DBUS protection
         test_mprot_set_permissions(LOW_REGION, MEMPROT_TYPE_DRAM0_SRAM, READ_ENA, WRITE_DIS, NULL, core);
     } else if (mem_type == MEMPROT_TYPE_IRAM0_RTCFAST) {
         //enable WRITE for low region
@@ -551,7 +551,7 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
         memcpy(fnc_ptr_low, (const void *) s_fnc_buff, sizeof(s_fnc_buff));
         memcpy(fnc_ptr_high, (const void *) s_fnc_buff, sizeof(s_fnc_buff));
 
-        //reenable original protection
+        //re-enable original protection
         test_mprot_set_permissions(LOW_REGION, MEMPROT_TYPE_IRAM0_RTCFAST, read_perm_low, write_perm_low, &exec_perm_low, core);
     } else {
         assert(0);
@@ -618,7 +618,6 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
 
     esp_mprot_monitor_clear_intr(mem_type, core);
 }
-#endif
 
 // testing per-CPU tasks
 esp_memp_config_t memp_cfg = {
@@ -647,8 +646,7 @@ static void task_on_CPU(void *arg)
     if (memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_SRAM) {
         test_mprot_read(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
         test_mprot_write(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
-        /* disabled unless IDF-5519 gets merged */
-        //test_mprot_exec(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
+        test_mprot_exec(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
     }
 
     if (memp_cfg.mem_type_mask & MEMPROT_TYPE_DRAM0_SRAM) {
@@ -659,8 +657,7 @@ static void task_on_CPU(void *arg)
     if (memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_RTCFAST) {
         test_mprot_read(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
         test_mprot_write(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
-        /* disabled unless IDF-5519 gets merged */
-        //test_mprot_exec(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
+        test_mprot_exec(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
     }
 
     xSemaphoreGive(ctx->sem);

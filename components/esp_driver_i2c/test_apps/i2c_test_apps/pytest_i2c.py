@@ -6,7 +6,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.supported_targets
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8960
 @pytest.mark.parametrize(
     'config',
     [
@@ -21,8 +20,10 @@ def test_i2c(dut: Dut) -> None:
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic_multi_device
@@ -30,6 +31,8 @@ def test_i2c(dut: Dut) -> None:
     'count, config',
     [
         (2, 'defaults',),
+        (2, 'release',),
+        (2, 'iram_safe',),
     ],
     indirect=True
 )
@@ -37,19 +40,3 @@ def test_i2c_multi_device(case_tester) -> None:        # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
             case_tester.run_multi_dev_case(case=case, reset=True)
-
-
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.generic_multi_device
-@pytest.mark.parametrize(
-    'count, config',
-    [
-        (2, 'sleep_retention',),
-    ],
-    indirect=True
-)
-def test_i2c_sleep_retention(case_tester) -> None:        # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True, timeout=250)

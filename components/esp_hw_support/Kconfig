@@ -130,10 +130,10 @@ menu "Hardware Settings"
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
             default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || \
-                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+                IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c2, esp32c3, esp32s3, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
+                esp32c2, esp32c3, esp32s3, esp32c5, esp32c6 and esp32h2 will reset at wake-up if GPIO is received
                 a small electrostatic pulse during light sleep, with specific condition
 
                 - GPIO needs to be configured as input-mode only
@@ -240,90 +240,10 @@ menu "Hardware Settings"
     rsource "./dma/Kconfig.dma"
 
     menu "Main XTAL Config"
-        # TODO: IDF-8943
-        choice XTAL_FREQ_SEL
-            prompt "Main XTAL frequency"
-            default XTAL_FREQ_48 if SOC_XTAL_SUPPORT_48M
-            default XTAL_FREQ_40 if (SOC_XTAL_SUPPORT_40M && !SOC_XTAL_SUPPORT_48M)
-            help
-                This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
-                The selected value MUST reflect the frequency of the given hardware.
-
-                Note: The XTAL_FREQ_AUTO option allows the ESP target to automatically estimating XTAL clock's
-                operating frequency. However, this feature is only supported on the ESP32. The ESP32 uses the
-                internal 8MHZ as a reference when estimating. Due to the internal oscillator's frequency being
-                temperature dependent, usage of the XTAL_FREQ_AUTO is not recommended in applications that operate
-                in high ambient temperatures or use high-temperature qualified chips and modules.
-
-            config XTAL_FREQ_24
-                depends on SOC_XTAL_SUPPORT_24M
-                bool "24 MHz"
-            config XTAL_FREQ_26
-                depends on SOC_XTAL_SUPPORT_26M
-                bool "26 MHz"
-            config XTAL_FREQ_32
-                depends on SOC_XTAL_SUPPORT_32M
-                bool "32 MHz"
-            config XTAL_FREQ_40
-                depends on SOC_XTAL_SUPPORT_40M
-                bool "40 MHz"
-            config XTAL_FREQ_48
-                depends on SOC_XTAL_SUPPORT_48M
-                bool "48 MHz"
-            config XTAL_FREQ_AUTO
-                depends on SOC_XTAL_SUPPORT_AUTO_DETECT
-                bool "Autodetect"
-        endchoice
-
-        # soc_xtal_freq_t enum in soc/clk_tree_defs.h lists the XTAL frequencies can be supported
-        # SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
-        config XTAL_FREQ
-            int
-            default 24 if XTAL_FREQ_24
-            default 26 if XTAL_FREQ_26
-            default 32 if XTAL_FREQ_32
-            default 40 if XTAL_FREQ_40
-            default 48 if XTAL_FREQ_48
-            default 0  if XTAL_FREQ_AUTO
+        orsource "./port/$IDF_TARGET/Kconfig.xtal"
     endmenu
 
-    menu "Crypto DPA Protection"
-        depends on SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
-        config ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            bool "Enable crypto DPA protection at startup"
-            default y
-            help
-                This config controls the DPA (Differential Power Analysis) protection
-                knob for the crypto peripherals. DPA protection dynamically adjusts the
-                clock frequency of the crypto peripheral. DPA protection helps to make it
-                difficult to perform SCA attacks on the crypto peripherals. However,
-                there is also associated performance impact based on the security level
-                set. Please refer to the TRM for more details.
-
-        choice ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            prompt "DPA protection level"
-            depends on ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
-            default ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            help
-                Configure the DPA protection security level
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-                bool "Security level low"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-                bool "Security level medium"
-
-            config ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-                bool "Security level high"
-        endchoice
-
-        config ESP_CRYPTO_DPA_PROTECTION_LEVEL
-            int
-            default 1 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_LOW
-            default 2 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_MEDIUM
-            default 3 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
-
-    endmenu
+    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
 
     orsource "./port/$IDF_TARGET/Kconfig.dcdc"
 
@@ -332,10 +252,7 @@ menu "Hardware Settings"
     # Invisible bringup bypass options for esp_hw_support component
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
         bool
-        # TODO: [ESP32C5] IDF-8642 IDF_TARGET_ESP32C5 is added because clock
-        # is required when bringup on C5 beta3, remove it when clock tree is
-        # supported
-        default y if !SOC_CLK_TREE_SUPPORTED && !IDF_TARGET_ESP32C5
+        default y if !SOC_CLK_TREE_SUPPORTED
         default n
         help
             This option is only used for new chip bringup, when
@@ -358,4 +275,13 @@ menu "Hardware Settings"
     config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         bool
         default n
+
+    config ESP_CLK_RC32K_NOT_TO_USE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+        default n
+        help
+            Due to the poor low-temperature characteristics of
+            RC32K (it cannot operate below -40 degrees Celsius),
+            please avoid using it whenever possible
 endmenu

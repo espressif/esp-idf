@@ -639,12 +639,6 @@ TEST_CASE("Slave receive correct data", "[spi]")
                     slave_cmpbuf[i] = rand_r(&slave_seed_cmp);
                 }
 
-                // esp_log_buffer_hex("master_send", master_sendbuf, buf_size);
-                // esp_log_buffer_hex("slave_recv", slave_recvbuf, buf_size);
-
-                // esp_log_buffer_hex("slave_send", slave_sendbuf, buf_size);
-                // esp_log_buffer_hex("master_recv", master_recvbuf, buf_size);
-
                 int master_expected_len = MIN(master_trans_len, slave_trans_len);
                 TEST_ASSERT_EQUAL_HEX8_ARRAY(master_cmpbuf, master_recvbuf, master_expected_len);
 

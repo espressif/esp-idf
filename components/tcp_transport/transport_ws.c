@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,8 @@ static esp_transport_handle_t ws_get_payload_transport_handle(esp_transport_hand
 
 static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len, int timeout_ms)
 {
+    ESP_STATIC_ANALYZER_CHECK(buffer == NULL, 0);
+
     // No buffered data to read from, directly attempt to read from the transport.
     if (ws->buffer_len == 0) {
         return esp_transport_read(ws->parent, buffer, len, timeout_ms);
@@ -283,7 +285,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     }
     int header_len = 0;
     do {
-        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - header_len, timeout_ms)) <= 0) {
+        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - 1 - header_len, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
             return -1;
         }
@@ -502,7 +504,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
-        payload_len = data_ptr[0] << 8 | data_ptr[1];
+        payload_len = (uint8_t)data_ptr[0] << 8 | (uint8_t)data_ptr[1];
     } else if (payload_len == 127) {
         // headerLen += 8;
         header = 8;
@@ -515,7 +517,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             // really too big!
             payload_len = 0xFFFFFFFF;
         } else {
-            payload_len = data_ptr[4] << 24 | data_ptr[5] << 16 | data_ptr[6] << 8 | data_ptr[7];
+            payload_len = (uint8_t)data_ptr[4] << 24 | (uint8_t)data_ptr[5] << 16 | (uint8_t)data_ptr[6] << 8 | data_ptr[7];
         }
     }
 
@@ -698,7 +700,7 @@ static int ws_get_socket(esp_transport_handle_t t)
 
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
-    if (parent_handle == NULL || parent_handle->foundation == NULL) {
+    if (parent_handle == NULL) {
       ESP_LOGE(TAG, "Invalid parent ptotocol");
       return NULL;
     }

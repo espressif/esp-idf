@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一"}
+{IDF_TARGET_ADC_NUM:default="两", esp32c2="一", esp32c6="一", esp32h2="一", esp32c5="一"}
 
 简介
 ------------
@@ -134,11 +134,12 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 .. code:: c
 
+    adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
         .max_store_buf_size = 1024,
-        .conv_frame_size = 100,
+        .conv_frame_size = 256,
     };
-    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config));
+    ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config, &handle));
 
 
 回收 ADC 单元
@@ -146,7 +147,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_deinit());
+    ESP_ERROR_CHECK(adc_continuous_deinit(handle));
 
 
 .. _adc-continuous-adc-configurations:
@@ -164,7 +165,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 按照以下步骤设置 :cpp:type:`adc_digi_pattern_config_t`：
 
-- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}#sensor>`__ 中的片上传感器与模拟信号处理章节。
+- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}#sensor>`__ 中的 ``ADC 特性`` 章节。
 - :cpp:member:`adc_digi_pattern_config_t::channel`：IO 对应的 ADC 通道号，请参阅下文注意事项。
 - :cpp:member:`adc_digi_pattern_config_t::unit`：IO 所属的 ADC 单元。
 - :cpp:member:`adc_digi_pattern_config_t::bit_width`：原始转换结果的位宽。
@@ -200,11 +201,11 @@ ADC 控制
 
 .. code::c
 
-    ESP_ERROR_CHECK(adc_continuous_start());
+    ESP_ERROR_CHECK(adc_continuous_start(handle));
 
 .. code:: c
 
-    ESP_ERROR_CHECK(adc_continuous_stop());
+    ESP_ERROR_CHECK(adc_continuous_stop(handle));
 
 
 .. _adc-continuous-register-event-callbacks:
@@ -350,7 +351,7 @@ ADC 连续转换模式驱动的 API 不一定线程安全，但驱动程序提�
 应用示例
 --------------------
 
-* ADC 连续转换模式示例：:example:`peripherals/adc/continuous_read`。
+* :example:`peripherals/adc/continuous_read` 演示了如何在 {IDF_TARGET_NAME} 开发板上使用 ADC 连续读取模式（DMA 模式），通过片上 ADC 模块从 GPIO 管脚读取数据。
 
 
 API 参考

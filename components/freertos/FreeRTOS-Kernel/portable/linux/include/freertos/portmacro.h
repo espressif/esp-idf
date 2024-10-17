@@ -94,8 +94,8 @@ extern void vPortEnableInterrupts( void );
 extern BaseType_t xPortSetInterruptMask( void );
 extern void vPortClearInterruptMask( BaseType_t xMask );
 
-extern void vPortEnterCritical( void );
-extern void vPortExitCritical( void );
+void vPortEnterCritical( void );
+void vPortExitCritical( void );
 #define portSET_INTERRUPT_MASK_FROM_ISR()       xPortSetInterruptMask()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)    vPortClearInterruptMask(x)
 #define portDISABLE_INTERRUPTS()                portSET_INTERRUPT_MASK()
@@ -124,7 +124,7 @@ extern void vPortCancelThread( void *pxTaskToDelete );
  * are always a full memory barrier. ISRs are emulated as signals
  * which also imply a full memory barrier.
  *
- * Thus, only a compilier barrier is needed to prevent the compiler
+ * Thus, only a compiler barrier is needed to prevent the compiler
  * reordering.
  */
 #define portMEMORY_BARRIER() __asm volatile( "" ::: "memory" )
@@ -139,5 +139,7 @@ extern unsigned long ulPortGetRunTime( void );
 
 // We need additional definitions for ESP-IDF code
 #include "portmacro_idf.h"
+
+void vPortSetStackWatchpoint(void *pxStackStart);
 
 #endif /* PORTMACRO_H */

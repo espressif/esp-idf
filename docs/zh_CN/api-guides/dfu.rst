@@ -114,13 +114,24 @@ Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情�
 .. _api_guide_dfu_flash_win:
 
 USB 驱动（仅限 Windows）
--------------------------------
+------------------------
 
-``dfu-util`` 使用 `libusb` 来访问设备。你需要在 Windows 上使用 `WinUSB` 驱动程序注册设备。
+``dfu-util`` 使用 `libusb` 访问设备。在 Windows 上，必须先安装 `WinUSB` 驱动程序才能使设备正常工作。详情请参阅 `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_。
 
-更多详细信息，请参考 `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_。
+.. only:: esp32s2
 
-可以通过 `Zadig 工具 <https://zadig.akeo.ie/>`_ 安装驱动程序。请确保在运行该工具之前设备处于下载模式，并确保在安装驱动程序之前检测到 {IDF_TARGET_NAME} 设备。Zadig 工具可能会检测到 {IDF_TARGET_NAME} 的多个 USB 接口。请只为没有安装驱动的接口（可能是接口 2）安装 WinUSB 驱动，不要重新安装其他接口驱动。
+    开发板驱动程序可以从 https://github.com/espressif/esp-win-usb-drivers/releases 下载。文件需要解压并 `安装 <https://learn.microsoft.com/zh-cn/windows-hardware/drivers/ifs/using-an-inf-file-to-install-a-file-system-filter-driver#right-click-install>`_。进行以上操作，可以为正确的设备接口更改或安装 WinUSB 驱动程序。
+
+.. note::
+
+    如果该功能无法正常运作，请手动分配驱动程序；若设备正常工作，请跳过以下章节。
+
+USB 驱动（仅限 Windows）- 手动分配驱动程序
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+可以使用 `Zadig 工具 <https://zadig.akeo.ie/>`_ 手动分配驱动程序。在运行工具前，请确保设备处于下载模式，且在安装驱动程序之前已检测到 {IDF_TARGET_NAME} 设备。
+
+Zadig 工具可能会检测到 {IDF_TARGET_NAME} 的多个 USB 接口。请 **仅为** 没有安装驱动程序的接口（可能是接口 2）安装 `WinUSB` 驱动程序，不要重新安装其他接口的驱动程序。
 
 .. warning::
 

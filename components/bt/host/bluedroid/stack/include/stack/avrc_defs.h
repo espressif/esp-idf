@@ -35,6 +35,7 @@
 #define AVRC_REV_1_3        0x0103
 #define AVRC_REV_1_4        0x0104
 #define AVRC_REV_1_5        0x0105
+#define AVRC_REV_1_6        0x0106
 
 #define AVRC_PACKET_LEN             512 /* Per the spec, you must support 512 byte RC packets */
 
@@ -185,7 +186,7 @@
 #define AVRC_PKT_END              3
 #define AVRC_PKT_TYPE_MASK        3
 
-/* Define the PDUs carried in the vendor dependant data
+/* Define the PDUs carried in the vendor dependent data
 */
 #define AVRC_PDU_GET_CAPABILITIES               0x10
 #define AVRC_PDU_LIST_PLAYER_APP_ATTR           0x11
@@ -297,7 +298,7 @@ typedef UINT8 tAVRC_BATTERY_STATUS;
 #define AVRC_MEDIA_ATTR_ID_TRACK_NUM             0x00000004
 #define AVRC_MEDIA_ATTR_ID_NUM_TRACKS            0x00000005
 #define AVRC_MEDIA_ATTR_ID_GENRE                 0x00000006
-#define AVRC_MEDIA_ATTR_ID_PLAYING_TIME          0x00000007        /* in miliseconds */
+#define AVRC_MEDIA_ATTR_ID_PLAYING_TIME          0x00000007        /* in milliseconds */
 #define AVRC_MAX_NUM_MEDIA_ATTR_ID               7
 
 /* Define the possible values of play state

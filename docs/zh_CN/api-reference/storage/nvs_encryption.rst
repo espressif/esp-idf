@@ -35,7 +35,7 @@ NVS 加密：基于 flash 加密的方案
 NVS 密钥分区
 ^^^^^^^^^^^^^^^^^
 
-应用如果要使用 NVS 加密（使用基于 flash 加密的方案）编译时，须使用类型为 ``data`` 和子类型为 ``key`` 的密钥分区。该分区应被标记为 ``encrypted`` 且最小为 4 KB （最小分区大小）。参考 :doc:`../../api-guides/partition-tables` 了解详情。在分区表选项 ( ``menuconfig`` > ``Partition Table``) 中，有两个包含 :ref:`nvs_encr_key_partition` 的额外分区表，可以直接用于 NVS 加密。分区的结构如下所示：
+应用如果要使用 NVS 加密（使用基于 flash 加密的方案）编译时，须使用类型为 ``data`` 和子类型为 ``nvs_keys`` 的密钥分区。该分区应被标记为 ``encrypted`` 且最小为 4 KB （最小分区大小）。参考 :doc:`../../api-guides/partition-tables` 了解详情。在分区表选项 ( ``menuconfig`` > ``Partition Table``) 中，有两个包含 :ref:`nvs_encr_key_partition` 的额外分区表，可以直接用于 NVS 加密。分区的结构如下所示：
 
 .. highlight:: none
 
@@ -66,6 +66,10 @@ NVS 密钥分区
 
             parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
 
+            # 如果启用了 Flash Encryption 或 Secure Boot，需要使用 "--esptool-erase-args=force" 来抑制错误：
+            # "Active security features detected, erasing flash is disabled as a safety measure.  Use --force to override ..."
+            parttool.py --port PORT --esptool-erase-args=force --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
+
 **使用预生成的 NVS 密钥分区**
 
     如果 :ref:`nvs_encr_key_partition` 中的密钥不是由应用程序生成，则需要使用预先生成的密钥分区。可以使用 :doc:`/api-reference/storage/nvs_partition_gen` 生成包含 XTS 加密密钥的 :ref:`nvs_encr_key_partition`。然后使用以下两个命令将预生成的密钥分区存储到 flash 上：
@@ -80,11 +84,19 @@ NVS 密钥分区
 
         parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
+        # 如果启用了 Flash Encryption 或 Secure Boot，需要使用 "--esptool-erase-args=force" 来抑制错误：
+        # "Active security features detected, erasing flash is disabled as a safety measure.  Use --force to override ..."
+        parttool.py --port PORT --esptool-erase-args=force --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
+
     .. note::
         如果设备是在 flash 加密开发模式下加密的，那么要更新 NVS 密钥分区就需要使用 :component_file:`parttool.py <partition_table/parttool.py>` 来加密 NVS 密钥分区，并提供一个指向你构建目录中未加密分区表的指针 (build/partition_table)，因为设备上的分区表也是加密的。命令如下：
         ::
 
             parttool.py --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="nvs_key 分区名称" --input NVS_KEY_PARTITION_FILE
+
+            # 如果启用了 Flash Encryption 或 Secure Boot，需要使用 "--esptool-erase-args=force" 来抑制错误：
+            # "Active security features detected, erasing flash is disabled as a safety measure.  Use --force to override ..."
+            parttool.py --esptool-erase-args=force --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
 由于密钥分区被标记为 ``encrypted``，且 :doc:`../../security/flash-encryption` 已启用，引导程序会在首次启动时使用 flash 加密密钥对此分区进行加密。
 
@@ -122,7 +134,7 @@ NVS 密钥分区
     .. note:: 可以使用以下命令预先在 eFuse 中设置自己的 HMAC 密钥：
         ::
 
-            espefuse.py -p PORT burn_key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
+            idf.py -p PORT efuse-burn-key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
 
 加密读/写
 --------------------

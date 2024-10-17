@@ -233,6 +233,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -314,8 +315,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
-    // Ensure no other output signal is routed via GPIO matrix to this pin
-    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4), SIG_GPIO_OUT_IDX);
 }
 
 /**
@@ -350,6 +349,21 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 1;
+}
+
+/**
+ * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    gpio_func_out_sel_cfg_reg_t reg = {
+      .out_sel = SIG_GPIO_OUT_IDX,
+    };
+    hw->func_out_sel_cfg[gpio_num].val = reg.val;
 }
 
 /**
@@ -545,7 +559,8 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
  * @param  val    Control value
  * @param  shift  write mask shift of control value
  */
-static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+__attribute__((always_inline))
+static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
     SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }

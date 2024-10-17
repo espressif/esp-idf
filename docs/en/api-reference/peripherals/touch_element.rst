@@ -450,10 +450,14 @@ The Touch Element Wakeup example is available in `system/light_sleep` directory.
         ...
     }
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-All the Touch Element library examples could be found in the :example:`peripherals/touch_sensor/touch_element` directory of ESP-IDF examples.
+- :example:`peripherals/touch_sensor/touch_element/touch_element_waterproof` demonstrates how to use the Touch Element library to set up capacitive touch sensors with waterproof protection.
+- :example:`peripherals/touch_sensor/touch_element/touch_slider` demonstrates how to use the Touch Element library to set up and operate a touch slider.
+- :example:`peripherals/touch_sensor/touch_element/touch_elements_combination` demonstrates how to use the Touch Element library to set up multiple types of touch elements and handle all the event messages in one task.
+- :example:`peripherals/touch_sensor/touch_element/touch_matrix` demonstrates how to use the Touch Element library to set up and use a touch matrix with a capacitive touch sensor on {IDF_TARGET_NAME} development boards.
+- :example:`peripherals/touch_sensor/touch_element/touch_button` demonstrates how to use the Touch Element library to set up and use a touch button on {IDF_TARGET_NAME} development boards.
 
 
 API Reference - Touch Element Core

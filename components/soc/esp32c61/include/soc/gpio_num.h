@@ -6,7 +6,6 @@
 
 #pragma once
 
-//TODO: [ESP32C61] IDF-9316, check pins attribute
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,9 +37,6 @@ typedef enum {
     GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
-    GPIO_NUM_22 = 22,   /*!< GPIO22, NC */
-    GPIO_NUM_23 = 23,   /*!< GPIO23, NC */
-    GPIO_NUM_24 = 24,   /*!< GPIO24, NC */
     GPIO_NUM_MAX,
 } gpio_num_t;
 

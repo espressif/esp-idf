@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 
 # TCP Client example
@@ -23,7 +23,7 @@ Set following parameters under ```Example Configuration``` Options:
 
 * Set `IPV6 Address` in case your chose IP version IPV6 above.
     * For IPv6 there's an additional option for ```Interface selection```.
-    * Enter the name of the interface to explicitely establish communication over a specific interface.
+    * Enter the name of the interface to explicitly establish communication over a specific interface.
     * On selecting ```Auto``` the example will find the first interface with an IPv6 address and use it.
 
 * Set `Port` number that represents remote port the example will connect to.

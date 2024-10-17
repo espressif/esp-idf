@@ -14,6 +14,11 @@ menu "Cache config"
             bool "16KB"
     endchoice
 
+    config ESP32S2_INSTRUCTION_CACHE_SIZE
+        hex
+        default 0x2000 if ESP32S2_INSTRUCTION_CACHE_8KB
+        default 0x4000 if ESP32S2_INSTRUCTION_CACHE_16KB
+
     choice ESP32S2_INSTRUCTION_CACHE_LINE_SIZE
         prompt "Instruction cache line size"
         default ESP32S2_INSTRUCTION_CACHE_LINE_32B
@@ -42,6 +47,12 @@ menu "Cache config"
         config ESP32S2_DATA_CACHE_16KB
             bool "16KB"
     endchoice
+
+    config ESP32S2_DATA_CACHE_SIZE
+        hex
+        default 0 if ESP32S2_DATA_CACHE_0KB
+        default 0x2000 if ESP32S2_DATA_CACHE_8KB
+        default 0x4000 if ESP32S2_DATA_CACHE_16KB
 
     choice ESP32S2_DATA_CACHE_LINE_SIZE
         prompt "Data cache line size"

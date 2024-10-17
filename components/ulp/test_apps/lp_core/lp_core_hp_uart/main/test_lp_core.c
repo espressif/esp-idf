@@ -22,6 +22,12 @@
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_test_app_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_test_app_bin_end");
 
+<<<<<<< HEAD
+=======
+extern const uint8_t lp_core_panic_bin_start[] asm("_binary_lp_core_test_app_panic_bin_start");
+extern const uint8_t lp_core_panic_bin_end[]   asm("_binary_lp_core_test_app_panic_bin_end");
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 extern const uint8_t lp_core_shared_mem_bin_start[] asm("_binary_lp_core_test_app_shared_mem_bin_start");
 extern const uint8_t lp_core_shared_mem_bin_end[]   asm("_binary_lp_core_test_app_shared_mem_bin_end");
 
@@ -48,6 +54,23 @@ TEST_CASE("lp-print can output to hp-uart", "[lp_core]")
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
+<<<<<<< HEAD
+=======
+TEST_CASE("LP-Core panic", "[lp_core]")
+{
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_panic_bin_start, lp_core_panic_bin_end);
+
+    // Actual test output on UART is checked by pytest, not unity test-case
+    // We simply wait to allow the lp-core to run once
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 TEST_CASE("LP-Core Shared-mem", "[lp_core]")
 {
     /* Load ULP firmware and start the coprocessor */

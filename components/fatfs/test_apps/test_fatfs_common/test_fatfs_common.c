@@ -17,6 +17,7 @@
 #include <utime.h>
 #include "unity.h"
 #include "esp_vfs.h"
+#include "esp_timer.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -754,6 +755,65 @@ void test_fatfs_can_opendir(const char* path)
     TEST_ASSERT_TRUE(found);
     TEST_ASSERT_EQUAL(0, closedir(dir));
     unlink(name_dir_file);
+}
+
+void test_fatfs_readdir_stat(const char* dir_prefix)
+{
+    char name_dir_file[64];
+    char name_dir_stat[64];
+    int file_num = 25;
+
+    rmdir(dir_prefix);
+    TEST_ASSERT_EQUAL(0, mkdir(dir_prefix, 0755));
+
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix,i);
+        test_fatfs_create_file_with_text(name_dir_file, fatfs_test_hello_str);
+    }
+
+    printf("Start counting\n");
+    int64_t start = esp_timer_get_time();
+    DIR* dir = opendir(dir_prefix);
+    TEST_ASSERT_NOT_NULL(dir);
+    struct stat st;
+    struct dirent* de;
+    uint32_t dir_size = 0;
+
+    // Call readdir before stat function and record the time needed to calculate the directory size
+    while(1) {
+        de = readdir(dir);
+        if (!de) {
+            break;
+        }
+        snprintf(name_dir_stat, sizeof(dir_prefix)+sizeof(de->d_name), "%s/%s", dir_prefix, de->d_name);
+        TEST_ASSERT_EQUAL(0, stat(name_dir_stat, &st));
+        dir_size += st.st_size;
+    }
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    int64_t end = esp_timer_get_time();
+    int64_t total_time_readdir = end-start;
+    printf("Time in us for calculating directory size by calling readdir first and then stat func:  %lld \n",total_time_readdir);
+    printf("Size of the directory %s is %"PRIu32"bytes\n", dir_prefix, dir_size);
+    TEST_ASSERT_EQUAL(file_num*14, dir_size); //each file size is 14 bytes
+
+    // Call stat function directly and record the time needed to calculate the directory size
+    dir_size = 0;
+    start = esp_timer_get_time();
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix, i);
+        TEST_ASSERT_EQUAL(0, stat(name_dir_file, &st));
+        dir_size += st.st_size;
+    }
+    end = esp_timer_get_time();
+    int64_t total_time_stat = end-start;
+    printf("Time in us for calculating directory size by calling stat func:  %lld \n",total_time_stat);
+    printf("Size of the directory %s is %"PRIu32"bytes\n", dir_prefix, dir_size);
+    TEST_ASSERT_EQUAL(file_num*14, dir_size); //each file size is 14 bytes
+
+    for(int i=0;i<file_num;i++) {
+        snprintf(name_dir_file, sizeof(name_dir_file), "%s/boo_%d.bin", dir_prefix,i);
+        unlink(name_dir_file);
+    }
 }
 
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix)

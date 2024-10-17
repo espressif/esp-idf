@@ -1,19 +1,53 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Console Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example illustrates the usage of the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html#console) to create an interactive shell on the ESP32. The interactive shell running on the ESP32 can then be controlled/interacted with over a serial port (UART).
+This example illustrates the usage of the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html#console) to create an interactive shell on a ESP chip. The interactive shell running on the ESP chip can then be controlled/interacted with over a serial interface. This example supports UART and USB interfaces.
 
 The interactive shell implemented in this example contains a wide variety of commands, and can act as a basis for applications that require a command-line interface (CLI).
 
 ## How to use example
 
-### Hardware Required
+This example can be used on boards with UART and USB interfaces. The sections below explain how to set up the board and configure the example.
 
-This example should be able to run on any commonly available ESP32 development board.
+### Using with UART
+
+When UART interface is used, this example can run on any commonly available Espressif development board. UART interface is enabled by default (`CONFIG_ESP_CONSOLE_UART_DEFAULT` option in menuconfig). No extra configuration is required.
+
+### Using with USB_SERIAL_JTAG
+
+*NOTE: We recommend to disable the secondary console output on chips with USB_SERIAL_JTAG since the secondary serial is output-only and would not be very useful when using a console application. This is why the secondary console output is deactivated per default (CONFIG_ESP_CONSOLE_SECONDARY_NONE=y)*
+
+On chips with USB_SERIAL_JTAG peripheral, console example can be used over the USB serial port.
+
+* First, connect the USB cable to the USB_SERIAL_JTAG interface.
+* Second, run `idf.py menuconfig` and enable `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG` option.
+
+For more details about connecting and configuring USB_SERIAL_JTAG (including pin numbers), see the IDF Programming Guide:
+* [ESP32-C3 USB_SERIAL_JTAG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/usb-serial-jtag-console.html)
+* [ESP32-C6 USB_SERIAL_JTAG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c6/api-guides/usb-serial-jtag-console.html)
+* [ESP32-S3 USB_SERIAL_JTAG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-serial-jtag-console.html)
+* [ESP32-H2 USB_SERIAL_JTAG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32h2/api-guides/usb-serial-jtag-console.html)
+
+### Using with USB CDC (USB_OTG peripheral)
+
+USB_OTG peripheral can also provide a USB serial port which works with this example.
+
+* First, connect the USB cable to the USB_OTG peripheral interface.
+* Second, run `idf.py menuconfig` and enable `CONFIG_ESP_CONSOLE_USB_CDC` option.
+
+For more details about connecting and configuring USB_OTG (including pin numbers), see the IDF Programming Guide:
+* [ESP32-S2 USB_OTG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-guides/usb-otg-console.html)
+* [ESP32-S3 USB_OTG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-otg-console.html)
+
+### Other configuration options
+
+This example has an option to store the command history in Flash. This option is enabled by default.
+
+To disable this, run `idf.py menuconfig` and disable `CONFIG_CONSOLE_STORE_HISTORY` option.
 
 ### Configure the project
 
@@ -21,7 +55,12 @@ This example should be able to run on any commonly available ESP32 development b
 idf.py menuconfig
 ```
 
-* Enable/disable `Example Configuration > Store command history in flash` as necessary
+* Enable/Disable storing command history in flash and load the history in a next example run. Linenoise line editing library provides functions to save and load
+  command history. If this option is enabled, initializes a FAT filesystem and uses it to store command history.
+  * `Example Configuration > Store command history in flash`
+
+* Accept/Ignore empty lines inserted into the console. If an empty line is inserted to the console, the Console can either ignore empty lines (the example would continue), or break on emplty lines (the example would stop after an empty line).
+  * `Example Configuration > Ignore empty lines inserted into the console`
 
 ### Build and Flash
 
@@ -46,33 +85,34 @@ This is an example of ESP-IDF console component.
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-[esp32]> help
+Ctrl+C will terminate the console environment.
+esp32> help
 help
-  Print the list of registered commands
+help  [<string>]
+  Print the summary of all registered commands if no arguments are given,
+  otherwise print summary of given command.
+      <string>  Name of command
 
-free
-  Get the total size of heap memory available
+free 
+  Get the current size of free heap memory
 
-restart
-  Restart the program
+heap 
+  Get minimum size of free heap memory that was available during program
+  execution
 
-deep_sleep  [-t <t>] [--io=<n>] [--io_level=<0|1>]
-  Enter deep sleep mode. Two wakeup modes are supported: timer and GPIO. If no
-  wakeup option is specified, will sleep indefinitely.
-  -t, --time=<t>  Wake up time, ms
-      --io=<n>  If specified, wakeup using GPIO with given number
-  --io_level=<0|1>  GPIO level to trigger wakeup
+version 
+  Get version of chip and SDK
 
-join  [--timeout=<t>] <ssid> [<pass>]
-  Join WiFi AP as a station
-  --timeout=<t>  Connection timeout, ms
-        <ssid>  SSID of AP
-        <pass>  PSK of AP
+restart 
+  Software reset of the chip
 
-[esp32]> free
+...
+...
+
+esp32> free
 257200
-[esp32]> deep_sleep -t 1000
-I (146929) deep_sleep: Enabling timer wakeup, timeout=1000000us
+esp32> deep_sleep -t 1000
+I (146929) cmd_system_sleep: Enabling timer wakeup, timeout=1000000us
 I (619) heap_init: Initializing. RAM available for dynamic allocation:
 I (620) heap_init: At 3FFAE2A0 len 00001D60 (7 KiB): DRAM
 I (626) heap_init: At 3FFB7EA0 len 00028160 (160 KiB): DRAM
@@ -84,13 +124,13 @@ This is an example of ESP-IDF console component.
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-[esp32]> join --timeout 10000 test_ap test_password
+esp32> join --timeout 10000 test_ap test_password
 I (182639) connect: Connecting to 'test_ap'
 I (184619) connect: Connected
-[esp32]> free
+esp32> free
 212328
-[esp32]> restart
-I (205639) restart: Restarting
+esp32> restart
+I (205639) cmd_system_common: Restarting
 I (616) heap_init: Initializing. RAM available for dynamic allocation:
 I (617) heap_init: At 3FFAE2A0 len 00001D60 (7 KiB): DRAM
 I (623) heap_init: At 3FFB7EA0 len 00028160 (160 KiB): DRAM
@@ -102,7 +142,8 @@ This is an example of ESP-IDF console component.
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-[esp32]>
+Ctrl+C will terminate the console environment.
+esp32>
 
 ```
 
@@ -110,7 +151,7 @@ Press TAB when typing command name to auto-complete.
 
 ### Line Endings
 
-The line endings in the Console Example are configured to match particular serial monitors. Therefore, if the following log output appears, consider using a different serial monitor (e.g. Putty for Windows) or modify the example's [UART configuration](#Configuring-UART-and-VFS).
+The line endings in the Console Example are configured to match particular serial monitors. Therefore, if the following log output appears, consider using a different serial monitor (e.g. Putty for Windows) or modify the example's [UART configuration](#Configuring-UART).
 
 ```
 This is an example of ESP-IDF console component.
@@ -123,11 +164,26 @@ On Windows, try using Putty instead.
 esp32>
 ```
 
+### No USB port appears
+
+On Windows 10, macOS, Linux, USB CDC devices do not require additional drivers to be installed.
+
+If the USB serial port doesn't appear in the system after flashing the example, check the following:
+
+* Check that the USB device is detected by the OS.
+  VID/PID pair for ESP32-S2 is 303a:0002.
+
+  - On Windows, check the Device Manager
+  - On macOS, check USB section in the System Information utility
+  - On Linux, check `lsusb` output
+
+* If the device is not detected, check the USB cable connection (D+, D-, and ground should be connected)
+
 ## Example Breakdown
 
 ### Configuring UART
 
-The ``initialize_console()`` function in the example configures some aspects of UART relevant to the operation of the console.
+The ``initialize_console_library()`` function in the example configures some aspects of UART relevant to the operation of the console.
 
 - **Line Endings**: The default line endings are configured to match those expected/generated by common serial monitor programs, such as `screen`, `minicom`, and the `esp-idf-monitor` included in the SDK. The default behavior for these commands are:
     - When 'enter' key is pressed on the keyboard, `CR` (0x13) code is sent to the serial device.

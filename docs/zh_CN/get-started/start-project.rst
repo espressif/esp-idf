@@ -115,14 +115,13 @@
 
     1. 退出监视器。
     2. 返回 ``menuconfig``。
-    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ_SEL` 设置为 26 MHz。
+    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ` 设置为 26 MHz。
     4. 重新 ``编译和烧录`` 应用程序。
 
     在当前的 ESP-IDF 版本中，{IDF_TARGET_NAME} 支持的主晶振频率如下：
 
     .. list::
 
-        :SOC_XTAL_SUPPORT_24M: - 24 MHz
         :SOC_XTAL_SUPPORT_26M: - 26 MHz
         :SOC_XTAL_SUPPORT_32M: - 32 MHz
         :SOC_XTAL_SUPPORT_40M: - 40 MHz
@@ -176,7 +175,7 @@ ESP-IDF 支持 Python 3.8 及以上版本，建议升级操作系统到最新版
 
     一般来说，BSP 支持开发板上所有硬件组件。除了管脚定义和初始化功能外，BSP 还附带如传感器、显示器、音频编解码器等外部元件的驱动程序。
 
-    BSP 通过 :doc:`IDF 组件管理器 </api-guides/tools/idf-component-manager>` 发布，可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
+    BSP 通过 :doc:`IDF 组件管理器 </api-guides/tools/idf-component-manager>` 发布，可以前往 `乐鑫组件注册表 <https://components.espressif.com>`_ 进行下载。
 
     .. only:: esp32
 

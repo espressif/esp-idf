@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "hal/gpio_ll.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
@@ -109,12 +110,12 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     vTaskDelay(5 / portTICK_PERIOD_MS);
 
-    // duty ratio: (2^duty)/(2^timer_bit)
+    // duty ratio: (duty)/(2^timer_bit)
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 0);
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 1);
-    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 1 << 12); // 50% duty
-    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << 13) - 1);
-    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << 13) - 2);
+    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 1 << (timer_bit - 1)); // 50% duty
+    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << timer_bit) - 1);
+    timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << timer_bit) - 2);
 }
 
 TEST_CASE("LEDC channel config wrong gpio", "[ledc]")
@@ -471,7 +472,7 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
 }
 #endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
-#if SOC_PCNT_SUPPORTED // Note. C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
+#if SOC_PCNT_SUPPORTED // Note. C61, C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 
@@ -509,7 +510,7 @@ static void tear_testbench(void)
 static int wave_count(int last_time)
 {
     // The input ability of PULSE_IO is disabled after ledc driver install, so we need to re-enable it again
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[PULSE_IO]);
+    gpio_ll_input_enable(&GPIO, PULSE_IO);
     int test_counter = 0;
     TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
     TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
@@ -532,15 +533,6 @@ static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32
 
 static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
 {
-    ledc_channel_config_t ledc_ch_config = {
-        .gpio_num = PULSE_IO,
-        .speed_mode = speed_mode,
-        .channel  = channel,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = timer,
-        .duty = 4000,
-        .hpoint = 0,
-    };
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
         .duty_resolution = timer_bit,
@@ -548,8 +540,12 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
         .freq_hz = TEST_PWM_FREQ,
         .clk_cfg = TEST_DEFAULT_CLK_CFG,
     };
-    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    TEST_ESP_OK(ledc_bind_channel_timer(speed_mode, channel, timer));
+
+    TEST_ESP_OK(ledc_set_duty(speed_mode, channel, (1 << (timer_bit - 1)))); // 50% duty cycle
+    TEST_ESP_OK(ledc_update_duty(speed_mode, channel));
+
     frequency_set_get(speed_mode, timer, 100, 100, 20);
 #if SOC_CLK_TREE_SUPPORTED
     frequency_set_get(speed_mode, timer, 5000, 5000, 50);
@@ -574,16 +570,23 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
 TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 {
     setup_testbench();
+
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
 #if SOC_LEDC_SUPPORT_HS_MODE
+    ledc_ch_config.speed_mode = LEDC_HIGH_SPEED_MODE;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_3, LEDC_HIGH_SPEED_MODE);
 #endif // SOC_LEDC_SUPPORT_HS_MODE
+    ledc_ch_config.speed_mode = LEDC_LOW_SPEED_MODE;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_3, LEDC_LOW_SPEED_MODE);
+
     tear_testbench();
 }
 
@@ -599,6 +602,7 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
         .clk_cfg = clk_src,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    TEST_ESP_OK(ledc_update_duty(speed_mode, LEDC_CHANNEL_0)); // Start
     vTaskDelay(100 / portTICK_PERIOD_MS);
     if (clk_src == LEDC_USE_RC_FAST_CLK) {
         // RC_FAST_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
@@ -662,6 +666,16 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     int count;
+
+    ledc_timer_config_t ledc_time_config = {
+        .speed_mode = test_speed_mode,
+        .duty_resolution = LEDC_TIMER_13_BIT,
+        .timer_num = LEDC_TIMER_0,
+        .freq_hz = TEST_PWM_FREQ,
+        .clk_cfg = TEST_DEFAULT_CLK_CFG,
+    };
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+
     ledc_channel_config_t ledc_ch_config = {
         .gpio_num = PULSE_IO,
         .speed_mode = test_speed_mode,
@@ -672,15 +686,6 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
         .hpoint = 0,
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
-
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = test_speed_mode,
-        .duty_resolution = LEDC_TIMER_13_BIT,
-        .timer_num = LEDC_TIMER_0,
-        .freq_hz = TEST_PWM_FREQ,
-        .clk_cfg = TEST_DEFAULT_CLK_CFG,
-    };
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
@@ -711,11 +716,12 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
 
 static void ledc_cpu_reset_test_first_stage(void)
 {
+    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
-    ledc_timer_config_t ledc_time_config = create_default_timer_config();
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     vTaskDelay(50 / portTICK_PERIOD_MS);
     esp_restart();
 }

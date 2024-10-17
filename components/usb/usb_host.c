@@ -16,23 +16,24 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "esp_private/critical_section.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hub.h"
+#include "enum.h"
 #include "usbh.h"
 #include "hcd.h"
 #include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
-static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
-
-#define HOST_ENTER_CRITICAL_ISR()       portENTER_CRITICAL_ISR(&host_lock)
-#define HOST_EXIT_CRITICAL_ISR()        portEXIT_CRITICAL_ISR(&host_lock)
-#define HOST_ENTER_CRITICAL()           portENTER_CRITICAL(&host_lock)
-#define HOST_EXIT_CRITICAL()            portEXIT_CRITICAL(&host_lock)
-#define HOST_ENTER_CRITICAL_SAFE()      portENTER_CRITICAL_SAFE(&host_lock)
-#define HOST_EXIT_CRITICAL_SAFE()       portEXIT_CRITICAL_SAFE(&host_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(host_lock);
+#define HOST_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&host_lock)
+#define HOST_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&host_lock)
+#define HOST_ENTER_CRITICAL()           esp_os_enter_critical(&host_lock)
+#define HOST_EXIT_CRITICAL()            esp_os_exit_critical(&host_lock)
+#define HOST_ENTER_CRITICAL_SAFE()      esp_os_enter_critical_safe(&host_lock)
+#define HOST_EXIT_CRITICAL_SAFE()       esp_os_exit_critical_safe(&host_lock)
 
 #define HOST_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
@@ -46,12 +47,12 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
             }                                                               \
 })
 
-#define PROCESS_REQUEST_PENDING_FLAG_USBH       0x01
-#define PROCESS_REQUEST_PENDING_FLAG_HUB        0x02
+#define PROCESS_REQUEST_PENDING_FLAG_USBH       (1 << 0)
+#define PROCESS_REQUEST_PENDING_FLAG_HUB        (1 << 1)
+#define PROCESS_REQUEST_PENDING_FLAG_ENUM       (1 << 2)
 
-#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-#define ENABLE_ENUM_FILTER_CALLBACK
-#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define SHORT_DESC_REQ_LEN                      8
+#define CTRL_TRANSFER_MAX_DATA_LEN              CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 
 #define SHORT_DESC_REQ_LEN                      8
 #define CTRL_TRANSFER_MAX_DATA_LEN              CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
@@ -112,7 +113,7 @@ struct client_s {
             uint32_t val;
         } flags;
         uint32_t num_done_ctrl_xfer;
-        uint32_t opened_dev_addr_map;
+        uint32_t opened_dev_addr_map[4];
     } dynamic;
     // Mux protected members must be protected by host library the mux_lock when accessed
     struct {
@@ -152,7 +153,12 @@ typedef struct {
         SemaphoreHandle_t event_sem;
         SemaphoreHandle_t mux_lock;
         usb_phy_handle_t phy_handle;    // Will be NULL if host library is installed with skip_phy_setup
+<<<<<<< HEAD
         void *hub_client;   // Pointer to Hub driver (acting as a client). Used to reroute completed USBH control transfers
+=======
+        void *enum_client;              // Pointer to Enum driver (acting as a client). Used to reroute completed USBH control transfers
+        void *hub_client;               // Pointer to External Hub driver (acting as a client). Used to reroute completed USBH control transfers. NULL, when External Hub Driver not available.
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     } constant;
 } host_lib_t;
 
@@ -164,19 +170,20 @@ const char *USB_HOST_TAG = "USB HOST";
 
 static inline void _record_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map |= (1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] |= (uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline void _clear_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
-    assert(dev_addr != 0);
-    client_obj->dynamic.opened_dev_addr_map &= ~(1 << (dev_addr - 1));
+    assert(dev_addr != 0 && dev_addr <= 127);
+    client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] &= ~(uint32_t)(1 << (dev_addr % 32));
 }
 
 static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev_addr)
 {
     bool ret;
+<<<<<<< HEAD
 
     if (dev_addr != 0) {
         ret = client_obj->dynamic.opened_dev_addr_map & (1 << (dev_addr - 1));
@@ -184,6 +191,14 @@ static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev
         ret = false;
     }
 
+=======
+    assert(dev_addr <= 127);
+    if (dev_addr != 0) {
+        ret = client_obj->dynamic.opened_dev_addr_map[dev_addr / 32] & (uint32_t)(1 << (dev_addr % 32));
+    } else {
+        ret = false;
+    }
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return ret;
 }
 
@@ -221,6 +236,19 @@ static bool _unblock_lib(bool in_isr)
     HOST_ENTER_CRITICAL_SAFE();
 
     return yield;
+}
+
+static inline bool _is_internal_client(void *client)
+{
+    if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
+        return true;
+    }
+#if ENABLE_USB_HUBS
+    if (p_host_lib_obj->constant.hub_client && (client == p_host_lib_obj->constant.hub_client)) {
+        return true;
+    }
+#endif // ENABLE_USB_HUBS
+    return false;
 }
 
 static void send_event_msg_to_clients(const usb_host_client_event_msg_t *event_msg, bool send_to_all, uint8_t opened_dev_addr)
@@ -267,6 +295,9 @@ static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *a
     case USB_PROC_REQ_SOURCE_HUB:
         p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_HUB;
         break;
+    case USB_PROC_REQ_SOURCE_ENUM:
+        p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_ENUM;
+        break;
     }
     bool yield = _unblock_lib(in_isr);
     HOST_EXIT_CRITICAL_SAFE();
@@ -281,8 +312,13 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         assert(event_data->ctrl_xfer_data.urb != NULL);
         assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
         // Redistribute completed control transfers to the clients that submitted them
+<<<<<<< HEAD
         if (event_data->ctrl_xfer_data.urb->usb_host_client == p_host_lib_obj->constant.hub_client) {
             // Redistribute to Hub driver. Simply call the transfer callback
+=======
+        if (_is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
+            // Simply call the transfer callback
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
             event_data->ctrl_xfer_data.urb->transfer.callback(&event_data->ctrl_xfer_data.urb->transfer);
         } else {
             client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
@@ -301,9 +337,15 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
             .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
+#if ENABLE_USB_HUBS
+        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         break;
     }
     case USBH_EVENT_DEV_GONE: {
+#if ENABLE_USB_HUBS
+        hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         // Prepare event msg, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
@@ -314,7 +356,14 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
     }
     case USBH_EVENT_DEV_FREE: {
         // Let the Hub driver know that the device is free and its port can be recycled
+<<<<<<< HEAD
         ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.dev_uid));
+=======
+        // Port could be absent, no need to verify
+        hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
+                         event_data->dev_free_data.port_num,
+                         event_data->dev_free_data.dev_uid);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         break;
     }
     case USBH_EVENT_ALL_FREE: {
@@ -325,6 +374,55 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         HOST_EXIT_CRITICAL();
         break;
     }
+    default:
+        abort();    // Should never occur
+        break;
+    }
+}
+
+static void hub_event_callback(hub_event_data_t *event_data, void *arg)
+{
+    switch (event_data->event) {
+    case HUB_EVENT_CONNECTED:
+        // Start enumeration process
+        enum_start(event_data->connected.uid);
+        break;
+    case HUB_EVENT_RESET_COMPLETED:
+        ESP_ERROR_CHECK(enum_proceed(event_data->reset_completed.uid));
+        break;
+    case HUB_EVENT_DISCONNECTED:
+        // Cancel enumeration process
+        enum_cancel(event_data->disconnected.uid);
+        // We allow this to fail in case the device object was already freed
+        usbh_devs_remove(event_data->disconnected.uid);
+        break;
+    default:
+        abort();    // Should never occur
+        break;
+    }
+}
+
+static void enum_event_callback(enum_event_data_t *event_data, void *arg)
+{
+    enum_event_t event = event_data->event;
+
+    switch (event) {
+    case ENUM_EVENT_STARTED:
+        // Enumeration process started
+        break;
+    case ENUM_EVENT_RESET_REQUIRED:
+        // Device may be gone, don't need to verify result
+        hub_port_reset(event_data->reset_req.parent_dev_hdl, event_data->reset_req.parent_port_num);
+        break;
+    case ENUM_EVENT_COMPLETED:
+        // Notify port that device completed enumeration
+        hub_port_active(event_data->complete.parent_dev_hdl, event_data->complete.parent_port_num);
+        // Propagate a new device event
+        ESP_ERROR_CHECK(usbh_devs_new_dev_event(event_data->complete.dev_hdl));
+        break;
+    case ENUM_EVENT_CANCELED:
+        hub_port_disable(event_data->canceled.parent_dev_hdl, event_data->canceled.parent_port_num);
+        break;
     default:
         abort();    // Should never occur
         break;
@@ -388,6 +486,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     - USB PHY
     - HCD
     - USBH
+    - Enum
     - Hub
     */
 
@@ -404,6 +503,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         };
         ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
         if (ret != ESP_OK) {
+            ESP_LOGE(USB_HOST_TAG, "PHY install error: %s", esp_err_to_name(ret));
             goto phy_err;
         }
     }
@@ -414,6 +514,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = hcd_install(&hcd_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "HCD install error: %s", esp_err_to_name(ret));
         goto hcd_err;
     }
 
@@ -426,24 +527,37 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     };
     ret = usbh_install(&usbh_config);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "USBH install error: %s", esp_err_to_name(ret));
         goto usbh_err;
     }
 
-#ifdef ENABLE_ENUM_FILTER_CALLBACK
-    if (config->enum_filter_cb == NULL) {
-        ESP_LOGW(USB_HOST_TAG, "User callback to set USB device configuration is enabled, but not used");
-    }
+    // Install Enumeration driver
+    enum_config_t enum_config = {
+        .proc_req_cb = proc_req_callback,
+        .proc_req_cb_arg = NULL,
+        .enum_event_cb = enum_event_callback,
+        .enum_event_cb_arg = NULL,
+#if ENABLE_ENUM_FILTER_CALLBACK
+        .enum_filter_cb = config->enum_filter_cb,
+        .enum_filter_cb_arg = NULL,
 #endif // ENABLE_ENUM_FILTER_CALLBACK
+    };
+    ret = enum_install(&enum_config, &host_lib_obj->constant.enum_client);
+    if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Enum. driver install error: %s", esp_err_to_name(ret));
+        goto enum_err;
+    }
+
     // Install Hub
     hub_config_t hub_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
-#ifdef ENABLE_ENUM_FILTER_CALLBACK
-        .enum_filter_cb = config->enum_filter_cb,
-#endif // ENABLE_ENUM_FILTER_CALLBACK
+        .event_cb = hub_event_callback,
+        .event_cb_arg = NULL,
     };
     ret = hub_install(&hub_config, &host_lib_obj->constant.hub_client);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Hub driver Install error: %s", esp_err_to_name(ret));
         goto hub_err;
     }
 
@@ -457,14 +571,19 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     p_host_lib_obj = host_lib_obj;
     HOST_EXIT_CRITICAL();
 
-    // Start the root hub
-    ESP_ERROR_CHECK(hub_root_start());
+    if (!config->root_port_unpowered) {
+        // Start the root hub
+        ESP_ERROR_CHECK(hub_root_start());
+    }
+
     ret = ESP_OK;
     return ret;
 
 assign_err:
     ESP_ERROR_CHECK(hub_uninstall());
 hub_err:
+    ESP_ERROR_CHECK(enum_uninstall());
+enum_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
     ESP_ERROR_CHECK(hcd_uninstall());
@@ -507,11 +626,13 @@ esp_err_t usb_host_uninstall(void)
     /*
     Uninstall each layer of the Host stack (listed below) from the highest layer to the lowest
     - Hub
+    - Enum
     - USBH
     - HCD
     - USB PHY
     */
     ESP_ERROR_CHECK(hub_uninstall());
+    ESP_ERROR_CHECK(enum_uninstall());
     ESP_ERROR_CHECK(usbh_uninstall());
     ESP_ERROR_CHECK(hcd_uninstall());
     // If the USB PHY was setup, then delete it
@@ -558,6 +679,9 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
         if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_HUB) {
             ESP_ERROR_CHECK(hub_process());
         }
+        if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_ENUM) {
+            ESP_ERROR_CHECK(enum_process());
+        }
 
         ret = ESP_OK;
         // Set timeout_ticks to 0 so that we can check for events again without blocking
@@ -602,6 +726,18 @@ esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret)
     info_ret->num_devices = num_devs_temp;
     info_ret->num_clients = num_clients_temp;
     return ESP_OK;
+}
+
+esp_err_t usb_host_lib_set_root_port_power(bool enable)
+{
+    esp_err_t ret;
+    if (enable) {
+        ret = hub_root_start();
+    } else {
+        ret = hub_root_stop();
+    }
+
+    return ret;
 }
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
@@ -729,7 +865,10 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)
             client_obj->dynamic.flags.taking_mux ||
             client_obj->dynamic.flags.num_intf_claimed != 0 ||
             client_obj->dynamic.num_done_ctrl_xfer != 0 ||
-            client_obj->dynamic.opened_dev_addr_map != 0) {
+            client_obj->dynamic.opened_dev_addr_map[0] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[1] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[2] != 0 ||
+            client_obj->dynamic.opened_dev_addr_map[3] != 0) {
         can_deregister = false;
     } else {
         can_deregister = true;
@@ -844,6 +983,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
     usb_device_handle_t dev_hdl;
     ret = usbh_devs_open(dev_addr, &dev_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "usbh_devs_open error: %s", esp_err_to_name(ret));
         goto exit;
     }
 
@@ -918,6 +1058,12 @@ esp_err_t usb_host_device_free_all(void)
     HOST_CHECK_FROM_CRIT(p_host_lib_obj->dynamic.flags.num_clients == 0, ESP_ERR_INVALID_STATE);    // All clients must have been deregistered
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
+<<<<<<< HEAD
+=======
+#if ENABLE_USB_HUBS
+    hub_notify_all_free();
+#endif // ENABLE_USB_HUBS
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
@@ -982,7 +1128,11 @@ static esp_err_t get_config_desc_transfer(usb_host_client_handle_t client_hdl, u
     // Submit control transfer
     esp_err_t ret = usb_host_transfer_submit_control(client_hdl, ctrl_transfer);
     if (ret != ESP_OK) {
+<<<<<<< HEAD
         ESP_LOGE(USB_HOST_TAG, "Submit ctrl transfer failed");
+=======
+        ESP_LOGE(USB_HOST_TAG, "Submit ctrl transfer failed %s", esp_err_to_name(ret));
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         return ret;
     }
 
@@ -1042,6 +1192,10 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
     // Initiate control transfer for short config descriptor
     ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, SHORT_DESC_REQ_LEN);
     if (ret != ESP_OK) {
+<<<<<<< HEAD
+=======
+        ESP_LOGE(USB_HOST_TAG, "Get short config desc. failed %s", esp_err_to_name(ret));
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         goto exit;
     }
 
@@ -1051,6 +1205,10 @@ esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_devi
     // Initiate control transfer for full config descriptor
     ret = get_config_desc_transfer(client_hdl, ctrl_transfer, bConfigurationValue, config_desc_short->wTotalLength);
     if (ret != ESP_OK) {
+<<<<<<< HEAD
+=======
+        ESP_LOGE(USB_HOST_TAG, "Get full config desc. failed %s", esp_err_to_name(ret));
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         goto exit;
     }
 
@@ -1106,6 +1264,7 @@ static esp_err_t ep_wrapper_alloc(usb_device_handle_t dev_hdl, const usb_ep_desc
     };
     ret = usbh_ep_alloc(dev_hdl, &ep_config, &ep_hdl);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "EP allocation error %s", esp_err_to_name(ret));
         goto alloc_err;
     }
     // Initialize endpoint wrapper item
@@ -1163,6 +1322,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     int offset_intf;
     const usb_intf_desc_t *intf_desc = usb_parse_interface_descriptor(config_desc, bInterfaceNumber, bAlternateSetting, &offset_intf);
     if (intf_desc == NULL) {
+        ESP_LOGE(USB_HOST_TAG, "Interface %d not found in config. desc.", bInterfaceNumber);
         ret = ESP_ERR_NOT_FOUND;
         goto exit;
     }
@@ -1177,6 +1337,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
         int offset_ep = offset_intf;
         const usb_ep_desc_t *ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, i, config_desc->wTotalLength, &offset_ep);
         if (ep_desc == NULL) {
+            ESP_LOGE(USB_HOST_TAG, "EP desc. %d not found in Interface desc.", bInterfaceNumber);
             ret = ESP_ERR_NOT_FOUND;
             goto ep_alloc_err;
         }
@@ -1291,6 +1452,7 @@ esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_devi
     // Claim interface
     ret = interface_claim(client_obj, dev_hdl, config_desc, bInterfaceNumber, bAlternateSetting, &intf_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Claiming interface error: %s", esp_err_to_name(ret));
         goto exit;
     }
     ret = ESP_OK;
@@ -1334,6 +1496,18 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
     return ret;
 }
 
+/* Just print error returned from usbh_ep_get_handle() */
+static void print_error_ep_get_handle(esp_err_t err)
+{
+    ESP_LOGE(USB_HOST_TAG, "Get EP handle error: %s", esp_err_to_name(err));
+}
+
+/* Just print error returned from usbh_ep_command() */
+static void print_error_ep_command(esp_err_t err)
+{
+    ESP_LOGE(USB_HOST_TAG, "EP command error: %s", esp_err_to_name(err));
+}
+
 esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
 {
     esp_err_t ret;
@@ -1341,9 +1515,13 @@ esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointA
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_HALT);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1356,9 +1534,13 @@ esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpoint
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_FLUSH);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1371,9 +1553,13 @@ esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpoint
 
     ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto exit;
     }
     ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_CLEAR);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
 
 exit:
     return ret;
@@ -1417,6 +1603,7 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
 
     ret = usbh_ep_get_handle(transfer->device_handle, transfer->bEndpointAddress, &ep_hdl);
     if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
         goto err;
     }
     ep_wrap = usbh_ep_get_context(ep_hdl);
@@ -1430,6 +1617,7 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
 
     ret = usbh_ep_enqueue_urb(ep_hdl, urb_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Enqueue URB error: %s", esp_err_to_name(ret));
         goto submit_err;
     }
     return ret;
@@ -1462,6 +1650,7 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     esp_err_t ret;
     ret = usbh_dev_submit_ctrl_urb(dev_hdl, urb_obj);
     if (ret != ESP_OK) {
+        ESP_LOGE(USB_HOST_TAG, "Submit CTRL URB error: %s", esp_err_to_name(ret));
         urb_obj->usb_host_inflight = false;
     }
     return ret;

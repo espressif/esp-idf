@@ -88,7 +88,7 @@ typedef struct {
                                                     By default (set to either 0 or 1) only one frame buffer will be created */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
     /// Extra configuration flags for MIPI DSI DPI panel
-    struct extra_flags {
+    struct extra_dpi_panel_flags {
         uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */
     } flags;                   /*!< Extra configuration flags */
 } esp_lcd_dpi_panel_config_t;

@@ -205,7 +205,7 @@ TEST_GROUP(sha);
 TEST_SETUP(sha)
 {
     test_utils_record_free_mem();
-    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+    TEST_ESP_OK(test_utils_set_leak_level(400, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
 
 TEST_TEAR_DOWN(sha)

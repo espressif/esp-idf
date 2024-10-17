@@ -3,3 +3,7 @@
 components/esp_common/test_apps/esp_common:
   disable:
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+<<<<<<< HEAD
+=======
+    - if: CONFIG_NAME == "psram_noinit" and SOC_SPIRAM_SUPPORTED != 1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

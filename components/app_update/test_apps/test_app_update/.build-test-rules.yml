@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/app_update/test_apps:
+  enable:
+    - if: CONFIG_NAME == "defaults" and IDF_TARGET != "linux"
+    - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3", "esp32p4"]
+    # S2 doesn't have ROM for flash
+    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3", "esp32p4"]
+  disable:
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: target esp32c61 is not supported yet  # TODO: [ESP32C61] IDF-9245

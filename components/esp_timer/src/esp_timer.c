@@ -15,35 +15,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_ipc.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
-
+#include "esp_compiler.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"
-
-//TODO: IDF-9526, refactor this
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C61
-#include "esp32c61/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rtc.h"
-#endif
-
 #include "sdkconfig.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
@@ -215,7 +192,7 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     timer_list_lock(dispatch_method);
 
     /* Check if the timer is armed once the list is locked.
-     * Otherwise another task may arm the timer inbetween the check
+     * Otherwise another task may arm the timer between the checks
      * and us locking the list, resulting in us inserting the
      * timer to s_timers a second time. This will create a loop
      * in s_timers. */
@@ -418,9 +395,11 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     while (1) {
         it = LIST_FIRST(&s_timers[dispatch_method]);
         int64_t now = esp_timer_impl_get_time();
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-use-after-free") // False-positive detection. TODO GCC-366
         if (it == NULL || it->alarm > now) {
             break;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-use-after-free")
         processed = true;
         LIST_REMOVE(it, list_entry);
         if (it->event_id == EVENT_ID_DELETE_TIMER) {

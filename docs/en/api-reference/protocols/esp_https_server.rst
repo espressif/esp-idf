@@ -63,6 +63,13 @@ Expected data type for different ESP HTTPS server events in event loop:
     - HTTPS_SERVER_EVENT_DISCONNECTED   :   ``NULL``
     - HTTPS_SERVER_EVENT_STOP           :   ``NULL``
 
+Application Examples
+--------------------
+
+- :example:`protocols/https_server/simple` demonstrates how to create an HTTPS server that returns a simple HTML page when visited.
+
+- :example:`protocols/https_server/wss_server` demonstrates how to create an SSL server with a simple WebSocket request handler that supports handling multiple clients, PING-PONG mechanism, and sending asynchronous messages to all clients.
+
 API Reference
 -------------
 

@@ -96,6 +96,7 @@ do{\
 #define OSI_VERSION              0x00010005
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
+#define BLE_CONTROLLER_MALLOC_CAPS        (MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL)
 /* Types definition
  ************************************************************************
  */
@@ -868,7 +869,21 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+}
+
+void *malloc_ble_controller_mem(size_t size)
+{
+    void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+    if(p == NULL) {
+        ESP_LOGE(BTDM_LOG_TAG, "Malloc failed");
+    }
+    return p;
+}
+
+uint32_t get_ble_controller_free_heap_size(void)
+{
+    return heap_caps_get_free_size(BLE_CONTROLLER_MALLOC_CAPS);
 }
 
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
@@ -1432,6 +1447,14 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         .name  = "BT Controller Data"
     };
 
+    /*
+     * Free data and BSS section for Bluetooth controller ROM code.
+     * Note that rom mem release must be performed before section _bt_data_start to _bt_data_end is released,
+     * otherwise `btdm_dram_available_region` will no longer be available when performing rom mem release and
+     * thus causing heap corruption.
+     */
+    ret = esp_bt_controller_rom_mem_release(mode);
+
     if (mode == ESP_BT_MODE_BTDM) {
         /* Start by freeing Bluetooth BSS section */
         if (ret == ESP_OK) {
@@ -1442,11 +1465,6 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         if (ret == ESP_OK) {
             ret = esp_bt_mem_release_areas(&data, &cont_data);
         }
-    }
-
-    /* free data and BSS section for Bluetooth controller ROM code */
-    if (ret == ESP_OK) {
-        ret = esp_bt_controller_rom_mem_release(mode);
     }
 
     return ret;
@@ -1620,7 +1638,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_cfg_mask = btdm_config_mask_load();
 
-    if (btdm_controller_init(btdm_cfg_mask, cfg) != 0) {
+    err = btdm_controller_init(btdm_cfg_mask, cfg);
+
+    if (err != 0) {
+        ESP_LOGE(BTDM_LOG_TAG, "%s %d\n",__func__,err);
         err = ESP_ERR_NO_MEM;
         goto error;
     }

@@ -649,11 +649,8 @@ The `esp_ble_gap_update_conn_params()` function triggers a GAP event `ESP_GAP_BL
 
 ```c
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-         ESP_LOGI(GATTS_TAG, "update connection params status = %d, min_int = %d, max_int = %d,
-                  conn_int = %d,latency = %d, timeout = %d",
+         ESP_LOGI(GATTS_TAG, "update connection params status = %d, conn_int = %d,latency = %d, timeout = %d",
                   param->update_conn_params.status,
-                  param->update_conn_params.min_int,
-                  param->update_conn_params.max_int,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
                   param->update_conn_params.timeout);
@@ -721,7 +718,7 @@ case ESP_GATTS_WRITE_EVT: {
      ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
      if (!param->write.is_prep){
         ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-        esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+        ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
         if (gl_profile_tab[PROFILE_B_APP_ID].descr_handle == param->write.handle && param->write.len == 2){
             uint16_t descr_value= param->write.value[1]<<8 | param->write.value[0];
             if (descr_value == 0x0001){
@@ -920,7 +917,7 @@ Let’s take a look at the Executive Write function:
 ```c
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-        esp_log_buffer_hex(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        ESP_LOG_BUFFER_HEX(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }
     else{
         ESP_LOGI(GATTS_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
@@ -937,7 +934,7 @@ The executive write is used to either confirm or cancel the write procedure done
 
 ```c
 if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-   esp_log_buffer_hex(GATTS_TAG,
+   ESP_LOG_BUFFER_HEX(GATTS_TAG,
                       prepare_write_env->prepare_buf,
                       prepare_write_env->prepare_len);
  }

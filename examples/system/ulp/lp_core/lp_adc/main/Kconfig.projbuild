@@ -1,0 +1,17 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LP_ADC1_CHANNEL_0_SELECT
+        int "LP ADC1 Channel 0 Select"
+        default 4
+        range 0 7
+        help
+            Select the channel to be used for LP ADC1 Channel 0
+
+    config EXAMPLE_LP_ADC1_CHANNEL_1_SELECT
+        int "LP ADC1 Channel 1 Select"
+        default 5
+        range 0 7
+        help
+            Select the channel to be used for LP ADC1 Channel 1
+
+endmenu

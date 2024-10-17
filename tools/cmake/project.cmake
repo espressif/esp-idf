@@ -61,7 +61,7 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 2)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 3)
 
 #
 # Parse and store the VERSION argument provided to the project() command.
@@ -420,11 +420,11 @@ function(__project_init components_var test_components_var)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${extra_cxxflags}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${extra_cppflags}" APPEND)
 
-    function(__project_component_dir component_dir)
+    function(__project_component_dir component_dir component_source)
         get_filename_component(component_dir "${component_dir}" ABSOLUTE)
         # The directory itself is a valid idf component
         if(EXISTS ${component_dir}/CMakeLists.txt)
-            idf_build_component(${component_dir})
+            idf_build_component(${component_dir} ${component_source})
         else()
             idf_build_get_property(exclude_dirs EXTRA_COMPONENT_EXCLUDE_DIRS)
             # otherwise, check whether the subfolders are potential idf components
@@ -433,7 +433,7 @@ function(__project_init components_var test_components_var)
                 if(IS_DIRECTORY ${component_dir} AND NOT ${component_dir} IN_LIST exclude_dirs)
                     __component_dir_quick_check(is_component ${component_dir})
                     if(is_component)
-                        idf_build_component(${component_dir})
+                        idf_build_component(${component_dir} ${component_source})
                     endif()
                 endif()
             endforeach()
@@ -451,11 +451,11 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            __project_component_dir(${component_dir})
+            __project_component_dir(${component_dir} "project_components")
         endforeach()
     else()
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main")
-            __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main")
+            __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main" "project_components")
         endif()
 
         paths_with_spaces_to_list(EXTRA_COMPONENT_DIRS)
@@ -464,12 +464,12 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            __project_component_dir("${component_dir}")
+            __project_component_dir("${component_dir}" "project_extra_components")
         endforeach()
 
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
         # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
-        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
+        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components" "project_components")
     endif()
 
     # For bootloader components, we only need to set-up the Kconfig files.
@@ -521,7 +521,7 @@ function(__project_init components_var test_components_var)
                     set(include 0)
                 endif()
                 if(include AND EXISTS ${component_dir}/test)
-                    __component_add(${component_dir}/test ${component_name})
+                    __component_add(${component_dir}/test ${component_name} "project_components")
                     list(APPEND test_components ${component_name}::test)
                 endif()
             endif()
@@ -825,7 +825,11 @@ macro(project project_name)
             # Do not print RWX segment warnings
             target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
         endif()
+<<<<<<< HEAD
         if(CONFIG_ESP_ORPHAN_SECTION_WARNING)
+=======
+        if(CONFIG_COMPILER_ORPHAN_SECTIONS_WARNING)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
             # Print warnings if orphan sections are found
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
         endif()
@@ -883,6 +887,33 @@ macro(project project_name)
 
     # Add DFU build and flash targets
     __add_dfu_targets()
+
+    # Add uf2 related targets
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(python PYTHON)
+
+    set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
+
+    add_custom_target(uf2
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
+
+    add_custom_target(uf2-app
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
 
     idf_build_executable(${project_elf})
 

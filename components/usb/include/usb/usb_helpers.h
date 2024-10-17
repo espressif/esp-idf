@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -129,7 +129,7 @@ typedef void (*print_class_descriptor_cb)(const usb_standard_desc_t *);
 /**
  * @brief Print device descriptor
  *
- * @param devc_desc Device descriptor
+ * @param[in] devc_desc Device descriptor
  */
 void usb_print_device_descriptor(const usb_device_desc_t *devc_desc);
 
@@ -139,17 +139,17 @@ void usb_print_device_descriptor(const usb_device_desc_t *devc_desc);
  * - This function prints the full contents of a configuration descriptor (including interface and endpoint descriptors)
  * - When a non-standard descriptor is encountered, this function will call the class_specific_cb if it is provided
  *
- * @param cfg_desc Configuration descriptor
- * @param class_specific_cb Class specific descriptor callback. Can be NULL
+ * @param[in] cfg_desc Configuration descriptor
+ * @param[in] class_specific_cb Class specific descriptor callback. Can be NULL
  */
 void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_descriptor_cb class_specific_cb);
 
 /**
  * @brief Print a string descriptor
  *
- * This funciton will only print ASCII characters of the UTF-16 encoded string
+ * This function will only print ASCII characters of the UTF-16 encoded string
  *
- * @param str_desc String descriptor
+ * @param[in] str_desc String descriptor
  */
 void usb_print_string_descriptor(const usb_str_desc_t *str_desc);
 

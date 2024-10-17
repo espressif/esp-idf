@@ -3,3 +3,6 @@
 tools/test_apps/peripherals/i2c_wifi:
   disable:
     - if: SOC_I2C_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c61"
+      reason: lack of runner

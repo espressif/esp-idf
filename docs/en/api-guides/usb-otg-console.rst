@@ -1,10 +1,11 @@
-***************
 USB OTG Console
 ***************
 
+:link_to_translation:`zh_CN:[中文]`
+
 On chips with an integrated USB peripheral, it is possible to use USB Communication Device Class (CDC) to implement the serial console, instead of using UART with an external USB-UART bridge chip. {IDF_TARGET_NAME} ROM code contains a USB CDC implementation, which supports for some basic functionality without requiring the application to include the USB stack:
 
-* Bidirectional serial console, which can be used with :doc:`IDF Monitor <tools/idf-monitor>` or another serial monitor
+* Bidirectional serial console, which can be used with :doc:`IDF Monitor <tools/idf-monitor>` or another serial monitor.
 * Flashing using ``esptool.py`` and ``idf.py flash``.
 * :doc:`Device Firmware Update (DFU) <dfu>` interface for flashing the device using ``dfu-util`` and ``idf.py dfu``.
 
@@ -15,29 +16,33 @@ On chips with an integrated USB peripheral, it is possible to use USB Communicat
 Hardware Requirements
 =====================
 
-Connect {IDF_TARGET_NAME} to the USB port as follows
+Connect {IDF_TARGET_NAME} to the USB port as follows.
 
-+------+-------------+
-| GPIO | USB         |
-+======+=============+
-| 20   | D+ (green)  |
-+------+-------------+
-| 19   | D- (white)  |
-+------+-------------+
-| GND  | GND (black) |
-+------+-------------+
-|      | +5V (red)   |
-+------+-------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 50 50
+    :align: center
+
+    * - GPIO
+      - USB
+    * - 20
+      - D+ (green)
+    * - 19
+      - D- (white)
+    * - GND
+      - GND (black)
+    * -
+      - +5V (red)
 
 Some development boards may offer a USB connector for the internal USB peripheral — in that case, no extra connections are required.
 
 .. only:: esp32s3
 
-    By default, :doc:`USB_SERIAL_JTAG <usb-serial-jtag-console>` module is connected to the internal PHY of the ESP32-S3, while USB_OTG peripheral can be used only if the external USB PHY is connected. Since CDC console is provided via USB_OTG peripheral, it cannot be used through the internal PHY in this configuration.
+    By default, the :doc:`USB_SERIAL_JTAG <usb-serial-jtag-console>` module is connected to the internal PHY of ESP32-S3, while the USB OTG peripheral can be used only if the external USB PHY is connected. Since the CDC console is provided via the USB OTG peripheral, it cannot be used through the internal PHY in this configuration.
 
-    You can permanently switch the internal USB PHY to work with USB_OTG peripheral instead of USB_SERIAL_JTAG by burning ``USB_PHY_SEL`` eFuse. See ESP32-S3 Technical Reference Manual for more details about USB_SERIAL_JTAG and USB_OTG.
+    You can permanently switch the internal USB PHY to work with USB OTG peripheral instead of USB_SERIAL_JTAG by burning ``USB_PHY_SEL`` eFuse. See ESP32-S3 Technical Reference Manual for more details about USB_SERIAL_JTAG and USB OTG.
 
-    Note however that USB_SERIAL_JTAG also provides a CDC console, so enabling the CDC console should not be the primary reason for switching from USB_SERIAL_JTAG to USB_CDC.
+    Note however that USB_SERIAL_JTAG also provides a CDC console, so enabling the CDC console should not be the primary reason for switching from USB_SERIAL_JTAG to USB CDC.
 
 
 Software Configuration
@@ -55,7 +60,7 @@ Uploading the Application
 Initial Upload
 --------------
 
-If the {IDF_TARGET_NAME} is not yet flashed with a program that enables a USB console, an initial upload of the program is required. There are 3 alternative options to perform the initial upload.
+If the {IDF_TARGET_NAME} is not yet flashed with a program that enables a USB console, an initial upload of the program is required. There are three alternative options to perform the initial upload.
 
 Once the initial upload is done, the application will start up and a USB CDC port will appear in the system.
 
@@ -68,7 +73,7 @@ Initial Upload Using the ROM Download Mode, over USB CDC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Place {IDF_TARGET_NAME} into download mode. To do this, keep GPIO0 low while toggling reset. On many development boards, the "Boot" button is connected to GPIO0, and you can press "Reset" button while holding "Boot".
-* A serial port will appear in the system. On most operating systems (Windows 8 and later, Linux, macOS) driver installation is not required. Find the port name using Device Manager (Windows) or by listing ``/dev/ttyACM*`` devices on Linux or ``/dev/cu*`` devices on macOS.
+* A serial port will appear in the system. On most operating systems (Windows 8 and later, Linux, macOS), driver installation is not required. Find the port name using Device Manager (Windows) or by listing ``/dev/ttyACM*`` devices on Linux or ``/dev/cu*`` devices on macOS.
 * Run ``idf.py flash -p PORT`` to upload the application, with ``PORT`` determined in the previous step.
 
 Initial Upload Using the ROM Download Mode, over USB DFU
@@ -98,7 +103,7 @@ There are several limitations to the USB console feature. These may or may not b
 
 2. If the application accidentally reconfigures the USB peripheral pins, or disables the USB peripheral, USB CDC device will disappear from the system. After fixing the issue in the application, you will need to follow the :ref:`usb_console_initial_upload` process to flash the application again.
 
-3. If the application enters light sleep (including automatic light sleep) or deep sleep mode, USB CDC device will disappear from the system.
+3. If the application enters Light-sleep mode (including automatic Light-sleep) or Deep-sleep mode, USB CDC device will disappear from the system.
 
 4. USB CDC driver reserves some amount of RAM and increases application code size. Keep this in mind if trying to optimize application memory usage.
 
@@ -111,4 +116,3 @@ There are several limitations to the USB console feature. These may or may not b
    * When developing applications which use USB peripheral, it is very likely that USB functionality will not work or will not fully work at some moments during development. This can be due to misconfigured USB descriptors, errors in the USB stack usage, or other reasons. In this case, using the UART console for flashing and monitoring provides a much better development experience.
 
 7. When debugging the application using JTAG, USB CDC may stop working if the CPU is stopped on a breakpoint. USB CDC operation relies on interrupts from the USB peripheral being serviced periodically. If the host computer does not receive valid responses from the USB device side for some time, it may decide to disconnect the device. The actual time depends on the OS and the driver, and ranges from a few hundred milliseconds to a few seconds.
-

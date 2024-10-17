@@ -21,6 +21,17 @@ extern "C" {
 #define MIPI_CSI_BRG_LL_GET_HW(id)  (((id) == 0) ? &MIPI_CSI_BRIDGE : NULL)
 
 /**
+ * @brief Enable the clock for MIPI CSI bridge phy
+ *
+ * @param dev  Pointer to the CSI bridge controller register base address
+ * @param en true to enable, false to disable
+ */
+static inline void mipi_csi_brg_ll_enable_clock(csi_brg_dev_t *dev, bool en)
+{
+    dev->host_ctrl.csi_enableclk = en;
+}
+
+/**
  * @brief Enable the CSI bridge
  *
  * @param dev  Pointer to the CSI bridge controller register base address

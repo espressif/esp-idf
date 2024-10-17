@@ -47,7 +47,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "gdma_priv.h"
 
-#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/gdma_sleep_retention.h"
 #endif
 
@@ -135,8 +135,8 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
 
     for (int i = start_group_id; i < end_group_id && search_code; i++) { // loop to search group
         group = gdma_acquire_group_handle(i, search_info->hal_init);
-        group->bus_id = search_info->bus_id;
         ESP_GOTO_ON_FALSE(group, ESP_ERR_NO_MEM, err, TAG, "no mem for group(%d)", i);
+        group->bus_id = search_info->bus_id;
         for (int j = 0; j < pairs_per_group && search_code; j++) { // loop to search pair
             pair = gdma_acquire_pair_handle(group, j);
             ESP_GOTO_ON_FALSE(pair, ESP_ERR_NO_MEM, err, TAG, "no mem for pair(%d,%d)", i, j);
@@ -255,13 +255,18 @@ esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
     return dma_chan->del(dma_chan);
 }
 
-esp_err_t gdma_get_channel_id(gdma_channel_handle_t dma_chan, int *channel_id)
+esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_id, int *channel_id)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
-    *channel_id = pair->pair_id;
+    if (group_id != NULL) {
+        *group_id = pair->group->group_id;
+    }
+    if (channel_id != NULL) {
+        *channel_id = pair->pair_id;
+    }
 err:
     return ret;
 }
@@ -426,7 +431,7 @@ esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strateg
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
 
-    gdma_hal_set_strategy(hal, pair->pair_id, dma_chan->direction, config->owner_check, config->auto_update_desc);
+    gdma_hal_set_strategy(hal, pair->pair_id, dma_chan->direction, config->owner_check, config->auto_update_desc, config->eof_till_data_popped);
 
     return ESP_OK;
 }
@@ -669,7 +674,7 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 
     if (do_deinitialize) {
         free(pair);
-#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-8461
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
         gdma_sleep_retention_deinit(group->group_id, pair_id);
 #endif
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
@@ -709,7 +714,7 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         s_platform.group_ref_counts[group->group_id]++;
         portEXIT_CRITICAL(&s_platform.spinlock);
 
-#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-8461
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
         gdma_sleep_retention_init(group->group_id, pair_id);
 #endif
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair_id, pair);

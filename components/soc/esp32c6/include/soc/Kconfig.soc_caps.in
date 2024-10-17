@@ -419,6 +419,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_CPU_PMP_REGION_GRANULARITY
+    int
+    default 4
+
 config SOC_DS_SIGNATURE_MAX_BIT_LEN
     int
     default 3072
@@ -515,6 +519,10 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y
@@ -546,10 +554,6 @@ config SOC_RTCIO_HOLD_SUPPORTED
 config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
-
-config SOC_RTCIO_VALID_RTCIO_MASK
-    hex
-    default 0xFF
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -639,6 +643,10 @@ config SOC_I2S_HW_VERSION_2
     bool
     default y
 
+config SOC_I2S_SUPPORTS_ETM
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
@@ -664,6 +672,10 @@ config SOC_I2S_PDM_MAX_TX_LINES
     default 2
 
 config SOC_I2S_SUPPORTS_TDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -700,6 +712,10 @@ config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     default 10
 
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
     bool
     default y
 
@@ -808,6 +824,10 @@ config SOC_RMT_SUPPORT_XTAL
     default y
 
 config SOC_RMT_SUPPORT_RC_FAST
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -1131,6 +1151,10 @@ config SOC_MWDT_SUPPORT_XTAL
     bool
     default y
 
+config SOC_MWDT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_TWAI_CONTROLLER_NUM
     int
     default 2
@@ -1208,6 +1232,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_APM_CTRL_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_LP_APM0_SUPPORTED
     bool
     default y
 
@@ -1367,9 +1399,25 @@ config SOC_PM_RETENTION_HAS_CLOCK_BUG
     bool
     default y
 
+config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
+    bool
+    default y
+
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
+
+config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
@@ -1443,6 +1491,10 @@ config SOC_WIFI_HE_SUPPORT
     bool
     default y
 
+config SOC_WIFI_MAC_VERSION_NUM
+    int
+    default 2
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -1498,3 +1550,10 @@ config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y
+<<<<<<< HEAD
+=======
+
+config SOC_DEBUG_HAVE_OCD_STUB_BINS
+    bool
+    default y
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

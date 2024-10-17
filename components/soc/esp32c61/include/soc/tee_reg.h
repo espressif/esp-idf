@@ -768,10 +768,10 @@ extern "C" {
 /** TEE_DATE_REG : R/W; bitpos: [27:0]; default: 35725664;
  *  Version control register
  */
-#define TEE_DATE_REG    0x0FFFFFFFU
-#define TEE_DATE_REG_M  (TEE_DATE_REG_V << TEE_DATE_REG_S)
-#define TEE_DATE_REG_V  0x0FFFFFFFU
-#define TEE_DATE_REG_S  0
+#define TEE_DATE    0x0FFFFFFFU
+#define TEE_DATE_M  (TEE_DATE_REG_V << TEE_DATE_REG_S)
+#define TEE_DATE_V  0x0FFFFFFFU
+#define TEE_DATE_S  0
 
 #ifdef __cplusplus
 }

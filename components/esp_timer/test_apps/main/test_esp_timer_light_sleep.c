@@ -16,8 +16,6 @@
 #include "esp_sleep.h"
 #include "soc/soc_caps.h"
 
-#if SOC_LIGHT_SLEEP_SUPPORTED
-
 static void timer_cb1(void *arg)
 {
     ++*((int*) arg);
@@ -58,5 +56,3 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
-
-#endif // SOC_LIGHT_SLEEP_SUPPORTED

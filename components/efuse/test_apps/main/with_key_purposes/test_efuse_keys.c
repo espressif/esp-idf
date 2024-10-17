@@ -386,7 +386,11 @@ TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
 TEST_CASE("Test revocation APIs", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));
@@ -422,7 +426,11 @@ TEST_CASE("Test revocation APIs", "[efuse]")
 TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
 {
     esp_efuse_utility_reset();
+#ifdef CONFIG_EFUSE_FPGA_TEST
     esp_efuse_utility_update_virt_blocks();
+#else
+    esp_efuse_utility_erase_virt_blocks();
+#endif
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));

@@ -98,7 +98,7 @@ Following is the procedure to re-enable the JTAG:
 **Stage 1: Setup**
 
 1. Generate a 256-bit HMAC secret key to use for JTAG re-enable.
-2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ``esp_efuse_write_key()`` function in the firmware or using ``espefuse.py`` from the host.
+2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ``esp_efuse_write_key()`` function in the firmware or using ``idf.py efuse-burn-key`` from the host.
 3. Configure the eFuse key block to be read-protected using the ``esp_efuse_set_read_protect()``, so that software cannot read back the value.
 4. Burn the ``soft JTAG disable`` bit/bits on {IDF_TARGET_NAME}. This will permanently disable JTAG unless the correct key value is provided by the software.
 
@@ -132,7 +132,7 @@ JTAG enables
 2. Pass this key value when calling the :cpp:func:`esp_hmac_jtag_enable` function from the firmware.
 3. To re-disable JTAG in the firmware, reset the system or call :cpp:func:`esp_hmac_jtag_disable`.
 
-End-to-end example of soft disable and re-enable JTAG workflow: :example:`security/hmac_soft_jtag`.
+For a complete workflow of soft-disabling and re-enabling JTAG, refer to :example:`security/hmac_soft_jtag`. This example demonstrates how to use HMAC to re-enable a soft-disabled JTAG interface, covering steps like generating an HMAC key, burning it to eFuse, and creating token data from the key.
 
 For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **HMAC Accelerator (HMAC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#hmac>`__].
 

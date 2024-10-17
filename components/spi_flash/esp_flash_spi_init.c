@@ -25,6 +25,7 @@
 #include "esp_spi_flash_counters.h"
 #include "esp_rom_spiflash.h"
 #include "bootloader_flash.h"
+#include "esp_check.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
@@ -131,7 +132,6 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int spics_in = spi_periph_signal[config->host_id].spics_in;
     int spics_out = spi_periph_signal[config->host_id].spics_out[cs_id];
     int spics_func = spi_periph_signal[config->host_id].func;
-    uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
     gpio_hal_context_t gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -149,7 +149,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
         if (cs_id == 0) {
             esp_rom_gpio_connect_in_signal(cs_io_num, spics_in, false);
         }
-        gpio_hal_iomux_func_sel(iomux_reg, PIN_FUNC_GPIO);
+        gpio_hal_func_sel(&gpio_hal, cs_io_num, PIN_FUNC_GPIO);
     }
     chip->os_func->end(chip->os_func_data);
 }
@@ -179,7 +179,11 @@ static bool cs_using_iomux(const esp_flash_spi_device_config_t *config)
 {
     bool use_iomux = true;
     CHECK_IOMUX_PIN(config->host_id, spics);
+<<<<<<< HEAD
     if (config->cs_io_num != spi_periph_signal[config->host_id].spics0_iomux_pin) {
+=======
+    if (config->cs_io_num != spi_periph_signal[config->host_id].spics_in) {
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         use_iomux = false;
     }
     return use_iomux;
@@ -406,6 +410,11 @@ esp_err_t esp_flash_init_default_chip(void)
     if (default_chip.size > legacy_chip->chip_size) {
         ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, legacy_chip->chip_size/1024);
     }
+#if !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM // IDF-10019
+    if (legacy_chip->chip_size > 16 * 1024 * 1024) {
+        ESP_RETURN_ON_ERROR_ISR(esp_mspi_32bit_address_flash_feature_check(), TAG, "32bit address feature check failed");
+    }
+#endif // !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM
     // Set chip->size equal to ROM flash size(also equal to the size in binary image header), which means the available size that can be used
     default_chip.size = legacy_chip->chip_size;
 
@@ -432,15 +441,18 @@ esp_err_t esp_flash_app_init(void)
 
     // Acquire the LDO channel used by the SPI NOR flash
     // in case the LDO voltage is changed by other users
-#if defined(CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN) && CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN != -1
+#if CONFIG_ESP_LDO_RESERVE_SPI_NOR_FLASH
     static esp_ldo_channel_handle_t s_ldo_chan = NULL;
     esp_ldo_channel_config_t ldo_config = {
         .chan_id = CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN,
         .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN,
+        .flags = {
+            .owned_by_hw = true,     // LDO output is totally controlled by hardware
+        },
     };
     err = esp_ldo_acquire_channel(&ldo_config, &s_ldo_chan);
     if (err != ESP_OK) return err;
-#endif
+#endif // CONFIG_ESP_LDO_RESERVE_SPI_NOR_FLASH
 
     spi_flash_init_lock();
     spi_flash_guard_set(&g_flash_guard_default_ops);

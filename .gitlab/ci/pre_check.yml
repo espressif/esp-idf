@@ -44,6 +44,9 @@ check_blobs:
     - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32_host $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     # Check if Coexistence library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
@@ -52,6 +55,8 @@ check_blobs:
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32h2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
     - bash $IDF_PATH/tools/ci/check_blobs.sh
 
@@ -135,6 +140,7 @@ pipeline_variables:
     # MODIFIED_FILES is a list of files that changed, could be used everywhere
     - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
     - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
+    - echo "REPORT_EXIT_CODE=0" >> pipeline.env
     # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
     # for non MR pipeline, these are empty lists
     - |
@@ -157,6 +163,7 @@ pipeline_variables:
       if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
+    - python tools/ci/ci_process_description.py
     - cat pipeline.env
     - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
   artifacts:
@@ -166,3 +173,35 @@ pipeline_variables:
       - pipeline.env
     expire_in: 1 week
     when: always
+
+baseline_manifest_sha:
+  extends:
+    - .pre_check_template
+    - .rules:dev-push
+  tags: [fast_run, shiny]
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1
+        git checkout FETCH_HEAD
+        idf-build-apps dump-manifest-sha \
+          --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
+          --output .manifest_sha
+      fi
+  artifacts:
+    paths:
+      - .manifest_sha
+    expire_in: 1 week
+    when: always
+
+redundant_pass_job:
+  stage: pre_check
+  tags: [shiny, fast_run]
+  image: $ESP_ENV_IMAGE
+  dependencies: null
+  before_script: []
+  cache: []
+  extends: []
+  script:
+    - echo "This job is redundant to ensure the 'retry_failed_jobs' job can exist and not be skipped"
+  when: always

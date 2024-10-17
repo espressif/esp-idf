@@ -10,8 +10,12 @@ set(srcs "rtc_clk_init.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
+<<<<<<< HEAD
     list(APPEND srcs "sar_periph_ctrl.c"
                      "esp_crypto_lock.c")
+=======
+    list(APPEND srcs "sar_periph_ctrl.c")
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         list(APPEND srcs "mspi_timing_config.c")

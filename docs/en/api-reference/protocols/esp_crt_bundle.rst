@@ -16,7 +16,7 @@ The bundle comes with the complete list of root certificates from Mozilla's NSS 
 
 When generating the bundle you may choose between:
 
- * The full root certificate bundle from Mozilla, containing more than 130 certificates. The current bundle was updated Mon Mar 11 15:25:27 2024 GMT.
+ * The full root certificate bundle from Mozilla, containing more than 130 certificates. The current bundle was updated Tue Sep 24 03:12:04 2024 GMT.
  * A pre-selected filter list of the name of the most commonly used root certificates, reducing the amount of certificates to around 41 while still having around 90% absolute usage coverage and 99% market share coverage according to SSL certificate authorities statistics.
 
 In addition, it is possible to specify a path to a certificate file or a directory containing certificates which then will be added to the generated bundle.
@@ -84,11 +84,11 @@ The bundle is kept updated by periodic sync with the Mozilla's NSS root certific
 Application Examples
 --------------------
 
-Simple HTTPS example that uses ESP-TLS to establish a secure socket connection using the certificate bundle with two custom certificates added for verification: :example:`protocols/https_x509_bundle`.
+- :example:`protocols/https_x509_bundle` demonstrates how to use ESP-TLS to establish a secure socket connection using the certificate bundle with two custom certificates added for verification.
 
-HTTPS example that uses ESP-TLS and the default bundle: :example:`protocols/https_request`.
+- :example:`protocols/https_request` demonstrates an HTTPS example that uses ESP-TLS and the default bundle.
 
-HTTPS example that uses mbedTLS and the default bundle: :example:`protocols/https_mbedtls`.
+- :example:`protocols/https_mbedtls` demonstrates an HTTPS example that uses Mbed TLS and the default bundle.
 
 API Reference
 -------------

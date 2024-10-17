@@ -18,4 +18,11 @@ menu "ESP HTTPS OTA"
             - Non-encrypted communication channel with server
             - Accepting firmware upgrade image from server with fake identity
 
+    config ESP_HTTPS_OTA_EVENT_POST_TIMEOUT
+        int "Time in millisecond to wait for posting event"
+        default 2000
+        help
+            This config option helps in setting the time in millisecond to wait for event to be posted to the
+            system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
+
 endmenu

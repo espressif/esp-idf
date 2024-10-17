@@ -32,6 +32,10 @@ if(DEFINED IDF_SIZE_MODE)
     list(APPEND IDF_SIZE_CMD ${IDF_SIZE_MODE})
 endif()
 
+if(DEFINED ENV{SIZE_DIFF_FILE})
+    list(APPEND IDF_SIZE_CMD "--diff=$ENV{SIZE_DIFF_FILE}")
+endif()
+
 list(APPEND IDF_SIZE_CMD ${MAP_FILE})
 
 execute_process(COMMAND ${IDF_SIZE_CMD}

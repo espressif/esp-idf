@@ -1,7 +1,9 @@
 # ulp_embed_binary
 #
 # Create ULP binary and embed into the application.
-function(ulp_embed_binary app_name s_sources exp_dep_srcs)
+
+function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
+
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         spaces2list(s_sources)
         foreach(source ${s_sources})
@@ -50,10 +52,11 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         endif()
 
         externalproject_add(${app_name}
-                SOURCE_DIR ${idf_path}/components/ulp/cmake
+                SOURCE_DIR ${project_path}
                 BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
                 INSTALL_COMMAND ""
-                CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+                            -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
                             -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
                             -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
                             -DULP_APP_NAME=${app_name}
@@ -64,6 +67,10 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                             -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
                             -DPYTHON=${python}
+<<<<<<< HEAD
+=======
+                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
                             ${extra_cmake_args}
                 BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
@@ -85,4 +92,12 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         target_linker_script(${COMPONENT_LIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.ld)
         target_add_binary_data(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.bin BINARY)
     endif()
+endfunction()
+
+function(ulp_embed_binary app_name s_sources exp_dep_srcs)
+    __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake" "${s_sources}" "${exp_dep_srcs}")
+endfunction()
+
+function(ulp_add_project app_name project_path)
+    __setup_ulp_project("${app_name}" "${project_path}" "" "")
 endfunction()

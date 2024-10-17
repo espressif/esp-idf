@@ -25,7 +25,8 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${original_freertos_dir}/esp_additions/include/freertos/idf_additions.h
     ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/task.h
     ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/event_groups.h
-    ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/queue.h)
+    ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/queue.h
+    ${original_freertos_dir}/FreeRTOS-Kernel/portable/linux/include/freertos/portmacro.h)
 
 idf_component_get_property(freertos_lib freertos COMPONENT_LIB)
 target_compile_definitions(${freertos_lib} PUBLIC "projCOVERAGE_TEST=0")

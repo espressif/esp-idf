@@ -74,6 +74,16 @@
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_THRESH     200
 
+<<<<<<< HEAD
+=======
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define ADC_TEST_LOW_VAL         2195
+#define ADC_TEST_LOW_THRESH      200
+
+#define ADC_TEST_HIGH_VAL        4095
+#define ADC_TEST_HIGH_THRESH     200
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #endif
 
 //ADC Channels

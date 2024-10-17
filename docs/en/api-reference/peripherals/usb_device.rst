@@ -5,16 +5,16 @@ USB Device Stack
 
 {IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
 {IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
-{IDF_TARGET_USB_EP_NUM:default="6"}
-{IDF_TARGET_USB_EP_NUM_INOUT:default="5"}
-{IDF_TARGET_USB_EP_NUM_IN:default="1"}
+{IDF_TARGET_USB_EP_NUM: default="6", esp32p4="15"}
+{IDF_TARGET_USB_EP_NUM_INOUT:default="5", esp32p4="8"}
+{IDF_TARGET_USB_EP_NUM_IN:default="1", esp32p4="7"}
 
 Overview
 --------
 
 The ESP-IDF USB Device Stack (hereinafter referred to as the Device Stack) enables USB Device support on {IDF_TARGET_NAME}. By using the Device Stack, {IDF_TARGET_NAME} can be programmed with any well defined USB device functions (e.g., keyboard, mouse, camera), a custom function (aka vendor-specific class), or a combination of those functions (aka a composite device).
 
-The Device Stack is built around the TinyUSB stack, but extends TinyUSB with some minor features and modifications for better integration with ESP-IDF. The Device stack is distributed as a managed component via the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
+The Device Stack is built around the TinyUSB stack, but extends TinyUSB with some minor features and modifications for better integration with ESP-IDF. The Device stack is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__.
 
 Features
 --------
@@ -34,16 +34,24 @@ Features
 Hardware Connection
 -------------------
 
-The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
+.. only:: esp32s2 or esp32s3
+
+    The {IDF_TARGET_NAME} routes the USB D+ and D- signals to GPIOs {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} respectively. For USB device functionality, these GPIOs should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
+
+.. only:: esp32p4
+
+    The {IDF_TARGET_NAME} routes the USB D+ and D- signals to their dedicated pins. For USB device functionality, these pins should be connected to the bus in some way (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 
 .. figure:: ../../../_static/usb-board-connection.png
     :align: center
     :alt: Connection of an USB GPIOs directly to a USB standard-A plug
     :figclass: align-center
 
-.. note::
+.. only:: esp32s2 or esp32s3
 
-    If you are using an {IDF_TARGET_NAME} development board with two USB ports, the port labeled "USB" will already be connected to the D+ and D- GPIOs.
+    .. note::
+
+        If you are using an {IDF_TARGET_NAME} development board with two USB ports, the port labeled "USB" will already be connected to the D+ and D- GPIOs.
 
 .. note::
 
@@ -63,7 +71,7 @@ The basis of the Device Stack is TinyUSB, where the Device Stack implements the 
 Component Dependency
 ^^^^^^^^^^^^^^^^^^^^
 
-The Device Stack is distributed via the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
+The Device Stack is distributed via the `ESP Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`__. Thus, to use it, please add the Device Stack component as dependency using the following command:
 
 .. code:: bash
 
@@ -95,15 +103,17 @@ Full-speed devices should initialize the following field to provide their config
 
 - :cpp:member:`configuration_descriptor`
 
-High-speed devices should initialize the following fields to provide configuration descriptors at each speed:
+.. only:: esp32p4
 
-- :cpp:member:`fs_configuration_descriptor`
-- :cpp:member:`hs_configuration_descriptor`
-- :cpp:member:`qualifier_descriptor`
+    High-speed devices should initialize the following fields to provide configuration descriptors at each speed:
 
-.. note::
+    - :cpp:member:`fs_configuration_descriptor`
+    - :cpp:member:`hs_configuration_descriptor`
+    - :cpp:member:`qualifier_descriptor`
 
-    When Device Stack supports high-speed, both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` should be present to comply with usb2.0 specification.
+    .. note::
+
+        Both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` must be present to comply with USB 2.0 specification.
 
 The Device Stack will instantiate a USB device based on the descriptors provided in the fields described above when :cpp:func:`tinyusb_driver_install` is called.
 
@@ -113,13 +123,13 @@ The Device Stack also provides default descriptors that can be installed by sett
 - Default string descriptor: Enabled by setting :cpp:member:`string_descriptor` to ``NULL``. Default string descriptors will use the value set by corresponding menuconfig options (e.g., manufacturer, product, and serial string descriptor options).
 - Default configuration descriptor. Some classes that rarely require custom configuration (such as CDC and MSC) will provide default configuration descriptors. These can be enabled by setting associated configuration descriptor field to ``NULL``:
 
-    - :cpp:member:`configuration_descriptor` full-speed descriptor for full-speed devices only
-    - :cpp:member:`fs_configuration_descriptor` full-speed descriptor for high-speed devices
-    - :cpp:member:`hs_configuration_descriptor` high-speed descriptor for high-speed devices
+    - :cpp:member:`configuration_descriptor`: full-speed descriptor for full-speed devices only
+    - :cpp:member:`fs_configuration_descriptor`: full-speed descriptor for high-speed devices
+    - :cpp:member:`hs_configuration_descriptor`: high-speed descriptor for high-speed devices
 
 .. note::
 
-    Backward compatibility: when Device Stack supports high-speed, field :cpp:member:`configuration_descriptor` could be used instead of :cpp:member:`fs_configuration_descriptor` for full-speed configuration descriptor.
+    For backward compatibility, when Device Stack supports high-speed, the field :cpp:member:`configuration_descriptor` could be used instead of :cpp:member:`fs_configuration_descriptor` for full-speed configuration descriptor.
 
 Installation
 ------------
@@ -138,7 +148,7 @@ To install the Device Stack, please call :cpp:func:`tinyusb_driver_install`. The
         .external_phy = false,      // Use internal USB PHY
     #if (TUD_OPT_HIGH_SPEED)
         .fs_configuration_descriptor = NULL, // Use the default full-speed configuration descriptor according to settings in Menuconfig
-        .hs_configuration_descriptor = NULL, // Use the default high-ppeed configuration descriptor according to settings in Menuconfig
+        .hs_configuration_descriptor = NULL, // Use the default high-speed configuration descriptor according to settings in Menuconfig
         .qualifier_descriptor = NULL,  // Use the default qualifier descriptor, with values from default device descriptor
     #else
         .configuration_descriptor = NULL,   // Use the default configuration descriptor according to settings in Menuconfig
@@ -260,23 +270,15 @@ If the MSC ``CONFIG_TINYUSB_MSC_ENABLED`` option is enabled in Menuconfig, the E
 Application Examples
 --------------------
 
-The table below describes the code examples available in the directory :example:`peripherals/usb/device`:
+The examples can be found in the directory :example:`peripherals/usb/device`.
 
-.. list-table::
-   :widths: 35 65
-   :header-rows: 1
+- :example:`peripherals/usb/device/tusb_console` demonstrates how to set up {IDF_TARGET_NAME} to get log output via a Serial Device connection using the TinyUSB component, applicable for any Espressif boards that support USB-OTG.
+- :example:`peripherals/usb/device/tusb_serial_device` demonstrates how to set up {IDF_TARGET_NAME} to function as a USB Serial Device using the TinyUSB component, with the ability to be configured as a double serial device.
+- :example:`peripherals/usb/device/tusb_midi` demonstrates how to set up {IDF_TARGET_NAME} to function as a USB MIDI Device, outputting a MIDI note sequence via the native USB port using the TinyUSB component.
+- :example:`peripherals/usb/device/tusb_hid` demonstrates how to implement a USB keyboard and mouse using the TinyUSB component, which sends 'key a/A pressed & released' events and moves the mouse in a square trajectory upon connection to a USB host.
+- :example:`peripherals/usb/device/tusb_msc` demonstrates how to use the USB capabilities to create a Mass Storage Device that can be recognized by USB-hosts, allowing access to its internal data storage, with support for SPI Flash and SD MMC Card storage media.
+- :example:`peripherals/usb/device/tusb_composite_msc_serialdevice` demonstrates how to set up {IDF_TARGET_NAME} to function simultaneously as both a USB Serial Device and an MSC device (SPI-Flash as the storage media) using the TinyUSB component.
 
-   * - Code Example
-     - Description
-   * - :example:`peripherals/usb/device/tusb_console`
-     - How to set up {IDF_TARGET_NAME} chip to get log output via Serial Device connection
-   * - :example:`peripherals/usb/device/tusb_serial_device`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
-   * - :example:`peripherals/usb/device/tusb_midi`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
-   * - :example:`peripherals/usb/device/tusb_hid`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
-   * - :example:`peripherals/usb/device/tusb_msc`
-     - How to set up {IDF_TARGET_NAME} chip to work as a USB Mass Storage Device
-   * - :example:`peripherals/usb/device/tusb_composite_msc_serialdevice`
-     - How to set up {IDF_TARGET_NAME} chip to work as a Composite USB Device (MSC + CDC)
+.. only:: not esp32p4
+
+  - :example:`peripherals/usb/device/tusb_ncm` demonstrates how to transmit Wi-Fi data to a Linux or Windows host via USB using the Network Control Model (NCM), a sub-class of Communication Device Class (CDC) USB Device for Ethernet-over-USB applications, with the help of a TinyUSB component.

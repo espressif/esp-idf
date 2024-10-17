@@ -74,6 +74,14 @@ __attribute__((__noreturn__))  void ulp_lp_core_halt(void);
 __attribute__((__noreturn__))  void ulp_lp_core_stop_lp_core(void);
 
 /**
+<<<<<<< HEAD
+=======
+ * @brief Abort LP core operation.
+ */
+void __attribute__((noreturn)) ulp_lp_core_abort(void);
+
+/**
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  * @brief Enable the SW triggered interrupt from the PMU
  *
  * @note This is the same SW trigger interrupt that is used to wake up the LP CPU

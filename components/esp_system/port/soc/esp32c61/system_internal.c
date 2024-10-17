@@ -40,7 +40,6 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
         }
     }
 
-    // ESP32C61 TODO: IDF9513, when you run modem, pay attention
 #if SOC_MODEM_CLOCK_SUPPORTED
     modem_syscon_ll_reset_all(&MODEM_SYSCON);
     modem_lpcon_ll_reset_all(&MODEM_LPCON);
@@ -98,7 +97,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // Disable cache
     Cache_Disable_Cache();
 
-    //TODO: [ESP32C61] IDF-9249, inherit from verify code
+    //TODO: [ESP32C61] IDF-9553, inherit from verify code
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     // Moved to module internal
     // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,

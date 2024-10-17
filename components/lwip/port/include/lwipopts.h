@@ -308,12 +308,23 @@ extern "C" {
 #define LWIP_DHCP                       1
 
 /**
- * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
+ * LWIP_DHCP_CHECKS_OFFERED_ADDRESS:
+ * - Using Address Conflict Detection (ACD) module assures that the offered IP address
+ *    is properly probed and announced before binding in DHCP. This conforms to RFC5227,
+ *    but takes several seconds.
+ * - Using ARP check, we only send two ARP requests to check for replies. This process
+ *    lasts 1 - 2 seconds.
+ * - No conflict detection: We directly bind the offered address.
  */
 #ifdef CONFIG_LWIP_DHCP_DOES_ARP_CHECK
 #define DHCP_DOES_ARP_CHECK             1
+#define LWIP_DHCP_DOES_ACD_CHECK        1
+#elif CONFIG_LWIP_DHCP_DOES_ACD_CHECK
+#define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        1
 #else
 #define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        0
 #endif
 
 /**
@@ -381,7 +392,7 @@ extern "C" {
 /* Since for embedded devices it's not that hard to miss a discover packet, so lower
  * the discover and request retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,4,4,4)s.
  */
-#define DHCP_REQUEST_TIMEOUT_SEQUENCE(tries)   ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
+#define DHCP_REQUEST_BACKOFF_SEQUENCE(state, tries)   ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
 
 static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 {
@@ -393,12 +404,12 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
     return timeout;
 }
 
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T0_LEASE(dhcp)  \
-        timeout_from_offered((dhcp)->offered_t0_lease, 120)
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T1_RENEW(dhcp)  \
-        timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ )
-#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
-        timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ )
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T0_LEASE(tout, dhcp)  do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t0_lease, 120); } while(0)
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T1_RENEW(tout, dhcp)  do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ );  } while(0)
+#define DHCP_SET_TIMEOUT_FROM_OFFERED_T2_REBIND(tout, dhcp) do {    \
+        (tout) = timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ );  } while(0)
 
 #define LWIP_HOOK_DHCP_PARSE_OPTION(netif, dhcp, state, msg, msg_type, option, len, pbuf, offset)   \
         do {    LWIP_UNUSED_ARG(msg);                                           \
@@ -470,6 +481,10 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  */
 #define LWIP_DNS                        1
 
+/** The maximum number of IP addresses per host
+ */
+#define DNS_MAX_HOST_IP                 CONFIG_LWIP_DNS_MAX_HOST_IP
+
 /** The maximum of DNS servers
  */
 #define DNS_MAX_SERVERS                 CONFIG_LWIP_DNS_MAX_SERVERS
@@ -497,6 +512,17 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_DNS_SUPPORT_MDNS_QUERIES   1
 #else
 #define LWIP_DNS_SUPPORT_MDNS_QUERIES   0
+#endif
+
+/**
+ * LWIP_DNS_SETSERVER_WITH_NETIF: If this is turned on, the dns_setserver_with_netif() is enabled and called
+ * from all internal modules (instead of dns_setserver()) allowing to setup a user callback to collect DNS server
+ * information acquired by the related network interface.
+ */
+#ifdef CONFIG_LWIP_DNS_SETSERVER_WITH_NETIF
+#define LWIP_DNS_SETSERVER_WITH_NETIF   1
+#else
+#define LWIP_DNS_SETSERVER_WITH_NETIF   0
 #endif
 
 /*
@@ -677,8 +703,12 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 /**
  * LWIP_NETIF_HOSTNAME==1: use DHCP_OPTION_HOSTNAME with netif's hostname
  * field.
+ * LWIP_DHCP_DISCOVER_ADD_HOSTNAME==1: include hostname opt in discover packets.
+ * If the hostname is not set in the DISCOVER packet, then some servers might issue
+ * an OFFER with hostname configured and consequently reject the REQUEST with any other hostname.
  */
 #define LWIP_NETIF_HOSTNAME             1
+#define LWIP_DHCP_DISCOVER_ADD_HOSTNAME 1
 
 /**
   * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
@@ -1066,6 +1096,11 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define PPP_IPV6_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV6
 
 /**
+ * PPP_IPV4_SUPPORT==1: Enable PPP IPv4 support
+ */
+#define PPP_IPV4_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV4
+
+/**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
  */
 #define PPP_NOTIFY_PHASE                CONFIG_LWIP_PPP_NOTIFY_PHASE_SUPPORT
@@ -1103,7 +1138,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 /**
  * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
  * TODO: If PPP_MAXIDLEFLAG > 0 and next package is send during PPP_MAXIDLEFLAG time,
- *       then 0x7E is not added at the begining of PPP package but 0x7E termination
+ *       then 0x7E is not added at the beginning of PPP package but 0x7E termination
  *       is always at the end. This behaviour brokes PPP dial with GSM (PPPoS).
  *       The PPP package should always start and end with 0x7E.
  */
@@ -1135,6 +1170,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #else
 #define PPP_SUPPORT                     0
 #endif  /* CONFIG_LWIP_PPP_SUPPORT */
+
+/**
+ * LWIP_USE_EXTERNAL_MBEDTLS: Use external mbed TLS library for crypto implementation used in PPP AUTH
+ */
+#ifdef CONFIG_LWIP_USE_EXTERNAL_MBEDTLS
+#define LWIP_USE_EXTERNAL_MBEDTLS 1
+#else
+#define LWIP_USE_EXTERNAL_MBEDTLS 0
+#endif
 
 /*
    --------------------------------------
@@ -1273,6 +1317,20 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  */
 #define LWIP_ND6_NUM_NEIGHBORS          CONFIG_LWIP_IPV6_ND6_NUM_NEIGHBORS
 
+/**
+ * LWIP_ND6_NUM_PREFIXES: Maximum number of entries in IPv6 on-link prefixes cache
+ */
+#define LWIP_ND6_NUM_PREFIXES          CONFIG_LWIP_IPV6_ND6_NUM_PREFIXES
+
+/**
+ * LWIP_ND6_NUM_ROUTERS: Maximum number of entries in IPv6 default routers cache
+ */
+#define LWIP_ND6_NUM_ROUTERS          CONFIG_LWIP_IPV6_ND6_NUM_ROUTERS
+
+/**
+ * LWIP_ND6_NUM_DESTINATIONS: Maximum number of entries in IPv6 destinations cache
+ */
+#define LWIP_ND6_NUM_DESTINATIONS          CONFIG_LWIP_IPV6_ND6_NUM_DESTINATIONS
 /*
    ---------------------------------------
    ---------- Hook options ---------------
@@ -1588,7 +1646,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_LWIP                        1
 #define ESP_LWIP_ARP                    1
 #define ESP_PER_SOC_TCP_WND             0
-#define ESP_THREAD_SAFE                 1
+#define ESP_THREAD_SAFE                 1       /* Not used (to be removed in v6.x) */
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
@@ -1626,11 +1684,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-#if ESP_THREAD_SAFE
 #define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
-#endif
 #endif
 
 /**

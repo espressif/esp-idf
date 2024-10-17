@@ -40,11 +40,11 @@ TEST_CASE("ana_cmpr_internal_reference_iram_safe", "[ana_cmpr]")
         .count = 0,
         .src_chan = -1,
     };
-    test_data.src_chan = test_init_src_chan_gpio();
+    test_data.src_chan = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID);
 
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
-        .unit = 0,
+        .unit = TEST_ANA_CMPR_UNIT_ID,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
         .cross_type = ANA_CMPR_CROSS_ANY,

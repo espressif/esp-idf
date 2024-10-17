@@ -1,8 +1,9 @@
-[mapping:esp_lcd_driver]
-archive: libesp_lcd.a
+[mapping:esp_lcd_gdma]
+archive: libesp_hw_support.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
-        esp_lcd_common: lcd_com_mount_dma_data (noflash)
+        gdma: gdma_reset (noflash)
+        gdma: gdma_start (noflash)
 
 [mapping:esp_lcd_hal]
 archive: libhal.a

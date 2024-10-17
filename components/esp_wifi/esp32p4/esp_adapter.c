@@ -53,6 +53,10 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
+#if CONFIG_ESP_EXT_CONN_ENABLE
+extern uint8_t *esp_extconn_get_mac(void);
+#endif
+
 IRAM_ATTR void *wifi_malloc(size_t size)
 {
 #if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
@@ -253,7 +257,32 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
 
 static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
-    return (void *)xQueueCreate(queue_len, item_size);
+    StaticQueue_t *queue_buffer = heap_caps_malloc_prefer(sizeof(StaticQueue_t) + (queue_len * item_size), 2,
+                                                          MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+                                                          MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    if (!queue_buffer) {
+        return NULL;
+    }
+    QueueHandle_t queue_handle = xQueueCreateStatic(queue_len, item_size, (uint8_t *)queue_buffer + sizeof(StaticQueue_t),
+                                                    queue_buffer);
+    if (!queue_handle) {
+        free(queue_buffer);
+        return NULL;
+    }
+
+    return (void *)queue_handle;
+}
+
+static void queue_delete_wrapper(void *queue)
+{
+    if (queue) {
+        StaticQueue_t *queue_buffer = NULL;
+        xQueueGetStaticBuffers(queue, NULL, &queue_buffer);
+        vQueueDelete(queue);
+        if (queue_buffer) {
+            free(queue_buffer);
+        }
+    }
 }
 
 static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_tick)
@@ -402,7 +431,26 @@ static void esp_log_write_wrapper(unsigned int level, const char *tag, const cha
 
 static esp_err_t esp_read_mac_wrapper(uint8_t *mac, unsigned int type)
 {
+    if (mac == NULL) {
+        ESP_LOGE(TAG, "mac address param is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // get mac address from target
+#if CONFIG_ESP_EXT_CONN_ENABLE
+    memcpy(mac, esp_extconn_get_mac(), 6);
+#else
+    ESP_LOGE(TAG, "Not support read mac");
     return ESP_FAIL;
+#endif
+
+    if (type == ESP_MAC_WIFI_SOFTAP) {
+        mac[5] += 1;
+    }
+
+    ESP_LOGD(TAG, "%s MAC addr: " MACSTR, (type == ESP_MAC_WIFI_STA ? "STA" : "AP"), MAC2STR(mac));
+
+    return ESP_OK;
 }
 
 static int coex_init_wrapper(void)
@@ -668,7 +716,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
     ._queue_create = queue_create_wrapper,
-    ._queue_delete = (void(*)(void *))vQueueDelete,
+    ._queue_delete = queue_delete_wrapper,
     ._queue_send = queue_send_wrapper,
     ._queue_send_from_isr = queue_send_from_isr_wrapper,
     ._queue_send_to_back = queue_send_to_back_wrapper,

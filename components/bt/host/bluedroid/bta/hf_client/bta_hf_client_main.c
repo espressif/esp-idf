@@ -413,7 +413,11 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
 
     /* check if mSBC support enabled */
     if (bta_hf_client_version >= HFP_HF_VERSION_1_6) {
+#if (BTM_WBS_INCLUDED == TRUE)
         bta_hf_client_cb.msbc_enabled = TRUE;
+#else
+        bta_hf_client_cb.msbc_enabled = FALSE;
+#endif
     } else{
         bta_hf_client_cb.msbc_enabled = FALSE;
     }

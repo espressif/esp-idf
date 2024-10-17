@@ -55,6 +55,7 @@ menu "ESP-Driver:SPI Configurations"
         default y
         select PERIPH_CTRL_FUNC_IN_IRAM
         select HAL_SPI_SLAVE_FUNC_IN_IRAM
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Place the SPI slave ISR in to IRAM to avoid possible cache miss.
 

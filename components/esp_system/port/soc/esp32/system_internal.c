@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
+#include "esp_macros.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
@@ -96,9 +97,9 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 
-#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
     if (esp_ptr_external_ram(esp_cpu_get_sp())) {
-        // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
+        // If stack_addr is from External Memory (CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM is used)
         // then need to switch SP to Internal Memory otherwise
         // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
         uint32_t new_sp = SOC_DRAM_LOW + (SOC_DRAM_HIGH - SOC_DRAM_LOW) / 2;
@@ -140,7 +141,6 @@ void IRAM_ATTR esp_restart_noos(void)
         esp_cpu_unstall(0);
         esp_rom_software_reset_cpu(1);
     }
-    while (true) {
-        ;
-    }
+
+    ESP_INFINITE_LOOP();
 }

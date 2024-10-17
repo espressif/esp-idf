@@ -1,6 +1,8 @@
 Overriding Default Chip Drivers
 ===============================
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. warning::
 
    Customizing SPI Flash Chip Drivers is considered an "expert" feature. Users should only do so at their own risk. (See the notes below)
@@ -39,7 +41,7 @@ Steps For Creating Custom Chip Drivers and Overriding the ESP-IDF Default Driver
    - When writing your own flash chip driver, you can set your flash chip capabilities through ``spi_flash_chip_***(vendor)_get_caps`` and points the function pointer ``get_chip_caps`` for protection to the ``spi_flash_chip_***_get_caps`` function. The steps are as follows.
 
       1. Please check whether your flash chip have the capabilities listed in ``spi_flash_caps_t`` by checking the flash datasheet.
-      2. Write a function named ``spi_flash_chip_***(vendor)_get_caps``. Take the example below as a reference. (if the flash support ``suspend`` and ``read unique id``).
+      2. Write a function named ``spi_flash_chip_***(vendor)_get_caps``. Take the example below as a reference (if the flash support ``suspend`` and ``read unique id``).
       3. Points the pointer ``get_chip_caps`` (in ``spi_flash_chip_t``) to the function mentioned above.
 
       .. code-block:: c

@@ -22,10 +22,10 @@
 #define U1RTS_GPIO_NUM (-1)
 #define U1CTS_GPIO_NUM (-1)
 
-#define LP_U0RXD_GPIO_NUM 4
-#define LP_U0TXD_GPIO_NUM 5
-#define LP_U0RTS_GPIO_NUM 2
-#define LP_U0CTS_GPIO_NUM 3
+#define U2RXD_GPIO_NUM (-1)
+#define U2TXD_GPIO_NUM (-1)
+#define U2RTS_GPIO_NUM (-1)
+#define U2CTS_GPIO_NUM (-1)
 
 /* The following defines are necessary for reconfiguring the UART
  * to use IOMUX, at runtime. */
@@ -39,8 +39,8 @@
 #define U1RXD_MUX_FUNC  (-1)
 #define U1RTS_MUX_FUNC  (-1)
 #define U1CTS_MUX_FUNC  (-1)
-
-#define LP_U0TXD_MUX_FUNC  (1)
-#define LP_U0RXD_MUX_FUNC  (1)
-#define LP_U0RTS_MUX_FUNC  (1)
-#define LP_U0CTS_MUX_FUNC  (1)
+/* Same goes for UART2 */
+#define U2TXD_MUX_FUNC  (-1)
+#define U2RXD_MUX_FUNC  (-1)
+#define U2RTS_MUX_FUNC  (-1)
+#define U2CTS_MUX_FUNC  (-1)

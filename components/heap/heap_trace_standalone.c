@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,8 +24,15 @@ static __attribute__((unused)) const char* TAG = "heaptrace";
 
 #if CONFIG_HEAP_TRACING_STANDALONE
 
+typedef enum {
+    TRACING_STARTED, // start recording allocs and free
+    TRACING_STOPPED, // stop recording allocs and free
+    TRACING_ALLOC_PAUSED, // stop recording allocs but keep recording free
+    TRACING_UNKNOWN // default value
+} tracing_state_t;
+
 static portMUX_TYPE trace_mux = portMUX_INITIALIZER_UNLOCKED;
-static bool tracing;
+static tracing_state_t tracing = TRACING_UNKNOWN;
 static heap_trace_mode_t mode;
 
 /* Define struct: linked list of records */
@@ -154,7 +161,7 @@ static HEAP_IRAM_ATTR heap_trace_record_t* map_find_and_remove(void *p)
 
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records)
 {
-    if (tracing) {
+    if ((tracing == TRACING_STARTED) || (tracing == TRACING_ALLOC_PAUSED)) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -181,12 +188,12 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t 
     return ESP_OK;
 }
 
-static esp_err_t set_tracing(bool enable)
+static esp_err_t set_tracing(tracing_state_t state)
 {
-    if (tracing == enable) {
+    if (tracing == state) {
         return ESP_ERR_INVALID_STATE;
     }
-    tracing = enable;
+    tracing = state;
     return ESP_OK;
 }
 
@@ -198,7 +205,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     portENTER_CRITICAL(&trace_mux);
 
-    set_tracing(false);
+    set_tracing(TRACING_STOPPED);
     mode = mode_param;
 
     // clear buffers
@@ -220,7 +227,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
     total_allocations = 0;
     total_frees = 0;
 
-    const esp_err_t ret_val = set_tracing(true);
+    const esp_err_t ret_val = set_tracing(TRACING_STARTED);
 
     portEXIT_CRITICAL(&trace_mux);
     return ret_val;
@@ -229,7 +236,15 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 esp_err_t heap_trace_stop(void)
 {
     portENTER_CRITICAL(&trace_mux);
-    const esp_err_t ret_val = set_tracing(false);
+    const esp_err_t ret_val = set_tracing(TRACING_STOPPED);
+    portEXIT_CRITICAL(&trace_mux);
+    return ret_val;
+}
+
+esp_err_t heap_trace_alloc_pause(void)
+{
+    portENTER_CRITICAL(&trace_mux);
+    const esp_err_t ret_val = set_tracing(TRACING_ALLOC_PAUSED);
     portEXIT_CRITICAL(&trace_mux);
     return ret_val;
 }
@@ -237,7 +252,7 @@ esp_err_t heap_trace_stop(void)
 esp_err_t heap_trace_resume(void)
 {
     portENTER_CRITICAL(&trace_mux);
-    const esp_err_t ret_val = set_tracing(true);
+    const esp_err_t ret_val = set_tracing(TRACING_STARTED);
     portEXIT_CRITICAL(&trace_mux);
     return ret_val;
 }
@@ -425,13 +440,12 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
 /* Add a new allocation to the heap trace records */
 static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *r_allocation)
 {
-    if (!tracing || r_allocation->address == NULL) {
+    if ((tracing != TRACING_STARTED) || (r_allocation->address == NULL)) {
         return;
     }
-
     portENTER_CRITICAL(&trace_mux);
 
-    if (tracing) {
+    if (tracing == TRACING_STARTED) {
         // If buffer is full, pop off the oldest
         // record to make more space
         if (records.count == records.capacity) {
@@ -465,7 +479,7 @@ static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *r_alloca
 */
 static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
 {
-       if (!tracing || p == NULL) {
+    if ((tracing == TRACING_STOPPED) || (p == NULL)) {
         return;
     }
 
@@ -478,7 +492,7 @@ static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
         return;
     }
 
-    if (tracing) {
+    if (tracing != TRACING_STOPPED) {
 
         total_frees++;
 

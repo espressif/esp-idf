@@ -28,6 +28,10 @@ void pmu_hal_lp_set_digital_power_up_wait_cycle(pmu_hal_context_t *hal, uint32_t
 
 uint32_t pmu_hal_lp_get_digital_power_up_wait_cycle(pmu_hal_context_t *hal);
 
+void pmu_hal_hp_set_control_ready_wait_cycle(pmu_hal_context_t *hal, uint32_t isolate_wait_cycle, uint32_t reset_wait_cycle);
+
+void pmu_hal_lp_set_control_ready_wait_cycle(pmu_hal_context_t *hal, uint32_t isolate_wait_cycle, uint32_t reset_wait_cycle);
+
 void pmu_hal_hp_set_sleep_active_backup_enable(pmu_hal_context_t *hal);
 
 void pmu_hal_hp_set_sleep_active_backup_disable(pmu_hal_context_t *hal);

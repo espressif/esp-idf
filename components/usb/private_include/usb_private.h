@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,7 @@ typedef struct urb_s urb_t;
 typedef enum {
     USB_PROC_REQ_SOURCE_USBH = 0x01,
     USB_PROC_REQ_SOURCE_HUB = 0x02,
+    USB_PROC_REQ_SOURCE_ENUM = 0x03
 } usb_proc_req_source_t;
 
 /**
@@ -77,16 +78,18 @@ typedef bool (*usb_proc_req_cb_t)(usb_proc_req_source_t source, bool in_isr, voi
  * - The constant fields of the URB are also set
  * - The data_buffer field of the URB is set to point to start of the allocated data buffer.
  *
- * @param data_buffer_size Size of the URB's data buffer
- * @param num_isoc_packets Number of isochronous packet descriptors
- * @return urb_t* URB object
+ * @param[in] data_buffer_size Size of the URB's data buffer
+ * @param[in] num_isoc_packets Number of isochronous packet descriptors
+ *
+ * @return
+ *    - urb_t* URB object
  */
 urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets);
 
 /**
  * @brief Free a URB
  *
- * @param urb URB object
+ * @param[in] urb URB object
  */
 void urb_free(urb_t *urb);
 

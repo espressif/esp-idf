@@ -12,6 +12,7 @@ stages:
   - test_deploy
   - deploy
   - post_deploy
+  - retry_failed_jobs
 
 variables:
 # System environment
@@ -39,7 +40,11 @@ variables:
   GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
   # we're using .cache folder for caches
   GIT_CLEAN_FLAGS: -ffdx -e .cache/
+<<<<<<< HEAD
   LATEST_GIT_TAG: v5.3.1
+=======
+  LATEST_GIT_TAG: v5.4-dev
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
   SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
   # by default we will fetch all submodules
@@ -54,9 +59,9 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.3:1"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.3:1-1"
-  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.3:1"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.4:1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.4:1-1"
+  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.4:1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
   PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
 
@@ -72,7 +77,7 @@ variables:
   CI_PYTHON_CONSTRAINT_BRANCH: ""
 
   # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
-  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.3.txt"
+  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.4.txt"
 
   # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
   # Keep the variable empty when not used.
@@ -82,6 +87,12 @@ variables:
   # branch name must be without the remote part ("origin/"). Keep the variable empty when not used.
   # This is used only if CI_PYTHON_TOOL_REPO is not empty.
   CI_PYTHON_TOOL_BRANCH: ""
+
+  # Set this variable to Clang toolchain distro URL to be used.
+  # NOTE: We have separate toolchains for Xtensa and RISCV, therefore jobs for one arch will fail.
+  # This is OK as far as we use CI_CLANG_DISTRO_URL for pre-release tests purposes only.
+  # Keep the variable empty when not used.
+  CI_CLANG_DISTRO_URL: ""
 
   # Set this variable to specify the file name for the known failure cases.
   KNOWN_FAILURE_CASES_FILE_NAME: "5.3.txt"
@@ -95,6 +106,8 @@ variables:
   # host mapping volume to share ccache between runner concurrent jobs
   CCACHE_DIR: "/cache/idf_ccache"
   CCACHE_MAXSIZE: "50G"
+
+  FF_USE_NEW_BASH_EVAL_STRATEGY: "true"
 
 ################################################
 # `before_script` and `after_script` Templates #
@@ -138,21 +151,21 @@ variables:
   # install latest python packages
   # target test jobs
   if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-pytest
+    run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
   elif [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
     run_cmd bash install.sh --enable-ci --enable-docs
   elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-pytest
+    run_cmd bash install.sh --enable-ci
   else
     if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
       run_cmd bash install.sh --enable-ci
     else
-      run_cmd bash install.sh --enable-ci --enable-pytest
+      run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
     fi
   fi
 
   # Install esp-clang if necessary
-  if [[ "$IDF_TOOLCHAIN" == "clang" ]]; then
+  if [[ "$IDF_TOOLCHAIN" == "clang" && -z "$CI_CLANG_DISTRO_URL" ]]; then
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
@@ -167,7 +180,7 @@ variables:
 
   source ./export.sh
 
-  # Custom clang
+  # Custom clang toolchain
   if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
     echo "Using custom clang from ${CI_CLANG_DISTRO_URL}"
     wget $CI_CLANG_DISTRO_URL
@@ -214,6 +227,8 @@ variables:
     - *common-before_scripts
     # On macOS, these tools need to be installed
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
+    # remove idf-env.json, since it may contains enabled "features"
+    - rm -f $IDF_TOOLS_PATH/idf-env.json
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_and_idf_python_venv
@@ -279,8 +294,8 @@ variables:
     git remote add origin "${CI_REPOSITORY_URL}"
   fi
 
-.git_checkout_fetch_head: &git_checkout_fetch_head |
-  git checkout FETCH_HEAD
+.git_checkout_ci_commit_sha: &git_checkout_ci_commit_sha |
+  git checkout $CI_COMMIT_SHA
   git clean ${GIT_CLEAN_FLAGS}
 
 # git diff requires two commits, with different CI env var
@@ -304,6 +319,7 @@ variables:
         git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA)
+        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
       # merge request pipelines, when the mr got conflicts
       elif [[ -n $CI_MERGE_REQUEST_DIFF_BASE_SHA ]]; then
         git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
@@ -319,7 +335,7 @@ variables:
         git fetch origin $CI_COMMIT_SHA --depth=2 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_SHA~1 $CI_COMMIT_SHA)
       fi
-    - *git_checkout_fetch_head
+    - *git_checkout_ci_commit_sha
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
@@ -333,7 +349,7 @@ variables:
     - *git_init
     - *git_fetch_from_mirror_url_if_exists
     - git fetch origin "${CI_COMMIT_SHA}" --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
-    - *git_checkout_fetch_head
+    - *git_checkout_ci_commit_sha
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys

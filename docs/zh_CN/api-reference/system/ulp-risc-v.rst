@@ -19,17 +19,17 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 编译 ULP RISC-V 代码
 -----------------------------
 
-要将 ULP RISC-V 代码编译为某组件的一部分，必须执行以下步骤：
+ ULP RISC-V 代码会与 ESP-IDF 项目共同编译，生成一个单独的二进制文件，并自动嵌入到主项目的二进制文件中。编译可通过以下两种方式实现：
 
-1. ULP RISC-V 代码以 C 语言或汇编语言编写（必须使用 ``.S`` 扩展名），必须放在组件目录中一个独立的目录中，例如 ``ulp/``。
+使用 ``ulp_embed_binary``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
+1. 将用 C 语言或汇编语言（带有 ``.S`` 扩展名）编写的 ULP RISC-V 代码放在组件目录下的专用目录中，例如 ``ulp/``。
 
-    当注册组件时（通过 ``idf_component_register``），该目录不应被添加至 ``SRC_DIRS`` 参数，因为目前该步骤需用于 ULP FSM。如何正确添加 ULP 源文件，请见以下步骤。
+2. 在 ``CMakeLists.txt`` 文件中注册组件后，调用 ``ulp_embed_binary`` 函数。例如：
 
-2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
+.. code-block:: cmake
 
-    ...
     idf_component_register()
 
     set(ulp_app_name ulp_${COMPONENT_NAME})
@@ -38,25 +38,81 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
- ``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。生成的其他文件，如 ELF 文件、.map 文件、头文件和链接器导出文件等也可使用此名称。第二个参数指定 ULP 源文件。最后，第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在构建过程中先生成后编译包含头文件的源文件。请参考下文，查看为 ULP 应用程序生成的头文件等相关概念。
+``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
 
-3. 使用常规方法（例如 ``idf.py app``）编译应用程序。
 
-   在内部，构建系统将按照以下步骤编译 ULP 程序：
+使用自定义的 CMake 项目
+^^^^^^^^^^^^^^^^^^^^^^^
 
-   1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤在组件编译目录中生成目标文件（ ``.obj.c`` 或 ``.obj.S``，取决于处理的源文件）。
+也可以为 ULP RISC-V 创建自定义的 CMake 项目，从而更好地控制构建过程，并实现常规 CMake 项目的操作，例如设置编译选项、链接外部库等。
 
-   2. **通过 C 预处理器运行链接器脚本模版。** 模版位于 ``components/ulp/ld`` 目录中。
+请在组件的 ``CMakeLists.txt`` 文件中将 ULP 项目添加为外部项目：
 
-   3. **将目标文件链接到 ELF 输出文件** (``ulp_app_name.elf``)。此步骤生成的 .map 文件默认用于调试 (``ulp_app_name.map``)。
+.. code-block:: cmake
 
-   4. **将 ELF 文件中的内容转储为二进制文件** (``ulp_app_name.bin``)，以便嵌入到应用程序中。
+    ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
 
-   5. 使用 ``riscv32-esp-elf-nm`` 在 ELF 文件中 **生成全局符号列表** (``ulp_app_name.sym``)。
+请创建一个文件夹，包含 ULP 项目文件及 ``CMakeLists.txt`` 文件，该文件夹的位置应与 ``ulp_add_project`` 函数中指定的路径一致。``CMakeLists.txt`` 文件应如下所示：
 
-   6. **创建 LD 导出脚本和头文件** （``ulp_app_name.ld`` 和 ``ulp_app_name.h``），包含来自 ``ulp_app_name.sym`` 的符号。此步骤可借助 ``esp32ulp_mapgen.py`` 工具来完成。
+.. code-block:: cmake
 
-   7. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。**
+    cmake_minimum_required(VERSION 3.16)
+
+    # 项目/目标名称由主项目传递，允许 IDF 依赖此目标
+    # 将二进制文件嵌入到主应用程序中
+    project(${ULP_APP_NAME})
+    add_executable(${ULP_APP_NAME} main.c)
+
+    # 导入 ULP 项目辅助函数
+    include(IDFULPProject)
+
+    # 应用默认的编译选项
+    ulp_apply_default_options(${ULP_APP_NAME})
+
+    # 应用 IDF ULP 组件提供的默认源文件
+    ulp_apply_default_sources(${ULP_APP_NAME})
+
+    # 添加构建二进制文件的目标，并添加链接脚本，用于将 ULP 共享变量导出到主应用程序
+    ulp_add_build_binary_targets(${ULP_APP_NAME})
+
+    # 以下内容是可选的，可以用于自定义构建过程
+
+    # 创建自定义库
+    set(lib_path "${CMAKE_CURRENT_LIST_DIR}/lib")
+    add_library(custom_lib STATIC "${lib_path}/lib_src.c")
+    target_include_directories(custom_lib PUBLIC "${lib_path}/")
+
+    # 链接到库
+    target_link_libraries(${ULP_APP_NAME} PRIVATE custom_lib)
+
+    # 设置自定义编译标志
+    target_compile_options(${ULP_APP_NAME} PRIVATE -msave-restore)
+
+构建项目
+^^^^^^^^
+
+若想编译和构建项目，请执行以下操作：
+
+1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将 :ref:`CONFIG_ULP_COPROC_TYPE` 设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
+
+2. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
+
+在构建过程中，采取以下步骤来构建 ULP 程序：
+
+    1. **通过 C 编译器和汇编器运行每个源文件。** 此步骤会在组件构建目录中生成目标文件 ``.obj.c`` 或 ``.obj.S``，具体取决于处理的源文件。
+
+    2. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/ld`` 目录中。
+
+    3. **将对象文件链接到一个 ELF 输出文件中，** 即 ``ulp_app_name.elf``。在此阶段生成的映射文件 ``ulp_app_name.map`` 可用于调试。
+
+    4. **将 ELF 文件的内容转储到一个二进制文件中，** 即 ``ulp_app_name.bin``。此二进制文件接下来可以嵌入到应用程序中。
+
+    5. 使用 ``riscv32-esp-elf-nm`` 在 ELF 文件中 **生成全局符号列表，** 即 ``ulp_app_name.sym``。
+
+    6. **创建一个 LD 导出脚本和一个头文件，** 即 ``ulp_app_name.ld`` 和 ``ulp_app_name.h``，并在文件中添加从 ``ulp_app_name.sym`` 里提取的符号。此步骤可以通过 ``esp32ulp_mapgen.py`` 实现。
+
+    7. **将生成的二进制文件添加到要嵌入到应用程序中的二进制文件列表。**
+
 
 .. _ulp-riscv-access-variables:
 
@@ -102,6 +158,11 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
     void init_ulp_vars() {
         ulp_measurement_count = 64;
     }
+
+.. note::
+
+    ULP RISC-V 程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 ULP RISC-V 二进制文件时被初始化。在首次运行 ULP RISC-V 之前，从主 CPU 上的主程序访问这些变量可能会导致未定义行为。
+
 
 互斥
 ^^^^^^^
@@ -238,11 +299,23 @@ ULP RISC-V 的中断处理尚在开发中，还不支持针对内部中断源的
 应用示例
 --------------------
 
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器轮询 GPIO：:example:`system/ulp/ulp_riscv/gpio`。
-* ULP RISC-V 协处理器使用 bit-banged UART 驱动程序打印：:example:`system/ulp/ulp_riscv/uart_print`.
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部温度传感器：:example:`system/ulp/ulp_riscv/ds18b20_onewire`。
-* 主 CPU 处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部 I2C 温度和湿度传感器 (BMP180)，达到阈值时唤醒主 CPU：:example:`system/ulp/ulp_riscv/i2c`.
-* 使用 ULP RISC-V 协处理器处理软件中断和 RTC IO 中断：:example:`system/ulp/ulp_riscv/interrupts`.
+* :example:`system/ulp/ulp_riscv/gpio` 演示了如何通过 ULP-RISC-V 协处理器监控 GPIO 引脚，并在其状态发生变化时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/uart_print` 演示了如何在开发板上使用 ULP-RISC-V 协处理器通过 bitbang 实现 UART 发射，即使在主 CPU 处于深度睡眠状态时也能直接从 ULP-RISC-V 协处理器输出日志。
+
+.. only:: esp32s2
+
+    * :example:`system/ulp/ulp_riscv/ds18b20_onewire` 演示了如何使用 ULP-RISC-V 协处理器通过 1-Wire 协议读取 DS18B20 传感器的温度，并在温度超过阈值时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/i2c` 演示了如何在深度睡眠模式下使用 ULP RISC-V 协处理器的 RTC I2C 外设定期测量 BMP180 传感器的温度和压力值，并在这些值超过阈值时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/interrupts` 演示了 ULP-RISC-V 协处理器如何注册和处理软件中断和 RTC IO 触发的中断，记录软件中断的计数，并在达到某个阈值后或按下按钮时唤醒主 CPU。
+
+* :example:`system/ulp/ulp_riscv/adc` 演示了如何使用 ULP-RISC-V 协处理器定期测量输入电压，并在电压超过设定阈值时唤醒系统。
+
+* :example:`system/ulp/ulp_riscv/gpio_interrupt` 演示了如何使用 ULP-RISC-V 协处理器以通过 RTC IO 中断从深度睡眠中唤醒，使用 GPIO0 作为输入信号，并配置和运行协处理器，将芯片置于深度睡眠模式，直到唤醒源引脚被拉低。
+
+* :example:`system/ulp/ulp_riscv/touch` 演示了如何使用 ULP RISC-V 协处理器定期扫描和读取触摸传感器，并在触摸传感器被激活时唤醒主 CPU。
 
 API 参考
 -------------

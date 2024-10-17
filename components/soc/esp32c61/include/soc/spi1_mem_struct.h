@@ -334,7 +334,7 @@ typedef union {
         /** clk_mode : R/W; bitpos: [1:0]; default: 0;
          *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
          *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
-         *  SPI clock is alwasy on.
+         *  SPI clock is always on.
          */
         uint32_t clk_mode:2;
         /** cs_hold_dly_res : R/W; bitpos: [11:2]; default: 1023;
@@ -721,7 +721,7 @@ typedef union {
          */
         uint32_t waiti_idle_delay_time:10;
         /** waiti_idle_delay_time_en : R/W; bitpos: [10]; default: 0;
-         *  Enable SPI1 wait idle gap time count functon. 1: Enable. 0: Disable.
+         *  Enable SPI1 wait idle gap time count function. 1: Enable. 0: Disable.
          */
         uint32_t waiti_idle_delay_time_en:1;
         uint32_t reserved_11:21;
@@ -1149,7 +1149,7 @@ typedef union {
         uint32_t reserved_5:5;
         /** brown_out_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
          *  The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that
-         *  chip is loosing power and RTC module sends out brown out close flash request to
+         *  chip is losing power and RTC module sends out brown out close flash request to
          *  SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered
          *  and MSPI returns to idle state. 0: Others.
          */
@@ -1232,7 +1232,7 @@ typedef union {
 } spi_mem_date_reg_t;
 
 
-typedef struct {
+typedef struct spi1_mem_dev_s {
     volatile spi_mem_cmd_reg_t cmd;
     volatile spi_mem_addr_reg_t addr;
     volatile spi_mem_ctrl_reg_t ctrl;
@@ -1250,7 +1250,7 @@ typedef struct {
     volatile spi_mem_tx_crc_reg_t tx_crc;
     volatile spi_mem_cache_fctrl_reg_t cache_fctrl;
     uint32_t reserved_040[6];
-    volatile spi_mem_buffer_reg_t word[16];
+    volatile uint32_t data_buf[16];
     volatile spi_mem_flash_waiti_ctrl_reg_t flash_waiti_ctrl;
     volatile spi_mem_flash_sus_ctrl_reg_t flash_sus_ctrl;
     volatile spi_mem_flash_sus_cmd_reg_t flash_sus_cmd;
@@ -1270,11 +1270,11 @@ typedef struct {
     volatile spi_mem_clock_gate_reg_t clock_gate;
     uint32_t reserved_204[126];
     volatile spi_mem_date_reg_t date;
-} spi_mem_dev_t;
+} spi1_mem_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(spi_mem_dev_t) == 0x400, "Invalid size of spi_mem_dev_t structure");
+_Static_assert(sizeof(spi1_mem_dev_t) == 0x400, "Invalid size of spi1_mem_dev_t structure");
 #endif
 
 #ifdef __cplusplus

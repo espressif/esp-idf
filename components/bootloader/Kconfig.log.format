@@ -1,0 +1,38 @@
+menu "Format"
+
+    config BOOTLOADER_LOG_COLORS
+        bool "Color"
+        default n
+        help
+            Use ANSI terminal colors in log output
+            Enable ANSI terminal color codes.
+            In order to view these, your terminal program must support ANSI color codes.
+
+    choice BOOTLOADER_LOG_TIMESTAMP_SOURCE
+        prompt "Timestamp"
+        default BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS
+        help
+            Choose what sort of timestamp is displayed in the log output:
+
+            - "None" - The log will only contain the actual log messages themselves
+              without any time-related information. Avoiding timestamps can help conserve
+              processing power and memory. It might useful when you
+              perform log analysis or debugging, sometimes it's more straightforward
+              to work with logs that lack timestamps, especially if the time of occurrence
+              is not critical for understanding the issues.
+              "I log_test: info message"
+
+            - "Milliseconds since boot" is calculated from the RTOS tick count multiplied
+              by the tick period. This time will reset after a software reboot.
+              "I (112500) log_test: info message"
+
+        config BOOTLOADER_LOG_TIMESTAMP_SOURCE_NONE
+            bool "None"
+            depends on NO_SYMBOL  # hide it now, turn it on final MR
+
+        config BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS
+            bool "Milliseconds Since Boot"
+
+    endchoice # BOOTLOADER_LOG_TIMESTAMP_SOURCE
+
+endmenu

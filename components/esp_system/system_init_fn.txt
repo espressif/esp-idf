@@ -41,7 +41,12 @@ CORE: 100: init_heap in components/heap/heap_caps_init.c on BIT(0)
 CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
 
 CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
-CORE: 103: init_psram in components/esp_psram/esp_psram.c on BIT(0)
+
+# Add the psram to heap, psram vaddr region is reserved when initialising the heap, after
+# psram is initialised (and necessary reservation for psram usage), the rest of the psram
+# will be added to the heap
+CORE: 103: add_psram_to_heap in components/esp_psram/esp_psram.c on BIT(0)
+
 CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 
@@ -50,10 +55,10 @@ CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 110: init_vfs_uart in components/esp_driver_uart/src/uart_vfs.c on BIT(0)
 CORE: 111: init_vfs_usj in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
 CORE: 112: init_vfs_usj_sec in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
+CORE: 113: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
 CORE: 114: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
 CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
 
-CORE: 120: init_pthread in components/pthread/pthread.c on BIT(0)
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
 CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
@@ -70,10 +75,19 @@ SECONDARY: 101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.
 # RNG module clock was disabled in `esp_perip_clk_init`, if hw_random is used, need to re-ebnabled it in startup
 SECONDARY: 102: init_rng_clock in components/esp_hw_support/hw_random.c on BIT(0)
 
+# Security specific initializations
+SECONDARY: 103: esp_security_init in components/esp_security/src/init.c on BIT(0)
+
 # esp_sleep doesn't have init dependencies
 SECONDARY: 105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
-SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32c6/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32c61/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32h2/sleep_clock.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/lowpower/port/esp32p4/sleep_clock.c on BIT(0)
 SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
+SECONDARY: 108: sleep_mmu_startup_init in components/esp_hw_support/lowpower/port/esp32c5/sleep_mmu.c on BIT(0)
+SECONDARY: 108: sleep_mmu_startup_init in components/esp_hw_support/lowpower/port/esp32c61/sleep_mmu.c on BIT(0)
 
 # app_trace has to be initialized before systemview
 SECONDARY: 115: esp_apptrace_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
@@ -84,6 +98,10 @@ SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on 
 
 # esp_debug_stubs doesn't have init dependencies
 SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
+
+# Register NVS Encryption schemes
+SECONDARY: 150: nvs_sec_provider_register_flash_enc_scheme in components/nvs_sec_provider/nvs_sec_provider.c on BIT(0)
+SECONDARY: 151: nvs_sec_provider_register_hmac_scheme in components/nvs_sec_provider/nvs_sec_provider.c on BIT(0)
 
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
@@ -98,6 +116,10 @@ SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_system/port
 # usb_serial_jtag needs to create and acquire a PM lock at startup.
 # This makes more sense to be done after esp_pm_impl_init (called from init_pm).
 SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_connection_monitor.c on BIT(0)
+
+# psram adjust timing point need a separate task which should be created at startup.
+# Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_by_mspi_delay.c on BIT(0)
 
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog

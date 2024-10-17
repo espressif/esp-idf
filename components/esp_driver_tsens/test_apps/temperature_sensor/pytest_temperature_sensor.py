@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.unity_tester import CaseTester
@@ -13,6 +12,7 @@ from pytest_embedded_idf.unity_tester import CaseTester
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4
+@pytest.mark.esp32c5
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'release',
@@ -24,6 +24,7 @@ def test_temperature_sensor_driver(dut: Dut) -> None:
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32p4
+@pytest.mark.esp32c5
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'iram_safe',

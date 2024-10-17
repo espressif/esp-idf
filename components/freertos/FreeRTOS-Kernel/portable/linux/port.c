@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -261,7 +261,13 @@ void vPortEnterCritical( void )
 
 void vPortExitCritical( void )
 {
-    uxCriticalNesting--;
+    if ( uxCriticalNesting > 0 )
+    {
+        uxCriticalNesting--;
+    }
+
+    /* Critical section nesting count must always be >= 0. */
+    configASSERT( uxCriticalNesting >= 0 );
 
     /* If we have reached 0 then re-enable the interrupts. */
     if( uxCriticalNesting == 0 )
@@ -562,5 +568,11 @@ unsigned long ulPortGetRunTime( void )
     times( &xTimes );
 
     return ( unsigned long ) xTimes.tms_utime;
+}
+/*-----------------------------------------------------------*/
+
+void vPortSetStackWatchpoint( void *pxStackStart )
+{
+    (void) pxStackStart;
 }
 /*-----------------------------------------------------------*/

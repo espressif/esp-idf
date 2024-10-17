@@ -15,11 +15,9 @@ idf_component_register(INCLUDE_DIRS ${includes}
                        REQUIRED_IDF_TARGETS linux
                        SRCS ${srcs})
 
-if(${IDF_TARGET} STREQUAL "linux")
-    find_library(LIB_BSD bsd)
-    if(LIB_BSD)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
-    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
-    endif()
+find_library(LIB_BSD bsd)
+if(LIB_BSD)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
 endif()

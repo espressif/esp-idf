@@ -69,6 +69,7 @@ typedef struct _protocomm_ble {
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
     unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -133,6 +134,13 @@ typedef struct {
     unsigned ble_link_encryption:1;
     /** BLE address */
     uint8_t *ble_addr;
+<<<<<<< HEAD
+=======
+    /**  Flag to keep BLE on */
+    unsigned keep_ble_on:1;
+    /** BLE Characteristic notify flag */
+    unsigned ble_notify:1;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -264,6 +272,14 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.channel_id,
                  event->mtu.value);
         transport_simple_ble_set_mtu(event, arg);
+        return 0;
+    case BLE_GAP_EVENT_NOTIFY_TX:
+        ESP_LOGI(TAG, "notify_tx event; conn_handle=%d attr_handle=%d "
+                    "status=%d is_indication=%d",
+                    event->notify_tx.conn_handle,
+                    event->notify_tx.attr_handle,
+                    event->notify_tx.status,
+                    event->notify_tx.indication);
         return 0;
     }
     return 0;
@@ -715,6 +731,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
                                         BLE_GATT_CHR_F_WRITE_ENC;
     }
 
+    if (protoble_internal->ble_notify) {
+        (characteristics + idx)->flags |= BLE_GATT_CHR_F_NOTIFY;
+    }
+
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently
@@ -972,6 +992,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
     protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
 
     simple_ble_cfg_t *ble_config = (simple_ble_cfg_t *) calloc(1, sizeof(simple_ble_cfg_t));
     if (ble_config == NULL) {
@@ -1003,6 +1024,8 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         return ESP_ERR_NO_MEM;
     }
 
+    ble_config->keep_ble_on = config->keep_ble_on;
+
     esp_err_t err = simple_ble_start(ble_config);
     ESP_LOGD(TAG, "Free Heap size after simple_ble_start= %" PRIu32, esp_get_free_heap_size());
 
@@ -1031,23 +1054,24 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
                      rc);
         }
 
-#ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    if (ble_cfg_p->keep_ble_on) {
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-	/* Keep BT stack on, but terminate the connection after provisioning */
-	rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-	if (rc) {
-	    ESP_LOGI(TAG, "Error in terminating connection rc = %d",rc);
-	}
-	free_gatt_ble_misc_memory(ble_cfg_p);
+       /* Keep BT stack on, but terminate the connection after provisioning */
+       rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+       if (rc) {
+           ESP_LOGI(TAG, "Error in terminating connection rc = %d",rc);
+       }
+       free_gatt_ble_misc_memory(ble_cfg_p);
 #endif // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-#else
-	/* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
+    }
+    else {
+	    /* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
         ret = nimble_port_stop();
         if (ret == 0) {
             nimble_port_deinit();
         }
         free_gatt_ble_misc_memory(ble_cfg_p);
-#endif // CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    }
 
         protocomm_ble_cleanup();
         return ret;

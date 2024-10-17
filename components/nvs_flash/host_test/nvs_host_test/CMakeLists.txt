@@ -5,4 +5,19 @@ set(COMPONENTS main)
 # This test app doesn't require FreeRTOS, using mock instead
 list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/mocks/freertos/")
 
+idf_build_set_property(COMPILE_DEFINITIONS "NO_DEBUG_STORAGE" APPEND)
 project(nvs_host_test)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/coverage_report/index.html"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMAND gcovr --root $ENV{IDF_PATH}/components/nvs_flash --html-details
+    --exclude ${CMAKE_CURRENT_SOURCE_DIR}/managed_components/*
+    -o ${CMAKE_CURRENT_BINARY_DIR}/coverage_report/index.html ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generate coverage report"
+    )
+
+add_custom_target(coverage
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    DEPENDS "coverage_report/index.html"
+    )

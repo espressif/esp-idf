@@ -16,6 +16,10 @@
 
 #include "driver/spi_master.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if SOC_SPI_SCT_SUPPORTED
 /**
  * @Backgrounds: `SCT Mode`
@@ -112,3 +116,7 @@ esp_err_t spi_device_queue_multi_trans(spi_device_handle_t handle, spi_multi_tra
  */
 esp_err_t spi_device_get_multi_trans_result(spi_device_handle_t handle, spi_multi_transaction_t **seg_trans_desc, TickType_t ticks_to_wait);
 #endif  //#if SOC_SPI_SCT_SUPPORTED
+
+#ifdef __cplusplus
+}
+#endif

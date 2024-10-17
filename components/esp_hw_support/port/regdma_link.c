@@ -842,3 +842,13 @@ void regdma_link_dump(FILE *out, void *link, int entry)
         fprintf(out, "This REGDMA linked list is empty!\n");
     }
 }
+<<<<<<< HEAD
+=======
+
+
+regdma_link_mode_t regdma_link_get_config_mode(const regdma_link_config_t *config)
+{
+    assert(config != NULL);
+    return (regdma_link_mode_t)config->head.mode;
+}
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

@@ -26,6 +26,9 @@ extern "C" {
 
 #define ENTRY(n)    (BIT(n))
 
+// Only used for driver retention function testing when lightsleep is not supported
+#define REGDMA_SW_TRIGGER_ENTRY             (ENTRY(3))
+
 #define REGDMA_PHY_LINK(_pri)               ((0x00 << 8) | _pri)
 #define REGDMA_PCR_LINK(_pri)               ((0x01 << 8) | _pri)
 #define REGDMA_MODEMSYSCON_LINK(_pri)       ((0x02 << 8) | _pri)
@@ -50,6 +53,10 @@ extern "C" {
 #define REGDMA_TG1_WDT_LINK(_pri)           ((0x1B << 8) | _pri)
 #define REGDMA_TG0_TIMER_LINK(_pri)         ((0x1C << 8) | _pri)
 #define REGDMA_TG1_TIMER_LINK(_pri)         ((0x1D << 8) | _pri)
+<<<<<<< HEAD
+=======
+#define REGDMA_I2S_LINK(_pri)               ((0x1E << 8) | _pri)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -66,6 +73,10 @@ extern "C" {
 #define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
+<<<<<<< HEAD
+=======
+#define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
@@ -151,10 +162,12 @@ typedef struct regdma_link_branch_write_wait_body {
     volatile uint32_t   mask;
 } regdma_link_branch_write_wait_body_t;
 
-ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM < 16, "regdma link entry number should less 16");
+ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM <= 16, "regdma link entry number should equal to and less than 16");
 typedef struct regdma_link_stats {
     volatile uint32_t   ref: REGDMA_LINK_ENTRY_NUM, /* a bitmap, identifies which entry has referenced the current link */
+#if REGDMA_LINK_ENTRY_NUM < 16
              reserve: 16-REGDMA_LINK_ENTRY_NUM,
+#endif
              id: 16; /* REGDMA linked list node unique identifier */
     volatile uint32_t   module; /* a bitmap used to identify the module to which the current node belongs */
 } regdma_link_stats_t;

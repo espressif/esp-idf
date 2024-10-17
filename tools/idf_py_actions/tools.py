@@ -129,6 +129,12 @@ def get_default_serial_port() -> Any:
         import esptool
         import serial.tools.list_ports
         ports = list(sorted(p.device for p in serial.tools.list_ports.comports()))
+        if sys.platform == 'darwin':
+            ports = [
+                port
+                for port in ports
+                if not port.endswith(('Bluetooth-Incoming-Port', 'wlan-debug'))
+            ]
         # high baud rate could cause the failure of creation of the connection
         esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=4,
                                                    initial_baud=115200)

@@ -186,7 +186,19 @@ Since the installed tools are not permanently added to the user or system ``PATH
 
     ``export.sh`` may be used with shells other than Bash (such as zsh). However, in this case, it is required to set the ``IDF_PATH`` environment variable before running the script. When used in Bash, the script guesses the ``IDF_PATH`` value from its own location.
 
-In addition to calling ``idf_tools.py``, these scripts list the directories that have been added to the ``PATH``.
+activate.py
+~~~~~~~~~~~
+
+The environment setup is handled by the underlying ``tools/activate.py`` Python script. This script performs all necessary preparations and checks, generating a temporary file that is subsequently sourced by the export script.
+
+``activate.py`` can also function as a standalone command. When run, it launches a new child shell with an ESP-IDF environment, which can be utilized and then exited with the ``exit`` command. Upon exiting the child shell, you will return to the parent shell from which the script was initially executed.
+
+Additionally, the specific behavior of the ``activate.py`` script can be modified with various options, such as spawning a specific shell with ESP-IDF using the ``--shell`` option. For more information on available options, use the ``activate.py --help`` command.
+
+.. note::
+
+    When using ``activate.py`` on Windows, it should be executed with ``python activate.py``. This ensures the script runs in the current terminal window rather than launching a new one that closes immediately.
+
 
 Other Installation Methods
 --------------------------

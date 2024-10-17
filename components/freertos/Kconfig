@@ -161,14 +161,32 @@ menu "FreeRTOS"
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
 
+        config FREERTOS_USE_TIMERS
+            bool "configUSE_TIMERS"
+            default y
+            help
+                Enable FreeRTOS Software Timers. Normally the timer task will only get pulled into the build
+                and created if any software timer related functions are used. This is achieved through IDF
+                defining a weak empty function for xTimerCreateTimerTask, which should take effect if timers.c
+                is not pulled into the build.
+
+                In certain special cases (if you use configUSE_TRACE_FACILITY=y and event groups) the linker will
+                still pull in the xTimerCreateTimerTask from timers.c even if the function that utilized it gets
+                discarded due to not being used.
+
+                In these cases you can use this option to force the timer task to be disabled.
+
+
         config FREERTOS_TIMER_SERVICE_TASK_NAME
             string "configTIMER_SERVICE_TASK_NAME"
+            depends on FREERTOS_USE_TIMERS
             default "Tmr Svc"
             help
                 Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
 
         choice FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
             prompt "configTIMER_SERVICE_TASK_CORE_AFFINITY"
+            depends on FREERTOS_USE_TIMERS
             default FREERTOS_TIMER_TASK_NO_AFFINITY
             help
                 Sets the timer task's core affinity
@@ -185,6 +203,7 @@ menu "FreeRTOS"
 
         config FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
             hex
+            depends on FREERTOS_USE_TIMERS
             default 0x0 if FREERTOS_TIMER_TASK_AFFINITY_CPU0
             default 0x1 if FREERTOS_TIMER_TASK_AFFINITY_CPU1
             default FREERTOS_NO_AFFINITY if FREERTOS_TIMER_TASK_NO_AFFINITY
@@ -193,12 +212,14 @@ menu "FreeRTOS"
             int "configTIMER_TASK_PRIORITY"
             range 1 25
             default 1
+            depends on FREERTOS_USE_TIMERS
             help
                 Sets the timer task's priority (see configTIMER_TASK_PRIORITY documentation for more details).
 
         config FREERTOS_TIMER_TASK_STACK_DEPTH
             int "configTIMER_TASK_STACK_DEPTH"
             range 1536 32768
+            depends on FREERTOS_USE_TIMERS
             default 2053 if IDF_TARGET_LINUX
             default 2048
             help
@@ -207,6 +228,7 @@ menu "FreeRTOS"
         config FREERTOS_TIMER_QUEUE_LENGTH
             int "configTIMER_QUEUE_LENGTH"
             range 5 20
+            depends on FREERTOS_USE_TIMERS
             default 10
             help
                 Set the timer task's command queue length (see configTIMER_QUEUE_LENGTH documentation for more
@@ -441,7 +463,7 @@ menu "FreeRTOS"
 
         config FREERTOS_FPU_IN_ISR
             bool "Use float in Level 1 ISR"
-            depends on IDF_TARGET_ESP32
+            depends on SOC_CPU_HAS_FPU && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3)
             default n
             help
                 When enabled, the usage of float type is allowed inside Level 1 ISRs. Note that usage of float types in
@@ -550,6 +572,33 @@ menu "FreeRTOS"
                 Vanilla FreeRTOS. e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
     endmenu # Port
+
+    menu "Extra"
+
+        config FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+            depends on SPIRAM
+            depends on FREERTOS_SUPPORT_STATIC_ALLOCATION
+            bool "Allow external memory as an argument to xTaskCreateStatic (READ HELP)"
+            default n if IDF_TARGET_ESP32
+            default y
+            help
+                Accessing memory in PSRAM has certain restrictions, so task stacks allocated by xTaskCreate
+                are by default allocated from internal RAM.
+
+                This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
+                This should only be used for tasks where the stack is never accessed while the cache is disabled.
+
+                Extra notes for ESP32:
+
+                Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround,
+                normally tasks cannot be safely run with their stack residing in external memory; for this reason
+                xTaskCreate (and related task creation functions) always allocate stack in internal memory and
+                xTaskCreateStatic will check if the memory passed to it is in internal memory.
+                If you have a task that needs a large amount of stack and does not call on ROM code in any way
+                (no direct calls, but also no Bluetooth/WiFi), you can try enable this to
+                cause xTaskCreateStatic to allow tasks stack in external memory.
+
+    endmenu  # Extra
 
     # Hidden or compatibility options
 

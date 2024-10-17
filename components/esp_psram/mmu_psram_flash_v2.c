@@ -28,10 +28,25 @@
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
 
+<<<<<<< HEAD
 extern int _instruction_reserved_start;
 extern int _instruction_reserved_end;
 extern int _rodata_reserved_start;
 extern int _rodata_reserved_end;
+=======
+/**
+ * If using `int`, then for CLANG, with enabled optimization when inlined function is provided with the address of external symbol, the two least bits of the constant used inside that function get cleared.
+ * Optimizer assumes that address of external symbol should be aligned to 4-bytes and therefore aligns constant value used for bitwise AND operation with that address.
+ *
+ * This means `extern int _instruction_reserved_start;` can be unaligned to 4 bytes, whereas using `char` can solve this issue.
+ *
+ * As we only use these symbol address, we declare them as `char` here
+ */
+extern char _instruction_reserved_start;
+extern char _instruction_reserved_end;
+extern char _rodata_reserved_start;
+extern char _rodata_reserved_end;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 const static char *TAG = "mmu_psram";
 static uint32_t s_irom_vaddr_start;
@@ -85,7 +100,11 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
     flash_irom_paddr_start = ALIGN_DOWN_BY(flash_irom_paddr_start, CONFIG_MMU_PAGE_SIZE);
+<<<<<<< HEAD
     ESP_EARLY_LOGI(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
+=======
+    ESP_EARLY_LOGV(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     if ((MMU_PAGE_TO_BYTES(start_page) + irom_size) > psram_size) {
         ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", irom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + irom_size);
@@ -106,6 +125,10 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     start_page += BYTES_TO_MMU_PAGE(irom_size);
     *out_page = start_page;
 
+<<<<<<< HEAD
+=======
+    ESP_EARLY_LOGI(TAG, ".text xip on psram");
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
@@ -120,7 +143,11 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
     flash_drom_paddr_start = ALIGN_DOWN_BY(flash_drom_paddr_start, CONFIG_MMU_PAGE_SIZE);
+<<<<<<< HEAD
     ESP_EARLY_LOGI(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
+=======
+    ESP_EARLY_LOGV(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     if ((MMU_PAGE_TO_BYTES(start_page) + drom_size) > psram_size) {
         ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash rodata, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", drom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + drom_size);
@@ -141,6 +168,10 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     start_page += BYTES_TO_MMU_PAGE(drom_size);
     *out_page = start_page;
 
+<<<<<<< HEAD
+=======
+    ESP_EARLY_LOGI(TAG, ".rodata xip on psram");
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_RODATA

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,7 +98,7 @@ typedef enum {
 
 #if SOC_I2S_SUPPORTS_PDM_TX
 /**
- * @brief pdm tx singnal scaling mode
+ * @brief pdm tx signal scaling mode
  */
 typedef enum {
     I2S_PDM_SIG_SCALING_DIV_2 = 0,   /*!< I2S TX PDM signal scaling: /2 */
@@ -124,7 +124,7 @@ typedef enum {
 
 /**
  * @brief I2S slot select in standard mode
- * @note  It has different meanings in tx/rx/mono/stereo mode, and it may have differen behaviors on different targets
+ * @note  It has different meanings in tx/rx/mono/stereo mode, and it may have different behaviors on different targets
  *        For the details, please refer to the I2S API reference
  */
 typedef enum {
@@ -184,6 +184,34 @@ typedef enum {
 } i2s_tdm_slot_mask_t;
 #endif // SOC_I2S_SUPPORTS_TDM
 
+/**
+ * @brief I2S channel events that supported by the ETM module
+ */
+typedef enum {
+    /** Trigger condition:
+     *  TX: no data to send in the TX FIFO, i.e., DMA need to stop (next desc is NULL)
+     *  RX: 1. If rx_stop_mode = 0, this event will trigger when DMA is stopped (next desc is NULL)
+     *      2. If rx_stop_mode = 1, this event will trigger when DMA in_suc_eof.
+     *      3. If rx_stop_mode = 2, this event will trigger when RX FIFO is full.
+     */
+    I2S_ETM_EVENT_DONE, /*!< Event that I2S TX or RX stopped */
+    /** Trigger condition:
+     *  TX: the sent words(in 32-bit) number reach the threshold that configured in `etm_tx_send_word_num`
+     *  RX: the received words(in 32-bit) number reach the threshold that configured in `etm_rx_receive_word_num`
+     *      and `etm_rx_receive_word_num` should be smaller than the size of the DMA buffer in one `in_suc_eof` event.
+     */
+    I2S_ETM_EVENT_REACH_THRESH, /*!< Event that the I2S sent or received data reached the threshold */
+    I2S_ETM_EVENT_MAX, /*!< Maximum number of events */
+} i2s_etm_event_type_t;
+
+/**
+ * @brief I2S channel tasks that supported by the ETM module
+ */
+typedef enum {
+    I2S_ETM_TASK_START,     /*!< Start the I2S channel */
+    I2S_ETM_TASK_STOP,      /*!< Stop the I2S channel */
+    I2S_ETM_TASK_MAX,       /*!< Maximum number of tasks */
+} i2s_etm_task_type_t;
 
 #ifdef __cplusplus
 }

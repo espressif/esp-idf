@@ -33,6 +33,9 @@ typedef struct {
     size_t trans_queue_depth;             /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/
     struct {
         uint32_t enable_internal_pullup: 1;  /*!< Enable internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. Recommend proper external pull-up if possible */
+        uint32_t allow_pd:               1;  /*!< If set, the driver will backup/restore the I2C registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off I2C's power domain.
+                                              This can save power, but at the expense of more RAM being consumed */
     } flags;                              /*!< I2C master config flags */
 } i2c_master_bus_config_t;
 
@@ -48,6 +51,14 @@ typedef struct {
         uint32_t disable_ack_check:      1;     /*!< Disable ACK check. If this is set false, that means ack check is enabled, the transaction will be stopped and API returns error when nack is detected. */
     } flags;                                    /*!< I2C device config flags */
 } i2c_device_config_t;
+
+/**
+ * @brief I2C master transmit buffer information structure
+ */
+typedef struct {
+    uint8_t *write_buffer;               /*!< Pointer to buffer to be written. */
+    size_t buffer_size;                  /*!< Size of data to be written. */
+} i2c_master_transmit_multi_buffer_info_t;
 
 /**
  * @brief Group of I2C master callbacks, can be used to get status during transaction or doing other small things. But take care potential concurrency issues.
@@ -122,6 +133,24 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle);
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
 esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, int xfer_timeout_ms);
+
+/**
+ * @brief Transmit multiple buffers of data over an I2C bus.
+ *
+ * This function transmits multiple buffers of data over an I2C bus using the specified I2C master device handle.
+ * It takes in an array of buffer information structures along with the size of the array and a transfer timeout value in milliseconds.
+ *
+ * @param i2c_dev I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param buffer_info_array Pointer to buffer information array.
+ * @param array_size size of buffer information array.
+ * @param xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
+ *
+ * @return
+ *      - ESP_OK: I2C master transmit success
+ *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
+ *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
+ */
+esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_master_transmit_multi_buffer_info_t *buffer_info_array, size_t array_size, int xfer_timeout_ms);
 
 /**
  * @brief Perform a write-read transaction on the I2C bus.

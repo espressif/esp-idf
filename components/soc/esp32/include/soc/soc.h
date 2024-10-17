@@ -14,7 +14,7 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
@@ -166,7 +166,6 @@
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        25
 //}}
 
 /* Overall memory map */

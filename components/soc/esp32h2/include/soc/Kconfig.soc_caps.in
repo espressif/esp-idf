@@ -407,7 +407,15 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_CPU_PMP_REGION_GRANULARITY
+    int
+    default 4
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
     bool
     default y
 
@@ -515,6 +523,10 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
     default y
@@ -538,10 +550,6 @@ config SOC_RTCIO_PIN_COUNT
 config SOC_RTCIO_HOLD_SUPPORTED
     bool
     default y
-
-config SOC_RTCIO_VALID_RTCIO_MASK
-    hex
-    default 0x7F80
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -631,6 +639,10 @@ config SOC_I2S_HW_VERSION_2
     bool
     default y
 
+config SOC_I2S_SUPPORTS_ETM
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
@@ -664,6 +676,10 @@ config SOC_I2S_SUPPORTS_TDM
     default y
 
 config SOC_I2S_TDM_FULL_DATA_WIDTH
+    bool
+    default y
+
+config SOC_I2S_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -792,6 +808,10 @@ config SOC_RMT_SUPPORT_XTAL
     default y
 
 config SOC_RMT_SUPPORT_RC_FAST
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -1131,6 +1151,10 @@ config SOC_MWDT_SUPPORT_XTAL
     bool
     default y
 
+config SOC_MWDT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_TWAI_CONTROLLER_NUM
     int
     default 1
@@ -1212,6 +1236,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y
 
@@ -1319,6 +1347,22 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
+config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
+
+config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
+    bool
+    default y
+
 config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
@@ -1412,5 +1456,9 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
     default y
 
 config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+    bool
+    default y
+
+config SOC_DEBUG_HAVE_OCD_STUB_BINS
     bool
     default y

@@ -128,6 +128,7 @@
     - 通过调低应用日志默认等级 :ref:`CONFIG_LOG_DEFAULT_LEVEL` （引导加载程序日志等级的相应配置为 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`）来减少日志输出量。这样做不仅可以减小二进制文件大小，还可以节省一些 CPU 用于格式化字符串的时间。
     :not SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。
     :SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。如果使用内置 USB-CDC 作为串口控制台，那么串口传输速率不会受配置的波特率影响。
+    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以减少内存使用，并且将应用程序中的日志操作速度提高约 10 倍。
 
 不建议的选项
 ^^^^^^^^^^^^^^^^^^
@@ -298,15 +299,19 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 提高 I/O 性能
 ----------------------------------
 
-使用标准 C 库函数，如 ``fread`` 和 ``fwrite`` 时，相较于使用平台特定的不带缓冲系统调用，I/O 性能可能更慢，如 ``read`` 和 ``write`` 。标准 C 库函数是为可移植性而设计的，它们会在执行时会引入一定开销和缓冲延迟，因此并不适用需要较高执行速度的场景。
+使用标准 C 库函数，如 ``fread`` 和 ``fwrite``，相较于使用平台特定的不带缓冲系统调用，如 ``read`` 和 ``write``，可能会导致 I/O 性能下降。
 
-:doc:`/api-reference/storage/fatfs` 具体信息和提示如下:
+``fread`` 与 ``fwrite`` 函数是为可移植性而设计的，而非速度，其缓冲性质会引入一些额外的开销。关于如何使用这两个函数，请参考示例 :example:`storage/fatfsgen`。
+
+与之相比，``read`` 与 ``write`` 函数是标准的 POSIX API，可直接通过 VFS 处理 FatFs，由 ESP-IDF 负责底层实现。关于如何使用这两个函数，请参考示例 :example:`storage/perf_benchmark`。
+
+下面提供了一些提示，更多信息请见 :doc:`/api-reference/storage/fatfs`。
 
 .. list::
 
     - 读取/写入请求的最大大小等于 FatFS 簇大小（分配单元大小）。
-    - 使用 ``read`` 和 ``write`` 而非 ``fread`` 和 ``fwrite`` 可以提高性能。
-    - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小（Newlib 的默认值为 128 字节），例如 4096、8192 或 16384 字节。为此，可以在特定文件的指针上使用 ``setvbuf`` 函数进行局部更改，或者修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 实现全局应用。
+    - 为了获得更好的性能，建议使用 ``read`` 和 ``write``，而非 ``fread`` 和 ``fwrite``。
+    - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小。Newlib 的默认值为 128 字节，但可将其增加到 4096、8192 或 16384 字节。为此，可以使用 ``setvbuf`` 函数对特定文件指针进行局部设置，或者通过修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 设置来进行全局修改。
 
         .. note::
             增加缓冲区的大小会增加堆内存的使用量。

@@ -31,6 +31,10 @@
 #include "esp32h2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/secure_boot.h"
 #endif
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
@@ -59,6 +63,42 @@ extern "C" {
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#endif
+
+/**
+ * @brief   Secure Boot Signature Block Version field
+ */
+typedef enum {
+    ESP_SECURE_BOOT_V1_ECDSA = 0,           /*!< Secure Boot v1 */
+    ESP_SECURE_BOOT_V2_RSA   = 2,           /*!< Secure Boot v2 with RSA key */
+    ESP_SECURE_BOOT_V2_ECDSA = 3,           /*!< Secure Boot v2 with ECDSA key */
+} esp_secure_boot_sig_scheme_t;
+
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V1_ECDSA
+#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_RSA
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+#define ESP_SECURE_BOOT_SCHEME ESP_SECURE_BOOT_V2_ECDSA
+#endif
+
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+/** @brief Get the selected secure boot scheme key type
+ *
+ * @return key type for the selected secure boot scheme
+ */
+static inline const char* esp_secure_boot_get_scheme_name(esp_secure_boot_sig_scheme_t scheme)
+{
+    switch (scheme) {
+        case ESP_SECURE_BOOT_V2_RSA:
+            return "RSA";
+        case ESP_SECURE_BOOT_V1_ECDSA:
+        case ESP_SECURE_BOOT_V2_ECDSA:
+            return "ECDSA";
+        default:
+            return "Unknown";
+    }
+}
 #endif
 
 /** @brief Is secure boot currently enabled in hardware?

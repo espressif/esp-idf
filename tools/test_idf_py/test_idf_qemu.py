@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import sys
@@ -23,15 +22,21 @@ class IdfPyQemuTest(unittest.TestCase):
         logfile_name = os.path.join(os.environ['IDF_PATH'], 'qemu_log.out')
         with open(logfile_name, 'w+b') as logfile, \
              pexpect.spawn(sys.executable, args=args, logfile=logfile) as child:
-            child.expect('Executing action: all')
+            child.expect_exact('Executing action: all')
             logging.info('Waiting for the build to finish...')
-            child.expect('Executing action: qemu', timeout=120)
-            child.expect('Generating flash image:')
-            child.expect('Generating efuse image:')
-            child.expect('Executing action: monitor')
-            child.expect('Hello world!')
-            child.expect('Restarting in 0 seconds', timeout=20)
-            child.expect('Restarting now.')
+            child.expect_exact('Executing action: qemu', timeout=120)
+            child.expect_exact('Generating flash image:')
+            child.expect_exact('Generating efuse image:')
+            child.expect_exact('Executing action: monitor')
+            child.expect_exact('Hello world!')
+            child.expect_exact('Restarting in 0 seconds', timeout=20)
+            child.expect_exact('Restarting now.')
+
+        args = [idf_py, '-C', hello_world_dir, '-B', build_dir, 'qemu', 'efuse-summary', '--format=summary']
+        with open(logfile_name, 'w+b') as logfile, \
+             pexpect.spawn(sys.executable, args=args, logfile=logfile) as child:
+            child.expect_exact('Executing action: efuse-summary')
+            child.expect_exact('WR_DIS (BLOCK0)')
 
 
 if __name__ == '__main__':

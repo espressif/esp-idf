@@ -2,7 +2,7 @@ dependencies:
   # Required IDF version
   idf: ">=4.1"
 
-  # Defining a dependency from the registry:
+  # Defining a dependency from the ESP Component Registry:
   # https://components.espressif.com/component/example/cmp
   example/cmp: "^3.3.3"
 

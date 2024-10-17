@@ -24,6 +24,7 @@
 #include "driver/gpio.h"
 #include "driver/mcpwm_gen.h"
 #include "mcpwm_private.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 static const char *TAG = "mcpwm";
 
@@ -84,6 +85,7 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
     mcpwm_hal_generator_reset(hal, oper_id, gen_id);
 
     // GPIO configuration
+    gen->gen_gpio_num = -1; // gpio not initialized yet
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         // also enable the input path if `io_loop_back` is enabled
@@ -93,6 +95,12 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
         .pull_up_en = config->flags.pull_up,
     };
     ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config gen GPIO failed");
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(config->gen_gpio_num));
+    // check if the GPIO is already used by others
+    if (old_gpio_rsv_mask & BIT64(config->gen_gpio_num)) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", config->gen_gpio_num);
+    }
     esp_rom_gpio_connect_out_signal(config->gen_gpio_num,
                                     mcpwm_periph_signals.groups[group->group_id].operators[oper_id].generators[gen_id].pwm_sig,
                                     config->flags.invert_pwm, 0);
@@ -119,7 +127,10 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
 
     ESP_LOGD(TAG, "del generator (%d,%d,%d)", group->group_id, oper->oper_id, gen->gen_id);
     // reset GPIO
-    gpio_reset_pin(gen->gen_gpio_num);
+    if (gen->gen_gpio_num >= 0) {
+        gpio_reset_pin(gen->gen_gpio_num);
+        esp_gpio_revoke(BIT64(gen->gen_gpio_num));
+    }
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_generator_destroy(gen), TAG, "destroy generator failed");
     return ESP_OK;

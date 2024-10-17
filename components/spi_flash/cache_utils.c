@@ -371,12 +371,19 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    esp_cpu_branch_prediction_disable();
+#endif
     cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
     cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)
@@ -501,7 +508,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     int i;
     bool flash_spiram_wrap_together, flash_support_wrap = true, spiram_support_wrap = true;
     uint32_t drom0_in_icache = 1;//always 1 in esp32s2
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C61 //TODO: [ESP32C61] IDF-9253
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C61 //TODO: IDF-4307
     drom0_in_icache = 0;
 #endif
 

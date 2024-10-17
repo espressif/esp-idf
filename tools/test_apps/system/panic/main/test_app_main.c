@@ -95,8 +95,14 @@ void app_main(void)
     HANDLE_TEST(test_name, test_hw_stack_guard_cpu1);
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    HANDLE_TEST(test_name, test_panic_extram_stack);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+    HANDLE_TEST(test_name, test_panic_extram_stack_heap);
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    HANDLE_TEST(test_name, test_panic_extram_stack_bss);
+#endif
+#endif
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+    HANDLE_TEST(test_name, test_capture_dram);
 #endif
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
     HANDLE_TEST(test_name, test_capture_dram);
@@ -116,6 +122,14 @@ void app_main(void)
     HANDLE_TEST(test_name, test_assert_cache_disabled);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace2);
+<<<<<<< HEAD
+=======
+    HANDLE_TEST(test_name, test_tcb_corrupted);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+    HANDLE_TEST(test_name, test_setup_coredump_summary);
+    HANDLE_TEST(test_name, test_coredump_summary);
+#endif
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #if CONFIG_IDF_TARGET_ESP32
     HANDLE_TEST(test_name, test_illegal_access);
 #endif

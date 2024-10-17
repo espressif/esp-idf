@@ -5,7 +5,7 @@
  */
 
 /* DESCRIPTION:
- * This example contains code to make ESP32-S3 based device recognizable by USB-hosts as a USB Mass Storage Device.
+ * This example contains code to make ESP32 based device recognizable by USB-hosts as a USB Mass Storage Device.
  * It either allows the embedded application i.e. example to access the partition or Host PC accesses the partition over USB MSC.
  * They can't be allowed to access the partition at the same time.
  * For different scenarios and behaviour, Refer to README of this example.
@@ -13,6 +13,7 @@
 
 #include <errno.h>
 #include <dirent.h>
+#include <stdlib.h>
 #include "esp_console.h"
 #include "esp_check.h"
 #include "esp_partition.h"
@@ -24,7 +25,19 @@
 #include "diskio_sdmmc.h"
 #endif
 
+/*
+ * We warn if a secondary serial console is enabled. A secondary serial console is always output-only and
+ * hence not very useful for interactive console applications. If you encounter this warning, consider disabling
+ * the secondary serial console in menuconfig unless you know what you are doing.
+ */
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#if !CONFIG_ESP_CONSOLE_SECONDARY_NONE
+#warning "A secondary serial console is not useful when using the console component. Please disable it in menuconfig."
+#endif
+#endif
+
 static const char *TAG = "example_main";
+static esp_console_repl_t *repl = NULL;
 
 /* TinyUSB descriptors
    ********************************************************************* */
@@ -255,8 +268,9 @@ static int console_exit(int argc, char **argv)
 {
     tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED);
     tinyusb_msc_storage_deinit();
-    printf("Application Exiting\n");
-    exit(0);
+    tinyusb_driver_uninstall();
+    printf("Application Exit\n");
+    repl->del(repl);
     return 0;
 }
 
@@ -407,18 +421,30 @@ void app_main(void)
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
     ESP_LOGI(TAG, "USB MSC initialization DONE");
 
-    esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
     repl_config.prompt = PROMPT_STR ">";
     repl_config.max_cmdline_length = 64;
-    esp_console_register_help_command();
+
+    // Init console based on menuconfig settings
+#if defined(CONFIG_ESP_CONSOLE_UART_DEFAULT) || defined(CONFIG_ESP_CONSOLE_UART_CUSTOM)
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
+
+    // USJ console can be set only on esp32p4, having separate USB PHYs for USB_OTG and USJ
+#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG) && defined(CONFIG_IDF_TARGET_ESP32P4)
+    esp_console_dev_usb_serial_jtag_config_t hw_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl));
+
+#else
+#error Unsupported console type
+#endif
+
     for (int count = 0; count < sizeof(cmds) / sizeof(esp_console_cmd_t); count++) {
         ESP_ERROR_CHECK(esp_console_cmd_register(&cmds[count]));
     }
+
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

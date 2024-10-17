@@ -1,0 +1,8 @@
+CONFIG_SPIRAM=y
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+CONFIG_SPIRAM_SPEED_200M=y
+<<<<<<< HEAD:examples/peripherals/isp/auto_focus/sdkconfig.defaults
+=======
+CONFIG_CAMERA_SC2336=y
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade:examples/peripherals/isp/multi_pipelines/sdkconfig.defaults
+CONFIG_CAMERA_OV5647=y

@@ -14,7 +14,7 @@ For example, it may be necessary to place:
 
     * critical code in RAM for performance reasons.
     * executable code in IRAM so that it can be ran while cache is disabled.
-    :SOC_RTC_MEM_SUPPORTED: * code in RTC memory for use in a wake stub.
+    :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: * code in RTC memory for use in a wake stub.
     :SOC_ULP_SUPPORTED: * code in RTC memory for use by the ULP coprocessor.
 
 With the linker script generation mechanism, it is possible to specify these placements at the component level within ESP-IDF. The component presents information on how it would like to place its symbols, objects or the entire archive. During build, the information presented by the components are collected, parsed and processed; and the placement rules generated is used to link the app.
@@ -629,10 +629,4 @@ Then the corresponding excerpt from the generated linker script will be as follo
 
     Rule generated from the default scheme entry ``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
 
-.. only:: not esp32c5
-
     The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
-
-.. only:: esp32c5
-
-    The linker script template currently used is :component_file:`esp_system/ld/esp32c5/beta3/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.

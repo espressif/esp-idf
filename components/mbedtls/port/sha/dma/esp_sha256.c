@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-256 Secure Hash Standard was published by NIST in 2002.
@@ -222,7 +222,11 @@ int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char *output )
         return ret;
     }
 
-    memcpy(output, ctx->state, 32);
+    if (ctx->mode == SHA2_224) {
+        memcpy(output, ctx->state, 28);
+    } else {
+        memcpy(output, ctx->state, 32);
+    }
 
     return ret;
 }

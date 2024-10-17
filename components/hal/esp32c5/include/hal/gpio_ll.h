@@ -16,7 +16,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
@@ -28,11 +27,15 @@
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
+<<<<<<< HEAD
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "soc/lp_io_struct.h"
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 #include "soc/lp_gpio_struct.h"
 #endif
+=======
+#include "soc/lp_gpio_struct.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #ifdef __cplusplus
 extern "C" {
@@ -237,6 +240,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].fun_ie = 1;
@@ -302,8 +306,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
-    // Ensure no other output signal is routed via GPIO matrix to this pin
-    hw->func_out_sel_cfg[gpio_num].out_sel = SIG_GPIO_OUT_IDX;
 }
 
 /**
@@ -338,6 +340,21 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 1;
+}
+
+/**
+ * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    gpio_func_out_sel_cfg_reg_t reg = {
+      .out_sel = SIG_GPIO_OUT_IDX,
+    };
+    hw->func_out_sel_cfg[gpio_num].val = reg.val;
 }
 
 /**
@@ -485,30 +502,20 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO25_REG || pin_name == IO_MUX_GPIO26_REG) {
+    // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
+    if (pin_name == IO_MUX_GPIO13_REG || pin_name == IO_MUX_GPIO14_REG) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
+<<<<<<< HEAD
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
     if (pin_name == IO_MUX_GPIO13_REG || pin_name == IO_MUX_GPIO14_REG) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
 #endif
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     PIN_FUNC_SELECT(pin_name, func);
-}
-
-/**
- * @brief  Control the pin in the IOMUX
- *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
- */
-static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
-{
-    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }
 
 /**
@@ -521,12 +528,12 @@ static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t 
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
+    // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
     IO_MUX.gpio[gpio_num].mcu_sel = func;
+<<<<<<< HEAD
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
@@ -534,6 +541,8 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
     }
     IO_MUX.gpio[gpio_num].mcu_sel = func;
 #endif
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 /**

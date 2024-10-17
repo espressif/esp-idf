@@ -108,9 +108,10 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
         return ESP_ERR_NO_MEM;
     }
 
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
     esp_err_t init_res = NVSPartitionManager::get_instance()->init_custom(part,
             0,
-            partition->size / SPI_FLASH_SEC_SIZE);
+            partition->size / sec_size);
 
     if (init_res != ESP_OK) {
         delete part;

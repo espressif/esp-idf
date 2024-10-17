@@ -110,6 +110,14 @@ typedef enum {
     ESP_BT_STATUS_HCI_CONN_TOUT_DUE_TO_MIC_FAILURE,
     ESP_BT_STATUS_HCI_CONN_FAILED_ESTABLISHMENT,
     ESP_BT_STATUS_HCI_MAC_CONNECTION_FAILED,
+    ESP_BT_STATUS_HCI_CCA_REJECTED,
+    ESP_BT_STATUS_HCI_TYPE0_SUBMAP_NOT_DEFINED,
+    ESP_BT_STATUS_HCI_UNKNOWN_ADV_ID,
+    ESP_BT_STATUS_HCI_LIMIT_REACHED,
+    ESP_BT_STATUS_HCI_OPT_CANCEL_BY_HOST,
+    ESP_BT_STATUS_HCI_PKT_TOO_LONG,
+    ESP_BT_STATUS_HCI_TOO_LATE,
+    ESP_BT_STATUS_HCI_TOO_EARLY,
 } esp_bt_status_t;
 
 
@@ -200,6 +208,8 @@ typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 
 #define ESP_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+
+#define ESP_BLE_ADV_NAME_LEN_MAX 29
 
 #ifdef __cplusplus
 }

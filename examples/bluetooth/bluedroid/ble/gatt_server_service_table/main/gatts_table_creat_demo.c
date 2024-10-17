@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -62,22 +62,24 @@ static prepare_type_env_t prepare_write_env;
 #define CONFIG_SET_RAW_ADV_DATA
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power*/
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF, 0x00,
-        /* device name */
-        0x0f, 0x09, 'E', 'S', 'P', '_', 'G', 'A', 'T', 'T', 'S', '_', 'D','E', 'M', 'O'
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power Level */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xEB,
+    /* Complete 16-bit Service UUIDs */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00,
+    /* Complete Local Name */
+    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL,
+    'E', 'S', 'P', '_', 'G', 'A', 'T', 'T', 'S', '_', 'D', 'E', 'M', 'O'
 };
+
 static uint8_t raw_scan_rsp_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power */
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF,0x00
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power Level */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xEB,
+    /* Complete 16-bit Service UUIDs */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00
 };
 
 #else
@@ -265,10 +267,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             }
             break;
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-            ESP_LOGI(GATTS_TABLE_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+            ESP_LOGI(GATTS_TABLE_TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
                   param->update_conn_params.status,
-                  param->update_conn_params.min_int,
-                  param->update_conn_params.max_int,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
                   param->update_conn_params.timeout);
@@ -327,7 +327,7 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC && prepare_write_env->prepare_buf){
-        esp_log_buffer_hex(GATTS_TABLE_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     }else{
         ESP_LOGI(GATTS_TABLE_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
     }
@@ -384,7 +384,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             if (!param->write.is_prep){
                 // the data length of gattc write  must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX.
                 ESP_LOGI(GATTS_TABLE_TAG, "GATT_WRITE_EVT, handle = %d, value len = %d, value :", param->write.handle, param->write.len);
-                esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
+                ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->write.value, param->write.len);
                 if (heart_rate_handle_table[IDX_CHAR_CFG_A] == param->write.handle && param->write.len == 2){
                     uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
                     if (descr_value == 0x0001){
@@ -417,7 +417,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         ESP_LOGI(GATTS_TABLE_TAG, "notify/indicate disable ");
                     }else{
                         ESP_LOGE(GATTS_TABLE_TAG, "unknown descr value");
-                        esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
+                        ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->write.value, param->write.len);
                     }
 
                 }
@@ -446,7 +446,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             break;
         case ESP_GATTS_CONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
-            esp_log_buffer_hex(GATTS_TABLE_TAG, param->connect.remote_bda, 6);
+            ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, param->connect.remote_bda, 6);
             esp_ble_conn_update_params_t conn_params = {0};
             memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
             /* For the iOS system, please refer to Apple official documents about the BLE connection parameters restrictions. */

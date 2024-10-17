@@ -13,8 +13,8 @@
 应用示例
 --------
 
-* 带有 HUB75 接口的简单 REG LED 矩阵：:example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix`。
-* 逻辑分析仪：:example:`peripherals/parlio/parlio_rx/logic_analyzer`。
+* :example:`peripherals/parlio/parlio_rx/logic_analyzer` 演示了如何使用并行 IO RX 外设来实现逻辑分析仪。该分析仪可以以高频率并行采样多个 GPIO 上的数据，还可以探测内部或外部信号，并通过 flash 或 TCP 流输出原始数据。
+* :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` 演示了如何使用 {IDF_TARGET_NAME} 的并行 IO TX 单元驱动支持 HUB75 接口的 RGB LED 矩阵板，并使用 LVGL 库来展示简单的 UI 元素。
 
 
 API 参考

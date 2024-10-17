@@ -61,6 +61,13 @@ Kconfig 选项的向后兼容性
 3. ``kconfgen`` 通过添加兼容性语句列表（即经过修改后，将旧选项的值设置为新选项的值），后处理 ``sdkconfig`` 文件，并生成所有构建结果（ ``sdkconfig.h``、 ``sdkconfig.cmake`` 以及 ``auto.conf``）。如果用户在其代码中仍然使用旧选项，此举可以防止用户代码出现问题。
 4. ``kconfgen`` 会自动生成 :ref:`configuration-deprecated-options`。
 
+``sdkconfig.rename`` 文件的结构如下：
+
+* 以 ``#`` 开头的行和空行将被忽略。
+* 其他所有行应遵循以下格式之一：
+    * ``CONFIG_DEPRECATED_NAME CONFIG_NEW_NAME``，其中 ``CONFIG_DEPRECATED_NAME`` 是旧配置名称，在较新的 ESP-IDF 版本中已更名为 ``CONFIG_NEW_NAME``。
+    * ``CONFIG_DEPRECATED_NAME !CONFIG_NEW_INVERTED_NAME``，其中 ``CONFIG_NEW_INVERTED_NAME`` 是在较新的 ESP-IDF 版本中通过布尔反转 ``CONFIG_DEPRECATED_NAME`` 的逻辑值而引入的新配置名称。
+
 .. _configuration-options-reference:
 
 配置选项参考

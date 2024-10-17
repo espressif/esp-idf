@@ -6,18 +6,19 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_timer.h"
 #include "esp_check.h"
 #include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
 #include "soc/gpio_periph.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "sdmmc_private.h"
 #include "freertos/FreeRTOS.h"
@@ -27,6 +28,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_hal.h"
 #include "hal/sdmmc_hal.h"
+#include "hal/sd_types.h"
 #include "hal/sdmmc_ll.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH    32
@@ -47,6 +49,18 @@
 
 static const char *TAG = "sdmmc_periph";
 
+#define SLOT_CHECK(slot_num) \
+if (slot_num < 0 || slot_num >= SOC_SDMMC_NUM_SLOTS) { \
+    return ESP_ERR_INVALID_ARG; \
+}
+
+#define GPIO_NUM_CHECK(_gpio_num) \
+if (!GPIO_IS_VALID_GPIO(_gpio_num)) { \
+    esp_err_t _err = ESP_ERR_INVALID_ARG; \
+    ESP_LOGE(TAG, "%s: Invalid GPIO number %d, returned 0x%x", __func__, _gpio_num, _err); \
+    return _err; \
+}
+
 /**
  * Slot contexts
  */
@@ -54,6 +68,11 @@ typedef struct slot_ctx_t {
     size_t slot_width;
     sdmmc_slot_io_info_t slot_gpio_num;
     bool use_gpio_matrix;
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    int slot_host_div;
+    uint32_t slot_freq_khz;
+    sdmmc_ll_delay_phase_t slot_ll_delay_phase;
+#endif
 } slot_ctx_t;
 
 /**
@@ -65,26 +84,48 @@ typedef struct host_ctx_t {
     SemaphoreHandle_t    io_intr_event;
     sdmmc_hal_context_t  hal;
     slot_ctx_t           slot_ctx[SOC_SDMMC_NUM_SLOTS];
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    uint8_t              num_of_init_slots;
+    int8_t               active_slot_num;
+#endif
 } host_ctx_t;
 
-static host_ctx_t s_host_ctx;
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static host_ctx_t s_host_ctx = {.active_slot_num = -1};
+#else
+static host_ctx_t s_host_ctx = {0};
+#endif
 
 static void sdmmc_isr(void *arg);
-static void sdmmc_host_dma_init(void);
 static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
+static bool sdmmc_host_slot_initialized(int slot);
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static void sdmmc_host_change_to_slot(int slot);
+#endif
+
+static void s_module_reset(void)
+{
+    // reset module
+    sdmmc_ll_reset_controller(s_host_ctx.hal.dev);
+    sdmmc_ll_reset_dma(s_host_ctx.hal.dev);
+    sdmmc_ll_reset_fifo(s_host_ctx.hal.dev);
+}
+
+static bool s_is_module_reset_done(void)
+{
+    bool is_done = sdmmc_ll_is_controller_reset_done(s_host_ctx.hal.dev) && sdmmc_ll_is_dma_reset_done(s_host_ctx.hal.dev) && sdmmc_ll_is_fifo_reset_done(s_host_ctx.hal.dev);
+    return is_done;
+}
 
 esp_err_t sdmmc_host_reset(void)
 {
-    // Set reset bits
-    SDMMC.ctrl.controller_reset = 1;
-    SDMMC.ctrl.dma_reset = 1;
-    SDMMC.ctrl.fifo_reset = 1;
+    s_module_reset();
 
     // Wait for the reset bits to be cleared by hardware
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
-    while (SDMMC.ctrl.controller_reset || SDMMC.ctrl.fifo_reset || SDMMC.ctrl.dma_reset) {
+    while (!s_is_module_reset_done()) {
         t1 = esp_timer_get_time();
         if (t1 - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
@@ -124,6 +165,7 @@ esp_err_t sdmmc_host_reset(void)
  */
 static void sdmmc_host_set_clk_div(int div)
 {
+    esp_clk_tree_enable_src((soc_module_clk_t)SDMMC_CLK_SRC_DEFAULT, true);
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, div);
         sdmmc_ll_select_clk_source(s_host_ctx.hal.dev, SDMMC_CLK_SRC_DEFAULT);
@@ -157,14 +199,14 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
             }
             // Sending clock update command to the CIU can generate HLE error.
             // According to the manual, this is okay and we must retry the command.
-            if (SDMMC.rintsts.hle) {
-                SDMMC.rintsts.hle = 1;
+            if (sdmmc_ll_get_interrupt_raw(s_host_ctx.hal.dev) & SDMMC_LL_EVENT_HLE) {
+                sdmmc_ll_clear_interrupt(s_host_ctx.hal.dev, SDMMC_LL_EVENT_HLE);
                 repeat = true;
                 break;
             }
             // When the command is accepted by CIU, start_command bit will be
             // cleared in SDMMC.cmd register.
-            if (SDMMC.cmd.start_command == 0) {
+            if (sdmmc_ll_is_command_taken(s_host_ctx.hal.dev)) {
                 repeat = false;
                 break;
             }
@@ -227,11 +269,16 @@ static int sdmmc_host_calc_freq(const int host_div, const int card_div)
     return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
 
+static void sdmmc_host_set_data_timeout(uint32_t freq_khz)
+{
+    const uint32_t data_timeout_ms = 100;
+    uint32_t data_timeout_cycles = data_timeout_ms * freq_khz;
+    sdmmc_ll_set_data_timeout(s_host_ctx.hal.dev, data_timeout_cycles);
+}
+
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
 
     // Disable clock first
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, false);
@@ -269,22 +316,23 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
         return err;
     }
 
-    // set data timeout
-    const uint32_t data_timeout_ms = 100;
-    uint32_t data_timeout_cycles = data_timeout_ms * freq_khz;
-    sdmmc_ll_set_data_timeout(s_host_ctx.hal.dev, data_timeout_cycles);
+    sdmmc_host_set_data_timeout(freq_khz);
     // always set response timeout to highest value, it's small enough anyway
     sdmmc_ll_set_response_timeout(s_host_ctx.hal.dev, 255);
-
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // save the current frequency
+    s_host_ctx.slot_ctx[slot].slot_freq_khz = freq_khz;
+    // save host_div value
+    s_host_ctx.slot_ctx[slot].slot_host_div = host_div;
+#endif
     return ESP_OK;
 }
 
 esp_err_t sdmmc_host_get_real_freq(int slot, int *real_freq_khz)
 {
+    SLOT_CHECK(slot);
+
     if (real_freq_khz == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -338,6 +386,10 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     int phase_diff_ps = src_clk_period_ps * sdmmc_ll_get_clock_div(s_host_ctx.hal.dev) / SOC_SDMMC_DELAY_PHASE_NUM;
     ESP_LOGD(TAG, "difference between input delay phases is %d ps", phase_diff_ps);
     ESP_LOGI(TAG, "host sampling edge is delayed by %d ps", phase_diff_ps * delay_phase_num);
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // save the current phase delay setting
+    s_host_ctx.slot_ctx[slot].slot_ll_delay_phase = phase;
+#endif
 #endif
 
     return ESP_OK;
@@ -345,9 +397,21 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
 
 esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
+    SLOT_CHECK(slot);
+
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    // Change the host settings to the appropriate slot before starting the transaction
+    // If the slot is not initialized (slot_host_div not set) or already active, do nothing
+    if (s_host_ctx.active_slot_num != slot) {
+        s_host_ctx.active_slot_num = slot;
+        if (sdmmc_host_slot_initialized(slot)) {
+            sdmmc_host_change_to_slot(slot);
+        } else {
+            ESP_LOGD(TAG, "Slot %d is not initialized yet, skipping sdmmc_host_change_to_slot", slot);
+        }
     }
+#endif
+
     // if this isn't a clock update command, check the card detect status
     if (!sdmmc_ll_is_card_detected(s_host_ctx.hal.dev, slot) && !cmd.update_clk_reg) {
         return ESP_ERR_NOT_FOUND;
@@ -361,7 +425,7 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
     int64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
-    while (SDMMC.cmd.start_command == 1) {
+    while (!sdmmc_ll_is_command_taken(s_host_ctx.hal.dev)) {
         t1 = esp_timer_get_time();
         if (t1 - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
@@ -371,17 +435,32 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
             vTaskDelay(1);
         }
     }
-    SDMMC.cmdarg = arg;
+    sdmmc_ll_set_command_arg(s_host_ctx.hal.dev, arg);
     cmd.card_num = slot;
     cmd.start_command = 1;
-    SDMMC.cmd = cmd;
+    sdmmc_ll_set_command(s_host_ctx.hal.dev, cmd);
     return ESP_OK;
+}
+
+static void sdmmc_host_intmask_clear_disable(void)
+{
+    sdmmc_ll_clear_interrupt(s_host_ctx.hal.dev, 0xffffffff);
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, 0xffffffff, false);
+    sdmmc_ll_enable_global_interrupt(s_host_ctx.hal.dev, false);
+}
+
+static void sdmmc_host_intmask_set_enable(void)
+{
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, 0xffffffff, false);
+    sdmmc_ll_enable_interrupt(s_host_ctx.hal.dev, SDMMC_LL_EVENT_DEFAULT, true);
+    sdmmc_ll_enable_global_interrupt(s_host_ctx.hal.dev, true);
 }
 
 esp_err_t sdmmc_host_init(void)
 {
     if (s_host_ctx.intr_handle) {
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGI(TAG, "%s: SDMMC host already initialized, skipping init flow", __func__);
+        return ESP_OK;
     }
 
     //enable bus clock for registers
@@ -403,12 +482,10 @@ esp_err_t sdmmc_host_init(void)
         return err;
     }
 
-    ESP_LOGD(TAG, "peripheral version %"PRIx32", hardware config %08"PRIx32, SDMMC.verid, SDMMC.hcon.val);
+    ESP_LOGD(TAG, "peripheral version %"PRIx32", hardware config %08"PRIx32, sdmmc_ll_get_version_id(s_host_ctx.hal.dev), sdmmc_ll_get_hw_config_info(s_host_ctx.hal.dev));
 
     // Clear interrupt status and set interrupt mask to known state
-    SDMMC.rintsts.val = 0xffffffff;
-    SDMMC.intmask.val = 0;
-    SDMMC.ctrl.int_enable = 0;
+    sdmmc_host_intmask_clear_disable();
 
     // Allocate event queue
     s_host_ctx.event_queue = xQueueCreate(SDMMC_EVENT_QUEUE_LENGTH, sizeof(sdmmc_event_t));
@@ -431,21 +508,13 @@ esp_err_t sdmmc_host_init(void)
         return ret;
     }
     // Enable interrupts
-    SDMMC.intmask.val =
-        SDMMC_INTMASK_CD |
-        SDMMC_INTMASK_CMD_DONE |
-        SDMMC_INTMASK_DATA_OVER |
-        SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC |
-        SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
-        SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-        SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
-    SDMMC.ctrl.int_enable = 1;
+    sdmmc_host_intmask_set_enable();
 
     // Disable generation of Busy Clear Interrupt
-    SDMMC.cardthrctl.busy_clr_int_en = 0;
+    sdmmc_ll_enable_busy_clear_interrupt(s_host_ctx.hal.dev, false);
 
-    // Enable DMA
-    sdmmc_host_dma_init();
+    // Init DMA
+    sdmmc_ll_init_dma(s_host_ctx.hal.dev);
 
     // Initialize transaction handler
     ret = sdmmc_host_transaction_handler_init();
@@ -517,9 +586,9 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (!s_host_ctx.intr_handle) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+
+    SLOT_CHECK(slot);
+
     if (slot_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -530,6 +599,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 
     // Configure pins
     const sdmmc_slot_info_t *slot_info = &sdmmc_slot_info[slot];
+    sdmmc_slot_io_info_t *slot_gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
 
     if (slot_width == SDMMC_SLOT_WIDTH_DEFAULT) {
         slot_width = slot_info->width;
@@ -537,6 +607,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ESP_ERR_INVALID_ARG;
     }
     s_host_ctx.slot_ctx[slot].slot_width = slot_width;
+    slot_gpio->cd = gpio_cd;
+    slot_gpio->wp = gpio_wp;
 
     bool pin_not_set = s_check_pin_not_set(slot_config);
     //SD driver behaviour is: all pins not defined == using iomux
@@ -556,67 +628,86 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 #if SOC_SDMMC_USE_GPIO_MATRIX
     if (use_gpio_matrix) {
         /* Save pin configuration for this slot */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.clk = slot_config->clk;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd = slot_config->cmd;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d0 = slot_config->d0;
+        slot_gpio->clk = slot_config->clk;
+        slot_gpio->cmd = slot_config->cmd;
+        slot_gpio->d0 = slot_config->d0;
         /* Save d1 even in 1-line mode, it might be needed for SDIO INT line */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d1 = slot_config->d1;
+        slot_gpio->d1 = slot_config->d1;
         if (slot_width >= 4) {
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d2 = slot_config->d2;
+            slot_gpio->d2 = slot_config->d2;
         }
         /* Save d3 even for 1-line mode, as it needs to be set high */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d3 = slot_config->d3;
+        slot_gpio->d3 = slot_config->d3;
         if (slot_width >= 8) {
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d4 = slot_config->d4;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d5 = slot_config->d5;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d6 = slot_config->d6;
-            s_host_ctx.slot_ctx[slot].slot_gpio_num.d7 = slot_config->d7;
+            slot_gpio->d4 = slot_config->d4;
+            slot_gpio->d5 = slot_config->d5;
+            slot_gpio->d6 = slot_config->d6;
+            slot_gpio->d7 = slot_config->d7;
         }
     } else
 #endif  //#if SOC_SDMMC_USE_GPIO_MATRIX
     {
         /* init pin configuration for this slot */
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.clk = sdmmc_slot_gpio_num[slot].clk;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd = sdmmc_slot_gpio_num[slot].cmd;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d0 = sdmmc_slot_gpio_num[slot].d0;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d1 = sdmmc_slot_gpio_num[slot].d1;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d2 = sdmmc_slot_gpio_num[slot].d2;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d3 = sdmmc_slot_gpio_num[slot].d3;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d4 = sdmmc_slot_gpio_num[slot].d4;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d5 = sdmmc_slot_gpio_num[slot].d5;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d6 = sdmmc_slot_gpio_num[slot].d6;
-        s_host_ctx.slot_ctx[slot].slot_gpio_num.d7 = sdmmc_slot_gpio_num[slot].d7;
+        slot_gpio->clk = sdmmc_slot_gpio_num[slot].clk;
+        slot_gpio->cmd = sdmmc_slot_gpio_num[slot].cmd;
+        slot_gpio->d0 = sdmmc_slot_gpio_num[slot].d0;
+        slot_gpio->d1 = sdmmc_slot_gpio_num[slot].d1;
+        slot_gpio->d2 = sdmmc_slot_gpio_num[slot].d2;
+        slot_gpio->d3 = sdmmc_slot_gpio_num[slot].d3;
+        slot_gpio->d4 = sdmmc_slot_gpio_num[slot].d4;
+        slot_gpio->d5 = sdmmc_slot_gpio_num[slot].d5;
+        slot_gpio->d6 = sdmmc_slot_gpio_num[slot].d6;
+        slot_gpio->d7 = sdmmc_slot_gpio_num[slot].d7;
     }
 
     bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
     if (pullup) {
-        sdmmc_host_pullup_en_internal(slot, slot_config->width);
+        sdmmc_host_pullup_en_internal(slot, s_host_ctx.slot_ctx[slot].slot_width);
     }
 
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.clk, sdmmc_slot_gpio_sig[slot].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.cmd, sdmmc_slot_gpio_sig[slot].cmd, GPIO_MODE_INPUT_OUTPUT, "cmd", use_gpio_matrix);
-    configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d0, sdmmc_slot_gpio_sig[slot].d0, GPIO_MODE_INPUT_OUTPUT, "d0", use_gpio_matrix);
-
+    if (slot_width >= 1) {
+        GPIO_NUM_CHECK(slot_gpio->clk);
+        GPIO_NUM_CHECK(slot_gpio->cmd);
+        GPIO_NUM_CHECK(slot_gpio->d0);
+    }
     if (slot_width >= 4) {
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d1, sdmmc_slot_gpio_sig[slot].d1, GPIO_MODE_INPUT_OUTPUT, "d1", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d2, sdmmc_slot_gpio_sig[slot].d2, GPIO_MODE_INPUT_OUTPUT, "d2", use_gpio_matrix);
-        // Force D3 high to make slave enter SD mode.
-        // Connect to peripheral after width configuration.
-        gpio_config_t gpio_conf = {
-            .pin_bit_mask = BIT64(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3),
-            .mode = GPIO_MODE_OUTPUT,
-            .pull_up_en = 0,
-            .pull_down_en = 0,
-            .intr_type = GPIO_INTR_DISABLE,
-        };
-        gpio_config(&gpio_conf);
-        gpio_set_level(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, 1);
+        GPIO_NUM_CHECK(slot_gpio->d1);
+        GPIO_NUM_CHECK(slot_gpio->d2);
+        GPIO_NUM_CHECK(slot_gpio->d3);
     }
     if (slot_width == 8) {
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d4, sdmmc_slot_gpio_sig[slot].d4, GPIO_MODE_INPUT_OUTPUT, "d4", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d5, sdmmc_slot_gpio_sig[slot].d5, GPIO_MODE_INPUT_OUTPUT, "d5", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d6, sdmmc_slot_gpio_sig[slot].d6, GPIO_MODE_INPUT_OUTPUT, "d6", use_gpio_matrix);
-        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d7, sdmmc_slot_gpio_sig[slot].d7, GPIO_MODE_INPUT_OUTPUT, "d7", use_gpio_matrix);
+        GPIO_NUM_CHECK(slot_gpio->d4);
+        GPIO_NUM_CHECK(slot_gpio->d5);
+        GPIO_NUM_CHECK(slot_gpio->d6);
+        GPIO_NUM_CHECK(slot_gpio->d7);
+    }
+
+    configure_pin(slot_gpio->clk, sdmmc_slot_gpio_sig[slot].clk, GPIO_MODE_OUTPUT, "clk", use_gpio_matrix);
+    configure_pin(slot_gpio->cmd, sdmmc_slot_gpio_sig[slot].cmd, GPIO_MODE_INPUT_OUTPUT, "cmd", use_gpio_matrix);
+    configure_pin(slot_gpio->d0, sdmmc_slot_gpio_sig[slot].d0, GPIO_MODE_INPUT_OUTPUT, "d0", use_gpio_matrix);
+
+    if (slot_width >= 4) {
+        configure_pin(slot_gpio->d1, sdmmc_slot_gpio_sig[slot].d1, GPIO_MODE_INPUT_OUTPUT, "d1", use_gpio_matrix);
+        configure_pin(slot_gpio->d2, sdmmc_slot_gpio_sig[slot].d2, GPIO_MODE_INPUT_OUTPUT, "d2", use_gpio_matrix);
+        // Force D3 high to make slave enter SD mode.
+        // Connect to peripheral after width configuration.
+        if (slot_gpio->d3 > GPIO_NUM_NC) {
+            gpio_config_t gpio_conf = {
+                .pin_bit_mask = BIT64(slot_gpio->d3),
+                .mode = GPIO_MODE_OUTPUT,
+                .pull_up_en = 0,
+                .pull_down_en = 0,
+                .intr_type = GPIO_INTR_DISABLE,
+            };
+            gpio_config(&gpio_conf);
+            gpio_set_level(slot_gpio->d3, 1);
+        }
+    }
+    if (slot_width == 8) {
+        configure_pin(slot_gpio->d4, sdmmc_slot_gpio_sig[slot].d4, GPIO_MODE_INPUT_OUTPUT, "d4", use_gpio_matrix);
+        configure_pin(slot_gpio->d5, sdmmc_slot_gpio_sig[slot].d5, GPIO_MODE_INPUT_OUTPUT, "d5", use_gpio_matrix);
+        configure_pin(slot_gpio->d6, sdmmc_slot_gpio_sig[slot].d6, GPIO_MODE_INPUT_OUTPUT, "d6", use_gpio_matrix);
+        configure_pin(slot_gpio->d7, sdmmc_slot_gpio_sig[slot].d7, GPIO_MODE_INPUT_OUTPUT, "d7", use_gpio_matrix);
     }
 
     // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
@@ -664,14 +755,17 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ret;
     }
 
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    if (s_host_ctx.num_of_init_slots < SOC_SDMMC_NUM_SLOTS && s_host_ctx.active_slot_num != slot) {
+        s_host_ctx.num_of_init_slots += 1;
+    }
+    s_host_ctx.active_slot_num = slot;
+#endif
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_deinit(void)
+static void sdmmc_host_deinit_internal(void)
 {
-    if (!s_host_ctx.intr_handle) {
-        return ESP_ERR_INVALID_STATE;
-    }
     esp_intr_free(s_host_ctx.intr_handle);
     s_host_ctx.intr_handle = NULL;
     vQueueDelete(s_host_ctx.event_queue);
@@ -684,9 +778,97 @@ esp_err_t sdmmc_host_deinit(void)
     SDMMC_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(s_host_ctx.hal.dev, false);
     }
+    ESP_LOGD(TAG, "SDMMC host deinitialized");
+}
+
+static int sdmmc_host_decrease_init_slot_num(void)
+{
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    s_host_ctx.active_slot_num = -1; // Reset the active slot number, will be set again before the next transaction
+    if (s_host_ctx.num_of_init_slots > 0) {
+        s_host_ctx.num_of_init_slots -= 1;
+    }
+    return s_host_ctx.num_of_init_slots;
+#else
+    return 0;
+#endif
+}
+
+static void sdmmc_host_deinit_slot_internal(int slot)
+{
+    int8_t gpio_pin_num;
+    sdmmc_slot_io_info_t* gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
+    // Disconnect signals and reset used GPIO pins
+    for (size_t i = 0; i < (sizeof(gpio->val) / (sizeof(gpio->val[0]))); i++) {
+        gpio_pin_num = gpio->val[i];
+        if (gpio_pin_num != GPIO_NUM_NC && GPIO_IS_VALID_GPIO(gpio_pin_num)) {
+            gpio_reset_pin(gpio_pin_num);
+        }
+    }
+    // Reset the slot context
+    memset(&(s_host_ctx.slot_ctx[slot]), 0, sizeof(slot_ctx_t));
+}
+
+esp_err_t sdmmc_host_deinit_slot(int slot)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!s_host_ctx.intr_handle) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    sdmmc_host_deinit_slot_internal(slot);
+    int num_of_init_slots = sdmmc_host_decrease_init_slot_num();
+    if (num_of_init_slots != 0) {
+        ESP_LOGD(TAG, "SDMMC host not deinitialized yet, number of initialized slots: %d",
+                 num_of_init_slots);
+        return ESP_OK;
+    }
+    sdmmc_host_deinit_internal();
 
     return ESP_OK;
 }
+
+esp_err_t sdmmc_host_deinit(void)
+{
+    if (!s_host_ctx.intr_handle) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    for (int slot = 0; slot < SOC_SDMMC_NUM_SLOTS; slot++) {
+        sdmmc_host_deinit_slot_internal(slot);
+    }
+    sdmmc_host_deinit_internal();
+
+    return ESP_OK;
+}
+
+static bool sdmmc_host_slot_initialized(int slot)
+{
+    // slot_host_div is initialized to 0 and is set in sdmmc_host_set_card_clk during card initialization
+    // during card deinitialization it is set back to 0
+    // should not be 0 if the slot is initialized
+    if (s_host_ctx.slot_ctx[slot].slot_host_div == 0) {
+        return false;
+    }
+    return true;
+}
+
+#if SOC_SDMMC_NUM_SLOTS >= 2
+static void sdmmc_host_change_to_slot(int slot)
+{
+    // Apply the appropriate saved host settings for the new slot before starting the transaction
+    SDMMC_CLK_SRC_ATOMIC() {
+        sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_host_div);
+#if !CONFIG_IDF_TARGET_ESP32
+        sdmmc_ll_set_din_delay(s_host_ctx.hal.dev, s_host_ctx.slot_ctx[slot].slot_ll_delay_phase);
+#endif
+    }
+    sdmmc_host_set_data_timeout(s_host_ctx.slot_ctx[slot].slot_freq_khz);
+
+    // Wait for the clock to propagate
+    esp_rom_delay_us(10);
+}
+#endif  // SOC_SDMMC_NUM_SLOTS >= 2
 
 esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t *out_event)
 {
@@ -705,23 +887,19 @@ esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t *out_event)
 
 esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
     if (sdmmc_slot_info[slot].width < width) {
         return ESP_ERR_INVALID_ARG;
     }
-    const uint16_t mask = BIT(slot);
     if (width == 1) {
-        SDMMC.ctype.card_width_8 &= ~mask;
-        SDMMC.ctype.card_width &= ~mask;
+        sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_1_BIT);
     } else if (width == 4) {
-        SDMMC.ctype.card_width_8 &= ~mask;
-        SDMMC.ctype.card_width |= mask;
+        sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_4_BIT);
         // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
         configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
     } else if (width == 8) {
-        SDMMC.ctype.card_width_8 |= mask;
+        sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_8_BIT);
         // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
         configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
     } else {
@@ -739,9 +917,8 @@ size_t sdmmc_host_get_slot_width(int slot)
 
 esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
     if (s_host_ctx.slot_ctx[slot].slot_width == 8 && ddr_enabled) {
         ESP_LOGW(TAG, "DDR mode with 8-bit bus width is not supported yet");
         // requires reconfiguring controller clock for 2x card frequency
@@ -755,9 +932,9 @@ esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
 
 esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on)
 {
-    if (!(slot == 0 || slot == 1)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    SLOT_CHECK(slot);
+
+    // During initialization this is not protected by a mutex
     if (cclk_always_on) {
         sdmmc_ll_enable_card_clock_low_power(s_host_ctx.hal.dev, slot, false);
     } else {
@@ -767,22 +944,9 @@ esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on)
     return ESP_OK;
 }
 
-static void sdmmc_host_dma_init(void)
-{
-    SDMMC.ctrl.dma_enable = 1;
-    SDMMC.bmod.val = 0;
-    SDMMC.bmod.sw_reset = 1;
-    SDMMC.idinten.ni = 1;
-    SDMMC.idinten.ri = 1;
-    SDMMC.idinten.ti = 1;
-}
-
 void sdmmc_host_dma_stop(void)
 {
-    SDMMC.ctrl.use_internal_dma = 0;
-    SDMMC.ctrl.dma_reset = 1;
-    SDMMC.bmod.fb = 0;
-    SDMMC.bmod.enable = 0;
+    sdmmc_ll_stop_dma(s_host_ctx.hal.dev);
 }
 
 void sdmmc_host_dma_prepare(sdmmc_desc_t *desc, size_t block_size, size_t data_size)
@@ -804,7 +968,7 @@ void sdmmc_host_dma_resume(void)
 
 bool sdmmc_host_card_busy(void)
 {
-    return SDMMC.status.data_busy == 1;
+    return sdmmc_ll_is_card_data_busy(s_host_ctx.hal.dev);
 }
 
 esp_err_t sdmmc_host_io_int_enable(int slot)
@@ -876,12 +1040,12 @@ static void sdmmc_isr(void *arg)
     sdmmc_event_t event;
     int higher_priority_task_awoken = pdFALSE;
 
-    uint32_t pending = sdmmc_ll_get_intr_status(s_host_ctx.hal.dev) & 0xFFFF;
-    SDMMC.rintsts.val = pending;
+    uint32_t pending = sdmmc_ll_get_intr_status(s_host_ctx.hal.dev) & SDMMC_LL_SD_EVENT_MASK;
+    sdmmc_ll_clear_interrupt(s_host_ctx.hal.dev, pending);
     event.sdmmc_status = pending;
 
-    uint32_t dma_pending = SDMMC.idsts.val;
-    SDMMC.idsts.val = dma_pending;
+    uint32_t dma_pending = sdmmc_ll_get_idsts_interrupt_raw(s_host_ctx.hal.dev);
+    sdmmc_ll_clear_idsts_interrupt(s_host_ctx.hal.dev, dma_pending);
     event.dma_status = dma_pending & 0x1f;
 
     if (pending != 0 || dma_pending != 0) {
@@ -925,10 +1089,31 @@ static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width)
 
 esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
 {
-    if (!(slot == 0 || slot == 1)) {
+    SLOT_CHECK(slot);
+
+    if (dma_mem_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
     dma_mem_info->dma_alignment_bytes = 4;
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_host_get_state(sdmmc_host_state_t* state)
+{
+    if (state == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (s_host_ctx.intr_handle) {
+        state->host_initialized = true;
+        state->num_of_init_slots = 1;
+    } else {
+        state->host_initialized = false;
+        state->num_of_init_slots = 0;
+    }
+#if SOC_SDMMC_NUM_SLOTS >= 2
+    state->num_of_init_slots = s_host_ctx.num_of_init_slots;
+#endif
     return ESP_OK;
 }

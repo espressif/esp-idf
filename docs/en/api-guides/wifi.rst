@@ -74,6 +74,34 @@ Generally, the most effective way to begin your own Wi-Fi application is to sele
 
 This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend you to select an :example:`example <wifi>`.
 
+- :example:`wifi/getting_started/station` demonstrates how to use the station functionality to connect to an AP.
+
+- :example:`wifi/getting_started/softAP` demonstrates how to use the SoftAP functionality to configure {IDF_TARGET_NAME} as an AP.
+
+- :example:`wifi/scan` demonstrates how to scan for available APs, configure the scan settings, and display the scan results.
+
+- :example:`wifi/fast_scan` demonstrates how to perform fast and all channel scans for nearby APs, set thresholds for signal strength and authentication modes, and connect to the best fitting AP based on signal strength and authentication mode.
+
+- :example:`wifi/wps` demonstrates how to use the WPS enrollee feature to simplify the process of connecting to a Wi-Fi router, with options for PIN or PBC modes.
+
+- :example:`wifi/wps_softap_registrar` demonstrates how to use the WPS registrar feature on SoftAP mode, simplifying the process of connecting to a Wi-Fi SoftAP from a station.
+
+- :example:`wifi/smart_config` demonstrates how to use the smartconfig feature to connect to a target AP using the ESPTOUCH app.
+
+- :example:`wifi/power_save` demonstrates how to use the power save mode in station mode.
+
+- :example:`wifi/softap_sta` demonstrates how to configure {IDF_TARGET_NAME} to function as both an AP and a station simultaneously, effectively enabling it to act as a Wi-Fi NAT router.
+
+- :example:`wifi/iperf` demonstrates how to implement the protocol used by the iPerf performance measurement tool, allowing for performance measurement between two chips or between a single chip and a computer running the iPerf tool, with specific instructions for testing station/soft-AP TCP/UDP RX/TX throughput.
+
+- :example:`wifi/roaming/roaming_app` demonstrates how to use the Wi-Fi Roaming App functionality to efficiently roam between compatible APs.
+
+- :example:`wifi/roaming/roaming_11kvr` demonstrates how to implement roaming using 11k and 11v APIs.
+
+.. only:: SOC_WIFI_HE_SUPPORT
+
+    - :example:`wifi/itwt` demonstrates how to use the iTWT feature, which only works in station mode and under different power save modes, with commands for setup, teardown, and suspend, and also shows the difference in current consumption when iTWT is enabled or disabled.
+
 Setting Wi-Fi Compile-time Options
 ++++++++++++++++++++++++++++++++++++
 
@@ -1671,7 +1699,7 @@ Wi-Fi Easy Connect™ (DPP)
 Wi-Fi Easy Connect\ :sup:`TM` (or Device Provisioning Protocol) is a secure and standardized provisioning protocol for configuring Wi-Fi devices. More information can be found in :doc:`esp_dpp <../api-reference/network/esp_dpp>`.
 
 WPA2-Enterprise
-+++++++++++++++++++++++++++++++++
+---------------
 
 WPA2-Enterprise is the secure authentication mechanism for enterprise wireless networks. It uses RADIUS server for authentication of network users before connecting to the Access Point. The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods such as TLS, TTLS, and PEAP. RADIUS server authenticates the users based on their credentials (username and password), digital certificates, or both. When {IDF_TARGET_NAME} in station mode tries to connect an AP in enterprise mode, it sends authentication request to AP which is sent to RADIUS server by AP for authenticating the station. Based on different EAP methods, the parameters can be set in configuration which can be opened using ``idf.py menuconfig``. WPA2_Enterprise is supported by {IDF_TARGET_NAME} only in station mode.
 
@@ -1759,7 +1787,7 @@ A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
 
-This subsection will briefly introduce the concepts and usage related to Wi-Fi Power Saving Mode, for a more detailed introduction please refer to the :doc:`Low Power Mode User Guide <../api-guides/low-power-mode>`
+This subsection will briefly introduce the concepts and usage related to Wi-Fi Power Saving Mode, for a more detailed introduction please refer to the :doc:`Low Power Mode User Guide <../api-guides/low-power-mode/index>`
 
 Station Sleep
 ++++++++++++++++++++++
@@ -2563,29 +2591,29 @@ The parameters not mentioned in the following table should be set to the default
           - 12
           - 8
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - TCP TX throughput (Mbit/s)
           - 74.6
           - 50.8
@@ -2675,23 +2703,23 @@ The parameters not mentioned in the following table should be set to the default
           - 8
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 0
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 0
-          - 0
+          - ENABLE
+          - ENABLE
+          - ENABLE
+          - DISABLE
+          - DISABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
-          - 0
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
+          - DISABLE
+          - DISABLE
         * - INSTRUCTION_CACHE
           - 16
           - 16
@@ -2768,9 +2796,9 @@ The parameters not mentioned in the following table should be set to the default
           - 16
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - TCP TX throughput (Mbit/s)
           - 38.1
           - 27.2
@@ -2827,9 +2855,9 @@ The parameters not mentioned in the following table should be set to the default
           - 16
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - TCP TX throughput (Mbit/s)
           - 30.5
           - 25.9
@@ -2886,9 +2914,9 @@ The parameters not mentioned in the following table should be set to the default
           - 14
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - TCP TX throughput (Mbit/s)
           - 21.6
           - 21.4
@@ -2945,17 +2973,17 @@ The parameters not mentioned in the following table should be set to the default
           - 32
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
+          - ENABLE
+          - ENABLE
+          - ENABLE
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - ENABLE
+          - ENABLE
+          - DISABLE
         * - INSTRUCTION_CACHE
           - 32
           - 32
@@ -3121,20 +3149,20 @@ The parameters not mentioned in the following table should be set to the default
                - 65
                - 65
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - TCP TX throughput (Mbit/s)
                - 37.5
                - 31.7
@@ -3203,20 +3231,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - INSTRUCTION_CACHE
                - 16
                - 16
@@ -3310,20 +3338,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16
@@ -3427,20 +3455,20 @@ The parameters not mentioned in the following table should be set to the default
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - ENABLE
+               - ENABLE
+               - ENABLE
+               - DISABLE
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - ENABLE
+               - ENABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - ENABLE
+               - DISABLE
+               - DISABLE
+               - DISABLE
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16

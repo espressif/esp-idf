@@ -32,6 +32,8 @@
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
+#define SOC_LCDCAM_I80_LCD_SUPPORTED    1
+#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -190,6 +192,9 @@
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
 
+// RTC_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
+
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
@@ -288,6 +293,10 @@
 #define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
 #define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
 #define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
+#define SOC_LCDCAM_I80_NUM_BUSES        (1U) /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
+#define SOC_LCDCAM_I80_BUS_WIDTH        (16) /*!< Intel 8080 bus max data width */
+#define SOC_LCDCAM_RGB_NUM_PANELS       (1U) /*!< LCD_CAM peripheral provides one RGB panel */
+#define SOC_LCDCAM_RGB_DATA_WIDTH       (16) /*!< RGB panel max data width */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
@@ -464,6 +473,7 @@
 
 #define SOC_PM_CPU_RETENTION_BY_RTCCNTL         (1)
 #define SOC_PM_MODEM_RETENTION_BY_BACKUPDMA     (1)
+#define SOC_PM_MODEM_PD_BY_SW                   (1)
 
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
@@ -517,6 +527,7 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 #define SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM             (1)
+#define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

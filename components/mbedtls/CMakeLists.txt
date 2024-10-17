@@ -12,6 +12,10 @@ endif()
 set(mbedtls_srcs "")
 set(mbedtls_include_dirs "port/include" "mbedtls/include" "mbedtls/library")
 
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    list(APPEND mbedtls_include_dirs "port/mbedtls_rom")
+endif()
+
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
     list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
@@ -57,7 +61,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         list(APPEND crt_paths ${custom_bundle_path})
 
     endif()
-    list(APPEND args --input ${crt_paths} -q)
+    list(APPEND args --input ${crt_paths} -q --max-certs "${CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS}")
 
     get_filename_component(crt_bundle
         ${bundle_name}
@@ -93,6 +97,11 @@ set(Python3_EXECUTABLE ${python})
 
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_DIR}/port/include")
+
+# Needed to for mbedtls_rom includes to work from within mbedtls
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    include_directories("${COMPONENT_DIR}/port/mbedtls_rom")
+endif()
 
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
@@ -152,6 +161,10 @@ endif()
 
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
+
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_security)
+endif()
 
 # Choose peripheral type
 
@@ -279,6 +292,9 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_verify_restartable")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_read_signature_restartable")
     endif()
 endif()
 
@@ -293,6 +309,9 @@ endif()
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10087
+        target_compile_options(${target} PRIVATE "-fno-analyzer")
+    endif()
 endforeach()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
@@ -330,7 +349,20 @@ if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
 endif()
 
+# Additional optional dependencies for the mbedcrypto library
+function(mbedcrypto_optional_deps component_name)
+    idf_build_get_property(components BUILD_COMPONENTS)
+    if(${component_name} IN_LIST components)
+        idf_component_get_property(lib_name ${component_name} COMPONENT_LIB)
+        target_link_libraries(mbedcrypto PRIVATE ${lib_name})
+    endif()
+endfunction()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM)
+    mbedcrypto_optional_deps(esp_timer idf::esp_timer)
+endif()
+
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
-    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
+    mbedcrypto_optional_deps(espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()

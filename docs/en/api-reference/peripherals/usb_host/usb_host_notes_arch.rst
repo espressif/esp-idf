@@ -1,6 +1,8 @@
 USB Host Maintainers Notes (Architecture)
 =========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The Host Stack is roughly split into multiple layers of abstraction, with each layer representing different USB concepts and a different level of USB Host operation. For example, a higher layer may present an abstraction of devices and application data transfers, whereas a lower layer may present an abstraction of endpoints and USB transfers.
 
 Layer Descriptions
@@ -37,7 +39,7 @@ The layers of the Host Stack are described in the following table. The layers ar
       - ``usb_host.h``, ``usb_host.c``
       - The USB Host Library layer is the lowest public API layer of the Host Stack and presents the concept of USB Host Clients. The abstraction of clients allows for multiple class drivers to coexist simultaneously (where each class roughly maps to a single client) and also acts as a mechanism for division of labor (where each client is responsible for its own processing and event handling).
     * - Host Class Drivers
-      - See the `ESP-IDF Extra Components repository <https://github.com/espressif/idf-extra-components>`_ or the USB Host examples in ESP-IDF (via :example:`peripherals/usb/host`).
+      - See the `ESP-USB repository <https://github.com/espressif/esp-usb>`_ or the USB Host examples in ESP-IDF (via :example:`peripherals/usb/host`).
       - The Host Class Drivers implement the host side of a particular device class (e.g., CDC, MSC, HID). The exposed API is specific to each class driver.
 
 Layer Dependencies
@@ -45,9 +47,9 @@ Layer Dependencies
 
 The Host Stack roughly follows a top to bottom hierarchy with inter-layer dependencies. Given layers A (highest), B, and C (lowest), the Host Stack has the following inter-layer dependency rules:
 
-- a particular layer can use the API of any layer directly below (Layer A using layer B is allowed)
+- a particular layer can use the API of any layer directly below (Layer A using layer B is allowed).
 - a particular layer can use the API of any layer indirectly below (Layer A using layer C is allowed) i.e., skipping layers.
-- a particular layer must not use the API of any layer above (Layer C using layer A/B is forbidden)
+- a particular layer must not use the API of any layer above (Layer C using layer A/B is forbidden).
 
 .. note::
 

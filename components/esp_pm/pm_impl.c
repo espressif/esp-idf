@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <sys/param.h>
 
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_pm.h"
@@ -41,6 +42,7 @@
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
@@ -48,7 +50,6 @@
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
 
-#include "sdkconfig.h"
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define HP_UART_SRC_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
@@ -438,7 +439,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
      * Bluetooth, etc..) APB clock frequency is 80 MHz */
     int apb_clk_freq = esp_clk_apb_freq() / MHZ;
-#if CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED
+#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED
     apb_clk_freq = MAX(apb_clk_freq, MODEM_REQUIRED_MIN_APB_CLK_FREQ / MHZ);
 #endif
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
@@ -466,6 +467,16 @@ esp_err_t esp_pm_configure(const void* vconfig)
     res = rtc_clk_cpu_freq_mhz_to_config(min_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_APB_MIN]);
     assert(res);
     s_cpu_freq_by_mode[PM_MODE_LIGHT_SLEEP] = s_cpu_freq_by_mode[PM_MODE_APB_MIN];
+
+    if (config->light_sleep_enable) {
+        // Enable the wakeup source here because the `esp_sleep_disable_wakeup_source` in the `else`
+        // branch must be called if corresponding wakeup source is already enabled.
+        esp_sleep_enable_timer_wakeup(0);
+    } else if (s_light_sleep_en) {
+        // Since auto light-sleep will enable the timer wakeup source, to avoid affecting subsequent possible
+        // deepsleep requests, disable the timer wakeup source here.
+        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+    }
     s_light_sleep_en = config->light_sleep_enable;
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
@@ -916,12 +927,16 @@ void esp_pm_impl_init(void)
     while (!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM))) {
         ;
     }
+
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
     HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
-    esp_err_t err = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+
+    // Return value unused if asserts are disabled
+    esp_err_t __attribute__((unused)) err = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
     assert(err == ESP_OK);
     HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);

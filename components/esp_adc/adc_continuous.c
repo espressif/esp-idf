@@ -23,6 +23,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
@@ -33,6 +34,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
+#include "soc/soc_caps.h"
 #include "esp_memory_utils.h"
 #include "adc_continuous_internal.h"
 #include "esp_private/adc_dma.h"
@@ -300,7 +302,9 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 
     adc_hal_digi_init(&handle->hal);
-
+#if !CONFIG_IDF_TARGET_ESP32
+    esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src), true);
+#endif
     adc_hal_digi_controller_config(&handle->hal, &handle->hal_digi_ctrlr_cfg);
     adc_hal_digi_enable(false);
 

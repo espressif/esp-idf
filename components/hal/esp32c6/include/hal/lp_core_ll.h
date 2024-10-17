@@ -136,6 +136,27 @@ static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
     return LPPERI.interrupt_source.lp_interrupt_source;
 }
 
+<<<<<<< HEAD
+=======
+/**
+ * @brief Get the flag that marks whether LP CPU is awakened by ETM
+ *
+ * @return Return true if lpcore is woken up by soc_etm
+ */
+static inline bool lp_core_ll_get_etm_wakeup_flag(void)
+{
+    return LP_AON.lpcore.lpcore_etm_wakeup_flag;
+}
+
+/**
+ * @brief Clear the flag that marks whether LP CPU is awakened by soc_etm
+ */
+static inline void lp_core_ll_clear_etm_wakeup_flag(void)
+{
+    LP_AON.lpcore.lpcore_etm_wakeup_flag_clr = 0x01;
+}
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #ifdef __cplusplus
 }
 #endif

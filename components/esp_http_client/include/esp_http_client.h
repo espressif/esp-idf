@@ -116,6 +116,7 @@ typedef enum {
     HTTP_METHOD_PROPFIND,   /*!< HTTP PROPFIND Method */
     HTTP_METHOD_PROPPATCH,  /*!< HTTP PROPPATCH Method */
     HTTP_METHOD_MKCOL,      /*!< HTTP MKCOL Method */
+    HTTP_METHOD_REPORT,     /*!< HTTP REPORT Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 
@@ -485,6 +486,17 @@ esp_err_t esp_http_client_set_timeout_ms(esp_http_client_handle_t client, int ti
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const char *key);
+
+/**
+ * @brief      Delete all http request headers
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *  - ESP_OK
+ *  - ESP_FAIL
+ */
+esp_err_t esp_http_client_delete_all_headers(esp_http_client_handle_t client);
 
 /**
  * @brief      This function will be open the connection, write all header strings and return

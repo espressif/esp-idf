@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,7 +189,7 @@ err:
 
 /**
  * Performs three GATT operations against the specified peer:
- * 1. Reads the HTP temparature type characteristic.
+ * 1. Reads the HTP temperature type characteristic.
  * 2. After read is completed, writes the HTP temperature measurement interval characteristic.
  * 3. After write is completed, subscribes to notifications for the HTP intermediate temperature
  *    and temperature measurement characteristic.
@@ -205,12 +205,12 @@ ble_htp_cent_read_write_subscribe(const struct peer *peer)
     const struct peer_chr *chr;
     int rc;
 
-    /* Read the Temparature Type characteristic. */
+    /* Read the Temperature Type characteristic. */
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
                              BLE_UUID16_DECLARE(BLE_SVC_HTP_CHR_UUID16_TEMP_TYPE));
     if (chr == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Temparature Type"
+        MODLOG_DFLT(ERROR, "Error: Peer doesn't support the Temperature Type"
                     " characteristic\n");
         goto err;
     }
@@ -418,12 +418,14 @@ ble_htp_cent_connect_if_interesting(void *disc)
     }
 #endif
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         MODLOG_DFLT(DEBUG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -479,14 +481,14 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
         ble_htp_cent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
@@ -613,7 +615,7 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         ext_print_adv_report(&event->disc);
 
         ble_htp_cent_connect_if_interesting(&event->disc);

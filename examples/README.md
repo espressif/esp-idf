@@ -58,7 +58,7 @@ idf.py set-target esp32
 
 ### Configure the Project
 
-For information about Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) > ESP Timer (High Resolution Timer).
+For information about Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html).
 
 To conveniently check or modify Kconfig options for this example in a project configuration menu, run:
 
@@ -95,6 +95,18 @@ Each example is a standalone project. The examples _do not have to be inside the
 The `IDF_PATH` environment variable is the only thing that connects the example to the rest of ESP-IDF.
 
 If you're looking for a more bare-bones project to start from, try [esp-idf-template](https://github.com/espressif/esp-idf-template).
+
+## Further Development
+
+For further steps on how to develop a project, see the following:
+
+- Managing the project:
+  - [IDF Frontend](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project) document
+  - ESP-IDF Getting Started video ([YouTube](https://youtu.be/J8zc8mMNKtc?t=340), [bilibili](https://www.bilibili.com/video/BV1114y1r7du/?t=336))
+  - [Overview](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#example-project) of an example project
+  - [Build System](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/build-system.html) document
+- Writing code:
+  - Write your own code following the [API references](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/index.html)
 
 ## Contributing Examples
 

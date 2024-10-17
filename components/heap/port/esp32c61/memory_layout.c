@@ -12,7 +12,10 @@
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
-//TODO: [ESP32C61] IDF-9253
+/* Memory layout for ESP32C61 SoC
+ * Note that the external memory is not represented in this file since
+ * it is handled by the esp_psram component
+ */
 
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
@@ -29,16 +32,14 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_RAM     = 0,
-    SOC_MEMORY_TYPE_RTCRAM  = 1,
-    SOC_MEMORY_TYPE_NUM,
+    SOC_MEMORY_TYPE_RAM,
 };
 
 /* COMMON_CAPS is the set of attributes common to all types of memory on this chip */
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
+#define ESP32C61_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 #else
-#define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
+#define ESP32C61_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
 #endif
 
 /**
@@ -47,10 +48,9 @@ enum {
  * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
-const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
+const soc_memory_type_desc_t soc_memory_types[] = {
     /*                           Mem Type Name   High Priority Matching                      Medium Priority Matching    Low Priority Matching */
-    [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C6_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                        ESP32C6_MEM_COMMON_CAPS,   0 }},
+    [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C61_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -66,20 +66,17 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 /**
  * Register the shared buffer area of the last memory block into the heap during heap initialization
  */
-#define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
+#define APP_USABLE_DIRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x40800000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40800000,             false}, //D/IRAM level0, can be used as trace memory
-    { 0x40820000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40820000,             false}, //D/IRAM level1, can be used as trace memory
-    { 0x40840000,           (APP_USABLE_DRAM_END-0x40840000),          SOC_MEMORY_TYPE_RAM, 0x40840000,             false}, //D/IRAM level2, can be used as trace memory
-    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_RAM, APP_USABLE_DRAM_END,    true},  //D/IRAM level3, can be used as trace memory (ROM reserved area)
+    { SOC_DIRAM_DRAM_LOW,   (APP_USABLE_DIRAM_END - SOC_DIRAM_DRAM_LOW),  SOC_MEMORY_TYPE_RAM,     SOC_DIRAM_IRAM_LOW,     false}, //D/IRAM, can be used as trace memory
+    { APP_USABLE_DIRAM_END, (SOC_DIRAM_DRAM_HIGH - APP_USABLE_DIRAM_END), SOC_MEMORY_TYPE_RAM,     APP_USABLE_DIRAM_END,    true}, //D/IRAM, can be used as trace memory (ROM reserved area)
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
 
-extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
-extern int _rtc_reserved_start, _rtc_reserved_end;
+extern int _data_start, _heap_start, _iram_start, _iram_end;
 
 /**
  * Reserved memory regions.
@@ -92,9 +89,3 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
-
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
-#endif
-
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);

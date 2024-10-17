@@ -12,6 +12,7 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/usb_serial_jtag_types.h"
+#include "hal/misc.h"
 
 /* ----------------------------- Macros & Types ----------------------------- */
 

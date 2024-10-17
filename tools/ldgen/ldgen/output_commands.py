@@ -60,7 +60,7 @@ class InputSectionDesc:
     Outputs an input section description as described in
     https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#INPUT-SECTION.
 
-    These commands are emmited from mapping fragment entries, specifically attaching
+    These commands are emitted from mapping fragment entries, specifically attaching
     a scheme onto an entity. Mapping fragment flags KEEP, SORT will also affect
     the emitted input section description.
     """
@@ -85,9 +85,10 @@ class InputSectionDesc:
         self.tied = tied
 
     def __str__(self):
-        sections_string = '( )'
+        sections_string = ''
 
         if self.sections:
+            sections_string = '( )'
             exclusion_strings = []
 
             for exc in sorted(self.exclusions):

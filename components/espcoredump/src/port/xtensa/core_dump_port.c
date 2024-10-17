@@ -299,7 +299,7 @@ uint32_t esp_core_dump_get_isr_stack_end(void)
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 {
     return esp_ptr_in_dram((void *)sp)
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
            || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP

@@ -84,6 +84,7 @@ void btm_init (void)
 #if BLE_INCLUDED == TRUE
     btm_ble_lock_init();
     btm_ble_sem_init();
+    btm_cb.addr_res_en = TRUE;
 #endif
     btm_sec_dev_init();
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -133,3 +134,16 @@ uint8_t btm_acl_active_count(void)
 
     return count;
 }
+#if (BLE_INCLUDED == TRUE)
+// Address resolution status
+uint8_t btm_get_ble_addr_resolve_disable_status(void)
+{
+    // Returns false if address resolution is enabled, true if disabled
+    return (btm_cb.addr_res_en) ? 0 : 1;
+}
+
+void btm_ble_addr_resolve_enable(bool enable)
+{
+    btm_cb.addr_res_en = enable;
+}
+#endif /*BLE_INCLUDED*/

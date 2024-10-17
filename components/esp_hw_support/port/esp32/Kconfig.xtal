@@ -1,0 +1,30 @@
+choice XTAL_FREQ
+    prompt "Main XTAL frequency"
+    default XTAL_FREQ_40
+    help
+        This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
+        The selected value MUST reflect the frequency of the given hardware.
+
+        Note: On ESP32, the XTAL_FREQ_AUTO option allows the ESP target to automatically estimating XTAL clock's
+        operating frequency. The ESP32 uses the internal 8MHZ as a reference when estimating. Due to the internal
+        oscillator's frequency being temperature dependent, usage of the XTAL_FREQ_AUTO is not recommended in
+        applications that operate in high ambient temperatures or use high-temperature qualified chips and modules.
+
+    config XTAL_FREQ_26
+        bool "26 MHz"
+    config XTAL_FREQ_32
+        bool "32 MHz"
+    config XTAL_FREQ_40
+        bool "40 MHz"
+    config XTAL_FREQ_AUTO
+        bool "Autodetect"
+endchoice
+
+# soc_xtal_freq_t enum in soc/clk_tree_defs.h lists the XTAL frequencies can be supported
+# SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
+config XTAL_FREQ
+    int
+    default 26 if XTAL_FREQ_26
+    default 32 if XTAL_FREQ_32
+    default 40 if XTAL_FREQ_40
+    default 0  if XTAL_FREQ_AUTO

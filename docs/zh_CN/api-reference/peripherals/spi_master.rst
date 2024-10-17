@@ -473,12 +473,12 @@ GPIO 矩阵与 IO_MUX 管脚
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7",  esp32c5="12"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9",  esp32c5="6"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8",  esp32c5="7"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6",  esp32c5="4"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7" , esp32c5="10", esp32c61="8"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9" , esp32c5="6",  esp32c61="6"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8" , esp32c5="7",  esp32c61="7"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2",  esp32c61="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6" , esp32c5="4",  esp32c61="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5",  esp32c61="4"}
 
     芯片的大多数外围信号都与之专用的 IO_MUX 管脚连接，但这些信号也可以通过较不直接的 GPIO 矩阵路由到任何其他可用的管脚。只要有一个信号是通过 GPIO 矩阵路由的，那么所有的信号都将通过它路由。
 
@@ -524,10 +524,10 @@ GPIO 矩阵与 IO_MUX 管脚
 传输事务持续时间
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32c5="27"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32c5="16"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32c5="24"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32c5="13"}
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32p4="44", esp32c5="24", esp32c61="32"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32p4="27", esp32c5="15", esp32c61="17"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32p4="26", esp32c5="22", esp32c61="29"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32p4="12", esp32c5="12", esp32c61="14"}
 
 传输事务持续时间包括设置 SPI 外设寄存器，将数据复制到 FIFO 或设置 DMA 链接，以及 SPI 传输事务时间。
 
@@ -798,9 +798,10 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 应用示例
 -------------------
 
-查看使用 SPI 主机驱动程序在半双工模式下读取/写入 AT93C46D EEPROM（8 位模式）的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_master/hd_eeprom` 目录。
+- :example:`peripherals/spi_master/hd_eeprom` 演示了如何使用 SPI 主机驱动程序的半双工模式来读写 AT93C46D EEPROM（8 位模式）。
 
-查看使用 SPI 主机驱动程序在全双工模式下驱动 LCD 屏幕（如 ST7789V 或 ILI9341）的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_master/lcd` 目录。
+:example:`peripherals/spi_master/lcd` 演示了如何使用 SPI 主驱动程序在 LCD 上显示动画。借助 DMA，可以实现并行渲染和刷新。该示例还说明了如何使用 SPI 事务钩子函数来驱动 D/C 信号电平。
+
 
 API 参考 - SPI Common
 --------------------------

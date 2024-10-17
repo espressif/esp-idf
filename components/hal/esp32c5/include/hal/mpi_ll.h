@@ -9,22 +9,17 @@
 #include <string.h>
 #include <sys/param.h>
 #include "soc/soc_caps.h"
-// TODO: [ESP32C5] IDF-8620 remove the cap
-#if SOC_MPI_SUPPORTED
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
 #include "soc/pcr_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/rsa_reg.h"
 #include "soc/mpi_periph.h"
-#endif  // SOC_MPI_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8620 remove the cap
-#if SOC_MPI_SUPPORTED
 
 /**
  * @brief Enable the bus clock for MPI peripheral module
@@ -54,14 +49,14 @@ static inline size_t mpi_ll_calculate_hardware_words(size_t words)
     return words;
 }
 
-static inline void mpi_ll_clear_power_control_bit(void)
+static inline void mpi_ll_power_up(void)
 {
     /* Power up the MPI peripheral (default is power-down state) */
     REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_PD);
     REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_FORCE_PD);
 }
 
-static inline void mpi_ll_set_power_control_bit(void)
+static inline void mpi_ll_power_down(void)
 {
     /* Power down the MPI peripheral */
     REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_FORCE_PU);
@@ -90,7 +85,7 @@ static inline bool mpi_ll_check_memory_init_complete(void)
 
 static inline void mpi_ll_start_op(mpi_op_t op)
 {
-    REG_WRITE(MPI_LL_OPERATIONS[op], 1);
+    REG_WRITE(MPI_OPERATIONS_REG[op], 1);
 }
 
 static inline bool mpi_ll_get_int_status(void)
@@ -105,7 +100,7 @@ static inline bool mpi_ll_get_int_status(void)
 */
 static inline void mpi_ll_write_to_mem_block(mpi_param_t param, size_t offset, const uint32_t* p, size_t n, size_t num_words)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[param] + offset;
+    uint32_t mem_base = MPI_BLOCK_BASES[param] + offset;
     uint32_t* pbase = (uint32_t*) mem_base;
     uint32_t copy_words = MIN(num_words, n);
 
@@ -127,12 +122,12 @@ static inline void mpi_ll_write_m_prime(uint32_t Mprime)
 
 static inline void mpi_ll_write_rinv(uint32_t rinv)
 {
-    REG_WRITE(MPI_LL_BLOCK_BASES[MPI_PARAM_Z], rinv);
+    REG_WRITE(MPI_BLOCK_BASES[MPI_PARAM_Z], rinv);
 }
 
 static inline void mpi_ll_write_at_offset(mpi_param_t param, int offset, uint32_t value)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[param] + offset;
+    uint32_t mem_base = MPI_BLOCK_BASES[param] + offset;
     REG_WRITE(mem_base, value);
 }
 
@@ -142,7 +137,7 @@ static inline void mpi_ll_write_at_offset(mpi_param_t param, int offset, uint32_
 */
 static inline void mpi_ll_read_from_mem_block(uint32_t* p, size_t n, size_t num_words)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[MPI_PARAM_Z];
+    uint32_t mem_base = MPI_BLOCK_BASES[MPI_PARAM_Z];
     /* Copy data from memory block registers */
     const size_t REG_WIDTH = sizeof(uint32_t);
     for (size_t i = 0; i < num_words; i++) {
@@ -184,7 +179,6 @@ static inline void mpi_ll_set_search_position(size_t pos)
 {
     REG_WRITE(RSA_SEARCH_POS_REG, pos);
 }
-#endif  // SOC_MPI_SUPPORTED
 
 #ifdef __cplusplus
 }

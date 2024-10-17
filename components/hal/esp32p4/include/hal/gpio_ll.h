@@ -245,6 +245,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].fun_ie = 1;
@@ -332,8 +333,6 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
     } else {
         hw->enable1_w1tc.enable1_w1tc = (0x1 << (gpio_num - 32));
     }
-    // Ensure no other output signal is routed via GPIO matrix to this pin
-    hw->func_out_sel_cfg[gpio_num].out_sel = SIG_GPIO_OUT_IDX;
 }
 
 /**
@@ -372,6 +371,21 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 1;
+}
+
+/**
+ * @brief Disconnect any peripheral output signal routed via GPIO matrix to the pin
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    gpio_func_out_sel_cfg_reg_t reg = {
+      .out_sel = SIG_GPIO_OUT_IDX,
+    };
+    hw->func_out_sel_cfg[gpio_num].val = reg.val;
 }
 
 /**
@@ -466,6 +480,11 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
 {
     *strength = (gpio_drive_cap_t)(IO_MUX.gpio[gpio_num].fun_drv);
 }
+
+// On ESP32P4, all digital GPIO pads can be held together during Deep-sleep through PMU.hp_sys[PMU_MODE_HP_SLEEP].syscntl.hp_pad_hold_all = 1
+// However, since the hold register for digital IOs is in TOP domain (HP_SYSTEM.gpio_o_hold_ctrlx), it gets powered down in Deep-sleep.
+// Therefore, after waking up from Deep-sleep, the register has been reset, it is not able to hold at that time.
+// In all, the users can not achieve the purpose of being hold all the time. So this feature is considered not usable on P4.
 
 /**
   * @brief Enable gpio pad hold function.

@@ -49,10 +49,16 @@ typedef enum {
 /** @brief Structure describing WiFi country-based regional restrictions. */
 typedef struct {
     char                  cc[3];   /**< country code string */
-    uint8_t               schan;   /**< start channel */
-    uint8_t               nchan;   /**< total channel number */
+    uint8_t               schan;   /**< start channel of the allowed 2.4GHz WiFi channels */
+    uint8_t               nchan;   /**< total channel number of the allowed 2.4GHz WiFi channels */
     int8_t                max_tx_power;   /**< This field is used for getting WiFi maximum transmitting power, call esp_wifi_set_max_tx_power to set the maximum transmitting power. */
     wifi_country_policy_t policy;  /**< country policy */
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+    uint32_t              wifi_5g_channel_mask;  /**< A bitmask representing the allowed 5GHz WiFi channels.
+                                                      Each bit in the mask corresponds to a specific channel as wifi_5g_channel_bit_t shown.
+                                                      Bitmask set to 0 indicates 5GHz channels are allowed according to local regulatory rules.
+                                                      Please note that configured bitmask takes effect only when policy is manual. */
+#endif
 } wifi_country_t;
 
 /* Strength of authmodes */
@@ -178,8 +184,8 @@ typedef struct {
 } wifi_scan_time_t;
 
 typedef struct {
-    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels */
-    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels */
+    uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels, that bits can be set as wifi_2g_channel_bit_t shown. */
+    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels, that bits can be set as wifi_5g_channel_bit_t shown. */
 } wifi_scan_channel_bitmap_t;
 
 /** @brief Parameters for an SSID scan. */
@@ -191,7 +197,9 @@ typedef struct {
     wifi_scan_type_t scan_type;                        /**< scan type, active or passive */
     wifi_scan_time_t scan_time;                        /**< scan time per channel */
     uint8_t home_chan_dwell_time;                      /**< time spent at home channel between scanning consecutive channels. */
-    wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned. For 2.4ghz channels set ghz_2_channels from BIT(1) to BIT(14) from LSB to MSB order to indicate channels to be scanned. Currently scanning in 5ghz channels is not supported. Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap. */
+    wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned.
+                                                            Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap.
+                                                            Also, note that only allowed channels configured by wifi_country_t can be scaned. */
 } wifi_scan_config_t;
 
 /** @brief Parameters default scan configurations. */
@@ -280,9 +288,10 @@ typedef enum {
 
 /** @brief Structure describing parameters for a WiFi fast scan */
 typedef struct {
-    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
-    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
+    int8_t              rssi;               /**< The minimum rssi to accept in the fast scan mode */
+    wifi_auth_mode_t    authmode;           /**< The weakest authmode to accept in the fast scan mode
                                                Note: In case this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
+    uint8_t             rssi_5g_adjustment; /**< The RSSI value of the 5G AP is within the rssi_5g_adjustment range compared to the 2G AP, the 5G AP will be given priority for connection. */
 } wifi_scan_threshold_t;
 
 typedef enum {
@@ -291,6 +300,85 @@ typedef enum {
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
 
+/** Argument structure for WiFi band */
+typedef enum {
+    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
+    WIFI_BAND_5G = 2,                   /* Band is 5G */
+} wifi_band_t;
+
+/** Argument structure for WiFi band mode */
+typedef enum {
+    WIFI_BAND_MODE_2G_ONLY = 1,         /* WiFi band mode is 2.4G only */
+    WIFI_BAND_MODE_5G_ONLY = 2,         /* WiFi band mode is 5G only */
+    WIFI_BAND_MODE_AUTO = 3,            /* WiFi band mode is 2.4G + 5G */
+} wifi_band_mode_t;
+
+#ifndef BIT
+#define BIT(nr)  (1 << (nr))
+#endif
+
+#define CHANNEL_TO_BIT_NUMBER(channel) ((channel >= 1 && channel <= 14) ? (channel) : \
+    ((channel >= 36 && channel <= 64 && (channel - 36) % 4 == 0) ? ((channel - 36) / 4 + 1) : \
+    ((channel >= 100 && channel <= 144 && (channel - 100) % 4 == 0) ? ((channel - 100) / 4 + 9) : \
+    ((channel >= 149 && channel <= 177 && (channel - 149) % 4 == 0) ? ((channel - 149) / 4 + 21) : 0))))
+
+#define BIT_NUMBER_TO_CHANNEL(bit_number, band) ((band == WIFI_BAND_2G) ? (bit_number) : \
+    ((bit_number >= 1 && bit_number <= 8) ? ((bit_number - 1) * 4 + 36) : \
+    ((bit_number >= 9 && bit_number <= 20) ? ((bit_number - 9) * 4 + 100) : \
+    ((bit_number >= 21 && bit_number <= 28) ? ((bit_number - 21) * 4 + 149) : 0))))
+
+#define CHANNEL_TO_BIT(channel) (BIT(CHANNEL_TO_BIT_NUMBER(channel)))
+
+/** Argument structure for 2.4G channels */
+typedef enum {
+    WIFI_CHANNEL_1 = BIT(1),   /**< wifi channel 1 */
+    WIFI_CHANNEL_2 = BIT(2),   /**< wifi channel 2 */
+    WIFI_CHANNEL_3 = BIT(3),   /**< wifi channel 3 */
+    WIFI_CHANNEL_4 = BIT(4),   /**< wifi channel 4 */
+    WIFI_CHANNEL_5 = BIT(5),   /**< wifi channel 5 */
+    WIFI_CHANNEL_6 = BIT(6),   /**< wifi channel 6 */
+    WIFI_CHANNEL_7 = BIT(7),   /**< wifi channel 7 */
+    WIFI_CHANNEL_8 = BIT(8),   /**< wifi channel 8 */
+    WIFI_CHANNEL_9 = BIT(9),   /**< wifi channel 9 */
+    WIFI_CHANNEL_10 = BIT(10), /**< wifi channel 10 */
+    WIFI_CHANNEL_11 = BIT(11), /**< wifi channel 11 */
+    WIFI_CHANNEL_12 = BIT(12), /**< wifi channel 12 */
+    WIFI_CHANNEL_13 = BIT(13), /**< wifi channel 13 */
+    WIFI_CHANNEL_14 = BIT(14), /**< wifi channel 14 */
+} wifi_2g_channel_bit_t;
+
+/** Argument structure for 5G channels */
+typedef enum {
+    WIFI_CHANNEL_36 = BIT(1),   /**< wifi channel 36 */
+    WIFI_CHANNEL_40 = BIT(2),   /**< wifi channel 40 */
+    WIFI_CHANNEL_44 = BIT(3),   /**< wifi channel 44 */
+    WIFI_CHANNEL_48 = BIT(4),   /**< wifi channel 48 */
+    WIFI_CHANNEL_52 = BIT(5),   /**< wifi channel 52 */
+    WIFI_CHANNEL_56 = BIT(6),   /**< wifi channel 56 */
+    WIFI_CHANNEL_60 = BIT(7),   /**< wifi channel 60 */
+    WIFI_CHANNEL_64 = BIT(8),   /**< wifi channel 64 */
+    WIFI_CHANNEL_100 = BIT(9),  /**< wifi channel 100 */
+    WIFI_CHANNEL_104 = BIT(10), /**< wifi channel 104 */
+    WIFI_CHANNEL_108 = BIT(11), /**< wifi channel 108 */
+    WIFI_CHANNEL_112 = BIT(12), /**< wifi channel 112 */
+    WIFI_CHANNEL_116 = BIT(13), /**< wifi channel 116 */
+    WIFI_CHANNEL_120 = BIT(14), /**< wifi channel 120 */
+    WIFI_CHANNEL_124 = BIT(15), /**< wifi channel 124 */
+    WIFI_CHANNEL_128 = BIT(16), /**< wifi channel 128 */
+    WIFI_CHANNEL_132 = BIT(17), /**< wifi channel 132 */
+    WIFI_CHANNEL_136 = BIT(18), /**< wifi channel 136 */
+    WIFI_CHANNEL_140 = BIT(19), /**< wifi channel 140 */
+    WIFI_CHANNEL_144 = BIT(20), /**< wifi channel 144 */
+    WIFI_CHANNEL_149 = BIT(21), /**< wifi channel 149 */
+    WIFI_CHANNEL_153 = BIT(22), /**< wifi channel 153 */
+    WIFI_CHANNEL_157 = BIT(23), /**< wifi channel 157 */
+    WIFI_CHANNEL_161 = BIT(24), /**< wifi channel 161 */
+    WIFI_CHANNEL_165 = BIT(25), /**< wifi channel 165 */
+    WIFI_CHANNEL_169 = BIT(26), /**< wifi channel 169 */
+    WIFI_CHANNEL_173 = BIT(27), /**< wifi channel 173 */
+    WIFI_CHANNEL_177 = BIT(28), /**< wifi channel 177 */
+} wifi_5g_channel_bit_t;
+
 #define WIFI_PROTOCOL_11B         0x1
 #define WIFI_PROTOCOL_11G         0x2
 #define WIFI_PROTOCOL_11N         0x4
@@ -298,6 +386,12 @@ typedef enum {
 #define WIFI_PROTOCOL_11A         0x10
 #define WIFI_PROTOCOL_11AC        0x20
 #define WIFI_PROTOCOL_11AX        0x40
+
+/** @brief Description of a WiFi protocols */
+typedef struct {
+    uint16_t ghz_2g;            /**< Represents 2.4 GHz protocol, support 802.11b or 802.11g or 802.11n or 802.11ax or LR mode */
+    uint16_t ghz_5g;            /**< Represents 5 GHz protocol, support 802.11a or 802.11n or 802.11ac or 802.11ax */
+} wifi_protocols_t;
 
 typedef enum {
     WIFI_BW_HT20   = 1,       /* Bandwidth is HT20      */
@@ -308,6 +402,12 @@ typedef enum {
     WIFI_BW160     = 4,       /* Bandwidth is 160 MHz   */
     WIFI_BW80_BW80 = 5,       /* Bandwidth is 80+80 MHz */
 } wifi_bandwidth_t;
+
+/** @brief Description of a WiFi band bandwidths */
+typedef struct {
+    wifi_bandwidth_t ghz_2g;       /* Represents 2.4 GHz bandwidth */
+    wifi_bandwidth_t ghz_5g;       /* Represents 5 GHz bandwidth */
+} wifi_bandwidths_t;
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
@@ -356,7 +456,7 @@ typedef struct {
     wifi_scan_method_t scan_method;           /**< do all channel scan or fast scan */
     bool bssid_set;                           /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];                         /**< MAC address of target AP*/
-    uint8_t channel;                          /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint8_t channel;                          /**< channel of target AP. For 2.4G AP, set to 1~13 to scan starting from the specified channel before connecting to AP. For 5G AP, set to 36~177 (36, 40, 44 ... 177) to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;                 /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;           /**< sort the connect AP in the list by rssi or security mode */
     wifi_scan_threshold_t  threshold;         /**< When scan_threshold is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
@@ -715,19 +815,19 @@ typedef enum {
     WIFI_PHY_RATE_9M        = 0x0F, /**< 9 Mbps */
     /**< rate table and guard interval information for each MCS rate*/
     /*
-     -----------------------------------------------------------------------------------------------------------
-            MCS RATE             |          HT20           |          HT40           |          HE20           |
-     WIFI_PHY_RATE_MCS0_LGI      |     6.5 Mbps (800ns)    |    13.5 Mbps (800ns)    |     8.1 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS1_LGI      |      13 Mbps (800ns)    |      27 Mbps (800ns)    |    16.3 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS2_LGI      |    19.5 Mbps (800ns)    |    40.5 Mbps (800ns)    |    24.4 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS3_LGI      |      26 Mbps (800ns)    |      54 Mbps (800ns)    |    32.5 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS4_LGI      |      39 Mbps (800ns)    |      81 Mbps (800ns)    |    48.8 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS5_LGI      |      52 Mbps (800ns)    |     108 Mbps (800ns)    |      65 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS6_LGI      |    58.5 Mbps (800ns)    |   121.5 Mbps (800ns)    |    73.1 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS7_LGI      |      65 Mbps (800ns)    |     135 Mbps (800ns)    |    81.3 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS8_LGI      |          -----          |          -----          |    97.5 Mbps (1600ns)   |
-     WIFI_PHY_RATE_MCS9_LGI      |          -----          |          -----          |   108.3 Mbps (1600ns)   |
-     -----------------------------------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |         VHT20           |
+     WIFI_PHY_RATE_MCS0_LGI      |     6.5 Mbps (800ns)    |    13.5 Mbps (800ns)    |     8.1 Mbps (1600ns)   |     6.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS1_LGI      |      13 Mbps (800ns)    |      27 Mbps (800ns)    |    16.3 Mbps (1600ns)   |      13 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS2_LGI      |    19.5 Mbps (800ns)    |    40.5 Mbps (800ns)    |    24.4 Mbps (1600ns)   |    19.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS3_LGI      |      26 Mbps (800ns)    |      54 Mbps (800ns)    |    32.5 Mbps (1600ns)   |      26 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS4_LGI      |      39 Mbps (800ns)    |      81 Mbps (800ns)    |    48.8 Mbps (1600ns)   |      39 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS5_LGI      |      52 Mbps (800ns)    |     108 Mbps (800ns)    |      65 Mbps (1600ns)   |      52 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS6_LGI      |    58.5 Mbps (800ns)    |   121.5 Mbps (800ns)    |    73.1 Mbps (1600ns)   |    58.5 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS7_LGI      |      65 Mbps (800ns)    |     135 Mbps (800ns)    |    81.3 Mbps (1600ns)   |      65 Mbps (800ns)    |
+     WIFI_PHY_RATE_MCS8_LGI      |          -----          |          -----          |    97.5 Mbps (1600ns)   |          -----          |
+     WIFI_PHY_RATE_MCS9_LGI      |          -----          |          -----          |   108.3 Mbps (1600ns)   |          -----          |
+     -------------------------------------------------------------------------------------------------------------------------------------
     */
     WIFI_PHY_RATE_MCS0_LGI  = 0x10, /**< MCS0 with long GI */
     WIFI_PHY_RATE_MCS1_LGI  = 0x11, /**< MCS1 with long GI */
@@ -742,19 +842,19 @@ typedef enum {
     WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 with long GI */
 #endif
     /*
-     -----------------------------------------------------------------------------------------------------------
-            MCS RATE             |          HT20           |          HT40           |          HE20           |
-     WIFI_PHY_RATE_MCS0_SGI      |     7.2 Mbps (400ns)    |      15 Mbps (400ns)    |      8.6 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS1_SGI      |    14.4 Mbps (400ns)    |      30 Mbps (400ns)    |     17.2 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS2_SGI      |    21.7 Mbps (400ns)    |      45 Mbps (400ns)    |     25.8 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS3_SGI      |    28.9 Mbps (400ns)    |      60 Mbps (400ns)    |     34.4 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS4_SGI      |    43.3 Mbps (400ns)    |      90 Mbps (400ns)    |     51.6 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS5_SGI      |    57.8 Mbps (400ns)    |     120 Mbps (400ns)    |     68.8 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS6_SGI      |      65 Mbps (400ns)    |     135 Mbps (400ns)    |     77.4 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS7_SGI      |    72.2 Mbps (400ns)    |     150 Mbps (400ns)    |       86 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS8_SGI      |          -----          |          -----          |    103.2 Mbps (800ns)   |
-     WIFI_PHY_RATE_MCS9_SGI      |          -----          |          -----          |    114.7 Mbps (800ns)   |
-     -----------------------------------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------------------------------------------------------------
+            MCS RATE             |          HT20           |          HT40           |          HE20           |         VHT20           |
+     WIFI_PHY_RATE_MCS0_SGI      |     7.2 Mbps (400ns)    |      15 Mbps (400ns)    |      8.6 Mbps (800ns)   |     7.2 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS1_SGI      |    14.4 Mbps (400ns)    |      30 Mbps (400ns)    |     17.2 Mbps (800ns)   |    14.4 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS2_SGI      |    21.7 Mbps (400ns)    |      45 Mbps (400ns)    |     25.8 Mbps (800ns)   |    21.7 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS3_SGI      |    28.9 Mbps (400ns)    |      60 Mbps (400ns)    |     34.4 Mbps (800ns)   |    28.9 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS4_SGI      |    43.3 Mbps (400ns)    |      90 Mbps (400ns)    |     51.6 Mbps (800ns)   |    43.3 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS5_SGI      |    57.8 Mbps (400ns)    |     120 Mbps (400ns)    |     68.8 Mbps (800ns)   |    57.8 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS6_SGI      |      65 Mbps (400ns)    |     135 Mbps (400ns)    |     77.4 Mbps (800ns)   |      65 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS7_SGI      |    72.2 Mbps (400ns)    |     150 Mbps (400ns)    |       86 Mbps (800ns)   |    72.2 Mbps (400ns)    |
+     WIFI_PHY_RATE_MCS8_SGI      |          -----          |          -----          |    103.2 Mbps (800ns)   |          -----          |
+     WIFI_PHY_RATE_MCS9_SGI      |          -----          |          -----          |    114.7 Mbps (800ns)   |          -----          |
+     -------------------------------------------------------------------------------------------------------------------------------------
     */
     WIFI_PHY_RATE_MCS0_SGI,         /**< MCS0 with short GI */
     WIFI_PHY_RATE_MCS1_SGI,         /**< MCS1 with short GI */
@@ -805,6 +905,7 @@ typedef enum {
     WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< Station beacon timeout */
 
     WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< Connectionless module wake interval start */
+    /* Add next events after this only */
 
     WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
     WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
@@ -1066,13 +1167,6 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
-
-/** Argument structure for wifi band */
-typedef enum {
-    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
-    WIFI_BAND_5G = 2,                   /* Band is 5G */
-    WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
-} wifi_band_t;
 
 #ifdef __cplusplus
 }

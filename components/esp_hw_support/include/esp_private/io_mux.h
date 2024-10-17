@@ -32,12 +32,21 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src);
 
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
 typedef struct {
+<<<<<<< HEAD
     uint8_t rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM];
+=======
+    uint8_t rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM + 1];
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     uint32_t rtc_io_using_mask;
 } rtc_io_status_t;
 
 /**
+<<<<<<< HEAD
  * Enable/Disable LP_IO peripheral clock.
+=======
+ * @brief Enable/Disable LP_IO peripheral clock
+ *
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  * @param gpio_num GPIO number
  * @param enable   true to enable the clock / false to disable the clock
  */

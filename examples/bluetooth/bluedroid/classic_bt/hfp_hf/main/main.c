@@ -29,8 +29,19 @@
 esp_bd_addr_t peer_addr = {0};
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 static uint8_t peer_bdname_len;
+static const char remote_device_name[] = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
 
-static const char remote_device_name[] = "ESP_HFP_AG";
+static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
@@ -86,7 +97,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
                 if (strcmp(peer_bdname, remote_device_name) == 0) {
                     memcpy(peer_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
                     ESP_LOGI(BT_HF_TAG, "Found a target device address:");
-                    esp_log_buffer_hex(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
+                    ESP_LOG_BUFFER_HEX(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
                     ESP_LOGI(BT_HF_TAG, "Found a target device name: %s", peer_bdname);
                     printf("Connect.\n");
                     esp_hf_client_connect(peer_addr);
@@ -104,7 +115,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_AUTH_CMPL_EVT: {
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(BT_HF_TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(BT_HF_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(BT_HF_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(BT_HF_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
         }

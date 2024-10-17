@@ -164,7 +164,6 @@ uint32_t sleep_retention_get_inited_modules(void);
  */
 uint32_t sleep_retention_get_created_modules(void);
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
 /**
  * @brief Software trigger REGDMA to do extra linked list retention
  *
@@ -172,7 +171,6 @@ uint32_t sleep_retention_get_created_modules(void);
  *                          or false for restore to register from memory
  */
 void sleep_retention_do_extra_retention(bool backup_or_restore);
-#endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**

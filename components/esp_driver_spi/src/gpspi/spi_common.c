@@ -14,7 +14,6 @@
 #include "esp_rom_gpio.h"
 #include "esp_heap_caps.h"
 #include "soc/spi_periph.h"
-#include "soc/ext_mem_defs.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -22,13 +21,11 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#endif
-#if SOC_GDMA_SUPPORTED
-#include "esp_private/gdma.h"
 #endif
 
 static const char *SPI_TAG = "spi";
@@ -290,8 +287,8 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
         dma_desc_ct = 1;    //default to 4k when max is not given
     }
 
-    dma_ctx->dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-    dma_ctx->dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+    dma_ctx->dmadesc_tx = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, 1, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    dma_ctx->dmadesc_rx = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, 1, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     if (dma_ctx->dmadesc_tx == NULL || dma_ctx->dmadesc_rx == NULL) {
         if (dma_ctx->dmadesc_tx) {
             free(dma_ctx->dmadesc_tx);
@@ -308,15 +305,7 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
     return ESP_OK;
 }
 
-#if SOC_NON_CACHEABLE_OFFSET
-#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))((uint32_t)(addr) + SOC_NON_CACHEABLE_OFFSET))
-#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))((uint32_t)(addr) - SOC_NON_CACHEABLE_OFFSET))
-#else
-#define ADDR_DMA_2_CPU(addr)   (addr)
-#define ADDR_CPU_2_DMA(addr)   (addr)
-#endif
-
-void SPI_MASTER_ISR_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+void IRAM_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
 {
     dmadesc = ADDR_DMA_2_CPU(dmadesc);
     int n = 0;
@@ -809,6 +798,9 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
 #ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_MASTER_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
+#if CONFIG_IDF_TARGET_ESP32
+    SPI_CHECK((bus_config->data_io_default_level == 0), "no support changing io default level ", ESP_ERR_INVALID_ARG);
+#endif
 
     bool spi_chan_claimed = spicommon_periph_claim(host_id, "spi master");
     SPI_CHECK(spi_chan_claimed, "host_id already in use", ESP_ERR_INVALID_STATE);
@@ -890,6 +882,15 @@ cleanup:
     return err;
 }
 
+void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps)
+{
+    (void) host_id; //remain for extendability
+    ESP_RETURN_ON_FALSE((extra_heap_caps & MALLOC_CAP_SPIRAM) == 0, NULL, SPI_TAG, "external memory is not supported now");
+
+    size_t dma_requir = 16;  //TODO: IDF-10111, using max alignment temp, refactor to "gdma_get_alignment_constraints" instead
+    return heap_caps_aligned_calloc(dma_requir, 1, size, extra_heap_caps | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+}
+
 const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id)
 {
     if (bus_ctx[host_id] == NULL) {
@@ -920,6 +921,9 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
 
     if (ctx->destroy_func) {
         err = ctx->destroy_func(ctx->destroy_arg);
+        if (err != ESP_OK) {
+            return err;
+        }
     }
     spicommon_bus_free_io_cfg(&bus_attr->bus_cfg);
 

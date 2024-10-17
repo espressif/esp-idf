@@ -134,6 +134,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
 #define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -230,7 +231,8 @@ TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep 
                           do_ulp_wakeup_with_lp_timer_deepsleep,
                           check_reset_reason_and_sleep_duration);
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+#endif //#if SOC_DEEP_SLEEP_SUPPORTED && CONFIG_RTC_FAST_CLK_SRC_RC_FAST
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 
 TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
 {
@@ -322,6 +324,7 @@ TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
     TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_set_timer_wakeup_counter, "LP Core did not wake up the expected number of times");
 }
 
+#if SOC_RTCIO_PIN_COUNT > 0
 TEST_CASE("LP core gpio tests", "[ulp]")
 {
     /* Load ULP firmware and start the coprocessor */
@@ -338,11 +341,13 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 
     TEST_ASSERT_TRUE(ulp_gpio_test_succeeded);
 }
+#endif //SOC_RTCIO_PIN_COUNT > 0
 
 #endif //SOC_LP_TIMER_SUPPORTED
 
 #define ISR_TEST_ITERATIONS 100
 #define IO_TEST_PIN 0
+<<<<<<< HEAD
 #include "lp_core_uart.h"
 
 TEST_CASE("LP core ISR tests", "[ulp]")
@@ -351,6 +356,11 @@ TEST_CASE("LP core ISR tests", "[ulp]")
 
     ESP_ERROR_CHECK(lp_core_uart_init(&ucfg));
 
+=======
+
+TEST_CASE("LP core ISR tests", "[ulp]")
+{
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     /* Load ULP firmware and start the coprocessor */
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
@@ -369,6 +379,10 @@ TEST_CASE("LP core ISR tests", "[ulp]")
     printf("ULP PMU ISR triggered %"PRIu32" times\n", ulp_pmu_isr_counter);
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_pmu_isr_counter);
 
+<<<<<<< HEAD
+=======
+#if SOC_RTCIO_PIN_COUNT > 0
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     /* Test LP IO interrupt */
     rtc_gpio_init(IO_TEST_PIN);
     rtc_gpio_set_direction(IO_TEST_PIN, RTC_GPIO_MODE_INPUT_ONLY);
@@ -385,4 +399,8 @@ TEST_CASE("LP core ISR tests", "[ulp]")
 
     printf("ULP LP IO ISR triggered %"PRIu32" times\n", ulp_io_isr_counter);
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
+<<<<<<< HEAD
+=======
+#endif //SOC_RTCIO_PIN_COUNT > 0
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }

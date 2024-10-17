@@ -4,6 +4,10 @@ dependencies:
   espressif/iperf-cmd:
     version: "~0.1.1"
   esp-qa/wifi-cmd:
-    version: "~0.1.0"
+    version: "~0.1.8"
   esp-qa/ping-cmd:
     version: "~0.0.1"
+  espressif/esp-extconn:
+    version: "~0.1.0"
+    rules:
+      - if: "target in [esp32p4]"

@@ -83,7 +83,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
 
     /* spawn a single thread to run REPL */
     if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
+                                cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
@@ -160,7 +160,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
 
     /* spawn a single thread to run REPL */
     if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
+                                usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
@@ -217,7 +217,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
 #elif SOC_UART_SUPPORT_XTAL_CLK
     uart_sclk_t clk_source = UART_SCLK_XTAL;
 #else
-    #error "No UART clock source is aware of DFS"
+#error "No UART clock source is aware of DFS"
 #endif // SOC_UART_SUPPORT_xxx
     const uart_config_t uart_config = {
         .baud_rate = dev_config->baud_rate,
@@ -262,7 +262,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     /* Spawn a single thread to run REPL, we need to pass `uart_repl` to it as
      * it also requires the uart channel. */
     if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
+                                uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -249,7 +249,7 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
-/* intended warning supression: is384 == true */
+/* intended warning suppression: is384 == true */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
     TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha384));
@@ -563,7 +563,8 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA large buffer", "[hw_crypto]")
 
 #endif //CONFIG_SPIRAM_USE_MALLOC
 
-#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK && !CONFIG_IDF_TARGET_ESP32H2
+// Not enough rtc memory for test on H2
 
 TEST_CASE("mbedtls SHA stack in RTC RAM", "[mbedtls]")
 {
@@ -587,7 +588,7 @@ TEST_CASE("mbedtls SHA stack in RTC RAM", "[mbedtls]")
 
 #endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY && CONFIG_SPIRAM_USE_MALLOC
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && CONFIG_SPIRAM_USE_MALLOC
 
 TEST_CASE("mbedtls SHA stack in PSRAM", "[mbedtls]")
 {
@@ -609,4 +610,4 @@ TEST_CASE("mbedtls SHA stack in PSRAM", "[mbedtls]")
     vSemaphoreDelete(done_sem);
 }
 
-#endif //CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY && CONFIG_SPIRAM_USE_MALLOC
+#endif //CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && CONFIG_SPIRAM_USE_MALLOC

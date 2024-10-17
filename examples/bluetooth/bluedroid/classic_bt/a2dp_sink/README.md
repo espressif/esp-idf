@@ -36,7 +36,7 @@ idf.py menuconfig
 
 * Choose external I2S codec or internal DAC for audio output, and configure the output PINs under A2DP Example Configuration
 
-* Enable Classic Bluetooth and A2DP under **Component config --> Bluetooth --> Bluedroid Enable**
+* For AVRCP CT Cover Art feature, is enabled by default, we can disable it by unselecting menuconfig option `Component config --> Bluetooth --> Bluedroid Options --> Classic Bluetooth --> AVRCP Features --> AVRCP CT Cover Art`. This example will try to use AVRCP CT Cover Art feature, get cover art image and count the image size if peer device support, this can be disable in `A2DP Example Configuration --> Use AVRCP CT Cover Art Feature`.
 
 ### Build and Flash
 
@@ -66,7 +66,13 @@ I (122697) BT_AV: Audio packet count 100
 I (124697) BT_AV: Audio packet count 200
 I (126697) BT_AV: Audio packet count 300
 I (128697) BT_AV: Audio packet count 400
+```
 
+The output when receiving a cover art image:
+
+```
+I (53349) RC_CT: AVRC metadata rsp: attribute id 0x80, 1000748
+I (53639) RC_CT: Cover Art Client final data event, image size: 14118 bytes
 ```
 
 Also, the sound will be heard if a loudspeaker is connected and possible external I2S codec is correctly configured. For ESP32 A2DP source example, the sound is noise as the audio source generates the samples with a random sequence.

@@ -1,7 +1,11 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/esp_ot_cli_extension:
+<<<<<<< HEAD
     version: "~1.1.0"
+=======
+    version: "~1.2.0"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
   idf:
     version: ">=4.1.0"
   ot_led:

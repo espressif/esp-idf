@@ -9,7 +9,9 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_bit_defs.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_cpu.h"
+#endif
 
 #include "soc/soc_caps.h"
 

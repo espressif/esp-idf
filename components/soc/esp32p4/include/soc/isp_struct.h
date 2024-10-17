@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -398,35 +398,35 @@ typedef union {
 typedef union {
     struct {
         /** gau_template21 : R/W; bitpos: [3:0]; default: 15;
-         *  this field configures index 21 of gausian template
+         *  this field configures index 21 of gaussian template
          */
         uint32_t gau_template21:4;
         /** gau_template20 : R/W; bitpos: [7:4]; default: 15;
-         *  this field configures index 20 of gausian template
+         *  this field configures index 20 of gaussian template
          */
         uint32_t gau_template20:4;
         /** gau_template12 : R/W; bitpos: [11:8]; default: 15;
-         *  this field configures index 12 of gausian template
+         *  this field configures index 12 of gaussian template
          */
         uint32_t gau_template12:4;
         /** gau_template11 : R/W; bitpos: [15:12]; default: 15;
-         *  this field configures index 11 of gausian template
+         *  this field configures index 11 of gaussian template
          */
         uint32_t gau_template11:4;
         /** gau_template10 : R/W; bitpos: [19:16]; default: 15;
-         *  this field configures index 10 of gausian template
+         *  this field configures index 10 of gaussian template
          */
         uint32_t gau_template10:4;
         /** gau_template02 : R/W; bitpos: [23:20]; default: 15;
-         *  this field configures index 02 of gausian template
+         *  this field configures index 02 of gaussian template
          */
         uint32_t gau_template02:4;
         /** gau_template01 : R/W; bitpos: [27:24]; default: 15;
-         *  this field configures index 01 of gausian template
+         *  this field configures index 01 of gaussian template
          */
         uint32_t gau_template01:4;
         /** gau_template00 : R/W; bitpos: [31:28]; default: 15;
-         *  this field configures index 00 of gausian template
+         *  this field configures index 00 of gaussian template
          */
         uint32_t gau_template00:4;
     };
@@ -439,7 +439,7 @@ typedef union {
 typedef union {
     struct {
         /** gau_template22 : R/W; bitpos: [3:0]; default: 15;
-         *  this field configures index 22 of gausian template
+         *  this field configures index 22 of gaussian template
          */
         uint32_t gau_template22:4;
         uint32_t reserved_4:28;
@@ -689,605 +689,205 @@ typedef union {
     uint32_t val;
 } isp_gamma_ctrl_reg_t;
 
-/** Type of gamma_ry1 register
- *  point of Y-axis of r channel gamma curve register 1
+/** Type of gamma_y1 register
+ *  point of Y-axis of r/g/b channel gamma curve register 1
  */
 typedef union {
     struct {
-        /** gamma_r_y03 : R/W; bitpos: [7:0]; default: 64;
-         *  this field configures the point 3 of Y-axis of r channel gamma curve
+        /** gamma_y03 : R/W; bitpos: [7:0]; default: 64;
+         *  this field configures the point 3 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y03:8;
-        /** gamma_r_y02 : R/W; bitpos: [15:8]; default: 48;
-         *  this field configures the point 2 of Y-axis of r channel gamma curve
+        uint32_t gamma_y03:8;
+        /** gamma_y02 : R/W; bitpos: [15:8]; default: 48;
+         *  this field configures the point 2 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y02:8;
-        /** gamma_r_y01 : R/W; bitpos: [23:16]; default: 32;
-         *  this field configures the point 1 of Y-axis of r channel gamma curve
+        uint32_t gamma_y02:8;
+        /** gamma_y01 : R/W; bitpos: [23:16]; default: 32;
+         *  this field configures the point 1 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y01:8;
-        /** gamma_r_y00 : R/W; bitpos: [31:24]; default: 16;
-         *  this field configures the point 0 of Y-axis of r channel gamma curve
+        uint32_t gamma_y01:8;
+        /** gamma_y00 : R/W; bitpos: [31:24]; default: 16;
+         *  this field configures the point 0 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y00:8;
+        uint32_t gamma_y00:8;
     };
     uint32_t val;
-} isp_gamma_ry1_reg_t;
+} isp_gamma_y1_reg_t;
 
-/** Type of gamma_ry2 register
- *  point of Y-axis of r channel gamma curve register 2
+/** Type of gamma_y2 register
+ *  point of Y-axis of r/g/b channel gamma curve register 2
  */
 typedef union {
     struct {
-        /** gamma_r_y07 : R/W; bitpos: [7:0]; default: 128;
-         *  this field configures the point 7 of Y-axis of r channel gamma curve
+        /** gamma_y07 : R/W; bitpos: [7:0]; default: 128;
+         *  this field configures the point 7 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y07:8;
-        /** gamma_r_y06 : R/W; bitpos: [15:8]; default: 112;
-         *  this field configures the point 6 of Y-axis of r channel gamma curve
+        uint32_t gamma_y07:8;
+        /** gamma_y06 : R/W; bitpos: [15:8]; default: 112;
+         *  this field configures the point 6 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y06:8;
-        /** gamma_r_y05 : R/W; bitpos: [23:16]; default: 96;
-         *  this field configures the point 5 of Y-axis of r channel gamma curve
+        uint32_t gamma_y06:8;
+        /** gamma_y05 : R/W; bitpos: [23:16]; default: 96;
+         *  this field configures the point 5 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y05:8;
-        /** gamma_r_y04 : R/W; bitpos: [31:24]; default: 80;
-         *  this field configures the point 4 of Y-axis of r channel gamma curve
+        uint32_t gamma_y05:8;
+        /** gamma_y04 : R/W; bitpos: [31:24]; default: 80;
+         *  this field configures the point 4 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y04:8;
+        uint32_t gamma_y04:8;
     };
     uint32_t val;
-} isp_gamma_ry2_reg_t;
+} isp_gamma_y2_reg_t;
 
-/** Type of gamma_ry3 register
- *  point of Y-axis of r channel gamma curve register 3
+/** Type of gamma_y3 register
+ *  point of Y-axis of r/g/b channel gamma curve register 3
  */
 typedef union {
     struct {
-        /** gamma_r_y0b : R/W; bitpos: [7:0]; default: 192;
-         *  this field configures the point 11 of Y-axis of r channel gamma curve
+        /** gamma_y0b : R/W; bitpos: [7:0]; default: 192;
+         *  this field configures the point 11 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0b:8;
-        /** gamma_r_y0a : R/W; bitpos: [15:8]; default: 176;
-         *  this field configures the point 10 of Y-axis of r channel gamma curve
+        uint32_t gamma_y0b:8;
+        /** gamma_y0a : R/W; bitpos: [15:8]; default: 176;
+         *  this field configures the point 10 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0a:8;
-        /** gamma_r_y09 : R/W; bitpos: [23:16]; default: 160;
-         *  this field configures the point 9 of Y-axis of r channel gamma curve
+        uint32_t gamma_y0a:8;
+        /** gamma_y09 : R/W; bitpos: [23:16]; default: 160;
+         *  this field configures the point 9 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y09:8;
-        /** gamma_r_y08 : R/W; bitpos: [31:24]; default: 144;
-         *  this field configures the point 8 of Y-axis of r channel gamma curve
+        uint32_t gamma_y09:8;
+        /** gamma_y08 : R/W; bitpos: [31:24]; default: 144;
+         *  this field configures the point 8 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y08:8;
+        uint32_t gamma_y08:8;
     };
     uint32_t val;
-} isp_gamma_ry3_reg_t;
+} isp_gamma_y3_reg_t;
 
-/** Type of gamma_ry4 register
- *  point of Y-axis of r channel gamma curve register 4
+/** Type of gamma_y4 register
+ *  point of Y-axis of r/g/b channel gamma curve register 4
  */
 typedef union {
     struct {
-        /** gamma_r_y0f : R/W; bitpos: [7:0]; default: 255;
-         *  this field configures the point 15 of Y-axis of r channel gamma curve
+        /** gamma_y0f : R/W; bitpos: [7:0]; default: 255;
+         *  this field configures the point 15 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0f:8;
-        /** gamma_r_y0e : R/W; bitpos: [15:8]; default: 240;
-         *  this field configures the point 14 of Y-axis of r channel gamma curve
+        uint32_t gamma_y0f:8;
+        /** gamma_y0e : R/W; bitpos: [15:8]; default: 240;
+         *  this field configures the point 14 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0e:8;
-        /** gamma_r_y0d : R/W; bitpos: [23:16]; default: 224;
-         *  this field configures the point 13 of Y-axis of r channel gamma curve
+        uint32_t gamma_y0e:8;
+        /** gamma_y0d : R/W; bitpos: [23:16]; default: 224;
+         *  this field configures the point 13 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0d:8;
-        /** gamma_r_y0c : R/W; bitpos: [31:24]; default: 208;
-         *  this field configures the point 12 of Y-axis of r channel gamma curve
+        uint32_t gamma_y0d:8;
+        /** gamma_y0c : R/W; bitpos: [31:24]; default: 208;
+         *  this field configures the point 12 of Y-axis of r/g/b channel gamma curve
          */
-        uint32_t gamma_r_y0c:8;
+        uint32_t gamma_y0c:8;
     };
     uint32_t val;
-} isp_gamma_ry4_reg_t;
+} isp_gamma_y4_reg_t;
 
-/** Type of gamma_gy1 register
- *  point of Y-axis of g channel gamma curve register 1
- */
-typedef union {
-    struct {
-        /** gamma_g_y03 : R/W; bitpos: [7:0]; default: 64;
-         *  this field configures the point 3 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y03:8;
-        /** gamma_g_y02 : R/W; bitpos: [15:8]; default: 48;
-         *  this field configures the point 2 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y02:8;
-        /** gamma_g_y01 : R/W; bitpos: [23:16]; default: 32;
-         *  this field configures the point 1 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y01:8;
-        /** gamma_g_y00 : R/W; bitpos: [31:24]; default: 16;
-         *  this field configures the point 0 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y00:8;
-    };
-    uint32_t val;
-} isp_gamma_gy1_reg_t;
-
-/** Type of gamma_gy2 register
- *  point of Y-axis of g channel gamma curve register 2
- */
-typedef union {
-    struct {
-        /** gamma_g_y07 : R/W; bitpos: [7:0]; default: 128;
-         *  this field configures the point 7 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y07:8;
-        /** gamma_g_y06 : R/W; bitpos: [15:8]; default: 112;
-         *  this field configures the point 6 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y06:8;
-        /** gamma_g_y05 : R/W; bitpos: [23:16]; default: 96;
-         *  this field configures the point 5 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y05:8;
-        /** gamma_g_y04 : R/W; bitpos: [31:24]; default: 80;
-         *  this field configures the point 4 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y04:8;
-    };
-    uint32_t val;
-} isp_gamma_gy2_reg_t;
-
-/** Type of gamma_gy3 register
- *  point of Y-axis of g channel gamma curve register 3
- */
-typedef union {
-    struct {
-        /** gamma_g_y0b : R/W; bitpos: [7:0]; default: 192;
-         *  this field configures the point 11 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0b:8;
-        /** gamma_g_y0a : R/W; bitpos: [15:8]; default: 176;
-         *  this field configures the point 10 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0a:8;
-        /** gamma_g_y09 : R/W; bitpos: [23:16]; default: 160;
-         *  this field configures the point 9 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y09:8;
-        /** gamma_g_y08 : R/W; bitpos: [31:24]; default: 144;
-         *  this field configures the point 8 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y08:8;
-    };
-    uint32_t val;
-} isp_gamma_gy3_reg_t;
-
-/** Type of gamma_gy4 register
- *  point of Y-axis of g channel gamma curve register 4
- */
-typedef union {
-    struct {
-        /** gamma_g_y0f : R/W; bitpos: [7:0]; default: 255;
-         *  this field configures the point 15 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0f:8;
-        /** gamma_g_y0e : R/W; bitpos: [15:8]; default: 240;
-         *  this field configures the point 14 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0e:8;
-        /** gamma_g_y0d : R/W; bitpos: [23:16]; default: 224;
-         *  this field configures the point 13 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0d:8;
-        /** gamma_g_y0c : R/W; bitpos: [31:24]; default: 208;
-         *  this field configures the point 12 of Y-axis of g channel gamma curve
-         */
-        uint32_t gamma_g_y0c:8;
-    };
-    uint32_t val;
-} isp_gamma_gy4_reg_t;
-
-/** Type of gamma_by1 register
- *  point of Y-axis of b channel gamma curve register 1
- */
-typedef union {
-    struct {
-        /** gamma_b_y03 : R/W; bitpos: [7:0]; default: 64;
-         *  this field configures the point 3 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y03:8;
-        /** gamma_b_y02 : R/W; bitpos: [15:8]; default: 48;
-         *  this field configures the point 2 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y02:8;
-        /** gamma_b_y01 : R/W; bitpos: [23:16]; default: 32;
-         *  this field configures the point 1 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y01:8;
-        /** gamma_b_y00 : R/W; bitpos: [31:24]; default: 16;
-         *  this field configures the point 0 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y00:8;
-    };
-    uint32_t val;
-} isp_gamma_by1_reg_t;
-
-/** Type of gamma_by2 register
- *  point of Y-axis of b channel gamma curve register 2
- */
-typedef union {
-    struct {
-        /** gamma_b_y07 : R/W; bitpos: [7:0]; default: 128;
-         *  this field configures the point 7 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y07:8;
-        /** gamma_b_y06 : R/W; bitpos: [15:8]; default: 112;
-         *  this field configures the point 6 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y06:8;
-        /** gamma_b_y05 : R/W; bitpos: [23:16]; default: 96;
-         *  this field configures the point 5 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y05:8;
-        /** gamma_b_y04 : R/W; bitpos: [31:24]; default: 80;
-         *  this field configures the point 4 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y04:8;
-    };
-    uint32_t val;
-} isp_gamma_by2_reg_t;
-
-/** Type of gamma_by3 register
- *  point of Y-axis of b channel gamma curve register 3
- */
-typedef union {
-    struct {
-        /** gamma_b_y0b : R/W; bitpos: [7:0]; default: 192;
-         *  this field configures the point 11 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0b:8;
-        /** gamma_b_y0a : R/W; bitpos: [15:8]; default: 176;
-         *  this field configures the point 10 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0a:8;
-        /** gamma_b_y09 : R/W; bitpos: [23:16]; default: 160;
-         *  this field configures the point 9 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y09:8;
-        /** gamma_b_y08 : R/W; bitpos: [31:24]; default: 144;
-         *  this field configures the point 8 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y08:8;
-    };
-    uint32_t val;
-} isp_gamma_by3_reg_t;
-
-/** Type of gamma_by4 register
- *  point of Y-axis of b channel gamma curve register 4
- */
-typedef union {
-    struct {
-        /** gamma_b_y0f : R/W; bitpos: [7:0]; default: 255;
-         *  this field configures the point 15 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0f:8;
-        /** gamma_b_y0e : R/W; bitpos: [15:8]; default: 240;
-         *  this field configures the point 14 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0e:8;
-        /** gamma_b_y0d : R/W; bitpos: [23:16]; default: 224;
-         *  this field configures the point 13 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0d:8;
-        /** gamma_b_y0c : R/W; bitpos: [31:24]; default: 208;
-         *  this field configures the point 12 of Y-axis of b channel gamma curve
-         */
-        uint32_t gamma_b_y0c:8;
-    };
-    uint32_t val;
-} isp_gamma_by4_reg_t;
-
-/** Type of gamma_rx1 register
- *  point of X-axis of r channel gamma curve register 1
+/** Type of gamma_x1 register
+ *  point of X-axis of r/g/b channel gamma curve register 1
  */
 typedef union {
     struct {
         /** gamma_r_x07 : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 7 of X-axis of r channel gamma curve, it represents
+         *  this field configures the point 7 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x07:3;
+        uint32_t gamma_x07:3;
         /** gamma_r_x06 : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 6 of X-axis of r channel gamma curve, it represents
+         *  this field configures the point 6 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x06:3;
-        /** gamma_r_x05 : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 5 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x06:3;
+        /** gamma_x05 : R/W; bitpos: [8:6]; default: 4;
+         *  this field configures the point 5 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x05:3;
-        /** gamma_r_x04 : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 4 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x05:3;
+        /** gamma_x04 : R/W; bitpos: [11:9]; default: 4;
+         *  this field configures the point 4 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x04:3;
-        /** gamma_r_x03 : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 3 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x04:3;
+        /** gamma_x03 : R/W; bitpos: [14:12]; default: 4;
+         *  this field configures the point 3 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x03:3;
-        /** gamma_r_x02 : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 2 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x03:3;
+        /** gamma_x02 : R/W; bitpos: [17:15]; default: 4;
+         *  this field configures the point 2 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x02:3;
-        /** gamma_r_x01 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 1 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x02:3;
+        /** gamma_x01 : R/W; bitpos: [20:18]; default: 4;
+         *  this field configures the point 1 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x01:3;
-        /** gamma_r_x00 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 0 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x01:3;
+        /** gamma_x00 : R/W; bitpos: [23:21]; default: 4;
+         *  this field configures the point 0 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x00:3;
+        uint32_t gamma_x00:3;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} isp_gamma_rx1_reg_t;
+} isp_gamma_x1_reg_t;
 
-/** Type of gamma_rx2 register
- *  point of X-axis of r channel gamma curve register 2
+/** Type of gamma_x2 register
+ *  point of X-axis of r/g/b channel gamma curve register 2
  */
 typedef union {
     struct {
-        /** gamma_r_x0f : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 15 of X-axis of r channel gamma curve, it
+        /** gamma_x0f : R/W; bitpos: [2:0]; default: 4;
+         *  this field configures the point 15 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0f:3;
-        /** gamma_r_x0e : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 14 of X-axis of r channel gamma curve, it
+        uint32_t gamma_x0f:3;
+        /** gamma_x0e : R/W; bitpos: [5:3]; default: 4;
+         *  this field configures the point 14 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0e:3;
-        /** gamma_r_x0d : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 13 of X-axis of r channel gamma curve, it
+        uint32_t gamma_x0e:3;
+        /** gamma_x0d : R/W; bitpos: [8:6]; default: 4;
+         *  this field configures the point 13 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0d:3;
-        /** gamma_r_x0c : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 12 of X-axis of r channel gamma curve, it
+        uint32_t gamma_x0d:3;
+        /** gamma_x0c : R/W; bitpos: [11:9]; default: 4;
+         *  this field configures the point 12 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0c:3;
-        /** gamma_r_x0b : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 11 of X-axis of r channel gamma curve, it
+        uint32_t gamma_x0c:3;
+        /** gamma_x0b : R/W; bitpos: [14:12]; default: 4;
+         *  this field configures the point 11 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0b:3;
-        /** gamma_r_x0a : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 10 of X-axis of r channel gamma curve, it
+        uint32_t gamma_x0b:3;
+        /** gamma_x0a : R/W; bitpos: [17:15]; default: 4;
+         *  this field configures the point 10 of X-axis of r/g/b channel gamma curve, it
          *  represents the power of the distance from the previous point
          */
-        uint32_t gamma_r_x0a:3;
-        /** gamma_r_x09 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 9 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x0a:3;
+        /** gamma_x09 : R/W; bitpos: [20:18]; default: 4;
+         *  this field configures the point 9 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x09:3;
-        /** gamma_r_x08 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 8 of X-axis of r channel gamma curve, it represents
+        uint32_t gamma_x09:3;
+        /** gamma_x08 : R/W; bitpos: [23:21]; default: 4;
+         *  this field configures the point 8 of X-axis of r/g/b channel gamma curve, it represents
          *  the power of the distance from the previous point
          */
-        uint32_t gamma_r_x08:3;
+        uint32_t gamma_x08:3;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} isp_gamma_rx2_reg_t;
-
-/** Type of gamma_gx1 register
- *  point of X-axis of g channel gamma curve register 1
- */
-typedef union {
-    struct {
-        /** gamma_g_x07 : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 7 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x07:3;
-        /** gamma_g_x06 : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 6 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x06:3;
-        /** gamma_g_x05 : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 5 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x05:3;
-        /** gamma_g_x04 : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 4 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x04:3;
-        /** gamma_g_x03 : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 3 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x03:3;
-        /** gamma_g_x02 : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 2 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x02:3;
-        /** gamma_g_x01 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 1 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x01:3;
-        /** gamma_g_x00 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 0 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x00:3;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} isp_gamma_gx1_reg_t;
-
-/** Type of gamma_gx2 register
- *  point of X-axis of g channel gamma curve register 2
- */
-typedef union {
-    struct {
-        /** gamma_g_x0f : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 15 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0f:3;
-        /** gamma_g_x0e : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 14 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0e:3;
-        /** gamma_g_x0d : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 13 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0d:3;
-        /** gamma_g_x0c : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 12 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0c:3;
-        /** gamma_g_x0b : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 11 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0b:3;
-        /** gamma_g_x0a : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 10 of X-axis of g channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x0a:3;
-        /** gamma_g_x09 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 9 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x09:3;
-        /** gamma_g_x08 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 8 of X-axis of g channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_g_x08:3;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} isp_gamma_gx2_reg_t;
-
-/** Type of gamma_bx1 register
- *  point of X-axis of b channel gamma curve register 1
- */
-typedef union {
-    struct {
-        /** gamma_b_x07 : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 7 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x07:3;
-        /** gamma_b_x06 : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 6 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x06:3;
-        /** gamma_b_x05 : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 5 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x05:3;
-        /** gamma_b_x04 : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 4 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x04:3;
-        /** gamma_b_x03 : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 3 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x03:3;
-        /** gamma_b_x02 : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 2 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x02:3;
-        /** gamma_b_x01 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 1 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x01:3;
-        /** gamma_b_x00 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 0 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x00:3;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} isp_gamma_bx1_reg_t;
-
-/** Type of gamma_bx2 register
- *  point of X-axis of b channel gamma curve register 2
- */
-typedef union {
-    struct {
-        /** gamma_b_x0f : R/W; bitpos: [2:0]; default: 4;
-         *  this field configures the point 15 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0f:3;
-        /** gamma_b_x0e : R/W; bitpos: [5:3]; default: 4;
-         *  this field configures the point 14 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0e:3;
-        /** gamma_b_x0d : R/W; bitpos: [8:6]; default: 4;
-         *  this field configures the point 13 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0d:3;
-        /** gamma_b_x0c : R/W; bitpos: [11:9]; default: 4;
-         *  this field configures the point 12 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0c:3;
-        /** gamma_b_x0b : R/W; bitpos: [14:12]; default: 4;
-         *  this field configures the point 11 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0b:3;
-        /** gamma_b_x0a : R/W; bitpos: [17:15]; default: 4;
-         *  this field configures the point 10 of X-axis of b channel gamma curve, it
-         *  represents the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x0a:3;
-        /** gamma_b_x09 : R/W; bitpos: [20:18]; default: 4;
-         *  this field configures the point 9 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x09:3;
-        /** gamma_b_x08 : R/W; bitpos: [23:21]; default: 4;
-         *  this field configures the point 8 of X-axis of b channel gamma curve, it represents
-         *  the power of the distance from the previous point
-         */
-        uint32_t gamma_b_x08:3;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} isp_gamma_bx2_reg_t;
+} isp_gamma_x2_reg_t;
 
 /** Type of ae_ctrl register
  *  ae control register
@@ -1321,7 +921,7 @@ typedef union {
          */
         uint32_t ae_monitor_th:8;
         /** ae_monitor_period : R/W; bitpos: [21:16]; default: 0;
-         *  this field cnfigures ae monitor frame period
+         *  this field configures ae monitor frame period
          */
         uint32_t ae_monitor_period:6;
         uint32_t reserved_22:10;
@@ -1484,6 +1084,25 @@ typedef union {
     uint32_t val;
 } isp_sharp_filter2_reg_t;
 
+typedef union {
+    struct {
+        /** sharp_filter_coe0 : R/W; bitpos: [4:0]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe0:5;
+        /** sharp_filter_coe1 : R/W; bitpos: [9:5]; default: 2;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe1:5;
+        /** sharp_filter_coe2 : R/W; bitpos: [14:10]; default: 1;
+         *  this field configures usm filter coefficient
+         */
+        uint32_t sharp_filter_coe2:5;
+        uint32_t reserved_15:17;
+    };
+    uint32_t val;
+} isp_sharp_filter_reg_t;
+
 /** Type of sharp_matrix_ctrl register
  *  sharp pix2matrix ctrl
  */
@@ -1536,7 +1155,7 @@ typedef union {
 typedef union {
     struct {
         /** dma_en : WT; bitpos: [0]; default: 0;
-         *  write 1 to triger dma to get 1 frame
+         *  write 1 to trigger dma to get 1 frame
          */
         uint32_t dma_en:1;
         /** dma_update_reg : R/W; bitpos: [1]; default: 0;
@@ -1584,7 +1203,7 @@ typedef union {
 typedef union {
     struct {
         /** cam_en : R/W; bitpos: [0]; default: 0;
-         *  write 1 to start recive camera data, write 0 to disable
+         *  write 1 to start receive camera data, write 0 to disable
          */
         uint32_t cam_en:1;
         /** cam_update_reg : R/W; bitpos: [1]; default: 0;
@@ -1596,7 +1215,7 @@ typedef union {
          */
         uint32_t cam_reset:1;
         /** cam_clk_inv : R/W; bitpos: [3]; default: 0;
-         *  this bit configures the invertion of cam clk from pad. 0: not invert cam clk, 1:
+         *  this bit configures the inversion of cam clk from pad. 0: not invert cam clk, 1:
          *  invert cam clk
          */
         uint32_t cam_clk_inv:1;
@@ -1880,7 +1499,7 @@ typedef union {
 typedef union {
     struct {
         /** awb_mode : R/W; bitpos: [1:0]; default: 3;
-         *  this field configures awb algo sel. 00: none sellected. 01: sel algo0. 10: sel
+         *  this field configures awb algo sel. 00: none selected. 01: sel algo0. 10: sel
          *  algo1. 11: sel both algo0 and algo1
          */
         uint32_t awb_mode:2;
@@ -2202,6 +1821,25 @@ typedef union {
     uint32_t val;
 } isp_hist_size_reg_t;
 
+/** Type of hist_seg register
+ *  histogram bin control register
+ */
+typedef union {
+    struct {
+        /** hist_seg: R/W;
+         * default:
+         * 16, 32, 48, 64,
+         * 80, 96, 112, 128,
+         * 144, 160, 176, 192,
+         * 208, 224, 240
+         *  this field configures threshold of histogram
+         */
+        uint8_t hist_seg_b[4];
+    };
+    uint32_t val;
+} isp_hist_seg_reg_t;
+
+
 /** Type of hist_seg0 register
  *  histogram bin control register 0
  */
@@ -2298,6 +1936,20 @@ typedef union {
     };
     uint32_t val;
 } isp_hist_seg3_reg_t;
+
+/** Type of hist_weight register
+ *  histogram sub-window weight register 0
+ */
+typedef union {
+    struct {
+        /** histogram weight : RO; bitpos: [31:0];
+         *  weight[12] default 232, others default 1
+         *  this field represents the weight of histogram subwindow, sum of all weight should be 256
+         */
+        uint8_t hist_weight_b[4];
+    };
+    uint32_t val;
+} isp_hist_weight_reg_t;
 
 /** Type of hist_weight0 register
  *  histogram sub-window weight register 0
@@ -2627,6 +2279,19 @@ typedef union {
     uint32_t val;
 } isp_lut_rdata_reg_t;
 
+/** Type of ae_block_mean register
+ *  ae statistic result
+ */
+typedef union {
+    struct {
+        /** ae_lum : RO; bitpos: [31:0]; default: 0;
+         *  this field represents the result of AE block
+         */
+        uint8_t ae_b_mean[4];
+    };
+    uint32_t val;
+} isp_ae_block_mean_reg_t;
+
 /** Type of ae_block_mean_0 register
  *  ae statistic result register 0
  */
@@ -2790,7 +2455,6 @@ typedef union {
     };
     uint32_t val;
 } isp_ae_block_mean_6_reg_t;
-
 /** Type of af_sum_a register
  *  result of sum of af window a
  */
@@ -2953,229 +2617,19 @@ typedef union {
     uint32_t val;
 } isp_blc_mean_reg_t;
 
-/** Type of hist_bin0 register
- *  result of histogram bin 0
+/** Type of hist_bin register
+ *  result of histogram bin n
  */
 typedef union {
     struct {
-        /** hist_bin_0 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 0
+        /** hist_bin_n : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin n
          */
-        uint32_t hist_bin_0:17;
+        uint32_t hist_bin_n:17;
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} isp_hist_bin0_reg_t;
-
-/** Type of hist_bin1 register
- *  result of histogram bin 1
- */
-typedef union {
-    struct {
-        /** hist_bin_1 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 1
-         */
-        uint32_t hist_bin_1:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin1_reg_t;
-
-/** Type of hist_bin2 register
- *  result of histogram bin 2
- */
-typedef union {
-    struct {
-        /** hist_bin_2 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 2
-         */
-        uint32_t hist_bin_2:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin2_reg_t;
-
-/** Type of hist_bin3 register
- *  result of histogram bin 3
- */
-typedef union {
-    struct {
-        /** hist_bin_3 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 3
-         */
-        uint32_t hist_bin_3:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin3_reg_t;
-
-/** Type of hist_bin4 register
- *  result of histogram bin 4
- */
-typedef union {
-    struct {
-        /** hist_bin_4 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 4
-         */
-        uint32_t hist_bin_4:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin4_reg_t;
-
-/** Type of hist_bin5 register
- *  result of histogram bin 5
- */
-typedef union {
-    struct {
-        /** hist_bin_5 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 5
-         */
-        uint32_t hist_bin_5:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin5_reg_t;
-
-/** Type of hist_bin6 register
- *  result of histogram bin 6
- */
-typedef union {
-    struct {
-        /** hist_bin_6 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 6
-         */
-        uint32_t hist_bin_6:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin6_reg_t;
-
-/** Type of hist_bin7 register
- *  result of histogram bin 7
- */
-typedef union {
-    struct {
-        /** hist_bin_7 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 7
-         */
-        uint32_t hist_bin_7:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin7_reg_t;
-
-/** Type of hist_bin8 register
- *  result of histogram bin 8
- */
-typedef union {
-    struct {
-        /** hist_bin_8 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 8
-         */
-        uint32_t hist_bin_8:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin8_reg_t;
-
-/** Type of hist_bin9 register
- *  result of histogram bin 9
- */
-typedef union {
-    struct {
-        /** hist_bin_9 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 9
-         */
-        uint32_t hist_bin_9:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin9_reg_t;
-
-/** Type of hist_bin10 register
- *  result of histogram bin 10
- */
-typedef union {
-    struct {
-        /** hist_bin_10 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 10
-         */
-        uint32_t hist_bin_10:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin10_reg_t;
-
-/** Type of hist_bin11 register
- *  result of histogram bin 11
- */
-typedef union {
-    struct {
-        /** hist_bin_11 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 11
-         */
-        uint32_t hist_bin_11:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin11_reg_t;
-
-/** Type of hist_bin12 register
- *  result of histogram bin 12
- */
-typedef union {
-    struct {
-        /** hist_bin_12 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 12
-         */
-        uint32_t hist_bin_12:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin12_reg_t;
-
-/** Type of hist_bin13 register
- *  result of histogram bin 13
- */
-typedef union {
-    struct {
-        /** hist_bin_13 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 13
-         */
-        uint32_t hist_bin_13:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin13_reg_t;
-
-/** Type of hist_bin14 register
- *  result of histogram bin 14
- */
-typedef union {
-    struct {
-        /** hist_bin_14 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 14
-         */
-        uint32_t hist_bin_14:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin14_reg_t;
-
-/** Type of hist_bin15 register
- *  result of histogram bin 15
- */
-typedef union {
-    struct {
-        /** hist_bin_15 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 15
-         */
-        uint32_t hist_bin_15:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin15_reg_t;
+} isp_hist_binn_reg_t;
 
 /** Type of rdn_eco_cs register
  *  rdn eco cs register
@@ -3708,6 +3162,17 @@ typedef union {
     uint32_t val;
 } isp_int_clr_reg_t;
 
+typedef struct {
+    volatile isp_gamma_y1_reg_t gamma_y1;
+    volatile isp_gamma_y2_reg_t gamma_y2;
+    volatile isp_gamma_y3_reg_t gamma_y3;
+    volatile isp_gamma_y4_reg_t gamma_y4;
+} isp_gamma_y_reg_t;
+
+typedef struct {
+    volatile isp_gamma_x1_reg_t gamma_x1;
+    volatile isp_gamma_x2_reg_t gamma_x2;
+} isp_gamma_x_reg_t;
 
 typedef struct {
     volatile isp_ver_date_reg_t ver_date;
@@ -3740,41 +3205,17 @@ typedef struct {
     volatile isp_int_ena_reg_t int_ena;
     volatile isp_int_clr_reg_t int_clr;
     volatile isp_gamma_ctrl_reg_t gamma_ctrl;
-    volatile isp_gamma_ry1_reg_t gamma_ry1;
-    volatile isp_gamma_ry2_reg_t gamma_ry2;
-    volatile isp_gamma_ry3_reg_t gamma_ry3;
-    volatile isp_gamma_ry4_reg_t gamma_ry4;
-    volatile isp_gamma_gy1_reg_t gamma_gy1;
-    volatile isp_gamma_gy2_reg_t gamma_gy2;
-    volatile isp_gamma_gy3_reg_t gamma_gy3;
-    volatile isp_gamma_gy4_reg_t gamma_gy4;
-    volatile isp_gamma_by1_reg_t gamma_by1;
-    volatile isp_gamma_by2_reg_t gamma_by2;
-    volatile isp_gamma_by3_reg_t gamma_by3;
-    volatile isp_gamma_by4_reg_t gamma_by4;
-    volatile isp_gamma_rx1_reg_t gamma_rx1;
-    volatile isp_gamma_rx2_reg_t gamma_rx2;
-    volatile isp_gamma_gx1_reg_t gamma_gx1;
-    volatile isp_gamma_gx2_reg_t gamma_gx2;
-    volatile isp_gamma_bx1_reg_t gamma_bx1;
-    volatile isp_gamma_bx2_reg_t gamma_bx2;
+    volatile isp_gamma_y_reg_t gamma_rgb_y[3]; // r: gamma_rgb_y[0], g: gamma_rgb_y[1], b: gamma_rgb_y[2]
+    volatile isp_gamma_x_reg_t gamma_rgb_x[3]; // r: gamma_rgb_x[0], g: gamma_rgb_x[1], b: gamma_rgb_x[2]
     volatile isp_ae_ctrl_reg_t ae_ctrl;
     volatile isp_ae_monitor_reg_t ae_monitor;
     volatile isp_ae_bx_reg_t ae_bx;
     volatile isp_ae_by_reg_t ae_by;
     volatile isp_ae_winpixnum_reg_t ae_winpixnum;
     volatile isp_ae_win_reciprocal_reg_t ae_win_reciprocal;
-    volatile isp_ae_block_mean_0_reg_t ae_block_mean_0;
-    volatile isp_ae_block_mean_1_reg_t ae_block_mean_1;
-    volatile isp_ae_block_mean_2_reg_t ae_block_mean_2;
-    volatile isp_ae_block_mean_3_reg_t ae_block_mean_3;
-    volatile isp_ae_block_mean_4_reg_t ae_block_mean_4;
-    volatile isp_ae_block_mean_5_reg_t ae_block_mean_5;
-    volatile isp_ae_block_mean_6_reg_t ae_block_mean_6;
+    volatile isp_ae_block_mean_reg_t ae_block_mean[7];
     volatile isp_sharp_ctrl0_reg_t sharp_ctrl0;
-    volatile isp_sharp_filter0_reg_t sharp_filter0;
-    volatile isp_sharp_filter1_reg_t sharp_filter1;
-    volatile isp_sharp_filter2_reg_t sharp_filter2;
+    volatile isp_sharp_filter_reg_t sharp_filter[3];
     volatile isp_sharp_matrix_ctrl_reg_t sharp_matrix_ctrl;
     volatile isp_sharp_ctrl1_reg_t sharp_ctrl1;
     volatile isp_dma_cntl_reg_t dma_cntl;
@@ -3819,33 +3260,9 @@ typedef struct {
     volatile isp_hist_coeff_reg_t hist_coeff;
     volatile isp_hist_offs_reg_t hist_offs;
     volatile isp_hist_size_reg_t hist_size;
-    volatile isp_hist_seg0_reg_t hist_seg0;
-    volatile isp_hist_seg1_reg_t hist_seg1;
-    volatile isp_hist_seg2_reg_t hist_seg2;
-    volatile isp_hist_seg3_reg_t hist_seg3;
-    volatile isp_hist_weight0_reg_t hist_weight0;
-    volatile isp_hist_weight1_reg_t hist_weight1;
-    volatile isp_hist_weight2_reg_t hist_weight2;
-    volatile isp_hist_weight3_reg_t hist_weight3;
-    volatile isp_hist_weight4_reg_t hist_weight4;
-    volatile isp_hist_weight5_reg_t hist_weight5;
-    volatile isp_hist_weight6_reg_t hist_weight6;
-    volatile isp_hist_bin0_reg_t hist_bin0;
-    volatile isp_hist_bin1_reg_t hist_bin1;
-    volatile isp_hist_bin2_reg_t hist_bin2;
-    volatile isp_hist_bin3_reg_t hist_bin3;
-    volatile isp_hist_bin4_reg_t hist_bin4;
-    volatile isp_hist_bin5_reg_t hist_bin5;
-    volatile isp_hist_bin6_reg_t hist_bin6;
-    volatile isp_hist_bin7_reg_t hist_bin7;
-    volatile isp_hist_bin8_reg_t hist_bin8;
-    volatile isp_hist_bin9_reg_t hist_bin9;
-    volatile isp_hist_bin10_reg_t hist_bin10;
-    volatile isp_hist_bin11_reg_t hist_bin11;
-    volatile isp_hist_bin12_reg_t hist_bin12;
-    volatile isp_hist_bin13_reg_t hist_bin13;
-    volatile isp_hist_bin14_reg_t hist_bin14;
-    volatile isp_hist_bin15_reg_t hist_bin15;
+    volatile isp_hist_seg_reg_t hist_seg[4];
+    volatile isp_hist_weight_reg_t hist_weight[7];
+    volatile isp_hist_binn_reg_t hist_binn[16];
     volatile isp_mem_aux_ctrl_0_reg_t mem_aux_ctrl_0;
     volatile isp_mem_aux_ctrl_1_reg_t mem_aux_ctrl_1;
     volatile isp_mem_aux_ctrl_2_reg_t mem_aux_ctrl_2;

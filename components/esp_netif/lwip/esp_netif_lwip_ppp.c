@@ -75,6 +75,7 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
             break;
         case PPPERR_CONNECT: /* Connection lost */
             ESP_LOGI(TAG, "Connection lost");
+            esp_netif_update_default_netif(netif, ESP_NETIF_LOST_IP);
             err = esp_event_post(IP_EVENT, netif->lost_ip_event, &evt, sizeof(evt), 0);
 
             if (ESP_OK != err) {
@@ -174,9 +175,9 @@ static void on_ppp_notify_phase(ppp_pcb *pcb, u8_t phase, void *ctx)
  *
  * @return uint32_t Length of data successfully sent
  */
-static uint32_t pppos_low_level_output(ppp_pcb *pcb, uint8_t *data, uint32_t len, void *netif)
+static uint32_t pppos_low_level_output(ppp_pcb *pcb, const void *data, uint32_t len, void *netif)
 {
-    esp_err_t ret = esp_netif_transmit(netif, data, len);
+    esp_err_t ret = esp_netif_transmit(netif, (void*)data, len);
     if (ret == ESP_OK) {
         return len;
     }
@@ -230,7 +231,9 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
 #if PPP_NOTIFY_PHASE
     ppp_set_notify_phase_callback(ppp_obj->ppp, on_ppp_notify_phase);
 #endif
+#if PPP_IPV4_SUPPORT
     ppp_set_usepeerdns(ppp_obj->ppp, 1);
+#endif
 
     return (netif_related_data_t *)ppp_obj;
 }
@@ -255,6 +258,10 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
         // Set our preferred address, and accept the remote
         ppp_ctx->ppp->ipcp_wantoptions.ouraddr = ppp_ctx->ppp_our_ip4_addr.addr;
         ppp_ctx->ppp->ipcp_wantoptions.accept_remote = 1;
+        ppp_ctx->ppp->ask_for_local = 1;    /* `ask_for_local` option in the lwip's pcb is `0` by default and causes
+                                             * the initial negotiation IPCP request to reset our own address to '0.0.0.0'.
+                                             * https://github.com/lwip-tcpip/lwip/blob/1cc1536e/src/netif/ppp/ipcp.c#L728-L729
+                                             */
     }
     if (ppp_ctx->ppp_their_ip4_addr.addr != IPADDR_ANY) {
         // Set their preferred address, and accept the local
@@ -264,7 +271,11 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
 #endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 
 #if ESP_IPV6_AUTOCONFIG
+<<<<<<< HEAD
     ppp_ctx->ppp->netif->ip6_autoconfig_enabled = 1;
+=======
+    ppp_ctx->ppp->netif->ip6_autoconfig_enabled = (esp_netif->flags & ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED) ? 1 : 0;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #endif
 
     ESP_LOGD(TAG, "%s: Starting PPP connection: %p", __func__, ppp_ctx->ppp);

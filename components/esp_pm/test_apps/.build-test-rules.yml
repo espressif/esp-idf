@@ -4,9 +4,14 @@ components/esp_pm/test_apps:
   enable:
     - if: INCLUDE_DEFAULT == 1
   disable:
+<<<<<<< HEAD
     - if: CONFIG_NAME == "pm_pd_top_sleep" and IDF_TARGET not in ["esp32c6", "esp32h2", "esp32p4"]
     - if: IDF_TARGET == "esp32c5"
+=======
+    - if: CONFIG_NAME == "pm_pd_top_sleep" and IDF_TARGET not in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32c61"]
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
       temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8643
+      reason: not support yet # TODO: [ESP32C61] IDF-9250
   depends_components:
     - esp_pm

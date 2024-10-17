@@ -24,8 +24,6 @@ extern "C" {
 
 #include "esp32c61/rom/ets_sys.h"
 
-// TODO: [ESP32C61] IDF-9243, inherit from c6
-
 /* The value that needs to be written to LP_WDT_WPROTECT_REG to write-enable the wdt registers */
 #define LP_WDT_WKEY_VALUE 0x50D83AA1
 /* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */

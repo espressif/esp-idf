@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
     }
 
     uint32_t size;
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
     Storage* mStorage;
 
     mStorage = lookup_storage_from_name(partition_label);
@@ -40,7 +41,7 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
         return ESP_OK;
     }
 
-    NVS_ASSERT_OR_RETURN(SPI_FLASH_SEC_SIZE != 0, ESP_FAIL);
+    NVS_ASSERT_OR_RETURN(sec_size != 0, ESP_FAIL);
 
     NVSPartition *p = nullptr;
     esp_err_t result = partition_lookup::lookup_nvs_partition(partition_label, &p);
@@ -51,7 +52,7 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
 
     size = p->get_size();
 
-    result = init_custom(p, 0, size / SPI_FLASH_SEC_SIZE);
+    result = init_custom(p, 0, size / sec_size);
     if (result != ESP_OK) {
         goto error;
     }
@@ -127,8 +128,9 @@ esp_err_t NVSPartitionManager::secure_init_partition(const char *part_name, nvs_
     }
 
     uint32_t size = p->get_size();
+    const uint32_t sec_size = esp_partition_get_main_flash_sector_size();
 
-    result = init_custom(p, 0, size / SPI_FLASH_SEC_SIZE);
+    result = init_custom(p, 0, size / sec_size);
     if (result != ESP_OK) {
         delete p;
         return result;

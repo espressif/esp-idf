@@ -66,6 +66,8 @@
   - "tools/ci/check_esp_memory_utils_headers.sh"
   - "tools/ci/check_blobs.sh"
   - "tools/ci/check_public_headers.py"
+  - "tools/ci/check_register_rw_half_word.cmake"
+  - "tools/ci/check_register_rw_half_word.py"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
@@ -81,6 +83,8 @@
 
   - "tools/idf_monitor.py"
 
+  - "tools/activate.py"
+
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/test_idf_py/**/*"
@@ -94,6 +98,11 @@
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
 
+  - "tools/export_utils/utils.py"
+  - "tools/export_utils/shell_types.py"
+  - "tools/export_utils/console_output.py"
+  - "tools/export_utils/activate_venv.py"
+
   - "tools/requirements/*"
   - "tools/requirements.json"
   - "tools/requirements_schema.json"
@@ -105,8 +114,6 @@
 
   - "tools/detect_python.sh"
   - "tools/detect_python.fish"
-
-  - "tools/ci/test_reproducible_build.sh"
 
   - "tools/gen_soc_caps_kconfig/*"
   - "tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py"
@@ -148,6 +155,7 @@
 
 .patterns-idf-pytest-plugin: &patterns-idf-pytest-plugin
   - "tools/ci/idf_pytest/**/*"
+  - "tools/ci/dynamic_pipelines/tests/**/*"
 
 ##############
 # if anchors #
@@ -216,6 +224,10 @@
 .rules:tag:release:
   rules:
     - <<: *if-tag-release
+
+.rules:dev-push:
+  rules:
+    - <<: *if-dev-push
 
 # Do not upload caches on dev branches by default
 .rules:upload-python-cache:

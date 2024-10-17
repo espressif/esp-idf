@@ -144,6 +144,9 @@
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
+// "RTC"_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
+
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
@@ -195,9 +198,6 @@
 /* No dedicated RTCIO subsystem on ESP32-C2. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
 #define SOC_RTCIO_PIN_COUNT    (0U)
-
-/*--------------------------- RSA CAPS ---------------------------------------*/
-#define SOC_RSA_MAX_BIT_LEN    (3072)
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 

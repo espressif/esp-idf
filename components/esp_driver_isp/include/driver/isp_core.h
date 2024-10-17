@@ -24,10 +24,19 @@ typedef struct {
     isp_input_data_source_t input_data_source;    ///< Input data source
     isp_color_t input_data_color_type;            ///< Input color type
     isp_color_t output_data_color_type;           ///< Output color type
+<<<<<<< HEAD
+=======
+    isp_color_range_t yuv_range;                  ///< When the `output_data_color_type` is any YUV color space, this field is to describe its color range
+    isp_yuv_conv_std_t yuv_std;                   ///< This field is to describe YUV<->RGB conversion standard
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     bool has_line_start_packet;                   ///< Enable line start packet
     bool has_line_end_packet;                     ///< Enable line end packet
     uint32_t h_res;                               ///< Input horizontal resolution, i.e. the number of pixels in a line
     uint32_t v_res;                               ///< Input vertical resolution, i.e. the number of lines in a frame
+<<<<<<< HEAD
+=======
+    int intr_priority;                            ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 } esp_isp_processor_cfg_t;
 
 /**
@@ -81,6 +90,31 @@ esp_err_t esp_isp_enable(isp_proc_handle_t proc);
  */
 esp_err_t esp_isp_disable(isp_proc_handle_t proc);
 
+<<<<<<< HEAD
+=======
+/*---------------------------------------------
+                Event Callbacks
+----------------------------------------------*/
+/**
+ * @brief Register ISP event callbacks
+ *
+ * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member in
+ *       the `cbs` structure to NULL.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ *       Involved variables (including `user_data`) should be in internal RAM as well.
+ *
+ * @param[in] proc             Processor handle
+ * @param[in] cbs              Group of callback functions
+ * @param[in] user_data        User data, which will be delivered to the callback functions directly
+ *
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_INVALID_ARG:   Invalid arguments
+ *        - ESP_ERR_INVALID_STATE: Driver state is invalid, you shouldn't call this API at this moment
+ */
+esp_err_t esp_isp_register_event_callbacks(isp_proc_handle_t proc, const esp_isp_evt_cbs_t *cbs, void *user_data);
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #ifdef __cplusplus
 }
 #endif

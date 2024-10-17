@@ -1,9 +1,8 @@
+<<<<<<< HEAD
 # TODO: IDF-9197 Use beta3 in doc temporary
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 INPUT += \
-        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/mp/include/soc/soc_caps.h \
-        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/mp/include/soc/clk_tree_defs.h \
-        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/mp/include/soc/gpio_num.h \
-        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/mp/include/soc/uart_channel.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_uart.h \
         $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_etm.h \
@@ -13,4 +12,6 @@ INPUT += \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_print.h \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
         $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
         $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
+        $(PROJECT_PATH)/components/bt/include/esp32c5/include/esp_bt.h \

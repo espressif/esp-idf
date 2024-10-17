@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ typedef bool (*pcnt_watch_cb_t)(pcnt_unit_handle_t unit, const pcnt_watch_event_
  * @note When CONFIG_PCNT_ISR_IRAM_SAFE is enabled, the callback itself and functions callbed by it should be placed in IRAM.
  */
 typedef struct {
-    pcnt_watch_cb_t on_reach; /*!< Called when PCNT unit counter reaches any watch point */
+    pcnt_watch_cb_t on_reach; /*!< Called when PCNT unit counter reaches any watch point or step notify*/
 } pcnt_event_callbacks_t;
 
 /**
@@ -65,6 +65,10 @@ typedef struct {
                             if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+#if SOC_PCNT_SUPPORT_STEP_NOTIFY
+        uint32_t en_step_notify_up: 1;   /*!< Enable step notify in the positive direction */
+        uint32_t en_step_notify_down: 1; /*!< Enable step notify in the negative direction */
+#endif // SOC_PCNT_SUPPORT_STEP_NOTIFY
     } flags;       /*!< Extra flags */
 } pcnt_unit_config_t;
 
@@ -79,7 +83,9 @@ typedef struct {
         uint32_t invert_level_input: 1;  /*!< Invert the input level signal */
         uint32_t virt_edge_io_level: 1;  /*!< Virtual edge IO level, 0: low, 1: high. Only valid when edge_gpio_num is set to -1 */
         uint32_t virt_level_io_level: 1; /*!< Virtual level IO level, 0: low, 1: high. Only valid when level_gpio_num is set to -1 */
-        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well.
+                                              Note that this flag is deprecated, will be removed in IDF v6.0.
+                                              Instead, you can configure the output mode by calling gpio_config() first, and then do PCNT channel configuration. Necessary configurations for the IO to be used as the PCNT input will be appended. */
     } flags;                             /*!< Channel config flags */
 } pcnt_chan_config_t;
 
@@ -147,7 +153,9 @@ typedef struct {
     int clear_signal_gpio_num;  /*!< GPIO number used by the clear signal, the default active level is high, input mode with pull down enabled */
     struct {
         uint32_t invert_clear_signal: 1;   /*!< Invert the clear input signal and set input mode with pull up */
-        uint32_t io_loop_back: 1;         /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t io_loop_back: 1;         /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well.
+                                               Note that this flag is deprecated, will be removed in IDF v6.0.
+                                               Instead, you can configure the output mode by calling gpio_config() first, and then do PCNT channel configuration. Necessary configurations for the IO to be used as the PCNT input will be appended. */
     } flags;                              /*!< clear signal config flags */
 } pcnt_clear_signal_config_t;
 
@@ -165,7 +173,7 @@ typedef struct {
  *      - ESP_FAIL: Set clear signal failed because of other error
  */
 esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_signal_config_t *config);
-#endif
+#endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
 /**
  * @brief Enable the PCNT unit
@@ -283,7 +291,6 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 /**
  * @brief Add a watch point for PCNT unit, PCNT will generate an event when the counter value reaches the watch point value
  *
- *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] watch_point Value to be watched
  * @return
@@ -307,6 +314,31 @@ esp_err_t pcnt_unit_add_watch_point(pcnt_unit_handle_t unit, int watch_point);
  *      - ESP_FAIL: Remove watch point failed because of other error
  */
 esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point);
+
+/**
+ * @brief Add a step notify for PCNT unit, PCNT will generate an event when the incremental(can be positive or negative) of counter value reaches the step interval
+ *
+ * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
+ * @param[in] step_interval PCNT step notify interval value
+ * @return
+ *      - ESP_OK: Add step notify successfully
+ *      - ESP_ERR_INVALID_ARG: Add step notify failed because of invalid argument (e.g. the value incremental to be watched is out of the limitation set in `pcnt_unit_config_t`)
+ *      - ESP_ERR_INVALID_STATE: Add step notify failed because the step notify has already been added
+ *      - ESP_FAIL: Add step notify failed because of other error
+ */
+esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval);
+
+/**
+ * @brief Remove a step notify for PCNT unit
+ *
+ * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
+ * @return
+ *      - ESP_OK: Remove step notify successfully
+ *      - ESP_ERR_INVALID_ARG: Remove step notify failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Remove step notify failed because the step notify was not added by `pcnt_unit_add_watch_step()` yet
+ *      - ESP_FAIL: Remove step notify failed because of other error
+ */
+esp_err_t pcnt_unit_remove_watch_step(pcnt_unit_handle_t unit);
 
 /**
  * @brief Create PCNT channel for specific unit, each PCNT has several channels associated with it

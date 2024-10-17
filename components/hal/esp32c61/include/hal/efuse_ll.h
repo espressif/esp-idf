@@ -18,6 +18,15 @@
 extern "C" {
 #endif
 
+typedef enum {
+    EFUSE_CONTROLLER_STATE_RESET            = 0,    ///< efuse_controllerid is on reset state.
+    EFUSE_CONTROLLER_STATE_IDLE             = 1,    ///< efuse_controllerid is on idle state.
+    EFUSE_CONTROLLER_STATE_READ_INIT        = 2,    ///< efuse_controllerid is on read init state.
+    EFUSE_CONTROLLER_STATE_READ_BLK0        = 3,    ///< efuse_controllerid is on reading block0 state.
+    EFUSE_CONTROLLER_STATE_BLK0_CRC_CHECK   = 4,    ///< efuse_controllerid is on checking block0 crc state.
+    EFUSE_CONTROLLER_STATE_READ_RS_BLK      = 5,    ///< efuse_controllerid is on reading RS block state.
+} efuse_controller_state_t;
+
 // Always inline these functions even no gcc optimization is applied.
 
 /******************* eFuse fields *************************/
@@ -50,38 +59,48 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.disable_wafer_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.blk_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    return false;
+    return EFUSE0.rd_mac_sys2.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    return (uint32_t)0;
+    return  EFUSE0.rd_mac_sys2.pkg_version;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
+{
+    return EFUSE0.conf.cfg_ecdsa_blk;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
+{
+    EFUSE0.conf.cfg_ecdsa_blk = efuse_blk;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
@@ -153,6 +172,10 @@ __attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void
 }
 
 /******************* eFuse control functions *************************/
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
+{
+    return EFUSE0.status.state;
+}
 
 #ifdef __cplusplus
 }

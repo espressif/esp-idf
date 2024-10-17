@@ -13,8 +13,8 @@ The TX and RX driver of Parallel IO peripheral are designed separately, you can 
 Application Examples
 --------------------
 
-* Simple REG LED Matrix with HUB75 interface: :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix`.
-* Logic Analyzer: :example:`peripherals/parlio/parlio_rx/logic_analyzer`.
+* :example:`peripherals/parlio/parlio_rx/logic_analyzer` demonstrates how to implement a logic analyzer using the Parallel IO RX peripheral, which can sample data on multiple GPIOs in parallel at a high rate, and provides options to probe either internal or external signals and output the raw data via flash or TCP stream.
+* :example:`peripherals/parlio/parlio_tx/simple_rgb_led_matrix` demonstrates how to use the Parallel IO TX unit of {IDF_TARGET_NAME} to drive a RGB LED Matrix board with a HUB75 interface, using the LVGL library to display simple UI elements.
 
 
 API Reference

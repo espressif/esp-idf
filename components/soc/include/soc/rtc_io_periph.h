@@ -13,6 +13,10 @@
 #if SOC_RTCIO_PIN_COUNT > 0
 #include "soc/rtc_io_channel.h"
 #endif
+<<<<<<< HEAD
+=======
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "soc/io_mux_reg.h"
 
 #ifdef __cplusplus

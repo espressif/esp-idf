@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C61] IDF-9262, inherit from ESP32C6
 
 /**
  * @brief Clear the crosscore interrupt that just occurred on the current core

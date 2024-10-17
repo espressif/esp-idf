@@ -28,6 +28,10 @@
 #include "hal/spimem_flash_ll.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10464
+#include "hal/mspi_timing_tuning_ll.h"
+#endif
+
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_ipc_isr.h"
 #endif
@@ -287,6 +291,9 @@ static void s_select_best_tuning_config(mspi_timing_config_t *config, uint32_t c
     } else {
 #if MSPI_TIMING_PSRAM_DTR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, reference_data, IS_DDR);
+#if CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR
+        mspi_timing_setting_temperature_adjustment_best_point(best_point);
+#endif
 #elif MSPI_TIMING_PSRAM_STR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
 #endif
@@ -462,7 +469,11 @@ void mspi_timing_psram_tuning(void)
 void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
 #if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10464
+    mspi_ll_clock_src_sel(MSPI_CLK_SRC_XTAL);
+#else
     spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_ROM_DEFAULT);
+#endif
 #endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
@@ -498,7 +509,11 @@ void mspi_timing_enter_low_speed_mode(bool control_spi1)
 void mspi_timing_enter_high_speed_mode(bool control_spi1)
 {
 #if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61// TODO: IDF-10464
+    mspi_ll_clock_src_sel(MSPI_CLK_SRC_SPLL);
+#else
     spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_DEFAULT);
+#endif
 #endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING

@@ -180,7 +180,7 @@ void esp_int_wdt_init(void)
                 "movi   %[IMM], 1\n"
                 "or     %[REG], %[IMM], %[REG]\n"
                 "wer    %[REG], %[ERI]\n"
-                /* Enable Xtensa Debug Module BreakIn signal */
+                /* Enable Xtensa Debug Module Break_In signal */
                 "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_DCRSET)) "\n"
                 "rer    %[REG], %[ERI]\n"
                 "movi   %[IMM], 0x10000\n"

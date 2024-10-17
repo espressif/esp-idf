@@ -1851,7 +1851,7 @@ def add_variables_to_deactivate_file(args: List[str], new_idf_vars:Dict[str, Any
     return deactivate_file_path
 
 
-def deactivate_statement(args: List[str]) -> None:
+def print_deactivate_statement(args: List[str]) -> None:
     """
     Deactivate statement is sequence of commands, that remove IDF global variables from environment,
     so the environment gets to the state it was before calling export.{sh/fish} script.
@@ -2061,7 +2061,12 @@ def handle_missing_versions(
     """
     Prints the info about missing tool to stderr if tool has no supported versions installed.
     """
-    fatal(f'tool {tool.name} has no installed versions. Please run \'{install_cmd}\' to install it.')
+    msg = f'tool {tool.name} has no installed versions.'
+    if 'NIX_PATH' in os.environ:
+        fatal(f'{msg} The environment indicates that you might be using NixOS. '
+              'Please see https://nixos.wiki/wiki/ESP-IDF for how to install tools for it.')
+    else:
+        fatal(f'{msg} Please run \'{install_cmd}\' to install it.')
     if tool.version_in_path and tool.version_in_path not in tool.versions:
         info(f'An unsupported version of tool {tool_name} was found in PATH: {tool.version_in_path}. ' +
              prefer_system_hint, f=sys.stderr)
@@ -2147,8 +2152,9 @@ def action_export(args: Any) -> None:
     """
     Exports all necessary environment variables and paths needed for tools used.
     """
-    if args.deactivate and different_idf_detected():
-        deactivate_statement(args)
+    if args.deactivate:
+        if different_idf_detected():
+            print_deactivate_statement(args)
         return
 
     tools_info = load_tools_info()
@@ -2751,8 +2757,8 @@ class ChecksumFileParser():
         <sha256sum-string> *<artifact-filename>
         ... (2 lines for every artifact) ...
     """
-    def __init__(self, tool_name: str, url: str) -> None:
-        self.tool_name = tool_name
+    def __init__(self, filename_prefix: str, url: str) -> None:
+        self.filename_prefix = filename_prefix
 
         sha256_file_tmp = os.path.join(g.idf_tools_path, 'tools', 'add-version.sha256.tmp')
         sha256_file = os.path.abspath(url)
@@ -2787,8 +2793,8 @@ class ChecksumFileParser():
                     raise SystemExit(1)
                 # crosstool-ng checksum file contains info about few tools
                 # e.g.: "xtensa-esp32-elf", "xtensa-esp32s2-elf"
-                # filter records for file by tool_name to avoid mismatch
-                if not hash_filename.startswith(self.tool_name):
+                # filter records for file by filename_prefix to avoid mismatch
+                if not hash_filename.startswith(self.filename_prefix):
                     continue
                 size = self.parseLine(r'^# \S*: (\d*) bytes', bytes_str)
                 sha256 = self.parseLine(r'^(\S*) ', hash_str)
@@ -2822,7 +2828,8 @@ def action_add_version(args: Any) -> None:
         version_obj = IDFToolVersion(version, version_status)
         tool_obj.versions[version] = version_obj
     url_prefix = args.url_prefix or f'https://{TODO_MESSAGE}/'
-    checksum_info: ChecksumFileParser = (ChecksumFileParser(tool_name, args.checksum_file)
+    filename_prefix = args.dist_filename_prefix if len(args.dist_filename_prefix) else tool_name
+    checksum_info: ChecksumFileParser = (ChecksumFileParser(filename_prefix, args.checksum_file)
                                          if args.checksum_file
                                          else ChecksumCalculator(args.artifact_file))  # type: ignore
     for file_size, file_sha256, file_name in checksum_info:
@@ -3154,6 +3161,9 @@ def main(argv: List[str]) -> None:
         add_version.add_argument('--version', help='Version identifier', required=True)
         add_version.add_argument('--url-prefix', help='String to prepend to file names to obtain download URLs')
         add_version.add_argument('--override', action='store_true', help='Override tool versions with new data')
+        add_version.add_argument('--dist-filename-prefix',
+                                 help='Prefix of distro archive name in checksum file. If skipped tool name is used.',
+                                 default='')
         add_version_files_group = add_version.add_mutually_exclusive_group(required=True)
         add_version_files_group.add_argument('--checksum-file', help='URL or path to local file with checksum/size for artifacts')
         add_version_files_group.add_argument('--artifact-file', help='File names of the download artifacts', nargs='*')

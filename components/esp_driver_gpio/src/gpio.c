@@ -20,7 +20,6 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "hal/gpio_hal.h"
-#include "esp_rom_gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/io_mux.h"
 
@@ -197,36 +196,37 @@ static esp_err_t gpio_input_disable(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-static esp_err_t gpio_input_enable(gpio_num_t gpio_num)
+esp_err_t gpio_input_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_input_enable(gpio_context.gpio_hal, gpio_num);
     return ESP_OK;
 }
 
-static esp_err_t gpio_output_disable(gpio_num_t gpio_num)
+esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
+    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // Ensure no other output signal is routed via GPIO matrix to this pin
     return ESP_OK;
 }
 
-static esp_err_t gpio_output_enable(gpio_num_t gpio_num)
+esp_err_t gpio_output_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
+    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // No peripheral output signal routed to the pin, just as a simple GPIO output
     gpio_hal_output_enable(gpio_context.gpio_hal, gpio_num);
-    esp_rom_gpio_connect_out_signal(gpio_num, SIG_GPIO_OUT_IDX, false, false);
     return ESP_OK;
 }
 
-static esp_err_t gpio_od_disable(gpio_num_t gpio_num)
+esp_err_t gpio_od_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_od_disable(gpio_context.gpio_hal, gpio_num);
     return ESP_OK;
 }
 
-static esp_err_t gpio_od_enable(gpio_num_t gpio_num)
+esp_err_t gpio_od_enable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_od_enable(gpio_context.gpio_hal, gpio_num);
@@ -753,7 +753,7 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     return ret;
 }
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 void gpio_deep_sleep_hold_en(void)
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -767,7 +767,7 @@ void gpio_deep_sleep_hold_dis(void)
     gpio_hal_deep_sleep_hold_dis(gpio_context.gpio_hal);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
-#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 esp_err_t IRAM_ATTR gpio_force_hold_all()
@@ -975,7 +975,7 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
 }
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
     if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
@@ -1015,7 +1015,7 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
-#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 
 esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
 {

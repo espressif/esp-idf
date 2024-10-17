@@ -17,17 +17,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_pm.h"
 #include "driver/gptimer.h"
-#include "hal/timer_types.h"
-#include "hal/timer_hal.h"
-#include "hal/timer_ll.h"
-#include "soc/timer_periph.h"
 #include "esp_memory_utils.h"
-#include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_clk.h"
-#include "clk_ctrl_os.h"
-#include "esp_clk_tree.h"
 #include "gptimer_priv.h"
 
 #if GPTIMER_USE_RETENTION_LINK
@@ -36,24 +27,6 @@
 
 static const char *TAG = "gptimer";
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define GPTIMER_CLOCK_SRC_ATOMIC()
-#endif
-
-typedef struct gptimer_platform_t {
-    _lock_t mutex;                             // platform level mutex lock
-    gptimer_group_t *groups[SOC_TIMER_GROUPS]; // timer group pool
-    int group_ref_counts[SOC_TIMER_GROUPS];    // reference count used to protect group install/uninstall
-} gptimer_platform_t;
-
-// gptimer driver platform, it's always a singleton
-static gptimer_platform_t s_platform;
-
-static gptimer_group_t *gptimer_acquire_group_handle(int group_id);
-static void gptimer_release_group_handle(gptimer_group_t *group);
-static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
 static void gptimer_default_isr(void *args);
 
 #if GPTIMER_USE_RETENTION_LINK
@@ -156,6 +129,11 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
+    bool allow_pd = (config->flags.allow_pd == 1) || (config->flags.backup_before_sleep == 1);
+#if !SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
+
     timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
     // register timer to the group (because one group can have several timers)
@@ -164,11 +142,19 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
 
+<<<<<<< HEAD
 #if GPTIMER_USE_RETENTION_LINK
     if (config->flags.backup_before_sleep != 0) {
         gptimer_create_retention_module(group);
     }
 #endif // GPTIMER_USE_RETENTION_LINK
+=======
+    if (allow_pd) {
+#if GPTIMER_USE_RETENTION_LINK
+        gptimer_create_retention_module(group);
+#endif // GPTIMER_USE_RETENTION_LINK
+    }
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
@@ -392,8 +378,8 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         // the register used by the following LL functions are shared with other API,
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
-        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
+        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not enabled yet");
@@ -422,6 +408,7 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
     return ESP_OK;
 }
 
+<<<<<<< HEAD
 static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
 {
     bool new_group = false;
@@ -588,6 +575,8 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     return ESP_OK;
 }
 
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 static void gptimer_default_isr(void *args)
 {
     bool need_yield = false;

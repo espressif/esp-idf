@@ -361,7 +361,7 @@ dw_gdma_lli_handle_t dw_gdma_link_list_get_item(dw_gdma_link_list_handle_t list,
  *      - ESP_ERR_INVALID_ARG: Configure link list item block transfer failed because of invalid argument
  *      - ESP_FAIL: Configure link list item block transfer failed because of other error
  */
-esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_transfer_config_t *config);
+esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, const dw_gdma_block_transfer_config_t *config);
 
 /**
  * @brief Set the next link list item for a given DMA link list item

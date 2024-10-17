@@ -84,6 +84,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/api/nat64_api.cpp"
             "openthread/src/core/api/netdata_api.cpp"
             "openthread/src/core/api/netdiag_api.cpp"
+            "openthread/src/core/api/network_time_api.cpp"
             "openthread/src/core/api/random_crypto_api.cpp"
             "openthread/src/core/api/tcp_api.cpp"
             "openthread/src/core/api/udp_api.cpp"
@@ -123,6 +124,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/thread/network_diagnostic.cpp"
             "openthread/src/core/thread/panid_query_server.cpp"
             "openthread/src/core/thread/thread_netif.cpp"
+            "openthread/src/core/thread/time_sync_service.cpp"
             "openthread/src/core/thread/tmf.cpp"
             "openthread/src/core/thread/topology.cpp"
             "openthread/src/core/utils/child_supervision.cpp")
@@ -154,6 +156,13 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
         list(APPEND src_dirs
             "src/ncp")
+        if(CONFIG_OPENTHREAD_RCP_UART)
+            list(APPEND exclude_srcs
+                "src/ncp/esp_openthread_ncp_spi.cpp")
+        elseif(CONFIG_OPENTHREAD_RCP_SPI)
+            list(APPEND exclude_srcs
+                "src/ncp/esp_openthread_ncp_hdlc.cpp")
+        endif()
     endif()
 
     if(NOT CONFIG_OPENTHREAD_DNS64_CLIENT)

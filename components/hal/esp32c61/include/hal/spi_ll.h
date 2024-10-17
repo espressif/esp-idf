@@ -26,8 +26,6 @@
 #include "hal/spi_types.h"
 #include "soc/pcr_struct.h"
 
-// TODO: [ESP32C61] IDF-9299, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +42,8 @@ extern "C" {
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
+#define SPI_LL_SUPPORT_CLK_SRC_PRE_DIV      1  //clock source have divider before peripheral
+#define SPI_LL_CLK_SRC_PRE_DIV_MAX          256//div1(8bit)
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -165,6 +165,24 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
             PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
             break;
     }
+}
+
+/**
+ * Config clock source integrate pre_div before it enter GPSPI peripheral
+ *
+ * @note 1. For timing turning(e.g. input_delay) feature available, should be (mst_div >= 2)
+ *       2. From peripheral limitation: (sour_freq/hs_div <= 160M) and (sour_freq/hs_div/mst_div <= 80M)
+ *
+ * @param hw        Beginning address of the peripheral registers.
+ * @param hs_div    Timing turning clock divider: (hs_clk_o = sour_freq/hs_div)
+ * @param mst_div   Functional output clock divider: (mst_clk_o = sour_freq/hs_div/mst_div)
+ */
+__attribute__((always_inline))
+static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
+{
+    // In IDF master driver 'mst_div' will be const 2 and 'hs_div' is actually pre_div temporally
+    (void) hs_div;
+    PCR.spi2_clkm_conf.spi2_clkm_div_num = mst_div - 1;
 }
 
 /**
@@ -309,7 +327,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32C61, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -322,7 +340,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32C61, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -707,7 +725,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  * Get the frequency of given dividers. Don't use in app.
  *
  * @param fapb APB clock of the system.
- * @param pre  Pre devider.
+ * @param pre  Pre divider.
  * @param n    Main divider.
  *
  * @return     Frequency of given dividers.
@@ -718,10 +736,10 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 }
 
 /**
- * Calculate the nearest frequency avaliable for master.
+ * Calculate the nearest frequency available for master.
  *
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  * @param out_reg    Output address to store the calculated clock configurations for the return frequency.
  *
@@ -801,7 +819,7 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  *
  * @param hw         Beginning address of the peripheral registers.
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  *
  * @return           Actual frequency that is used.
@@ -855,7 +873,7 @@ static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
 /**
  * Set the delay of SPI clocks before the first SPI clock after the CS active edge.
  *
- * Note ESP32 doesn't support to use this feature when command/address phases
+ * Note ESP32C61 doesn't support to use this feature when command/address phases
  * are used in full duplex mode.
  *
  * @param hw    Beginning address of the peripheral registers.
@@ -905,7 +923,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32c3
+    //This is not used in esp32c61
 }
 
 /**
@@ -916,7 +934,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32c3
+    //This is not used in esp32c61
 }
 
 /**

@@ -388,7 +388,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
-TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+static void IRAM_ATTR test_esp_timer_get_time_performance(void)
 {
     int64_t begin = esp_timer_get_time();
     volatile int64_t end;
@@ -398,6 +398,11 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     }
     int ns_per_call = (int)((end - begin) * 1000 / iter_count);
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
+}
+
+TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
+{
+    test_esp_timer_get_time_performance();
 }
 
 static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff(void)
@@ -851,7 +856,7 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
         int diff = callback_time - expected_time;
-        printf("%d us\n", diff);
+        esp_rom_printf(DRAM_STR("%d us\n"), diff);
 #ifndef CONFIG_IDF_ENV_FPGA
         if (i != 0) {
             // skip the first measurement

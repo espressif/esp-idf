@@ -42,7 +42,7 @@ DRAM（数据 RAM）
 
 可以将 ``__NOINIT_ATTR`` 宏用作属性，从而将数据放入 ``.noinit`` 部分。放入该部分的值在启动时不会被初始化，在软件重启后也会保持值不变。
 
-.. only:: esp32
+.. only:: SOC_SPIRAM_SUPPORTED
 
    通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
 
@@ -150,7 +150,9 @@ DROM（数据存储在 flash 中）
     RTC Slow memory（RTC 慢速存储器）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-reference/system/ulp` 访问的代码和变量。
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+
+        从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-reference/system/ulp` 访问的代码和变量。
 
     ``RTC_NOINIT_ATTR`` 属性宏可以用来将数据放入 RTC Slow memory。放入此类型存储器的值从深度睡眠模式中醒来后会保持值不变。
 
@@ -170,8 +172,9 @@ DROM（数据存储在 flash 中）
 
             对于 {IDF_TARGET_NAME}，RTC 存储器已被重新重命名为 LP（低功耗）存储器。在与 {IDF_TARGET_NAME} 相关的 IDF 代码、文档以及技术参考手册中，可能会出现这两个术语混用的情况。
 
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
-    RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
+        RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
 
     .. only:: esp32
 

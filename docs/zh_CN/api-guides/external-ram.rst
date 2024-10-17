@@ -54,7 +54,11 @@ ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并�
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     * :ref:`external_ram_config_bss`
+<<<<<<< HEAD
     :esp32: * :ref:`external_ram_config_noinit`
+=======
+    * :ref:`external_ram_config_noinit`
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_xip`
 
 .. _external_ram_config_memory_map:
@@ -123,16 +127,14 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
 
-.. only:: esp32
+.. _external_ram_config_noinit:
 
-    .. _external_ram_config_noinit:
+允许 .noinit 段放入片外存储器
+-------------------------------------
 
-    允许 .noinit 段放入片外存储器
-    -------------------------------------
+通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
 
-    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
-
-    通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
+通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
@@ -164,6 +166,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
         在 PSRAM 中直接执行代码
         ------------------------------------
+<<<<<<< HEAD
 
         启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后，可同时指定 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项。
 
@@ -184,6 +187,35 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
         启用此选项后，SPI1 flash 操作期间 cache 保持启用状态，因此需要执行的代码在此期间不必放置在内部 RAM 中。由于 ESP32-P4 flash 和 PSRAM 使用两个独立的 SPI 总线，将 flash 内容移动到 PSRAM 实际上增加了 PSRAM MSPI 总线的负载，因此整体性能将取决于应用程序对 PSRAM 的使用。例如，因为 PSRAM 的总线速度可能远大于 flash 总线速度，如果那些之前存放在 flash 中的指令和只读数据（现在存放于 PSRAM 中）不被经常访问，那么整体性能将有可能更好。因此，建议先进行性能分析以确定启用此选项是否会显著影响应用程序性能。
 
+=======
+
+        启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后，可同时指定 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项。
+
+        在 PSRAM 中直接执行代码的好处包括：
+
+        - PSRAM 访问速度可能快于 flash，因此性能更好。例如，如果使用的 PSRAM 是八线的，且被配置为 80 MHz，而 flash 是4线的，且被配置为 80 Mhz，那么 PSRAM 的访问速度是快于 flash 的。
+
+        - 在进行 SPI1 flash 操作期间，cache 仍然保持启用状态，这样可以优化代码执行性能。由于无需把中断服务程序 (ISR)、ISR 回调和在此期间可能被访问的数据放置在片上 RAM 中，片上 RAM 可用于其他用途，从而提高了使用效率。这个特性适用于需要处理大量数据的高吞吐量外设应用，能显著提高 SPI1 flash 操作期间的性能。
+
+        :example:`system/xip_from_psram` 演示了如何从 PSRAM 直接执行代码，从而优化内部 RAM 的使用，并避免用户调用 flash 操作（例如闪存擦除/读取/写入操作）时关闭 cache。
+
+    .. only:: not (esp32s2 or esp32s3)
+
+        .. _external_ram_config_xip:
+
+        在 PSRAM 中直接执行代码
+        ------------------------------------
+
+        启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后能在 PSRAM 中直接执行代码。通常放置在 flash 中的段，如 ``.text`` 部分的数据（用于指令）和 ``.rodata`` 部分的数据（用于只读数据），将被加载到 PSRAM 中。
+
+        启用此选项后，SPI1 flash 操作期间 cache 保持启用状态，因此需要执行的代码在此期间不必放置在内部 RAM 中。
+
+        .. only:: SOC_MMU_PER_EXT_MEM_TARGET
+
+            由于 {IDF_TARGET_NAME} flash 和 PSRAM 使用两个独立的 SPI 总线，将 flash 内容移动到 PSRAM 实际上增加了 PSRAM MSPI 总线的负载，
+
+            例如，PSRAM 的访问速度可能快于 flash (比如在 ESP32-P4 上，选择的 PSRAM 是十六线的并将其配置为 200 MHz， 此时 PSRAM 的访问速度是远快于一颗被配置为 80 MHz 的四线 flash 芯片)，如果这些之前在 flash 中被就地执行的指令和数据不是十分频繁地被访问，则使能这个选项会增加系统的性能。建议先进行性能分析以确定启用此选项是否会显著影响应用程序性能。
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 片外 RAM 使用限制
 ===================
@@ -206,7 +238,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
     - 一般来说，片外 RAM 不会用作任务堆栈存储器。:cpp:func:`xTaskCreate` 及类似函数始终会为堆栈和任务 TCB 分配片上储存器。
 
-可以使用 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将仍从片上存储器分配。
+可以使用 :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将仍从片上存储器分配。
 
 
 初始化失败

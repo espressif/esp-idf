@@ -21,9 +21,6 @@ extern "C" {
 /**
  * Probe and initialize SD/MMC card using given host
  *
- * @note Only SD cards (SDSC and SDHC/SDXC) are supported now.
- *       Support for MMC/eMMC cards will be added later.
- *
  * @param host  pointer to structure defining host controller
  * @param out_card  pointer to structure which will receive information
  *                  about the card when the function completes
@@ -283,7 +280,7 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
  * @param addr  byte address within IO function where writing starts
  * @param src  data to be written. Aligned to 4 byte boundary, and also cache line size if the buffer is behind the
  *             cache.
- * @param size  number of bytes to read, must be divisible by the card block
+ * @param size  number of bytes to write, must be divisible by the card block
  *              size.
  * @return
  *      - ESP_OK on success

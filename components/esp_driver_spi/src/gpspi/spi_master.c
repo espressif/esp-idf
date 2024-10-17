@@ -133,6 +133,27 @@ We have two bits to control the interrupt:
 #include "esp_cache.h"
 #endif
 
+#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ISR_ATTR
+#endif
+
+#ifdef CONFIG_SPI_MASTER_IN_IRAM
+#define SPI_MASTER_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ATTR
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SPI_MASTER_PERI_CLOCK_ATOMIC()
+#endif
+
+static const char *SPI_TAG = "spi_master";
+#define SPI_CHECK(a, str, ret_val, ...)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str, ##__VA_ARGS__)
+
 typedef struct spi_device_t spi_device_t;
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
@@ -209,15 +230,6 @@ struct spi_device_t {
 };
 
 static spi_host_t* bus_driver_ctx[SOC_SPI_PERIPH_NUM] = {};
-
-static const char *SPI_TAG = "spi_master";
-#define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str)
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_MASTER_PERI_CLOCK_ATOMIC()
-#endif
 
 static void spi_intr(void *arg);
 static void spi_bus_intr_enable(void *host);
@@ -302,6 +314,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         spi_ll_enable_clock(host_id, true);
     }
     spi_hal_init(&host->hal, host_id);
+    spi_hal_config_io_default_level(&host->hal, bus_attr->bus_cfg.data_io_default_level);
 
     if (host_id != SPI1_HOST) {
         //SPI1 attributes are already initialized at start up.
@@ -409,7 +422,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     if (dev_config->clock_source) {
         clk_src = dev_config->clock_source;
     }
-    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= MIN(clock_source_hz / 2, (80 * 1000000))), "invalid sclk speed", ESP_ERR_INVALID_ARG);
 
@@ -1149,15 +1162,22 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #endif
     }
 
-    if (rcv_ptr && bus_attr->dma_enabled && (!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned)) {
-        ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
-        //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
-        ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
-        rx_byte_len = (rx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
-        rcv_ptr = heap_caps_aligned_alloc(alignment, rx_byte_len, MALLOC_CAP_DMA);
-        if (rcv_ptr == NULL) {
-            goto clean_up;
+    if (rcv_ptr && bus_attr->dma_enabled) {
+        if ((!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned)) {
+            ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
+            //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
+            ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
+            rx_byte_len = (rx_byte_len + alignment - 1) & (~(alignment - 1));   // up align alignment
+            rcv_ptr = heap_caps_aligned_alloc(alignment, rx_byte_len, MALLOC_CAP_DMA);
+            if (rcv_ptr == NULL) {
+                goto clean_up;
+            }
         }
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        // do invalid here to hold on cache status to avoid hardware auto write back during dma transaction
+        esp_err_t ret = esp_cache_msync((void *)rcv_ptr, rx_byte_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
     }
     priv_desc->buffer_to_send = send_ptr;
     priv_desc->buffer_to_rcv = rcv_ptr;

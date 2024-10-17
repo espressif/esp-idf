@@ -35,6 +35,8 @@ static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 
 TEST_CASE("pcnt_iram_interrupt_safe", "[pcnt]")
 {
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+
     pcnt_unit_config_t unit_config = {
         .low_limit = -100,
         .high_limit = 100
@@ -56,7 +58,6 @@ TEST_CASE("pcnt_iram_interrupt_safe", "[pcnt]")
     pcnt_chan_config_t channel_config = {
         .edge_gpio_num = TEST_PCNT_GPIO_A,
         .level_gpio_num = -1,
-        .flags.io_loop_back = true,
     };
     pcnt_channel_handle_t channelA = NULL;
     pcnt_channel_handle_t channelB = NULL;

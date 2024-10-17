@@ -47,11 +47,6 @@
 
 static SemaphoreHandle_t test_sem = NULL;
 
-uint8_t addr_1m[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x01};
-uint8_t addr_2m[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x02};
-uint8_t addr_legacy[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x03};
-uint8_t addr_coded[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x04};
-
 esp_ble_gap_ext_adv_params_t ext_adv_params_1M = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
     .interval_min = 0x30,
@@ -160,27 +155,33 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, status %d", param->ext_adv_set_rand_addr.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising random address set, status %d, instance %u",
+                 param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT, status %d", param->ext_adv_set_params.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising params set, status %d, instance %u",
+                 param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT, status %d", param->ext_adv_data_set.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising data set, status %d, instance %u",
+                 param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT, status %d", param->scan_rsp_set.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising scan response data set, status %d, instance %u",
+                 param->scan_rsp_set.status, param->scan_rsp_set.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT, status %d", param->ext_adv_start.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance_num %u",
+                 param->ext_adv_start.status, param->ext_adv_start.instance_num);
         break;
     case ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT, status %d", param->ext_adv_stop.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising stop, status %d, instance_num %u",
+                 param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
         break;
     default:
         break;
@@ -230,26 +231,39 @@ void app_main(void)
         return;
     }
 
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    // create static random address
+    esp_bd_addr_t addr_1m;
+    esp_bd_addr_t addr_2m;
+    esp_bd_addr_t addr_legacy;
+    esp_bd_addr_t addr_coded;
+    esp_ble_gap_addr_create_static(addr_1m);
+    esp_ble_gap_addr_create_static(addr_2m);
+    esp_ble_gap_addr_create_static(addr_legacy);
+    esp_ble_gap_addr_create_static(addr_coded);
 
     test_sem = xSemaphoreCreateBinary();
+
     // 1M phy extend adv, Connectable advertising
+    ESP_LOG_BUFFER_HEX(LOG_TAG, addr_1m, ESP_BD_ADDR_LEN);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(0, &ext_adv_params_1M), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(0, addr_1m), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_adv_data_raw(0, sizeof(raw_adv_data_1m), &raw_adv_data_1m[0]), test_sem);
 
     // 2M phy extend adv, Scannable advertising
+    ESP_LOG_BUFFER_HEX(LOG_TAG, addr_2m, ESP_BD_ADDR_LEN);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(1, &ext_adv_params_2M), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(1, addr_2m), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_scan_rsp_data_raw(1, sizeof(raw_scan_rsp_data_2m), raw_scan_rsp_data_2m), test_sem);
 
     // 1M phy legacy adv, ADV_IND
+    ESP_LOG_BUFFER_HEX(LOG_TAG, addr_legacy, ESP_BD_ADDR_LEN);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(2, &legacy_adv_params), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(2, addr_legacy), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_adv_data_raw(2, sizeof(legacy_adv_data), &legacy_adv_data[0]), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_scan_rsp_data_raw(2, sizeof(legacy_scan_rsp_data), &legacy_scan_rsp_data[0]), test_sem);
 
     // coded phy extend adv, Scannable advertising
+    ESP_LOG_BUFFER_HEX(LOG_TAG, addr_coded, ESP_BD_ADDR_LEN);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_params(3, &ext_adv_params_coded), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_set_rand_addr(3, addr_coded), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_config_ext_scan_rsp_data_raw(3, sizeof(raw_scan_rsp_data_coded), &raw_scan_rsp_data_coded[0]), test_sem);

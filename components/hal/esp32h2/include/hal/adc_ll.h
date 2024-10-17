@@ -566,6 +566,20 @@ static inline void adc_ll_enable_bus_clock(bool enable)
     PCR.saradc_conf.saradc_reg_clk_en = enable;
 }
 
+<<<<<<< HEAD
+=======
+#if SOC_RCC_IS_INDEPENDENT
+/**
+ * @brief Enable the ADC function clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_func_clock(bool enable)
+{
+    PCR.saradc_clkm_conf.saradc_clkm_en = enable;
+}
+#endif
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 /**
  * @brief Reset ADC module
  */

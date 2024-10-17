@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-C6 PAU(Power Assist Unit) register operations
+// The LL layer for ESP32-P4 PAU(Power Assist Unit) register operations
 
 #pragma once
 
@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-static inline void pau_ll_enable_bus_clock(bool enable)
+static inline void _pau_ll_enable_bus_clock(bool enable)
 {
     if (enable) {
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_regdma_sys_clk_en = 1;
@@ -32,6 +32,10 @@ static inline void pau_ll_enable_bus_clock(bool enable)
         HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_regdma = 1;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pau_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _pau_ll_enable_bus_clock(__VA_ARGS__)
 
 static inline uint32_t pau_ll_get_regdma_backup_flow_error(pau_dev_t *dev)
 {
@@ -156,6 +160,16 @@ static inline void pau_ll_clear_regdma_backup_done_intr_state(pau_dev_t *dev)
 static inline void pau_ll_clear_regdma_backup_error_intr_state(pau_dev_t *dev)
 {
     dev->int_clr.error_int_clr = 1;
+}
+
+static inline void pau_ll_set_regdma_link_wait_retry_count(pau_dev_t *dev, int count)
+{
+    dev->regdma_bkp_conf.link_tout_thres = count;
+}
+
+static inline void pau_ll_set_regdma_link_wait_read_interval(pau_dev_t *dev, int interval)
+{
+    dev->regdma_bkp_conf.read_interval = interval;
 }
 
 #ifdef __cplusplus

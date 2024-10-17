@@ -13,8 +13,6 @@
 #include "esp_secure_boot.h"
 #include "hal/efuse_hal.h"
 
-//TODO:[ESP32C61] IDf-9232
-
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT
@@ -357,36 +355,53 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
         ESP_LOGW(TAG, "Not disabled UART bootloader cache (set DIS_DOWNLOAD_ICACHE->1)");
     }
 #endif
-
-#if SOC_EFUSE_DIS_PAD_JTAG
-    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_PAD_JTAG);
-    result &= secure;
-    if (!secure) {
-        ESP_LOGW(TAG, "Not disabled JTAG PADs (set DIS_PAD_JTAG->1)");
+    bool soft_dis_jtag_complete = false;
+#if SOC_EFUSE_SOFT_DIS_JTAG
+    size_t soft_dis_jtag_cnt_val = 0;
+    esp_efuse_read_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, &soft_dis_jtag_cnt_val);
+    soft_dis_jtag_complete = (soft_dis_jtag_cnt_val == ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count);
+    if (soft_dis_jtag_complete) {
+        bool hmac_key_found = false;
+        hmac_key_found = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG, NULL);
+        hmac_key_found |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL, NULL);
+        if (!hmac_key_found) {
+            ESP_LOGW(TAG, "SOFT_DIS_JTAG is set but HMAC key with respective purpose not found");
+            soft_dis_jtag_complete = false;
+        }
     }
+#endif
+
+    if (!soft_dis_jtag_complete) {
+#if SOC_EFUSE_DIS_PAD_JTAG
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_PAD_JTAG);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not disabled JTAG PADs (set DIS_PAD_JTAG->1)");
+        }
 #endif
 
 #if SOC_EFUSE_DIS_USB_JTAG
-    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_USB_JTAG);
-    result &= secure;
-    if (!secure) {
-        ESP_LOGW(TAG, "Not disabled USB JTAG (set DIS_USB_JTAG->1)");
-    }
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_USB_JTAG);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not disabled USB JTAG (set DIS_USB_JTAG->1)");
+        }
 #endif
+
+#if SOC_EFUSE_HARD_DIS_JTAG
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not disabled JTAG (set HARD_DIS_JTAG->1)");
+        }
+#endif
+    }
 
 #if SOC_EFUSE_DIS_DIRECT_BOOT
     secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
     result &= secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not disabled direct boot mode (set DIS_DIRECT_BOOT->1)");
-    }
-#endif
-
-#if SOC_EFUSE_HARD_DIS_JTAG
-    secure = esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
-    result &= secure;
-    if (!secure) {
-        ESP_LOGW(TAG, "Not disabled JTAG (set HARD_DIS_JTAG->1)");
     }
 #endif
 

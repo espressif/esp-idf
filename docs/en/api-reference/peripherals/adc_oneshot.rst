@@ -3,7 +3,7 @@ Analog to Digital Converter (ADC) Oneshot Mode Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one", esp32c5="one"}
 
 Introduction
 ------------
@@ -86,7 +86,7 @@ Unit Configuration
 
 After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` to configure ADC IOs to measure analog signal:
 
-- :cpp:member:`adc_oneshot_chan_cfg_t::atten`, ADC attenuation. Refer to `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``On-Chip Sensor and Analog Signal Processing``.
+- :cpp:member:`adc_oneshot_chan_cfg_t::atten`, ADC attenuation. Refer to `Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > ``ADC Characteristics``.
 - :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`, the bitwidth of the raw conversion result.
 
 .. note::
@@ -142,7 +142,7 @@ where:
     * - Vmax
       - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``On-Chip Sensor and Analog Signal Processing``.
     * - Dmax
-      -  Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where bitwidth is the :cpp:member::`adc_oneshot_chan_cfg_t:bitwidth` configured before.
+      -  Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where bitwidth is the :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth` configured before.
 
 To do further calibration to convert the ADC raw result to voltage in mV, please refer to calibration doc :doc:`adc_calibration`.
 
@@ -229,7 +229,7 @@ Kconfig Options
 Application Examples
 --------------------
 
-* ADC oneshot mode example: :example:`peripherals/adc/oneshot_read`.
+* :example:`peripherals/adc/oneshot_read` demonstrates how to obtain a one-shot ADC reading from a GPIO pin using the ADC one-shot mode driver and how to use the ADC Calibration functions to obtain a calibrated result in mV on {IDF_TARGET_NAME}.
 
 
 API Reference

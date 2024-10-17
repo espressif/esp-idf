@@ -1,7 +1,7 @@
 LED PWM 控制器
 ==============
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16", esp32c5="16", esp32c61="16"}
 
 :link_to_translation:`en:[English]`
 
@@ -88,7 +88,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
        * - RC_FAST_CLK
          - ~ 8 MHz
          - 低速
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
 
 .. only:: esp32s2
 
@@ -107,7 +107,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -126,10 +126,10 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. only:: esp32c2
 
@@ -145,12 +145,12 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
-         - 40 MHz
+         - 40/26 MHz
          - 支持动态调频 (DFS) 功能
 
-.. only:: esp32c6 or esp32p4
+.. only:: esp32c5
 
     .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
        :widths: 10 10 30
@@ -163,8 +163,27 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 80 MHz
          - /
        * - RC_FAST_CLK
-         - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - ~ 17.5 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+       * - XTAL_CLK
+         - 48 MHz
+         - 支持动态调频 (DFS) 功能
+
+.. only:: esp32c6 or esp32c61 or esp32p4
+
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - PLL_80M_CLK
+         - 80 MHz
+         - /
+       * - RC_FAST_CLK
+         - ~ 17.5 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -183,7 +202,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 32 MHz
          - 支持动态调频 (DFS) 功能
@@ -361,16 +380,15 @@ LED PWM 控制器 API 会在设定的频率和占空比分辨率超过 LED PWM �
 占空比分辨率通常用 :cpp:type:`ledc_timer_bit_t` 设置，范围是 10 至 15 位。如需较低的占空比分辨率（上至 10，下至 1），可直接输入相应数值。
 
 
-应用实例
+应用示例
 -------------------
 
-使用 LEDC 基本实例请参照 :example:`peripherals/ledc/ledc_basic`。
+.. list::
 
-使用 LEDC 改变占空比和渐变控制的实例请参照 :example:`peripherals/ledc/ledc_fade`。
+    * :example:`peripherals/ledc/ledc_basic` 演示了如何使用 LEDC 生成低速模式的 PWM 信号。
+    * :example:`peripherals/ledc/ledc_fade` 演示了如何使用 LEDC 实现 LED 亮度的渐变控制。
+    :SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED: * :example:`peripherals/ledc/ledc_gamma_curve_fade` 演示了如何使用 LEDC 对 RGB LED 实现带伽马校正的颜色控制。
 
-.. only:: SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-
-    使用 LEDC 对 RGB LED 实现带伽马校正的颜色控制实例请参照 :example:`peripherals/ledc/ledc_gamma_curve_fade`。
 
 API 参考
 -------------

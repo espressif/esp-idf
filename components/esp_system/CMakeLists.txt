@@ -3,10 +3,12 @@ idf_build_get_property(target IDF_TARGET)
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "esp_system.c"
+                        "esp_err.c"
                         "port/soc/linux/reset_reason.c"
                         "port/soc/linux/system_internal.c"
                         "port/esp_system_linux.c"
-                        INCLUDE_DIRS "include")
+                        INCLUDE_DIRS "include"
+                        PRIV_REQUIRES spi_flash)
     return()
 endif()
 
@@ -144,4 +146,8 @@ endif()
 
 if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
+endif()
+
+if(CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS)
+    add_subdirectory(openocd_stub_bins)
 endif()

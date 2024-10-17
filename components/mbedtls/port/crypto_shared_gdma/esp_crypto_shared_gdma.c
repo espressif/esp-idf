@@ -92,8 +92,15 @@ static esp_err_t crypto_shared_gdma_init(void)
     transfer_cfg.max_data_burst_size = 0;
     gdma_config_transfer(rx_channel, &transfer_cfg);
 
+<<<<<<< HEAD
+=======
+#ifdef SOC_AES_SUPPORTED
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     gdma_connect(rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
+#elif SOC_SHA_SUPPORTED
+    gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
+#endif
 
     return ESP_OK;
 
@@ -123,11 +130,17 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
     /* Tx channel is shared between AES and SHA, need to connect to peripheral every time */
     gdma_disconnect(tx_channel);
 
+#ifdef SOC_SHA_SUPPORTED
     if (peripheral == GDMA_TRIG_PERIPH_SHA) {
         gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
-    } else if (peripheral == GDMA_TRIG_PERIPH_AES) {
+    } else
+#endif // SOC_SHA_SUPPORTED
+#ifdef SOC_AES_SUPPORTED
+    if (peripheral == GDMA_TRIG_PERIPH_AES) {
         gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
-    } else {
+    } else
+#endif // SOC_AES_SUPPORTED
+    {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -176,11 +189,17 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     /* Tx channel is shared between AES and SHA, need to connect to peripheral every time */
     gdma_disconnect(tx_channel);
 
+#ifdef SOC_SHA_SUPPORTED
     if (peripheral == GDMA_TRIG_PERIPH_SHA) {
         gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA, 0));
-    } else if (peripheral == GDMA_TRIG_PERIPH_AES) {
+    } else
+#endif // SOC_SHA_SUPPORTED
+#ifdef SOC_AES_SUPPORTED
+    if (peripheral == GDMA_TRIG_PERIPH_AES) {
         gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
-    } else {
+    } else
+#endif // SOC_AES_SUPPORTED
+    {
         return ESP_ERR_INVALID_ARG;
     }
 

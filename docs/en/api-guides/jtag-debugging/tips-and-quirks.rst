@@ -83,7 +83,7 @@ GDB has a Python extension for FreeRTOS support. ESP-IDF automatically loads thi
 
     The MTDI pin of ESP32, being among four pins used for JTAG communication, is also one of ESP32's bootstrapping pins. On power up ESP32 is sampling binary level on MTDI to set it's internal voltage regulator used to supply power to external SPI flash chip. If binary level on MDTI pin on power up is low, the voltage regulator is set to deliver 3.3 V, if it is high, then the voltage is set to 1.8 V. The MTDI pin should have a pull-up or may rely on internal weak pull down resistor (see `ESP32 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ for details), depending on the type of SPI chip used. Once JTAG is connected, it overrides the pull-up or pull-down resistor that is supposed to do the bootstrapping.
 
-    To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
+    To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad boot-up of application due to incorrect flash voltage.
 
     Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash. WROVER earlier than ESP32-WROVER-B use 1.8 V flash, while ESP32-WROVER-B and -E modules use 3.3 V flash.
 
@@ -178,6 +178,8 @@ It is important to set the variable before including the ESP-specific configurat
       - Set to ``0`` to disable Flash breakpoints support.
     * - ``ESP_SEMIHOST_BASEDIR``
       - Set to the path (on the host) which will be the default directory for semihosting functions.
+    * - ``ESP_ONLYCPU``
+      - For multi-core targets, can be set to ``1`` to only enable single core debugging.
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars

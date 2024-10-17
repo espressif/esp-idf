@@ -46,6 +46,7 @@ extern const regdma_entries_config_t l2_cache_regs_retention[L2_CACHE_RETENTION_
 extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTION_LINK_LEN];
 
 /**
+<<<<<<< HEAD
  * @brief Provide access to timer group configuration registers retention
  * context definition.
  *
@@ -56,24 +57,36 @@ extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTIO
 extern const regdma_entries_config_t tg_regs_retention[TIMG_RETENTION_LINK_LEN];
 
 /**
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  * @brief Provide access to IOMUX configuration registers retention
  * context definition.
  *
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    2
+#define IOMUX_RETENTION_LINK_LEN    3
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**
- * @brief Provide access to spimem configuration registers retention
+ * @brief Provide access to FLASH spimem configuration registers retention
  * context definition.
  *
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define SPIMEM_RETENTION_LINK_LEN   8
-extern const regdma_entries_config_t spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
+#define SPIMEM_FLASH_RETENTION_LINK_LEN   8
+extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_FLASH_RETENTION_LINK_LEN];
+
+/**
+ * @brief Provide access to PSRAM spimem configuration registers retention
+ * context definition.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define SPIMEM_PSRAM_RETENTION_LINK_LEN   14
+extern const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION_LINK_LEN];
 
 /**
  * @brief Provide access to systimer configuration registers retention

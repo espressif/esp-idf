@@ -1,4 +1,9 @@
 [codespell]
+<<<<<<< HEAD
 skip = build,*.yuv,components/fatfs/src/*,alice.txt,*.rgb,components/wpa_supplicant/*,components/esp_wifi/*
 ignore-words-list = ser,dout,rsource,fram,inout,shs,ans,aci,unstall,unstalling,hart,wheight,ot
+=======
+skip = build,*.yuv,components/fatfs/src/*,alice.txt,*.rgb,components/wpa_supplicant/*,components/esp_wifi/*,*.pem
+ignore-words-list = ser,dout,rsource,fram,inout,shs,ans,aci,unstall,unstalling,hart,wheight,wel,ot,fane,assertIn,registr,oen
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 write-changes = true

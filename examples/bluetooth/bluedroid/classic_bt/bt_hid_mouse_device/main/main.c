@@ -23,6 +23,8 @@
 #define REPORT_PROTOCOL_MOUSE_REPORT_SIZE      (4)
 #define REPORT_BUFFER_SIZE                     REPORT_PROTOCOL_MOUSE_REPORT_SIZE
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
+
 typedef struct {
     esp_hidd_app_param_t app_param;
     esp_hidd_qos_param_t both_qos;
@@ -177,7 +179,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_AUTH_CMPL_EVT: {
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
         }
@@ -434,11 +436,12 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "setting device name");
-    esp_bt_gap_set_device_name("HID Mouse Example");
+    esp_bt_gap_set_device_name(local_device_name);
 
     ESP_LOGI(TAG, "setting cod major, peripheral");
-    esp_bt_cod_t cod;
+    esp_bt_cod_t cod = {0};
     cod.major = ESP_BT_COD_MAJOR_DEV_PERIPHERAL;
+    cod.minor = ESP_BT_COD_MINOR_PERIPHERAL_POINTING;
     esp_bt_gap_set_cod(cod, ESP_BT_SET_COD_MAJOR_MINOR);
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -449,7 +452,7 @@ void app_main(void)
         s_local_param.app_param.name = "Mouse";
         s_local_param.app_param.description = "Mouse Example";
         s_local_param.app_param.provider = "ESP32";
-        s_local_param.app_param.subclass = ESP_HID_CLASS_MIC;
+        s_local_param.app_param.subclass = ESP_HID_CLASS_MIC; // keep same with minor class of COD
         s_local_param.app_param.desc_list = hid_mouse_descriptor;
         s_local_param.app_param.desc_list_len = hid_mouse_descriptor_len;
 

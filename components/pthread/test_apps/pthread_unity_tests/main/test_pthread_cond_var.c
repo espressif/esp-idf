@@ -5,6 +5,8 @@
  */
 #include <pthread.h>
 #include "unity.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 typedef struct {
     pthread_cond_t *cond;
@@ -117,4 +119,7 @@ TEST_CASE("pthread cond wait", "[pthread]")
 
     TEST_ASSERT_EQUAL_INT(ESP_OK, pthread_cond_destroy(&cond));
     TEST_ASSERT_EQUAL_INT(ESP_OK, pthread_mutex_destroy(&mutex));
+
+    // Wait a few ticks to allow freertos idle task to free up memory
+    vTaskDelay(10);
 }

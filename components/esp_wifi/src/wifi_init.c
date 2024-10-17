@@ -38,6 +38,10 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
+
 static bool s_wifi_inited = false;
 
 #if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
@@ -176,6 +180,11 @@ static esp_err_t wifi_deinit_internal(void)
 #endif
 
     esp_supplicant_deinit();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    deinit_roaming_app();
+#endif
+
     err = esp_wifi_deinit_internal();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
@@ -196,7 +205,7 @@ static esp_err_t wifi_deinit_internal(void)
     esp_wifi_beacon_monitor_configure(&monitor_config);
 #endif
 
-#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+#if CONFIG_PM_ENABLE && CONFIG_ESP_WIFI_SLP_IRAM_OPT
     esp_pm_unregister_light_sleep_default_params_config_callback();
 #endif
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -321,7 +330,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
 #endif
 
-#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+#if CONFIG_PM_ENABLE && CONFIG_ESP_WIFI_SLP_IRAM_OPT
     int min_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_LIGHT_SLEEP);
     int max_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX);
     esp_wifi_internal_update_light_sleep_default_params(min_freq_mhz, max_freq_mhz);
@@ -435,6 +444,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
             goto _deinit;
         }
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+        init_roaming_app();
+#endif
+
     } else {
         goto _deinit;
     }
@@ -462,6 +476,28 @@ _deinit:
     }
 
     return result;
+}
+
+esp_err_t esp_wifi_connect(void)
+{
+    esp_err_t ret = ESP_OK;
+    ret = esp_wifi_connect_internal();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roaming_app_enable_reconnect();
+#endif
+    return ret;
+}
+
+esp_err_t esp_wifi_disconnect(void)
+{
+    esp_err_t ret = ESP_OK;
+    ret = esp_wifi_disconnect_internal();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roaming_app_disable_reconnect();
+#endif
+    return ret;
 }
 
 #ifdef CONFIG_PM_ENABLE
@@ -587,4 +623,20 @@ void nan_sm_handle_event(void *p1, int p2)
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
 
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_ESP32C2_REV_MIN_FULL < 200
+void esp32c2_eco4_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
+
+#ifndef CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+void pm_beacon_offset_funcs_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
 #endif

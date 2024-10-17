@@ -1,20 +1,10 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "soc/spi_periph.h"
-
-#define FUNC_SPI    1   //all pins of SPI1, HSPI and VSPI shares this function number
 
 /*
  Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
@@ -33,16 +23,16 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spihd_in = SPIHD_IN_IDX,
         .spics_out = {SPICS0_OUT_IDX, SPICS1_OUT_IDX, SPICS2_OUT_IDX},
         .spics_in = SPICS0_IN_IDX,
-        .spiclk_iomux_pin = SPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = SPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = SPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = SPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
+        .spiclk_iomux_pin = MSPI_IOMUX_PIN_NUM_CLK,
+        .spid_iomux_pin = MSPI_IOMUX_PIN_NUM_MOSI,
+        .spiq_iomux_pin = MSPI_IOMUX_PIN_NUM_MISO,
+        .spiwp_iomux_pin = MSPI_IOMUX_PIN_NUM_WP,
+        .spihd_iomux_pin = MSPI_IOMUX_PIN_NUM_HD,
+        .spics0_iomux_pin = MSPI_IOMUX_PIN_NUM_CS0,
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
         .module = PERIPH_SPI_MODULE,
-        .func = FUNC_SPI,
+        .func = MSPI_FUNC_NUM,
         .hw = &SPI1
     }, {
         .spiclk_out = HSPICLK_OUT_IDX,
@@ -66,7 +56,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .module = PERIPH_HSPI_MODULE,
-        .func = FUNC_SPI,
+        .func = HSPI_FUNC_NUM,
         .hw = &SPI2
     }, {
         .spiclk_out = VSPICLK_OUT_IDX,
@@ -90,7 +80,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
         .module = PERIPH_VSPI_MODULE,
-        .func = FUNC_SPI,
+        .func = VSPI_FUNC_NUM,
         .hw = &SPI3
     }
 };

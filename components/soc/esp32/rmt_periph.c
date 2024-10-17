@@ -11,7 +11,6 @@
 const rmt_signal_conn_t rmt_periph_signals = {
     .groups = {
         [0] = {
-            .module = PERIPH_RMT_MODULE,
             .irq = ETS_RMT_INTR_SOURCE,
             .channels = {
                 [0] = {

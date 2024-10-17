@@ -176,6 +176,12 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "unaligned segment length 0x%"PRIx32, data_len);
     }
 
+<<<<<<< HEAD
+=======
+    mmu_ll_set_entry_invalid(0, MMU_LL_END_DROM_ENTRY_ID);
+    s_current_read_mapping = UINT32_MAX;
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return ESP_OK;
 }
 

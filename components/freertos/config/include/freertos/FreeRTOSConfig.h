@@ -34,7 +34,7 @@
     #define STACK_OVERHEAD_OPTIMIZATION    0
 #endif
 
-/* apptrace mdule increases minimum stack usage */
+/* apptrace module increases minimum stack usage */
 #if CONFIG_APPTRACE_ENABLE
     #define STACK_OVERHEAD_APPTRACE    1280
 #else
@@ -183,12 +183,17 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                          1
-#define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
-#define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
-#define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+#if CONFIG_FREERTOS_USE_TIMERS
+    #define configUSE_TIMERS                          1
+    #define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+    #define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+    #define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
+    #define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+    #define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+#else
+    #define configUSE_TIMERS                          0
+#endif
+
 
 /* ------------------------ List --------------------------- */
 
@@ -214,7 +219,11 @@
 #define INCLUDE_uxTaskGetStackHighWaterMark        1
 #define INCLUDE_eTaskGetState                      1
 #define INCLUDE_xTaskResumeFromISR                 1
-#define INCLUDE_xTimerPendFunctionCall             1
+#if CONFIG_FREERTOS_USE_TIMERS
+  #define INCLUDE_xTimerPendFunctionCall           1
+#else
+  #define INCLUDE_xTimerPendFunctionCall           0
+#endif
 #define INCLUDE_xTaskGetSchedulerState             1
 #define INCLUDE_xTaskGetCurrentTaskHandle          1
 

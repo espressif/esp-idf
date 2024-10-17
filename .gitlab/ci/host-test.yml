@@ -34,22 +34,16 @@ check_public_headers:
     - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
-test_nvs_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/nvs_flash/test_nvs_host
-    - make test
-
 test_nvs_coverage:
   extends:
     - .host_test_template
     - .rules:labels:nvs_coverage
   artifacts:
     paths:
-      - components/nvs_flash/test_nvs_host/coverage_report
+      - components/nvs_flash/host_test/nvs_host_test/coverage_report
   script:
-    - cd components/nvs_flash/test_nvs_host
-    - make coverage_report
+    - cd components/nvs_flash/host_test/nvs_host_test
+    - idf.py build coverage
   # the 'long' host tests take approx 11 hours on our current runners. Adding some margin here for possible CPU contention
   timeout: 18 hours
 
@@ -67,22 +61,6 @@ test_ldgen_on_host:
     - python -m unittest
   variables:
     LC_ALL: C.UTF-8
-
-test_reproducible_build:
-  extends: .host_test_template
-  script:
-    - ./tools/ci/test_reproducible_build.sh
-  artifacts:
-    when: on_failure
-    paths:
-      - "**/sdkconfig"
-      - "**/build*/*.bin"
-      - "**/build*/*.elf"
-      - "**/build*/*.map"
-      - "**/build*/flasher_args.json"
-      - "**/build*/*.bin"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
 
 test_spiffs_on_host:
   extends: .host_test_template
@@ -299,16 +277,19 @@ test_pytest_qemu:
     paths:
       - XUNIT_RESULT.xml
       - pytest-embedded/
+<<<<<<< HEAD
+=======
+      - "**/build*/*.bin"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     reports:
       junit: XUNIT_RESULT.xml
-  allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
   variables:
     INSTALL_QEMU: 1
   script:
-    - run_cmd python tools/ci/ci_build_apps.py . -vv
+    - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
       --pytest-apps
       -m qemu
@@ -318,6 +299,7 @@ test_pytest_qemu:
     - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target $IDF_TARGET
+      --log-cli-level DEBUG
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
@@ -337,7 +319,7 @@ test_pytest_linux:
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
       -m host_test
@@ -348,6 +330,38 @@ test_pytest_linux:
     - run_cmd pytest
       --target linux
       -m host_test
+      --embedded-services idf
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --app-info-filepattern \"list_job_*.txt\"
+
+test_pytest_macos:
+  extends:
+    - .host_test_template
+    - .before_script:build:macos
+  tags:
+    - macos_shell
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest-embedded/
+      - "**/build*/build_log.txt"
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
+  script:
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+      --target linux
+      --pytest-apps
+      -m \"host_test and macos_shell\"
+      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+    - python tools/ci/get_known_failure_cases_file.py
+    - run_cmd pytest
+      --target linux
+      -m \"host_test and macos_shell\"
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
@@ -362,5 +376,44 @@ test_idf_pytest_plugin:
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - cd tools/ci/idf_pytest
+    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests/test_report_generator
+    - python -m unittest test_report_generator.py
+    - cd ${IDF_PATH}/tools/ci/idf_pytest
     - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+
+test_idf_build_apps_load_soc_caps:
+  extends: .host_test_template
+  script:
+    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
+
+test_nvs_gen_check:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - components/nvs_flash/nvs_partition_tool
+    reports:
+      junit: XUNIT_RESULT.xml
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
+    - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+
+make_sure_soc_caps_compatible_in_idf_build_apps:
+    extends:
+      - .host_test_template
+      - .rules:dev-push
+    artifacts:
+      paths:
+        - new.json
+        - base.json
+      when: always
+    when: manual
+    script:
+      - python tools/ci/idf_build_apps_dump_soc_caps.py new.json
+      - git fetch --depth=1 origin $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout -f $CI_MERGE_REQUEST_DIFF_BASE_SHA
+      - git checkout $CI_COMMIT_SHA -- tools/ci/idf_build_apps_dump_soc_caps.py
+      - python tools/ci/idf_build_apps_dump_soc_caps.py base.json
+      - diff new.json base.json

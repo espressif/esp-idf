@@ -7,11 +7,15 @@
 
 宏观上，该启动流程可以分为如下 3 个步骤：
 
-1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
+.. list::
 
-2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+   1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
 
-3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 的调度器启动。
+   2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
+
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时第二个 CPU 和 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
+
+   :not SOC_HP_CPU_HAS_MULTIPLE_CORES: 3. :ref:`application-startup` 运行，这时 RTOS 调度器启动，接着运行 ``main_task``，从而执行 ``app_main``。
 
 下面会对上述过程进行更为详细的阐述。
 
@@ -32,7 +36,7 @@
 
 .. list::
 
-   :SOC_RTC_MEM_SUPPORTED: #. 从深度睡眠模式复位：如果 ``RTC_CNTL_STORE6_REG`` 寄存器的值非零，且 ``RTC_CNTL_STORE7_REG`` 寄存器中的 RTC 内存的 CRC 校验值有效，那么程序会使用 ``RTC_CNTL_STORE6_REG`` 寄存器的值作为入口地址，并立即跳转到该地址运行。如果  ``RTC_CNTL_STORE6_REG`` 的值为零，或 ``RTC_CNTL_STORE7_REG`` 中的 CRC 校验值无效，又或通过 ``RTC_CNTL_STORE6_REG`` 调用的代码返回，那么则像上电复位一样继续启动。 **注意**：如果想在这里运行自定义的代码，可以参考 :doc:`深度睡眠 <deep-sleep-stub>` 文档里面介绍的深度睡眠存根机制方法。
+   :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: #. 从深度睡眠模式复位：如果 ``RTC_CNTL_STORE6_REG`` 寄存器的值非零，且 ``RTC_CNTL_STORE7_REG`` 寄存器中的 RTC 内存的 CRC 校验值有效，那么程序会使用 ``RTC_CNTL_STORE6_REG`` 寄存器的值作为入口地址，并立即跳转到该地址运行。如果  ``RTC_CNTL_STORE6_REG`` 的值为零，或 ``RTC_CNTL_STORE7_REG`` 中的 CRC 校验值无效，又或通过 ``RTC_CNTL_STORE6_REG`` 调用的代码返回，那么则像上电复位一样继续启动。 **注意**：如果想在这里运行自定义的代码，可以参考 :doc:`深度睡眠 <deep-sleep-stub>` 文档里面介绍的深度睡眠存根机制方法。
 
    #. 上电复位、软件 SoC 复位、看门狗 SoC 复位：检查 ``GPIO_STRAP_REG`` 寄存器，判断是否请求自定义启动模式，如 UART 下载模式。如果是，ROM 会执行此自定义加载模式，否则会像软件 CPU 复位一样继续启动。请参考 {IDF_TARGET_NAME} 技术规格书了解 SoC 启动模式以及具体执行过程。
 

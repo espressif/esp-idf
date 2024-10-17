@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include "esp_flash_spi_init.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
-#include "spi_flash_mmap.h"
 #include "unity.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -146,7 +145,7 @@ static void write_large_buffer(esp_flash_t *chip, const esp_partition_t *part, c
 {
     printf("Erasing chip %p, %d bytes\n", chip, length);
 
-    TEST_ESP_OK(esp_flash_erase_region(chip, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE - 1)));
+    TEST_ESP_OK(esp_flash_erase_region(chip, part->address, (length + part->erase_size) & ~(part->erase_size - 1)));
 
     printf("Writing chip %p, %d bytes from source %p\n", chip, length, source);
     // note writing to unaligned address
@@ -195,7 +194,7 @@ void spi_task4(void* arg)
 
     ESP_LOGI(TAG, "Testing chip %p...", chip);
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ASSERT(part->size > test_len + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(part->size > test_len + 2 + part->erase_size);
 
     write_large_buffer(chip, part, source_buf, test_len);
     read_and_check(chip, part, source_buf, test_len);

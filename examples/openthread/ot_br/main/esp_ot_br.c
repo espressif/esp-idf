@@ -48,6 +48,16 @@
 #include "ot_led_strip.h"
 #endif
 
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+#include "example_common_private.h"
+#include "protocol_examples_common.h"
+#endif
+
+#if !CONFIG_OPENTHREAD_BR_AUTO_START && CONFIG_EXAMPLE_CONNECT_ETHERNET
+// TZ-1109: Add a menchanism for connecting ETH manually.
+#error Currently we do not support a manual way to connect ETH, if you want to use ETH, please enable OPENTHREAD_BR_AUTO_START.
+#endif
+
 #define TAG "esp_ot_br"
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
@@ -92,6 +102,7 @@ static void ot_task_worker(void *aContext)
 }
 
 void ot_br_init(void *ctx)
+<<<<<<< HEAD
 {
 #if CONFIG_EXAMPLE_CONNECT_WIFI
 #if CONFIG_OPENTHREAD_BR_AUTO_START
@@ -140,6 +151,71 @@ void ot_br_init(void *ctx)
 
 void app_main(void)
 {
+=======
+{
+#if CONFIG_OPENTHREAD_CLI_WIFI
+    ESP_ERROR_CHECK(esp_ot_wifi_config_init());
+#endif
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+#if CONFIG_EXAMPLE_CONNECT_WIFI || CONFIG_EXAMPLE_CONNECT_ETHERNET
+    bool wifi_or_ethernet_connected = false;
+#else
+#error No backbone netif!
+#endif
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    char wifi_ssid[32] = "";
+    char wifi_password[64] = "";
+    if (esp_ot_wifi_config_get_ssid(wifi_ssid) == ESP_OK) {
+        ESP_LOGI(TAG, "use the Wi-Fi config from NVS");
+        esp_ot_wifi_config_get_password(wifi_password);
+    } else {
+        ESP_LOGI(TAG, "use the Wi-Fi config from Kconfig");
+        strcpy(wifi_ssid, CONFIG_EXAMPLE_WIFI_SSID);
+        strcpy(wifi_password, CONFIG_EXAMPLE_WIFI_PASSWORD);
+    }
+    if (esp_ot_wifi_connect(wifi_ssid, wifi_password) == ESP_OK) {
+        wifi_or_ethernet_connected = true;
+    } else {
+        ESP_LOGE(TAG, "Fail to connect to Wi-Fi, please try again manually");
+    }
+#endif
+#if CONFIG_EXAMPLE_CONNECT_ETHERNET
+    ESP_ERROR_CHECK(example_ethernet_connect());
+    wifi_or_ethernet_connected = true;
+#endif
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    ot_br_external_coexist_init();
+#endif // CONFIG_EXTERNAL_COEX_ENABLE
+    ESP_ERROR_CHECK(mdns_init());
+    ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
+
+    esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
+#endif
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+    if (wifi_or_ethernet_connected) {
+        esp_openthread_set_backbone_netif(get_example_netif());
+        ESP_ERROR_CHECK(esp_openthread_border_router_init());
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+        esp_ot_wifi_border_router_init_flag_set(true);
+#endif
+        otOperationalDatasetTlvs dataset;
+        otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
+        ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
+    } else {
+        ESP_LOGE(TAG, "Auto-start mode failed, please try to start manually");
+    }
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
+    esp_openthread_lock_release();
+    vTaskDelete(NULL);
+}
+
+void app_main(void)
+{
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     // Used eventfds:
     // * netif
     // * task queue

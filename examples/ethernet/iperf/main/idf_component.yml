@@ -3,5 +3,5 @@ dependencies:
     path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
   ethernet_init:
     path: ${IDF_PATH}/examples/ethernet/basic/components/ethernet_init
-  espressif/iperf:
+  espressif/iperf-cmd:
     version: "~0.1.1"

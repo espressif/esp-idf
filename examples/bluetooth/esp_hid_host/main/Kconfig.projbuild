@@ -14,4 +14,10 @@ menu "HID Example Configuration"
         select BT_NIMBLE_HID_SERVICE
         help
             This enables Nimble HID Host
+
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target Device Name"
+        default "HID Mouse Example"
+        help
+            Use this option to set target device name to connect.
 endmenu

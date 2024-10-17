@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,6 +194,15 @@ void ecc_hal_write_mod_op_param(const uint8_t *a, const uint8_t *b, uint16_t len
 int ecc_hal_read_mod_op_result(uint8_t *r, uint16_t len);
 
 #endif /* SOC_ECC_EXTENDED_MODES_SUPPORTED */
+
+#ifdef SOC_ECC_CONSTANT_TIME_POINT_MUL
+/**
+ * @brief Enable constant time multiplication operations
+ *
+ * @param true: enable; false: disable
+ */
+void ecc_hal_enable_constant_time_point_mul(bool enable);
+#endif /* SOC_ECC_CONSTANT_TIME_POINT_MUL */
 
 #ifdef __cplusplus
 }

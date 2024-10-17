@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "esp_err.h"
 #include "esp_ds_err.h"
 #include "soc/soc_caps.h"
+
+#ifdef SOC_DIG_SIGN_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +63,7 @@ typedef struct esp_digital_signature_data {
      * alter the DS peripheral results this way, it will just truncate or
      * extend the message and the resulting signature in software.)
      *
-     * @note In IDF, the enum type length is the same as of type unsigned, so they can be used interchangably.
+     * @note In IDF, the enum type length is the same as of type unsigned, so they can be used interchangeably.
      *       See the ROM code for the original declaration of struct \c ets_ds_data_t.
      */
     esp_digital_signature_length_t rsa_length;
@@ -130,9 +132,9 @@ typedef struct {
  *        since the message digest matches.
  */
 esp_err_t esp_ds_sign(const void *message,
-        const esp_ds_data_t *data,
-        hmac_key_id_t key_id,
-        void *signature);
+                      const esp_ds_data_t *data,
+                      hmac_key_id_t key_id,
+                      void *signature);
 
 /**
  * @brief Start the signing process.
@@ -170,9 +172,9 @@ esp_err_t esp_ds_sign(const void *message,
  *      - ESP_ERR_HW_CRYPTO_DS_INVALID_KEY if there's a problem with passing the HMAC key to the DS component
  */
 esp_err_t esp_ds_start_sign(const void *message,
-        const esp_ds_data_t *data,
-        hmac_key_id_t key_id,
-        esp_ds_context_t **esp_ds_ctx);
+                            const esp_ds_data_t *data,
+                            hmac_key_id_t key_id,
+                            esp_ds_context_t **esp_ds_ctx);
 
 /**
  * Return true if the DS peripheral is busy, otherwise false.
@@ -186,7 +188,7 @@ bool esp_ds_is_busy(void);
  *
  * @param signature the destination of the signature, should be (data->rsa_length + 1)*4 bytes long,
           the resultant signature bytes shall be written in little endian format.
- * @param esp_ds_ctx the context object retreived by \c esp_ds_start_sign()
+ * @param esp_ds_ctx the context object retrieved by \c esp_ds_start_sign()
  *
  * @return
  *      - ESP_OK if successful, the ds operation has been finished and the result is written to signature.
@@ -225,10 +227,12 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx);
  *      - ESP_ERR_INVALID_ARG if one of the parameters is NULL or p_data->rsa_length is too long
  */
 esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
-        const void *iv,
-        const esp_ds_p_data_t *p_data,
-        const void *key);
+                                const void *iv,
+                                const esp_ds_p_data_t *p_data,
+                                const void *key);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

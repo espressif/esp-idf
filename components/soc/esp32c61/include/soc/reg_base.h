@@ -23,25 +23,26 @@
 #define DR_REG_SOC_ETM_BASE                     0x60013000
 #define DR_REG_PVT_MONITOR_BASE                 0x60019000
 #define DR_REG_PSRAM_MEM_MONITOR_BASE           0x6001A000
-#define DR_REG_AHB_GDMA_BASE                    0x60080000
+#define DR_REG_AHB_DMA_BASE                     0x60080000
 #define DR_REG_GPSPI_BASE                       0x60081000
 #define DR_REG_SHA_BASE                         0x60089000
-#define DR_REG_ECC_BASE                         0x6008B000
+#define DR_REG_ECC_MULT_BASE                    0x6008B000
 #define DR_REG_ECDSA_BASE                       0x6008E000
 #define DR_REG_IO_MUX_BASE                      0x60090000
 #define DR_REG_GPIO_BASE                        0x60091000
+#define DR_REG_GPIO_EXT_BASE                    0x60091E00
 #define DR_REG_TCM_MEM_MONITOR_BASE             0x60092000
 #define DR_REG_PAU_BASE                         0x60093000
 #define DR_REG_HP_SYSTEM_BASE                   0x60095000
 #define DR_REG_PCR_BASE                         0x60096000
-#define DR_REG_TEE_REG_BASE                     0x60098000
-#define DR_REG_HP_APM_REG_BASE                  0x60099000
+#define DR_REG_TEE_BASE                         0x60098000
+#define DR_REG_HP_APM_BASE                      0x60099000
 #define DR_REG_MISC_BASE                        0x6009F000
 #define DR_REG_MODEM0_BASE                      0x600A0000
 #define DR_REG_MODEM1_BASE                      0x600AC000
 #define DR_REG_MODEM_PWR0_BASE                  0x600AD000
 #define DR_REG_MODEM_PWR1_BASE                  0x600AF000
-#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800  //TODO: [ESP32C61] IDF-9276, from verify
+#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800
 #define DR_REG_PMU_BASE                         0x600B0000
 #define DR_REG_LP_CLKRST_BASE                   0x600B0400
 #define DR_REG_LP_TIMER_BASE                    0x600B0C00
@@ -59,3 +60,4 @@
 #define DR_REG_ASSIST_DEBUG_BASE                0x600C2000
 #define DR_REG_INTPRI_BASE                      0x600C5000
 #define DR_REG_CACHE_BASE                       0x600C8000
+#define DR_REG_CLINT_M_BASE                     0x20000000

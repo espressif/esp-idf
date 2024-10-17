@@ -43,6 +43,7 @@ static void i2c_master_write_sleep_retention_test(void)
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .flags.enable_internal_pullup = true,
+        .flags.allow_pd = true,
     };
     i2c_master_bus_handle_t bus_handle;
 
@@ -68,7 +69,9 @@ static void i2c_master_write_sleep_retention_test(void)
     TEST_ESP_OK(i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
     unity_wait_for_signal("i2c slave receive once, master to sleep");
 
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(3 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
@@ -84,7 +87,9 @@ static void i2c_master_write_sleep_retention_test(void)
     unity_send_signal("master write again");
 
     unity_wait_for_signal("ready to delete");
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
     TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
 
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
@@ -103,6 +108,7 @@ static void i2c_slave_read_sleep_retention_test(void)
         .scl_io_num = I2C_SLAVE_SCL_IO,
         .sda_io_num = I2C_SLAVE_SDA_IO,
         .slave_addr = 0x58,
+        .flags.allow_pd = true,
     };
 
     i2c_slave_dev_handle_t slave_handle;
@@ -128,7 +134,9 @@ static void i2c_slave_read_sleep_retention_test(void)
 
     unity_send_signal("i2c slave receive once, master to sleep");
     // Slave sleep as well..
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
@@ -147,7 +155,9 @@ static void i2c_slave_read_sleep_retention_test(void)
 
     vQueueDelete(s_receive_queue);
     unity_send_signal("ready to delete");
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 

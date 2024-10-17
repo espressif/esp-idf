@@ -16,6 +16,7 @@ from idf_build_apps import App
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import IDF_PATH
 from idf_pytest.constants import DEFAULT_BUILD_LOG_FILENAME
+from idf_pytest.constants import DEFAULT_SIZE_JSON_FILENAME
 
 
 class AppDownloader:
@@ -54,14 +55,18 @@ class AppUploader(AppDownloader):
             'flasher_args.json',
             'flash_project_args',
             'config/sdkconfig.json',
+            'sdkconfig',
             'project_description.json',
         ],
         ArtifactType.LOGS: [
             DEFAULT_BUILD_LOG_FILENAME,
         ],
+<<<<<<< HEAD
         ArtifactType.SIZE_REPORTS: [
             'size.json',
         ],
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     }
 
     def __init__(self, pipeline_id: t.Union[str, int, None] = None) -> None:
@@ -107,12 +112,13 @@ class AppUploader(AppDownloader):
         else:
             upload_types = [artifact_type]
 
+        # Upload of size.json files is handled by GitLab CI via "artifacts_handler.py" script.
         print(f'Uploading {app_build_path} {[k.value for k in upload_types]} to minio server')
         for upload_type in upload_types:
             uploaded |= self._upload_app(app_build_path, upload_type)
 
         if uploaded:
-            rmdir(app_build_path, exclude_file_patterns=DEFAULT_BUILD_LOG_FILENAME)
+            rmdir(app_build_path, exclude_file_patterns=[DEFAULT_BUILD_LOG_FILENAME, DEFAULT_SIZE_JSON_FILENAME])
 
     def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
         app_path, build_dir = os.path.split(app_build_path)

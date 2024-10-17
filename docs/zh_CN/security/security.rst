@@ -1,13 +1,23 @@
 安全
 ====
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA"}
 
-{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA"}
+{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA", esp32c5="DS 或 ECDSA", esp32c61="ECDSA"}
 
 :link_to_translation:`en:[English]`
 
 本指南概述了乐鑫解决方案中可用的整体安全功能。从 **安全** 角度考虑，强烈建议在使用乐鑫平台和 ESP-IDF 软件栈设计产品时参考本指南。
+
+.. note::
+
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
+
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      可以在 :doc:`../api-guides/tools/qemu` 中虚拟测试 {IDF_TARGET_NAME} 目标芯片的安全功能。安全工作流程建立后，便可在真实硬件上继续操作。
 
 目标
 ----
@@ -45,7 +55,7 @@
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 签名密钥始终保密；签名密钥泄露会危及安全启动系统。
-* 禁止第三方使用 ``espsecure.py`` 观察密钥生成或签名过程的相关细节，这两个过程都容易受到时序攻击或其他侧信道攻击的影响。
+* 不允许第三方使用 ``idf.py secure-`` 或 ``espsecure.py`` 命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
 * 确保正确烧录所有安全性 eFuse，包括禁用调试接口以及非必需的启动介质（例如 UART 下载模式）等。
 
 

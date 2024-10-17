@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,21 @@ typedef union {
 ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb_setup_packet_t incorrect");
 
 /**
+ * @brief Structure representing a USB device status
+ *
+ * See Figures 9-4 Information Returned by a GetStatus() Request to a Device of USB2.0 specification for more details
+ */
+typedef union {
+    struct {
+        uint16_t self_powered: 1;           /**< 1 - Device is currently self-powered, 0 - bus powered */
+        uint16_t remote_wakeup: 1;          /**< 1 - the ability of the device to signal remote wakeup is enabled, 0 - the ability of the device to signal remote wakeup is disabled. */
+        uint16_t reserved: 14;              /**< reserved */
+    } USB_DESC_ATTR;                        /**< Packed */
+    uint16_t val;                           /**< Device status value */
+} usb_device_status_t;
+ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_device_status_t incorrect");
+
+/**
  * @brief Bit masks belonging to the bmRequestType field of a setup packet
  */
 #define USB_BM_REQUEST_TYPE_DIR_OUT         (0X00 << 7)
@@ -143,6 +158,19 @@ ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of 
 #define USB_W_VALUE_DT_DEVICE_QUALIFIER     0x06
 #define USB_W_VALUE_DT_OTHER_SPEED_CONFIG   0x07
 #define USB_W_VALUE_DT_INTERFACE_POWER      0x08
+
+/**
+ * @brief Initializer for a GET_STATUS request
+ *
+ * Sets the address of a connected device
+ */
+#define USB_SETUP_PACKET_INIT_GET_STATUS(setup_pkt_ptr) ({  \
+    (setup_pkt_ptr)->bmRequestType = USB_BM_REQUEST_TYPE_DIR_IN | USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIP_DEVICE;   \
+    (setup_pkt_ptr)->bRequest = USB_B_REQUEST_GET_STATUS;  \
+    (setup_pkt_ptr)->wValue = 0;   \
+    (setup_pkt_ptr)->wIndex = 0;    \
+    (setup_pkt_ptr)->wLength = 2;   \
+})
 
 /**
  * @brief Initializer for a SET_ADDRESS request

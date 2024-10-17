@@ -22,6 +22,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/gpio_hal.h"
 #include "unity.h"
 #include "math.h"
@@ -47,9 +48,9 @@
 static void i2s_test_io_config(int mode)
 {
     // Connect internal signals using IO matrix.
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_BCK_IO], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[DATA_OUT_IO], PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_BCK_IO, PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
+    gpio_func_sel(DATA_OUT_IO, PIN_FUNC_GPIO);
 
     gpio_set_direction(MASTER_BCK_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
@@ -869,7 +870,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
 
     // Reconfig GPIO signal
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
+    gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(MASTER_WS_IO, i2s_periph_signal[0].m_tx_ws_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(MASTER_WS_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);

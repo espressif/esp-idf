@@ -16,7 +16,7 @@ from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
 from pytest_embedded.utils import to_list
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61']
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 DEFAULT_LOGDIR = 'pytest-embedded'
@@ -27,14 +27,16 @@ TARGET_MARKERS = {
     'esp32s3': 'support esp32s3 target',
     'esp32c3': 'support esp32c3 target',
     'esp32c2': 'support esp32c2 target',
+    'esp32c5': 'support esp32c5 target',
     'esp32c6': 'support esp32c6 target',
     'esp32h2': 'support esp32h2 target',
     'esp32p4': 'support esp32p4 target',
+    'esp32c61': 'support esp32c61 target',
     'linux': 'support linux target',
 }
 
 SPECIAL_MARKERS = {
-    'supported_targets': "support all officially announced supported targets ('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6')",
+    'supported_targets': 'support all officially announced supported targets, refer to `SUPPORTED_TARGETS`',
     'preview_targets': "support all preview targets ('none')",
     'all_targets': 'support all targets, including supported ones and preview ones',
     'temp_skip_ci': 'temp skip tests for specified targets only in ci',
@@ -46,6 +48,7 @@ SPECIAL_MARKERS = {
 ENV_MARKERS = {
     # special markers
     'qemu': 'build and test using qemu, not real target',
+    'macos_shell': 'tests should be run on macos hosts',
     # single-dut markers
     'generic': 'tests should be run on generic runners',
     'flash_suspend': 'support flash suspend feature',
@@ -65,6 +68,7 @@ ENV_MARKERS = {
     'flash_encryption': 'Flash Encryption runners',
     'flash_encryption_f4r8': 'Flash Encryption runners with 4-line flash and 8-line psram',
     'flash_encryption_f8r8': 'Flash Encryption runners with 8-line flash and 8-line psram',
+    'flash_encryption_ota': 'Flash Encryption runners with ethernet OTA support with 4mb flash size',
     'flash_multi': 'Multiple flash chips tests',
     'psram': 'Chip has 4-line psram',
     'ir_transceiver': 'runners with a pair of IR transmitter and receiver',
@@ -118,6 +122,8 @@ ENV_MARKERS = {
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
     'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
+    'lp_i2s': 'lp_i2s runner tested with hp_i2s',
+    'ram_app': 'ram_app runners',
 }
 
 DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
@@ -147,6 +153,7 @@ DEFAULT_FULL_BUILD_TEST_FILEPATTERNS = [
     'tools/ci/ignore_build_warnings.txt',
 ]
 DEFAULT_BUILD_LOG_FILENAME = 'build_log.txt'
+DEFAULT_SIZE_JSON_FILENAME = 'size.json'
 
 
 class CollectMode(str, Enum):
@@ -271,8 +278,14 @@ class PytestCase:
         if 'jtag' in self.env_markers or 'usb_serial_jtag' in self.env_markers:
             return True
 
-        if any('panic' in Path(app.path).parts for app in self.apps):
-            return True
+        cases_need_elf = [
+            'panic',
+            'gdbstub_runtime'
+        ]
+
+        for case in cases_need_elf:
+            if any(case in Path(app.path).parts for app in self.apps):
+                return True
 
         return False
 

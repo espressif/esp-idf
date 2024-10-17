@@ -132,7 +132,6 @@ TEST_CASE("RMT interrupt priority", "[rmt]")
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .gpio_num = 0,
         .flags.with_dma = false,    // Interrupt will only be allocated when dma disabled
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
         .intr_priority = 3,
     };
     // --- Check if specifying interrupt priority works

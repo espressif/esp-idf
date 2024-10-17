@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -70,22 +70,23 @@ static prepare_type_env_t prepare_write_env;
 //#define CONFIG_SET_RAW_ADV_DATA
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power*/
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF, 0x00,
-        /* device name */
-        0x0E, 0x09, 'B', 'L', 'E', '_', 'C', 'O','M', 'P', '_', 'T','E', 'S', 'T'
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00,
+    /* Device Name */
+    0x0E, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'L', 'E', '_', 'C', 'O', 'M', 'P', '_', 'T', 'E', 'S', 'T'
 };
+
 static uint8_t raw_scan_rsp_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power */
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF,0x00
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00
 };
 
 #else
@@ -263,7 +264,7 @@ static void show_bonded_devices(void)
     EXAMPLE_DEBUG(EXAMPLE_TAG, "Bonded devices list : %d\n", dev_num);
     for (int i = 0; i < dev_num; i++) {
         #if DEBUG_ON
-        esp_log_buffer_hex(EXAMPLE_TAG, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
         #endif
     }
 
@@ -338,10 +339,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             }
             break;
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-            EXAMPLE_DEBUG(EXAMPLE_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+            EXAMPLE_DEBUG(EXAMPLE_TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
                   param->update_conn_params.status,
-                  param->update_conn_params.min_int,
-                  param->update_conn_params.max_int,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
                   param->update_conn_params.timeout);
@@ -388,7 +387,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
             EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
             #if DEBUG_ON
-            esp_log_buffer_hex(EXAMPLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
+            ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
             #endif
             EXAMPLE_DEBUG(EXAMPLE_TAG, "------------------------------------");
             break;
@@ -541,7 +540,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         ESP_LOGI(EXAMPLE_TAG, "notify/indicate disable ");
                     }else{
                         ESP_LOGE(EXAMPLE_TAG, "unknown descr value");
-                        esp_log_buffer_hex(EXAMPLE_TAG, param->write.value, param->write.len);
+                        ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, param->write.value, param->write.len);
                     }
 
                 }

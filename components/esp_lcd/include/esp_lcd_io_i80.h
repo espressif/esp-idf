@@ -30,7 +30,11 @@ typedef struct {
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
     union {
+<<<<<<< HEAD
         size_t psram_trans_align;  /*!< DMA transfer alignment for data allocated from PSRAM */
+=======
+        size_t psram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment for data allocated from PSRAM */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         size_t dma_burst_size;     /*!< DMA burst size, in bytes */
     };
     size_t sram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment for data allocated from SRAM */

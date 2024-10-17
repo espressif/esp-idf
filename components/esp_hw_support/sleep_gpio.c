@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 #include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
-static const char *TAG = "sleep";
+static const char *TAG = "sleep_gpio";
 
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 void gpio_sleep_mode_config_apply(void)
@@ -61,13 +61,18 @@ void esp_sleep_config_gpio_isolate(void)
             gpio_sleep_set_pull_mode(gpio_num, GPIO_FLOATING);
         }
     }
-
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
-    gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS1), GPIO_PULLUP_ONLY);
+    int32_t mspi_io_cs1_io_num = esp_mspi_get_io(ESP_MSPI_IO_CS1);
+    if (GPIO_IS_VALID_GPIO(mspi_io_cs1_io_num)) {
+        gpio_sleep_set_pull_mode(mspi_io_cs1_io_num, GPIO_PULLUP_ONLY);
+    }
 #endif // CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
 
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-    gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS0), GPIO_PULLUP_ONLY);
+    int32_t mspi_io_cs0_io_num = esp_mspi_get_io(ESP_MSPI_IO_CS0);
+    if (GPIO_IS_VALID_GPIO(mspi_io_cs0_io_num)) {
+        gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CS0), GPIO_PULLUP_ONLY);
+    }
 #endif // CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
 
 #if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU
@@ -106,7 +111,7 @@ void esp_sleep_enable_gpio_switch(bool enable)
     }
 }
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
 {
     gpio_hal_context_t gpio_hal = {
@@ -144,8 +149,9 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
         }
     }
 }
-#endif // !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 
+#if SOC_DEEP_SLEEP_SUPPORTED
 void esp_deep_sleep_wakeup_io_reset(void)
 {
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -179,6 +185,7 @@ void esp_deep_sleep_wakeup_io_reset(void)
     }
 #endif
 }
+#endif
 
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
 ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, SECONDARY, BIT(0), 105)
@@ -193,5 +200,10 @@ ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, SECONDARY, BIT(0), 105)
     // Enable automatic switching of GPIO configuration
     esp_sleep_enable_gpio_switch(true);
     return ESP_OK;
+}
+
+void esp_sleep_gpio_include(void)
+{
+    // Linker hook function, exists to make the linker examine this file
 }
 #endif

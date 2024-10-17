@@ -90,7 +90,7 @@ typedef struct {
 static psram_ctx_t s_psram_ctx;
 static const DRAM_ATTR char TAG[] = "esp_psram";
 
-ESP_SYSTEM_INIT_FN(init_psram, CORE, BIT(0), 103)
+ESP_SYSTEM_INIT_FN(add_psram_to_heap, CORE, BIT(0), 103)
 {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
     if (esp_psram_is_initialized()) {

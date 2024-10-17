@@ -722,6 +722,48 @@ TEST(partition_api, test_partition_power_off_emulation)
     free(test_data_ptr);
 }
 
+TEST(partition_api, test_partition_copy)
+{
+    const esp_partition_t *factory_part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    TEST_ASSERT_NOT_NULL(factory_part);
+
+    const esp_partition_t *ota0_part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
+    TEST_ASSERT_NOT_NULL(ota0_part);
+
+    TEST_ESP_OK(esp_partition_copy(ota0_part, 0, factory_part, 0, factory_part->size));
+    TEST_ESP_OK(esp_partition_copy(ota0_part, 0, factory_part, 0, SIZE_MAX));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, 0x1000000, factory_part, 0, SIZE_MAX));
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, 0, factory_part, 0x1000000, SIZE_MAX));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, 0, factory_part, 0, SIZE_MAX - 1));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, UINT32_MAX - 1, factory_part, 0, 0x10000));
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, 0, factory_part, UINT32_MAX - 1, 0x10000));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, UINT32_MAX - 1, factory_part, 0, SIZE_MAX));
+    TEST_ESP_ERR(ESP_ERR_INVALID_SIZE, esp_partition_copy(ota0_part, 0, factory_part, UINT32_MAX - 1, SIZE_MAX));
+}
+
+TEST(partition_api, test_partition_register_external)
+{
+    esp_err_t error;
+    const esp_partition_t *ota1_part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
+    TEST_ASSERT_NULL(ota1_part);
+    const esp_partition_t *storage_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_UNDEFINED, NULL);
+    error = esp_partition_register_external(NULL,
+        storage_part->address + storage_part->size, // place this new partition after the storage (the last part in the table)
+        1 * 1024 * 1024,
+        "ota_1",
+        ESP_PARTITION_TYPE_APP,
+        ESP_PARTITION_SUBTYPE_APP_OTA_1,
+        &ota1_part);
+    TEST_ESP_OK(error);
+    ota1_part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
+    TEST_ASSERT_NOT_NULL(ota1_part);
+    TEST_ESP_OK(esp_partition_deregister_external(ota1_part));
+}
+
 TEST_GROUP_RUNNER(partition_api)
 {
     RUN_TEST_CASE(partition_api, test_partition_find_basic);
@@ -741,6 +783,8 @@ TEST_GROUP_RUNNER(partition_api)
     RUN_TEST_CASE(partition_api, test_partition_mmap_size_too_small);
     RUN_TEST_CASE(partition_api, test_partition_stats);
     RUN_TEST_CASE(partition_api, test_partition_power_off_emulation);
+    RUN_TEST_CASE(partition_api, test_partition_copy);
+    RUN_TEST_CASE(partition_api, test_partition_register_external);
 }
 
 static void run_all_tests(void)

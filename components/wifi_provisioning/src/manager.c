@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,7 +156,7 @@ static struct wifi_prov_mgr_ctx *prov_ctx;
 
 /* This executes registered app_event_callback for a particular event
  *
- * NOTE : By the time this fucntion returns, it is possible that
+ * NOTE : By the time this function returns, it is possible that
  * the manager got de-initialized due to a call to wifi_prov_mgr_deinit()
  * either inside the event callbacks or from another thread. Therefore
  * post execution of execute_event_cb(), the validity of prov_ctx must
@@ -1240,6 +1240,9 @@ esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
     }
+
+    execute_event_cb(WIFI_PROV_SET_STA_CONFIG, (void *)wifi_cfg, sizeof(wifi_config_t));
+
     if (prov_ctx->prov_state >= WIFI_PROV_STATE_CRED_RECV) {
         ESP_LOGE(TAG, "Wi-Fi credentials already received by provisioning app");
         RELEASE_LOCK(prov_ctx_lock);

@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
+=======
+#define MMU_LL_FLASH_MMU_ID                 0
+#define MMU_LL_PSRAM_MMU_ID                 0
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
 #define MMU_LL_END_DROM_ENTRY_ID            (SOC_MMU_ENTRY_NUM - 1)
 
@@ -71,7 +76,7 @@ __attribute__((always_inline))
 static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 {
     (void)mmu_id;
-    uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MEM_MMU_PAGE_SIZE);
+    uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE);
     return  (page_size_code == 0) ? MMU_PAGE_64KB : \
             (page_size_code == 1) ? MMU_PAGE_32KB : \
             (page_size_code == 2) ? MMU_PAGE_16KB : \
@@ -90,7 +95,7 @@ static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
                       (size == MMU_PAGE_32KB) ? 1 : \
                       (size == MMU_PAGE_16KB) ? 2 : \
                       (size == MMU_PAGE_8KB) ? 3 : 0;
-    REG_SET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MEM_MMU_PAGE_SIZE, reg_val);
+    REG_SET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE, reg_val);
 }
 
 /**
@@ -212,7 +217,6 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
 __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    (void)target;
     uint32_t mmu_raw_value;
     if (mmu_ll_cache_encryption_enabled()) {
         mmu_val |= SOC_MMU_SENSITIVE;
@@ -302,7 +306,8 @@ static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    return MMU_TARGET_FLASH0;
+    mmu_target_t target = ((REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_ACCESS_SPIRAM) == 0) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0;
+    return target;
 }
 
 /**

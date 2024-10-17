@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/timer_periph.h"
+#include "soc/wdt_periph.h"
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
 #include "hal/wdt_types.h"

@@ -90,3 +90,11 @@ config ESP_ROM_USB_SERIAL_DEVICE_NUM
 config ESP_ROM_HAS_VERSION
     bool
     default y
+
+config ESP_ROM_HAS_VPRINTF_FUNC
+    bool
+    default y
+
+config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+    bool
+    default y

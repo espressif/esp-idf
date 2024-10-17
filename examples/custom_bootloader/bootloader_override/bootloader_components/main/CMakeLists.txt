@@ -3,14 +3,7 @@ idf_component_register(SRCS "bootloader_start.c"
 
 idf_build_get_property(target IDF_TARGET)
 
-# TODO: [ESP32C5] IDF-9197 remove this when beta3 is removed
-if(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(target_folder "esp32c5/mp")
-elseif(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(target_folder "esp32c5/beta3")
-else()
-    set(target_folder "${target}")
-endif()
+set(target_folder "${target}")
 
 # Use the linker script files from the actual bootloader
 set(scripts "${IDF_PATH}/components/bootloader/subproject/main/ld/${target_folder}/bootloader.ld"

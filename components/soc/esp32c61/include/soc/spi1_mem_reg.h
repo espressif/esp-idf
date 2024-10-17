@@ -14,7 +14,7 @@ extern "C" {
 /** SPI_MEM_CMD_REG register
  *  SPI1 memory command register
  */
-#define SPI_MEM_CMD_REG (DR_REG_SPI_MEM_BASE + 0x0)
+#define SPI_MEM_CMD_REG(i) (REG_SPI_MEM_BASE(i) + 0x0)
 /** SPI_MEM_MST_ST : RO; bitpos: [3:0]; default: 0;
  *  The current status of SPI1 master FSM.
  */
@@ -158,7 +158,7 @@ extern "C" {
 /** SPI_MEM_ADDR_REG register
  *  SPI1 address register
  */
-#define SPI_MEM_ADDR_REG (DR_REG_SPI_MEM_BASE + 0x4)
+#define SPI_MEM_ADDR_REG(i) (REG_SPI_MEM_BASE(i) + 0x4)
 /** SPI_MEM_USR_ADDR_VALUE : R/W; bitpos: [31:0]; default: 0;
  *  In user mode, it is the memory address. other then the bit0-bit23 is the memory
  *  address, the bit24-bit31 are the byte length of a transfer.
@@ -171,7 +171,7 @@ extern "C" {
 /** SPI_MEM_CTRL_REG register
  *  SPI1 control register.
  */
-#define SPI_MEM_CTRL_REG (DR_REG_SPI_MEM_BASE + 0x8)
+#define SPI_MEM_CTRL_REG(i) (REG_SPI_MEM_BASE(i) + 0x8)
 /** SPI_MEM_FDUMMY_RIN : R/W; bitpos: [2]; default: 1;
  *  In the dummy phase of a MSPI read data transfer when accesses to flash, the signal
  *  level of SPI bus is output by the MSPI controller.
@@ -317,11 +317,11 @@ extern "C" {
 /** SPI_MEM_CTRL1_REG register
  *  SPI1 control1 register.
  */
-#define SPI_MEM_CTRL1_REG (DR_REG_SPI_MEM_BASE + 0xc)
+#define SPI_MEM_CTRL1_REG(i) (REG_SPI_MEM_BASE(i) + 0xc)
 /** SPI_MEM_CLK_MODE : R/W; bitpos: [1:0]; default: 0;
  *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
  *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
- *  SPI clock is alwasy on.
+ *  SPI clock is always on.
  */
 #define SPI_MEM_CLK_MODE    0x00000003U
 #define SPI_MEM_CLK_MODE_M  (SPI_MEM_CLK_MODE_V << SPI_MEM_CLK_MODE_S)
@@ -339,7 +339,7 @@ extern "C" {
 /** SPI_MEM_CTRL2_REG register
  *  SPI1 control2 register.
  */
-#define SPI_MEM_CTRL2_REG (DR_REG_SPI_MEM_BASE + 0x10)
+#define SPI_MEM_CTRL2_REG(i) (REG_SPI_MEM_BASE(i) + 0x10)
 /** SPI_MEM_SYNC_RESET : WT; bitpos: [31]; default: 0;
  *  The FSM will be reset.
  */
@@ -351,7 +351,7 @@ extern "C" {
 /** SPI_MEM_CLOCK_REG register
  *  SPI1 clock division control register.
  */
-#define SPI_MEM_CLOCK_REG (DR_REG_SPI_MEM_BASE + 0x14)
+#define SPI_MEM_CLOCK_REG(i) (REG_SPI_MEM_BASE(i) + 0x14)
 /** SPI_MEM_CLKCNT_L : R/W; bitpos: [7:0]; default: 3;
  *  In the master mode it must be equal to spi_mem_clkcnt_N.
  */
@@ -385,7 +385,7 @@ extern "C" {
 /** SPI_MEM_USER_REG register
  *  SPI1 user register.
  */
-#define SPI_MEM_USER_REG (DR_REG_SPI_MEM_BASE + 0x18)
+#define SPI_MEM_USER_REG(i) (REG_SPI_MEM_BASE(i) + 0x18)
 /** SPI_MEM_CK_OUT_EDGE : R/W; bitpos: [9]; default: 0;
  *  the bit combined with spi_mem_mosi_delay_mode bits to set mosi signal delay mode.
  */
@@ -483,7 +483,7 @@ extern "C" {
 /** SPI_MEM_USER1_REG register
  *  SPI1 user1 register.
  */
-#define SPI_MEM_USER1_REG (DR_REG_SPI_MEM_BASE + 0x1c)
+#define SPI_MEM_USER1_REG(i) (REG_SPI_MEM_BASE(i) + 0x1c)
 /** SPI_MEM_USR_DUMMY_CYCLELEN : R/W; bitpos: [5:0]; default: 7;
  *  The length in spi_mem_clk cycles of dummy phase. The register value shall be
  *  (cycle_num-1).
@@ -503,7 +503,7 @@ extern "C" {
 /** SPI_MEM_USER2_REG register
  *  SPI1 user2 register.
  */
-#define SPI_MEM_USER2_REG (DR_REG_SPI_MEM_BASE + 0x20)
+#define SPI_MEM_USER2_REG(i) (REG_SPI_MEM_BASE(i) + 0x20)
 /** SPI_MEM_USR_COMMAND_VALUE : R/W; bitpos: [15:0]; default: 0;
  *  The value of  command.
  */
@@ -522,7 +522,7 @@ extern "C" {
 /** SPI_MEM_MOSI_DLEN_REG register
  *  SPI1 send data bit length control register.
  */
-#define SPI_MEM_MOSI_DLEN_REG (DR_REG_SPI_MEM_BASE + 0x24)
+#define SPI_MEM_MOSI_DLEN_REG(i) (REG_SPI_MEM_BASE(i) + 0x24)
 /** SPI_MEM_USR_MOSI_DBITLEN : R/W; bitpos: [9:0]; default: 0;
  *  The length in bits of write-data. The register value shall be (bit_num-1).
  */
@@ -534,7 +534,7 @@ extern "C" {
 /** SPI_MEM_MISO_DLEN_REG register
  *  SPI1 receive data bit length control register.
  */
-#define SPI_MEM_MISO_DLEN_REG (DR_REG_SPI_MEM_BASE + 0x28)
+#define SPI_MEM_MISO_DLEN_REG(i) (REG_SPI_MEM_BASE(i) + 0x28)
 /** SPI_MEM_USR_MISO_DBITLEN : R/W; bitpos: [9:0]; default: 0;
  *  The length in bits of  read-data. The register value shall be (bit_num-1).
  */
@@ -546,7 +546,7 @@ extern "C" {
 /** SPI_MEM_RD_STATUS_REG register
  *  SPI1 status register.
  */
-#define SPI_MEM_RD_STATUS_REG (DR_REG_SPI_MEM_BASE + 0x2c)
+#define SPI_MEM_RD_STATUS_REG(i) (REG_SPI_MEM_BASE(i) + 0x2c)
 /** SPI_MEM_STATUS : R/W/SS; bitpos: [15:0]; default: 0;
  *  The value is stored when set spi_mem_flash_rdsr bit and spi_mem_flash_res bit.
  */
@@ -579,7 +579,7 @@ extern "C" {
 /** SPI_MEM_MISC_REG register
  *  SPI1 misc register
  */
-#define SPI_MEM_MISC_REG (DR_REG_SPI_MEM_BASE + 0x34)
+#define SPI_MEM_MISC_REG(i) (REG_SPI_MEM_BASE(i) + 0x34)
 /** SPI_MEM_CS0_DIS : R/W; bitpos: [0]; default: 0;
  *  SPI_CS0 pin enable, 1: disable SPI_CS0, 0: SPI_CS0 pin is active to select SPI
  *  device, such as flash, external RAM and so on.
@@ -614,7 +614,7 @@ extern "C" {
 /** SPI_MEM_TX_CRC_REG register
  *  SPI1 TX CRC data register.
  */
-#define SPI_MEM_TX_CRC_REG (DR_REG_SPI_MEM_BASE + 0x38)
+#define SPI_MEM_TX_CRC_REG(i) (REG_SPI_MEM_BASE(i) + 0x38)
 /** SPI_MEM_TX_CRC_DATA : RO; bitpos: [31:0]; default: 4294967295;
  *  For SPI1, the value of crc32.
  */
@@ -626,7 +626,7 @@ extern "C" {
 /** SPI_MEM_CACHE_FCTRL_REG register
  *  SPI1 bit mode control register.
  */
-#define SPI_MEM_CACHE_FCTRL_REG (DR_REG_SPI_MEM_BASE + 0x3c)
+#define SPI_MEM_CACHE_FCTRL_REG(i) (REG_SPI_MEM_BASE(i) + 0x3c)
 /** SPI_MEM_CACHE_USR_ADDR_4BYTE : R/W; bitpos: [1]; default: 0;
  *  For SPI1,  cache  read flash with 4 bytes address, 1: enable, 0:disable.
  */
@@ -686,7 +686,7 @@ extern "C" {
 /** SPI_MEM_W0_REG register
  *  SPI1 memory data buffer0
  */
-#define SPI_MEM_W0_REG (DR_REG_SPI_MEM_BASE + 0x58)
+#define SPI_MEM_W0_REG(i) (REG_SPI_MEM_BASE(i) + 0x58)
 /** SPI_MEM_BUF0 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -698,7 +698,7 @@ extern "C" {
 /** SPI_MEM_W1_REG register
  *  SPI1 memory data buffer1
  */
-#define SPI_MEM_W1_REG (DR_REG_SPI_MEM_BASE + 0x5c)
+#define SPI_MEM_W1_REG(i) (REG_SPI_MEM_BASE(i) + 0x5c)
 /** SPI_MEM_BUF1 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -710,7 +710,7 @@ extern "C" {
 /** SPI_MEM_W2_REG register
  *  SPI1 memory data buffer2
  */
-#define SPI_MEM_W2_REG (DR_REG_SPI_MEM_BASE + 0x60)
+#define SPI_MEM_W2_REG(i) (REG_SPI_MEM_BASE(i) + 0x60)
 /** SPI_MEM_BUF2 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -722,7 +722,7 @@ extern "C" {
 /** SPI_MEM_W3_REG register
  *  SPI1 memory data buffer3
  */
-#define SPI_MEM_W3_REG (DR_REG_SPI_MEM_BASE + 0x64)
+#define SPI_MEM_W3_REG(i) (REG_SPI_MEM_BASE(i) + 0x64)
 /** SPI_MEM_BUF3 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -734,7 +734,7 @@ extern "C" {
 /** SPI_MEM_W4_REG register
  *  SPI1 memory data buffer4
  */
-#define SPI_MEM_W4_REG (DR_REG_SPI_MEM_BASE + 0x68)
+#define SPI_MEM_W4_REG(i) (REG_SPI_MEM_BASE(i) + 0x68)
 /** SPI_MEM_BUF4 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -746,7 +746,7 @@ extern "C" {
 /** SPI_MEM_W5_REG register
  *  SPI1 memory data buffer5
  */
-#define SPI_MEM_W5_REG (DR_REG_SPI_MEM_BASE + 0x6c)
+#define SPI_MEM_W5_REG(i) (REG_SPI_MEM_BASE(i) + 0x6c)
 /** SPI_MEM_BUF5 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -758,7 +758,7 @@ extern "C" {
 /** SPI_MEM_W6_REG register
  *  SPI1 memory data buffer6
  */
-#define SPI_MEM_W6_REG (DR_REG_SPI_MEM_BASE + 0x70)
+#define SPI_MEM_W6_REG(i) (REG_SPI_MEM_BASE(i) + 0x70)
 /** SPI_MEM_BUF6 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -770,7 +770,7 @@ extern "C" {
 /** SPI_MEM_W7_REG register
  *  SPI1 memory data buffer7
  */
-#define SPI_MEM_W7_REG (DR_REG_SPI_MEM_BASE + 0x74)
+#define SPI_MEM_W7_REG(i) (REG_SPI_MEM_BASE(i) + 0x74)
 /** SPI_MEM_BUF7 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -782,7 +782,7 @@ extern "C" {
 /** SPI_MEM_W8_REG register
  *  SPI1 memory data buffer8
  */
-#define SPI_MEM_W8_REG (DR_REG_SPI_MEM_BASE + 0x78)
+#define SPI_MEM_W8_REG(i) (REG_SPI_MEM_BASE(i) + 0x78)
 /** SPI_MEM_BUF8 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -794,7 +794,7 @@ extern "C" {
 /** SPI_MEM_W9_REG register
  *  SPI1 memory data buffer9
  */
-#define SPI_MEM_W9_REG (DR_REG_SPI_MEM_BASE + 0x7c)
+#define SPI_MEM_W9_REG(i) (REG_SPI_MEM_BASE(i) + 0x7c)
 /** SPI_MEM_BUF9 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -806,7 +806,7 @@ extern "C" {
 /** SPI_MEM_W10_REG register
  *  SPI1 memory data buffer10
  */
-#define SPI_MEM_W10_REG (DR_REG_SPI_MEM_BASE + 0x80)
+#define SPI_MEM_W10_REG(i) (REG_SPI_MEM_BASE(i) + 0x80)
 /** SPI_MEM_BUF10 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -818,7 +818,7 @@ extern "C" {
 /** SPI_MEM_W11_REG register
  *  SPI1 memory data buffer11
  */
-#define SPI_MEM_W11_REG (DR_REG_SPI_MEM_BASE + 0x84)
+#define SPI_MEM_W11_REG(i) (REG_SPI_MEM_BASE(i) + 0x84)
 /** SPI_MEM_BUF11 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -830,7 +830,7 @@ extern "C" {
 /** SPI_MEM_W12_REG register
  *  SPI1 memory data buffer12
  */
-#define SPI_MEM_W12_REG (DR_REG_SPI_MEM_BASE + 0x88)
+#define SPI_MEM_W12_REG(i) (REG_SPI_MEM_BASE(i) + 0x88)
 /** SPI_MEM_BUF12 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -842,7 +842,7 @@ extern "C" {
 /** SPI_MEM_W13_REG register
  *  SPI1 memory data buffer13
  */
-#define SPI_MEM_W13_REG (DR_REG_SPI_MEM_BASE + 0x8c)
+#define SPI_MEM_W13_REG(i) (REG_SPI_MEM_BASE(i) + 0x8c)
 /** SPI_MEM_BUF13 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -854,7 +854,7 @@ extern "C" {
 /** SPI_MEM_W14_REG register
  *  SPI1 memory data buffer14
  */
-#define SPI_MEM_W14_REG (DR_REG_SPI_MEM_BASE + 0x90)
+#define SPI_MEM_W14_REG(i) (REG_SPI_MEM_BASE(i) + 0x90)
 /** SPI_MEM_BUF14 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -866,7 +866,7 @@ extern "C" {
 /** SPI_MEM_W15_REG register
  *  SPI1 memory data buffer15
  */
-#define SPI_MEM_W15_REG (DR_REG_SPI_MEM_BASE + 0x94)
+#define SPI_MEM_W15_REG(i) (REG_SPI_MEM_BASE(i) + 0x94)
 /** SPI_MEM_BUF15 : R/W/SS; bitpos: [31:0]; default: 0;
  *  data buffer
  */
@@ -878,7 +878,7 @@ extern "C" {
 /** SPI_MEM_FLASH_WAITI_CTRL_REG register
  *  SPI1 wait idle control register
  */
-#define SPI_MEM_FLASH_WAITI_CTRL_REG (DR_REG_SPI_MEM_BASE + 0x98)
+#define SPI_MEM_FLASH_WAITI_CTRL_REG(i) (REG_SPI_MEM_BASE(i) + 0x98)
 /** SPI_MEM_WAITI_EN : R/W; bitpos: [0]; default: 1;
  *  1: The hardware will wait idle after SE/PP/WRSR automatically, and hardware auto
  *  Suspend/Resume can be enabled. 0: The functions of hardware wait idle and auto
@@ -937,7 +937,7 @@ extern "C" {
 /** SPI_MEM_FLASH_SUS_CTRL_REG register
  *  SPI1 flash suspend control register
  */
-#define SPI_MEM_FLASH_SUS_CTRL_REG (DR_REG_SPI_MEM_BASE + 0x9c)
+#define SPI_MEM_FLASH_SUS_CTRL_REG(i) (REG_SPI_MEM_BASE(i) + 0x9c)
 /** SPI_MEM_FLASH_PER : R/W/SC; bitpos: [0]; default: 0;
  *  program erase resume bit, program erase suspend operation will be triggered when
  *  the bit is set. The bit will be cleared once the operation done.1: enable 0:
@@ -1035,7 +1035,7 @@ extern "C" {
 /** SPI_MEM_FLASH_SUS_CMD_REG register
  *  SPI1 flash suspend command register
  */
-#define SPI_MEM_FLASH_SUS_CMD_REG (DR_REG_SPI_MEM_BASE + 0xa0)
+#define SPI_MEM_FLASH_SUS_CMD_REG(i) (REG_SPI_MEM_BASE(i) + 0xa0)
 /** SPI_MEM_FLASH_PES_COMMAND : R/W; bitpos: [15:0]; default: 30069;
  *  Program/Erase suspend command.
  */
@@ -1055,7 +1055,7 @@ extern "C" {
 /** SPI_MEM_SUS_STATUS_REG register
  *  SPI1 flash suspend status register
  */
-#define SPI_MEM_SUS_STATUS_REG (DR_REG_SPI_MEM_BASE + 0xa4)
+#define SPI_MEM_SUS_STATUS_REG(i) (REG_SPI_MEM_BASE(i) + 0xa4)
 /** SPI_MEM_FLASH_SUS : R/W/SS/SC; bitpos: [0]; default: 0;
  *  The status of flash suspend, only used in SPI1.
  */
@@ -1144,7 +1144,7 @@ extern "C" {
 /** SPI_MEM_FLASH_WAITI_CTRL1_REG register
  *  SPI1 wait idle control register
  */
-#define SPI_MEM_FLASH_WAITI_CTRL1_REG (DR_REG_SPI_MEM_BASE + 0xac)
+#define SPI_MEM_FLASH_WAITI_CTRL1_REG(i) (REG_SPI_MEM_BASE(i) + 0xac)
 /** SPI_MEM_WAITI_IDLE_DELAY_TIME : R/W; bitpos: [9:0]; default: 0;
  *  SPI1 wait idle gap time configuration. SPI1 slv fsm will count during SPI1 IDLE.
  */
@@ -1153,7 +1153,7 @@ extern "C" {
 #define SPI_MEM_WAITI_IDLE_DELAY_TIME_V  0x000003FFU
 #define SPI_MEM_WAITI_IDLE_DELAY_TIME_S  0
 /** SPI_MEM_WAITI_IDLE_DELAY_TIME_EN : R/W; bitpos: [10]; default: 0;
- *  Enable SPI1 wait idle gap time count functon. 1: Enable. 0: Disable.
+ *  Enable SPI1 wait idle gap time count function. 1: Enable. 0: Disable.
  */
 #define SPI_MEM_WAITI_IDLE_DELAY_TIME_EN    (BIT(10))
 #define SPI_MEM_WAITI_IDLE_DELAY_TIME_EN_M  (SPI_MEM_WAITI_IDLE_DELAY_TIME_EN_V << SPI_MEM_WAITI_IDLE_DELAY_TIME_EN_S)
@@ -1163,7 +1163,7 @@ extern "C" {
 /** SPI_MEM_INT_ENA_REG register
  *  SPI1 interrupt enable register
  */
-#define SPI_MEM_INT_ENA_REG (DR_REG_SPI_MEM_BASE + 0xc0)
+#define SPI_MEM_INT_ENA_REG(i) (REG_SPI_MEM_BASE(i) + 0xc0)
 /** SPI_MEM_PER_END_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The enable bit for SPI_MEM_PER_END_INT interrupt.
  */
@@ -1210,7 +1210,7 @@ extern "C" {
 /** SPI_MEM_INT_CLR_REG register
  *  SPI1 interrupt clear register
  */
-#define SPI_MEM_INT_CLR_REG (DR_REG_SPI_MEM_BASE + 0xc4)
+#define SPI_MEM_INT_CLR_REG(i) (REG_SPI_MEM_BASE(i) + 0xc4)
 /** SPI_MEM_PER_END_INT_CLR : WT; bitpos: [0]; default: 0;
  *  The clear bit for SPI_MEM_PER_END_INT interrupt.
  */
@@ -1257,7 +1257,7 @@ extern "C" {
 /** SPI_MEM_INT_RAW_REG register
  *  SPI1 interrupt raw register
  */
-#define SPI_MEM_INT_RAW_REG (DR_REG_SPI_MEM_BASE + 0xc8)
+#define SPI_MEM_INT_RAW_REG(i) (REG_SPI_MEM_BASE(i) + 0xc8)
 /** SPI_MEM_PER_END_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw bit for SPI_MEM_PER_END_INT interrupt. 1: Triggered when Auto Resume
  *  command (0x7A) is sent and flash is resumed successfully. 0: Others.
@@ -1301,7 +1301,7 @@ extern "C" {
 #define SPI_MEM_MST_ST_END_INT_RAW_S  4
 /** SPI_MEM_BROWN_OUT_INT_RAW : R/WTC/SS; bitpos: [10]; default: 0;
  *  The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that
- *  chip is loosing power and RTC module sends out brown out close flash request to
+ *  chip is losing power and RTC module sends out brown out close flash request to
  *  SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered
  *  and MSPI returns to idle state. 0: Others.
  */
@@ -1313,7 +1313,7 @@ extern "C" {
 /** SPI_MEM_INT_ST_REG register
  *  SPI1 interrupt status register
  */
-#define SPI_MEM_INT_ST_REG (DR_REG_SPI_MEM_BASE + 0xcc)
+#define SPI_MEM_INT_ST_REG(i) (REG_SPI_MEM_BASE(i) + 0xcc)
 /** SPI_MEM_PER_END_INT_ST : RO; bitpos: [0]; default: 0;
  *  The status bit for SPI_MEM_PER_END_INT interrupt.
  */
@@ -1360,7 +1360,7 @@ extern "C" {
 /** SPI_MEM_DDR_REG register
  *  SPI1 DDR control register
  */
-#define SPI_MEM_DDR_REG (DR_REG_SPI_MEM_BASE + 0xd4)
+#define SPI_MEM_DDR_REG(i) (REG_SPI_MEM_BASE(i) + 0xd4)
 /** SPI_MEM_FMEM_DDR_EN : R/W; bitpos: [0]; default: 0;
  *  1: in ddr mode,  0 in sdr mode
  */
@@ -1469,7 +1469,7 @@ extern "C" {
 /** SPI_MEM_TIMING_CALI_REG register
  *  SPI1 timing control register
  */
-#define SPI_MEM_TIMING_CALI_REG (DR_REG_SPI_MEM_BASE + 0x180)
+#define SPI_MEM_TIMING_CALI_REG(i) (REG_SPI_MEM_BASE(i) + 0x180)
 /** SPI_MEM_TIMING_CALI : R/W; bitpos: [1]; default: 0;
  *  The bit is used to enable timing auto-calibration for all reading operations.
  */
@@ -1488,7 +1488,7 @@ extern "C" {
 /** SPI_MEM_CLOCK_GATE_REG register
  *  SPI1 clk_gate register
  */
-#define SPI_MEM_CLOCK_GATE_REG (DR_REG_SPI_MEM_BASE + 0x200)
+#define SPI_MEM_CLOCK_GATE_REG(i) (REG_SPI_MEM_BASE(i) + 0x200)
 /** SPI_MEM_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Register clock gate enable signal. 1: Enable. 0: Disable.
  */
@@ -1500,7 +1500,7 @@ extern "C" {
 /** SPI_MEM_DATE_REG register
  *  Version control register
  */
-#define SPI_MEM_DATE_REG (DR_REG_SPI_MEM_BASE + 0x3fc)
+#define SPI_MEM_DATE_REG(i) (REG_SPI_MEM_BASE(i) + 0x3fc)
 /** SPI_MEM_DATE : R/W; bitpos: [27:0]; default: 36774400;
  *  Version control register
  */

@@ -34,6 +34,8 @@
 #define TEST_CI_ADDRESS_CHIP_OFFSET (6)
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define TEST_CI_ADDRESS_CHIP_OFFSET (7)
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
 #endif
 #endif
 
@@ -282,7 +284,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
+    case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
                     event->connect.status == 0 ? "established" : "failed",

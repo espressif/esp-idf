@@ -1,12 +1,10 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.7.0
-    Connecting....
-    Detecting chip type... ESP32-P4
+    Executing action: efuse-summary
+    (...)
 
-    === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Config fuses:
@@ -185,27 +183,3 @@
                                                        is selected at startup. 1: selected. 0: not select
                                                        ed
     DIS_WDT (BLOCK0)                                   Set this bit to disable watch dog                  = False R/W (0b0)
-
-
-To get a dump for all eFuse registers.
-
-.. code-block:: none
-
-    espefuse.py v4.7.dev1
-    Connecting....
-    Detecting chip type... ESP32-P4
-    BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_USR_DATA  (BLOCK3          ) [3 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY0      (BLOCK4          ) [4 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY1      (BLOCK5          ) [5 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY2      (BLOCK6          ) [6 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY3      (BLOCK7          ) [7 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY4      (BLOCK8          ) [8 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY5      (BLOCK9          ) [9 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_SYS_DATA2 (BLOCK10         ) [10] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK0          (                ) [0 ] err__regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    EFUSE_RD_RS_ERR0_REG        0x00000000
-    EFUSE_RD_RS_ERR1_REG        0x00000000
-    === Run "dump" command ===

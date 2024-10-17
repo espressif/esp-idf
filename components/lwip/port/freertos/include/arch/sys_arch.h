@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef __SYS_ARCH_H__
 #define __SYS_ARCH_H__
@@ -24,7 +24,6 @@ typedef TaskHandle_t sys_thread_t;
 
 typedef struct sys_mbox_s {
   QueueHandle_t os_mbox;
-  void *owner;
 }* sys_mbox_t;
 
 /** This is returned by _fromisr() sys functions to tell the outermost function
@@ -38,33 +37,17 @@ void sys_delay_ms(uint32_t ms);
 #define LWIP_COMPAT_MUTEX 0
 
 #if !LWIP_COMPAT_MUTEX
-#define sys_mutex_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
-#define sys_mutex_set_invalid( x ) ( ( *x ) = NULL )
+#define sys_mutex_valid_val(mutex)   ((mutex) != NULL)
+#define sys_mutex_valid(mutex)       (((mutex) != NULL) && sys_mutex_valid_val(*(mutex)))
+#define sys_mutex_set_invalid(mutex) ((*(mutex)) = NULL)
 #endif
 
-#define sys_mbox_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
+#define sys_mbox_valid(mbox)       (*(mbox) != NULL)
+#define sys_mbox_set_invalid(mbox) (*(mbox) = NULL)
 
-/* Define the sys_mbox_set_invalid() to empty to support lock-free mbox in ESP LWIP.
- *
- * The basic idea about the lock-free mbox is that the mbox should always be valid unless
- * no socket APIs are using the socket and the socket is closed. ESP LWIP achieves this by
- * following two changes to official LWIP:
- * 1. Postpone the deallocation of mbox to netconn_free(), in other words, free the mbox when
- *    no one is using the socket.
- * 2. Define the sys_mbox_set_invalid() to empty if the mbox is not actually freed.
-
- * The second change is necessary. Consider a common scenario: the application task calls
- * recv() to receive packets from the socket, the sys_mbox_valid() returns true. Because there
- * is no lock for the mbox, the LWIP CORE can call sys_mbox_set_invalid() to set the mbox at
- * anytime and the thread-safe issue may happen.
- *
- * However, if the sys_mbox_set_invalid() is not called after sys_mbox_free(), e.g. in netconn_alloc(),
- * we need to initialize the mbox to invalid explicitly since sys_mbox_set_invalid() now is empty.
- */
-#define sys_mbox_set_invalid( x )  *x = NULL
-
-#define sys_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
-#define sys_sem_set_invalid( x ) ( ( *x ) = NULL )
+#define sys_sem_valid_val(sema)   ((sema) != NULL)
+#define sys_sem_valid(sema)       (((sema) != NULL) && sys_sem_valid_val(*(sema)))
+#define sys_sem_set_invalid(sema) ((*(sema)) = NULL)
 
 void sys_delay_ms(uint32_t ms);
 sys_sem_t* sys_thread_sem_init(void);

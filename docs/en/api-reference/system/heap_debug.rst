@@ -216,7 +216,8 @@ Once you have identified the code which you think is leaking:
 - Enable the :ref:`CONFIG_HEAP_TRACING_DEST` option.
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer that can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs or frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
-- Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
+- Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing. This state will stop the tracing of both allocations and frees.
+- Call the function :cpp:func:`heap_trace_alloc_pause` to pause the tracing of new allocations while continuing to trace the frees. Call this immediately after the piece of code which you suspect is leaking memory to prevent any new allocations to be recorded.
 - Call the function :cpp:func:`heap_trace_dump` to dump the results of the heap trace.
 
 The following code snippet demonstrates how application code would typically initialize, start, and stop heap tracing:
@@ -508,6 +509,11 @@ Not everything printed by :cpp:func:`heap_trace_dump` is necessarily a memory le
 - TCP connections retain some memory even after they are closed due to the ``TIME_WAIT`` state. Once the ``TIME_WAIT`` period is completed, this memory will be freed.
 
 One way to differentiate between "real" and "false positive" memory leaks is to call the suspect code multiple times while tracing is running, and look for patterns (multiple matching allocations) in the heap trace output.
+
+Application Examples
+--------------------
+
+- :example:`system/heap_task_tracking` demonstrates the use of the heap task tracking feature to track heap memory allocated on a per-task basis.
 
 API Reference - Heap Tracing
 ----------------------------

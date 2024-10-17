@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 
+#include "esp_macros.h"
+
 #include "esp_ipc_isr.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/cache_utils.h"
@@ -124,7 +126,7 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
 FORCE_INLINE_ATTR __attribute__((__noreturn__))
 void busy_wait(void)
 {
-    while (1) {;} // infinite loop
+    ESP_INFINITE_LOOP();
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 

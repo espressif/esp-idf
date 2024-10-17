@@ -49,7 +49,6 @@ components_not_formatted_temporary:
     - "/components/bootloader/"
     - "/components/bt/"
     - "/components/cmock/"
-    - "/components/console/"
     - "/components/efuse/"
     - "/components/esp_coex/"
     - "/components/esp_eth/"
@@ -153,6 +152,8 @@ components_not_formatted_permanent:
     - "/components/app_trace/sys_view/Config/"
     - "/components/app_trace/sys_view/Sample/"
     - "/components/app_trace/sys_view/SEGGER/"
+    # FreeRTOS-Plux-POSIX files (upstream source code)
+    - "/components/rt/"
     # SoC header files (generated)
     - "/components/soc/*/include/soc/"
     # Example resource files (generated)
@@ -160,6 +161,10 @@ components_not_formatted_permanent:
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
     # Coredump (generated)
     - /components/espcoredump/include_core_dump/elf.h
+    # OpenOCD stub binaries (generated)
+    - /components/esp_system/openocd_stub_bins/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32c6/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32h2/*.inc
 
 docs:
   # Docs directory contains some .inc files, which are not C include files

@@ -28,6 +28,16 @@ extern "C" {
 #define TEST_LCD_DC_GPIO        1
 #define TEST_LCD_PCLK_GPIO      2
 #define TEST_LCD_DATA0_GPIO     4
+<<<<<<< HEAD
+=======
+#elif CONFIG_IDF_TARGET_ESP32C61
+#define TEST_LCD_BK_LIGHT_GPIO  3
+#define TEST_LCD_RST_GPIO       5
+#define TEST_LCD_CS_GPIO        0
+#define TEST_LCD_DC_GPIO        1
+#define TEST_LCD_PCLK_GPIO      2
+#define TEST_LCD_DATA0_GPIO     4
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define TEST_LCD_BK_LIGHT_GPIO  23
 #define TEST_LCD_RST_GPIO       6

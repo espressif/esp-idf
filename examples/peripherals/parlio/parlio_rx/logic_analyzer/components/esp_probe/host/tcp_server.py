@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import socket
 from io import TextIOWrapper
@@ -23,29 +22,30 @@ def _tcp_server(port:int, chan_num:int, vcd_out_io:TextIOWrapper) -> None:
     s.listen(5)
     print(f'TCP listening at {host}:{port}')
 
+    c, addr = s.accept()
+    print(f'Client {addr[0]}:{addr[1]} joined')
+    c.settimeout(3)
+    vcd = VCDDumper()
+    vcd.open_new_vcd_file(chan_num, vcd_out_io)
+    recv_data = b''
     try:
         while True:
-            c, addr = s.accept()
-            print(f'Client {addr[0]}:{addr[1]} joined')
-            vcd = VCDDumper()
-            vcd.open_new_vcd_file(chan_num, vcd_out_io)
-
-            while True:
-                recv_data = c.recv(16384)
-                if recv_data == b'':
-                    break
-                print(f'data received {len(recv_data)} bytes')
-                vcd.dump_samples(recv_data)
-
-            print(f'Client {addr[0]}:{addr[1]} left')
-            vcd.close_vcd_file()
-            c.close()
+            temp = c.recv(10240)
+            recv_data += temp
+            if temp == b'':
+                break
+            print(f'Data received {len(temp)} bytes')
+    except socket.timeout:
+        print('Done!')
     finally:
-        vcd.close_vcd_file()
-        c.close()
-        s.shutdown(socket.SHUT_RDWR)
-        s.close()
-        print('TCP server closed')
+        print(f'Received {len(recv_data)} bytes in total')
+        vcd.dump_samples(recv_data)
+
+    print(f'Client {addr[0]}:{addr[1]} left')
+    vcd.close_vcd_file()
+    c.close()
+    s.close()
+    print('TCP server closed')
 
 
 def tcp_server_main() -> None:
@@ -70,6 +70,7 @@ def tcp_server_main() -> None:
     chan_num = 1 << p
 
     _tcp_server(port, chan_num, vcd_out_io)
+    exit(0)
 
 
 if __name__ == '__main__':

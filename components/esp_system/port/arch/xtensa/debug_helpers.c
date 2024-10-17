@@ -65,7 +65,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
     }
 
     //Initialize stk_frame with first frame of stack
-    esp_backtrace_frame_t stk_frame = { 0 };
+    esp_backtrace_frame_t stk_frame;
     memcpy(&stk_frame, frame, sizeof(esp_backtrace_frame_t));
 
     print_str("\r\n\r\nBacktrace:", panic);
@@ -197,7 +197,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print_all_tasks(int depth)
     for (UBaseType_t task_idx = 0; task_idx < num_snapshots; task_idx++) {
         bool cur_running = false;
         TaskHandle_t task_hdl = (TaskHandle_t) task_snapshots[task_idx].pxTCB;
-        esp_backtrace_frame_t stk_frame;
+        esp_backtrace_frame_t stk_frame = {0};
 
         // Check if the task is one of the currently running tasks
         for (BaseType_t core_id = 0; core_id < configNUMBER_OF_CORES; core_id++) {

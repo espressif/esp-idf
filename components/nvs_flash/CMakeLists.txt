@@ -14,11 +14,17 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_types.cpp"
          "src/nvs_platform.cpp")
 
+set(requires esp_partition)
+if(${target} STREQUAL "linux")
+    set(priv_requires spi_flash)
+else()
+    set(priv_requires spi_flash newlib)
+endif()
+
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "esp_partition"
-                    PRIV_REQUIRES spi_flash newlib
+                    REQUIRES "${requires}"
+                    PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "include"
-                    "../spi_flash/include"
                     PRIV_INCLUDE_DIRS "private_include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux
@@ -33,4 +39,8 @@ if(${target} STREQUAL "linux")
 else()
     target_sources(${COMPONENT_LIB} PRIVATE "src/nvs_encrypted_partition.cpp")
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::mbedtls)
+endif()
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10088
+    target_compile_options(${COMPONENT_LIB} PUBLIC "-fno-analyzer")
 endif()

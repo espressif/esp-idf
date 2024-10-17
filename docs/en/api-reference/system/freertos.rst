@@ -140,3 +140,10 @@ Vanilla FreeRTOS provides its own `selection of heap implementations <https://ww
 
     - Allocate the task or object using one of the ``...CreateWithCaps()`` API, such as :cpp:func:`xTaskCreateWithCaps` and :cpp:func:`xQueueCreateWithCaps` (see :ref:`freertos-idf-additional-api` for more details).
     - Manually allocate external memory for those objects using :cpp:func:`heap_caps_malloc`, then create the objects from the allocated memory using on of the ``...CreateStatic()`` FreeRTOS functions.
+
+Application Examples
+--------------------
+
+- :example:`system/freertos/basic_freertos_smp_usage` demonstrates how to use basic FreeRTOS APIs for task creation, communication, synchronization, and batch processing within an SMP architecture on {IDF_TARGET_NAME}.
+
+- :example:`system/freertos/real_time_stats` demonstrates how to use FreeRTOS's function `vTaskGetRunTimeStats()` to obtain CPU usage statistics of tasks with respect to a specified duration, rather than over the entire runtime of FreeRTOS.

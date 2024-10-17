@@ -24,5 +24,11 @@ Workflows
 .. toctree::
    :maxdepth: 1
 
-   host-based-security-workflows
+   security-features-enablement-workflows
 
+Vulnerabilities
+---------------
+.. toctree::
+   :maxdepth: 1
+
+   vulnerabilities

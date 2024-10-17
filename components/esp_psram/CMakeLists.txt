@@ -36,7 +36,12 @@ if(CONFIG_SPIRAM)
     endif()
 
     if(CONFIG_SPIRAM_MODE_QUAD)
-        list(APPEND srcs "${target}/esp_psram_impl_quad.c")
+        if(${target} STREQUAL "esp32" OR ${target} STREQUAL "esp32s2")
+            list(APPEND srcs "${target}/esp_psram_impl_quad.c")
+        else()
+            list(APPEND srcs "device/esp_psram_impl_ap_quad.c")
+        endif()
+
     elseif(CONFIG_SPIRAM_MODE_OCT)
         list(APPEND srcs "${target}/esp_psram_impl_octal.c")
     endif()

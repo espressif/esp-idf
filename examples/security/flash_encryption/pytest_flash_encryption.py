@@ -53,6 +53,12 @@ def _test_flash_encryption(dut: Dut) -> None:
         plain_hex_str,
         'with esp_flash_read',
         expected_str,
+        'FAT partition "fat_not_encr" is not encrypted.',
+        'Read partition using esp_flash_read until test string is found',
+        'Test string was found at offset',
+        'FAT partition "fat_encrypted" is encrypted.',
+        'Read partition using esp_flash_read at expected offset',
+        'Data does not match test string',
         # The status of NVS encryption for the "nvs" partition
         'NVS partition "nvs" is encrypted.',
         # The status of NVS encryption for the "custom_nvs" partition

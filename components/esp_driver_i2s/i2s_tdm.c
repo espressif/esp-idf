@@ -46,6 +46,9 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
             clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
             ESP_LOGW(TAG, "the current mclk multiple is too small, adjust the mclk multiple to %"PRIu32, clk_info->mclk / rate);
         }
+        if (clk_info->mclk % clk_info->bclk != 0) {
+            ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
+        }
     } else {
         if (clk_cfg->bclk_div < 8) {
             ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");

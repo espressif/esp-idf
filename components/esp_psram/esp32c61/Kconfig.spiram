@@ -1,0 +1,72 @@
+config SPIRAM
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM
+
+    choice SPIRAM_MODE
+        prompt "Mode of SPI RAM chip in use"
+        default SPIRAM_MODE_QUAD
+
+        config SPIRAM_MODE_QUAD
+            bool "Quad Mode PSRAM"
+
+    endchoice
+
+    choice SPIRAM_SPEED
+        prompt "Set RAM clock speed"
+        default SPIRAM_SPEED_40M
+        help
+            Select the speed for the SPI RAM chip.
+
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
+        config SPIRAM_SPEED_40M
+            bool "40Mhz clock speed"
+    endchoice
+
+    config SPIRAM_SPEED
+        int
+        default 80 if SPIRAM_SPEED_80M
+        default 40 if SPIRAM_SPEED_40M
+
+    config SPIRAM_FETCH_INSTRUCTIONS
+        bool
+        help
+            Enable this option allows moving application's instruction segment from the SPI Flash to PSRAM
+
+    config SPIRAM_RODATA
+        bool
+        help
+            Enable this option allows moving application's rodata segment from the SPI Flash to
+            PSRAM
+
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature (READ HELP)"
+        default n
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        select SPIRAM_FLASH_LOAD_TO_PSRAM
+        help
+            If enabled, firmware in flash including instructions and data will be moved into PSRAM on startup,
+            firmware code will execute directly from PSRAM.
+
+            With this option enabled, code that requires execution during an MSPI1 Flash operation
+            does not have to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operations can continue working normally.
+
+            This feature is useful for high throughput peripheral involved applications to improve
+            the performance during MSPI1 flash operations.
+
+    config SPIRAM_FLASH_LOAD_TO_PSRAM
+        bool
+        help
+            This is a helper indicating this condition:
+            `CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_IDF_TARGET_ESP32C61`
+
+    source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
+endmenu

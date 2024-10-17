@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,16 @@
 #include "driver/gpio.h"
 #include "esp_attr.h"
 #include "test_pulse_cnt_board.h"
+
+// helper function to initialize a gpio for simulation
+void test_gpio_init_for_simulation(int gpio_sig)
+{
+    gpio_config_t config = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << gpio_sig,
+    };
+    gpio_config(&config);
+}
 
 // helper function to simulate several rising edges on gpio
 IRAM_ATTR void test_gpio_simulate_rising_edge(int gpio_sig, size_t times)

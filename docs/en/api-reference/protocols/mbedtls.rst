@@ -9,7 +9,7 @@ Mbed TLS
 
     ESP-IDF uses a `fork <https://github.com/espressif/mbedtls>`_ of Mbed TLS which includes a few patches (related to hardware routines of certain modules like ``bignum (MPI)`` and ``ECC``) over vanilla Mbed TLS.
 
-Mbed TLS supports SSL 3.0 up to TLS 1.3 and DTLS 1.0 to 1.2 communication by providing the following:
+Mbed TLS supports TLS 1.2, TLS 1.3 and DTLS 1.2 communication by providing the following:
 
 - TCP/IP communication functions: listen, connect, accept, read/write.
 - SSL/TLS communication functions: init, handshake, read/write.
@@ -18,8 +18,9 @@ Mbed TLS supports SSL 3.0 up to TLS 1.3 and DTLS 1.0 to 1.2 communication by pro
 - Hashing
 - Encryption/decryption
 
-Supported TLS versions include SSL 3.0, TLS 1.0, TLS 1.1, TLS 1.2, and TLS 1.3, but on the latest ESP-IDF, SSL 3.0, TLS 1.0, and TLS 1.1 have been removed from Mbed TLS. Supported DTLS versions include DTLS 1.0, DTLS 1.1, and DTLS 1.2, but on the latest ESP-IDF, DTLS 1.0 has been removed from Mbed TLS.
+.. note::
 
+    Mbed TLS v3.x.x series supports only TLS 1.2 and TLS 1.3 protocols. Support for SSL 3.0, TLS 1.0/1.1 and DTLS 1.0 has been removed (deprecated). TLS 1.3 is fully supported starting Mbed TLS v3.6.0 release, before this release some features were still in experimental state. Please refer to :component_file:`Mbed TLS ChangeLog <mbedtls/mbedtls/ChangeLog>` for more details.
 
 Mbed TLS Documentation
 ----------------------
@@ -45,7 +46,7 @@ Examples in ESP-IDF use :doc:`/api-reference/protocols/esp_tls` which provides a
 
 Refer to the examples :example:`protocols/https_server/simple` (Simple HTTPS server) and :example:`protocols/https_request` (Make HTTPS requests) for more information.
 
-If the Mbed TLS API is to be used directly, refer to the example :example:`protocols/https_mbedtls`.
+If you plan to use the Mbed TLS API directly, refer to the example :example:`protocols/https_mbedtls`. This example demonstrates how to establish an HTTPS connection using Mbed TLS by setting up a secure socket with a certificate bundle for verification.
 
 
 Alternatives
@@ -72,11 +73,6 @@ Following is a brief list of important config options accessible at ``Component 
     :SOC_AES_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_AES`: Support for hardware AES acceleration
     :SOC_MPI_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_MPI`: Support for hardware MPI (bignum) acceleration
     :SOC_ECC_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_ECC`: Support for hardware ECC acceleration
-
-.. note::
-
-    Mbed TLS v3.0.0 and later support only TLS 1.2 and TLS 1.3 (SSL 3.0, TLS 1.0, TLS 1.1, and DTLS 1.0 are not supported). The support for TLS 1.3 is experimental and only supports the client-side. More information about this can be found out `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/architecture/tls13-support.md>`__.
-
 
 Performance and Memory Tweaks
 -----------------------------
@@ -122,5 +118,5 @@ Reducing Binary Size
 Under ``Component Config -> mbedTLS``, there are multiple Mbed TLS features which are enabled by default but can be disabled if not needed to save code size. More information can be about this can be found in :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` docs.
 
 
-.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.4.1/
+.. _`API Reference`: https://mbed-tls.readthedocs.io/projects/api/en/v3.6.1/
 .. _`Knowledge Base`: https://mbed-tls.readthedocs.io/en/latest/kb/

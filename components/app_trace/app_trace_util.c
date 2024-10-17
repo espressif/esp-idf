@@ -9,12 +9,14 @@
 #include "esp_app_trace_util.h"
 #include "sdkconfig.h"
 
+#define ESP_APPTRACE_PRINT_LOCK 0
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// Locks /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 #if ESP_APPTRACE_PRINT_LOCK
-static esp_apptrace_lock_t s_log_lock = {.irq_stat = 0, .portmux = portMUX_INITIALIZER_UNLOCKED};
+static esp_apptrace_lock_t s_log_lock = { .mux = portMUX_INITIALIZER_UNLOCKED };
 #endif
 
 int esp_apptrace_log_lock(void)
@@ -31,7 +33,7 @@ int esp_apptrace_log_lock(void)
 
 void esp_apptrace_log_unlock(void)
 {
- #if ESP_APPTRACE_PRINT_LOCK
+#if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_lock_give(&s_log_lock);
 #endif
 }
@@ -87,7 +89,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
 uint8_t *esp_apptrace_rb_produce(esp_apptrace_rb_t *rb, uint32_t size)
 {
     uint8_t *ptr = rb->data + rb->wr;
-    // check for avalable space
+    // check for available space
     if (rb->rd <= rb->wr) {
         // |?R......W??|
         if (rb->wr + size >= rb->size) {

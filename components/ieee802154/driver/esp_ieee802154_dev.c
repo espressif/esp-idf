@@ -138,7 +138,7 @@ static IRAM_ATTR void receive_ack_timeout_timer_start(uint32_t duration)
 }
 #endif
 
-static void ieee802154_rx_frame_info_update(void)
+static IEEE802154_NOINLINE void ieee802154_rx_frame_info_update(void)
 {
     uint8_t len = s_rx_frame[s_rx_index][0];
     int8_t rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer
@@ -773,7 +773,7 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
 
     ieee802154_ll_set_ed_sample_mode(IEEE802154_ED_SAMPLE_AVG);
-#if !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
     esp_coex_ieee802154_ack_pti_set(IEEE802154_MIDDLE);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_IDLE);
 #else

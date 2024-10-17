@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,6 +32,9 @@
 #endif
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
+#if CONFIG_BT_SDP_COMMON_ENABLED
+#include "esp_sdp_api.h"
+#endif /* CONFIG_BT_SDP_COMMON_ENABLED */
 #endif
 
 #include "esp_hidd.h"
@@ -847,6 +850,47 @@ static void bt_hidd_event_callback(void *handler_args, esp_event_base_t base, in
     }
     return;
 }
+
+#if CONFIG_BT_SDP_COMMON_ENABLED
+static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_SDP_INIT_EVT:
+        ESP_LOGI(TAG, "ESP_SDP_INIT_EVT: status:%d", param->init.status);
+        if (param->init.status == ESP_SDP_SUCCESS) {
+            esp_bluetooth_sdp_dip_record_t dip_record = {
+                .hdr =
+                    {
+                        .type = ESP_SDP_TYPE_DIP_SERVER,
+                    },
+                .vendor           = bt_hid_config.vendor_id,
+                .vendor_id_source = ESP_SDP_VENDOR_ID_SRC_BT,
+                .product          = bt_hid_config.product_id,
+                .version          = bt_hid_config.version,
+                .primary_record   = true,
+            };
+            esp_sdp_create_record((esp_bluetooth_sdp_record_t *)&dip_record);
+        }
+        break;
+    case ESP_SDP_DEINIT_EVT:
+        ESP_LOGI(TAG, "ESP_SDP_DEINIT_EVT: status:%d", param->deinit.status);
+        break;
+    case ESP_SDP_SEARCH_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_SDP_SEARCH_COMP_EVT: status:%d", param->search.status);
+        break;
+    case ESP_SDP_CREATE_RECORD_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d, handle:0x%x", param->create_record.status,
+                 param->create_record.record_handle);
+        break;
+    case ESP_SDP_REMOVE_RECORD_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_SDP_REMOVE_RECORD_COMP_EVT: status:%d", param->remove_record.status);
+        break;
+    default:
+        break;
+    }
+}
+#endif /* CONFIG_BT_SDP_COMMON_ENABLED */
+
 #endif
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -903,14 +947,19 @@ void app_main(void)
     ESP_LOGI(TAG, "setting device name");
     esp_bt_gap_set_device_name(bt_hid_config.device_name);
     ESP_LOGI(TAG, "setting cod major, peripheral");
-    esp_bt_cod_t cod;
+    esp_bt_cod_t cod = {0};
     cod.major = ESP_BT_COD_MAJOR_DEV_PERIPHERAL;
+    cod.minor = ESP_BT_COD_MINOR_PERIPHERAL_POINTING;
     esp_bt_gap_set_cod(cod, ESP_BT_SET_COD_MAJOR_MINOR);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "setting bt device");
     ESP_ERROR_CHECK(
         esp_hidd_dev_init(&bt_hid_config, ESP_HID_TRANSPORT_BT, bt_hidd_event_callback, &s_bt_hid_param.hid_dev));
-#endif
+#if CONFIG_BT_SDP_COMMON_ENABLED
+    ESP_ERROR_CHECK(esp_sdp_register_callback(esp_sdp_cb));
+    ESP_ERROR_CHECK(esp_sdp_init());
+#endif /* CONFIG_BT_SDP_COMMON_ENABLED */
+#endif /* CONFIG_BT_HID_DEVICE_ENABLED */
 #if CONFIG_BT_NIMBLE_ENABLED
     /* XXX Need to have template for store */
     ble_store_config_init();

@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Kernel V11.0.1
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
@@ -87,6 +87,10 @@
 
 #ifndef portARCH_NAME
     #define portARCH_NAME    NULL
+#endif
+
+#ifndef configSTACK_DEPTH_TYPE
+    #define configSTACK_DEPTH_TYPE    StackType_t
 #endif
 
 #ifndef configSTACK_ALLOCATION_FROM_SEPARATE_HEAP
@@ -178,7 +182,7 @@ void vPortGetHeapStats( HeapStats_t * pxHeapStats );
 /*
  * Map to the memory management routines required for the port.
  */
-void * pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
+void * pvPortMalloc( size_t xWantedSize ) PRIVILEGED_FUNCTION;
 void * pvPortCalloc( size_t xNum,
                      size_t xSize ) PRIVILEGED_FUNCTION;
 void vPortFree( void * pv ) PRIVILEGED_FUNCTION;
@@ -193,6 +197,12 @@ size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
     #define pvPortMallocStack    pvPortMalloc
     #define vPortFreeStack       vPortFree
 #endif
+
+/*
+ * This function resets the internal state of the heap module. It must be called
+ * by the application before restarting the scheduler.
+ */
+void vPortHeapResetState( void ) PRIVILEGED_FUNCTION;
 
 #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
 
@@ -232,7 +242,7 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
     void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,
                                     const struct xMEMORY_REGION * const xRegions,
                                     StackType_t * pxBottomOfStack,
-                                    uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
+                                    configSTACK_DEPTH_TYPE uxStackDepth ) PRIVILEGED_FUNCTION;
 #endif
 
 /**

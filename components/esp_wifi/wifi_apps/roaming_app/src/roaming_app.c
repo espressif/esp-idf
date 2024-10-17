@@ -50,6 +50,19 @@ static inline long time_diff_sec(struct timeval *a, struct timeval *b)
 {
     return (a->tv_sec - b->tv_sec);
 }
+
+void roaming_app_disable_reconnect(void)
+{
+    ESP_LOGD(ROAMING_TAG, "Switching off reconnect due to application trigerred disconnect");
+    g_roaming_app.allow_reconnect = false;
+}
+
+void roaming_app_enable_reconnect(void)
+{
+    ESP_LOGD(ROAMING_TAG, "Switching on reconnect due to application trigerred reconnect");
+    g_roaming_app.allow_reconnect = true;
+}
+
 static void roaming_app_get_ap_info(wifi_ap_record_t *ap_info)
 {
     esp_wifi_sta_get_ap_info(ap_info);
@@ -65,6 +78,7 @@ static void roaming_app_get_ap_info(wifi_ap_record_t *ap_info)
     }
 #endif /*LOW_RSSI_ROAMING_ENABLED*/
 }
+
 #if LEGACY_ROAM_ENABLED
 static void legacy_roam_clear_bssid_flag(void)
 {
@@ -145,6 +159,8 @@ static void roaming_app_disconnected_event_handler(void* arg, esp_event_base_t e
     ESP_LOGD(ROAMING_TAG, "station got disconnected reason=%d", disconn->reason);
     if (disconn->reason == WIFI_REASON_ROAMING) {
         ESP_LOGD(ROAMING_TAG, "station roaming, do nothing");
+    } else if (g_roaming_app.allow_reconnect == false) {
+        ESP_LOGD(ROAMING_TAG, "station initiated disconnect, do nothing");
     } else {
 #if LEGACY_ROAM_ENABLED
         /*
@@ -158,6 +174,12 @@ static void roaming_app_disconnected_event_handler(void* arg, esp_event_base_t e
 #endif /*LEGACY_ROAM_ENABLED*/
         esp_wifi_connect();
     }
+}
+
+static void roaming_app_sta_stop_event_handler(void* arg, esp_event_base_t event_base,
+                                               int32_t event_id, void* event_data)
+{
+    g_roaming_app.allow_reconnect = false;
 }
 
 static void roaming_app_connected_event_handler(void* arg, esp_event_base_t event_base,
@@ -198,6 +220,7 @@ static void roaming_app_connected_event_handler(void* arg, esp_event_base_t even
 #if LEGACY_ROAM_ENABLED
     g_roaming_app.force_roam_ongoing = true;
 #endif /*LEGACY_ROAM_ENABLED*/
+    g_roaming_app.allow_reconnect = true;
 }
 #define MAX_NEIGHBOR_LEN 512
 #if PERIODIC_RRM_MONITORING
@@ -475,8 +498,6 @@ static void periodic_rrm_request(struct timeval *now)
         g_roaming_app.rrm_request_active = true;
     }
 }
-#else
-static void periodic_rrm_request(struct timeval *now) { }
 #endif
 
 static bool candidate_security_match(wifi_ap_record_t candidate)
@@ -763,7 +784,7 @@ esp_err_t init_scan_params(void)
 void init_roaming_app(void)
 {
 #if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
-    ESP_LOGE(ROAMING_TAG, "No roaming method enabled. Roaming app cannot be initialized");
+    ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be initialized");
     return;
 #endif
 
@@ -773,6 +794,7 @@ void init_roaming_app(void)
 #endif
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, roaming_app_connected_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, roaming_app_disconnected_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_STOP, roaming_app_sta_stop_event_handler, NULL));
 #if LOW_RSSI_ROAMING_ENABLED
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                &roaming_app_rssi_low_handler, NULL));
@@ -799,6 +821,7 @@ void deinit_roaming_app(void)
     /* Unregister Event handlers */
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, roaming_app_connected_event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, roaming_app_disconnected_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, roaming_app_sta_stop_event_handler));
 #if LOW_RSSI_ROAMING_ENABLED
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
                                                  &roaming_app_rssi_low_handler));

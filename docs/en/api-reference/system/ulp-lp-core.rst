@@ -16,11 +16,16 @@ The ULP LP-Core coprocessor has the following features:
 Compiling Code for the ULP LP-Core
 ----------------------------------
 
-The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. To achieve this do the following:
+The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. There are two ways to achieve this:
+
+Using ``ulp_embed_binary``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Place the ULP LP-Core code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 
-2. After registering the component in the CMakeLists.txt file, call the ``ulp_embed_binary`` function. Here is an example:
+2. After registering the component in the ``CMakeLists.txt`` file, call the ``ulp_embed_binary`` function. Here is an example:
+
+.. code-block:: cmake
 
 .. code-block:: cmake
 
@@ -34,6 +39,62 @@ The ULP LP-Core code is compiled together with your ESP-IDF project as a separat
 
 The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
+<<<<<<< HEAD
+=======
+
+Using a Custom CMake Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is also possible to create a custom CMake project for the LP-Core. This gives more control over the build process and allows you to set compile options, link external libraries and all other things that are possible with a regular CMake project.
+
+To do this, add the ULP project as an external project in your component ``CMakeLists.txt`` file:
+
+.. code-block:: cmake
+
+    ulp_add_project("ULP_APP_NAME" "${CMAKE_SOURCE_DIR}/PATH_TO_DIR_WITH_ULP_PROJECT_FILE/")
+
+Create a folder which contains your ULP project files and a ``CMakeLists.txt`` file, located at the path given to ``ulp_add_project``. The ``CMakeLists.txt`` file should look like this:
+
+.. code-block:: cmake
+
+    cmake_minimum_required(VERSION 3.16)
+
+    # Project/target name is passed from the main project to allow IDF to have a dependency on this target
+    # as well as embed the binary into the main app
+    project(${ULP_APP_NAME})
+    add_executable(${ULP_APP_NAME} main.c)
+
+    # Import the ULP project helper functions
+    include(IDFULPProject)
+
+    # Apply default compile options
+    ulp_apply_default_options(${ULP_APP_NAME})
+
+    # Apply default sources provided by the IDF ULP component
+    ulp_apply_default_sources(${ULP_APP_NAME})
+
+    # Add targets for building the binary, as well as the linkerscript which exports ULP shared variables to the main app
+    ulp_add_build_binary_targets(${ULP_APP_NAME})
+
+    # Everything below this line is optional and can be used to customize the build process
+
+    # Create a custom library
+    set(lib_path "${CMAKE_CURRENT_LIST_DIR}/lib")
+    add_library(custom_lib STATIC "${lib_path}/lib_src.c")
+    target_include_directories(custom_lib PUBLIC "${lib_path}/")
+
+    # Link the library
+    target_link_libraries(${ULP_APP_NAME} PRIVATE custom_lib)
+
+    # Set custom compile flags
+    target_compile_options(${ULP_APP_NAME} PRIVATE -msave-restore)
+
+Building Your Project
+~~~~~~~~~~~~~~~~~~~~~~
+
+To compile and build your project:
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menuconfig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 2. Build the application as usual (e.g., ``idf.py app``).
@@ -53,6 +114,7 @@ During the build process, the following steps are taken to build ULP program:
     6. **Create an LD export script and a header file** ``ulp_app_name.ld`` and ``ulp_app_name.h`` containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
     7. **Add the generated binary to the list of binary files** to be embedded into the application.
+
 
 .. _ulp-lp-core-access-variables:
 
@@ -205,6 +267,22 @@ For example, to override the handler for the LP IO interrupt, you can define the
 
 In addition to configuring the interrupt related registers for the interrupt source you want to handle, you also need to enable the interrupts globally in the LP-Core interrupt controller. This can be done using the :cpp:func:`ulp_lp_core_intr_enable` function.
 
+<<<<<<< HEAD
+=======
+ULP LP-Core Clock Configuration
+-------------------------------
+{IDF_TARGET_XTAL_FREQ:default="Not updated", esp32c5="48 MHz", esp32p4="40 MHz"}
+
+The ULP LP-Core clock source is based on the system clock ``LP_FAST_CLK``, see `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``Reset and Clock`` for more details.
+
+.. only:: SOC_CLK_LP_FAST_SUPPORT_XTAL
+
+    On {IDF_TARGET_NAME} ``LP_FAST_CLK`` supports using the external {IDF_TARGET_XTAL_FREQ} crystal (XTAL) as the source for ``LP_FAST_CLK``, which allows the ULP LP-Core to run at a higher frequency than with the default ``RTC_FAST_CLOCK`` which runs at around 20 MHz. The drawback is that this clock is normally powered down during sleep to reduce power consumption, with it selected XTAL will also stay powered on during sleep, increasing power consumption. If you only plan to use the LP-Core as a co-processor while the HP-Core is active, then this option can be used to increase both the performance and the frequency stability of the LP-Core.
+
+    To enable this feature set :ref:`CONFIG_RTC_FAST_CLK_SRC` to ``CONFIG_RTC_FAST_CLK_SRC_XTAL``.
+
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 Debugging ULP LP-Core Applications
 ----------------------------------
 
@@ -222,16 +300,105 @@ When programming the LP-Core, it can sometimes be challenging to figure out why 
 
         python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
 
+<<<<<<< HEAD
+=======
+Debugging ULP LP-Core Applications with GDB and OpenOCD
+-------------------------------------------------------
+
+It is also possible to debug code running on LP core using GDB and OpenOCD as you usually do for HP cores, but it has some specifics and limitations.
+
+Debugging Session
+~~~~~~~~~~~~~~~~~
+
+Run OpenOCD with special config file for LP core debugging support. And then run GDB with special ``gdbinit`` file.
+
+.. code-block:: bash
+
+    openocd -f board/{IDF_TARGET_PATH_NAME}-lpcore-builtin.cfg
+    riscv32-esp-elf-gdb -x gdbinit <path to main program ELF>
+
+``gdbinit`` file contents with inline comments is below. For more details see the next section.
+
+.. code-block:: bash
+
+    # connect to target
+    target extended-remote :3333
+    # reset chip
+    mon reset halt
+    maintenance flush register-cache
+    # add symbols and debugging info for ULP program
+    add-symbol <path to ULP program ELF>
+    # temporary HW breakpoint to setup breakpoints
+    # if you need more than HW supports
+    thb main
+    commands
+    # set breakpoints here
+    # At this moment ULP program is loaded into RAM and when there are
+    # no free HW breakpoints slots available GDB will set SW ones
+    b func1
+    b func2
+    b func3
+    # resume execution
+    c
+    end
+    # start main program after reset
+    c
+
+LP Core Debugging Specifics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list::
+
+    #. For convenient debugging you may need to add `-O0` compile option for ULP app in its CMakeLists.txt. See :example:`system/ulp/lp_core/debugging/` how to do this.
+    :not esp32p4: #. LP core supports limited set of HW exceptions, so, for example, writing at address `0x0` will not cause a panic as it would be for the code running on HP core. This can be overcome to some extent by enabling undefined behavior sanitizer for LP core application, so `ubsan` can help to catch some errors. But note that it will increase code size significantly and it can happen that application won't fit into RTC RAM. To enable `ubsan` for ULP app add `-fsanitize=undefined -fno-sanitize=shift-base` compile option to its CMakeLists.txt. See :example:`system/ulp/lp_core/debugging/` how to do this.
+    #. To be able to debug program running on LP core debug info and symbols need to be loaded to GDB. It can be done via GDB command line or in ``gdbinit`` file. See section above.
+    #. Upon startup LP core application is loaded into RAM, so all SW breakpoints set before that moment will get overwritten. The best moment to set breakpoints for LP core application is to do this when LP core program reaches `main` function.
+    #. When using IDEs it can be that it does not support breakpoint actions/commands configuration shown in ``gdbinit`` above, so in this case you have to preset all breakpoints before debug session start and disable all of them except for ``main``. When program is stopped at ``main`` manually enable remaining breakpoints and resume execution.
+
+Limitations
+~~~~~~~~~~~
+
+#. Currently debugging is not supported when either HP or LP core enters any sleep mode. So it limits available debugging scenarios.
+#. FreeRTOS support in OpenOCD is disabled when debugging LP core, so you won't be able to see tasks running in the system. Instead there will be several threads representing HP and LP cores:
+
+.. code-block:: bash
+
+    (gdb) info thread
+        Id   Target Id                                                          Frame
+        1    Thread 1 "{IDF_TARGET_PATH_NAME}.cpu0" (Name: {IDF_TARGET_PATH_NAME}.cpu0, state: debug-request) 0x40803772 in esp_cpu_wait_for_intr ()
+            at /home/user/projects/esp/esp-idf/components/esp_hw_support/cpu.c:64
+      * 2    Thread 2 "{IDF_TARGET_PATH_NAME}.cpu1" (Name: {IDF_TARGET_PATH_NAME}.cpu1, state: breakpoint)    do_things (max=1000000000)
+            at /home/user/projects/esp/esp-idf/examples/system/ulp/lp_core/debugging/main/lp_core/main.c:21
+
+#. When setting HW breakpoint in GDB it is set on both cores, so the number of available HW breakpoints is limited to the number of them supported by LP core ({IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} for {IDF_TARGET_NAME}).
+#. OpenOCD flash support is disabled. It does not matter for LP core application because it is run completely from RAM and GDB can use SW breakpoints for it. But if you want to set a breakpoint on function from flash used by the code running on HP core (e.g. `app_main`) you should request to set HW breakpoint explicitly via ``hb`` / ``thb`` GDB commands.
+#. Since main and ULP programs are linked as separate binaries it is possible for them to have global symbols (functions, variables) with the same name. When you set breakpoint for such a functions using its name GDB will set breakpoints for all of them. It could lead to the problems when one of the function is located in the flash because currently flash support is disabled in OpenOCD when debugging LP core. In that case you can use source line or address based breakpoints.
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 Application Examples
 --------------------
 
 * :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in Deep-sleep.
+<<<<<<< HEAD
 * :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+=======
+
+.. only:: esp32c6
+
+    * :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
+
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
 * :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
 * :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
+
+* :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
+* :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
+
+* :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.
+* :example:`system/ulp/lp_core/debugging` shows how to debug code running on LP core using GDB and OpenOCD.
 
 API Reference
 -------------

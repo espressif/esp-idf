@@ -13,14 +13,80 @@
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "esp_dma_utils.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_private/esp_cache_private.h"
 #include "soc/soc_caps.h"
 #include "hal/hal_utils.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
+#include "esp_cache.h"
 
 static const char *TAG = "dma_utils";
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
+
+esp_err_t esp_dma_split_buffer_to_aligned(void *input_buffer, size_t input_buffer_len, void *stash_buffer, size_t stash_buffer_len, size_t split_alignment, dma_buffer_split_array_t *align_array)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(align_array && input_buffer && input_buffer_len && stash_buffer && split_alignment && !(split_alignment & (split_alignment - 1)
+                        && (stash_buffer_len >= 2 * split_alignment)), ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(!((uintptr_t)stash_buffer % split_alignment), ESP_ERR_INVALID_ARG, TAG, "extra buffer is not aligned");
+
+    // calculate head_overflow_len
+    size_t head_overflow_len = (uintptr_t)input_buffer % split_alignment;
+    head_overflow_len = head_overflow_len ? split_alignment - head_overflow_len : 0;
+    ESP_LOGD(TAG, "head_addr:%p split_alignment:%zu head_overflow_len:%zu", input_buffer, split_alignment, head_overflow_len);
+    // calculate tail_overflow_len
+    size_t tail_overflow_len = ((uintptr_t)input_buffer + input_buffer_len) % split_alignment;
+    ESP_LOGD(TAG, "tail_addr:%p split_alignment:%zu tail_overflow_len:%zu", input_buffer + input_buffer_len - tail_overflow_len, split_alignment, tail_overflow_len);
+
+    uint32_t extra_buf_count = 0;
+    input_buffer = (uint8_t*)input_buffer;
+    stash_buffer = (uint8_t*)stash_buffer;
+    align_array->buf.head.recovery_address = input_buffer;
+    align_array->buf.head.aligned_buffer = stash_buffer + split_alignment * extra_buf_count++;
+    align_array->buf.head.length = head_overflow_len;
+    align_array->buf.body.recovery_address = input_buffer + head_overflow_len;
+    align_array->buf.body.aligned_buffer = input_buffer + head_overflow_len;
+    align_array->buf.body.length = input_buffer_len - head_overflow_len - tail_overflow_len;
+    align_array->buf.tail.recovery_address = input_buffer + input_buffer_len - tail_overflow_len;
+    align_array->buf.tail.aligned_buffer = stash_buffer + split_alignment * extra_buf_count++;
+    align_array->buf.tail.length = tail_overflow_len;
+
+    // special handling when input_buffer length is no more than buffer alignment
+    if(head_overflow_len >= input_buffer_len || tail_overflow_len >= input_buffer_len)
+    {
+        align_array->buf.head.length  = input_buffer_len ;
+        align_array->buf.body.length  = 0 ;
+        align_array->buf.tail.length  = 0 ;
+    }
+
+    for(int i = 0; i < 3; i++) {
+        if(!align_array->aligned_buffer[i].length) {
+            align_array->aligned_buffer[i].aligned_buffer = NULL;
+            align_array->aligned_buffer[i].recovery_address = NULL;
+        }
+    }
+
+    return ret;
+}
+
+esp_err_t esp_dma_merge_aligned_buffers(dma_buffer_split_array_t *align_array)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(align_array, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    // only need to copy the head and tail buffer
+    if(align_array->buf.head.length) {
+        memcpy(align_array->buf.head.recovery_address, align_array->buf.head.aligned_buffer, align_array->buf.head.length);
+    }
+    if(align_array->buf.tail.length) {
+        memcpy(align_array->buf.tail.recovery_address, align_array->buf.tail.aligned_buffer, align_array->buf.tail.length);
+    }
+
+    return ret;
+}
 
 esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size)
 {
@@ -46,7 +112,8 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
         heap_caps &= ~MALLOC_CAP_DMA;
     }
 
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
+    // Return value unused if asserts are disabled
+    esp_err_t __attribute((unused)) ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
     //Get the least common multiple of two alignment
@@ -132,7 +199,8 @@ bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma
     if (esp_ptr_external_ram(ptr)) {
         cache_flags |= MALLOC_CAP_SPIRAM;
     }
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
+    // Return value unused if asserts are disabled
+    esp_err_t __attribute__((unused)) ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
     //Get the least common multiple of two alignment

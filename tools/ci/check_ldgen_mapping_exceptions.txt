@@ -2,6 +2,12 @@ libc
 sha256_coredump
 gcc
 clang_rt_builtins
+freertos_idf
+freertos_smp
 freertos_common
 esp_psram
 esp_mm
+<<<<<<< HEAD
+=======
+esp_ringbuf
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

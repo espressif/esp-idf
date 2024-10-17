@@ -275,7 +275,7 @@ typedef union {
 } i2c_ana_mst_date_reg_t;
 
 
-typedef struct {
+typedef struct i2c_ana_mst_dev_t {
     volatile i2c_ana_mst_i2c0_ctrl_reg_t i2c0_ctrl;
     volatile i2c_ana_mst_i2c1_ctrl_reg_t i2c1_ctrl;
     volatile i2c_ana_mst_i2c0_conf_reg_t i2c0_conf;
@@ -293,6 +293,7 @@ typedef struct {
     volatile i2c_ana_mst_date_reg_t date;
 } i2c_ana_mst_dev_t;
 
+extern i2c_ana_mst_dev_t I2C_ANA_MST;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2c_ana_mst_dev_t) == 0x3c, "Invalid size of i2c_ana_mst_dev_t structure");

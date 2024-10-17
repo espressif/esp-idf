@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,8 @@ int scandir(const char *dirname, struct dirent ***out_dirlist,
 
     dir_ptr = opendir(dirname);
     ESP_GOTO_ON_FALSE(dir_ptr, -1, out, TAG, "Failed to open directory: %s", dirname);
+
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // Ignore intended return of allocated *out_dirlist
 
     while ((entry = readdir(dir_ptr)) != NULL) {
         /* skip entries that don't match the filter function */
@@ -71,8 +73,10 @@ out:
         }
         free(entries);
     }
+
     if (dir_ptr) {
         closedir(dir_ptr);
     }
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }

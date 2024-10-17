@@ -358,22 +358,34 @@ static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
     char name[64] = {0};
 
     uint8_t uuid_len = 0;
-    uint8_t *uuid_d = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_16SRV_CMPL, &uuid_len);
+    uint8_t *uuid_d = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                      scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                      ESP_BLE_AD_TYPE_16SRV_CMPL,
+                      &uuid_len);
     if (uuid_d != NULL && uuid_len) {
         uuid = uuid_d[0] + (uuid_d[1] << 8);
     }
 
     uint8_t appearance_len = 0;
-    uint8_t *appearance_d = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_APPEARANCE, &appearance_len);
+    uint8_t *appearance_d = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                                    scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                                    ESP_BLE_AD_TYPE_APPEARANCE,
+                                                    &appearance_len);
     if (appearance_d != NULL && appearance_len) {
         appearance = appearance_d[0] + (appearance_d[1] << 8);
     }
 
     uint8_t adv_name_len = 0;
-    uint8_t *adv_name = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+    uint8_t *adv_name = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                                 scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                                 ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                 &adv_name_len);
 
     if (adv_name == NULL) {
-        adv_name = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_NAME_SHORT, &adv_name_len);
+        adv_name = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                            scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                            ESP_BLE_AD_TYPE_NAME_SHORT,
+                                            &adv_name_len);
     }
 
     if (adv_name != NULL && adv_name_len) {

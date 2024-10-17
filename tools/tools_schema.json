@@ -23,6 +23,7 @@
     "toolInfo": {
       "type": "object",
       "description": "Information about one tool",
+      "additionalProperties": false,
       "properties": {
         "name" : {
           "description": "Tool name (used as a directory name)",
@@ -131,6 +132,7 @@
     },
     "versionInfo": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "name" : {
           "description": "Version name (used as a directory name)",
@@ -153,7 +155,13 @@
         "linux-arm64": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
+        "linux-armhf": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
         "macos": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "macos-arm64": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
         "win32": {
@@ -170,6 +178,7 @@
     "platformDownloadInfo": {
       "description": "Information about download artifact for one platform",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "sha256": {
           "type": "string",
@@ -202,13 +211,14 @@
     "platformOverrideInfo": {
       "description": "Platform-specific values which override the defaults",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "platforms": {
           "description": "List of platforms to which this override applies",
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-arm64", "macos", "macos-arm64", "win32", "win64"]
+            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-armhf", "linux-arm64", "macos", "macos-arm64", "win32", "win64"]
           }
         },
         "export_paths": {

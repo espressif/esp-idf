@@ -1,12 +1,15 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4'], reason='h2/p4 not supported')  # TODO: IDF-8990
+@pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+@pytest.mark.esp32c6
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'phy_multiple_init_data',

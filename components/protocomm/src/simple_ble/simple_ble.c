@@ -31,6 +31,11 @@ static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
+uint8_t get_keep_ble_on()
+{
+    return g_ble_cfg_p->keep_ble_on;
+}
+
 const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 {
     const uint8_t *uuid128_ptr;
@@ -236,14 +241,15 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
         return ret;
     }
 
-#ifdef CONFIG_BTDM_CTRL_MODE_BTDM
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-#elif defined CONFIG_BTDM_CTRL_MODE_BLE_ONLY || CONFIG_BT_CTRL_MODE_EFF
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-#else
+#ifdef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
     return ESP_FAIL;
+#elif CONFIG_BTDM_CTRL_MODE_BTDM
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+#else  //For all other chips supporting BLE Only
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 #endif
+
     if (ret) {
         ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
         return ret;

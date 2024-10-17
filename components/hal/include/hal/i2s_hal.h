@@ -40,7 +40,7 @@ typedef struct {
             i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
             uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
-            bool                    bit_shift;          /*!< Set to enbale bit shift in Philips mode */
+            bool                    bit_shift;          /*!< Set to enable bit shift in Philips mode */
 #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
             bool                    msb_right;          /*!< Set to place right channel data at the MSB in the FIFO */
 #else
@@ -350,7 +350,7 @@ void i2s_hal_tdm_enable_rx_channel(i2s_hal_context_t *hal);
 #define i2s_hal_rx_reset_fifo(hal)              i2s_ll_rx_reset_fifo((hal)->dev)
 
 
-#if !SOC_I2S_SUPPORTS_GDMA
+#if !SOC_GDMA_SUPPORTED
 /**
  * @brief Enable I2S TX DMA
  *

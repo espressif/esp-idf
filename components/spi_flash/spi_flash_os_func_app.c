@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -347,6 +347,22 @@ esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)
     };
     chip->os_func = &esp_flash_spi1_default_os_functions;
     chip->os_func_data = &main_flash_arg;
+    return ESP_OK;
+}
+
+esp_err_t esp_flash_set_dangerous_write_protection(esp_flash_t *chip, const bool protect)
+{
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+    if (chip == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (chip->os_func_data != NULL) {
+        ((app_func_arg_t*)chip->os_func_data)->no_protect = !protect;
+    }
+#else
+    (void)chip;
+    (void)protect;
+#endif
     return ESP_OK;
 }
 

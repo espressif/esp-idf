@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,10 @@
 #include <stdlib.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void *bootloader_sha256_handle_t;
 
 bootloader_sha256_handle_t bootloader_sha256_start(void);
@@ -23,3 +27,7 @@ bootloader_sha256_handle_t bootloader_sha256_start(void);
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len);
 
 void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest);
+
+#ifdef __cplusplus
+}
+#endif

@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE", esp32p4="JTAG_SEL_ENABLE"}
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE", esp32p4="JTAG_SEL_ENABLE", esp32c5="JTAG_SEL_ENABLE", esp32c61="JTAG_SEL_ENABLE"}
 
 关于适配 OpenOCD 和 {IDF_TARGET_NAME} 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节。然后按照以下步骤进行设置，使其正常工作。
 
@@ -12,7 +12,7 @@
     配置 eFuse
     ^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。你可以使用 ``espefuse.py`` 工具来烧录 eFuse，以完成接口转换。
+    {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。你可以使用 ``idf.py`` 工具来烧录 eFuse，以完成接口转换。
 
     .. only:: esp32c3
 

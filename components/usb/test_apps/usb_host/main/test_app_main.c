@@ -9,7 +9,10 @@
 #include "unity_test_utils_memory.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+<<<<<<< HEAD
 #include "test_usb_common.h"
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "dev_msc.h"
 #include "usb/usb_host.h"
 
@@ -17,10 +20,17 @@ void setUp(void)
 {
     unity_utils_record_free_mem();
     dev_msc_init();
+<<<<<<< HEAD
     test_usb_init_phy();    // Initialize the internal USB PHY and USB Controller for testing
     // Install USB Host
     usb_host_config_t host_config = {
         .skip_phy_setup = true,     // test_usb_init_phy() will already have setup the internal USB PHY for us
+=======
+    // Install USB Host
+    usb_host_config_t host_config = {
+        .skip_phy_setup = false,
+        .root_port_unpowered = false,
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -32,10 +42,17 @@ void tearDown(void)
     // Short delay to allow task to be cleaned up
     vTaskDelay(10);
     // Clean up USB Host
+<<<<<<< HEAD
     ESP_ERROR_CHECK(usb_host_uninstall());
     // Short delay to allow task to be cleaned up after client uninstall
     vTaskDelay(10);
     test_usb_deinit_phy();  // Deinitialize the internal USB PHY after testing
+=======
+    printf("USB Host uninstall\n");
+    ESP_ERROR_CHECK(usb_host_uninstall());
+    // Short delay to allow task to be cleaned up after client uninstall
+    vTaskDelay(10);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     unity_utils_evaluate_leaks();
 }
 

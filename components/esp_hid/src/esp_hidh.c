@@ -536,7 +536,7 @@ esp_err_t esp_hidh_dev_report_maps_get(esp_hidh_dev_t *dev, size_t *num_maps, es
  * */
 
 /**
- * `lock_devices()` only protect the devices list, this mutex protect the single deivce instance.
+ * `lock_devices()` only protect the devices list, this mutex protect the single device instance.
  */
 inline void esp_hidh_dev_lock(esp_hidh_dev_t *dev)
 {
@@ -655,7 +655,12 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
         }
         r = dev->reports;
         while (r) {
-            if (r->value_len == len - 1 && r->report_id == *data && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
+            /**
+             * @note For some HID device, the input report length may exceed the length which is declared in HID
+             * descriptor, like Logitech K380 keyboard. So loose the check condition from `r->value_len == len - 1` to
+             * `r->value_len <= len - 1`.
+             */
+            if (r->value_len <= len - 1 && r->report_id == *data && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
                     r->protocol_mode == protocol_mode) {
                 *has_report_id = true;
                 break;

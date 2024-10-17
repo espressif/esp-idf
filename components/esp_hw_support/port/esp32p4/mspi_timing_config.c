@@ -26,7 +26,8 @@ void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_spe
     ESP_EARLY_LOGD(TAG, "psram_freq_mhz: %" PRIu32 " mhz, bus clock div: %" PRIu32, psram_freq_mhz, freqdiv);
     PERIPH_RCC_ATOMIC() {
     	//MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
-        psram_ctrlr_ll_set_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, MSPI_TIMING_CORE_CLOCK_DIV);
+        psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
+        psram_ctrlr_ll_set_core_clock_div(PSRAM_CTRLR_LL_MSPI_ID_2, MSPI_TIMING_CORE_CLOCK_DIV);
         psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_3, freqdiv);
         psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_2, freqdiv);
     }

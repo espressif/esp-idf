@@ -35,6 +35,9 @@ extern int wifi_cmd_get_rx_statistics(int argc, char **argv);
 extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
 #endif
 
+#ifdef CONFIG_ESP_EXT_CONN_ENABLE
+#include "esp_extconn.h"
+#endif
 
 void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status)
 {
@@ -69,6 +72,11 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
 
 void app_main(void)
 {
+#if CONFIG_ESP_EXT_CONN_ENABLE
+    esp_extconn_config_t ext_config = ESP_EXTCONN_CONFIG_DEFAULT();
+    esp_extconn_init(&ext_config);
+#endif
+
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());

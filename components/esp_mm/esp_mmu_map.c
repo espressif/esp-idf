@@ -14,6 +14,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
+#include "esp_compiler.h"
 
 #include "soc/soc_caps.h"
 #include "hal/cache_types.h"
@@ -133,8 +134,8 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
      * - Now IBUS addresses (between `_instruction_reserved_start` and `_instruction_reserved_end`) are consecutive on all chips,
      *   we strongly rely on this to calculate the .text length
      */
-    extern int _instruction_reserved_start;
-    extern int _instruction_reserved_end;
+    extern char _instruction_reserved_start;
+    extern char _instruction_reserved_end;
     size_t irom_len_to_reserve = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_start)) == irom_len_to_reserve);
 
@@ -161,8 +162,8 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     /**
      * Similarly, we follow the way how 1st bootloader load flash .rodata:
      */
-    extern int _rodata_reserved_start;
-    extern int _rodata_reserved_end;
+    extern char _rodata_reserved_start;
+    extern char _rodata_reserved_end;
     size_t drom_len_to_reserve = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_start)) == drom_len_to_reserve);
 
@@ -638,9 +639,11 @@ esp_err_t esp_mmu_unmap(void *ptr)
     size_t slot_len = 0;
 
     for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-out-of-bounds")
         if (ptr_laddr >= s_mmu_ctx.mem_regions[i].free_head && ptr_laddr < s_mmu_ctx.mem_regions[i].end) {
             region = &s_mmu_ctx.mem_regions[i];
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-out-of-bounds")
     }
     ESP_RETURN_ON_FALSE(region, ESP_ERR_NOT_FOUND, TAG, "munmap target pointer is outside external memory regions");
 

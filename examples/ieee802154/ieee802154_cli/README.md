@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-H2 |
+| ----------------- | -------- | -------- | -------- |
 
 # IEEE802.15.4 Command Line Example
 
@@ -314,7 +314,7 @@ I (6580547) i154cmd: 00 11 22 33 44 55 66 77
 ```
 
 #### tx -l \<len\>
-Transmit IEEE 802154 MAC frame wich has a length=\<len\>.
+Transmit IEEE 802154 MAC frame which has a length=\<len\>.
 * -C: Set cca trigging tx mode true.
 ```bash
 > tx -l 10

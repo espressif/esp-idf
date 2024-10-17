@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 
@@ -14,9 +13,7 @@ CONFIGS_NVS_ENCR_FLASH_ENC = [
 @pytest.mark.esp32c3
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_nvs_flash(dut: IdfDut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![nvs_encr_hmac]')
-    dut.expect_unity_test_output(timeout=120)
+    dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
 
 
 @pytest.mark.esp32c3
@@ -39,3 +36,9 @@ def test_nvs_flash_encr_flash_enc(dut: IdfDut) -> None:
     # Erase the nvs_key partition
     dut.serial.erase_partition('nvs_key')
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32
+@pytest.mark.psram
+def test_nvs_flash_ram(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='nvs_ram')

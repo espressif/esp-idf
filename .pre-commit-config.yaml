@@ -53,7 +53,7 @@ repos:
               .*_pb2.py
           )$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
   - repo: local
@@ -224,6 +224,11 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-pwsh-check
+    rev: v1.0.1
+    hooks:
+    - id: check-powershell-scripts
+      stages: [manual]
   - repo: https://github.com/espressif/esp-idf-sbom.git
     rev: v0.13.0
     hooks:
@@ -236,6 +241,6 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.1.0
+    rev: v2.3.0
     hooks:
       - id: check-kconfig-files

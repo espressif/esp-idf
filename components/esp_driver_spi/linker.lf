@@ -5,3 +5,6 @@ entries:
     if SOC_GDMA_SUPPORTED != y && (SPI_MASTER_ISR_IN_IRAM = y || SPI_SLAVE_ISR_IN_IRAM = y):
         spi_dma: spi_dma_reset (noflash)
         spi_dma: spi_dma_start (noflash)
+
+        if SOC_SPI_SUPPORT_SLAVE_HD_VER2 = y:
+            spi_dma: spi_dma_get_eof_desc (noflash)

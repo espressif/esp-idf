@@ -6,7 +6,7 @@ Bootloader
 The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
-2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure </security/secure-boot-v2>` features, if configured;
+2. Initialize :doc:`/security/flash-encryption` and/or :doc:`Secure Boot </security/secure-boot-v2>` features, if configured;
 3. Select the application partition to boot, based on the partition table and ota_data (if any);
 4. Load this image to RAM (IRAM & DRAM) and transfer management to the image that was just loaded.
 
@@ -25,7 +25,7 @@ The bootloader does not support booting apps from older versions of ESP-IDF. Whe
 
 .. note::
 
-   If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
+    If testing an OTA update for an existing product in production, always test it using the same ESP-IDF bootloader binary that is deployed in production.
 
 .. only:: esp32
 
@@ -54,7 +54,7 @@ The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader
 
 .. only:: esp32
 
-   Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
+    Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
 
 Log Level
 ---------
@@ -163,20 +163,26 @@ Options to work around this are:
 
 When Secure Boot V2 is enabled, there is also an absolute binary size limit of {IDF_TARGET_MAX_BOOTLOADER_SIZE} (excluding the 4 KB signature), because the bootloader is first loaded into a fixed size buffer for verification.
 
+Fast Boot from Deep-Sleep
+-------------------------
+
+The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when the :ref:`CONFIG_SECURE_BOOT` option is disabled or :ref:`CONFIG_SECURE_BOOT_INSECURE` is enabled along with Secure Boot. The reduction in time is achieved by ignoring image verification.
+
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    Fast Boot from Deep-Sleep
-    -------------------------
+    During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. After waking up from deep sleep, this address is used to boot the application again without any checks, resulting in a significantly faster load.
 
-    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+.. only:: not SOC_RTC_FAST_MEM_SUPPORTED
+
+    The {IDF_TARGET_NAME} does not have RTC memory, so a running partition cannot be saved there; instead, the entire partition table is read to select the correct application. During wake-up, the selected application is loaded without any checks, resulting in a significantly faster load.
 
 Custom Bootloader
 -----------------
 
 The current bootloader implementation allows a project to extend it or modify it. There are two ways of doing it: by implementing hooks or by overriding it. Both ways are presented in :example:`custom_bootloader` folder in ESP-IDF examples:
 
-* `bootloader_hooks` which presents how to connect some hooks to the bootloader initialization
-* `bootloader_override` which presents how to override the bootloader implementation
+* :example:`custom_bootloader/bootloader_hooks` presents how to connect some hooks to the bootloader initialization
+* :example:`custom_bootloader/bootloader_override` presents how to override the bootloader implementation
 
 In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's `bootloader_components` directory (note that this will increase its size).
 

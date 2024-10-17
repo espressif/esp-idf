@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+<<<<<<< HEAD
+=======
+#include "sdkconfig.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/io_mux.h"

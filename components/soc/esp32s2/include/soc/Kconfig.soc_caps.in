@@ -407,6 +407,10 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -482,6 +486,10 @@ config SOC_I2S_SUPPORTS_DMA_EQUAL
 config SOC_I2S_SUPPORTS_LCD_CAMERA
     bool
     default y
+
+config SOC_I2S_MAX_DATA_WIDTH
+    int
+    default 24
 
 config SOC_I2S_APLL_MIN_FREQ
     int
@@ -1108,6 +1116,10 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     default y
 
 config SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
+    bool
+    default y
+
+config SOC_PM_MODEM_PD_BY_SW
     bool
     default y
 

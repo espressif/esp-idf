@@ -80,8 +80,13 @@ struct gdma_hal_context_t {
     void (*connect_peri)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, gdma_trigger_peripheral_t periph, int periph_sub_id); /// Connect the channel to a peripheral
     void (*disconnect_peri)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Disconnect the channel from a peripheral
     void (*enable_burst)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_data_burst, bool en_desc_burst); /// Enable burst mode
+<<<<<<< HEAD
     void (*set_strategy)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back); /// Set some misc strategy of the channel behaviour
     void (*set_burst_size)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz); /// Set burst transfer size
+=======
+    void (*set_burst_size)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz); /// Set burst transfer size
+    void (*set_strategy)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped); /// Set some misc strategy of the channel behaviour
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     uint32_t (*get_intr_status_reg)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); // Get the interrupt status register address
     void (*enable_intr)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask, bool en_or_dis); /// Enable the channel interrupt
     void (*clear_intr)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask); /// Clear the channel interrupt
@@ -118,7 +123,7 @@ void gdma_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channel_di
 
 void gdma_hal_set_burst_size(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz);
 
-void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back);
+void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped);
 
 void gdma_hal_enable_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask, bool en_or_dis);
 

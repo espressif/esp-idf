@@ -145,9 +145,14 @@ void vPortExitCriticalIDF(portMUX_TYPE *lock)
     spinlock_release(lock);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNestingIDF[coreID];
+
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNestingIDF[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             XTOS_RESTORE_JUST_INTLEVEL((int) port_uxCriticalOldInterruptStateIDF[coreID]);
@@ -342,6 +347,11 @@ BaseType_t xPortStartScheduler( void )
         prvStartSchedulerOtherCores();
     }
 #endif // configNUM_CORES > 1
+
+    // Windows contain references to the startup stack which will be reclaimed by the main task
+    // Spill the windows to create a clean environment to ensure we do not carry over any such references
+    // to invalid SPs which will cause problems if main_task does a windowoverflow to them
+    xthal_window_spill();
 
     // Cannot be directly called from C; never returns
     __asm__ volatile ("call0    _frxt_dispatch\n");

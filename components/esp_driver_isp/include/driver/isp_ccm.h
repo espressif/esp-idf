@@ -35,7 +35,11 @@ typedef struct {
  *       but it only takes effect until `esp_isp_ccm_enable` is called
  *
  * @param[in] proc    Processor handle
+<<<<<<< HEAD
  * @param[in] ccm_cfg CCM configurations, set NULL to de-configure the ISP CCM
+=======
+ * @param[in] ccm_cfg CCM configurations
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  *
  * @return
  *        - ESP_OK                 On success

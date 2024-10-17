@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_compiler.h"
 
 static const char *TAG = "lcd_panel.io.i2c";
 
@@ -47,6 +48,8 @@ typedef struct {
 
 esp_err_t esp_lcd_new_panel_io_i2c_v1(uint32_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
 {
+    // leak detection of i2c_panel_io because saving i2c_panel_io->base address
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 #endif
@@ -78,6 +81,7 @@ esp_err_t esp_lcd_new_panel_io_i2c_v1(uint32_t bus, const esp_lcd_panel_io_i2c_c
     return ESP_OK;
 err:
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 static esp_err_t panel_io_i2c_del(esp_lcd_panel_io_t *io)

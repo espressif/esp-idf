@@ -41,6 +41,7 @@ TYPE_PATTERNS_DICT = {
         '**/build*/flasher_args.json',
         '**/build*/flash_project_args',
         '**/build*/config/sdkconfig.json',
+        '**/build*/sdkconfig',
         '**/build*/project_description.json',
         'list_job*.txt',
     ],

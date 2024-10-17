@@ -11,6 +11,7 @@
 #define _MESH_H_
 
 #include "net.h"
+#include "tag.h"
 
 #ifdef __cplusplus
 extern "C" {

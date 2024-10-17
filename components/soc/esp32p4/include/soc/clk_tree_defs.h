@@ -483,7 +483,8 @@ typedef enum {
     SPI_CLK_SRC_XTAL     = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_RC_FAST  = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST_20M as SPI source clock */
     SPI_CLK_SRC_SPLL     = SOC_MOD_CLK_SPLL,        /*!< Select SPLL as SPI source clock */
-    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_SPLL,        /*!< Select SPLL as SPI source clock */
+    // TODO: IDF-8313, use PLL as default
+    SPI_CLK_SRC_DEFAULT  = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as default source clock */
 } soc_periph_spi_clk_src_t;
 
 /////////////////////////////////////////////////PSRAM////////////////////////////////////////////////////////////////////
@@ -634,6 +635,23 @@ typedef enum {
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
 
+<<<<<<< HEAD
+=======
+///////////////////////////////////////////////LP_ADC///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of LP_ADC
+ */
+#define SOC_LP_ADC_CLKS {SOC_MOD_CLK_LP_DYN_FAST}
+
+/**
+ * @brief LP ADC controller clock source
+ */
+typedef enum {
+    LP_ADC_CLK_SRC_LP_DYN_FAST = SOC_MOD_CLK_LP_DYN_FAST,   /*!< Select LP_DYN_FAST as the source clock */
+} soc_periph_lp_adc_clk_src_t;
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**

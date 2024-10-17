@@ -54,7 +54,7 @@ Secure Element
 
 The ATECC608A secure element interfacing example has been moved to `ESP Cryptoauthlib Repository <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ on GitHub.
 
-This example is also part of the `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ in the component manager registry.
+This example is also part of the `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ in the ESP Component Registry.
 
 I2S
 -------

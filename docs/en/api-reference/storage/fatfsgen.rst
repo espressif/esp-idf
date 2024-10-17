@@ -1,7 +1,3 @@
-:orphan:
-
-.. linked from fatfs.rst
-
 Generating and Parsing FATFS on Host
 ====================================
 

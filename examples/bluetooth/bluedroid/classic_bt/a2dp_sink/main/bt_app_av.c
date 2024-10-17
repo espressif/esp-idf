@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -93,6 +93,13 @@ i2s_chan_handle_t tx_chan = NULL;
 dac_continuous_handle_t tx_chan;
 #endif
 
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+static bool cover_art_connected = false;
+static bool cover_art_getting = false;
+static uint32_t cover_art_image_size = 0;
+static uint8_t image_handle_old[7];
+#endif
+
 /********************************
  * STATIC FUNCTION DEFINITIONS
  *******************************/
@@ -107,6 +114,18 @@ static void bt_app_alloc_meta_buffer(esp_avrc_ct_cb_param_t *param)
     rc->meta_rsp.attr_text = attr_text;
 }
 
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+static bool image_handle_check(uint8_t *image_handle, int len)
+{
+    /* Image handle length must be 7 */
+    if (len == 7 && memcmp(image_handle_old, image_handle, 7) != 0) {
+        memcpy(image_handle_old, image_handle, 7);
+        return true;
+    }
+    return false;
+}
+#endif
+
 static void bt_av_new_track(void)
 {
     /* request metadata */
@@ -114,6 +133,11 @@ static void bt_av_new_track(void)
                         ESP_AVRC_MD_ATTR_ARTIST |
                         ESP_AVRC_MD_ATTR_ALBUM |
                         ESP_AVRC_MD_ATTR_GENRE;
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+    if (cover_art_connected) {
+        attr_mask |= ESP_AVRC_MD_ATTR_COVER_ART;
+    }
+#endif
     esp_avrc_ct_send_metadata_cmd(APP_RC_CT_TL_GET_META_DATA, attr_mask);
 
     /* register notification if peer support the event_id */
@@ -364,7 +388,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (a2d->a2d_psc_cfg_stat.psc_mask & ESP_A2D_PSC_DELAY_RPT) {
             ESP_LOGI(BT_AV_TAG, "Peer device support delay reporting");
         } else {
-            ESP_LOGI(BT_AV_TAG, "Peer device unsupport delay reporting");
+            ESP_LOGI(BT_AV_TAG, "Peer device unsupported delay reporting");
         }
         break;
     }
@@ -415,15 +439,24 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         }
         break;
     }
-    /* when passthrough responsed, this event comes */
+    /* when passthrough response, this event comes */
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough rsp: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
                     rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
         break;
     }
-    /* when metadata responsed, this event comes */
+    /* when metadata response, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+        if(rc->meta_rsp.attr_id == 0x80 && cover_art_connected && cover_art_getting == false) {
+            /* check image handle is valid and different with last one, wo dont want to get an image repeatedly */
+            if(image_handle_check(rc->meta_rsp.attr_text, rc->meta_rsp.attr_length)) {
+                esp_avrc_ct_cover_art_get_linked_thumbnail(rc->meta_rsp.attr_text);
+                cover_art_getting = true;
+            }
+        }
+#endif
         free(rc->meta_rsp.attr_text);
         break;
     }
@@ -436,6 +469,13 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     /* when feature of remote device indicated, this event comes */
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC remote features %"PRIx32", TG features %x", rc->rmt_feats.feat_mask, rc->rmt_feats.tg_feat_flag);
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+        if ((rc->rmt_feats.tg_feat_flag & ESP_AVRC_FEAT_FLAG_TG_COVER_ART) && !cover_art_connected) {
+            ESP_LOGW(BT_RC_CT_TAG, "Peer support Cover Art feature, start connection...");
+            /* set mtu to zero to use a default value */
+            esp_avrc_ct_cover_art_connect(0);
+        }
+#endif
         break;
     }
     /* when notification capability of peer device got, this event comes */
@@ -446,6 +486,36 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         bt_av_new_track();
         bt_av_playback_changed();
         bt_av_play_pos_changed();
+        break;
+    }
+    case ESP_AVRC_CT_COVER_ART_STATE_EVT: {
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+        if (rc->cover_art_state.state == ESP_AVRC_COVER_ART_CONNECTED) {
+            cover_art_connected = true;
+            ESP_LOGW(BT_RC_CT_TAG, "Cover Art Client connected");
+        }
+        else {
+            cover_art_connected = false;
+            ESP_LOGW(BT_RC_CT_TAG, "Cover Art Client disconnected, reason:%d", rc->cover_art_state.reason);
+        }
+#endif
+        break;
+    }
+    case ESP_AVRC_CT_COVER_ART_DATA_EVT: {
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+        /* when rc->cover_art_data.final is true, it means we have received the entire image or get operation failed */
+        if (rc->cover_art_data.final) {
+            if(rc->cover_art_data.status == ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGI(BT_RC_CT_TAG, "Cover Art Client final data event, image size: %lu bytes", cover_art_image_size);
+            }
+            else {
+                ESP_LOGE(BT_RC_CT_TAG, "Cover Art Client get operation failed");
+            }
+            cover_art_image_size = 0;
+            /* set the getting state to false, we can get next image now */
+            cover_art_getting = false;
+        }
+#endif
         break;
     }
     /* others */
@@ -545,6 +615,14 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 
 void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
 {
+#if CONFIG_EXAMPLE_AVRCP_CT_COVER_ART_ENABLE
+    /* we must handle ESP_AVRC_CT_COVER_ART_DATA_EVT in this callback, copy image data to other buff before return if need */
+    if (event == ESP_AVRC_CT_COVER_ART_DATA_EVT && param->cover_art_data.status == ESP_BT_STATUS_SUCCESS) {
+        cover_art_image_size += param->cover_art_data.data_len;
+        /* copy image data to other place */
+        /* memcpy(p_buf, param->cover_art_data.p_data, param->cover_art_data.data_len); */
+    }
+#endif
     switch (event) {
     case ESP_AVRC_CT_METADATA_RSP_EVT:
         bt_app_alloc_meta_buffer(param);
@@ -553,7 +631,9 @@ void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
-    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT: {
+    case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
+    case ESP_AVRC_CT_COVER_ART_STATE_EVT:
+    case ESP_AVRC_CT_COVER_ART_DATA_EVT: {
         bt_app_work_dispatch(bt_av_hdl_avrc_ct_evt, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
         break;
     }

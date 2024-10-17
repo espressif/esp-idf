@@ -130,7 +130,11 @@ typedef union {
          */
         uint32_t test_enable:1;
         /** test_usb_oe : R/W; bitpos: [1]; default: 0;
+<<<<<<< HEAD
          *  USB pad one in test
+=======
+         *  USB pad output enable in test
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
          */
         uint32_t test_usb_oe:1;
         /** test_tx_dp : R/W; bitpos: [2]; default: 0;

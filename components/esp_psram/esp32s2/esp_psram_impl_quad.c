@@ -21,7 +21,7 @@
 #include "rom/efuse.h"
 #include "esp_rom_efuse.h"
 #include "soc/spi_reg.h"
-#include "soc/io_mux_reg.h"
+#include "soc/spi_pins.h"
 #include "esp_private/esp_gpio_reserve.h"
 
 static const char* TAG = "quad_psram";
@@ -70,15 +70,15 @@ static const char* TAG = "quad_psram";
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
 // hardcode the flash pins as well, making this code incompatible with either a setup
 // that has the flash on non-standard pins or ESP32s with built-in flash.
-#define FLASH_CLK_IO          SPI_CLK_GPIO_NUM
-#define FLASH_CS_IO           SPI_CS0_GPIO_NUM
+#define FLASH_CLK_IO            MSPI_IOMUX_PIN_NUM_CLK
+#define FLASH_CS_IO             MSPI_IOMUX_PIN_NUM_CS0
 // PSRAM clock and cs IO should be configured based on hardware design.
-#define PSRAM_CLK_IO          SPI_CLK_GPIO_NUM
-#define PSRAM_CS_IO           SPI_CS1_GPIO_NUM
-#define PSRAM_SPIQ_SD0_IO     SPI_Q_GPIO_NUM
-#define PSRAM_SPID_SD1_IO     SPI_D_GPIO_NUM
-#define PSRAM_SPIWP_SD3_IO    SPI_WP_GPIO_NUM
-#define PSRAM_SPIHD_SD2_IO    SPI_HD_GPIO_NUM
+#define PSRAM_CLK_IO            MSPI_IOMUX_PIN_NUM_CLK
+#define PSRAM_CS_IO             MSPI_IOMUX_PIN_NUM_CS1
+#define PSRAM_SPIQ_SD0_IO       MSPI_IOMUX_PIN_NUM_MISO
+#define PSRAM_SPID_SD1_IO       MSPI_IOMUX_PIN_NUM_MOSI
+#define PSRAM_SPIWP_SD3_IO      MSPI_IOMUX_PIN_NUM_WP
+#define PSRAM_SPIHD_SD2_IO      MSPI_IOMUX_PIN_NUM_HD
 
 #define CS_PSRAM_SEL   SPI_MEM_CS1_DIS_M
 #define CS_FLASH_SEL   SPI_MEM_CS0_DIS_M

@@ -2,9 +2,12 @@ components/esp_driver_touch_sens/test_apps/touch_sens:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 3
       temporary: currently driver ng only support version 3
+<<<<<<< HEAD
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: the runners do not support the pins for touch sensor
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
   depends_components:
     - esp_driver_touch_sens

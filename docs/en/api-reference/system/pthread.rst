@@ -1,5 +1,5 @@
-POSIX Threads Support
-=====================
+POSIX Support (Including POSIX Threads Support)
+===============================================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -12,7 +12,11 @@ POSIX Threads are implemented in ESP-IDF as wrappers around equivalent FreeRTOS 
 
 Pthreads can be used in ESP-IDF by including standard ``pthread.h`` header, which is included in the toolchain libc. An additional ESP-IDF specific header, ``esp_pthread.h``, provides additional non-POSIX APIs for using some ESP-IDF features with pthreads.
 
-C++ Standard Library implementations for ``std::thread``, ``std::mutex``, ``std::condition_variable``, etc., are realized using pthreads (via GCC libstdc++). Therefore, restrictions mentioned here also apply to the equivalent C++ standard library functionality.
+Besides POSIX Threads, ESP-IDF also supports :ref:`POSIX message queues <posix_message_queues>`.
+
+C++ Standard Library implementations for ``std::thread``, ``std::mutex``, ``std::condition_variable``, etc., are realized using pthreads and other POSIX APIs (via GCC libstdc++). Therefore, restrictions mentioned here also apply to the equivalent C++ standard library functionality.
+
+If you identify a useful API that you would like to see implemented in ESP-IDF, please open a `feature request on GitHub <https://github.com/espressif/esp-idf/issues>`_ with the details.
 
 RTOS Integration
 ----------------
@@ -22,6 +26,10 @@ Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operat
 .. note::
 
     When calling a standard libc or C++ sleep function, such as ``usleep`` defined in ``unistd.h``, the task will only block and yield the core if the sleep time is longer than :ref:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
+
+.. note::
+
+    The POSIX ``errno`` is provided by newlib in ESP-IDF. Thus the configuration ``configUSE_POSIX_ERRNO`` is not used and should stay disabled.
 
 By default, all POSIX Threads have the same RTOS priority, but it is possible to change this by calling a :ref:`custom API <esp-pthread>`.
 
@@ -169,6 +177,53 @@ Thread-Specific Data
 
     There are other options for thread local storage in ESP-IDF, including options with higher performance. See :doc:`/api-guides/thread-local-storage`.
 
+.. _posix_message_queues:
+
+Message Queues
+^^^^^^^^^^^^^^
+
+The message queue implementation is based on the `FreeRTOS-Plus-POSIX <https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_POSIX/index.html>`_ project. Message queues are not made available in any filesystem on ESP-IDF. Message priorities are not supported.
+The following API functions of the POSIX message queue specification are implemented:
+
+* `mq_open() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html>`_
+
+    - The ``name`` argument has, besides the POSIX specification, the following additional restrictions:
+        - It has to begin with a leading slash.
+        - It has to be no more than 255 + 2 characters long (including the leading slash, excluding the terminating null byte). However, memory for ``name`` is dynamically allocated internally, so the shorter it is, the fewer memory it will consume.
+    - The ``mode`` argument is not implemented and is ignored.
+    - Supported ``oflags``: ``O_RDWR``, ``O_CREAT``, ``O_EXCL``, and ``O_NONBLOCK``
+
+* `mq_close() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_close.html>`_
+* `mq_unlink() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_unlink.html>`_
+* `mq_receive() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html>`_
+
+    - Since message priorities are not supported, ``msg_prio`` is unused.
+
+* `mq_timedreceive() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html>`_
+
+    - Since message priorities are not supported, ``msg_prio`` is unused.
+
+* `mq_send() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html>`_
+
+    - Since message priorities are not supported, ``msg_prio`` has no effect.
+
+* `mq_timedsend() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html>`_
+
+    - Since message priorities are not supported, ``msg_prio`` has no effect.
+
+* `mq_getattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_getattr.html>`_
+
+`mq_notify() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_notify.html>`_ and `mq_setattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html>`_ are not implemented.
+
+Building
+........
+
+To use the POSIX message queue API, please add ``rt`` as a requirement in your component's ``CMakeLists.txt``
+
+.. note::
+
+    If you have used `FreeRTOS-Plus-POSIX <https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_POSIX/index.html>`_ in another FreeRTOS project before, please note that the include paths in IDF are POSIX-like. Hence, applications include ``mqueue.h`` directly instead of using the subdirectory include ``FreeRTOS_POSIX/mqueue.h``.
+
 Not Implemented
 ---------------
 
@@ -176,8 +231,10 @@ The ``pthread.h`` header is a standard header and includes additional APIs and f
 
 * ``pthread_cancel()`` returns ``ENOSYS`` if called.
 * ``pthread_condattr_init()`` returns ``ENOSYS`` if called.
+* `mq_notify() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_notify.html>`_ returns ``ENOSYS`` if called.
+* `mq_setattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html>`_ returns ``ENOSYS`` if called.
 
-Other POSIX Threads functions (not listed here) are not implemented and will produce either a compiler or a linker error if referenced from an ESP-IDF application. If you identify a useful API that you would like to see implemented in ESP-IDF, please open a `feature request on GitHub <https://github.com/espressif/esp-idf/issues>`_ with the details.
+Other POSIX Threads functions (not listed here) are not implemented and will produce either a compiler or a linker error if referenced from an ESP-IDF application.
 
 .. _esp-pthread:
 
@@ -187,6 +244,7 @@ ESP-IDF Extensions
 The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header offers custom extensions to control how subsequent calls to ``pthread_create()`` behaves. Currently, the following configuration can be set:
 
 .. list::
+
     - Default stack size of new threads, if not specified when calling ``pthread_create()`` (overrides :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`).
     - Stack memory capabilities determine which kind of memory is used for allocating pthread stacks. The field takes ESP-IDF heap capability flags, as defined in :component_file:`heap/include/esp_heap_caps.h`. The memory must be 8-bit accessible (MALLOC_CAP_8BIT), besides other custom flags the user can choose from. The user is responsible for ensuring the correctness of the stack memory capabilities. For more information about memory locations, refer to the documentation of :ref:`memory_capabilities`.
     - RTOS priority of new threads (overrides :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`).
@@ -195,12 +253,11 @@ The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header
 
 This configuration is scoped to the calling thread (or FreeRTOS task), meaning that :cpp:func:`esp_pthread_set_cfg` can be called independently in different threads or tasks. If the ``inherit_cfg`` flag is set in the current configuration then any new thread created will inherit the creator's configuration (if that thread calls ``pthread_create()`` recursively), otherwise the new thread will have the default configuration.
 
-Examples
---------
+Application Examples
+--------------------
 
 - :example:`system/pthread` demonstrates using the pthreads API to create threads.
 - :example:`cxx/pthread` demonstrates using C++ Standard Library functions with threads.
-
 
 API Reference
 -------------

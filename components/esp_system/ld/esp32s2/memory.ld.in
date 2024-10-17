@@ -15,20 +15,6 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-#ifdef CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-#define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x2000
-#else
-#define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x4000
-#endif
-
-#ifdef CONFIG_ESP32S2_DATA_CACHE_0KB
-#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0
-#elif defined CONFIG_ESP32S2_DATA_CACHE_8KB
-#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0x2000
-#else
-#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0x4000
-#endif
-
 #define RAM_IRAM_START    0x40020000
 #define RAM_DRAM_START    0x3FFB0000
 
@@ -127,8 +113,7 @@ _data_seg_org = ORIGIN(rtc_data_seg);
 
 /* The lines below define location alias for .rtc.data section based on Kconfig option.
    When the option is not defined then use slow memory segment
-   else the data will be placed in fast memory segment
-   TODO: check whether the rtc_data_location is correct for esp32s2 - IDF-761 */
+   else the data will be placed in fast memory segment */
 #ifndef CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else

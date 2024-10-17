@@ -10,6 +10,7 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32c5
 @pytest.mark.adc
 def test_adc_oneshot(dut: Dut) -> None:
     dut.expect(r'EXAMPLE: ADC1 Channel\[(\d+)\] Raw Data: (\d+)', timeout=5)

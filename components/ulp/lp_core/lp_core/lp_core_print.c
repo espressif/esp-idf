@@ -298,3 +298,40 @@ int lp_core_printf(const char* format, ...)
 }
 
 #endif /* !CONFIG_ULP_ROM_PRINT_ENABLE */
+
+void lp_core_print_str(const char *str)
+{
+    for (int i = 0; str[i] != 0; i++) {
+        lp_core_print_char(str[i]);
+    }
+}
+
+void lp_core_print_hex(int h)
+{
+    int x;
+    int c;
+    // Does not print '0x', only the digits (8 digits to print)
+    for (x = 0; x < 8; x++) {
+        c = (h >> 28) & 0xf; // extract the leftmost byte
+        if (c < 10) {
+            lp_core_print_char('0' + c);
+        } else {
+            lp_core_print_char('a' + c - 10);
+        }
+        h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
+    }
+}
+
+void lp_core_print_dec_two_digits(int d)
+{
+    // can print at most 2 digits!
+    int n1, n2;
+    n1 = d % 10; // extract ones digit
+    n2 = d / 10; // extract tens digit
+    if (n2 == 0) {
+        lp_core_print_char(' ');
+    } else {
+        lp_core_print_char(n2 + '0');
+    }
+    lp_core_print_char(n1 + '0');
+}

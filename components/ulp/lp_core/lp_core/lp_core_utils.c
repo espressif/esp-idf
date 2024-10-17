@@ -15,6 +15,7 @@
 #include "hal/uart_ll.h"
 #include "hal/rtc_io_ll.h"
 
+<<<<<<< HEAD
 #if !CONFIG_IDF_TARGET_ESP32P4
 #include "hal/lp_aon_ll.h"
 #endif
@@ -23,12 +24,26 @@
 #include "hal/etm_ll.h"
 #endif
 
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_ll.h"
 #endif
 
+#include "esp_cpu.h"
+
 /* LP_FAST_CLK is not very accurate, for now use a rough estimate */
+#if CONFIG_RTC_FAST_CLK_SRC_RC_FAST
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000 // For P4 TRM says 20 MHz by default, but we tune it closer to 16 MHz
+#elif CONFIG_RTC_FAST_CLK_SRC_XTAL
+#if SOC_XTAL_SUPPORT_48M
+#define LP_CORE_CPU_FREQUENCY_HZ 48000000
+#else
+#define LP_CORE_CPU_FREQUENCY_HZ 40000000
+#endif
+#else  // Default value in chip without rtc fast clock sel option
+#define LP_CORE_CPU_FREQUENCY_HZ 16000000
+#endif
 
 static uint32_t lp_wakeup_cause = 0;
 
@@ -54,12 +69,16 @@ void ulp_lp_core_update_wakeup_cause(void)
 
 #if SOC_ETM_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
-            && etm_ll_is_lpcore_wakeup_triggered()) {
+            && lp_core_ll_get_etm_wakeup_flag()) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_ETM;
 #if CONFIG_IDF_TARGET_ESP32P4
         lp_core_ll_clear_etm_wakeup_status();
 #else
+<<<<<<< HEAD
         lp_aon_ll_clear_lpcore_etm_wakeup_flag();
+=======
+        lp_core_ll_clear_etm_wakeup_flag();
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #endif
     }
 #endif /* SOC_ETM_SUPPORTED */
@@ -137,6 +156,16 @@ void ulp_lp_core_stop_lp_core(void)
 }
 
 void __attribute__((noreturn)) abort(void)
+{
+    // By calling abort users expect some panic message to be printed,
+    // so cause an exception like it is done in HP core's version of abort().
+    // If CONFIG_ULP_PANIC_OUTPUT_ENABLE is YES then panic handler will print smth
+    // If debugger is attached it will stop here and user can inspect the backtrace.
+    esp_cpu_dbgr_break();
+    while (1); // to make compiler happy about noreturn attr
+}
+
+void __attribute__((noreturn)) ulp_lp_core_abort(void)
 {
     /* Stop the LP Core */
     ulp_lp_core_stop_lp_core();

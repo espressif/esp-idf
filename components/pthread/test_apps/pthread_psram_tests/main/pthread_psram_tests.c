@@ -15,10 +15,21 @@
 #include <errno.h>
 #include "pthread.h"
 
+static void *exit_task(void *args)
+{
+    pthread_exit(NULL);
+}
+
 void setUp(void)
 {
     esp_pthread_cfg_t config = esp_pthread_get_default_config();
     TEST_ASSERT_EQUAL(ESP_OK, esp_pthread_set_cfg(&config));
+
+    /* Needed to allocate the lazy allocated locks */
+    pthread_t pthread_object = (pthread_t)NULL;
+    TEST_ASSERT_EQUAL_INT(0, pthread_create(&pthread_object, NULL, exit_task, NULL));
+    TEST_ASSERT_EQUAL_INT(0, pthread_join(pthread_object, NULL));
+
     test_utils_record_free_mem();
 }
 

@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
 #include "soc/spi_periph.h"
 
 /*
@@ -25,17 +24,17 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spihd_in = SPIHD_IN_IDX,
         .spics_out = {SPICS0_OUT_IDX, SPICS1_OUT_IDX},/* SPI0/1 do not have CS2 now */
         .spics_in = 0,/* SPI cs is not an input signal*/
-        .spiclk_iomux_pin = SPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = SPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = SPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = SPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
+        .spiclk_iomux_pin = MSPI_IOMUX_PIN_NUM_CLK,
+        .spid_iomux_pin = MSPI_IOMUX_PIN_NUM_MOSI,
+        .spiq_iomux_pin = MSPI_IOMUX_PIN_NUM_MISO,
+        .spiwp_iomux_pin = MSPI_IOMUX_PIN_NUM_WP,
+        .spihd_iomux_pin = MSPI_IOMUX_PIN_NUM_HD,
+        .spics0_iomux_pin = MSPI_IOMUX_PIN_NUM_CS0,
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = -1,
         .module = PERIPH_SPI_MODULE,
         .hw = (spi_dev_t *) &SPIMEM1,
-        .func = SPI_FUNC_NUM,
+        .func = MSPI_FUNC_NUM,
 
     }, {
         .spiclk_out = FSPICLK_OUT_MUX_IDX,

@@ -272,6 +272,10 @@ INPUT = \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154.h \
     $(PROJECT_PATH)/components/log/include/esp_log.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_level.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_buffer.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_timestamp.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_color.h \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
@@ -296,6 +300,11 @@ INPUT = \
     $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
+	$(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
@@ -304,6 +313,7 @@ INPUT = \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs_null.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \

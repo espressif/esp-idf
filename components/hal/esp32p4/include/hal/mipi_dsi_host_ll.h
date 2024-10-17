@@ -114,11 +114,11 @@ static inline void mipi_dsi_host_ll_set_timeout_count(dsi_host_dev_t *dev, uint3
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->to_cnt_cfg, hstx_to_cnt, hs_tx);
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->to_cnt_cfg, lprx_to_cnt, lp_rx);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->hs_rd_to_cnt, hs_rd_to_cnt, hs_rd);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lp_rd_to_cnt, lp_rd_to_cnt, lp_rd);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->hs_wr_to_cnt, hs_wr_to_cnt, hs_wr);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lp_wr_to_cnt, lp_wr_to_cnt, lp_wr);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->bta_to_cnt, bta_to_cnt, bta);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->hs_rd_timeout_cnt, hs_rd_to_cnt, hs_rd);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lp_rd_timeout_cnt, lp_rd_to_cnt, lp_rd);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->hs_wr_timeout_cnt, hs_wr_to_cnt, hs_wr);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lp_wr_timeout_cnt, lp_wr_to_cnt, lp_wr);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->bta_timeout_cnt, bta_to_cnt, bta);
 }
 
 /**

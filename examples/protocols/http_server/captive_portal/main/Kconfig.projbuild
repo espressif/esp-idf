@@ -17,4 +17,10 @@ menu "Example Configuration"
         default 4
         help
             Max number of the STA connects to AP.
+
+    config ESP_ENABLE_DHCP_CAPTIVEPORTAL
+        bool "DHCP Captive portal"
+        default y
+        help
+            Enables more modern DHCP-based Option 114 to provide clients with the captive portal URI
 endmenu

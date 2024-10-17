@@ -42,7 +42,7 @@ Constant data may also be placed into DRAM, for example if it is used in an non-
 
 The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noinit`` section. The values placed into this section will not be initialized at startup and should keep its value after software restart.
 
-.. only:: esp32
+.. only:: SOC_SPIRAM_SUPPORTED
 
     By applying the ``EXT_RAM_NOINIT_ATTR`` macro, non-initialized value could also be placed in external RAM. To do this, the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
 
@@ -150,7 +150,9 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
     RTC Slow Memory
     ^^^^^^^^^^^^^^^
 
-    Global and static variables used by code which runs from RTC memory must be placed into RTC Slow memory. For example :doc:`deep sleep <deep-sleep-stub>` variables can be placed here instead of RTC FAST memory, or code and variables accessed by the :doc:`/api-reference/system/ulp`.
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+
+        Global and static variables used by code which runs from RTC memory must be placed into RTC Slow memory. For example :doc:`deep sleep <deep-sleep-stub>` variables can be placed here instead of RTC FAST memory, or code and variables accessed by the :doc:`/api-reference/system/ulp`.
 
     The attribute macro named ``RTC_NOINIT_ATTR`` can be used to place data into this type of memory. The values placed into this section keep their value after waking from deep sleep.
 
@@ -170,8 +172,9 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
             On {IDF_TARGET_NAME} what was previously referred to as RTC memory has been renamed LP (low power) memory. You might see both terms being used interchangeably in IDF code, docs and the technical reference manual.
 
+    .. only:: ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
-    The same region of RTC FAST memory can be accessed as both instruction and data memory. Code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
+        The same region of RTC FAST memory can be accessed as both instruction and data memory. Code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
 
     .. only:: esp32
 

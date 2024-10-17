@@ -29,6 +29,10 @@ menu "Example Configuration"
             bool "ESP32C6-DevKitC"
             depends on IDF_TARGET_ESP32C6
 
+        config BLE_MESH_ESP32C5_DEV
+            bool "ESP32C5-DevKitC"
+            depends on IDF_TARGET_ESP32C5
+
     endchoice
 
 endmenu

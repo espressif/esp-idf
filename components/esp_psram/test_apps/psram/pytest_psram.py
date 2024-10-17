@@ -86,3 +86,31 @@ def test_psram_esp32s3_octal(dut: Dut) -> None:
 )
 def test_psram_esp32p4(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32c5
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32c5_release',
+        'esp32c5_advanced',
+    ],
+    indirect=True,
+)
+def test_psram_esp32c5(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32c61
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32c61_release',
+        'esp32c61_advanced',
+    ],
+    indirect=True,
+)
+def test_psram_esp32c61(dut: Dut) -> None:
+    dut.run_all_single_board_cases()

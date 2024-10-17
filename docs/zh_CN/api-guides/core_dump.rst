@@ -77,6 +77,25 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
         该功能仅在使用 ELF 文件格式时可用。
 
+.. only:: not esp32c5
+
+    核心转储内存区域
+    ^^^^^^^^^^^^^^^^
+
+    核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
+
+    推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
+
+    .. only:: SOC_SPIRAM_SUPPORTED
+
+        .. note::
+
+            除了崩溃任务的 TCB 和栈外，位于外部 RAM 中的数据不会保存到核心转储文件中，包括使用 ``EXT_RAM_BSS_ATTR`` 或 ``EXT_RAM_NOINIT_ATTR`` 属性定义的变量，以及存储在 ``extram_bss`` 段中的任何数据。
+
+    .. note::
+
+        该功能仅在使用 ELF 文件格式时可用。
+
 将核心转储保存到 flash
 -----------------------
 
@@ -86,12 +105,12 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. code-block:: none
 
-   # 名称，   类型，子类型，   偏移量，   大小
-   # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
-   nvs,      data, nvs,     0x9000,  0x6000
-   phy_init, data, phy,     0xf000,  0x1000
-   factory,  app,  factory, 0x10000, 1M
-   coredump, data, coredump,,        64K
+    # 名称，   类型，子类型，   偏移量，   大小
+    # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
+    nvs,      data, nvs,     0x9000,  0x6000
+    phy_init, data, phy,     0xf000,  0x1000
+    factory,  app,  factory, 0x10000, 1M
+    coredump, data, coredump,,        64K
 
 .. important::
 
@@ -195,7 +214,7 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     <将 Base64 编码的核心转储内容解码，并将其保存到磁盘文件中>
     ================= CORE DUMP END ===================
 
-建议将核心转储文本主体手动保存到文件，``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
+建议将核心转储文本主体手动保存到文件， ``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
 
 .. code-block:: bash
 

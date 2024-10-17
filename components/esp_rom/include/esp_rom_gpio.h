@@ -66,6 +66,7 @@ void esp_rom_gpio_connect_in_signal(uint32_t gpio_num, uint32_t signal_idx, bool
  * @brief Combine a peripheral signal which tagged as output attribute with a GPIO.
  *
  * @note There's no limitation on the number of signals that a GPIO can combine with.
+ * @note Internally, the signal will be connected first, then output will be enabled on the pad.
  *
  * @param gpio_num GPIO number
  * @param signal_idx Peripheral signal index (tagged as output attribute). Particularly, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.

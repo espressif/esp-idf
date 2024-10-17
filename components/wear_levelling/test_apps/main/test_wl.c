@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 
 
 TEST_GROUP(wear_levelling);
@@ -65,7 +64,7 @@ TEST(wear_levelling, wl_mount_checks_partition_params)
     esp_partition_erase_range(test_partition, 0, test_partition->size);
     // test small partition: result should be error
     for (int i = 0; i < 5; i++) {
-        fake_partition.size = SPI_FLASH_SEC_SIZE * (i);
+        fake_partition.size = test_partition->erase_size * (i);
         size_before = esp_get_free_heap_size();
         TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_mount(&fake_partition, &handle));
         // test that we didn't leak any memory
@@ -74,7 +73,7 @@ TEST(wear_levelling, wl_mount_checks_partition_params)
     }
 
     // test minimum size partition: result should be OK
-    fake_partition.size = SPI_FLASH_SEC_SIZE * 5;
+    fake_partition.size = test_partition->erase_size * 5;
     size_before = esp_get_free_heap_size();
     TEST_ESP_OK(wl_mount(&fake_partition, &handle));
     wl_unmount(handle);
@@ -217,7 +216,7 @@ TEST(wear_levelling, write_doesnt_touch_other_sectors)
     esp_partition_t fake_partition;
     memcpy(&fake_partition, partition, sizeof(fake_partition));
 
-    fake_partition.size = SPI_FLASH_SEC_SIZE * (4 + TEST_SECTORS_COUNT);
+    fake_partition.size = partition->erase_size * (4 + TEST_SECTORS_COUNT);
 
     wl_handle_t handle;
     TEST_ESP_OK(wl_mount(&fake_partition, &handle));

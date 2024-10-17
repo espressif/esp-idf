@@ -9,6 +9,7 @@ static const char* TAG = "nvs_page_host_test";
 #include "unity.h"
 #include "test_fixtures.hpp"
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
 
 #if defined(SEGGER_H) && defined(GLOBAL_H)
 NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();

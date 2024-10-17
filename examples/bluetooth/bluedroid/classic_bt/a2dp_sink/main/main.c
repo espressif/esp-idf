@@ -26,7 +26,7 @@
 #include "esp_avrc_api.h"
 
 /* device name */
-#define LOCAL_DEVICE_NAME    "ESP_SPEAKER"
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 
 /* event for stack up */
 enum {
@@ -86,7 +86,7 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     case ESP_BT_GAP_AUTH_CMPL_EVT: {
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(BT_AV_TAG, "authentication failed, status: %d", param->auth_cmpl.stat);
         }
@@ -119,7 +119,8 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
     /* when GAP mode changed, this event comes */
     case ESP_BT_GAP_MODE_CHG_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d", param->mode_chg.mode);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d, interval: %.2f ms",
+                 param->mode_chg.mode, param->mode_chg.interval * 0.625);
         break;
     /* when ACL connection completed, this event comes */
     case ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT:
@@ -148,7 +149,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     switch (event) {
     /* when do the stack up, this event comes */
     case BT_APP_EVT_STACK_UP: {
-        esp_bt_gap_set_device_name(LOCAL_DEVICE_NAME);
+        esp_bt_gap_set_device_name(local_device_name);
         esp_bt_dev_register_callback(bt_app_dev_cb);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 

@@ -294,3 +294,57 @@ esp_err_t esp_phy_get_ant(esp_phy_ant_config_t *config)
     memcpy(config, &s_phy_ant_config, sizeof(esp_phy_ant_config_t));
     return ESP_OK;
 }
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+typedef enum {
+    PHY_I2C_MST_CMD_TYPE_RF_OFF = 0,
+    PHY_I2C_MST_CMD_TYPE_RF_ON,
+    PHY_I2C_MST_CMD_TYPE_BBPLL_CFG,
+    PHY_I2C_MST_CMD_TYPE_MAX
+} phy_i2c_master_command_type_t;
+
+static uint32_t phy_ana_i2c_master_burst_config(phy_i2c_master_command_attribute_t *attr, int size, phy_i2c_master_command_type_t type)
+{
+    #define I2C1_BURST_VAL(en, start, end) (((en) << 31) | ((end) << 22) | ((start) << 16))
+    #define I2C0_BURST_VAL(en, start, end) (((en) << 15) | ((end) <<  6) | ((start) <<  0))
+
+    uint32_t brust = 0;
+    for (int i = 0; i < size; i++) {
+        if (attr[i].config.start == 0xff || attr[i].config.end == 0xff) /* ignore invalid configure */
+            continue;
+
+        if (attr[i].cmd_type == type) {
+            if (attr[i].config.host_id) {
+                brust |= I2C1_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            } else {
+                brust |= I2C0_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            }
+        }
+    }
+    return brust;
+}
+
+uint32_t phy_ana_i2c_master_burst_bbpll_config(void)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, PHY_I2C_MST_CMD_TYPE_BBPLL_CFG);
+}
+
+uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, on ? PHY_I2C_MST_CMD_TYPE_RF_ON : PHY_I2C_MST_CMD_TYPE_RF_OFF);
+}
+#endif

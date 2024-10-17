@@ -54,6 +54,8 @@ typedef int sdspi_dev_handle_t;
     .get_real_freq = &sdspi_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
     .set_input_delay = NULL, \
+    .dma_aligned_buffer = NULL, \
+    .pwr_ctrl_handle = NULL, \
     .get_dma_info = &sdspi_host_get_dma_info, \
 }
 
@@ -69,6 +71,7 @@ typedef struct {
     bool gpio_wp_polarity;     /*!< GPIO write protect polarity
                                     0 means "active low", i.e. card is protected when the GPIO is low;
                                     1 means "active high", i.e. card is protected when GPIO is high. */
+    uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
 } sdspi_device_config_t;
 
 #define SDSPI_SLOT_NO_CS          GPIO_NUM_NC      ///< indicates that card select line is not used
@@ -87,6 +90,7 @@ typedef struct {
     .gpio_wp   = SDSPI_SLOT_NO_WP, \
     .gpio_int  = GPIO_NUM_NC, \
     .gpio_wp_polarity = SDSPI_IO_ACTIVE_LOW, \
+    .duty_cycle_pos = 0,\
 }
 
 /**

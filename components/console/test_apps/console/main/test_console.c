@@ -25,8 +25,8 @@
  */
 
 typedef struct {
-        const char *in;
-        const char *out;
+    const char *in;
+    const char *out;
 } cmd_context_t;
 
 static esp_console_repl_t *s_repl = NULL;
@@ -239,8 +239,8 @@ TEST_CASE("esp console test with context", "[console]")
     };
 
     cmd_context_t context1 = {
-       .in = "c2",
-       .out = NULL,
+        .in = "c2",
+        .out = NULL,
     };
 
     const esp_console_cmd_t cmd0 = {
@@ -252,11 +252,11 @@ TEST_CASE("esp console test with context", "[console]")
     };
 
     const esp_console_cmd_t cmd1 = {
-       .command = "hello-c2",
-       .help = "Print Hello World in context c2",
-       .hint = NULL,
-       .func_w_context = do_hello_cmd_with_context,
-       .context = &context1,
+        .command = "hello-c2",
+        .help = "Print Hello World in context c2",
+        .hint = NULL,
+        .func_w_context = do_hello_cmd_with_context,
+        .context = &context1,
     };
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd0));
@@ -272,4 +272,79 @@ TEST_CASE("esp console test with context", "[console]")
     TEST_ASSERT_EQUAL(context1.in, context1.out);
 
     TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console help command - set verbose level = 0", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_0));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - set verbose level = 1", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_1));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console deregister commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    // deregister a non-existing cmd, should return "ESP_ERR_INVALID_ARG"
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_cmd_deregister("abcdefg"));
+    // deregister cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console re-register commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_register_help_command());
+
+    // deregister cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_z.command));
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+
+    // re-register cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
 }

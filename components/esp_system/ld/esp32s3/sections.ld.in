@@ -436,9 +436,10 @@ SECTIONS
   {
     . = ORIGIN(extern_ram_seg);
     . = . + (_rodata_reserved_end - _flash_rodata_dummy_start);
-    . = ALIGN (0x10000);
+    . = ALIGN (_esp_mmu_page_size);
   } > extern_ram_seg
 
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram.bss (NOLOAD) :
   {
@@ -448,6 +449,22 @@ SECTIONS
 
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > extern_ram_seg
+#endif //CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+  /**
+   * This section holds data that won't be initialised when startup.
+   * This section locates in External RAM region.
+   */
+  .ext_ram_noinit (NOLOAD) :
+  {
+    _ext_ram_noinit_start = ABSOLUTE(.);
+
+    *(.ext_ram_noinit*)
+
+    ALIGNED_SYMBOL(4, _ext_ram_noinit_end)
+  } > extern_ram_seg
+#endif //CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :

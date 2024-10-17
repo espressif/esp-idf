@@ -3,7 +3,7 @@ Configure Other JTAG Interfaces
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE", esp32p4="JTAG_SEL_ENABLE"}
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE", esp32p4="JTAG_SEL_ENABLE", esp32c5="JTAG_SEL_ENABLE", esp32c61="JTAG_SEL_ENABLE"}
 
 For guidance about which JTAG interface to select when using OpenOCD with {IDF_TARGET_NAME}, refer to the section :ref:`jtag-debugging-selecting-jtag-adapter`. Then follow the configuration steps below to get it working.
 
@@ -12,7 +12,7 @@ For guidance about which JTAG interface to select when using OpenOCD with {IDF_T
     Configure eFuses
     ^^^^^^^^^^^^^^^^
 
-    By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``espefuse.py`` tool.
+    By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``idf.py`` tool.
 
     .. only:: esp32c3
 

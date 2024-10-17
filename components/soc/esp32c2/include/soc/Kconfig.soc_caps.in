@@ -327,6 +327,10 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -434,10 +438,6 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
 config SOC_RTCIO_PIN_COUNT
     int
     default 0
-
-config SOC_RSA_MAX_BIT_LEN
-    int
-    default 3072
 
 config SOC_SHA_SUPPORT_RESUME
     bool

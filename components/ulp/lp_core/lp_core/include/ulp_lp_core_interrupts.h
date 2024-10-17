@@ -7,13 +7,22 @@
 #pragma once
 
 #include "sdkconfig.h"
+<<<<<<< HEAD
+=======
+#include "soc/soc_caps.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+<<<<<<< HEAD
 #if CONFIG_IDF_TARGET_ESP32C6
 #define LP_CORE_ISR_ATTR // On C6 registers are saved by us before calling the ISR
+=======
+#if SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
+#define LP_CORE_ISR_ATTR // On chips with just a single interrupt entry point registers are saved by us before calling the ISR
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #else
 #define LP_CORE_ISR_ATTR __attribute__((interrupt))
 #endif

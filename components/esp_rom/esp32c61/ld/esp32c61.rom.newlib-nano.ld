@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM function interface esp32c6lite.rom.newlib-nano.ld for esp32c6lite
+/* ROM function interface esp32c61.rom.newlib-nano.ld for esp32c61
  *
  *
- * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum d875746dfc29a51e6d327cc923b7a095
+ * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum 27eb0efac0883ee622c22767242c9457
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *

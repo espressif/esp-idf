@@ -28,8 +28,15 @@
 #define SOC_DMA2D_SUPPORTED             1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
+<<<<<<< HEAD
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
 #define SOC_LCDCAM_CAM_SUPPORTED        1
+=======
+#define SOC_LCDCAM_SUPPORTED            1
+#define SOC_LCDCAM_CAM_SUPPORTED        1
+#define SOC_LCDCAM_I80_LCD_SUPPORTED    1 // support the Intel 8080 bus driver based on the LCD_CAM peripheral
+// #define SOC_LCDCAM_RGB_LCD_SUPPORTED    1 // TODO: IDF-7465
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
@@ -78,13 +85,19 @@
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
+<<<<<<< HEAD
 #define SOC_LP_SPI_SUPPORTED            1
+=======
+#define SOC_LP_I2S_SUPPORTED            1
+#define SOC_LP_SPI_SUPPORTED            1
+#define SOC_LP_ADC_SUPPORTED            1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
-// #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
 #define SOC_SDMMC_HOST_SUPPORTED        1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
+#define SOC_DEBUG_PROBE_SUPPORTED       1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
@@ -94,6 +107,10 @@
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
+<<<<<<< HEAD
+=======
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -117,7 +134,11 @@
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
 #define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
+<<<<<<< HEAD
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 6: 8)
+=======
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 6)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_ADC_MAX_CHANNEL_NUM                 (8)
 #define SOC_ADC_ATTEN_NUM                       (4)
 
@@ -169,9 +190,13 @@
 #define SOC_CPU_HAS_FPU_EXT_ILL_BUG     1       // EXT_ILL CSR doesn't support FLW/FSW
 #define SOC_CPU_HAS_HWLOOP              1
 /* PIE coprocessor assembly is only supported with GCC compiler  */
+<<<<<<< HEAD
 #ifndef __clang__
 #define SOC_CPU_HAS_PIE                 1
 #endif
+=======
+#define SOC_CPU_HAS_PIE                 1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 
@@ -182,6 +207,8 @@
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 #define SOC_CPU_PMP_REGION_GRANULARITY  128
+
+#define SOC_CPU_HAS_LOCKUP_RESET        1
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
@@ -204,7 +231,11 @@
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
 #define SOC_AXI_GDMA_SUPPORT_PSRAM          1
 #define SOC_GDMA_SUPPORT_ETM                1
+<<<<<<< HEAD
 // #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+=======
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
 /*-------------------------- 2D-DMA CAPS -------------------------------------*/
@@ -234,6 +265,12 @@
 // GPIO0~15 on ESP32P4 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE   (1)
+<<<<<<< HEAD
+=======
+
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #define SOC_GPIO_VALID_GPIO_MASK        (0x007FFFFFFFFFFFFF)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
@@ -252,10 +289,11 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM            (2)
 #define SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER     (1)
 
+#define SOC_DEBUG_PROBE_NUM_UNIT                 (1U)  // Number of debug probe units
+#define SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH         (16) // Maximum width of the debug probe output in each unit
+
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
-// Support to hold a single digital I/O when the digital domain is powered off
-#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 16
@@ -295,7 +333,7 @@
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
 #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
 
-// #define SOC_I2C_SUPPORT_SLEEP_RETENTION (1) // TODO: IDF-9353
+#define SOC_I2C_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-P4 has 1 LP_I2C
@@ -306,8 +344,9 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (3U)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_APLL       (1) // TODO: IDF-8884
+#define SOC_I2S_SUPPORTS_APLL       (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
@@ -318,8 +357,13 @@
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)     // On I2S0
 #define SOC_I2S_PDM_MAX_RX_LINES    (4)     // On I2S0
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
+#define SOC_I2S_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up I2S registers before sleep */
+
+/*-------------------------- LP_I2S CAPS -------------------------------------*/
+#define SOC_LP_I2S_NUM              (1U)
 
 /*-------------------------- ISP CAPS ----------------------------------------*/
+<<<<<<< HEAD
 #define SOC_ISP_BF_SUPPORTED            1
 #define SOC_ISP_CCM_SUPPORTED           1
 #define SOC_ISP_DVP_SUPPORTED           1
@@ -333,6 +377,43 @@
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS      3
 #define SOC_ISP_CCM_DIMENSION           3
 #define SOC_ISP_DVP_DATA_WIDTH_MAX      16
+=======
+#define SOC_ISP_BF_SUPPORTED                     1
+#define SOC_ISP_CCM_SUPPORTED                    1
+#define SOC_ISP_DEMOSAIC_SUPPORTED               1
+#define SOC_ISP_DVP_SUPPORTED                    1
+#define SOC_ISP_SHARPEN_SUPPORTED                1
+#define SOC_ISP_COLOR_SUPPORTED                  1
+#define SOC_ISP_SHARE_CSI_BRG                    1
+
+#define SOC_ISP_NUMS                             1U
+#define SOC_ISP_DVP_CTLR_NUMS                    1U
+#define SOC_ISP_AE_CTLR_NUMS                     1U
+#define SOC_ISP_AE_BLOCK_X_NUMS                  5
+#define SOC_ISP_AE_BLOCK_Y_NUMS                  5
+#define SOC_ISP_AF_CTLR_NUMS                     1U
+#define SOC_ISP_AF_WINDOW_NUMS                   3
+#define SOC_ISP_BF_TEMPLATE_X_NUMS               3
+#define SOC_ISP_BF_TEMPLATE_Y_NUMS               3
+#define SOC_ISP_CCM_DIMENSION                    3
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_INT_BITS     2
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_DEC_BITS     4
+#define SOC_ISP_DEMOSAIC_GRAD_RATIO_RES_BITS     26
+#define SOC_ISP_DVP_DATA_WIDTH_MAX               16
+#define SOC_ISP_SHARPEN_TEMPLATE_X_NUMS          3
+#define SOC_ISP_SHARPEN_TEMPLATE_Y_NUMS          3
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_INT_BITS     3
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_DEC_BITS     5
+#define SOC_ISP_SHARPEN_H_FREQ_COEF_RES_BITS     24
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_INT_BITS     3
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_DEC_BITS     5
+#define SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS     24
+#define SOC_ISP_HIST_CTLR_NUMS                   1U
+#define SOC_ISP_HIST_BLOCK_X_NUMS                5
+#define SOC_ISP_HIST_BLOCK_Y_NUMS                5
+#define SOC_ISP_HIST_SEGMENT_NUMS                16
+#define SOC_ISP_HIST_INTERVAL_NUMS               15
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -345,7 +426,6 @@
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (0)
 #define SOC_MMU_PERIPH_NUM                    (2U)
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (2U)
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
@@ -380,18 +460,18 @@
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
-// #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_DMA                   1  /*!< RMT peripheral can connect to DMA channel */
+#define SOC_RMT_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up RMT registers before sleep */
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
-/* I80 bus and RGB timing generator can't work at the same time */
-// #define SOC_LCD_I80_SUPPORTED           (1)  /*!< Intel 8080 LCD is supported */ // TODO: IDF-7465
-// #define SOC_LCD_RGB_SUPPORTED           (1)  /*!< RGB LCD is supported */        // TODO: IDF-7465
-#define SOC_LCD_I80_BUSES               (1U) /*!< Has one LCD Intel 8080 bus */
-#define SOC_LCD_RGB_PANELS              (1U) /*!< Support one RGB LCD panel */
-#define SOC_LCD_I80_BUS_WIDTH           (24) /*!< Intel 8080 bus width */
-#define SOC_LCD_RGB_DATA_WIDTH          (24) /*!< Number of LCD data lines */
-#define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
+/* I80 bus and RGB timing generator can't work at the same time in the LCD_CAM peripheral */
+#define SOC_LCD_I80_SUPPORTED              1  /*!< support intel 8080 driver */
+#define SOC_LCDCAM_I80_NUM_BUSES           1U /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
+#define SOC_LCDCAM_I80_BUS_WIDTH           24 /*!< Intel 8080 bus max data width */
+#define SOC_LCDCAM_RGB_NUM_PANELS          1U /*!< Support one RGB LCD panel */
+// #define SOC_LCD_RGB_DATA_WIDTH          24 /*!< Number of LCD data lines */
+// #define SOC_LCD_SUPPORT_RGB_YUV_CONV    1  /*!< Support color format conversion between RGB and YUV */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (2U)   ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
@@ -419,7 +499,14 @@
 #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U  /*!< number of RX units in each group */
 #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the TX unit */
 #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the RX unit */
+<<<<<<< HEAD
 #define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
+=======
+#define SOC_PARLIO_TX_CLK_SUPPORT_GATING     1  /*!< Support gating TX clock */
+#define SOC_PARLIO_RX_CLK_SUPPORT_GATING     1  /*!< Support gating RX clock */
+#define SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT     1  /*!< Support output RX clock to a GPIO */
+#define SOC_PARLIO_TRANS_BIT_ALIGN           1  /*!< Support bit alignment in transaction */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_PARLIO_TX_SIZE_BY_DMA            1   /*!< Transaction length is controlled by DMA instead of indicated by register */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
@@ -506,24 +593,40 @@
 /*-------------------------- LP SPI CAPS ----------------------------------------*/
 #define SOC_LP_SPI_PERIPH_NUM              1
 #define SOC_LP_SPI_MAXIMUM_BUFFER_SIZE     64
+<<<<<<< HEAD
+=======
+/*-------------------------- SPIRAM CAPS ----------------------------------------*/
+#define SOC_SPIRAM_XIP_SUPPORTED        1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
-//#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                (1) //TODO: IDF-7518
+#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
+<<<<<<< HEAD
 // #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)  //TODO: IDFCI-2073
+=======
+// #define SOC_SPI_MEM_SUPPORT_WRAP                          (1) // IDFCI-2073 The feature cannot be treated as supported on P4
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_DQS                   (1)
+#define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
+
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT (1)
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
+<<<<<<< HEAD
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED        1
+=======
+#define SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT        1
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
@@ -552,6 +655,7 @@
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
@@ -613,7 +717,11 @@
 #define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
 #define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_HAS_LP_UART            (1)         /*!< Support LP UART */
+<<<<<<< HEAD
 #define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
+=======
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)      /*!< Support back up registers before sleep */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
@@ -649,8 +757,14 @@
 #define SOC_PM_CPU_RETENTION_BY_SW      (1)
 
 #define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR   (1)
 #define SOC_PAU_IN_TOP_DOMAIN           (1)
 #define SOC_CPU_IN_TOP_DOMAIN           (1)
+<<<<<<< HEAD
+=======
+
+#define SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE  (1)
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 /*-------------------------- PSRAM CAPS ----------------------------*/
 #define SOC_PSRAM_VDD_POWER_MPLL    (1)
@@ -659,12 +773,14 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
-// #define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */ TODO: IDF-8884
+#define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
 #define SOC_CLK_MPLL_SUPPORTED                    (1)     /*!< Support MSPI PLL */
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
 
 #define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL              (1)     /*!< Support XTAL clock as the LP_FAST clock source */
+
 
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 
@@ -695,3 +811,7 @@
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
+<<<<<<< HEAD
+=======
+#define SOC_LP_CORE_SUPPORT_LP_ADC            (1) /*!< LP ADC can be accessed from the LP-Core */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade

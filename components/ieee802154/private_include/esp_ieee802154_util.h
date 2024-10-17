@@ -265,7 +265,7 @@ typedef enum {
     IEEE802154_SCENE_RX_AT,     /*!< IEEE802154 radio coexistence scene RX AT */
 } ieee802154_txrx_scene_t;
 
-#if !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 
 /**
  * @brief  Set the IEEE802154 radio coexistence scene during transmitting or receiving.

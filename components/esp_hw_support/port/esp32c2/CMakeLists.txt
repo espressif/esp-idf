@@ -7,8 +7,7 @@ set(srcs "rtc_clk_init.c"
 
 if(NOT BOOTLOADER_BUILD)
 
-    list(APPEND srcs "esp_crypto_lock.c"
-                     "sar_periph_ctrl.c")
+    list(APPEND srcs "sar_periph_ctrl.c")
 
 endif()
 

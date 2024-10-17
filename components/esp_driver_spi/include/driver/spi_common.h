@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,6 +116,7 @@ typedef struct {
     int data5_io_num;     ///< GPIO pin for spi data5 signal in octal mode, or -1 if not used.
     int data6_io_num;     ///< GPIO pin for spi data6 signal in octal mode, or -1 if not used.
     int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
+    bool data_io_default_level; ///< Output data IO default level when no transaction.
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     esp_intr_cpu_affinity_t  isr_cpu_id;    ///< Select cpu core to register SPI ISR.
@@ -166,6 +167,20 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
  *         - ESP_OK                on success
  */
 esp_err_t spi_bus_free(spi_host_device_t host_id);
+
+/**
+ * @brief Helper function for malloc DMA capable memory for SPI driver
+ *
+ * @note This API will take care of the cache and hardware alignment internally.
+ *       To free/release memory allocated by this helper function, simply calling `free()`
+ *
+ * @param[in]  host_id          SPI peripheral who will using the memory
+ * @param[in]  size             Size in bytes, the amount of memory to allocate
+ * @param[in]  extra_heap_caps  Extra heap caps based on MALLOC_CAP_DMA
+ *
+ * @return                      Pointer to the memory if allocated successfully
+ */
+void *spi_bus_dma_memory_alloc(spi_host_device_t host_id, size_t size, uint32_t extra_heap_caps);
 
 #ifdef __cplusplus
 }

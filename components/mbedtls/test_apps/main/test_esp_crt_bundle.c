@@ -6,8 +6,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2024 Espressif Systems (Shanghai) CO LTD
  */
+#include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -41,6 +42,7 @@ extern const uint8_t server_cert_chain_pem_end[]   asm("_binary_server_cert_chai
 extern const uint8_t server_pk_start[] asm("_binary_prvtkey_pem_start");
 extern const uint8_t server_pk_end[]   asm("_binary_prvtkey_pem_end");
 
+// `server_cert_bundle_corrupt` is created by generating the cert bundle using `server_root.pem`
 extern const uint8_t server_cert_bundle_start[] asm("_binary_server_cert_bundle_start");
 extern const uint8_t server_cert_bundle_end[] asm("_binary_server_cert_bundle_end");
 
@@ -272,7 +274,7 @@ void client_task(void *pvParameters)
         goto exit;
     }
 
-    /* Test with default crt bundle that doesnt contain the ca crt */
+    /* Test with default crt bundle that does not contain the ca crt */
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
     if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
@@ -300,7 +302,7 @@ void client_task(void *pvParameters)
     } else {
         ESP_LOGE(TAG, "Certificate verification failed!");
     }
-    TEST_ASSERT(res == ESP_CRT_VALIDATE_FAIL);
+    TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_FAIL, res);
 
     // Reset session before new connection
     mbedtls_ssl_close_notify(&client.ssl);
@@ -338,7 +340,7 @@ void client_task(void *pvParameters)
     } else {
         ESP_LOGE(TAG, "Certificate verification failed!");
     }
-    TEST_ASSERT(res == ESP_CRT_VALIDATE_OK);
+    TEST_ASSERT_EQUAL(ESP_CRT_VALIDATE_OK, res);
 
     // Reset session before new connection
     mbedtls_ssl_close_notify(&client.ssl);
@@ -406,7 +408,7 @@ TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 
     mbedtls_x509_crt_init( &crt );
     mbedtls_x509_crt_parse(&crt, bad_md_crt_pem_start, bad_md_crt_pem_end - bad_md_crt_pem_start);
-    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) == 0);
+    TEST_ASSERT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL));
 
     mbedtls_x509_crt_free(&crt);
 
@@ -426,62 +428,119 @@ TEST_CASE("custom certificate bundle - wrong signature", "[mbedtls]")
     /* esp32.com cert chain where 1 byte in the signature is changed */
     printf("Testing certificate with wrong signature\n");
     mbedtls_x509_crt_parse(&crt, wrong_sig_crt_pem_start, wrong_sig_crt_pem_end - wrong_sig_crt_pem_start);
-    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) != 0);
+    TEST_ASSERT_NOT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL));
     mbedtls_x509_crt_free(&crt);
 
     mbedtls_x509_crt_init( &crt );
     /* the correct esp32.com cert chain*/
     printf("Testing certificate with correct signature\n");
     mbedtls_x509_crt_parse(&crt, correct_sig_crt_pem_start, correct_sig_crt_pem_end - correct_sig_crt_pem_start);
-    TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) == 0);
+    TEST_ASSERT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL));
     mbedtls_x509_crt_free(&crt);
 
     esp_crt_bundle_detach(NULL);
 }
 
-TEST_CASE("custom certificate bundle init API - bound checking", "[mbedtls]")
+TEST_CASE("custom certificate bundle init API - bound checking - NULL certificate bundle", "[mbedtls]")
 {
-
-    uint8_t test_bundle[256] = {0};
     esp_err_t esp_ret;
+
+    /* The API should fail when NULL is passed as the bundle */
+    esp_ret = esp_crt_bundle_set(NULL, 0);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+}
+
+TEST_CASE("custom certificate bundle init API - bound checking - Invalid size of certificate bundle", "[mbedtls]")
+{
+    uint8_t test_bundle[1024] = {0};
+    esp_err_t esp_ret;
+
     /* The API should fail with bundle size given as 1 */
     esp_ret = esp_crt_bundle_set(test_bundle, 1);
-    TEST_ASSERT( esp_ret == ESP_ERR_INVALID_ARG);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+}
+
+TEST_CASE("custom certificate bundle init API - bound checking - Invalid first certificate offset", "[mbedtls]")
+{
+    uint8_t test_bundle[1024] = {0};
+    esp_err_t esp_ret;
+
+    /* Check that the esp_crt_bundle_set API will not accept
+     * the first offset to be invalid */
+
+    /* The first certificate must start after N uint32_t offset values,
+     * thus, it cannot start from the 0th position */
+    test_bundle[0] = 0;
+    esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+
+    /* The first certificate must start after N uint32_t offset values, thus,
+     * the offset from where the it would start should be divisible by sizeof(uint32_t) */
+    test_bundle[0] = 1;
+    esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle
+     * which in which the first cert starts beyond end of bundle*/
+    uint8_t *dummy_test_bundle = test_bundle + sizeof(uint32_t);
+
+    esp_ret = esp_crt_bundle_set(dummy_test_bundle, sizeof(test_bundle));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+}
+
+TEST_CASE("custom certificate bundle init API - bound checking - Certificates count overflow", "[mbedtls]")
+{
+    uint8_t test_bundle[1024] = {0};
+    esp_err_t esp_ret;
+
+    memset(test_bundle, 0, sizeof(test_bundle));
 
     /* Check that the esp_crt_bundle_set API will not accept a bundle
      * which has more no. of certs than configured in
      * CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS */
-
-    uint8_t rand;
-    esp_fill_random(&rand, 1);
-    test_bundle[0] = rand;
-
-    /* Make sure that the number of certs will always be greater than
-     * CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS */
-    test_bundle[1] = rand + CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS;
+    *((uint32_t*) test_bundle) = ((CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS + 1) * sizeof(uint32_t));
 
     esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
-    TEST_ASSERT( esp_ret == ESP_ERR_INVALID_ARG);
-
-    /* The API should fail with bundle_size < BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) */
-    test_bundle[0] = 0;
-    test_bundle[1] = 1; /* set num_certs = 1 */
-    esp_ret = esp_crt_bundle_set(test_bundle, 5);
-    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
-
-    /* Cert number is greater than actual certs present, The API should fail */
-    /* Actual No. of certs present in bundle = 1, setting num_certs to 5 */
-    test_bundle[1] = 5; /* num_certs */
-    test_bundle[3] = 5; /* cert_1_name_len */
-    test_bundle[5] = 10; /* cert_1_pub_key_len */
-    /* Actual bundle size becomes BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) + cert_1_name_len(5) + cert_1_pub_key_len(10)
-     * i.e. 21 bytes */
-    esp_ret = esp_crt_bundle_set(test_bundle, 21);
-    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
-
-    /* The API should fail if bundle_size < BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) + cert_1_name_len(5) + cert_1_pub_key_len(10) */
-    esp_ret = esp_crt_bundle_set(test_bundle, 20);
-    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
 
     esp_crt_bundle_detach(NULL);
+}
+
+TEST_CASE("custom certificate bundle init API - bound checking - Incorrect certificate offset", "[mbedtls]")
+{
+    uint8_t test_bundle[1024] = {0};
+    esp_err_t esp_ret;
+
+    memset(test_bundle, 0, sizeof(test_bundle));
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle where
+       all offsets are not consistent with certificate data */
+
+    /*
+    | offset 1 | offset 2 | Cert 1 name len | Cert 1 key len | Cert 1 name | Cert 1 key | Cert 2 name len | ..... |
+    | ----- offsets ----- |
+                          | ---------------------- Certificate 1 ---------------------- |
+                                                                                        | ---- Certificate 2 ---- |
+    */
+
+    *((uint32_t*) &test_bundle[0]) = (2 * sizeof(uint32_t));
+    *((uint16_t*) &test_bundle[8]) = 2;     // Cert 1 name len
+    *((uint16_t*) &test_bundle[10]) = 4;    // Cert 1 key len
+
+    /* Correct offset of certificate 2 should be
+        = 2 * sizeof(uint32_t) (Offsets of 2 certs) + 2 * sizeof(uint16_t) (Cert name and len) + 2 (Cert 1 name len) + 4 (Cert 1 key len);
+        = 18
+    */
+    *((uint32_t*) &test_bundle[4]) = 16;    // Incorrect certificate 2 offset
+
+    esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle where
+       all offsets are not consistency with certificate data and the certificate
+       offsets exceeds the bundle size */
+    *((uint32_t*) &test_bundle[4]) = sizeof(test_bundle) + 1;    // Offset exceeds the test_bundle size
+
+    esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ret);
 }

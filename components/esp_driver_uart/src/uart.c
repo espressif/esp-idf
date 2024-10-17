@@ -21,16 +21,21 @@
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
+#include "soc/soc_caps.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
-#include "driver/rtc_io.h"
 #include "driver/uart_select.h"
-#include "driver/lp_io.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gpio.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#if (SOC_UART_LP_NUM >= 1)
+#include "driver/rtc_io.h"
+#include "hal/rtc_io_ll.h"
+#include "driver/lp_io.h"
+#endif
 #include "clk_ctrl_os.h"
 #include "esp_pm.h"
 #include "esp_private/sleep_retention.h"
@@ -68,6 +73,7 @@ static const char *UART_TAG = "uart";
 
 #if (SOC_UART_LP_NUM >= 1)
 #define UART_THRESHOLD_NUM(uart_num, field_name) ((uart_num < SOC_UART_HP_NUM) ? field_name : LP_##field_name)
+#define TO_LP_UART_NUM(uart_num)                 (uart_num - SOC_UART_HP_NUM)
 #else
 #define UART_THRESHOLD_NUM(uart_num, field_name) (field_name)
 #endif
@@ -206,6 +212,9 @@ static void uart_module_enable(uart_port_t uart_num)
                 HP_UART_BUS_CLK_ATOMIC() {
                     uart_ll_reset_register(uart_num);
                 }
+                HP_UART_SRC_CLK_ATOMIC() {
+                    uart_ll_sclk_enable(uart_context[uart_num].hal.dev);
+                }
             }
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
@@ -233,9 +242,10 @@ static void uart_module_enable(uart_port_t uart_num)
 #if (SOC_UART_LP_NUM >= 1)
         else {
             LP_UART_BUS_CLK_ATOMIC() {
-                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, true);
-                lp_uart_ll_reset_register(uart_num - SOC_UART_HP_NUM);
+                lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), true);
+                lp_uart_ll_reset_register(TO_LP_UART_NUM(uart_num));
             }
+            lp_uart_ll_sclk_enable(TO_LP_UART_NUM(uart_num));
         }
 #endif
         uart_context[uart_num].hw_enabled = true;
@@ -257,15 +267,22 @@ static void uart_module_disable(uart_port_t uart_num)
                 uart_context[uart_num].retention_link_inited = false;
             }
 #endif
+<<<<<<< HEAD
 
+=======
+            HP_UART_SRC_CLK_ATOMIC() {
+                uart_ll_sclk_disable(uart_context[uart_num].hal.dev);
+            }
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
             HP_UART_BUS_CLK_ATOMIC() {
                 uart_ll_enable_bus_clock(uart_num, false);
             }
         }
 #if (SOC_UART_LP_NUM >= 1)
         else if (uart_num >= SOC_UART_HP_NUM) {
+            lp_uart_ll_sclk_disable(TO_LP_UART_NUM(uart_num));
             LP_UART_BUS_CLK_ATOMIC() {
-                lp_uart_ll_enable_bus_clock(uart_num - SOC_UART_HP_NUM, false);
+                lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), false);
             }
         }
 #endif
@@ -737,16 +754,17 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (tx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(tx_io_num, PIN_FUNC_GPIO);
-            gpio_set_level(tx_io_num, 1);
             esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+            // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
+            // (output enabled too early may cause unnecessary level change at the pad)
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            rtc_gpio_set_direction(tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(tx_io_num);
-            rtc_gpio_iomux_func_sel(tx_io_num, 1);
+            rtc_gpio_iomux_func_sel(tx_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+            // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
         }
 #endif
     }
@@ -754,7 +772,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(rx_io_num, PIN_FUNC_GPIO);
-            gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
+            gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY); // This does not consider that RX signal can be read inverted by configuring the hardware (i.e. idle is at low level). However, it is only a weak pullup, the TX at the other end can always drive the line.
             gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
             esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
@@ -762,7 +780,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         else {
             rtc_gpio_set_direction(rx_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(rx_io_num);
-            rtc_gpio_iomux_func_sel(rx_io_num, 1);
+            rtc_gpio_iomux_func_sel(rx_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
@@ -772,15 +790,15 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_func_sel(rts_io_num, PIN_FUNC_GPIO);
-            gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
             esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+            // output enable is set inside esp_rom_gpio_connect_out_signal func after the signal is connected
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            rtc_gpio_set_direction(rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(rts_io_num);
-            rtc_gpio_iomux_func_sel(rts_io_num, 1);
+            rtc_gpio_iomux_func_sel(rts_io_num, RTCIO_LL_PIN_FUNC);
             lp_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+            // output enable is set inside lp_gpio_connect_out_signal func after the signal is connected
         }
 #endif
     }
@@ -796,7 +814,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         else {
             rtc_gpio_set_direction(cts_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(cts_io_num);
-            rtc_gpio_iomux_func_sel(cts_io_num, 1);
+            rtc_gpio_iomux_func_sel(cts_io_num, RTCIO_LL_PIN_FUNC);
 
             lp_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
         }
@@ -894,6 +912,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     if (uart_num < SOC_UART_HP_NUM) {
+        esp_clk_tree_enable_src((soc_module_clk_t)uart_sclk_sel, true);
         HP_UART_SRC_CLK_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
             uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
@@ -982,7 +1001,6 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
     uint8_t uart_num = p_uart->uart_num;
     int rx_fifo_len = 0;
     uint32_t uart_intr_status = 0;
-    uart_event_t uart_event;
     BaseType_t HPTaskAwoken = 0;
     bool need_yield = false;
     static uint8_t pat_flg = 0;
@@ -995,7 +1013,9 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
         if (uart_intr_status == 0) {
             break;
         }
-        uart_event.type = UART_EVENT_MAX;
+        uart_event_t uart_event = {
+            .type = UART_EVENT_MAX,
+        };
         if (uart_intr_status & UART_INTR_TXFIFO_EMPTY) {
             UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
             uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
@@ -1917,6 +1937,9 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
                         "wakeup_threshold out of bounds");
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_wakeup_thrd(&(uart_context[uart_num].hal), wakeup_threshold);
+    HP_UART_PAD_CLK_ATOMIC() {
+        uart_ll_enable_pad_sleep_clock(uart_context[uart_num].hal.dev, true);
+    }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }

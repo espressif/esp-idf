@@ -23,6 +23,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_pm.h"
 #include "soc/parlio_periph.h"
+#include "soc/soc_caps.h"
 #include "hal/parlio_ll.h"
 #include "hal/gpio_hal.h"
 #include "hal/dma_types.h"
@@ -33,6 +34,7 @@
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_attr.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gdma.h"
 #include "esp_cache.h"
 
@@ -537,6 +539,7 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
     }
 #endif
 
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     /* Set clock configuration */
     PARLIO_CLOCK_SRC_ATOMIC() {
         parlio_ll_rx_set_clock_source(hal->regs, clk_src);

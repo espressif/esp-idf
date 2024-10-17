@@ -3,7 +3,7 @@
 
 # MIPI DSI LCD Panel Example
 
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) supports MIPI DSI interfaced LCD panel, with frame buffer(s) managed by the driver itself.
+[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/lcd/dsi_lcd.html) supports MIPI DSI interfaced LCD panel, with frame buffer(s) managed by the driver itself.
 
 This example shows the general process of installing a MIPI DSI LCD driver, and displays a LVGL widget on the screen.
 
@@ -12,7 +12,7 @@ This example shows the general process of installing a MIPI DSI LCD driver, and 
 ### Hardware Required
 
 * An ESP development board, which with MIPI DSI peripheral supported
-* A general MIPI DSI LCD panel, with 2 data lanes and 1 clock lane, this example will use the [ILI9881C](https://components.espressif.com/components/espressif/esp_lcd_ili9881c) for demonstration
+* A general MIPI DSI LCD panel, with 2 data lanes and 1 clock lane, this example support [ILI9881C](https://components.espressif.com/components/espressif/esp_lcd_ili9881c) and [EK79007](https://components.espressif.com/components/espressif/esp_lcd_ek79007)
 * An USB cable for power supply and programming
 
 ### Hardware Connection
@@ -49,15 +49,16 @@ Before testing your LCD, you also need to read your LCD spec carefully, and then
 
 Run `idf.py menuconfig` and go to `Example Configuration`:
 
+* Choose the LCD model in `Select MIPI LCD model` according to your board.
 * Choose whether to `Use DMA2D to copy draw buffer to frame buffer` asynchronously. If you choose `No`, the draw buffer will be copied to the frame buffer synchronously by CPU.
-* Choose if you want to `Monitor FPS by GPIO`. If you choose `Yes`, then you can attach an oscilloscope or logic analyzer to the GPIO pin to monitor the FPS of the display.
-  Please note, the actual FPS should be **double** the square wave frequency.
+* Choose if you want to `Monitor Refresh Rate by GPIO`. If you choose `Yes`, then you can attach an oscilloscope or logic analyzer to the GPIO pin to monitor the Refresh Rate of the display.
+  Please note, the actual Refresh Rate should be **double** the square wave frequency.
 
 ### Build and Flash
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A LVGL widget should show up on the LCD as expected.
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from the ESP Component Registry into `managed_components` folder.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

@@ -631,6 +631,7 @@ typedef struct
 {
     esp_bd_addr_t  bd_addr;               /*!< peer address */
     esp_ble_bond_key_info_t bond_key;     /*!< the bond key information */
+    esp_ble_addr_type_t bd_addr_type;     /*!< peer address type */
 } esp_ble_bond_dev_t;                     /*!< the ble bond device type */
 
 
@@ -1179,13 +1180,13 @@ typedef union {
     struct ble_update_conn_params_evt_param {
         esp_bt_status_t status;                    /*!< Indicate update connection parameters success status */
         esp_bd_addr_t bda;                         /*!< Bluetooth device address */
-        uint16_t min_int;                          /*!< Min connection interval */
-        uint16_t max_int;                          /*!< Max connection interval */
+        uint16_t min_int;                          /*!< Minimum connection interval. If the master initiates the connection parameter update, this value is not applicable for the slave and will be set to zero. */
+        uint16_t max_int;                          /*!< Maximum connection interval. If the master initiates the connection parameter update, this value is not applicable for the slave and will be set to zero. */
         uint16_t latency;                          /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
-        uint16_t conn_int;                         /*!< Current connection interval */
+        uint16_t conn_int;                         /*!< Current connection interval in milliseconds, calculated as N × 1.25 ms */
         uint16_t timeout;                          /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
-                                                     Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec */
-    } update_conn_params;                          /*!< Event parameter of ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
+                                                    This value is calculated as N × 10 ms */
+    } update_conn_params;                          /*!< Event parameter for ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT
      */
@@ -1902,17 +1903,41 @@ esp_err_t esp_ble_gap_get_device_name(void);
  *
  */
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type);
+
 /**
  * @brief          This function is called to get ADV data for a specific type.
  *
- * @param[in]       adv_data - pointer of ADV data which to be resolved
- * @param[in]       type   - finding ADV data type
- * @param[out]      length - return the length of ADV data not including type
+ * @note           This is the recommended function to use for resolving ADV data by type.
+ *                 It improves upon the deprecated `esp_ble_resolve_adv_data` function by
+ *                 including an additional parameter to specify the length of the ADV data,
+ *                 thereby offering better safety and reliability.
  *
- * @return          pointer of ADV data
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      adv_data_len - the length of ADV data which to be resolved.
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
+ *
+ */
+uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length);
+
+/**
+ * @brief          This function is called to get ADV data for a specific type.
+ *
+ * @note           This function has been deprecated and will be removed in a future release.
+ *                 Please use `esp_ble_resolve_adv_data_by_type` instead, which provides
+ *                 better parameter validation and supports more accurate data resolution.
+ *
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to set raw advertising data. User need to fill

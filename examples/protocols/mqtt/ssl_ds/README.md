@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # ESP-MQTT SSL Mutual Authentication with Digital Signature
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -24,7 +24,7 @@ Please select the supported target with the following command:
 ```
 idf.py set-target /* target */
 ```
-More detials can be found at [Selecting the target](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#selecting-the-target).
+More details can be found at [Selecting the target](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#selecting-the-target).
 
 #### 2) Generate your client key and certificate
 
@@ -62,7 +62,7 @@ RSA private key is nothing but the client private key ( RSA ) generated in Step 
 
 > Note: More details about the `esp-secure-cert-tool` utility can be found [here](https://github.com/espressif/esp_secure_cert_mgr/tree/main/tools).
 
-#### 4) Connection cofiguration
+#### 4) Connection configuration
 * Open the project configuration menu (`idf.py menuconfig`)
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 

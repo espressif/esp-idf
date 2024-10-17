@@ -3,7 +3,7 @@ Random Number Generation
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_RF_NAME: default="Wi-Fi or Bluetooth", esp32s2="Wi-Fi", esp32h2="Bluetooth or 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi or Bluetooth or 802.15.4 Thread/Zigbee"}
+{IDF_TARGET_RF_NAME: default="Wi-Fi or Bluetooth", esp32s2="Wi-Fi", esp32h2="Bluetooth or 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi or Bluetooth or 802.15.4 Thread/Zigbee", esp32c5="Wi-Fi or Bluetooth or 802.15.4 Thread/Zigbee"}
 {IDF_TARGET_RF_IS: default="are", esp32s2="is"}
 
 {IDF_TARGET_NAME} contains a hardware random number generator (RNG). You can use the APIs :cpp:func:`esp_random` and :cpp:func:`esp_fill_random` to obtained random values from it.

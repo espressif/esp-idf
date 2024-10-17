@@ -15,10 +15,8 @@
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
 
-#if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #include "tlsf.h"
 #include "tlsf_block_functions.h"
-#endif
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
@@ -110,7 +108,7 @@ void multi_heap_in_rom_init(void)
 #else // CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 /* Check a block is valid for this heap. Used to verify parameters. */
-__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const block_header_t *block)
+__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const multi_heap_block_handle_t block)
 {
     pool_t pool = tlsf_get_pool(heap->heap_data);
     void *ptr = block_to_ptr(block);
@@ -175,22 +173,22 @@ multi_heap_block_handle_t multi_heap_get_first_block(multi_heap_handle_t heap)
 {
     assert(heap != NULL);
     pool_t pool = tlsf_get_pool(heap->heap_data);
-    block_header_t* block = offset_to_block(pool, -(int)block_header_overhead);
+    multi_heap_block_handle_t block = offset_to_block(pool, -(int)block_header_overhead);
 
-    return (multi_heap_block_handle_t)block;
+    return block;
 }
 
 multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, multi_heap_block_handle_t block)
 {
     assert(heap != NULL);
     assert_valid_block(heap, block);
-    block_header_t* next = block_next(block);
+    multi_heap_block_handle_t next = block_next(block);
 
     if(block_size(next) == 0) {
         //Last block:
         return NULL;
     } else {
-        return (multi_heap_block_handle_t)next;
+        return next;
     }
 
 }

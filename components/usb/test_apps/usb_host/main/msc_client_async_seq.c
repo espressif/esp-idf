@@ -12,7 +12,10 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_log.h"
+<<<<<<< HEAD
 #include "test_usb_common.h"
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "mock_msc.h"
 #include "dev_msc.h"
 #include "msc_client.h"

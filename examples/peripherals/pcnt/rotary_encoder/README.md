@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Rotary Encoder Example
 
@@ -7,7 +7,7 @@
 
 The PCNT peripheral is designed to count the number of rising and/or falling edges of an input signal. Each PCNT unit has two channels, which makes it possible to extract more information from two input signals than only one signal.
 
-This example shows how to make use of the HW features to decode the differential signals generated from a common rotary encoder -- [EC11](https://tech.alpsalpine.com/e/products/category/encorder/sub/01/series/ec11e/).
+This example shows how to make use of the HW features to decode the differential signals generated from a common rotary encoder -- [EC11](https://tech.alpsalpine.com/e/products/category/encoder/sub/01/series/ec11e/).
 
 The signals a rotary encoder produces (and what can be handled by this example) are based on a 2-bit gray code available on 2 digital data signal lines. The typical encoders use 3 output pins: 2 for the signals and one for the common signal usually GND.
 

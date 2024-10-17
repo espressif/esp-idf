@@ -1,0 +1,16 @@
+.generate_pytest_report_base:
+  stage: .post
+  tags: [build, shiny]
+  image: $ESP_ENV_IMAGE
+  artifacts:
+    paths:
+      - target_test_report.html
+    expire_in: 1 week
+    when: always
+
+fast_pipeline:pipeline_ended:always_failed:
+  when: on_success
+  extends: .generate_pytest_report_base
+  script:
+      - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type target_test
+      - exit 30

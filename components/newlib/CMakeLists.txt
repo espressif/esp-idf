@@ -16,6 +16,7 @@ set(srcs
     "abort.c"
     "assert.c"
     "heap.c"
+    "flockfile.c"
     "locks.c"
     "poll.c"
     "pthread.c"
@@ -65,6 +66,7 @@ list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_pthread_impl")
 list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_assert_impl")
+list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_getentropy_impl")
 target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
 
 # Forces the linker to include newlib_init.c

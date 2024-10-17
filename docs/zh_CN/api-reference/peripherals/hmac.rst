@@ -98,7 +98,7 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
 **第一步：设置**
 
 1. 生成一个 256 位的 HMAC 密钥，用于重新启用 JTAG。
-2. 将步骤 1 获得的密钥写入 eFuse 块，且 eFuse 块的密钥功能参数应为 HMAC_DOWN_ALL (5) 或 HMAC_DOWN_JTAG (6)。为此，可以使用固件中的 ``esp_efuse_write_key()`` 函数，或使用主机上的 ``espefuse.py`` 完成操作。
+2. 将步骤 1 获得的密钥写入 eFuse 块，且 eFuse 块的密钥功能参数应为 HMAC_DOWN_ALL (5) 或 HMAC_DOWN_JTAG (6)。为此，可以使用固件中的 ``esp_efuse_write_key()`` 函数，或使用主机上的 ``idf.py efuse-burn-key`` 完成操作。
 3. 使用 ``esp_efuse_set_read_protect()`` 将 eFuse 密钥块配置为读保护，防止软件读取写入到 eFuse 密钥块中的 HMAC 密钥值。
 4. 在烧录到 {IDF_TARGET_NAME} 上时，将特定的位或位组设置为 ``soft JTAG disable``。这样可以永久禁用 JTAG 接口，除非软件提供正确的密钥值进行验证。
 
@@ -132,7 +132,7 @@ HMAC 的第三种应用场景是将其作为密钥，启用软禁用的 JTAG 接
 2. 从固件调用 :cpp:func:`esp_hmac_jtag_enable` 函数时，传递上一步获取的密钥值。
 3. 要在固件中重新禁用 JTAG，可以重置系统，或调用 :cpp:func:`esp_hmac_jtag_disable`。
 
-关于如何暂时禁用以及重新启用 JTAG 的完整示例，请参考 :example:`security/hmac_soft_jtag`。
+关于如何软禁用以及重新启用 JTAG 的完整示例，请参考 :example:`security/hmac_soft_jtag`。该示例演示了如何使用 HMAC 重新启用已软禁用的 JTAG 接口，包括生成 HMAC 密钥、将其烧录到 eFuse 中以及根据密钥创建令牌数据等步骤。
 
 更多有关详情，请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **HMAC 加速器 (HMAC)** [`PDF <{IDF_TARGET_TRM_CN_URL}#hmac>`__]。
 

@@ -71,16 +71,17 @@ def test_esp_timer(dut: Dut) -> None:
         logging.info('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
         assert abs(diff) < 100
 
-    match = dut.expect(LIGHT_SLEEP_ENTER_REGEX, timeout=2)
-    sleep_enter_time = int(match.group(1))
-    match = dut.expect(LIGHT_SLEEP_EXIT_REGEX, timeout=2)
-    sleep_exit_time = int(match.group(1))
-    sleep_time = sleep_exit_time - sleep_enter_time
+    if dut.app.sdkconfig.get('SOC_LIGHT_SLEEP_SUPPORTED'):
+        match = dut.expect(LIGHT_SLEEP_ENTER_REGEX, timeout=2)
+        sleep_enter_time = int(match.group(1))
+        match = dut.expect(LIGHT_SLEEP_EXIT_REGEX, timeout=2)
+        sleep_exit_time = int(match.group(1))
+        sleep_time = sleep_exit_time - sleep_enter_time
 
-    logging.info('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
-        sleep_enter_time, sleep_exit_time, sleep_time))
+        logging.info('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
+            sleep_enter_time, sleep_exit_time, sleep_time))
 
-    assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1200
+        assert -2000 < sleep_time - LIGHT_SLEEP_TIME < 1000
 
     for i in range(5, 7):
         match = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)

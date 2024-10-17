@@ -1001,6 +1001,7 @@ typedef struct {
 typedef struct {
     BD_ADDR         bd_addr;            /* BD address peer device. */
     tBTA_PM_MODE    mode;               /* the new connection role */
+    UINT16          interval;           /* Number of baseband slots */
 } tBTA_DM_MODE_CHG;
 
 typedef struct {
@@ -1350,8 +1351,20 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF_HD_IDLE_IDX     BTA_DM_PM_SNIFF4
 #endif
 
+#ifndef BTA_DM_PM_SNIFF_AG_OPEN_IDX
+#define BTA_DM_PM_SNIFF_AG_OPEN_IDX     BTA_DM_PM_SNIFF
+#endif
+
+#ifndef BTA_DM_PM_SNIFF_AG_IDLE_IDX
+#define BTA_DM_PM_SNIFF_AG_IDLE_IDX     BTA_DM_PM_SNIFF
+#endif
+
 #ifndef BTA_DM_PM_SNIFF_SCO_OPEN_IDX
 #define BTA_DM_PM_SNIFF_SCO_OPEN_IDX    BTA_DM_PM_SNIFF3
+#endif
+
+#ifndef BTA_DM_PM_SNIFF_SCO_CLOSE_IDX
+#define BTA_DM_PM_SNIFF_SCO_CLOSE_IDX   BTA_DM_PM_SNIFF
 #endif
 
 #ifndef BTA_DM_PM_SNIFF_HD_ACTIVE_IDX
@@ -2190,6 +2203,17 @@ extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
         UINT32 *p_handle );
+
+/*******************************************************************************
+**
+** Function         BTA_DmRemoveLocalDiRecord
+**
+** Description      This function removes a DI record from the local SDP database.
+**
+** Returns          BTA_SUCCESS if record is removed successfully, otherwise error code.
+**
+*******************************************************************************/
+extern tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle);
 #endif  ///SDP_INCLUDED == TRUE
 /*******************************************************************************
 **

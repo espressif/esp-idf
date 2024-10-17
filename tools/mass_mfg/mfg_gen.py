@@ -3,12 +3,11 @@
 # SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import csv
-import distutils.dir_util
 import os
 from itertools import zip_longest
+from pathlib import Path
 
 import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 
@@ -72,7 +71,7 @@ def verify_keys_exist(values_file_keys, input_config_file):
 def verify_datatype_encoding(input_config_file):
     """ Verify datatype and encodings from config file is valid
     """
-    valid_encodings = {'string', 'binary', 'hex2bin','u8', 'i8', 'u16', 'u32', 'i32','base64'}
+    valid_encodings = {'string', 'binary', 'hex2bin','u8', 'i8', 'u16', 'u32', 'i32', 'u64', 'i64','base64'}
     valid_datatypes = {'file','data','namespace'}
 
     with open(input_config_file,'r') as config_file:
@@ -209,7 +208,7 @@ def create_dir(filetype, output_dir_path):
     """
     output_target_dir = os.path.join(output_dir_path,filetype,'')
     if not os.path.isdir(output_target_dir):
-        distutils.dir_util.mkpath(output_target_dir)
+        Path(output_target_dir).mkdir(parents=True)
 
     return output_target_dir
 

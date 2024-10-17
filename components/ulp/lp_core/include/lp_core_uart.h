@@ -23,7 +23,7 @@ extern "C" {
 #define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_15
 #define LP_UART_DEFAULT_RTS_GPIO_NUM (-1)
 #define LP_UART_DEFAULT_CTS_GPIO_NUM (-1)
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif (CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5)
 #define LP_UART_DEFAULT_TX_GPIO_NUM GPIO_NUM_5
 #define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_4
 #define LP_UART_DEFAULT_RTS_GPIO_NUM GPIO_NUM_2
@@ -83,7 +83,7 @@ typedef struct {
 #define LP_UART_DEFAULT_CLOCK_CONFIG()              \
         .lp_uart_source_clk = LP_UART_SCLK_DEFAULT, \
 
-/* Default LP UART GPIO settings and protocol parametes */
+/* Default LP UART GPIO settings and protocol parameters */
 #define LP_CORE_UART_DEFAULT_CONFIG()               \
     {                                               \
         LP_UART_DEFAULT_GPIO_CONFIG()               \

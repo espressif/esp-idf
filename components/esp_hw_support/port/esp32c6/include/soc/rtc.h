@@ -414,15 +414,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
 uint64_t rtc_time_get(void);
 
 /**
- * @brief Busy loop until next RTC_SLOW_CLK cycle
- *
- * This function returns not earlier than the next RTC_SLOW_CLK clock cycle.
- * In some cases (e.g. when RTC_SLOW_CLK cycle is very close), it may return
- * one RTC_SLOW_CLK cycle later.
- */
-void rtc_clk_wait_for_slow_cycle(void);
-
-/**
  * @brief Enable the rtc digital 8M clock
  *
  * This function is used to enable the digital rtc 8M clock to support peripherals.

@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+idf_build_get_property(target IDF_TARGET)
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_PPA_SUPPORTED)
@@ -7,7 +12,20 @@ if(CONFIG_SOC_PPA_SUPPORTED)
                      "src/ppa_fill.c")
 endif()
 
+<<<<<<< HEAD
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_REQUIRES esp_mm esp_pm
+=======
+if(${target} STREQUAL "linux")
+    set(priv_requires "")
+else()
+    set(priv_requires esp_mm esp_pm)
+endif()
+
+
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS ${public_include}
+                       PRIV_REQUIRES "${priv_requires}"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
                       )

@@ -40,6 +40,9 @@ typedef struct {
 #if SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
         uint32_t slave_unmatch_en: 1;        /*!< Can trigger unmatch interrupt when slave address does not match what master sends*/
 #endif
+        uint32_t allow_pd:    1;  /*!< If set, the driver will backup/restore the I2C registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off I2C's power domain.
+                                              This can save power, but at the expense of more RAM being consumed */
     } flags;                                 /*!< I2C slave config flags */
 } i2c_slave_config_t;
 

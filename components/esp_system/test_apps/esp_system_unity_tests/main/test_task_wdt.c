@@ -14,6 +14,14 @@
 #include "esp_task_wdt.h"
 #include "test_utils.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_pmu.h"
+#endif
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
 #include "esp_sleep.h"
@@ -63,11 +71,26 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
     TEST_ESP_OK(sleep_cpu_configure(true));
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
+<<<<<<< HEAD
     esp_sleep_enable_timer_wakeup(10 * 1000);
+=======
+#if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+    /* There is a bug that PD TOP will reset mmu table, so we add mmu table retention during sleep,
+       and it will increase time overhead before entering sleep */
+    esp_sleep_enable_timer_wakeup(100 * 1000);
+#else
+    esp_sleep_enable_timer_wakeup(10 * 1000);
+#endif
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     esp_light_sleep_start();
 
     TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+<<<<<<< HEAD
+=======
+    esp_sleep_set_sleep_context(NULL);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
     // Short delay to allow timeout to occur
     esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);

@@ -51,7 +51,7 @@ def _session_work_dir(request: FixtureRequest) -> typing.Generator[typing.Tuple[
     work_dir = request.config.getoption('--work-dir')
 
     if work_dir:
-        work_dir = os.path.join(work_dir, datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S'))
+        work_dir = os.path.join(work_dir, datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S'))
         logging.debug(f'using work directory: {work_dir}')
         os.makedirs(work_dir, exist_ok=True)
         clean_dir = None
@@ -95,7 +95,9 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
     # by default, use hello_world app and copy it to a temporary directory with
     # the name resembling that of the test
     copy_from = 'tools/test_build_system/build_test_app'
-    copy_to = request.node.name + '_app'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_app'
 
     # allow overriding source and destination via pytest.mark.test_app_copy()
     mark = request.node.get_closest_marker('test_app_copy')
@@ -131,7 +133,9 @@ def test_app_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Genera
 
 @pytest.fixture
 def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
-    copy_to = request.node.name + '_app'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_app'
     path_to = func_work_dir / copy_to
 
     logging.debug(f'cloning git-template app to {path_to}')
@@ -154,7 +158,13 @@ def test_git_template_app(func_work_dir: Path, request: FixtureRequest) -> typin
 
 @pytest.fixture
 def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[Path, None, None]:
-    copy_to = request.node.name + '_idf'
+    # sanitize test name in case pytest.mark.parametrize was used
+    test_name_sanitized = request.node.name.replace('[', '_').replace(']', '')
+    copy_to = test_name_sanitized + '_idf'
+    # allow overriding the destination via pytest.mark.idf_copy_with_space so the destination contain space
+    mark_with_space = request.node.get_closest_marker('idf_copy_with_space')
+    if mark_with_space:
+        copy_to = test_name_sanitized + ' idf'
 
     # allow overriding the destination via pytest.mark.idf_copy()
     mark = request.node.get_closest_marker('idf_copy')

@@ -293,8 +293,16 @@ When interrupts are operational, you can obtain the information from which parti
 Application Examples
 --------------------
 
-- Touch sensor read example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
-- Touch sensor interrupt example: :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`.
+.. only:: esp32
+
+    - :example:`peripherals/touch_sensor/touch_sensor_v1/touch_pad_read` demonstrates how to read and print raw or IIR filtered values from capacitive touch sensors on {IDF_TARGET_NAME}, and how to calibrate the sensors.
+    - :example:`peripherals/touch_sensor/touch_sensor_v1/touch_pad_interrupt` demonstrates how to set up the {IDF_TARGET_NAME}'s capacitive touch pad to trigger an interrupt when touched, and how to use software detection for greater sensitivity, comparing the performance of hardware interrupt mode and software polling mode.
+
+.. only:: esp32s2 or esp32s3
+
+    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_read` demonstrates how to read and display raw values from capacitive touch pad sensors on {IDF_TARGET_NAME}, including how to calibrate the sensors and detect touch actions.
+    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_interrupt` demonstrates how to set up {IDF_TARGET_NAME}'s capacitive touch pad peripheral to trigger an interrupt when a pad is touched, and how to detect the touch event by the software for sensor designs when greater touch detection sensitivity is required.
+
 
 .. _touch_pad-api-reference:
 

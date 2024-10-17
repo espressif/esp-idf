@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -117,6 +117,22 @@ esp_attr_value_t gatts_demo_char1_val = {
     .attr_value   = char1_str,
 };
 
+#ifdef CONFIG_SET_RAW_ADV_DATA
+static uint8_t raw_adv_data[] = {
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,               // Length 2, Data Type ESP_BLE_AD_TYPE_FLAG, Data 1 (LE General Discoverable Mode, BR/EDR Not Supported)
+    /* TX Power Level */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xEB,             // Length 2, Data Type ESP_BLE_AD_TYPE_TX_PWR, Data 2 (-21)
+    /* Complete 16-bit Service UUIDs */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xAB, 0xCD    // Length 3, Data Type ESP_BLE_AD_TYPE_16SRV_CMPL, Data 3 (UUID)
+};
+
+static uint8_t raw_scan_rsp_data[] = {
+    /* Complete Local Name */
+    0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'G', 'A', 'T', 'T', 'S', '_', 'D', 'E', 'M', 'O'   // Length 15, Data Type ESP_BLE_AD_TYPE_NAME_CMPL, Data (ESP_GATTS_DEMO)
+};
+
+#else
 static uint8_t service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
@@ -157,6 +173,7 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .p_service_uuid = NULL,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
+#endif /* CONFIG_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
     .adv_int_min        = 0x20,
@@ -246,10 +263,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         }
         break;
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-        ESP_LOGI(COEX_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+        ESP_LOGI(COEX_TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
                  param->update_conn_params.status,
-                 param->update_conn_params.min_int,
-                 param->update_conn_params.max_int,
                  param->update_conn_params.conn_int,
                  param->update_conn_params.latency,
                  param->update_conn_params.timeout);
@@ -279,8 +294,10 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
-                                                ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+            adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
+                                                scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
+                                                ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                &adv_name_len);
             if (adv_name != NULL) {
                 if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
                     if (connect == false) {
@@ -297,7 +314,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
                         // Update peer gatt server address
                         memcpy(peer_gatts_addr, scan_result->scan_rst.bda, sizeof(esp_bd_addr_t));
-                        esp_log_buffer_hex("the remote device addr", peer_gatts_addr, sizeof(esp_bd_addr_t));
+                        ESP_LOG_BUFFER_HEX("the remote device addr", peer_gatts_addr, sizeof(esp_bd_addr_t));
                     }
                 }
             }
@@ -334,7 +351,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             gattc_profile_tab[GATTC_PROFILE_C_APP_ID].conn_id = p_data->connect.conn_id;
             memcpy(gattc_profile_tab[GATTC_PROFILE_C_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
             ESP_LOGI(COEX_TAG, "REMOTE BDA:");
-            esp_log_buffer_hex(COEX_TAG, gattc_profile_tab[GATTC_PROFILE_C_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+            ESP_LOG_BUFFER_HEX(COEX_TAG, gattc_profile_tab[GATTC_PROFILE_C_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
             esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req(gattc_if, p_data->connect.conn_id);
             if (mtu_ret) {
                 ESP_LOGE(COEX_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -502,7 +519,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         } else {
             ESP_LOGI(COEX_TAG, "ESP_GATTC_NOTIFY_EVT, receive indicate value:");
         }
-        esp_log_buffer_hex(COEX_TAG, p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_HEX(COEX_TAG, p_data->notify.value, p_data->notify.value_len);
         break;
     case ESP_GATTC_WRITE_DESCR_EVT:
         if (p_data->write.status != ESP_GATT_OK) {
@@ -526,7 +543,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_bd_addr_t bda;
         memcpy(bda, p_data->srvc_chg.remote_bda, sizeof(esp_bd_addr_t));
         ESP_LOGI(COEX_TAG, "ESP_GATTC_SRVC_CHG_EVT, bd_addr:");
-        esp_log_buffer_hex(COEX_TAG, bda, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(COEX_TAG, bda, sizeof(esp_bd_addr_t));
         break;
     }
     case ESP_GATTC_WRITE_CHAR_EVT:
@@ -602,7 +619,7 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
 static void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
 {
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
-        esp_log_buffer_hex(COEX_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        ESP_LOG_BUFFER_HEX(COEX_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
     } else {
         ESP_LOGI(COEX_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
@@ -673,7 +690,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep) {
             ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            esp_log_buffer_hex(COEX_TAG, param->write.value, param->write.len);
+            ESP_LOG_BUFFER_HEX(COEX_TAG, param->write.value, param->write.len);
             if (gatts_profile_tab[GATTS_PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
                 uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
                 if (descr_value == NOTIFY_ENABLE) {
@@ -702,7 +719,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                     ESP_LOGI(COEX_TAG, "notify/indicate disable ");
                 } else {
                     ESP_LOGE(COEX_TAG, "unknown descr value");
-                    esp_log_buffer_hex(COEX_TAG, param->write.value, param->write.len);
+                    ESP_LOG_BUFFER_HEX(COEX_TAG, param->write.value, param->write.len);
                 }
 
             }
@@ -779,7 +796,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(COEX_TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
         if (param->conf.status != ESP_GATT_OK) {
-            esp_log_buffer_hex(COEX_TAG, param->conf.value, param->conf.len);
+            ESP_LOG_BUFFER_HEX(COEX_TAG, param->conf.value, param->conf.len);
         }
         break;
     case ESP_GATTS_OPEN_EVT:
@@ -818,7 +835,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep) {
             ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            esp_log_buffer_hex(COEX_TAG, param->write.value, param->write.len);
+            ESP_LOG_BUFFER_HEX(COEX_TAG, param->write.value, param->write.len);
             if (gatts_profile_tab[GATTS_PROFILE_B_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
                 uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
                 if (descr_value == NOTIFY_ENABLE) {
@@ -920,7 +937,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(COEX_TAG, "ESP_GATTS_CONF_EVT status %d attr_handle %d", param->conf.status, param->conf.handle);
         if (param->conf.status != ESP_GATT_OK) {
-            esp_log_buffer_hex(COEX_TAG, param->conf.value, param->conf.len);
+            ESP_LOG_BUFFER_HEX(COEX_TAG, param->conf.value, param->conf.len);
         }
         break;
     case ESP_GATTS_DISCONNECT_EVT:

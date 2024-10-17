@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,50 @@
 #include "mbedtls/aes.h"
 #endif
 #include "memory_checks.h"
+
+#include "esp_heap_caps.h"
+#include "time.h"
+
+// recorded heap free sizes (MALLOC_CAP_INTERNAL and MALLOC_CAP_SPIRAM)
+static size_t recorded_internal_heap_free_size = 0;
+static size_t recorded_spiram_heap_free_size = 0;
+
+// stores heap free sizes for internal and spiram pools
+void record_heap_free_sizes(void)
+{
+    recorded_internal_heap_free_size = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    recorded_spiram_heap_free_size = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+}
+
+// returns difference between actual heap free size and recorded heap free size
+// parameter nvs_active_pool controls whether active or inactive heap will be examined
+// if CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM is not set, active pool is MALLOC_CAP_INTERNAL and inactive is MALLOC_CAP_SPIRAM
+// if CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM is set, active pool is MALLOC_CAP_SPIRAM and inactive is MALLOC_CAP_INTERNAL
+int32_t get_heap_free_difference(const bool nvs_active_pool)
+{
+    int32_t recorded_heap_free_size = 0;
+    int32_t actual_heap_free_size = 0;
+
+    bool evaluate_spiram = false;
+#ifdef CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM
+    // here active means spiram
+    evaluate_spiram = nvs_active_pool;
+#else
+    // here active means internal
+    evaluate_spiram = !nvs_active_pool;
+#endif
+
+    if(evaluate_spiram) {
+        recorded_heap_free_size = recorded_spiram_heap_free_size;
+        actual_heap_free_size = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    }
+    else {
+        recorded_heap_free_size = recorded_internal_heap_free_size;
+        actual_heap_free_size = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    }
+
+    return actual_heap_free_size - recorded_heap_free_size;
+}
 
 /* setUp runs before every test */
 void setUp(void)
@@ -47,7 +91,6 @@ void tearDown(void)
 
     test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
             test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
-
 }
 
 static void test_task(void *pvParameters)

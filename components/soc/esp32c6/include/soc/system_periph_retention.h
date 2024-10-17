@@ -48,6 +48,7 @@ extern const regdma_entries_config_t tee_apm_regs_retention[TEE_APM_RETENTION_LI
 extern const regdma_entries_config_t tee_apm_highpri_regs_retention[TEE_APM_HIGH_PRI_RETENTION_LINK_LEN];
 
 /**
+<<<<<<< HEAD
  * @brief Provide access to timer group configuration registers retention
  * context definition.
  *
@@ -58,6 +59,8 @@ extern const regdma_entries_config_t tee_apm_highpri_regs_retention[TEE_APM_HIGH
 extern const regdma_entries_config_t tg_regs_retention[TIMG_RETENTION_LINK_LEN];
 
 /**
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  * @brief Provide access to IOMUX configuration registers retention
  * context definition.
  *
@@ -75,7 +78,7 @@ extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_L
  * useful for external use.
  */
 #define SPIMEM_RETENTION_LINK_LEN   8
-extern const regdma_entries_config_t spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
+extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
 
 /**
  * @brief Provide access to systimer configuration registers retention

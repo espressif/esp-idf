@@ -121,9 +121,12 @@ esp_err_t esp_isp_awb_controller_disable(isp_awb_ctlr_t awb_ctlr);
 
 /**
  * @brief Trigger AWB white patch statistics for one time and get the result
+<<<<<<< HEAD
  * @note  This function is a synchronous and block function,
  *        it only returns when AWB white patch statistics is done or timeout.
  *        It's a simple method to get the result directly for one time.
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
  *
  * @param[in]  awb_ctlr  AWB controller handle
  * @param[in]  timeout_ms Timeout in millisecond

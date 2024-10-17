@@ -13,17 +13,12 @@ extern "C" {
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
 
-typedef enum {
-    PHY_I2C_MST_CMD_TYPE_OFF = 0,
-    PHY_I2C_MST_CMD_TYPE_ON,
-    PHY_I2C_MST_CMD_TYPE_MAX
-} phy_i2c_master_command_type_t;
-
 typedef struct {
+    uint8_t cmd_type;   /* the command type of the current phy i2c master command memory config */
     struct {
         uint8_t start, end; /* the start and end index of phy i2c master command memory */
         uint8_t host_id;    /* phy i2c master host id */
-    } config[PHY_I2C_MST_CMD_TYPE_MAX];
+    } config;
 } phy_i2c_master_command_attribute_t;
 
 /**
@@ -88,13 +83,14 @@ void phy_xpd_tsens(void);
 void phy_init_flag(void);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 /**
  * @brief Get the configuration info of PHY i2c master command memory.
  *
- * @param   attr the configuration info of PHY i2c master command memory
+ * @param[out] attr  the configuration info of PHY i2c master command memory
+ * @param[out] size  the count of PHY i2c master command memory configuration
  */
-void phy_i2c_master_mem_cfg(phy_i2c_master_command_attribute_t *attr);
+void phy_i2c_master_command_mem_cfg(phy_i2c_master_command_attribute_t *attr, int *size);
 #endif
 
 /**
@@ -217,6 +213,23 @@ void phy_ant_clr_update_flag(void);
  */
 void phy_ant_update(void);
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Get the REGDMA config value of the BBPLL in analog i2c master burst mode
+ *
+ * @return  the BBPLL REGDMA configure value of i2c master burst mode
+ */
+uint32_t phy_ana_i2c_master_burst_bbpll_config(void);
+
+/**
+ * @brief Get the REGDMA config value of the RF PHY on or off in analog i2c master burst mode
+ *
+ * @param[in] on true for enable RF PHY, false for disable RF PHY.
+ *
+ * @return  the RF on or off configure value of i2c master burst mode
+ */
+uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
+#endif
 
 #ifdef __cplusplus
 }

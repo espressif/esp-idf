@@ -18,8 +18,15 @@
 #include "esp_check.h"
 #include "esp_clk_tree.h"
 #include "soc/cam_periph.h"
+<<<<<<< HEAD
 #include "esp_cam_ctlr_dvp_cam.h"
 #include "esp_private/esp_cam_dvp.h"
+=======
+#include "soc/soc_caps.h"
+#include "esp_cam_ctlr_dvp_cam.h"
+#include "esp_private/esp_cam_dvp.h"
+#include "esp_private/esp_clk_tree_common.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "../../dvp_share_ctrl.h"
 
 #ifdef CONFIG_CAM_CTLR_DVP_CAM_ISR_IRAM_SAFE
@@ -329,6 +336,10 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
         }
     }
 
+<<<<<<< HEAD
+=======
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
         cam_ll_select_clk_src(ctlr_id, clk_src);

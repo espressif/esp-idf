@@ -13,18 +13,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8726
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/rmt_types.h"
 #include "soc/rmt_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 
 #define RMT_LL_EVENT_TX_DONE(channel)     (1 << (channel))
 #define RMT_LL_EVENT_TX_THRES(channel)    (1 << ((channel) + 8))
@@ -39,6 +37,8 @@ extern "C" {
 #define RMT_LL_MAX_LOOP_COUNT_PER_BATCH   1023
 #define RMT_LL_MAX_FILTER_VALUE           255
 #define RMT_LL_MAX_IDLE_VALUE             32767
+
+#define RMT_LL_SLEEP_RETENTION_MODULE_ID(group_id) (SLEEP_RETENTION_MODULE_RMT0)
 
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
@@ -88,8 +88,13 @@ static inline void rmt_ll_enable_periph_clock(rmt_dev_t *dev, bool enable)
  */
 static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
 {
+<<<<<<< HEAD
     dev->sys_conf.mem_force_pu = 1;
     dev->sys_conf.mem_force_pd = 0;
+=======
+    PCR.rmt_pd_ctrl.rmt_mem_force_pu = 1;
+    PCR.rmt_pd_ctrl.rmt_mem_force_pd = 0;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 /**
@@ -99,8 +104,13 @@ static inline void rmt_ll_mem_force_power_on(rmt_dev_t *dev)
  */
 static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
 {
+<<<<<<< HEAD
     dev->sys_conf.mem_force_pd = 1;
     dev->sys_conf.mem_force_pu = 0;
+=======
+    PCR.rmt_pd_ctrl.rmt_mem_force_pd = 1;
+    PCR.rmt_pd_ctrl.rmt_mem_force_pu = 0;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 /**
@@ -110,8 +120,13 @@ static inline void rmt_ll_mem_force_power_off(rmt_dev_t *dev)
  */
 static inline void rmt_ll_mem_power_by_pmu(rmt_dev_t *dev)
 {
+<<<<<<< HEAD
     dev->sys_conf.mem_force_pd = 0;
     dev->sys_conf.mem_force_pu = 0;
+=======
+    PCR.rmt_pd_ctrl.rmt_mem_force_pd = 0;
+    PCR.rmt_pd_ctrl.rmt_mem_force_pu = 0;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 /**
@@ -844,7 +859,11 @@ static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel
 
 static inline bool rmt_ll_is_mem_force_powered_down(rmt_dev_t *dev)
 {
+<<<<<<< HEAD
     return dev->sys_conf.mem_force_pd;
+=======
+    return PCR.rmt_pd_ctrl.rmt_mem_force_pd;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 __attribute__((always_inline))
@@ -900,8 +919,6 @@ static inline uint32_t rmt_ll_get_tx_loop_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 12) & 0x03;
 }
-
-#endif  // CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 
 #ifdef __cplusplus
 }

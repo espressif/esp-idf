@@ -49,9 +49,8 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
 
 esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
 {
-    // TODO: [ESP32C5] IDF-8727
-    abort();
     // Currently calibration is not supported on ESP32-C5, IDF-5236
+    // Allow no calibration
     *tsens_cal = 0;
     return ESP_OK;
 }

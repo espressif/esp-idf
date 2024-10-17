@@ -140,9 +140,6 @@ __attribute__((weak)) void esp_clk_init(void)
 
     // Re calculate the ccount to make time calculation correct.
     esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
-
-    // Set crypto clock (`clk_sec`) to use 96M PLL clock
-    REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x3);
 }
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
@@ -255,7 +252,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         parlio_ll_tx_enable_clock(&PARL_IO, false);
         parlio_ll_enable_bus_clock(0, false);
         gdma_ll_force_enable_reg_clock(&GDMA, false);
-        gdma_ll_enable_bus_clock(0, false);
+        _gdma_ll_enable_bus_clock(0, false);
 #if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         spi_ll_enable_bus_clock(SPI1_HOST, false);
 #endif

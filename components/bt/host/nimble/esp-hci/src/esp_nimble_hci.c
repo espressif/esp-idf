@@ -190,6 +190,14 @@ static void controller_rcv_pkt_ready(void)
     }
 }
 
+<<<<<<< HEAD
+=======
+static void dummy_controller_rcv_pkt_ready(void)
+{
+  /* Dummy function */
+}
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 void bt_record_hci_data(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
@@ -203,6 +211,15 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 }
 
+<<<<<<< HEAD
+=======
+static int dummy_host_rcv_pkt(uint8_t *data, uint16_t len)
+{
+    /* Dummy function */
+    return 0;
+}
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 /*
  * @brief: BT controller callback function, to transfer data packet to the host
  */
@@ -264,6 +281,11 @@ static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_recv = host_rcv_pkt,
 };
 
+static const esp_vhci_host_callback_t dummy_vhci_host_cb = {
+    .notify_host_send_available = dummy_controller_rcv_pkt_ready,
+    .notify_host_recv = dummy_host_rcv_pkt,
+};
+
 
 extern void ble_transport_init(void);
 extern esp_err_t ble_buf_alloc(void);
@@ -313,8 +335,13 @@ esp_err_t esp_nimble_hci_deinit(void)
     }
     ble_transport_deinit();
 
+    esp_vhci_host_register_callback(&dummy_vhci_host_cb);
+
+<<<<<<< HEAD
+=======
     ble_buf_free();
 
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #if MYNEWT_VAL(BLE_QUEUE_CONG_CHECK)
     ble_adv_list_deinit();
 #endif

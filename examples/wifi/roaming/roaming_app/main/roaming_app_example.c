@@ -43,8 +43,6 @@ static EventGroupHandle_t s_wifi_event_group;
 #define MAXIMUM_RETRY 5
 const char *TAG = "wifi roaming app";
 
-static int s_retry_num = 0;
-
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
@@ -55,19 +53,12 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         if (disconn->reason == WIFI_REASON_ROAMING) {
             ESP_LOGI(TAG, "station disconnected during roaming");
         } else {
-            if (s_retry_num < MAXIMUM_RETRY) {
-                ESP_LOGI(TAG, "station disconnected with reason %d", disconn->reason);
-                esp_wifi_connect();
-                s_retry_num++;
-                ESP_LOGI(TAG, "retry to connect to the AP");
-            } else {
-                xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-            }
+            ESP_LOGI(TAG, "station disconnected with reason %d", disconn->reason);
+            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-        s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }

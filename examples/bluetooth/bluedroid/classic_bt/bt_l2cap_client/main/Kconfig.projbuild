@@ -6,4 +6,10 @@ menu "L2CAP Example Configuration"
         help
             This enables the Secure Simple Pairing. If disable this option,
             Bluedroid will only support Legacy Pairing
+
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target Device Name"
+        default "ESP_BT_L2CAP_SERVER"
+        help
+            Use this option to set target device name to connect.
 endmenu

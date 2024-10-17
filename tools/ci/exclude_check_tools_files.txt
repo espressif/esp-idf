@@ -8,11 +8,11 @@ tools/ci/get_all_test_results.py
 tools/gdb_panic_server.py
 tools/check_term.py
 tools/python_version_checker.py
-tools/generate_debug_prefix_map.py
 tools/ci/astyle-rules.yml
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
+tools/ci/ci_process_description.py
 tools/ci/configure_ci_environment.sh
 tools/ci/generate_rules.py
 tools/ci/deploy_docs.py
@@ -32,6 +32,9 @@ tools/eclipse-code-style.xml
 tools/format.sh
 tools/mocks/**/*
 tools/set-submodules-to-github.sh
+tools/templates/sample_project/main/main.c
+tools/templates/sample_project/CMakeLists.txt
+tools/templates/sample_project/main/CMakeLists.txt
 tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
@@ -50,3 +53,9 @@ tools/ci/python_packages/idf_iperf_test_util/**/*
 tools/esp_prov/**/*
 tools/ci/sort_yaml.py
 tools/ci/sg_rules/*
+tools/ci/previous_stage_job_status.py
+tools/legacy_exports/export_legacy.fish
+tools/legacy_exports/export_legacy.sh
+tools/legacy_exports/export_legacy.ps1
+tools/legacy_exports/export_legacy.bat
+tools/ci/idf_build_apps_dump_soc_caps.py

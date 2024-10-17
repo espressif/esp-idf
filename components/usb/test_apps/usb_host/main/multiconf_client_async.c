@@ -11,7 +11,10 @@
 #include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+<<<<<<< HEAD
 #include "test_usb_common.h"
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "multiconf_client.h"
 #include "mock_msc.h"
 #include "dev_msc.h"

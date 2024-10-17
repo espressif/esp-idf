@@ -4,4 +4,16 @@ menu "Example Configuration"
         bool "Dump whole adv data and scan response data in example"
         default n
 
+    config EXAMPLE_CI_ID
+        int
+        default 70
+        help
+            This config the example id for CI test. Only for internal used.
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "The pipeline id for CI test"
+        default 0
+        help
+            This config the pipeline id for CI test. Only for internal used.
+
 endmenu

@@ -17,11 +17,14 @@
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
+#include "esp_private/usb_phy.h"
 #include "test_hcd_common.h"
+<<<<<<< HEAD
 #include "test_usb_common.h"
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #include "mock_msc.h"
 #include "unity.h"
-#include "esp_dma_utils.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -39,6 +42,7 @@ typedef struct {
 } pipe_event_msg_t;
 
 hcd_port_handle_t port_hdl = NULL;
+static usb_phy_handle_t phy_hdl = NULL;
 
 // ---------------------------------------------------- Private --------------------------------------------------------
 
@@ -145,7 +149,25 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 hcd_port_handle_t test_hcd_setup(void)
 {
+<<<<<<< HEAD
     test_usb_init_phy();    // Initialize the internal USB PHY and USB Controller for testing
+=======
+    // Deinitialize PHY from previous failed test
+    if (phy_hdl != NULL) {
+        TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
+        phy_hdl = NULL;
+    }
+    // Initialize the internal USB PHY to connect to the USB OTG peripheral
+    usb_phy_config_t phy_config = {
+        .controller = USB_PHY_CTRL_OTG,
+        .target = USB_PHY_TARGET_INT,
+        .otg_mode = USB_OTG_MODE_HOST,
+        .otg_speed = USB_PHY_SPEED_UNDEFINED,   // In Host mode, the speed is determined by the connected device
+        .ext_io_conf = NULL,
+        .otg_io_conf = NULL,
+    };
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_new_phy(&phy_config, &phy_hdl), "Failed to init USB PHY");
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     // Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));
     TEST_ASSERT_NOT_NULL(port_evt_queue);
@@ -164,8 +186,11 @@ hcd_port_handle_t test_hcd_setup(void)
     hcd_port_handle_t port_hdl;
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(PORT_NUM, &port_config, &port_hdl));
     TEST_ASSERT_NOT_NULL(port_hdl);
+<<<<<<< HEAD
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_NOT_POWERED, hcd_port_get_state(port_hdl));
     test_usb_set_phy_state(false, 0);    // Force disconnected state on PHY
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return port_hdl;
 }
 
@@ -182,17 +207,30 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl)
     // Uninstall the HCD
     TEST_ASSERT_EQUAL(ESP_OK, hcd_uninstall());
     vQueueDelete(port_evt_queue);
+<<<<<<< HEAD
     test_usb_deinit_phy();  // Deinitialize the internal USB PHY after testing
+=======
+    // Deinitialize the internal USB PHY
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
+    phy_hdl = NULL;
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 }
 
 usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
 {
+<<<<<<< HEAD
     // Power ON the port
+=======
+    // Power ON the port. This should allow for connections to occur
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_ON));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISCONNECTED, hcd_port_get_state(port_hdl));
     // Wait for connection event
     printf("Waiting for connection\n");
+<<<<<<< HEAD
     test_usb_set_phy_state(true, pdMS_TO_TICKS(100));     // Allow for connected state on PHY
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_CONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_CONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
@@ -218,9 +256,16 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
         TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_DISABLE));
         TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
     }
+<<<<<<< HEAD
     // Wait for a safe disconnect
     printf("Waiting for disconnection\n");
     test_usb_set_phy_state(false, pdMS_TO_TICKS(100));    // Force disconnected state on PHY
+=======
+    printf("Waiting for disconnection\n");
+    // Power-off the port to trigger a disconnection
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_OFF));
+    // Wait for the port disconnection event
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
@@ -264,19 +309,14 @@ urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
     // Allocate a URB and data buffer
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
-    void *data_buffer;
-    size_t real_size;
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
+    void *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
     TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
     TEST_ASSERT_NOT_NULL_MESSAGE(data_buffer, "Failed to allocate transfer buffer");
 
     // Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
     usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
     transfer_dummy->data_buffer = data_buffer;
-    transfer_dummy->data_buffer_size = real_size;
+    transfer_dummy->data_buffer_size = heap_caps_get_allocated_size(data_buffer);
     transfer_dummy->num_isoc_packets = num_isoc_packets;
     return urb;
 }

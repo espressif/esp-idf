@@ -9,8 +9,12 @@ generate_pytest_build_report:
     paths:
       - build_report.html
       - test_related_apps_download_urls.yml
+    expire_in: 1 week
+    when: always
+
   script:
-    - python tools/ci/dynamic_pipelines/scripts/generate_build_report.py
+    - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
+    - python tools/ci/previous_stage_job_status.py --stage build
 
 generate_pytest_child_pipeline:
   # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
@@ -31,6 +35,7 @@ Pytest Target Test Jobs:
     - generate_pytest_child_pipeline
   variables:
     PARENT_PIPELINE_ID: $PARENT_PIPELINE_ID
+    REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false

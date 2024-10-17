@@ -111,6 +111,22 @@ linux_component:
     - Apache-2.0
     - BSD-4-Clause-UC
 
+rt_component:
+  include:
+    - 'components/rt/**'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           #FreeRTOS-Plux-POSIX sources and port files
+
+rt_component_tests:
+  include:
+    - 'components/rt/test_apps/**'
+  allowed_licenses:
+    - Apache-2.0
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
 systemview:
   include:
     - 'components/app_trace/sys_view'
@@ -143,7 +159,7 @@ argtable3:
 
 md5_hash:
   include:
-    - 'components/esp_rom/include/**/rom/md5_hash.h'
+    - 'components/esp_rom/*/include/**/rom/md5_hash.h'
   allowed_licenses:
     - BSD-3-Clause
     - Apache-2.0
@@ -182,7 +198,7 @@ tinyusb:
 # with files licensed under a mix of Apache and BSD-3-Clause licenses.
 esp_rom_usb:
   include:
-    - 'components/esp_rom/include/*/rom/usb/'
+    - 'components/esp_rom/*/include/*/rom/usb/'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause
@@ -226,3 +242,4 @@ ignore:
     - components/protocomm/python/
     - components/wifi_provisioning/proto-c/
     - components/wifi_provisioning/python/
+    - tools/templates/

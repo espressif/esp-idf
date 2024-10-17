@@ -11,12 +11,11 @@ Thread
 应用示例
 --------------------
 
-ESP-IDF 示例目录 :example:`openthread` 包含以下应用程序：
+- :example:`openthread/ot_br` 演示了如何在 {IDF_TARGET_NAME} 上设置 Thread 边界路由器，启用双向 IPv6 连接、服务发现等功能。
 
-- OpenThread 交互 shell：:example:`openthread/ot_cli`
-- 边界路由器 (Thread Border Router)：:example:`openthread/ot_br`
-- Thread 无线电协处理器 (Thread Radio Co-Processor)：:example:`openthread/ot_rcp`
+- :example:`openthread/ot_cli` 演示了如何使用支持 TCP、UDP 和 Iperf 等附加功能的 OpenThread 命令行界面。该示例需要在配备 IEEE 802.15.4 模块的开发板上运行，并说明了如何使用至少两个这样的开发板进行网络配置。
 
+- :example:`openthread/ot_rcp` 演示了如何与主处理器配合使用，作为 Thread 边界路由器和 Thread Sniffer。该示例需要在配备 IEEE 802.15.4 模块的开发板上运行。
 
 API参考
 -------------

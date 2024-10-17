@@ -2,6 +2,7 @@ idf_component_register(SRCS "test_wl.cpp"
                        PRIV_INCLUDE_DIRS "../../private_include"
                             "../.."
                        REQUIRES wear_levelling
+                       PRIV_REQUIRES spi_flash
                        WHOLE_ARCHIVE
                        )
 

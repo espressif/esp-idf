@@ -1,9 +1,9 @@
 构建系统
-********************
+********
 
 :link_to_translation:`en:[English]`
 
-本文档主要介绍 ESP-IDF 构建系统的实现原理以及 ``组件`` 等相关概念。如需了解如何组织和构建新的 ESP-IDF 项目或组件，请阅读本文档。
+本文档主要介绍 ESP-IDF 构建系统的实现原理以及“组件”等相关概念。如需了解如何组织和构建新的 ESP-IDF 项目或组件，请阅读本文档。
 
 
 概述
@@ -149,11 +149,14 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 .. highlight:: none
 
-示例项目的目录树结构可能如下所示::
+示例项目的目录树结构可能如下所示：
+
+.. code-block:: none
 
     - myProject/
                  - CMakeLists.txt
                  - sdkconfig
+                 - dependencies.lock
                  - bootloader_components/ - boot_component/ - CMakeLists.txt
                                                             - Kconfig
                                                             - src1.c
@@ -164,10 +167,14 @@ ESP-IDF 适用于 Python 3.8 以上版本。
                                              - Kconfig
                                              - src1.c
                                              - include/ - component2.h
+                 - managed_components/ - namespace__component-name/ - CMakelists.txt
+                                                                    - src1.c
+                                                                    - idf_component.yml
+                                                                    - include/ - src1.h
                  - main/       - CMakeLists.txt
                                - src1.c
                                - src2.c
-
+                               - idf_component.yml
                  - build/
 
 该示例项目 "myProject" 包含以下组成部分：
@@ -176,13 +183,19 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。
 
-- 可选的 "bootloader_components" 目录中包含了需要在引导加载项目中进行编译和链接的组件。并不是每个项目都需要这种自定义组件，但此类组件在引导加载程序需要修改以嵌入新功能时可能很有用。
+- "dependencies.lock" 文件包含项目中当前使用的所有托管的组件及其版本。使用 IDF 组件管理器添加或更新项目组件时，会自动生成或更新 ``dependencies.lock`` 文件。因此，请勿手动编辑此文件！如果项目中没有组件包含 ``idf_component.yml`` 文件，则不会创建 ``dependencies.lock`` 文件。
 
-- 可选的 "components" 目录中包含了项目的部分自定义组件，并不是每个项目都需要这种自定义组件，但它有助于构建可复用的代码或者导入第三方（不属于 ESP-IDF）的组件。或者，你也可以在顶层 CMakeLists.txt 中设置 ``EXTRA_COMPONENT_DIRS`` 变量以查找其他指定位置处的组件。
+- “idf_component.yml” 是可选文件，里面包含组件的元数据及其依赖项。IDF 组件管理器使用该文件下载和解析这些依赖项。更多信息，请参阅 `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_。
+
+- "bootloader_components" 是可选目录，里面包含了需要在引导加载项目中进行编译和链接的组件。并不是每个项目都需要这种自定义组件，但此类组件在引导加载程序需要修改以嵌入新功能时可能很有用。
+
+- "components" 是可选目录，里面包含了项目的部分自定义组件，并不是每个项目都需要这种自定义组件，但它有助于构建可复用的代码或者导入第三方（不属于 ESP-IDF）的组件。或者，你也可以在顶层 CMakeLists.txt 中设置 ``EXTRA_COMPONENT_DIRS`` 变量以查找其他指定位置处的组件。
 
 - "main" 目录是一个特殊的组件，它包含项目本身的源代码。"main" 是默认名称，CMake 变量 ``COMPONENT_DIRS`` 默认包含此组件，但你可以修改此变量。有关详细信息，请参阅 :ref:`重命名 main 组件 <rename-main>`。如果项目中源文件较多，建议将其归于组件中，而不是全部放在 "main" 中。
 
 - "build" 目录是存放构建输出的地方，如果没有此目录，``idf.py`` 会自动创建。CMake 会配置项目，并在此目录下生成临时的构建文件。随后，在主构建进程的运行期间，该目录还会保存临时目标文件、库文件以及最终输出的二进制文件。此目录通常不会添加到项目的源码管理系统中，也不会随项目源码一同发布。
+
+- "managed_components" 目录由 IDF 组件管理器创建，用于存储由 IDF 组件管理器管理的组件。每个托管组件通常包含 ``idf_component.yml`` 清单文件，定义了包括版本和依赖项在内的组件元数据。但对于那些来自 Git 仓库的组件，清单文件是可选的。请勿手动修改 "managed_components" 目录下的内容。如果需要进行更改，可以将组件复制到 ``components`` 目录下。"managed_components" 目录通常不在 Git 中进行版本控制，也不会与项目源代码一起分发。
 
 每个组件目录都包含一个 ``CMakeLists.txt`` 文件，里面会定义一些变量以控制该组件的构建过程，以及其与整个项目的集成。更多详细信息请参阅 :ref:`component-directories`。
 
@@ -294,9 +307,16 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 同名组件
 --------
 
-ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件（``IDF_PATH/components``），然后是 ``EXTRA_COMPONENT_DIRS`` 中的组件，最后是项目组件（``PROJECT_DIR/components``）。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
+ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组件目录（从高到低）：
 
-.. 注解::
+* 项目目录下的组件
+* ``EXTRA_COMPONENT_DIRS`` 中的组件
+* 项目目录下 ``managed_components`` 目录中的组件。这些组件由 IDF Component Manager 下载并管理。（除非 IDF Component Manager 被禁用）
+* ``IDF_PATH/components`` 目录下的组件
+
+如果有两个及以上同名组件，构建系统会使用优先级更高的组件。这使得我们可以在项目中覆盖 ESP-IDF 提供的组件。只需要复制 ESP-IDF 组件到项目目录下，然后修改它。这样可以在修改组件的同时，不修改 ESP-IDF 的源代码。
+
+.. note::
 
   如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。
 
@@ -338,6 +358,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 - ``COMPONENT_NAME``：组件名，与组件目录名相同。
 - ``COMPONENT_ALIAS``：库别名，由构建系统在内部为组件创建。
 - ``COMPONENT_LIB``：库名，由构建系统在内部为组件创建。
+- ``COMPONENT_VERSION``：组件版本，由 idf_component.yml 指定并由 IDF 组件管理器设置。
 
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
@@ -1243,23 +1264,37 @@ ESP-IDF 构建命令
 
 .. code-block:: none
 
-  idf_build_component(component_dir)
+  idf_build_component(component_dir [component_source])
 
 向构建系统提交一个包含组件的 *component_dir* 目录。相对路径会被转换为相对于当前目录的绝对路径。
-所有对该命令的调用必须在`idf_build_process`之前执行。
 
-该命令并不保证组件在构建过程中会被处理（参见 `idf_build_process` 中 `COMPONENTS` 参数说明）
+一个可选的 *component_source* 参数可以用于指定组件源。（默认为 "project_components"）
+
+这个参数决定了同名组件的优先级。详细信息请参考 :ref:`cmake-components-same-name`。
+
+该参数可以指定如下组件源（优先级从高到低排序）：
+
+- "project_components" - 项目目录中的组件
+- "project_extra_components" - 通过 ``EXTRA_COMPONENT_DIRS`` 指定的额外组件
+- "project_managed_components" - 通过 IDF Component Manager 管理的组件
+- "idf_components" - ESP-IDF 中的组件，通常在 :idf:`/components` 目录中
+
+举个例子，如果有两个组件，组件名都为 "json"。一个组件源被定义为 "project_components"，另一个组件源被定义为 "idf_components"，那么 "project_components" 中的 "json" 组件会被优先选择。
+
+.. warning::
+
+    所有对该命令的调用必须在 `idf_build_process` 之前执行。该命令并不保证组件在构建过程中会被处理（参见 `idf_build_process` 中 `COMPONENTS` 参数说明）。
 
 .. code-block:: none
 
-  idf_build_process(target
-                    [PROJECT_DIR project_dir]
-                    [PROJECT_VER project_ver]
-                    [PROJECT_NAME project_name]
-                    [SDKCONFIG sdkconfig]
-                    [SDKCONFIG_DEFAULTS sdkconfig_defaults]
-                    [BUILD_DIR build_dir]
-                    [COMPONENTS component1 component2 ...])
+    idf_build_process(target
+                      [PROJECT_DIR project_dir]
+                      [PROJECT_VER project_ver]
+                      [PROJECT_NAME project_name]
+                      [SDKCONFIG sdkconfig]
+                      [SDKCONFIG_DEFAULTS sdkconfig_defaults]
+                      [BUILD_DIR build_dir]
+                      [COMPONENTS component1 component2 ...])
 
 为导入 ESP-IDF 组件执行大量的幕后工作，包括组件配置、库创建、依赖性扩展和解析。在这些功能中，对于用户最重要的可能是通过调用每个组件的 ``idf_component_register`` 来创建库。该命令为每个组件创建库，这些库可以使用别名来访问，其形式为 idf::*component_name*。
 这些别名可以用来将组件链接到用户自己的目标、库或可执行文件上。
@@ -1408,6 +1443,7 @@ ESP-IDF 组件属性
 - COMPONENT_LIB - 所创建的组件静态/接口库的名称；由 ``idf_build_component`` 设置，库本身由 ``idf_component_register`` 创建。
 - COMPONENT_NAME - 组件的名称；由 ``idf_build_component`` 根据组件的目录名设置。
 - COMPONENT_TYPE - 组件的类型（LIBRARY 或 CONFIG_ONLY）。如果一个组件指定了源文件或嵌入了一个文件，那么它的类型就是 LIBRARY。
+- COMPONENT_SOURCE - 组件源。可选值为 "idf_components"，"project_managed_components"，"project_components"，"project_extra_components". 用于决定同名组件的优先级。
 - EMBED_FILES - 要嵌入组件的文件列表；由 ``idf_component_register`` EMBED_FILES 参数设置。
 - EMBED_TXTFILES - 要嵌入组件的文本文件列表；由 ``idf_component_register`` EMBED_TXTFILES 参数设置。
 - INCLUDE_DIRS - 组件 include 目录列表；由 ``idf_component_register`` INCLUDE_DIRS 参数设置。
@@ -1548,6 +1584,10 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
 
     - 检索每个组件的公共和私有依赖。创建一个子进程，以脚本模式执行每个组件的 CMakeLists.txt。``idf_component_register`` REQUIRES 和 PRIV_REQUIRES 参数的值会返回给父进程。这就是所谓的早期扩展。在这一步中定义变量 ``CMAKE_BUILD_EARLY_EXPANSION``。
     - 根据公共和私有的依赖关系，递归地导入各个组件。
+    - 若未禁用 IDF 组件管理器，则可调用它来解析组件的依赖项：
+      - 查找项目中包含的清单和依赖项。
+      - 启动版本解决过程以解析组件的依赖项。
+      - 若版本解决过程成功，则 IDF 组件管理器会下载依赖项，并将它们集成到构建中，随后创建 ``dependencies.lock`` 文件，该文件中包含上述依赖项的确切版本列表。
 
 
 处理
@@ -1624,6 +1664,23 @@ CMake 中不可用的功能
 --------------
 
 仍然可以使用 ``make flash`` 或者类似的目标来构建和烧录，但是项目 ``sdkconfig`` 不能再用来指定串口和波特率。可以使用环境变量来覆盖串口和波特率的设置，详情请参阅 :ref:`flash-with-ninja-or-make`。
+
+应用示例
+--------------------
+
+- :example:`build_system/wrappers` 演示了如何使用链接器功能在 ESP-IDF 和引导程序中重新定义或覆盖任何公共函数，以修改或扩展函数的默认行为。
+
+- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导程序，提供一个自定义引导程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 KConfig 选项）有条件地覆盖引导程序。
+
+- :example:`build_system/cmake/import_lib` 演示了如何使用 ExternalProject CMake 模块导入和使用第三方库。
+
+- :example:`build_system/cmake/import_prebuilt` 演示了如何将预构建的静态库导入到 ESP-IDF 构建系统中，构建具有依赖关系的组件，并将其链接到主组件，最终输出当前运行的分区。
+
+- :example:`build_system/cmake/idf_as_lib` 演示了如何使用自定义 CMake 项目创建与 :example:`hello world application <get-started/hello_world>` 类似的应用。
+
+- :example:`build_system/cmake/multi_config` 演示了如何从单个代码库构建单个应用的多个配置，这可以方便地为多个相似产品创建固件。
+
+- :example:`build_system/cmake/plugins` 演示了与插件的链接时注册相关的 ESP-IDF 构建系统功能，允许添加某个功能的多个实现，而无需让应用程序了解每个具体的实现。
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _Cmake: https://cmake.org

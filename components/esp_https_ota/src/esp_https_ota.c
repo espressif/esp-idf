@@ -194,9 +194,15 @@ static const char* ota_event_name_table[] = {
     "ESP_HTTPS_OTA_ABORT",
 };
 
+#if CONFIG_ESP_HTTPS_OTA_EVENT_POST_TIMEOUT == -1
+#define ESP_HTTPS_OTA_EVENT_POST_TIMEOUT portMAX_DELAY
+#else
+#define ESP_HTTPS_OTA_EVENT_POST_TIMEOUT pdMS_TO_TICKS(CONFIG_ESP_HTTPS_OTA_EVENT_POST_TIMEOUT)
+#endif
+
 static void esp_https_ota_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, portMAX_DELAY) != ESP_OK) {
+    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, ESP_HTTPS_OTA_EVENT_POST_TIMEOUT) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post https_ota event: %s", ota_event_name_table[event_id]);
     }
 }
@@ -370,8 +376,8 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         err = ESP_FAIL;
         goto http_cleanup;
     }
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%" PRIx32,
-        https_ota_handle->update_partition->subtype, https_ota_handle->update_partition->address);
+    ESP_LOGI(TAG, "Writing to <%s> partition at offset 0x%" PRIx32,
+        https_ota_handle->update_partition->label, https_ota_handle->update_partition->address);
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
     if (ota_config->buffer_caps != 0) {
@@ -716,6 +722,15 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle)
     }
     free(handle);
     return err;
+}
+
+int esp_https_ota_get_status_code(esp_https_ota_handle_t https_ota_handle)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *) https_ota_handle;
+    if (handle == NULL || handle->http_client == NULL) {
+        return -1;
+    }
+    return esp_http_client_get_status_code(handle->http_client);
 }
 
 int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle)

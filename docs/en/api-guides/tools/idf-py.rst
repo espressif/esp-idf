@@ -83,7 +83,7 @@ Build the Project: ``build``
 
 This command builds the project found in the current directory. This can involve multiple steps:
 
-  - Create the build directory if needed. The sub-directory ``build`` is used to hold build output, although this can be changed with the ``-B`` option.
+  - Create the build directory if needed. The sub-directory "build" is used to hold build output, although this can be changed with the ``-B`` option.
   - Run CMake_ as necessary to configure the project and generate build files for the main build tool.
   - Run the main build tool (Ninja_ or `GNU Make`). By default, the build tool is automatically detected but it can be explicitly set by passing the ``-G`` option to ``idf.py``.
 
@@ -107,7 +107,7 @@ Delete the Entire Build Contents: ``fullclean``
 
   idf.py fullclean
 
-This command deletes the entire "build" directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
+This command deletes the entire build directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
 Flash the Project: ``flash``
 ----------------------------
@@ -150,9 +150,12 @@ Example usage:
 There are also some format specific options, which are listed below:
 
 - Only for raw format:
+
   - ``--flash-offset``: This option will create a merged binary that should be flashed at the specified offset, instead of at the standard offset of 0x0.
   - ``--fill-flash-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
+
 - Only for uf2 format:
+
   - ``--md5-disable``: This option will disable MD5 checksums at the end of each block. This can be useful for integration with e.g. `tinyuf2 <https://github.com/adafruit/tinyuf2>`__.
 
 Hints on How to Resolve Errors

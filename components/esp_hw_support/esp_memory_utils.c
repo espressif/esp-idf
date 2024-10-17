@@ -67,7 +67,7 @@ bool esp_ptr_external_ram(const void *p)
 #endif  //CONFIG_SPIRAM
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 bool esp_stack_ptr_in_extram(uint32_t sp)
 {
     //Check if stack ptr is on PSRAM, and 16 byte aligned.

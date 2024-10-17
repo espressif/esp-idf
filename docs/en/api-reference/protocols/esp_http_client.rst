@@ -13,10 +13,10 @@ Overview
     * :cpp:func:`esp_http_client_cleanup`: Closes the connection (if any) and frees up all the memory allocated to the HTTP client instance. This must be the last function to be called after the completion of operations.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Simple example that uses ESP HTTP Client to make HTTP/S requests can be found at :example:`protocols/esp_http_client`.
+- :example:`protocols/esp_http_client` demonstrates how to use the ESP HTTP Client to make HTTP/S requests.
 
 
 Basic HTTP Request

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,10 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
+#include "soc/soc_etm_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -38,6 +41,77 @@ extern "C" {
 #define I2S_LL_XTAL_CLK_FREQ           (40 * 1000000)   // XTAL_CLK: 40MHz
 #define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_XTAL_CLK_FREQ  // No PLL clock source on P4, use XTAL as default
 
+#define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){  \
+        [0] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S0_EVT_RX_DONE, \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S0_EVT_X_WORDS_RECEIVED,  \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S0_EVT_TX_DONE,  \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S0_EVT_X_WORDS_SENT, \
+            },  \
+        },  \
+        [1] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S1_EVT_RX_DONE, \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S1_EVT_X_WORDS_RECEIVED,  \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S1_EVT_TX_DONE,  \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S1_EVT_X_WORDS_SENT, \
+            },  \
+        },   \
+        [2] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S2_EVT_RX_DONE, \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S2_EVT_X_WORDS_RECEIVED,  \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_EVENT_DONE] = I2S2_EVT_TX_DONE,  \
+                [I2S_ETM_EVENT_REACH_THRESH] = I2S2_EVT_X_WORDS_SENT, \
+            },  \
+        },   \
+    }[i2s_port][(chan_dir) - 1][event]
+
+
+#define I2S_LL_ETM_TASK_TABLE(i2s_port, chan_dir, task)  \
+    (uint32_t[SOC_I2S_NUM][2][I2S_ETM_TASK_MAX]){  \
+        [0] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S0_TASK_START_RX, \
+                [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_RX, \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
+                [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_TX, \
+            },  \
+        },  \
+        [1] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S1_TASK_START_RX, \
+                [I2S_ETM_TASK_STOP] = I2S1_TASK_STOP_RX, \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S1_TASK_START_TX, \
+                [I2S_ETM_TASK_STOP] = I2S1_TASK_STOP_TX, \
+            },  \
+        },  \
+        [2] = {  \
+            [I2S_DIR_RX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S2_TASK_START_RX, \
+                [I2S_ETM_TASK_STOP] = I2S2_TASK_STOP_RX, \
+            },  \
+            [I2S_DIR_TX - 1] = {  \
+                [I2S_ETM_TASK_START] = I2S2_TASK_START_TX, \
+                [I2S_ETM_TASK_STOP] = I2S2_TASK_STOP_TX, \
+            },  \
+        },  \
+    }[i2s_port][(chan_dir) - 1][task]
+
+#define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFFUL)
+
 /**
  * @brief Enable the bus clock for I2S module
  *
@@ -49,12 +123,15 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
     switch (i2s_id) {
         case 0:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s0_mclk_en = enable;
             return;
         case 1:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s1_mclk_en = enable;
             return;
         case 2:
             HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = enable;
+            LP_AON_CLKRST.hp_clk_ctrl.hp_pad_i2s2_mclk_en = enable;
             return;
     }
 }
@@ -421,25 +498,52 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
             return;
         case 1:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
             return;
         case 2:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
             return;
     }
 }
@@ -459,25 +563,52 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
             return;
         case 1:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
             return;
         case 2:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
             return;
     }
 }
@@ -490,12 +621,6 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  */
 static inline void _i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_tx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
-
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
@@ -534,12 +659,6 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void _i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_rx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
-
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
@@ -638,7 +757,7 @@ static inline void i2s_ll_rx_set_eof_num(i2s_dev_t *hw, int eof_num)
 }
 
 /**
- * @brief Congfigure TX chan bit and audio data bit
+ * @brief Configure TX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -651,7 +770,7 @@ static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
 }
 
 /**
- * @brief Congfigure RX chan bit and audio data bit
+ * @brief Configure RX chan bit and audio data bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -1052,11 +1171,11 @@ static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t f
 }
 
 /**
- * @brief Get I2S TX PDM fp configuration paramater
+ * @brief Get I2S TX PDM fp configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fp configuration paramater
+ *        - fp configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
@@ -1064,11 +1183,11 @@ static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 }
 
 /**
- * @brief Get I2S TX PDM fs configuration paramater
+ * @brief Get I2S TX PDM fs configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fs configuration paramater
+ *        - fs configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
@@ -1091,7 +1210,7 @@ static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
  * @brief Configure RX PDM downsample
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param dsr PDM downsample configuration paramater
+ * @param dsr PDM downsample configuration parameter
  */
 static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
 {
@@ -1164,7 +1283,7 @@ static inline void i2s_ll_rx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
  * @brief Configura TX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pcm_cfg PCM configuration paramater
+ * @param pcm_cfg PCM configuration parameter
  */
 static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
@@ -1176,7 +1295,7 @@ static inline void i2s_ll_tx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_
  * @brief Configure RX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pcm_cfg PCM configuration paramater
+ * @param pcm_cfg PCM configuration parameter
  */
 static inline void i2s_ll_rx_set_pcm_type(i2s_dev_t *hw, i2s_pcm_compress_t pcm_cfg)
 {
@@ -1348,7 +1467,7 @@ static inline void i2s_ll_tx_pdm_dma_take_mode(i2s_dev_t *hw, bool is_mono, bool
  * @param is_mono   The DMA data only has one slot (mono) or contains two slots (stereo)
  * @param is_copy   Whether the un-selected slot copies the data from the selected one
  *                  If not, the un-selected slot will transmit the data from 'conf_single_data'
- * @param mask      The slot mask to selet the slot
+ * @param mask      The slot mask to select the slot
  */
 static inline void i2s_ll_tx_pdm_slot_mode(i2s_dev_t *hw, bool is_mono, bool is_copy, i2s_pdm_slot_mask_t mask)
 {
@@ -1429,6 +1548,120 @@ __attribute__((always_inline))
 static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
 {
     return hw->bck_cnt.tx_bck_cnt;
+}
+
+/**
+ * @brief Set the TX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that send
+ */
+static inline void i2s_ll_tx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_tx_send_word_num = thresh;
+}
+
+/**
+ * @brief Set the RX ETM threshold of REACH_THRESH event
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param thresh The threshold that received
+ */
+static inline void i2s_ll_rx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->etm_conf.etm_rx_receive_word_num = thresh;
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_tx_done_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st4.i2s0_evt_tx_done_st;
+        case 1:
+            return SOC_ETM.evt_st4.i2s1_evt_tx_done_st;
+        case 2:
+            return SOC_ETM.evt_st4.i2s2_evt_tx_done_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_rx_done_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st4.i2s0_evt_rx_done_st;
+        case 1:
+            return SOC_ETM.evt_st4.i2s1_evt_rx_done_st;
+        case 2:
+            return SOC_ETM.evt_st4.i2s2_evt_rx_done_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_tx_threshold_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st4.i2s0_evt_x_words_sent_st;
+        case 1:
+            return SOC_ETM.evt_st4.i2s1_evt_x_words_sent_st;
+        case 2:
+            return SOC_ETM.evt_st4.i2s2_evt_x_words_sent_st;
+        default:
+            HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Get I2S ETM TX done event status
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *      - true  TX done event triggered
+ *      - false TX done event not triggered
+ */
+static inline bool i2s_ll_get_etm_rx_threshold_event_status(i2s_dev_t *hw)
+{
+    uint32_t i2s_id = I2S_LL_GET_ID(hw);
+    switch (i2s_id) {
+        case 0:
+            return SOC_ETM.evt_st4.i2s0_evt_x_words_received_st;
+        case 1:
+            return SOC_ETM.evt_st4.i2s1_evt_x_words_received_st;
+        case 2:
+            return SOC_ETM.evt_st4.i2s2_evt_x_words_received_st;
+        default:
+            HAL_ASSERT(false);
+    }
 }
 
 #ifdef __cplusplus

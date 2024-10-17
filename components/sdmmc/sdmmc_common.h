@@ -124,6 +124,8 @@ esp_err_t sdmmc_init_mmc_decode_cid(sdmmc_card_t* card);
 esp_err_t sdmmc_init_ocr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_spi_crc(sdmmc_card_t* card);
 esp_err_t sdmmc_init_io(sdmmc_card_t* card);
+esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
+esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t* card_cap);
 esp_err_t sdmmc_init_sd_blocklen(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_scr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card);

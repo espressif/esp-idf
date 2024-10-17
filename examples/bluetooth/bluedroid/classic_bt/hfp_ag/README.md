@@ -45,6 +45,7 @@ The default configuration is `PCM`, if you want to use `vHCI` you should configu
 
 #### PCM Signal Configurations
 
+<<<<<<< HEAD
 PCM Signal supports two configurations in menuconfig: PCM Role, PCM Polar.
 
 - PCM Role: PCM role can be configured as PCM master or PCM slave. The default configuration is `Master`, you can change the PCM role in `menuconfig` path:
@@ -55,6 +56,24 @@ PCM Signal supports two configurations in menuconfig: PCM Role, PCM Polar.
 
 The default configuration of PCM frame synchronization signal is `Stereo mode(Dual channel)`. FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues until the end of the current channel-data transmission. As is shown in the figure ![Stereo](image/Channel_Mode.png)
 The latest version of esp-idf master branch can configure three different forms(Stereo mode, Mono mode 1, Mono mode 2).
+=======
+PCM Signal supports three configurations in menuconfig: PCM Role, PCM Polar and Channel Mode(Stereo/Mono).
+
+- PCM Role: PCM role can be configured as PCM master or PCM slave. The default configuration is `Master`, you can change the PCM role in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> PCM Role`
+
+- PCM Polar: PCM polarity can be configured as Falling Edge or Rising Edge. The default configuration is `Falling Edge`, you can change the PCM polar in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> PCM Polar`
+
+- Channel Mode(Stereo/Mono): PCM frame synchronization signal can be configured as Stereo mode or Mono mode, where the Mono mode can be configured in two different forms(Mono mode 1 and Mono mode 2). As is shown in the figure ![Stereo/Mono](image/Channel_Mode_Stereo_Mono.png)
+
+  - Stereo Mode(Dual channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues until the end of the current channel-data transmission.
+  - Mono Mode 1(Single channel): FSYNC signal starts to change a CLK clock cycle earlier than the DOUT signal, which means that the FSYNC signal takes effect a clock cycle earlier than the first bit of the current channel-data transmission. The FSYNC signal continues for one extra CLK clock cycle.
+  - Mono Mode 2(Single channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues for one extra CLK clock cycle.
+
+- The default configuration is `Stereo Mode`, you can change the PCM Channel mode in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> Channel Mode(Stereo/Mono)`
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 ### Codec Choice
 

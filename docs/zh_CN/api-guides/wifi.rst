@@ -27,6 +27,10 @@ Wi-Fi 驱动程序
     - 支持多个天线
     - 支持获取信道状态信息
 
+    .. only:: SOC_WIFI_NAN_SUPPORT
+
+     - Wi-Fi Aware (NAN)
+
 .. only:: esp32c6
 
     - 支持 4 个虚拟接口，即 STA、AP、Sniffer 和 reserved。
@@ -69,6 +73,34 @@ Wi-Fi 驱动程序
 一般来说，要编写自己的 Wi-Fi 应用程序，最高效的方式是先选择一个相似的应用程序示例，然后将其中可用的部分移植到自己的项目中。如果你希望编写一个强健的 Wi-Fi 应用程序，强烈建议在开始之前先阅读本文。**非强制要求，请依个人情况而定。**
 
 本文将补充说明 Wi-Fi API 和 Wi-Fi 示例的相关信息，重点描述使用 Wi-Fi API 的原则、当前 Wi-Fi API 实现的限制以及使用 Wi-Fi 时的常见错误。同时，本文还介绍了 Wi-Fi 驱动程序的一些设计细节。建议选择一个示例 :example:`example <wifi>` 进行参考。
+
+- :example:`wifi/getting_started/station` 演示如何使用 station 功能连接到 AP。
+
+- :example:`wifi/getting_started/softAP` 演示如何使用 SoftAP 功能将 {IDF_TARGET_NAME} 配置为 AP。
+
+- :example:`wifi/scan` 演示如何扫描可用的 AP，配置扫描设置，并显示扫描结果。
+
+- :example:`wifi/fast_scan` 演示如何执行快速和全通道扫描，查找附近的 AP，设置信号强度的阈值和认证模式，并根据信号强度和认证模式连接到最合适的 AP。
+
+- :example:`wifi/wps` 演示如何使用 WPS 入网功能，简化连接 Wi-Fi 路由器的过程，支持 PIN 或 PBC 模式。
+
+- :example:`wifi/wps_softap_registrar` 演示如何在 SoftAP 模式下使用 WPS 注册器功能，从而简化从 station 连接到 Wi-Fi SoftAP 的过程。
+
+- :example:`wifi/smart_config` 演示如何使用 smartconfig 功能通过 ESPTOUCH 应用连接到目标 AP。
+
+- :example:`wifi/power_save` 演示如何使用 station 模式的省电模式。
+
+- :example:`wifi/softap_sta` 演示如何配置 {IDF_TARGET_NAME} 同时用作 AP 和 station，从而可将其用作 Wi-Fi NAT 路由器。
+
+- :example:`wifi/iperf` 演示如何实现 iPerf 性能测量工具所使用的协议，允许在两个芯片之间或在单个芯片和运行 iPerf 工具的计算机之间进行性能测量，并提供测试 station/SoftAP TCP/UDP RX/TX 吞吐量的具体说明。
+
+- :example:`wifi/roaming/roaming_app` 演示如何使用 Wi-Fi Roaming App 功能，在兼容的 AP 之间高效漫游。
+
+- :example:`wifi/roaming/roaming_11kvr` 演示如何使用 11k 和 11v API 实现漫游功能。
+
+.. only:: SOC_WIFI_HE_SUPPORT
+
+    - :example:`wifi/itwt` 演示如何使用 iTWT 功能，该功能仅在 station 模式下工作，并在不同的省电模式下提供设置、拆卸和挂起的命令，还展示了启用和禁用 iTWT 时的电流消耗差异。
 
 设置 Wi-Fi 编译时选项
 ++++++++++++++++++++++++++++++++++++
@@ -1667,7 +1699,7 @@ Wi-Fi Easy Connect™ (DPP)
 Wi-Fi Easy Connect\ :sup:`TM` （也称为设备配置协议）是一个安全且标准化的配置协议，用于配置 Wi-Fi 设备。更多信息请参考 :doc:`esp_dpp <../api-reference/network/esp_dpp>`。
 
 WPA2-Enterprise
-+++++++++++++++++++++++++++++++++
+---------------
 
 WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入点之前，它使用 RADIUS 服务器对网络用户进行身份验证。身份验证过程基于 802.1X 标准，并有不同的扩展身份验证协议 (EAP) 方法，如 TLS、TTLS、PEAP 等。RADIUS 服务器根据用户的凭据（用户名和密码）、数字证书或两者对用户进行身份验证。当处于 station 模式的 {IDF_TARGET_NAME} 尝试连接到企业模式的 AP 时，它会向 AP 发送身份验证请求，AP 会将该请求发送到 RADIUS 服务器以对 station 进行身份验证。根据不同的 EAP 方式，可以通过 ``idf.py menuconfig`` 打开配置，并在配置中设置参数。{IDF_TARGET_NAME} 仅在 station 模式下支持 WPA2_Enterprise。
 
@@ -1727,7 +1759,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
 {IDF_TARGET_NAME} Wi-Fi 节能模式
 -----------------------------------------
 
-本小节将简单介绍Wi-Fi节能模式相关的概念和使用方式，更加详细的介绍请参考 :doc:`低功耗模式使用指南 <../api-guides/low-power-mode>`。
+本小节将简单介绍Wi-Fi节能模式相关的概念和使用方式，更加详细的介绍请参考 :doc:`低功耗模式使用指南 <../api-guides/low-power-mode/index>`。
 
 station 睡眠
 ++++++++++++++++++++++
@@ -2531,29 +2563,29 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 12
           - 8
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
-          - 15
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
-          - 16
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
-          - 13
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 开启
         * - TCP 发送数据吞吐量 (Mbit/s)
           - 74.6
           - 50.8
@@ -2643,23 +2675,23 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 8
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
-          - 15
-          - 0
+          - 开启
+          - 开启
+          - 开启
+          - 开启
+          - 关闭
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
-          - 0
-          - 0
+          - 开启
+          - 开启
+          - 开启
+          - 关闭
+          - 关闭
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
-          - 0
-          - 0
+          - 开启
+          - 开启
+          - 关闭
+          - 关闭
+          - 关闭
         * - INSTRUCTION_CACHE
           - 16
           - 16
@@ -2736,9 +2768,9 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 16
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - 开启
+          - 开启
+          - 关闭
         * - TCP 发送数据吞吐量 (Mbit/s)
           - 38.1
           - 27.2
@@ -2795,9 +2827,9 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 16
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - 开启
+          - 开启
+          - 关闭
         * - TCP 发送数据吞吐量 (Mbit/s)
           - 30.5
           - 25.9
@@ -2854,9 +2886,9 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 14
           - 6
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - 开启
+          - 开启
+          - 关闭
         * - TCP 发送数据吞吐量 (Mbit/s)
           - 21.6
           - 21.4
@@ -2913,17 +2945,17 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 32
           - 6
         * - WIFI_IRAM_OPT
-          - 15
-          - 15
-          - 15
+          - 开启
+          - 开启
+          - 开启
         * - WIFI_RX_IRAM_OPT
-          - 16
-          - 16
-          - 16
+          - 开启
+          - 开启
+          - 开启
         * - LWIP_IRAM_OPTIMIZATION
-          - 13
-          - 13
-          - 0
+          - 开启
+          - 开启
+          - 关闭
         * - INSTRUCTION_CACHE
           - 32
           - 32
@@ -3089,20 +3121,20 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
                - 65
                - 65
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - 开启
+               - 开启
+               - 开启
+               - 关闭
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - 开启
+               - 开启
+               - 关闭
+               - 关闭
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - 开启
+               - 关闭
+               - 关闭
+               - 关闭
              * - TCP 发送数据吞吐量 (Mbit/s)
                - 37.5
                - 31.7
@@ -3171,20 +3203,20 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - 开启
+               - 开启
+               - 开启
+               - 关闭
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - 开启
+               - 开启
+               - 关闭
+               - 关闭
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - 开启
+               - 关闭
+               - 关闭
+               - 关闭
              * - INSTRUCTION_CACHE
                - 16
                - 16
@@ -3278,20 +3310,20 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - 开启
+               - 开启
+               - 开启
+               - 关闭
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - 开启
+               - 开启
+               - 关闭
+               - 关闭
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - 开启
+               - 关闭
+               - 关闭
+               - 关闭
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16
@@ -3395,20 +3427,20 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
                - 32
                - 32
              * - WIFI_IRAM_OPT
-               - 15
-               - 15
-               - 15
-               - 0
+               - 开启
+               - 开启
+               - 开启
+               - 关闭
              * - WIFI_RX_IRAM_OPT
-               - 16
-               - 16
-               - 0
-               - 0
+               - 开启
+               - 开启
+               - 关闭
+               - 关闭
              * - LWIP_IRAM_OPTIMIZATION
-               - 13
-               - 0
-               - 0
-               - 0
+               - 开启
+               - 关闭
+               - 关闭
+               - 关闭
              * - LWIP_UDP_RECVMBOX_SIZE
                - 16
                - 16

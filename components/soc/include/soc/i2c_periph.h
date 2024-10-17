@@ -8,16 +8,24 @@
 #include "soc/i2c_reg.h"
 #include "soc/i2c_struct.h"
 #include "soc/soc_caps.h"
+<<<<<<< HEAD
 #if SOC_I2C_SUPPORTED  // TODO: [ESP32C5] IDF-8694
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 #endif  // SOC_I2C_SUPPORTED
+=======
+#if SOC_I2C_SUPPORTED
+#include "soc/regdma.h"
+#include "soc/interrupts.h"
+#if SOC_I2C_SUPPORT_SLEEP_RETENTION
+#include "soc/retention_periph_defs.h"
+#endif
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_I2C_SUPPORTED
 typedef struct {
     const uint8_t sda_out_sig;
     const uint8_t sda_in_sig;
@@ -25,7 +33,6 @@ typedef struct {
     const uint8_t scl_in_sig;
     const uint8_t iomux_func;
     const uint8_t irq;
-    const periph_module_t module;
 } i2c_signal_conn_t;
 
 extern const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM];
@@ -34,12 +41,13 @@ extern const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM];
 typedef struct {
     const regdma_entries_config_t *link_list;
     uint32_t link_num;
+    periph_retention_module_t module_id;
 } i2c_reg_ctx_link_t;
 
 extern const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM];
 #endif
-#endif  // SOC_I2C_SUPPORTED
 
 #ifdef __cplusplus
 }
 #endif
+#endif  // SOC_I2C_SUPPORTED

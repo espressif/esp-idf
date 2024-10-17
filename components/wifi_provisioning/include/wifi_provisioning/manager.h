@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,13 @@ typedef enum {
      * Indicates that provisioning has started
      */
     WIFI_PROV_START,
+
+    /**
+     * Emitted before accepting the wifi credentials to
+     * set the wifi configurations according to requirement.
+     * NOTE - In this case event_data shall be populated with a pointer to `wifi_config_t`.
+    */
+    WIFI_PROV_SET_STA_CONFIG,
 
     /**
      * Emitted when Wi-Fi AP credentials are received via `protocomm`

@@ -43,11 +43,24 @@
 #include "esp_tls.h"
 #include "esp_crt_bundle.h"
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
+#define MAX_URLS    9
+#else
 #define MAX_URLS    2
+#endif
 
 static const char *web_urls[MAX_URLS] = {
     "https://www.howsmyssl.com/a/check",
     "https://espressif.com",
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
+    "https://letsencrypt.org",
+    "https://www.identrust.com",
+    "https://www.globalsign.com",
+    "https://www.sectigo.com",
+    "https://www.digicert.com",
+    "https://www.godaddy.com",
+    "https://rainmaker.espressif.com",  // Amazon
+#endif
 };
 
 static const char *TAG = "example";

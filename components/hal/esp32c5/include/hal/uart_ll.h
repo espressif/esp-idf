@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "esp_attr.h"
 #include "hal/misc.h"
 #include "hal/uart_types.h"
@@ -61,6 +60,10 @@ extern "C" {
 
 #define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
     (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
+
+// UART sleep retention module
+#define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
+                                                     (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : -1)
 
 // Define UART interrupts
 typedef enum {
@@ -185,6 +188,30 @@ static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
 #define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief  Enable the UART clock.
+ *
+ * @param hw_id LP UART instance ID
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_sclk_enable(int hw_id)
+{
+    (void)hw_id;
+    LP_UART.clk_conf.tx_sclk_en = 1;
+    LP_UART.clk_conf.rx_sclk_en = 1;
+}
+
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param hw_id LP UART instance ID
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_sclk_disable(int hw_id)
+{
+    (void)hw_id;
+    LP_UART.clk_conf.tx_sclk_en = 0;
+    LP_UART.clk_conf.rx_sclk_en = 0;
+}
 
 /**
  * @brief Reset LP UART module
@@ -889,6 +916,17 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_t
 {
     // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
     hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
+}
+
+/**
+ * @brief   Enable/disable the UART pad clock in sleep_state
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable enable or disable
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
+{
+    (void)hw; (void)enable;
 }
 
 /**

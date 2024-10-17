@@ -13,8 +13,12 @@ if(CONFIG_MCPWM_ISR_IRAM_SAFE)
     list(APPEND srcs "test_mcpwm_iram.c")
 endif()
 
+if(CONFIG_SOC_ETM_SUPPORTED AND CONFIG_SOC_MCPWM_SUPPORT_ETM)
+    list(APPEND srcs "test_mcpwm_etm.c")
+endif()
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_driver_mcpwm esp_driver_gpio
+                       PRIV_REQUIRES unity esp_driver_mcpwm esp_driver_gpio esp_driver_gptimer
                        WHOLE_ARCHIVE)

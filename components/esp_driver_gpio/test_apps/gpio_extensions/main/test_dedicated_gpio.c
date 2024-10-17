@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -60,7 +61,7 @@ TEST_CASE("Dedicated_GPIO_bundle_install/uninstall", "[dedic_gpio]")
 
 typedef struct {
     SemaphoreHandle_t sem;
-    const int gpios[TEST_GPIO_GROUP_SIZE];
+    int gpios[TEST_GPIO_GROUP_SIZE];
 } test_dedic_task_context_t;
 
 static void test_dedic_gpio_on_specific_core(void *args)
@@ -144,6 +145,7 @@ TEST_CASE("Dedicated_GPIO_run_on_multiple_CPU_cores", "[dedic_gpio]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateCounting(SOC_CPU_CORES_NUM, 0);
     TaskHandle_t task_handle[SOC_CPU_CORES_NUM];
+    test_dedic_task_context_t isr_ctx[SOC_CPU_CORES_NUM];
 
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -151,11 +153,11 @@ TEST_CASE("Dedicated_GPIO_run_on_multiple_CPU_cores", "[dedic_gpio]")
 #else
         int start_gpio = i * TEST_GPIO_GROUP_SIZE;
 #endif
-        test_dedic_task_context_t isr_ctx = {
-            .sem = sem,
-            .gpios = {start_gpio, start_gpio + 1, start_gpio + 2, start_gpio + 3}
-        };
-        xTaskCreatePinnedToCore(test_dedic_gpio_on_specific_core, "dedic_gpio_test_tsk", 4096, &isr_ctx, 1,
+        isr_ctx[i].sem = sem;
+        const int gpios[TEST_GPIO_GROUP_SIZE] = {start_gpio, start_gpio + 1, start_gpio + 2, start_gpio + 3};
+        memcpy(isr_ctx[i].gpios, gpios, sizeof(gpios));
+
+        xTaskCreatePinnedToCore(test_dedic_gpio_on_specific_core, "dedic_gpio_test_tsk", 4096, &isr_ctx[i], 1,
                                 &task_handle[i], i);
     }
 

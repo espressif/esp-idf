@@ -182,6 +182,8 @@
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM  (3)
 
+// RTC_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 
 /*-------------------------- Dedicated GPIO CAPS ---------------------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -214,6 +216,7 @@
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_DMA_EQUAL  (1)
 #define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
+#define SOC_I2S_MAX_DATA_WIDTH      (24)
 #define SOC_I2S_APLL_MIN_FREQ       (250000000)
 #define SOC_I2S_APLL_MAX_FREQ       (500000000)
 #define SOC_I2S_APLL_MIN_RATE       (10675) //in Hz, I2S Clock rate limited by hardware
@@ -466,6 +469,7 @@
 #define SOC_PM_SUPPORT_VDDSDIO_PD                 (1)
 
 #define SOC_CONFIGURABLE_VDDSDIO_SUPPORTED        (1)
+#define SOC_PM_MODEM_PD_BY_SW                     (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)

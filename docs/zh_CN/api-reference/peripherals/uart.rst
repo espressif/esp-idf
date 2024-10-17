@@ -415,26 +415,13 @@ RS485 特定通信模式简介
 应用示例
 --------------------
 
-下表列出了目录 :example:`peripherals/uart/` 下可用的代码示例。
-
-.. list-table::
-   :widths: 35 65
-   :header-rows: 1
-
-   * - 代码示例
-     - 描述
-   * - :example:`peripherals/uart/uart_echo`
-     - 配置 UART 设置、安装 UART 驱动程序以及通过 UART1 接口读取/写入。
-   * - :example:`peripherals/uart/uart_events`
-     - 报告各种通信事件，使用模式检测中断。
-   * - :example:`peripherals/uart/uart_async_rxtxtasks`
-     - 通过同一 UART 在两个独立的 FreeRTOS 任务中发送和接收数据。
-   * - :example:`peripherals/uart/uart_select`
-     - 针对 UART 文件描述符使用同步 I/O 多路复用。
-   * - :example:`peripherals/uart/uart_echo_rs485`
-     - 设置 UART 驱动程序以半双工模式通过 RS485 接口进行通信。此示例与 :example:`peripherals/uart/uart_echo` 类似，但允许通过连接到 {IDF_TARGET_NAME} 管脚的 RS485 接口芯片进行通信。
-   * - :example:`peripherals/uart/nmea0183_parser`
-     - 解析通过 UART 外设从 GPS 收到的 NMEA0183 语句来获取 GPS 信息。
+* :example:`peripherals/uart/uart_async_rxtxtasks` 演示了通过同一 UART 接口完成两个独立任务的通信。其中一个任务定期发送 "Hello world"，另一个任务接收并打印 UART 接收到的数据。
+* :example:`peripherals/uart/uart_echo` 演示了使用 UART 接口回显接收到的所有数据。
+* :example:`peripherals/uart/uart_echo_rs485` 演示了如何使用 UART 软件驱动程序以 RS485 半双工传输模式回显接收到的 UART 数据，要求外部连接总线驱动器。
+* :example:`peripherals/uart/uart_events` 演示了如何使用 UART 驱动程序处理特殊的 UART 事件，从 UART0 读取数据，并将数据回显到监视控制台。
+* :example:`peripherals/uart/uart_repl` 演示了如何使用和连接两个 UART 接口，使用于标准输出的 UART 可以发送命令并接收来自另一个控制台 UART 的回复，无需人工交互。
+* :example:`peripherals/uart/uart_select` 演示了在 UART 接口上使用 ``select()`` 函数来同步 I/O 多路复用，允许从/向各种来源（如 UART 和套接字）进行非阻塞读写操作，从而立即处理准备就绪的资源。
+* :example:`peripherals/uart/nmea0183_parser` 演示了如何使用 ESP UART 事件驱动程序和 ESP 事件循环库来解析来自 GPS/BDS/GLONASS 模块的 NMEA-0183 数据流，并输出常见的信息，如 UTC 时间、纬度、经度、海拔和速度。
 
 
 API 参考

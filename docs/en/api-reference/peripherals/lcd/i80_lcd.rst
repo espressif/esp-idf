@@ -1,11 +1,13 @@
 I80 Interfaced LCD
 ------------------
 
+:link_to_translation:`zh_CN:[中文]`
+
 #. Create I80 bus by :cpp:func:`esp_lcd_new_i80_bus`. You need to set up the following parameters for an Intel 8080 parallel bus:
 
     - :cpp:member:`esp_lcd_i80_bus_config_t::clk_src` sets the clock source of the I80 bus. Note, the default clock source may be different between ESP targets.
     - :cpp:member:`esp_lcd_i80_bus_config_t::wr_gpio_num` sets the GPIO number of the pixel clock (also referred as ``WR`` in some LCD spec)
-    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` sets the GPIO number of the data/command select pin (also referred as ``RS`` in some LCD spec)
+    - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` sets the GPIO number of the data or command select pin (also referred as ``RS`` in some LCD spec)
     - :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` sets the bit width of the data bus (only support ``8`` or ``16``)
     - :cpp:member:`esp_lcd_i80_bus_config_t::data_gpio_nums` is the array of the GPIO number of the data bus. The number of GPIOs should be equal to the :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` value.
     - :cpp:member:`esp_lcd_i80_bus_config_t::max_transfer_bytes` sets the maximum number of bytes that can be transferred in one transaction.

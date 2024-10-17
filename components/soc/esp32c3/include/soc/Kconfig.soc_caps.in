@@ -419,6 +419,10 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
     int
     default 3
 
+config SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -1044,6 +1048,10 @@ config SOC_PM_CPU_RETENTION_BY_RTCCNTL
     default y
 
 config SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+    bool
+    default y
+
+config SOC_PM_MODEM_PD_BY_SW
     bool
     default y
 

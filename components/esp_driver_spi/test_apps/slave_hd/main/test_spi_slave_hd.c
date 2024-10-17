@@ -381,8 +381,6 @@ static void test_hd_loop(const void* arg1, void* arg2)
             wait_rdbuf_sig(context, portMAX_DELAY);
 
             ESP_LOGI("mem", "pos: %d, len: %d", pos, len);
-            // ESP_LOG_BUFFER_HEX("recv_buffer", recv_buffer, len);
-            // ESP_LOG_BUFFER_HEX("mem", &mem_ptr[pos], len);
             TEST_ASSERT_EQUAL_HEX8_ARRAY(&mem_ptr[pos], recv_buffer, len);
         }
 

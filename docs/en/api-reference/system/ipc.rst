@@ -146,6 +146,17 @@ The High Priority Interrupt IPC API also provides the following convenience func
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - :cpp:func:`esp_ipc_isr_stall_other_cpu` stalls the target core. The calling core disables interrupts of level 3 and lower while the target core will busy-wait with interrupts of level 5 and lower disabled. The target core will busy-wait until :cpp:func:`esp_ipc_isr_release_other_cpu` is called.
     - :cpp:func:`esp_ipc_isr_release_other_cpu` resumes the target core.
 
+Application Examples
+--------------------
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+
+    - :example:`system/ipc/ipc_isr/xtensa` demonstrates how to use the IPC ISR feature to run an IPC in the context of a High Priority Interrupt, allowing users to quickly get the state of the other CPU, with two assembly callbacks that return the PS register of the other core and save/restore registers while performing tasks based on input arguments.
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    - :example:`system/ipc/ipc_isr/riscv` demonstrates how to use the IPC ISR feature on {IDF_TARGET_NAME} to run an IPC in the context of a High Priority Interrupt, including how to quickly get the state of the other CPU and how to return multiple values from the callback function.
+
 API Reference
 -------------
 

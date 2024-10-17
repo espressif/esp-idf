@@ -180,7 +180,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
    :start-after: run-openocd
    :end-before: ---
 
-{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg"}
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg", esp32p4="board/esp32p4-ftdi.cfg", esp32c5="board/esp32c5-ftdi.cfg", esp32c61="board/esp32c61-ftdi.cfg"}
 
 .. note::
 
@@ -226,6 +226,8 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``exit`` - Optional. Finally exit OpenOCD.
  - ``compress`` - Optional. Compress image file before programming.
  - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
+ - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
+ - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
 
 You are now ready to start application debugging. Follow the steps described in the section below.
 

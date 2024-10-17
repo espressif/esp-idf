@@ -1,4 +1,4 @@
-idf_component_register(SRCS  "test_socks_transport.cpp"
+idf_component_register(SRCS "test_socks_transport.cpp" "test_websocket_transport.cpp"
                         REQUIRES tcp_transport mocked_transport
                         INCLUDE_DIRS "$ENV{IDF_PATH}/tools"
                         WHOLE_ARCHIVE)

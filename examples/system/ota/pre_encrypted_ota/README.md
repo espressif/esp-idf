@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # Encrypted Binary OTA
 
@@ -8,6 +8,8 @@ This example demonstrates OTA updates with pre-encrypted binary using `esp_encry
 Pre-encrypted firmware binary must be hosted on OTA update server.
 This firmware will be fetched and then decrypted on device before being flashed.
 This allows firmware to remain `confidential` on the OTA update channel irrespective of underlying transport (e.g., non-TLS).
+
+* **NOTE:** Pre-encrypted OTA is a completely different scheme from Flash Encryption. Pre-encrypted OTA helps in ensuring the confidentiality of the firmware on the network channel, whereas Flash Encryption is intended for encrypting the contents of the ESP32's off-chip flash memory.
 
 > [!CAUTION]
 > Using the Pre-encrypted Binary OTA provides confidentiality of the firmware, but it does not ensure authenticity of the firmware. For ensuring that the firmware is coming from trusted source, please consider enabling secure boot feature along with the Pre-encrypted binary OTA. Please refer to security guide in the ESP-IDF docs for more details.

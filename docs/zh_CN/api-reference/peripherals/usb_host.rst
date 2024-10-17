@@ -25,18 +25,26 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 
 主机库具有以下特性：
 
-- 支持全速 (FS) 和低速 (LS) 设备。
-- 支持四种传输类型，即控制传输、块传输、中断传输和同步传输。
-- 支持多个 Class 驱动程序同时运行，即主机的多个客户端同时运行。
-- 单个设备可以由多个客户端同时使用，如复合设备。
-- 主机库及其底层主机栈不会在内部自动创建操作系统任务，任务数量完全由主机库接口的使用方式决定。一般来说，任务数量为 ``（运行中的主机 Class 驱动程序数量 + 1）``。
+.. list::
+
+    :esp32s2 or esp32s3: - 支持全速 (FS) 和低速 (LS) 设备。
+    :esp32p4: - 支持高速 (HS)、全速 (FS) 和低速 (LS) 设备。
+    - 支持四种传输类型，即控制传输、块传输、中断传输和同步传输。
+    :esp32p4: - 支持高带宽等时性端点。
+    - 支持多个 Class 驱动程序同时运行，即主机的多个客户端同时运行。
+    - 单个设备可以由多个客户端同时使用，如复合设备。
+    - 主机库及其底层主机栈不会在内部自动创建操作系统任务，任务数量完全由主机库接口的使用方式决定。一般来说，任务数量为 ``（运行中的主机 Class 驱动程序数量 + 1）``。
 
 目前，主机库及其底层主机栈存在以下限制：
 
-- 仅支持单个设备，而主机库的 API 支持多设备。
-- 仅支持异步传输。
-- 仅支持使用发现的首个配置，尚不支持变更为其他配置。
-- 尚不支持传输超时。
+.. list::
+
+    - 仅支持单个设备，而主机库的 API 支持多设备。
+    - 仅支持异步传输。
+    - 仅支持使用发现的首个配置，尚不支持变更为其他配置。
+    - 尚不支持传输超时。
+    :esp32p4: - {IDF_TARGET_NAME} 包含两个 USB-OTG 外设：USB 2.0 OTG 高速和 USB 2.0 OTG 全速。目前仅支持高速实例。
+    :esp32p4: - {IDF_TARGET_NAME} 目前无法枚举低速设备。
 
 
 .. -------------------------------------------------- Architecture -----------------------------------------------------
@@ -89,7 +97,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 设备
 ^^^^^^^
 
-主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。
+主机库隔离了客户端与设备处理的细节，包括连接、内存分配和枚举等，客户端只需提供已连接且已枚举的设备列表供选择。默认情况下，在枚举过程中，每个设备都会自动配置为使用找到的第一个配置，即通过获取配置描述符请求返回的第一个配置描述符。对于大多数标准设备，通常将第一个配置的 ``bConfigurationValue`` 设置为 ``1``。启用选项 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 后，可以选择不同的 ``bConfigurationValue``。获取更多详细信息，请参阅 `Multiple configuration Support_`。
 
 只要不与相同接口通信，两个及以上的客户端可以同时与同一设备通信。然而，多个客户端同时与相同设备的默认端点（即 EP0）通信，将导致它们的控制传输序列化。
 
@@ -357,7 +365,7 @@ USB 主机库（以下简称主机库）是 USB 主机栈的最底层，提供�
 主机库示例
 ^^^^^^^^^^^^^^^^^^^^^
 
-:example:`peripherals/usb/host/usb_host_lib` 展示了 USB 主机库 API 的基本用法，用于创建伪 Class 驱动程序。
+:example:`peripherals/usb/host/usb_host_lib` 演示了如何使用 USB 主机库 API 来安装和注册客户端、等待设备连接、打印设备信息和处理断开连接，并重复这些步骤，直到退出应用程序。
 
 Class 驱动程序示例
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -367,28 +375,28 @@ USB 主机栈提供了大量示例，展示了如何通过使用主机库 API �
 CDC-ACM
 """""""
 
-* 通信设备 Class（抽象控制模型）的主机 Class 驱动程序通过 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__ 作为受管理的组件分发。
-* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_host` 使用 CDC-ACM 主机驱动程序组件，与 CDC-ACM 设备通信。
-* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_vcp` 展示了如何扩展 CDC-ACM 主机驱动程序，与虚拟串口设备交互。
+* 通信设备 Class（抽象控制模型）的主机 Class 驱动程序通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__ 作为受管理的组件分发。
+* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_host` 演示了使用 CDC-ACM 主机驱动程序组件，实现 {IDF_TARGET_NAME} 与 USB CDC-ACM 设备的通信。
+* 示例 :example:`peripherals/usb/host/cdc/cdc_acm_vcp` 演示了如何扩展 CDC-ACM 的主机驱动程序，以支持 VCP 设备（即虚拟通信端口设备，如 CP210x、FTDI FT23x 或 CH34x），以及如何使用 CDC-ACM API 控制设备并发送数据。
 * 示例 `esp_modem <https://github.com/espressif/esp-protocols/tree/master/components/esp_modem/examples>`__ 中也使用了 CDC-ACM 驱动程序，该程序在这些示例中与蜂窝模块通信。
 
 MSC
 """
 
-* 大容量存储 Class（仅支持批量传输）的主机 Class 驱动程序已部署到 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_msc>`__。
-* 示例 :example:`peripherals/usb/host/msc` 展示了如何使用 MSC 主机驱动程序读写 USB flash 驱动。
+* 大容量存储 Class（仅支持批量传输）的主机 Class 驱动程序已部署到 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_msc>`__。
+* 示例 :example:`peripherals/usb/host/msc` 演示了如何使用 USB 大容量存储类来访问、读取、写入和操作 USB 闪存驱动器，包括处理 USB 重新连接和反初始化 USB 主机堆栈。
 
 HID
 """
 
-* HID（人机接口设备）的主机 class 驱动作为托管组件通过 `ESP-IDF 组件注册器 <https://components.espressif.com/components/espressif/usb_host_hid>`__ 分发。
-* 示例 :example:`peripherals/usb/host/hid` 展示了从具有多个接口的 USB HID 设备接收报告的可能性。
+* HID（人机接口设备）的主机 class 驱动作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/usb_host_hid>`__ 分发。
+* 示例 :example:`peripherals/usb/host/hid` 演示了如何在 {IDF_TARGET_NAME} 上实现基本的 USB 主机 HID 类驱动，以便与 USB HID 设备（如键盘和鼠标）进行通信，并持续扫描设备的连接状态。一旦连接成功，即获取 HID 报告。
 
 UVC
 """
 
-* USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
-* 示例 :example:`peripherals/usb/host/uvc` 展示了如何使用 UVC 主机驱动程序接收来自 USB 摄像头的视频流，并可选择将该流通过 Wi-Fi 转发。
+* USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
+* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 `libuvc` 库从 USB 摄像头捕获视频，并通过托管 TCP 服务器将视频流通过 Wi-Fi 传输，同时提供了使用 ``player.py`` 脚本在 PC 上查看捕获视频的选项。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 

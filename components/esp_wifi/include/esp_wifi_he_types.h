@@ -41,7 +41,7 @@ enum {
 /**
   * @brief Channel state information(CSI) configuration type
   */
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_SOC_WIFI_MAC_VERSION_NUM == 3
 typedef struct {
     uint32_t enable                 : 1;    /**< enable to acquire CSI */
     uint32_t acquire_csi_legacy     : 1;    /**< enable to acquire L-LTF */
@@ -172,7 +172,7 @@ typedef enum {
 /**
   * @brief RxControl Info
   */
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_SOC_WIFI_MAC_VERSION_NUM == 3
 typedef struct {
     signed rssi: 8;                               /**< the RSSI of the reception frame */
     unsigned rate: 5;                             /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */
@@ -322,7 +322,11 @@ typedef enum {
 
 /** Argument structure for WIFI_EVENT_TWT_SET_UP event */
 typedef struct {
+<<<<<<< HEAD
     wifi_itwt_setup_config_t config;      /**< itwt setup config, this value is determined by the AP */
+=======
+    wifi_itwt_setup_config_t config;       /**< itwt setup config, this value is determined by the AP */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     esp_err_t status;                     /**< itwt setup status, 1: indicate setup success, others : indicate setup fail */
     uint8_t reason;                       /**< itwt setup frame tx fail reason */
     uint64_t target_wake_time;            /**< TWT SP start time */

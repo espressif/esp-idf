@@ -13,8 +13,7 @@ _Example Title should use the word "example" instead of "demo", "test" or any si
 
 (For general overview of examples and their usage, see the `README.md` file in the upper level 'examples' directory.)
 
-> **Note**:
->
+> [!NOTE]
 > After you click any link to [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/index.html), go to the top of the sidebar, then make sure you have the appropriate **Espressif chip** (target) and **ESP-IDF version** selected in the dropdown menus.
 
 _What is this example? What does it do?_
@@ -133,6 +132,6 @@ For any technical queries, please open an [issue](https://github.com/espressif/e
 
 _Provide references to important documents_
 
-- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: ESP Timer feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html)
+- _Link to the ESP-IDF feature's API reference, for example [ESP-IDF: ESP Timer feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html)_
 - [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
 - [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)

@@ -15,6 +15,7 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
+<<<<<<< HEAD
 
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
 #if CONFIG_IDF_TARGET_ESP32C5
@@ -25,6 +26,9 @@
 #include "hal/mspi_timing_tuning_ll.h"
 #endif /* !CONFIG_IDF_TARGET_ESP32C5 */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
+=======
+#include "sdkconfig.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 #include "soc/sensitive_reg.h"
@@ -221,6 +225,7 @@ static esp_err_t check_and_generate_encryption_keys(void)
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
 
+<<<<<<< HEAD
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
 #if CONFIG_IDF_TARGET_ESP32C5
     REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
@@ -240,6 +245,8 @@ static esp_err_t check_and_generate_encryption_keys(void)
     _mspi_timing_ll_reset_mspi();
 #endif /* !CONFIG_IDF_TARGET_ESP32C5 */
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
+=======
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
     return ESP_OK;
 }
 
@@ -284,6 +291,11 @@ esp_err_t esp_flash_encrypt_contents(void)
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     REG_WRITE(SENSITIVE_XTS_AES_KEY_UPDATE_REG, 1);
+#endif
+
+// TODO: Remove C5 target config after key manager LL support- see IDF-8621
+#if CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
+    esp_flash_encryption_enable_key_mgr();
 #endif
 
     err = encrypt_bootloader();

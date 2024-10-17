@@ -33,6 +33,12 @@
 #define MIN_FREQ    8
 #elif CONFIG_XTAL_FREQ_26
 #define MIN_FREQ    13
+#elif CONFIG_XTAL_FREQ_AUTO
+#if CONFIG_IDF_TARGET_ESP32C5
+/* The ESP32C5 uses Autodetect to obtain the XTAL_FREQ, and its CONFIG_XTAL_FREQ is set to 0.
+ * Its MIN_FREQ is set to 12M because it primarily uses a 48M xtal */
+#define MIN_FREQ    12
+#endif
 #endif
 
 TEST_CASE("uart tx won't be blocked by auto light sleep", "[uart]")

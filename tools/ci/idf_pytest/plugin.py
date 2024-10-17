@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import importlib
+import logging
 import os
+import sys
 import typing as t
 from collections import defaultdict
 from functools import cached_property
+from unittest.mock import MagicMock
 from xml.etree import ElementTree as ET
 
 import pytest
@@ -78,7 +82,7 @@ class IdfPytestEmbedded:
 
         self.apps_list = (
             [os.path.join(idf_relpath(app.app_dir), app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
-            if apps
+            if apps is not None
             else None
         )
 
@@ -134,6 +138,38 @@ class IdfPytestEmbedded:
             item=item,
             multi_dut_without_param=multi_dut_without_param
         )
+
+    def pytest_collectstart(self) -> None:
+        # mock the optional packages while collecting locally
+        if not os.getenv('CI_JOB_ID') or os.getenv('PYTEST_IGNORE_COLLECT_IMPORT_ERROR') == '1':
+            # optional packages required by test scripts
+            for p in [
+                'scapy',
+                'scapy.all',
+                'websocket',  # websocket-client
+                'netifaces',
+                'RangeHTTPServer',  # rangehttpserver
+                'dbus',  # dbus-python
+                'dbus.mainloop',
+                'dbus.mainloop.glib',
+                'google.protobuf',  # protobuf
+                'google.protobuf.internal',
+                'bleak',
+                'paho',  # paho-mqtt
+                'paho.mqtt',
+                'paho.mqtt.client',
+                'paramiko',
+                'netmiko',
+                'pyecharts',
+                'pyecharts.options',
+                'pyecharts.charts',
+                'can',  # python-can
+            ]:
+                try:
+                    importlib.import_module(p)
+                except ImportError:
+                    logging.warning(f'Optional package {p} is not installed, mocking it while collecting...')
+                    sys.modules[p] = MagicMock()
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
@@ -197,6 +233,12 @@ class IdfPytestEmbedded:
             if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
+
+            # add single-dut "target" as param
+            _item_target_param = self.get_param(item, 'target', None)
+            if case.is_single_dut_test_case and _item_target_param and _item_target_param not in case.all_markers:
+                item.add_marker(_item_target_param)
+
         items[:] = [_item for _item in items if _item in item_to_case_dict]
 
         # 3.1. CollectMode.SINGLE_SPECIFIC, like `pytest --target esp32`

@@ -15,7 +15,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/timer_periph.h"
+#include "soc/wdt_periph.h"
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
 #include "hal/wdt_types.h"
@@ -23,8 +23,6 @@ extern "C" {
 #include "esp_attr.h"
 #include "esp_assert.h"
 #include "hal/misc.h"
-
-// TODO: [ESP32C61] IDF-9257, inherit from c6
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
 #define MWDT_LL_DEFAULT_CLK_PRESCALER 20000

@@ -49,7 +49,7 @@ menu "Power Management"
 
     config PM_SLP_IRAM_OPT
         bool "Put lightsleep related codes in internal RAM"
-        depends on FREERTOS_USE_TICKLESS_IDLE
+        depends on SOC_LIGHT_SLEEP_SUPPORTED
         help
             If enabled, about 2.1KB of lightsleep related source code would be in IRAM and chip would sleep
             longer for 310us at 160MHz CPU frequency most each time.

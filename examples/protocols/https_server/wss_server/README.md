@@ -1,13 +1,13 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
-# HTTP Websocket server with SSL support
+# HTTPS Websocket server
 
-This example creates a SSL server and employs a simple Websocket request handler. It demonstrates handling multiple clients from the server including:
+This example creates an HTTPS server with SSL/TLS support using ESP-TLS and employs a simple Websocket request handler. It demonstrates handling multiple clients from the server including:
 * PING-PONG mechanism
 * Sending asynchronous messages to all clients
 
-See the `esp_https_server` component documentation for details.
+For more information, refer to the [esp_https_server component documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/esp_https_server.html).
 
 
 ### Websocket support in `http_server`

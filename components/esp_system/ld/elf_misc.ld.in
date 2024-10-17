@@ -54,6 +54,10 @@
     * And so forth...
     */
    *(.rela.*)
+<<<<<<< HEAD
+=======
+   *(.got .got.plt) /* TODO: GCC-382 */
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
    *(.eh_frame_hdr)
    *(.eh_frame)

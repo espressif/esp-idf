@@ -24,6 +24,11 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
+=======
+#define MMU_LL_FLASH_MMU_ID                 0
+#define MMU_LL_PSRAM_MMU_ID                 0
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
 #define MMU_LL_END_DROM_ENTRY_ID            (SOC_MMU_ENTRY_NUM - 1)
 
@@ -79,11 +84,7 @@ __attribute__((always_inline))
 static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 {
     (void)mmu_id;
-    uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE);
-    return  (page_size_code == 0) ? MMU_PAGE_64KB :
-            (page_size_code == 1) ? MMU_PAGE_32KB :
-            (page_size_code == 2) ? MMU_PAGE_16KB :
-            MMU_PAGE_8KB;
+    return MMU_PAGE_64KB;
 }
 
 /**
@@ -94,11 +95,7 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 __attribute__((always_inline))
 static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
-    uint8_t reg_val = (size == MMU_PAGE_64KB) ? 0 :
-                      (size == MMU_PAGE_32KB) ? 1 :
-                      (size == MMU_PAGE_16KB) ? 2 :
-                      (size == MMU_PAGE_8KB) ? 3 : 0;
-    REG_SET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MMU_PAGE_SIZE, reg_val);
+    HAL_ASSERT(size == MMU_PAGE_64KB);
 }
 
 /**
@@ -187,7 +184,6 @@ __attribute__((always_inline))
 static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target)
 {
     (void)mmu_id;
-    (void)target;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
@@ -219,12 +215,11 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
  */
 __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
-    (void)mmu_id;
-    (void)target;
     uint32_t mmu_raw_value;
     if (mmu_ll_cache_encryption_enabled()) {
         mmu_val |= SOC_MMU_SENSITIVE;
     }
+    mmu_val |= (target == MMU_TARGET_FLASH0) ? SOC_MMU_ACCESS_FLASH : SOC_MMU_ACCESS_SPIRAM;
 
     mmu_raw_value = mmu_val | SOC_MMU_VALID;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
@@ -240,7 +235,6 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
  */
 __attribute__((always_inline)) static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
 {
-    (void)mmu_id;
     uint32_t mmu_raw_value;
     uint32_t ret;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
@@ -263,7 +257,6 @@ __attribute__((always_inline)) static inline uint32_t mmu_ll_read_entry(uint32_t
  */
 __attribute__((always_inline)) static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 {
-    (void)mmu_id;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
     REG_WRITE(SPI_MEM_MMU_ITEM_CONTENT_REG(0), SOC_MMU_INVALID);
 }
@@ -309,7 +302,8 @@ static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    return MMU_TARGET_FLASH0;
+    mmu_target_t target = ((REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_ACCESS_SPIRAM) == 0) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0;
+    return target;
 }
 
 /**
@@ -322,7 +316,6 @@ static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t ent
  */
 static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t entry_id)
 {
-    (void)mmu_id;
     HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
@@ -361,7 +354,6 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
  */
 static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint32_t mmu_val, mmu_target_t target)
 {
-    (void)mmu_id;
     for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         if (mmu_ll_check_entry_valid(mmu_id, i)) {
             if (mmu_ll_get_entry_target(mmu_id, i) == target) {
@@ -385,7 +377,6 @@ static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint3
  */
 static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t entry_id, mmu_vaddr_t type)
 {
-    (void)mmu_id;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
 

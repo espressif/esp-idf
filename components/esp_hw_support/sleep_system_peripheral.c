@@ -73,13 +73,25 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_iomux_retention_init(v
     return ESP_OK;
 }
 
-static __attribute__((unused)) esp_err_t sleep_sys_periph_spimem_retention_init(void *arg)
+static __attribute__((unused)) esp_err_t sleep_sys_periph_flash_spimem_retention_init(void *arg)
 {
-    esp_err_t err = sleep_retention_entries_create(spimem_regs_retention, ARRAY_SIZE(spimem_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
-    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "SPI mem");
-    ESP_LOGD(TAG, "SPI Mem sleep retention initialization");
+    esp_err_t err = sleep_retention_entries_create(flash_spimem_regs_retention, ARRAY_SIZE(flash_spimem_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "Flash SPI mem");
+    ESP_LOGD(TAG, "Flash SPI Mem sleep retention initialization");
     return ESP_OK;
 }
+
+#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
+/* TODO: PM-205, In the ESP32C5, Flash and PSRAM use the same set of SPIMEM hardware, while in P4, Flash and PSRAM each have their own SPIMEM hardware.
+ * It’s necessary to confirm whether the ESP32C5 can independently manage SPIMEM retention for Flash and PSRAM in software. */
+static __attribute__((unused)) esp_err_t sleep_sys_periph_psram_spimem_retention_init(void *arg)
+{
+    esp_err_t err = sleep_retention_entries_create(psram_spimem_regs_retention, ARRAY_SIZE(psram_spimem_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "PSRAM SPI mem");
+    ESP_LOGD(TAG, "PSRAM SPI Mem sleep retention initialization");
+    return ESP_OK;
+}
+#endif
 
 static __attribute__((unused)) esp_err_t sleep_sys_periph_systimer_retention_init(void *arg)
 {
@@ -130,8 +142,12 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
 #endif
     err = sleep_sys_periph_iomux_retention_init(arg);
     if(err) goto error;
-    err = sleep_sys_periph_spimem_retention_init(arg);
+    err = sleep_sys_periph_flash_spimem_retention_init(arg);
     if(err) goto error;
+#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
+    err = sleep_sys_periph_psram_spimem_retention_init(arg);
+    if(err) goto error;
+#endif
     err = sleep_sys_periph_systimer_retention_init(arg);
     if(err) goto error;
 #if SOC_PAU_IN_TOP_DOMAIN

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,6 +149,12 @@ static inline void modem_syscon_ll_reset_zbmac(modem_syscon_dev_t *hw)
 {
     hw->modem_rst_conf.rst_zbmac = 1;
     hw->modem_rst_conf.rst_zbmac = 0;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_reset_zbmac_apb(modem_syscon_dev_t *hw)
+{
+    // ESP32H2 Not Support
 }
 
 __attribute__((always_inline))

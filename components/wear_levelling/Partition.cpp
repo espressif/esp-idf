@@ -23,7 +23,7 @@ size_t Partition::get_flash_size()
 esp_err_t Partition::erase_sector(size_t sector)
 {
     esp_err_t result = ESP_OK;
-    result = erase_range(sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
+    result = erase_range(sector * this->partition->erase_size, this->partition->erase_size);
     return result;
 }
 
@@ -54,7 +54,7 @@ esp_err_t Partition::read(size_t src_addr, void *dest, size_t size)
 
 size_t Partition::get_sector_size()
 {
-    return SPI_FLASH_SEC_SIZE;
+    return this->partition->erase_size;
 }
 
 bool Partition::is_readonly()

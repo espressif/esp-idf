@@ -42,9 +42,9 @@
 #if (BTC_L2CAP_INCLUDED == TRUE)
 #include "btc_l2cap.h"
 #endif /* #if (BTC_L2CAP_INCLUDED == TRUE) */
-#if (BTC_SDP_INCLUDED == TRUE)
+#if (BTC_SDP_COMMON_INCLUDED == TRUE)
 #include "btc_sdp.h"
-#endif /* #if (BTC_SDP_INCLUDED == TRUE) */
+#endif /* #if (BTC_SDP_COMMON_INCLUDED == TRUE) */
 #if BTC_HF_INCLUDED
 #include "btc_hf_ag.h"
 #endif/* #if BTC_HF_INCLUDED */
@@ -69,6 +69,12 @@
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_health_model.h"
 #include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_generic_model.h"
+#include "btc_ble_mesh_lighting_model.h"
+#include "btc_ble_mesh_sensor_model.h"
+#include "btc_ble_mesh_time_scene_model.h"
+#if CONFIG_BLE_MESH_V11_SUPPORT
+#include "btc_ble_mesh_mbt_model.h"
 #include "btc_ble_mesh_agg_model.h"
 #include "btc_ble_mesh_brc_model.h"
 #include "btc_ble_mesh_df_model.h"
@@ -78,11 +84,7 @@
 #include "btc_ble_mesh_rpr_model.h"
 #include "btc_ble_mesh_sar_model.h"
 #include "btc_ble_mesh_srpl_model.h"
-#include "btc_ble_mesh_generic_model.h"
-#include "btc_ble_mesh_lighting_model.h"
-#include "btc_ble_mesh_sensor_model.h"
-#include "btc_ble_mesh_time_scene_model.h"
-#include "btc_ble_mesh_mbt_model.h"
+#endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 #endif /* #if CONFIG_BLE_MESH */
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
@@ -138,9 +140,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (BTC_L2CAP_INCLUDED == TRUE)
     [BTC_PID_L2CAP]       = {btc_l2cap_call_handler,      btc_l2cap_cb_handler    },
 #endif /* #if (BTC_L2CAP_INCLUDED == TRUE) */
-#if (BTC_SDP_INCLUDED == TRUE)
+#if (BTC_SDP_COMMON_INCLUDED == TRUE)
     [BTC_PID_SDP]       = {btc_sdp_call_handler,          btc_sdp_cb_handler      },
-#endif /* #if (BTC_SDP_INCLUDED == TRUE) */
+#endif /* #if (BTC_SDP_COMMON_INCLUDED == TRUE) */
 #if BTC_HF_INCLUDED
     [BTC_PID_HF]   = {btc_hf_call_handler,  btc_hf_cb_handler},
 #endif  /* #if BTC_HF_INCLUDED */
@@ -295,8 +297,8 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 /**
  * transfer an message to another module in the different task.
  * @param  msg       message
- * @param  arg       paramter
- * @param  arg_len   length of paramter
+ * @param  arg       parameter
+ * @param  arg_len   length of parameter
  * @param  copy_func deep copy function
  * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
@@ -342,7 +344,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 }
 
 /**
- * transfer an message to another module in tha same task.
+ * transfer an message to another module in the same task.
  * @param  msg       message
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail

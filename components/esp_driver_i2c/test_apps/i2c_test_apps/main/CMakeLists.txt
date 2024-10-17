@@ -25,13 +25,10 @@ if(CONFIG_SOC_LP_I2C_SUPPORTED)
     list(APPEND srcs "test_lp_i2c.c")
 endif()
 
-# Only build this file with `CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP` and `CONFIG_IEEE802154_ENABLED` enabled
-# Enable `CONFIG_IEEE802154_ENABLED` is for modem domain really power down.
-# This reliable can be removed if the sleep retention got finished.
-if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP AND CONFIG_IEEE802154_ENABLED)
+if(CONFIG_SOC_I2C_SUPPORT_SLEEP_RETENTION)
     list(APPEND srcs "test_i2c_sleep_retention.c")
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity driver test_utils ieee802154
+                       PRIV_REQUIRES unity driver test_utils
                        WHOLE_ARCHIVE)

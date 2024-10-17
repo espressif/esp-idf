@@ -1,13 +1,34 @@
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Union
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-
-from pyparsing import (Combine, Forward, Group, IndentedBlock, Keyword, LineEnd, Literal, OneOrMore, Opt,
-                       ParseFatalException, SkipTo, Suppress, Word, ZeroOrMore, alphanums, alphas, delimited_list,
-                       nums, rest_of_line)
+from pyparsing import alphanums
+from pyparsing import alphas
+from pyparsing import Combine
+from pyparsing import delimited_list
+from pyparsing import Forward
+from pyparsing import Group
+from pyparsing import IndentedBlock
+from pyparsing import Keyword
+from pyparsing import LineEnd
+from pyparsing import Literal
+from pyparsing import nums
+from pyparsing import OneOrMore
+from pyparsing import Opt
+from pyparsing import ParseFatalException
+from pyparsing import rest_of_line
+from pyparsing import SkipTo
+from pyparsing import Suppress
+from pyparsing import Word
+from pyparsing import ZeroOrMore
 
 
 class Empty:
@@ -227,11 +248,11 @@ class Sort(EntryFlag):
     _keywords = Keyword('name') | Keyword('alignment') | Keyword('init_priority')
     SORT = (Keyword('SORT').suppress()
             + Suppress('(')
-            + _keywords.set_results_name('first')
-            + Opt(Suppress(',') + _keywords.set_results_name('second'))
+            + Opt(_keywords.set_results_name('first')
+            + Opt(Suppress(',') + _keywords.set_results_name('second')))
             + Suppress(')'))
 
-    def __init__(self, first: str, second: Optional[str] = None):
+    def __init__(self, first: Optional[str] = None, second: Optional[str] = None):
         self.first = first
         self.second = second
 
@@ -244,7 +265,7 @@ class Sort(EntryFlag):
 
     @staticmethod
     def parse(toks):
-        return Sort(toks.first, toks.second or None)
+        return Sort(toks.first or None, toks.second or None)
 
 
 class Flag:

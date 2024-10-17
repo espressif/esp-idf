@@ -11,6 +11,7 @@
 #include "nvs_flash.h"
 
 #include "multi_heap.h"
+#include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -127,5 +128,7 @@ void app_main(void)
     }
     ESP_LOGI(tag, "Free heap size increased by %"PRIu32" bytes", free_after - free_before);
 
-    ESP_LOGI(tag, "SUCCESS");
+    if (heap_caps_check_integrity_all(true)) {
+        ESP_LOGI(tag, "Comprehensive heap check: SUCCESS");
+    }
 }

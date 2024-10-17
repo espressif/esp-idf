@@ -381,7 +381,7 @@ esp_err_t dw_gdma_channel_continue(dw_gdma_channel_handle_t chan)
 esp_err_t dw_gdma_new_link_list(const dw_gdma_link_list_config_t *config, dw_gdma_link_list_handle_t *ret_list)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(ret_list, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config && ret_list, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     dw_gdma_link_list_item_t *items = NULL;
     dw_gdma_link_list_t *list = NULL;
     uint32_t num_items = config->num_items;
@@ -531,7 +531,7 @@ esp_err_t dw_gdma_channel_set_block_markers(dw_gdma_channel_handle_t chan, dw_gd
     return ESP_OK;
 }
 
-esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_transfer_config_t *config)
+esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, const dw_gdma_block_transfer_config_t *config)
 {
     ESP_RETURN_ON_FALSE(lli && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 

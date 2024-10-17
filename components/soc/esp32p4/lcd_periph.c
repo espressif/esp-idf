@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,8 @@
 #include "soc/lcd_periph.h"
 #include "soc/gpio_sig_map.h"
 
-const lcd_signal_conn_t lcd_periph_signals = {
+#if SOC_LCDCAM_I80_LCD_SUPPORTED
+const lcd_i80_signal_conn_t lcd_periph_i80_signals = {
     .buses = {
         [0] = {
             .module = PERIPH_LCD_CAM_MODULE,
@@ -42,7 +43,12 @@ const lcd_signal_conn_t lcd_periph_signals = {
             .dc_sig = LCD_DC_PAD_OUT_IDX,
             .wr_sig = LCD_PCLK_PAD_OUT_IDX
         }
-    },
+    }
+};
+#endif // SOC_LCDCAM_I80_LCD_SUPPORTED
+
+#if SOC_LCDCAM_RGB_LCD_SUPPORTED
+const lcd_rgb_signal_conn_t lcd_periph_rgb_signals = {
     .panels = {
         [0] = {
             .module = PERIPH_LCD_CAM_MODULE,
@@ -80,3 +86,4 @@ const lcd_signal_conn_t lcd_periph_signals = {
         }
     }
 };
+#endif // SOC_LCDCAM_RGB_LCD_SUPPORTED

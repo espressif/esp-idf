@@ -5,15 +5,15 @@ choice RTC_CLK_SRC
         Choose which clock is used as RTC clock source.
 
     config RTC_CLK_SRC_INT_RC
-        bool "Internal 136kHz RC oscillator"
+        bool "Internal 136 kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
-        bool "External 32kHz crystal"
+        bool "External 32 kHz crystal"
         select ESP_SYSTEM_RTC_EXT_XTAL
     config RTC_CLK_SRC_EXT_OSC
-        bool "External 32kHz oscillator at 32K_XP pin"
+        bool "External 32 kHz oscillator at 32K_XP pin"
         select ESP_SYSTEM_RTC_EXT_OSC
     config RTC_CLK_SRC_INT_8MD256
-        bool "Internal 17.5MHz oscillator, divided by 256"
+        bool "Internal 17.5 MHz oscillator, divided by 256"
 endchoice
 
 config RTC_CLK_CAL_CYCLES

@@ -3856,7 +3856,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
             prvAddCurrentTaskToDelayedList( xTicksToWait, xWaitIndefinitely );
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* configUSE_TIMERS */
@@ -4123,10 +4123,19 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
         if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, pdFALSE ) == pdTRUE )
         {
             /* The unblocked task has a priority above that of the calling task, so
-             * a context switch is required.  This function is called with the
-             * scheduler suspended so xYieldPending is set so the context switch
-             * occurs immediately that the scheduler is resumed (unsuspended). */
-            xYieldPending[ xCurCoreID ] = pdTRUE;
+             * a context switch is required. */
+            #if ( configNUM_CORES > 1 )
+
+                /* In SMP mode, this function is called from a critical section, so we
+                 * yield the current core to schedule the unblocked task. */
+                portYIELD_WITHIN_API();
+            #else /* configNUM_CORES > 1 */
+
+                /* In single-core mode, this function is called with the scheduler suspended
+                 * so xYieldPending is set so the context switch occurs immediately once the
+                 * scheduler is resumed (unsuspended). */
+                xYieldPending[ xCurCoreID ] = pdTRUE;
+            #endif /* configNUM_CORES > 1 */
         }
     }
 }

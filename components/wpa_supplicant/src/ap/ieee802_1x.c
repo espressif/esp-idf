@@ -433,6 +433,8 @@ int ieee802_1x_init(struct hostapd_data *hapd)
 
 	os_memset(&conf, 0, sizeof(conf));
 	eap_cfg = os_zalloc(sizeof(struct eap_config));
+	if (!eap_cfg)
+		return -1;
 	eap_cfg->max_auth_rounds = 100;
 	eap_cfg->max_auth_rounds_short = 50;
 	//eap_cfg->backend_auth = 1;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,8 +31,11 @@ void test_hw_stack_guard_cpu1(void);
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-void test_panic_extram_stack(void);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+void test_panic_extram_stack_heap(void);
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+void test_panic_extram_stack_bss(void);
+#endif
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -67,6 +70,16 @@ void test_illegal_access(void);
 
 void test_capture_dram(void);
 
+<<<<<<< HEAD
+=======
+void test_tcb_corrupted(void);
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+void test_setup_coredump_summary(void);
+void test_coredump_summary(void);
+#endif
+
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 #ifdef __cplusplus
 }
 #endif

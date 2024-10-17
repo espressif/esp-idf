@@ -200,7 +200,10 @@ WEAK_UNLESS_TIMEFUNC_IMPL int settimeofday(const struct timeval *tv, const struc
 
 int usleep(useconds_t us)
 {
-    const int us_per_tick = portTICK_PERIOD_MS * 1000;
+    /* Even at max tick rate, vTaskDelay can still delay for the max of the us argument,
+       we just need to make sure the tick calculation does not overflow
+    */
+    const int64_t us_per_tick = portTICK_PERIOD_MS * 1000;
     if (us < us_per_tick) {
         esp_rom_delay_us((uint32_t) us);
     } else {

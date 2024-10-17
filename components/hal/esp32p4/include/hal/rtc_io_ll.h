@@ -104,6 +104,21 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 }
 
 /**
+ * @brief Enable/Disable LP_GPIO peripheral clock.
+ *
+ * @param enable true to enable the clock / false to disable the clock
+ */
+static inline void _rtcio_ll_enable_io_clock(bool enable)
+{
+    LP_GPIO.clk_en.reg_clk_en = enable;
+    while (LP_GPIO.clk_en.reg_clk_en != enable) {
+        ;
+    }
+}
+
+#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
+
+/**
  * @brief Select the lp_gpio/hp_gpio function to control the pad.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.

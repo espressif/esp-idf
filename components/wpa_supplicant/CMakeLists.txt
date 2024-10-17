@@ -202,6 +202,7 @@ endif()
 
 if(CONFIG_ESP_WIFI_DPP_SUPPORT)
     set(dpp_src "src/common/dpp.c"
+    "src/common/dpp_crypto.c"
     "esp_supplicant/src/esp_dpp.c")
 else()
     set(dpp_src "")
@@ -231,6 +232,10 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10090
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()
+
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     ESP_SUPPLICANT

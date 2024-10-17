@@ -10,7 +10,7 @@
 #include "soc/soc_caps.h"
 
 // TODO: IDF-5645
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#if CONFIG_IDF_TARGET_ESP32C6
 #include "soc/lp_io_reg.h"
 #include "soc/lp_io_struct.h"
 #include "soc/lp_aon_reg.h"
@@ -22,7 +22,7 @@
 // ESP32H2-TODO: IDF-6327
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "soc/lp_aon_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#elif CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
 #include "soc/lp_gpio_reg.h"
 #include "soc/lp_gpio_struct.h"
 #include "soc/lp_iomux_reg.h"

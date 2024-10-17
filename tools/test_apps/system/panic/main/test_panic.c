@@ -13,6 +13,10 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "spi_flash_mmap.h"
+<<<<<<< HEAD
+=======
+#include "esp_core_dump.h"
+>>>>>>> a97a7b0962da148669bb333ff1f30bf272946ade
 
 #include "esp_private/cache_utils.h"
 #include "esp_memory_utils.h"
@@ -95,7 +99,7 @@ void test_hw_stack_guard_cpu1(void)
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 static void stack_in_extram(void* arg) {
     (void) arg;
@@ -103,7 +107,7 @@ static void stack_in_extram(void* arg) {
     abort();
 }
 
-void test_panic_extram_stack(void) {
+void test_panic_extram_stack_heap(void) {
     /* Start by initializing a Task which has a stack in external RAM */
     StaticTask_t handle;
     const uint32_t stack_size = 8192;
@@ -118,9 +122,18 @@ void test_panic_extram_stack(void) {
 
     vTaskDelay(1000);
 }
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+static EXT_RAM_BSS_ATTR StackType_t stack[8192];
+void test_panic_extram_stack_bss(void)
+{
+    StaticTask_t handle;
 
+    xTaskCreateStatic(stack_in_extram, "Task_stack_extram", sizeof(stack), NULL, 4, stack, &handle);
 
-#endif // ESP_COREDUMP_ENABLE_TO_FLASH && SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    vTaskDelay(1000);
+}
+#endif
+#endif // ESP_COREDUMP_ENABLE_TO_FLASH && FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -266,6 +279,47 @@ void test_ub(void)
 {
     uint8_t stuff[1] = {rand()};
     printf("%d\n", stuff[rand()]);
+}
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+void test_setup_coredump_summary(void)
+{
+    if (esp_core_dump_image_erase() != ESP_OK)
+        die("Coredump image can not be erased!");
+    assert(0);
+}
+
+void test_coredump_summary(void)
+{
+    esp_core_dump_summary_t *summary = malloc(sizeof(esp_core_dump_summary_t));
+    if (summary) {
+        esp_err_t err = esp_core_dump_get_summary(summary);
+        if (err == ESP_OK) {
+            printf("App ELF file SHA256: %s\n", (char *)summary->app_elf_sha256);
+            printf("Crashed task: %s\n", summary->exc_task);
+#if __XTENSA__
+            printf("Exception cause: %ld\n", summary->ex_info.exc_cause);
+#else
+            printf("Exception cause: %ld\n", summary->ex_info.mcause);
+#endif
+            char panic_reason[200];
+            err = esp_core_dump_get_panic_reason(panic_reason, sizeof(panic_reason));
+            if (err == ESP_OK) {
+                printf("Panic reason: %s\n", panic_reason);
+            }
+        }
+        free(summary);
+    }
+}
+#endif
+
+void test_tcb_corrupted(void)
+{
+    uint32_t volatile *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
+    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); i++) {
+        tcb_ptr[i] = 0xDEADBEE0;
+    }
+    vTaskDelay(2);
 }
 
 /* NOTE: The following test verifies the behaviour for the

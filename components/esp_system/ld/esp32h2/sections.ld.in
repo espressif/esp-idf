@@ -17,8 +17,12 @@ SECTIONS
    */
   .rtc.text :
   {
-    ALIGNED_SYMBOL(4, _rtc_fast_start)
-    ALIGNED_SYMBOL(4, _rtc_text_start)
+    /* Align the start of RTC code region as per PMP granularity
+     * this ensures we do not overwrite the permissions for any potential previous
+     * region regardless of its end alignment
+     */
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_fast_start)
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_text_start)
 
     *(.rtc.entry.text)
 
@@ -27,7 +31,10 @@ SECTIONS
     *rtc_wake_stub*.*(.text .text.*)
     *(.rtc_text_end_test)
 
-    ALIGNED_SYMBOL(4, _rtc_text_end)
+    /* Align the end of RTC code region as per PMP granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
+    _rtc_text_end = ABSOLUTE(.);
   } > lp_ram_seg
 
   /**
@@ -149,6 +156,21 @@ SECTIONS
   .iram0.text :
   {
     _iram_start = ABSOLUTE(.);
+
+#if CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS
+    /* Do not move this block! OpenOCD expects this to be at the beginning of IRAM. */
+    KEEP(*(.ocd_stub.code));
+    KEEP(*(.ocd_stub.tramp));
+    . = ALIGN(0x800);
+    KEEP(*(.ocd_stub.data));
+    KEEP(*(.ocd_stub.bss));
+    KEEP(*(.ocd_stub.stack));
+    KEEP(*(.ocd_stub.params));
+    . = ALIGN(0x1000);
+    KEEP(*(.ocd_stub.scratchmem));
+    ASSERT(ABSOLUTE(.) == _iram_start + 0x2000, "openocd stub memory must be ended at _iram_start + 0x2000");
+#endif
+
     /* Vectors go to start of IRAM */
     ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
     KEEP(*(.exception_vectors_table.text));
@@ -166,6 +188,9 @@ SECTIONS
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
+    /* Align the end of code region as per PMP region granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
     ALIGNED_SYMBOL(4, _iram_text_end)
   } > sram_seg
 

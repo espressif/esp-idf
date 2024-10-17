@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,12 +28,12 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_init.h"
 
-#define FLASH_CLK_IO SPI_CLK_GPIO_NUM
-#define FLASH_CS_IO SPI_CS0_GPIO_NUM
-#define FLASH_SPIQ_IO SPI_Q_GPIO_NUM
-#define FLASH_SPID_IO SPI_D_GPIO_NUM
-#define FLASH_SPIWP_IO SPI_WP_GPIO_NUM
-#define FLASH_SPIHD_IO SPI_HD_GPIO_NUM
+#define FLASH_CLK_IO    MSPI_IOMUX_PIN_NUM_CLK
+#define FLASH_CS_IO     MSPI_IOMUX_PIN_NUM_CS0
+#define FLASH_SPIQ_IO   MSPI_IOMUX_PIN_NUM_MISO
+#define FLASH_SPID_IO   MSPI_IOMUX_PIN_NUM_MOSI
+#define FLASH_SPIWP_IO  MSPI_IOMUX_PIN_NUM_WP
+#define FLASH_SPIHD_IO  MSPI_IOMUX_PIN_NUM_HD
 
 void bootloader_flash_update_id(void)
 {
@@ -98,15 +98,15 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
     } else {
         const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
         if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
-            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_CS, SPICS0_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_MISO, SPIQ_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_MISO, SPIQ_IN_IDX, 0);
-            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_MOSI, SPID_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_MOSI, SPID_IN_IDX, 0);
-            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_WP, SPIWP_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_WP, SPIWP_IN_IDX, 0);
-            esp_rom_gpio_connect_out_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_OUT_IDX, 0, 0);
-            esp_rom_gpio_connect_in_signal(SPI_IOMUX_PIN_NUM_HD, SPIHD_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_CS_IO, SPICS0_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIQ_IO, SPIQ_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIQ_IO, SPIQ_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPID_IO, SPID_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPID_IO, SPID_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIWP_IO, SPIWP_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIWP_IO, SPIWP_IN_IDX, 0);
+            esp_rom_gpio_connect_out_signal(FLASH_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
+            esp_rom_gpio_connect_in_signal(FLASH_SPIHD_IO, SPIHD_IN_IDX, 0);
             //select pin function gpio
             gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA0_U, PIN_FUNC_GPIO);
             gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA1_U, PIN_FUNC_GPIO);
@@ -190,7 +190,7 @@ int bootloader_flash_get_wp_pin(void)
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302:
         return ESP32_PICO_V3_GPIO;
     default:
-        return SPI_WP_GPIO_NUM;
+        return MSPI_IOMUX_PIN_NUM_WP;
     }
 #endif
 }

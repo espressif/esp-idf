@@ -291,10 +291,18 @@
 .. _touch_pad-api-examples:
 
 应用示例
---------------------
+--------
 
-- 触摸传感器读值示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`
-- 触摸传感器中断示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`
+.. only:: esp32
+
+    - :example:`peripherals/touch_sensor/touch_sensor_v1/touch_pad_read` 演示了如何在 {IDF_TARGET_NAME} 上读取并打印电容触摸传感器的原始值或 IIR 滤波后的值，以及如何校准传感器。
+    - :example:`peripherals/touch_sensor/touch_sensor_v1/touch_pad_interrupt` 演示了如何设置 {IDF_TARGET_NAME} 的电容触摸板，使其在被触摸时触发中断，以及如何使用软件监测来提高灵敏度，并比较硬件中断模式和软件轮询模式的性能。
+
+.. only:: esp32s2 or esp32s3
+
+    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_read` 演示了如何在 {IDF_TARGET_NAME} 上读取并显示电容触摸传感器的原始值，包括如何校准传感器以及监测触摸动作。
+    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_interrupt` 演示了如何设置 {IDF_TARGET_NAME} 的电容触摸板外设，使其在被触摸时触发中断，以及在需要更高触摸监测灵敏度的传感器设计中，如何通过软件来监测触摸事件。
+
 
 .. _touch_pad-api-reference:
 

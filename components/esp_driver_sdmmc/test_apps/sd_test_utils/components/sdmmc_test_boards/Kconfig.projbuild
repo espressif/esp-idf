@@ -33,6 +33,14 @@ menu "SDMMC Test Board Configuration"
             bool "ESP32-P4 Function EV Board"
             depends on IDF_TARGET_ESP32P4
 
+        config SDMMC_BOARD_ESP32P4_EV_BOARD_WITH_SDSPI
+            bool "ESP32-P4 Function EV Board with SDSPI breakout"
+            depends on IDF_TARGET_ESP32P4
+
+        config SDMMC_BOARD_ESP32C5_BREAKOUT
+            bool "ESP32-C5 breakout board"
+            depends on IDF_TARGET_ESP32C5
+
         config SDMMC_BOARD_CUSTOM_SD
             depends on SOC_SDMMC_HOST_SUPPORTED
             bool "Custom SD (choose pins)"
@@ -133,6 +141,8 @@ menu "SDMMC Test Board Configuration"
 
             config SDMMC_BOARD_CUSTOM_UNUSED
                 int "GPIO not routed on the board"
+                default 34 if IDF_TARGET_ESP32P4
+                default 8 if IDF_TARGET_ESP32C5
                 default -1
 
         endmenu

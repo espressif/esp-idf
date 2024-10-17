@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,8 @@ extern "C" {
  *
  * @param enable    Enable/Disable
  */
-static inline void ledc_ll_enable_bus_clock(bool enable) {
+static inline void ledc_ll_enable_bus_clock(bool enable)
+{
     if (enable) {
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
     } else {
@@ -61,7 +62,8 @@ static inline void ledc_ll_enable_bus_clock(bool enable) {
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
  */
-static inline void ledc_ll_enable_reset_reg(bool enable) {
+static inline void ledc_ll_enable_reset_reg(bool enable)
+{
     if (enable) {
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
     } else {
@@ -74,6 +76,14 @@ static inline void ledc_ll_enable_reset_reg(bool enable) {
 #define ledc_ll_enable_reset_reg(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_reset_reg(__VA_ARGS__)
 
 /**
+ * @brief Enable the power for LEDC memory block
+ */
+static inline void ledc_ll_enable_mem_power(bool enable)
+{
+    // No LEDC mem block on ESP32
+}
+
+/**
  * @brief Enable LEDC function clock
  *
  * @param hw Beginning address of the peripheral registers
@@ -81,7 +91,8 @@ static inline void ledc_ll_enable_reset_reg(bool enable) {
  *
  * @return None
  */
-static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en) {
+static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
+{
     //resolve for compatibility
 }
 

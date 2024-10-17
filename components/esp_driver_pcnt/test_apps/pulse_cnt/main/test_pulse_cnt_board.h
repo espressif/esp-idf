@@ -27,6 +27,7 @@ extern "C" {
 #define TEST_PCNT_CALLBACK_ATTR
 #endif // CONFIG_PCNT_ISR_IRAM_SAFE
 
+void test_gpio_init_for_simulation(int gpio_sig);
 void test_gpio_simulate_rising_edge(int gpio_sig, size_t times);
 void test_gpio_simulate_quadrature_signals(int gpio_sig_a, int gpio_sig_b, size_t times);
 

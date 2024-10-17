@@ -27,7 +27,7 @@ extern "C" {
  * @param group_id Group ID
  * @param enable true to enable, false to disable
  */
-static inline void mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_dsi_sys_clk_en = enable;
@@ -35,7 +35,7 @@ static inline void mipi_dsi_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
+#define mipi_dsi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mipi_dsi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the MIPI DSI module

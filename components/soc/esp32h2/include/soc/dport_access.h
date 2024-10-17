@@ -7,8 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc.h"
-#include "uart_reg.h"
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
