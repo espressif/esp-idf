@@ -14,7 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "soc/soc_caps.h"
-#include "hal/touch_sensor_hal.h"
+#include "hal/touch_sens_hal.h"
 #include "driver/touch_sens_types.h"
 #include "esp_memory_utils.h"
 #include "esp_check.h"
@@ -85,6 +85,7 @@ struct touch_sensor_s {
     bool                    immersion_proof;            /*!< Flag to indicate whether to disable scanning when the guard ring is triggered */
     bool                    proximity_en;               /*!< Flag to indicate whether the proximity sensing feature is enabled */
     bool                    timeout_en;                 /*!< Flag to indicate whether the measurement timeout feature (hardware timeout) is enabled */
+    bool                    denoise_en;                 /*!< Flag to indicate whether the denoise channel feature is enabled */
 };
 
 /**
@@ -94,7 +95,7 @@ struct touch_sensor_s {
 struct touch_channel_s {
     touch_sensor_handle_t   base;                       /*!< The touch sensor controller handle */
     int                     id;                         /*!< Touch channel id, the range is target-specific */
-    bool                    is_prox_chan;               /*!< Flag to indicate whether this is a proximity channel */
+    int                     prox_id;                    /*!< The proximity channel id + 1. It is 0 if not a proximity channel */
     uint32_t                prox_cnt;                   /*!< Cache the proximity measurement count, only takes effect when the channel is a proximity channel.
                                                          *   When this count reaches `touch_proximity_config_t::scan_times`,
                                                          *   this field will be cleared and call the `on_proximity_meas_done` callback.

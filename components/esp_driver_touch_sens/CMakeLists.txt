@@ -8,10 +8,11 @@ set(srcs)
 set(public_inc)
 
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-    if(CONFIG_SOC_TOUCH_SENSOR_VERSION EQUAL 3)
-        list(APPEND srcs "hw_ver3/touch_version_specific.c"
-                         "common/touch_sens_common.c")
-        list(APPEND public_inc  "include" "hw_ver3/include")
+    set(version_folder "hw_ver${CONFIG_SOC_TOUCH_SENSOR_VERSION}")
+    if(CONFIG_SOC_TOUCH_SENSOR_VERSION GREATER 1)
+        list(APPEND srcs "common/touch_sens_common.c"
+                         "${version_folder}/touch_version_specific.c")
+        list(APPEND public_inc  "include" "${version_folder}/include")
     endif()
 endif()
 
