@@ -120,6 +120,8 @@ typedef struct {
     int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
     int                    tx_hetb_queue_num;      /**< WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission */
     bool                   dump_hesigb_enable;     /**< enable dump sigb field */
+    bool                   sta_random_mac;         /**< STA MAC randomization. Supported on station interface only; softAP may be added in future */
+    uint8_t                sta_rmac_auto_reset_int;/**< STA random MAC auto-reset interval in hours (1-24) while not connected */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -347,6 +349,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
     .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .tx_hetb_queue_num = WIFI_TX_HETB_QUEUE_NUM, \
     .dump_hesigb_enable = WIFI_DUMP_HESIGB_ENABLED, \
+    .sta_random_mac = CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED, \
+    .sta_rmac_auto_reset_int = CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 

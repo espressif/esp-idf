@@ -512,3 +512,14 @@ if WIFI_RMT_PASSIVE_HIDDEN_AP_SUPPORT
         bool
         default WIFI_RMT_PASSIVE_HIDDEN_AP_SUPPORT
 endif
+
+if WIFI_RMT_STA_RANDOM_MAC_ENABLED
+    config ESP_WIFI_STA_RANDOM_MAC_ENABLED # ignore: multiple-definition
+        bool
+        default WIFI_RMT_STA_RANDOM_MAC_ENABLED
+endif
+
+config ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL # ignore: multiple-definition
+    int
+    depends on WIFI_RMT_STA_RANDOM_MAC_ENABLED
+    default WIFI_RMT_STA_RANDOM_MAC_AUTO_RESET_INTERVAL

@@ -1368,6 +1368,7 @@ struct wpabuf * dpp_build_conf_req(struct dpp_authentication *auth,
 				   const char *json)
 {
 	struct wpabuf *buf, *conf_req;
+	u8 dialog_token;
 
 	conf_req = dpp_build_conf_req_attr(auth, json);
 	if (!conf_req) {
@@ -1376,7 +1377,12 @@ struct wpabuf * dpp_build_conf_req(struct dpp_authentication *auth,
 		return NULL;
 	}
 
-	buf = gas_build_initial_req(0, 10 + 2 + wpabuf_len(conf_req));
+	do {
+		dialog_token = os_random() & 0xff;
+	} while (!dialog_token);
+	auth->gas_dialog_token = dialog_token;
+
+	buf = gas_build_initial_req(dialog_token, 10 + 2 + wpabuf_len(conf_req));
 	if (!buf) {
 		wpabuf_free(conf_req);
 		return NULL;

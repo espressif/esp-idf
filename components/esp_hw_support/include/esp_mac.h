@@ -117,6 +117,8 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
   * Then calculates the MAC address of the specific interface requested,
   * refer to ESP-IDF Programming Guide for the algorithm.
   *
+  * @note This function reads MAC address directly from efuse(and might be different from MAC address read using esp_wifi_get_mac() API).
+  *
   * The MAC address set by the esp_iface_mac_addr_set() function will not depend on the base MAC address.
   *
   * @param  mac base MAC address, length: 6 bytes/8 bytes.

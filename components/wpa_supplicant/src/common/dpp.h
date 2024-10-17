@@ -311,6 +311,7 @@ struct dpp_authentication {
 	int send_conn_status;
 	int conn_status_requested;
 	int akm_use_selector;
+	u8 gas_dialog_token; /* Dialog Token used in GAS Initial Request */
 
 #ifdef CONFIG_TESTING_OPTIONS
 	char *config_obj_override;

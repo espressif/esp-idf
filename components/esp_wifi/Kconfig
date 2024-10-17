@@ -925,6 +925,21 @@ menu "Wi-Fi"
                 Select this option to enable/disable support for station connections
                 to hidden APs using passive scan when the country policy is set to auto.
 
+        config ESP_WIFI_STA_RANDOM_MAC_ENABLED
+            bool "Station Mac-Randomization enabled"
+            default y
+            help
+                Select this option to enable Mac Randomization for Station
+
+        config ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL
+            int "Station Mac-Randomization Auto-Reset Interval time"
+            depends on ESP_WIFI_STA_RANDOM_MAC_ENABLED
+            range 1 24
+            default 12
+            help
+                Interval in hours to rotate the STA random MAC while not connected to an AP.
+                Values below 1 or above 24 are not allowed.
+
     endif # wifi enabled
 
 endmenu # Wi-Fi

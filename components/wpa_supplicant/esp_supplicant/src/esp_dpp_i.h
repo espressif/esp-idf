@@ -33,7 +33,6 @@ struct dpp_bootstrap_params_t {
 struct esp_dpp_context_t {
     struct dpp_bootstrap_params_t bootstrap_params;
     struct dpp_authentication *dpp_auth;
-    int gas_dialog_token;
     struct dpp_global *dpp_global;
     wifi_config_t wifi_cfg;
     int id;

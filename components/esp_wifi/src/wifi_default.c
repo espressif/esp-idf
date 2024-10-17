@@ -119,6 +119,13 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
             }
         }
 
+#if CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED
+        /* Sync netif MAC when STA random MAC was set internally by the Wi-Fi driver */
+        uint8_t mac[6];
+        esp_wifi_get_mac(WIFI_IF_STA, mac);
+        esp_netif_set_mac(esp_netif, mac);
+#endif
+
         esp_netif_action_connected(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
