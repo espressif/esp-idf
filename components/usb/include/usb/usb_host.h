@@ -101,13 +101,16 @@ typedef void (*usb_host_client_event_cb_t)(const usb_host_client_event_msg_t *ev
  * Configuration structure of the USB Host Library. Provided in the usb_host_install() function
  */
 typedef struct {
-    bool skip_phy_setup;        /**< If set, the USB Host Library will not configure the USB PHY thus allowing the user
-                                     to manually configure the USB PHY before calling usb_host_install(). Users should
-                                     set this if they want to use an external USB PHY. Otherwise, the USB Host Library
-                                     will automatically configure the internal USB PHY */
-    int intr_flags;             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
-    usb_host_enum_filter_cb_t enum_filter_cb; /**< Enumeration filter callback. Enable CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-                                                   to use this feature. Set to NULL otherwise. */
+    bool skip_phy_setup;                        /**< If set, the USB Host Library will not configure the USB PHY thus allowing
+                                                     the user to manually configure the USB PHY before calling usb_host_install().
+                                                     Users should set this if they want to use an external USB PHY. Otherwise,
+                                                     the USB Host Library will automatically configure the internal USB PHY */
+    bool root_port_unpowered;                   /**< If set, the USB Host Library will not power on the root port on installation.
+                                                     This allows users to power on the root port manually by calling
+                                                     usb_host_lib_set_root_port_power(). */
+    int intr_flags;                             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
+    usb_host_enum_filter_cb_t enum_filter_cb;   /**< Enumeration filter callback. Enable CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+                                                     to use this feature. Set to NULL otherwise. */
 } usb_host_config_t;
 
 /**
@@ -205,6 +208,23 @@ esp_err_t usb_host_lib_unblock(void);
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
+
+/**
+ * @brief Power the root port ON or OFF
+ *
+ * - Powering ON the root port will allow device connections to occur
+ * - Powering OFF the root port will disconnect all devices downstream off the root port and prevent
+ *   any further device connections.
+ *
+ * @note If 'usb_host_config_t.root_port_unpowered' was set on USB Host Library installation, users must call this
+ *       function to power ON the root port before any device connections can occur.
+ *
+ * @param[in] enable True to power the root port ON, false to power OFF
+ * @return
+ *    - ESP_OK: Root port power enabled/disabled
+ *    - ESP_ERR_INVALID_STATE: Root port already powered or HUB driver not installed
+ */
+esp_err_t usb_host_lib_set_root_port_power(bool enable);
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 
