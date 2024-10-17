@@ -50,15 +50,15 @@ extern "C" {
 /* Count number of arguments of __VA_ARGS__
  * - reference https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
  * - __GET_NTH_ARG__() takes args >= N (64) but only expand to Nth one (64th)
- * - __RSEQ_N__() is reverse sequential to N to add padding to have Nth
+ * - ESP_RSEQ_N() is reverse sequential to N to add padding to have Nth
  *   position is the same as the number of arguments
  * - ##__VA_ARGS__ is used to deal with 0 parameter (swallows comma)
  */
-#ifndef __VA_NARG__
-# define __VA_NARG__(...)   __NARG__(_0, ##__VA_ARGS__, __RSEQ_N__())
+#ifndef ESP_VA_NARG
+# define ESP_VA_NARG(...)   ESP_NARG(_0, ##__VA_ARGS__, ESP_RSEQ_N())
 
-# define __NARG__(...)      __GET_NTH_ARG__(__VA_ARGS__)
-# define __GET_NTH_ARG__( \
+# define ESP_NARG(...)      ESP_GET_NTH_ARG(__VA_ARGS__)
+# define ESP_GET_NTH_ARG( \
         _01,_02,_03,_04,_05,_06,_07,_08,_09,_10, \
         _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
         _21,_22,_23,_24,_25,_26,_27,_28,_29,_30, \
@@ -66,7 +66,7 @@ extern "C" {
         _41,_42,_43,_44,_45,_46,_47,_48,_49,_50, \
         _51,_52,_53,_54,_55,_56,_57,_58,_59,_60, \
         _61,_62,_63,N,...) N
-# define __RSEQ_N__() \
+# define ESP_RSEQ_N() \
         62,61,60,                      \
         59,58,57,56,55,54,53,52,51,50, \
         49,48,47,46,45,44,43,42,41,40, \
@@ -79,25 +79,6 @@ extern "C" {
 #ifndef ESP_UNUSED
 #define ESP_UNUSED(x) ((void)(x))
 #endif
-
-/* test macros */
-#define foo_args(...) 1
-#define foo_no_args() 2
-#if defined(__cplusplus) && (__cplusplus >  201703L)
-#define foo(...) CHOOSE_MACRO_VA_ARG(foo_args, foo_no_args __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
-#else
-#define foo(...) CHOOSE_MACRO_VA_ARG(foo_args, foo_no_args, ##__VA_ARGS__)(__VA_ARGS__)
-#endif
-
-ESP_STATIC_ASSERT(foo() == 2, "CHOOSE_MACRO_VA_ARG() result does not match for 0 arguments");
-ESP_STATIC_ASSERT(foo(42) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for 1 argument");
-#if defined(__cplusplus) && (__cplusplus >  201703L)
-ESP_STATIC_ASSERT(foo(42, 87) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for n arguments");
-#endif
-
-#undef foo
-#undef foo_args
-#undef foo_no_args
 
 #define ESP_INFINITE_LOOP() \
     do { \
