@@ -1,85 +1,72 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- |
 
-ESP-IDF UART HCI Host
-=====================
+# ESP-IDF Gatt Security Client Example
 
-This is a Bluetooth Host use UART as HCI IO. This require the UART device support RTS/CTS mandatory.
+This example shows how to use the ESP BLE5.0 security APIs to connect in secure manner with peer device and use encryption for data exchange.
 
-It can do the configuration of UART baudrate by menuconfig.
+## How to Use Example
 
-## Example Layout
+Before project configuration and build, be sure to set the correct chip target using:
 
-This example is modified based on [bt_discovery](../../classic_bt/bt_discovery), and all modifications are listed below:
-
-- Removed all dependencies on controller from `main.c`.
-
-```
-#include "esp_bt.h"
-
-...
-
-ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
-
-esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-    ESP_LOGE(GAP_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
-    return;
-}
-
-if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
-    ESP_LOGE(GAP_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
-    return;
-}
+```bash
+idf.py set-target <chip_name>
 ```
 
-- Add support for uart driver: `uart_driver.c` and `uart_driver.h`.
+To test this demo, you can run the [ble50_security_server_demo](../ble50_security_server), which starts advertising and can be connected to
+this demo automatically.
 
-- Initialize UART driver in `main.c`.
+There are some important points for this demo:
+1. `esp_ble_gap_set_security_param` should be used to set the security parameters in the initial stage;
+2. `esp_ble_set_encryption` should be used to start encryption with peer device. If the peer device initiates the encryption,
+   `esp_ble_gap_security_rsp` should be used to send security response to the peer device when `ESP_GAP_BLE_SEC_REQ_EVT` is received.
+3. The `gatt_security_client_demo` will receive a `ESP_GAP_BLE_AUTH_CMPL_EVT` once the encryption procedure has completed.
 
-```
-#include "esp_hci_api.h"
-#include "uart_driver.h"
-
-...
-
-/* initialize HCI TRANSPORT first */
-hci_uart_open();
-/* get HCI driver operations */
-esp_bluedroid_hci_driver_operations_t operations = {
-    .send = hci_uart_send,
-    .check_send_available = hci_check_send_available,
-    .register_host_callback = hci_register_host_callback,
-};
-esp_bluedroid_attach_hci_driver(&operations);
-```
-
-## How to use example
+Please, check this [tutorial](tutorial/ble50_security_client_Example_Walkthrough.md) for more information about this example.
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP development board. To connect UART to another board running a Bluetooth controller. For example, [controller_hci_uart_esp32](../../../hci/controller_hci_uart_esp32).
+* A development board with ESP32-C3 SoC, ESP32-S3 SoC, ESP32-C2/ESP32-H2 SoC and BT5.0 supported chip (e.g., ESP32-C3-DevKitC-1 etc.)
+* A USB cable for Power supply and programming
 
-### Configure the project
-
-```
-idf.py menuconfig
-```
-
-- UART baudrate can be configured in `Example Configuration > UART Baudrate for HCI`
+See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
-
-(Replace PORT with the name of the serial port to use.)
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
+
+## Example Output
+
+```
+I (364) BTDM_INIT: BT controller compile version [3e61eea]
+I (374) coexist: coexist rom version 8459080
+I (374) phy_init: phy_version 500,985899c,Apr 19 2021,16:05:08
+I (494) system_api: Base MAC address is not set
+I (494) system_api: read default base MAC address from EFUSE
+I (494) BTDM_INIT: Bluetooth MAC: 7c:df:a1:40:01:dd
+
+I (514) SEC_GATTC_DEMO: EVT 0, gattc if 3
+I (514) SEC_GATTC_DEMO: REG_EVT
+I (524) SEC_GATTC_DEMO: Scan start success
+I (2654) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (2654) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 21
+I (3624) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (3624) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 21
+I (4594) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (4594) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 21
+I (5514) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (5524) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 0
+I (7494) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (7494) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 21
+I (8614) SEC_GATTC_DEMO: legacy adv, adv type 0x13 data len 31
+I (8614) SEC_GATTC_DEMO: legacy adv, adv type 0x1b data len 0
+
+```
 
 ## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

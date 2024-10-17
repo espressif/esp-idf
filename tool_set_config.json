@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1778406538,
+    "idfLocation": "C:/Hitesh/Workspace/",
+    "idfVersion": "5.3",
+    "active": true,
+    "systemGitExecutablePath": "C:/Hitesh/ESP_IDF_TOOLS_PATH/Espressif/tools/idf-git/2.44.0/cmd/git.exe",
+    "systemPythonExecutablePath": "C:/Hitesh/ESP_IDF_TOOLS_PATH/Espressif/python_env/idf5.3_py3.11_env/Scripts/python.exe",
+    "envVars": {
+      "PATH": "C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\xtensa-esp-elf-gdb\\14.2_20240403\\xtensa-esp-elf-gdb\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\riscv32-esp-elf-gdb\\14.2_20240403\\riscv32-esp-elf-gdb\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\xtensa-esp-elf\\esp-13.2.0_20240530\\xtensa-esp-elf\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\esp-clang\\16.0.1-fe4f10a809\\esp-clang\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\riscv32-esp-elf\\esp-13.2.0_20240530\\riscv32-esp-elf\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\esp32ulp-elf\\2.38_20240113\\esp32ulp-elf\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\cmake\\3.24.0\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\openocd-esp32\\v0.12.0-esp32-20240318\\openocd-esp32\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\ninja\\1.11.1\\;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\idf-exe\\1.0.3\\;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\ccache\\4.8\\ccache-4.8-windows-x86_64;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\dfu-util\\0.11\\dfu-util-0.11-win64;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\qemu-xtensa\\esp_develop_9.0.0_20240606\\qemu\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\qemu-riscv32\\esp_develop_9.0.0_20240606\\qemu\\bin;C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\python_env\\idf5.3_py3.11_env\\Scripts;C:\\Hitesh\\Workspace\\tools;%PATH%",
+      "IDF_COMPONENT_MANAGER": "1",
+      "OPENOCD_SCRIPTS": "C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\openocd-esp32\\v0.12.0-esp32-20240318\\openocd-esp32\\share\\openocd\\scripts",
+      "IDF_DEACTIVATE_FILE_PATH": "C:\\Users\\NUC\\AppData\\Local\\Temp\\tmp7g5kxbs3idf_16356",
+      "IDF_MAINTAINER": "1",
+      "IDF_CCACHE_ENABLE": "1",
+      "IDF_PATH": "C:/Hitesh/Workspace/",
+      "IDF_PYTHON_ENV_PATH": "C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\python_env\\idf5.3_py3.11_env",
+      "ESP_IDF_VERSION": "5.3",
+      "ESP_ROM_ELF_DIR": "C:\\Hitesh\\ESP_IDF_TOOLS_PATH\\Espressif\\tools\\esp-rom-elfs\\20240305\\"
+    }
+  }
+]
