@@ -810,7 +810,16 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
+#if SOC_PMU_SUPPORTED
+    // For PMU supported chips, CPU's PLL power can be turned off by PMU, so no need to disable the PLL at here.
+    // Leaving PLL on at this stage also helps USJ keep connection and retention operation (if they rely on this PLL).
+    rtc_clk_cpu_set_to_default_config();
+#else
+    // For earlier chips, there is no PMU module that can turn off the CPU's PLL, so it has to be disabled at here to save the power consumption.
+    // Though ESP32C3/S3 has USB CDC device, it can not function properly during sleep due to the lack of APB clock (before C6, USJ relies on APB clock to work).
+    // Therefore, we will always disable CPU's PLL (i.e. BBPLL).
     rtc_clk_cpu_freq_set_xtal();
+#endif
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
