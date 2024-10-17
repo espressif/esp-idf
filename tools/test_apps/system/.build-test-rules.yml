@@ -62,6 +62,15 @@ tools/test_apps/system/memprot:
       temporary: true
       reason: the other targets are not tested yet
 
+tools/test_apps/system/mmu_page_size:
+  enable:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
+      reason: Coverage for two targets with configurable MMU page size is sufficient
+  depends_components:
+    - esp_app_format
+    - bootloader_support
+    - esp_mm
+
 tools/test_apps/system/no_embedded_paths:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
