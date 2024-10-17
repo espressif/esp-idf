@@ -20,7 +20,7 @@ if(openocd_path)
         set(data_bin "${stub_bin_path}/${target}/stub_flash_idf_binary_data.inc")
         set(img_header "${stub_bin_path}/${target}/stub_flash_idf_image.h")
         if(EXISTS ${code_bin} AND EXISTS ${data_bin} AND EXISTS ${img_header})
-            set(dest_dir "${IDF_PATH}/components/esp_system/openocd_stub_bins")
+            set(dest_dir "${CMAKE_BINARY_DIR}/openocd_stub_bins")
             set(output_code_bin "${dest_dir}/stub_flash_idf_binary_code.inc")
             set(output_data_bin "${dest_dir}/stub_flash_idf_binary_data.inc")
             set(output_img_header "${dest_dir}/stub_flash_idf_image.h")
@@ -31,13 +31,18 @@ if(openocd_path)
                 DEPENDS ${output_code_bin} ${output_data_bin} ${output_img_header}
                 COMMENT "Copying OpenOCD stub binaries and image header"
             )
+            add_dependencies(${COMPONENT_LIB} copy_stub_bins)
         endif()
+    else()
+        message(FATAL_ERROR
+            "OpenOCD stub binary files couldn't be found! "
+            "To bypass this error, disable the CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS option")
     endif()
 
     set(srcs "openocd_stub_flasher.c")
     add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
     target_sources(${COMPONENT_LIB} PRIVATE ${srcs})
-    target_include_directories(${COMPONENT_LIB} PUBLIC .)
+    target_include_directories(${COMPONENT_LIB} PRIVATE ${dest_dir})
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_openocd_stub_binaries")
 
 endif()
