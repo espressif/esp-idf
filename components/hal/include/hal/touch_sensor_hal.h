@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_types.h"

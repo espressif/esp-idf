@@ -798,14 +798,14 @@ typedef volatile struct rtc_cntl_dev_s {
     union {
         struct {
             uint32_t reserved0                     :    7;
-            uint32_t touch_bypass_neg_noise_thres  :    1;
+            uint32_t touch_bypass_nn_thres         :    1;
             uint32_t touch_bypass_noise_thres      :    1;
             uint32_t touch_smooth_lvl              :    2;
             uint32_t touch_jitter_step             :    4;  /*touch jitter step*/
-            uint32_t config1:               4;
-            uint32_t config2:               2;
+            uint32_t config1                       :    4;
+            uint32_t config2                       :    2;
             uint32_t touch_noise_thres             :    2;
-            uint32_t config3:               2;
+            uint32_t config3                       :    2;
             uint32_t touch_debounce                :    3;  /*debounce counter*/
             uint32_t touch_filter_mode             :    3;  /*0: IIR ? 1: IIR ? 2: IIR 1/8 3: Jitter*/
             uint32_t touch_filter_en               :    1;  /*touch filter enable*/

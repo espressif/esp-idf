@@ -25,6 +25,7 @@
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
 #include "hal/touch_sensor_types.h"
+#include "hal/touch_sens_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -222,10 +223,9 @@ static inline void touch_ll_force_done_curr_measurement(void)
  * The measurement action can be triggered by the hardware timer, as well as by the software instruction.
  * @note
  *      The timer should be triggered
- * @param is_sleep   Whether in sleep state
  */
 __attribute__((always_inline))
-static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
+static inline void touch_ll_start_fsm_repeated_timer(void)
 {
     /**
      * Touch timer trigger measurement and always wait measurement done.
@@ -238,10 +238,9 @@ static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
 /**
  * Stop touch sensor FSM timer.
  *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
- * @param is_sleep   Whether in sleep state
  */
 __attribute__((always_inline))
-static inline void touch_ll_stop_fsm_repeated_timer(bool is_sleep)
+static inline void touch_ll_stop_fsm_repeated_timer(void)
 {
     PMU.touch_pwr_cntl.sleep_timer_en = 0;
     touch_ll_force_done_curr_measurement();
@@ -326,7 +325,7 @@ static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
  * @return
  *      - ESP_OK on success
  */
-static inline void touch_ll_set_channel_mask(uint16_t enable_mask)
+static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {
     // Channel shift workaround: the lowest bit takes no effect
     uint16_t mask = (enable_mask << 1) & TOUCH_PAD_BIT_MASK_ALL;
@@ -502,7 +501,7 @@ static inline uint32_t touch_ll_get_current_meas_channel(void)
  *
  * @param int_mask interrupt mask
  */
-static inline void touch_ll_intr_enable(uint32_t int_mask)
+static inline void touch_ll_interrupt_enable(uint32_t int_mask)
 {
     uint32_t mask = LP_TOUCH.int_ena.val;
     mask |= (int_mask & TOUCH_LL_INTR_MASK_ALL);
@@ -514,7 +513,7 @@ static inline void touch_ll_intr_enable(uint32_t int_mask)
  *
  * @param int_mask interrupt mask
  */
-static inline void touch_ll_intr_disable(uint32_t int_mask)
+static inline void touch_ll_interrupt_disable(uint32_t int_mask)
 {
     uint32_t mask = LP_TOUCH.int_ena.val;
     mask &= ~(int_mask & TOUCH_LL_INTR_MASK_ALL);
@@ -527,7 +526,7 @@ static inline void touch_ll_intr_disable(uint32_t int_mask)
  * @param int_mask Pad mask to clear interrupts
  */
 __attribute__((always_inline))
-static inline void touch_ll_intr_clear(touch_pad_intr_mask_t int_mask)
+static inline void touch_ll_interrupt_clear(touch_pad_intr_mask_t int_mask)
 {
     LP_TOUCH.int_clr.val = int_mask;
 }
@@ -545,28 +544,23 @@ static inline uint32_t touch_ll_get_intr_status_mask(void)
 }
 
 /**
- * Enable the timeout check for all touch sensor channels measurements.
+ * Set the timeout to enable or disable the check for all touch sensor channels measurements.
  * When the touch reading of a touch channel exceeds the measurement threshold,
  * If enable: a timeout interrupt will be generated and it will go to the next channel measurement.
  * If disable: the FSM is always on the channel, until the measurement of this channel is over.
  *
  * @param timeout_cycles The maximum time cycles of the measurement on one channel.
+ *                       Set to 0 to disable the timeout.
+ *                       Set to non-zero to enable the timeout and set the timeout cycles.
  */
-static inline void touch_ll_timeout_enable(uint32_t timeout_cycles)
+static inline void touch_ll_set_timeout(uint32_t timeout_cycles)
 {
-    LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_num = timeout_cycles;
-    LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 1;
-}
-
-/**
- * Disable the timeout check for all touch sensor channels measurements.
- * When the touch reading of a touch channel exceeds the measurement threshold,
- * If enable: a timeout interrupt will be generated and it will go to the next channel measurement.
- * If disable: the FSM is always on the channel, until the measurement of this channel is over.
- */
-static inline void touch_ll_timeout_disable(void)
-{
-    LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 0;
+    if (timeout_cycles) {
+        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_num = timeout_cycles;
+        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 1;
+    } else {
+        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 0;
+    }
 }
 
 /**

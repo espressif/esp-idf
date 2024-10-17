@@ -48,12 +48,12 @@ void touch_hal_deinit(void)
     touch_ll_clear_trigger_status_mask();
     touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
     touch_ll_timeout_disable();
-    touch_ll_waterproof_disable();
-    touch_ll_denoise_disable();
+    touch_ll_waterproof_enable(false);
+    touch_ll_denoise_enable(false);
     touch_pad_t prox_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {[0 ... (SOC_TOUCH_PROXIMITY_CHANNEL_NUM - 1)] = 0};
     touch_ll_proximity_set_channel_num((const touch_pad_t *)prox_pad);
     touch_ll_sleep_set_channel_num(0);
-    touch_ll_sleep_disable_proximity_sensing();
+    touch_ll_sleep_enable_proximity_sensing(false);
     touch_ll_reset();   // Reset the touch sensor FSM.
 }
 
@@ -90,25 +90,25 @@ void touch_hal_denoise_get_config(touch_pad_denoise_t *denoise)
 void touch_hal_denoise_enable(void)
 {
     touch_ll_clear_channel_mask(1U << SOC_TOUCH_DENOISE_CHANNEL);
-    touch_ll_denoise_enable();
+    touch_ll_denoise_enable(true);
 }
 
 void touch_hal_waterproof_set_config(const touch_pad_waterproof_t *waterproof)
 {
     touch_ll_waterproof_set_guard_pad(waterproof->guard_ring_pad);
-    touch_ll_waterproof_set_sheild_driver(waterproof->shield_driver);
+    touch_ll_waterproof_set_shield_driver(waterproof->shield_driver);
 }
 
 void touch_hal_waterproof_get_config(touch_pad_waterproof_t *waterproof)
 {
     touch_ll_waterproof_get_guard_pad(&waterproof->guard_ring_pad);
-    touch_ll_waterproof_get_sheild_driver(&waterproof->shield_driver);
+    touch_ll_waterproof_get_shield_driver(&waterproof->shield_driver);
 }
 
 void touch_hal_waterproof_enable(void)
 {
     touch_ll_clear_channel_mask(1U << SOC_TOUCH_SHIELD_CHANNEL);
-    touch_ll_waterproof_enable();
+    touch_ll_waterproof_enable(true);
 }
 
 bool touch_hal_enable_proximity(touch_pad_t touch_num, bool enabled)
