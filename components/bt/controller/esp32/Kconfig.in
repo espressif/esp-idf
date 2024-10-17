@@ -262,10 +262,10 @@ menu "MODEM SLEEP Options"
                 the bluetooth low power clock source.
 
         config BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
-            bool "External 32kHz crystal"
-            depends on RTC_CLK_SRC_EXT_CRYS
+            bool "External 32kHz crystal/oscillator"
+            depends on RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC
             help
-                External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
+                External 32kHz crystal/oscillator has a nominal frequency of 32.768kHz and provides good frequency
                 stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
                 modem sleep to be used with both DFS and light sleep.
     endchoice
