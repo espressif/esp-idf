@@ -42,7 +42,6 @@ Sigma-Delta 调制通道通常应用于以下场景：
 - :cpp:member:`sdm_config_t::clk_src` 选择 SDM 模块的时钟源。注意，所有通道选择的时钟源应保持一致。
 - :cpp:member:`sdm_config_t::sample_rate_hz` 设置 SDM 模块的采样率。提高采样率可以提高输出信号的信噪比，更容易在后级通过滤波获取高精度的原始信号。
 - :cpp:member:`sdm_config_t::invert_out` 设置是否反转输出信号。
-- :cpp:member:`sdm_config_t::io_loop_back` 通过 GPIO 矩阵外设，启用 GPIO 的输入和输出功能。注意，该字段仅供调试使用。
 
 函数 :cpp:func:`sdm_new_channel` 可能因为各种原因失败，如内存不足、参数无效等。当缺少空闲通道（即所有的硬件 SDM 通道均在使用中）时，将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
 
