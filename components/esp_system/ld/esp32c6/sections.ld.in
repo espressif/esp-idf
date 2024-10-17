@@ -177,8 +177,6 @@ SECTIONS
     KEEP(*(.exception_vectors_table.text));
     KEEP(*(.exception_vectors.text));
 
-    ALIGNED_SYMBOL(4, _invalid_pc_placeholder)
-
     /* esp_tee_config_t structure: used to share information between the TEE and REE
      * (e.g. interrupt handler addresses, REE flash text-rodata boundaries, etc.)
      * This symbol is expected by the TEE at an offset of 0x300 from the vector table start.

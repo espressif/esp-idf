@@ -362,7 +362,7 @@ def test_instr_fetch_prohibited(
         dut.expect_gme('InstrFetchProhibited')
         dut.expect_reg_dump(0)
         dut.expect_backtrace()
-        expected_backtrace = ['_init'] + get_default_backtrace(test_func_name)
+        expected_backtrace = ['_invalid_pc_placeholder'] + get_default_backtrace(test_func_name)
     else:
         dut.expect_gme('Instruction access fault')
         dut.expect_reg_dump(0)

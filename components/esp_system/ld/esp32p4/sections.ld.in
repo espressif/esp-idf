@@ -186,8 +186,6 @@ SECTIONS
     KEEP(*(.exception_vectors_table.text));
     KEEP(*(.exception_vectors.text));
 
-    ALIGNED_SYMBOL(4, _invalid_pc_placeholder)
-
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
 
