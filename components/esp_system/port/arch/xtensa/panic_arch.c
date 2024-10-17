@@ -479,3 +479,9 @@ void panic_print_backtrace(const void *f, int core)
     esp_backtrace_frame_t frame = {.pc = xt_frame->pc, .sp = xt_frame->a1, .next_pc = xt_frame->a0, .exc_frame = xt_frame};
     esp_backtrace_print_from_frame(100, &frame, true);
 }
+
+void panic_prepare_frame_from_ctx(void* frame)
+{
+    /* Nothing to cleanup on xtensa */
+    (void)frame;
+}
