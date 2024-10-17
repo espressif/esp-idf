@@ -186,6 +186,13 @@
 #define GOEPC_INCLUDED              TRUE
 #endif /* UC_BT_GOEPC_ENABLED */
 
+#if UC_BT_PBAC_ENABLED
+#define BTC_PBA_CLIENT_INCLUDED     TRUE
+#define BTC_PBA_SUPPORTED_FEAT      UC_BT_PBAC_SUPPORTED_FEAT
+#define BTC_PBA_PREFERRED_MTU       UC_BT_PBAC_PREFERRED_MTU
+#define BTA_PBA_CLIENT_INCLUDED     TRUE
+#endif
+
 #endif /* UC_BT_CLASSIC_ENABLED */
 
 /* This is set to enable use of GAP L2CAP connections. */

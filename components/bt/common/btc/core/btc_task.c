@@ -57,6 +57,9 @@
 #if BTC_HH_INCLUDED == TRUE
 #include "btc_hh.h"
 #endif /* BTC_HH_INCLUDED */
+#if BTC_PBA_CLIENT_INCLUDED
+#include "btc_pba_client.h"
+#endif
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
@@ -154,6 +157,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif
 #if BTC_HH_INCLUDED
     [BTC_PID_HH]          = {btc_hh_call_handler,          btc_hh_cb_handler      },
+#endif
+#if BTC_PBA_CLIENT_INCLUDED
+    [BTC_PID_PBA_CLIENT]  = {btc_pba_client_call_handler,  btc_pba_client_cb_handler},
 #endif
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif

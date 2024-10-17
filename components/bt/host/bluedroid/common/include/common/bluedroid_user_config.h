@@ -124,6 +124,25 @@
 #define UC_BT_ENC_KEY_SIZE_CTRL_MODE   0
 #endif
 
+//PBAP Client
+#ifdef CONFIG_BT_PBAC_ENABLED
+#define UC_BT_PBAC_ENABLED           	    CONFIG_BT_PBAC_ENABLED
+#else
+#define UC_BT_PBAC_ENABLED       	        FALSE
+#endif
+
+#ifdef CONFIG_BT_PBAC_SUPPORTED_FEAT
+#define UC_BT_PBAC_SUPPORTED_FEAT           CONFIG_BT_PBAC_SUPPORTED_FEAT
+#else
+#define UC_BT_PBAC_SUPPORTED_FEAT           0x00
+#endif
+
+#ifdef CONFIG_BT_PBAC_PREFERRED_MTU
+#define UC_BT_PBAC_PREFERRED_MTU            CONFIG_BT_PBAC_PREFERRED_MTU
+#else
+#define UC_BT_PBAC_PREFERRED_MTU            0
+#endif
+
 //GOEPC (BT)
 #ifdef CONFIG_BT_GOEPC_ENABLED
 #define UC_BT_GOEPC_ENABLED           	    CONFIG_BT_GOEPC_ENABLED

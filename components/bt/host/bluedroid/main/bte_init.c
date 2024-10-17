@@ -156,6 +156,10 @@
 #include "bta_pan_int.h"
 #endif
 
+#if BTA_PBA_CLIENT_INCLUDED == TRUE
+#include "bta_pba_client_int.h"
+#endif
+
 #include "bta_sys_int.h"
 
 // control block for patch ram downloading
@@ -184,6 +188,12 @@ void BTE_DeinitStack(void)
 {
     //BTA Modules
 #if (BTA_INCLUDED == TRUE && BTA_DYNAMIC_MEMORY == TRUE)
+#if BTA_PBA_CLIENT_INCLUDED == TRUE
+    if (bta_pba_client_cb_ptr) {
+        osi_free(bta_pba_client_cb_ptr);
+        bta_pba_client_cb_ptr = NULL;
+    }
+#endif
 #if GATTS_INCLUDED == TRUE
     if (bta_gatts_cb_ptr){
         osi_free(bta_gatts_cb_ptr);
@@ -520,6 +530,12 @@ bt_status_t BTE_InitStack(void)
 #endif
 #if BTA_PAN_INCLUDED==TRUE
     memset((void *)bta_pan_cb_ptr, 0, sizeof(tBTA_PAN_CB));
+#endif
+#if BTA_PBA_CLIENT_INCLUDED == TRUE
+    if ((bta_pba_client_cb_ptr = (tBTA_PBA_CLIENT_CB *)osi_malloc(sizeof(tBTA_PBA_CLIENT_CB))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)bta_pba_client_cb_ptr, 0, sizeof(tBTA_PBA_CLIENT_CB));
 #endif
 
 #endif // BTA_INCLUDED == TRUE
