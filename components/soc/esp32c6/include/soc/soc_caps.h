@@ -574,6 +574,8 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                    (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION        (1)
+#define SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN            (1)
 
 /*--------------------------------- RNG CAPS --------------------------------------------*/
 #define SOC_RNG_CLOCK_IS_INDEPENDENT                          (1)

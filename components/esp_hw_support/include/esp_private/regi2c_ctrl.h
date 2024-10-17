@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,13 @@ void regi2c_exit_critical(void);
 void regi2c_analog_cali_reg_read(void);
 void regi2c_analog_cali_reg_write(void);
 #endif   //#if ADC_CALI_PD_WORKAROUND
+
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+// regi2c would be powered down in light sleep, but measure range is recorded
+// in regi2c, so this function is used for record.
+void regi2c_tsens_reg_read(void);
+void regi2c_tsens_reg_write(void);
+#endif
 
 /* Enable/Disable regi2c_saradc with calling these two functions.
    With reference count protection inside.
