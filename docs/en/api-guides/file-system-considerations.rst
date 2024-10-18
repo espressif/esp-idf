@@ -105,7 +105,7 @@ The most supported file system, recommended for common applications - file/direc
 **Examples:**
 
 * :example:`storage/sd_card`: access the SD card which uses the FAT file system
-* :example:`storage/ext_flash_fatfs`: access the external flash chip which uses the FAT file system
+* :example:`storage/fatfs/ext_flash`: access the external flash chip which uses the FAT file system
 
 
 .. _spiffs-fs-section:

@@ -301,9 +301,9 @@ Improving I/O Performance
 
 Using standard C library functions like ``fread`` and ``fwrite`` instead of platform-specific unbuffered syscalls such as ``read`` and ``write``, may result in slower performance.
 
-The ``fread`` and ``fwrite`` functions are designed for portability rather than speed, introducing some overhead due to their buffered nature. Check the example :example:`storage/fatfsgen` to see how to use these two functions.
+The ``fread`` and ``fwrite`` functions are designed for portability rather than speed, introducing some overhead due to their buffered nature. Check the example :example:`storage/fatfs/getting_started` to see how to use these two functions.
 
-In contrast, the ``read`` and ``write`` functions are standard POSIX APIs that can be used directly when working with FatFs through VFS, with ESP-IDF handling the underlying implementation. Check the example :example:`storage/perf_benchmark` to see how to use the two functions.
+In contrast, the ``read`` and ``write`` functions are standard POSIX APIs that can be used directly when working with FatFs through VFS, with ESP-IDF handling the underlying implementation. Check the example :example:`storage/fatfs/fs_operations` to see how to use the two functions.
 
 Additional tips are provided below, and further details can be found in :doc:`/api-reference/storage/fatfs`.
 

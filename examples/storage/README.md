@@ -7,10 +7,11 @@ This directory contains a range of examples ESP-IDF projects. These are intended
 
 The examples are grouped into sub-directories by category. Each category directory contains one or more example projects:
 
+* `fatfs_basic` minimal example of FatFS usage on SPI FLASH
+* `fatfs_advanced` example demonstrates how to use advanced features for working with FatFS such as automatic partition generation
 * `custom_flash_driver` example demonstrates how to implement your own flash chip driver by overriding the default driver.
 * `emmc` example demonstrates how to use an eMMC chip with an ESP device.
 * `ext_flash_fatfs` example demonstrates how to use FATFS partition with external SPI FLASH chip.
-* `fatfsgen` example demonstrates how to use FATFS partition
 * `nvs_rw_blob` example demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP module restarts.
 * `nvs_rw_value` example demonstrates how to read and write a single integer value using NVS.
 * `nvs_rw_value_cxx` example demonstrates how to read and write a single integer value using NVS (it uses the C++ NVS handle API).

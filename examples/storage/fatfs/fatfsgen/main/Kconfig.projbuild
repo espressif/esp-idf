@@ -1,0 +1,10 @@
+menu "Example Configuration"
+
+    config EXAMPLE_FATFS_MODE_READ_ONLY
+        bool "Read only mode for generated FATFS image"
+        default y
+        help
+            If read-only mode is set, the generated fatfs image will be raw (without wear levelling support).
+            Otherwise it will support wear levelling that enables read-write mounting.
+
+endmenu

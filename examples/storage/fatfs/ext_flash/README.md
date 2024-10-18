@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example is similar to the [wear levelling](../wear_levelling/README.md) example, except that it uses an external SPI Flash chip. This can be useful if you need to add more storage to a module with only 4 MB flash size.
+This example is similar to the [wear levelling](../../wear_levelling/README.md) example, except that it uses an external SPI Flash chip. This can be useful if you need to add more storage to a module with only 4 MB flash size.
 
 The flow of the example is as follows:
 
