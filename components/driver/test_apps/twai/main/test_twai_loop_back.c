@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,25 +99,27 @@ TEST_CASE("twai_mode_ext_no_ack_250kbps", "[twai-loop-back]")
         .extd = true, // Extended Frame Format (29bit ID)
     };
 
-    printf("install twai driver\r\n");
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
         g_config.controller_id = i;
         g_config.tx_io = i;
         g_config.rx_io = i;
+        printf("install twai driver %d\r\n", g_config.controller_id);
         TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_buses[i]));
         TEST_ESP_OK(twai_start_v2(twai_buses[i]));
     }
 
-    printf("transmit message\r\n");
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        printf("transmit message from %d\r\n", i);
+        tx_msg.data[5] = SOC_TWAI_CONTROLLER_NUM - i;
         TEST_ESP_OK(twai_transmit_v2(twai_buses[i], &tx_msg, pdMS_TO_TICKS(1000)));
     }
 
-    printf("receive message\r\n");
     twai_message_t rx_msg;
     for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        printf("receive message from %d\r\n", i);
         TEST_ESP_OK(twai_receive_v2(twai_buses[i], &rx_msg, pdMS_TO_TICKS(1000)));
         TEST_ASSERT_TRUE(rx_msg.data_length_code == 6);
+        tx_msg.data[5] = SOC_TWAI_CONTROLLER_NUM - i;
         for (int i = 0; i < 6; i++) {
             TEST_ASSERT_EQUAL(tx_msg.data[i], rx_msg.data[i]);
         }
