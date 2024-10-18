@@ -10,6 +10,7 @@
     - .after_script:build:ccache-show-stats:upload-failed-job-logs
   image: $ESP_ENV_IMAGE
   stage: build
+  timeout: 1 hour
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
