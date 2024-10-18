@@ -26,6 +26,7 @@ void app_main(void)
 
     printf("example: Start\n");
 
+    gpio_reset_pin(EXAMPLE_GPIO_IN);
     /* Make sure we have a pull-down on the input GPIO to prevent noise (when disconnected) */
     gpio_pulldown_en(EXAMPLE_GPIO_IN);
     gpio_set_direction(EXAMPLE_GPIO_IN, GPIO_MODE_INPUT_OUTPUT);
