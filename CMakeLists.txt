@@ -136,6 +136,10 @@ if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
     list(APPEND compile_definitions "-DNDEBUG")
 endif()
 
+if(CONFIG_COMPILER_NO_MERGE_CONSTANTS)
+    list(APPEND compile_options "-fno-merge-constants")
+endif()
+
 if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
     list(APPEND compile_options "-fstack-protector")
 elseif(CONFIG_COMPILER_STACK_CHECK_MODE_STRONG)
