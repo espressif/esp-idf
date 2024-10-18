@@ -350,8 +350,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
  *
- * @note On ESP32C6, this function will check whether BBPLL can be disabled. If there is no consumer, then BBPLL will be
- * turned off. The behaviour is the same as using rtc_clk_cpu_freq_set_config to switch cpu clock source to XTAL.
+ * @note On ESP32P4, this function always disables CPLL after switching the CPU clock source to XTAL,
+ * since there is no peripheral relies on CPLL clock (except Flash/PSRAM if their clock source selects CPLL).
  */
 void rtc_clk_cpu_freq_set_xtal(void);
 

@@ -290,18 +290,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2active_backup_en      = 0, \
         .hp_modem2active_backup_en      = 0, \
     }, \
-    .backup_clk = (                             \
-        BIT(PMU_ICG_FUNC_ENA_GDMA)              \
-        | BIT(PMU_ICG_FUNC_ENA_REGDMA)          \
-        | BIT(PMU_ICG_FUNC_ENA_TG0)             \
-        | BIT(PMU_ICG_FUNC_ENA_HPBUS)           \
-        | BIT(PMU_ICG_FUNC_ENA_MSPI)            \
-        | BIT(PMU_ICG_FUNC_ENA_IOMUX)           \
-        | BIT(PMU_ICG_FUNC_ENA_SPI2)            \
-        | BIT(PMU_ICG_FUNC_ENA_SEC)             \
-        | BIT(PMU_ICG_FUNC_ENA_PWM)             \
-        | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
-        | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
+    .backup_clk = 0xffffffff,   \
 }
 
 #define PMU_HP_MODEM_RETENTION_CONFIG_DEFAULT() {   \
@@ -313,16 +302,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2modem_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(0, 1), \
         .hp_sleep2modem_backup_en       = 0, \
     }, \
-    .backup_clk = (BIT(PMU_ICG_FUNC_ENA_REGDMA) \
-        | BIT(PMU_ICG_FUNC_ENA_TG0)             \
-        | BIT(PMU_ICG_FUNC_ENA_HPBUS)           \
-        | BIT(PMU_ICG_FUNC_ENA_MSPI)            \
-        | BIT(PMU_ICG_FUNC_ENA_IOMUX)           \
-        | BIT(PMU_ICG_FUNC_ENA_SPI2)            \
-        | BIT(PMU_ICG_FUNC_ENA_SEC)            \
-        | BIT(PMU_ICG_FUNC_ENA_PWM)            \
-        | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
-        | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
+    .backup_clk = 0xffffffff,   \
 }
 
 #define PMU_HP_SLEEP_RETENTION_CONFIG_DEFAULT() {   \
@@ -339,18 +319,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2sleep_backup_en       = 0, \
         .hp_active2sleep_backup_en      = 0, \
     }, \
-    .backup_clk = (                             \
-        BIT(PMU_ICG_FUNC_ENA_GDMA)              \
-        | BIT(PMU_ICG_FUNC_ENA_REGDMA)          \
-        | BIT(PMU_ICG_FUNC_ENA_TG0)             \
-        | BIT(PMU_ICG_FUNC_ENA_HPBUS)           \
-        | BIT(PMU_ICG_FUNC_ENA_MSPI)            \
-        | BIT(PMU_ICG_FUNC_ENA_IOMUX)           \
-        | BIT(PMU_ICG_FUNC_ENA_SPI2)            \
-        | BIT(PMU_ICG_FUNC_ENA_SEC)             \
-        | BIT(PMU_ICG_FUNC_ENA_PWM)             \
-        | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
-        | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
+    .backup_clk = 0xffffffff,   \
 }
 
 const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pmu_hp_mode_t mode)
