@@ -301,6 +301,7 @@
 #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
 #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
 #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_SUPPORT_SLEEP_RETENTION    (1)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_PERIPH_NUM                    (1U)

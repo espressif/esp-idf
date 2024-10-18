@@ -32,9 +32,11 @@ const ledc_signal_conn_t ledc_periph_signal[1] = {
  *
  * Note 1: Gamma feature is hard to do hardware retention, will consider to use software to do the backup and restore.
  * 		   We won't start a fade automatically after wake-up.
- *         Instead, we will only start a PWM with a constant duty cycle, the same value as before entering the sleep.
+ *         Instead, we will only start a PWM with a fixed duty cycle, the same value as before entering the sleep.
  *
  * Note 2: For timer/channel registers to get synced, update bits need to be set
+ *
+ * Note 3: Retention backup/restore does not rely on LEDC function clock enabled
  */
 #define LEDC_COMMON_RETENTION_REGS_CNT  5
 #define LEDC_COMMON_RETENTION_REGS_BASE (DR_REG_LEDC_BASE + 0xc8)

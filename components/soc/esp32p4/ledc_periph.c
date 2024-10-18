@@ -32,9 +32,11 @@ const ledc_signal_conn_t ledc_periph_signal[1] = {
  * LEDC_CONF_REG,
  *
  * Note 1: Gamma parameter registers are backuped and restored. But we won't start a fade automatically after wake-up.
- *         Instead, we will only start a PWM with a constant duty cycle, the same value as before entering the sleep.
+ *         Instead, we will only start a PWM with a fixed duty cycle, the same value as before entering the sleep.
  *
  * Note 2: For timer/channel registers to get synced, update bits need to be set
+ *
+ * Note 3: Gamma RAM registers R/W relies both APB and function clock, therefore, retention requires the existence of function clock
  */
 #define LEDC_COMMON_RETENTION_REGS_CNT  5
 #define LEDC_COMMON_RETENTION_REGS_BASE (DR_REG_LEDC_BASE + 0xc8)
