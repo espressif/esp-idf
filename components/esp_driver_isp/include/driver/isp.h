@@ -22,3 +22,4 @@
 #include "driver/isp_hist.h"
 #include "driver/isp_sharpen.h"
 #include "driver/isp_color.h"
+#include "driver/isp_lsc.h"

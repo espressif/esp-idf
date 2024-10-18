@@ -342,6 +342,7 @@
 #define SOC_ISP_DVP_SUPPORTED                    1
 #define SOC_ISP_SHARPEN_SUPPORTED                1
 #define SOC_ISP_COLOR_SUPPORTED                  1
+#define SOC_ISP_LSC_SUPPORTED                    1
 #define SOC_ISP_SHARE_CSI_BRG                    1
 
 #define SOC_ISP_NUMS                             1U
@@ -371,6 +372,9 @@
 #define SOC_ISP_HIST_BLOCK_Y_NUMS                5
 #define SOC_ISP_HIST_SEGMENT_NUMS                16
 #define SOC_ISP_HIST_INTERVAL_NUMS               15
+#define SOC_ISP_LSC_GRAD_RATIO_INT_BITS          2
+#define SOC_ISP_LSC_GRAD_RATIO_DEC_BITS          8
+#define SOC_ISP_LSC_GRAD_RATIO_RES_BITS          22
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

@@ -347,6 +347,28 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_color_configure(isp_proc, &color_config));
     ESP_ERROR_CHECK(esp_isp_color_enable(isp_proc));
 
+#if CONFIG_ESP32P4_REV_MIN_FULL >= 100
+    esp_isp_lsc_gain_array_t gain_array = {};
+    esp_isp_lsc_config_t lsc_config = {
+        .gain_array = &gain_array,
+    };
+    size_t gain_size = 0;
+    ESP_ERROR_CHECK(esp_isp_lsc_allocate_gain_array(isp_proc, &gain_array, &gain_size));
+
+    isp_lsc_gain_t gain_val = {
+        .decimal = 204,
+        .integer = 0,
+    };
+    for (int i = 0; i < gain_size; i++) {
+        gain_array.gain_r[i].val = gain_val.val;
+        gain_array.gain_gr[i].val = gain_val.val;
+        gain_array.gain_gb[i].val = gain_val.val;
+        gain_array.gain_b[i].val = gain_val.val;
+    }
+    ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
+    ESP_ERROR_CHECK(esp_isp_lsc_enable(isp_proc));
+#endif
+
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
         esp_sccb_io_handle_t dw9714_io_handle;

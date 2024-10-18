@@ -22,7 +22,10 @@ extern "C" {
 #endif
 
 
-#define ISP_LL_GET_HW(num)            (((num) == 0) ? (&ISP) : NULL)
+#define ISP_LL_GET_HW(num)                    (((num) == 0) ? (&ISP) : NULL)
+
+#define ISP_LL_HSIZE_MAX                      1920
+#define ISP_LL_VSIZE_MAX                      1080
 
 /*---------------------------------------------------------------
                       Clock
@@ -82,6 +85,14 @@ extern "C" {
 #define ISP_LL_AE_WINDOW_MAX_RANGE            ((1<<12) - 1)
 
 /*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+#define ISP_LL_AWB_WINDOW_MAX_RANGE    ((1<<12) - 1)
+#define ISP_LL_AWB_LUM_MAX_RANGE       ((1<<10) - 1)
+#define ISP_LL_AWB_RGB_RATIO_INT_BITS  (2)
+#define ISP_LL_AWB_RGB_RATIO_FRAC_BITS (8)
+
+/*---------------------------------------------------------------
                       BF
 ---------------------------------------------------------------*/
 #define ISP_LL_BF_DEFAULT_TEMPLATE_VAL        15
@@ -103,20 +114,10 @@ extern "C" {
 #define ISP_LL_COLOR_BRIGNTNESS_MAX     127
 
 /*---------------------------------------------------------------
-                      AWB
+                      LSC
 ---------------------------------------------------------------*/
-#define ISP_LL_AWB_WINDOW_MAX_RANGE    ((1<<12) - 1)
-#define ISP_LL_AWB_LUM_MAX_RANGE       ((1<<10) - 1)
-#define ISP_LL_AWB_RGB_RATIO_INT_BITS  (2)
-#define ISP_LL_AWB_RGB_RATIO_FRAC_BITS (8)
-
-typedef union {
-    struct {
-        uint32_t fraction: ISP_LL_AWB_RGB_RATIO_FRAC_BITS;
-        uint32_t integer: ISP_LL_AWB_RGB_RATIO_INT_BITS;
-    };
-    uint32_t val;
-} isp_ll_awb_rgb_ratio_t;
+#define ISP_LL_LSC_GRID_HEIGHT        32
+#define ISP_LL_LSC_GRID_WIDTH         32
 
 /*---------------------------------------------------------------
                       CCM
@@ -149,6 +150,22 @@ typedef enum {
     ISP_LL_AF_EDGE_DETECTOR_MODE_AUTO,      ///< Auto set threshold
     ISP_LL_AF_EDGE_DETECTOR_MODE_MANUAL,    ///< Manual set threshold
 } isp_ll_af_edge_detector_mode_t;
+
+typedef union {
+    struct {
+        uint32_t fraction: ISP_LL_AWB_RGB_RATIO_FRAC_BITS;
+        uint32_t integer: ISP_LL_AWB_RGB_RATIO_INT_BITS;
+    };
+    uint32_t val;
+} isp_ll_awb_rgb_ratio_t;
+
+/**
+ * @brief ISP LUT
+ */
+typedef enum {
+    ISP_LL_LUT_LSC,    ///< LUT for LSC
+    ISP_LL_LUT_DPC,    ///< LUT for DPC
+} isp_ll_lut_t;
 
 
 /*---------------------------------------------------------------
@@ -461,6 +478,17 @@ static inline bool isp_ll_is_demosaic_enabled(isp_dev_t *hw)
 static inline bool isp_ll_is_rgb2yuv_enabled(isp_dev_t *hw)
 {
     return hw->cntl.rgb2yuv_en;
+}
+
+/**
+ * @brief Set bayer mode
+ *
+ * @param[in] hw           Hardware instance address
+ * @param[in] bayer_order  Bayer order
+ */
+static inline void isp_ll_set_bayer_mode(isp_dev_t *hw, color_raw_element_order_t bayer_order)
+{
+    hw->frame_cfg.bayer_mode = bayer_order;
 }
 
 /*---------------------------------------------------------------
@@ -1151,6 +1179,88 @@ static inline void isp_ll_ae_env_detector_set_thresh(isp_dev_t *hw, uint32_t low
 static inline void isp_ll_ae_env_detector_set_period(isp_dev_t *hw, uint32_t period)
 {
     hw->ae_monitor.ae_monitor_period = period;
+}
+
+/*---------------------------------------------------------------
+                      LSC
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable LSC clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_lsc_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_lsc_force_on = enable;
+}
+
+/**
+ * @brief Enable / Disable Color
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_lsc_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.lsc_en = enable;
+}
+
+/**
+ * @brief Set xtable size
+ *
+ * @param[in] hw          Hardware instance address
+ * @param[in] xtablesize  xtablesize
+ */
+static inline void isp_ll_lsc_set_xtablesize(isp_dev_t *hw, uint8_t xtablesize)
+{
+    hw->lsc_tablesize.lsc_xtablesize = xtablesize;
+}
+
+/*---------------------------------------------------------------
+                      LUT
+---------------------------------------------------------------*/
+/**
+ * @brief Select ISP LUT
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] is_write  Is write or not
+ * @param[in] is_gb_b   Is gb_b or not
+ * @param[in] addr      LUT addr
+ * @param[in] lut       ISP LUT
+ */
+static inline void isp_ll_lut_set_cmd(isp_dev_t *hw, bool is_write, bool is_gb_b, uint32_t addr, isp_ll_lut_t lut)
+{
+    uint32_t val = 0;
+    val |= is_write ? (1 << 16) : 0;
+    val |= is_gb_b ? 0 : (1 << 10);
+    val |= addr & ((1 << 10) - 1);
+    val |= lut << 12;
+    hw->lut_cmd.val = val;
+}
+
+/**
+ * @brief Set lut gb and b gain
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] gb_gain   gb gain
+ * @param[in] b_gain    b gain
+ */
+static inline void isp_ll_lut_set_wdata_gb_b(isp_dev_t *hw, isp_lsc_gain_t gb_gain, isp_lsc_gain_t b_gain)
+{
+    hw->lut_wdata.lut_wdata = (gb_gain.val & 0x3ff) << 10 | (b_gain.val & 0x3ff);
+}
+
+/**
+ * @brief Set lut r and gr gain
+ *
+ * @param[in] hw        Hardware instance address
+ * @param[in] r_gain   r gain
+ * @param[in] gr_gain    gr gain
+ */
+static inline void isp_ll_lut_set_wdata_r_gr(isp_dev_t *hw, isp_lsc_gain_t r_gain, isp_lsc_gain_t gr_gain)
+{
+    hw->lut_wdata.lut_wdata = (r_gain.val & 0x3ff) << 10 | (gr_gain.val & 0x3ff);
 }
 
 /*---------------------------------------------------------------
