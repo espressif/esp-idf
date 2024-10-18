@@ -128,6 +128,15 @@ typedef union {
     uint32_t val;
 } gpio_ext_etm_event_chn_cfg_reg_t;
 
+/** Type of etm_task_pn_cfg register
+ *  GPIO selection register for ETM.
+ *  This register is an abstraction of the following registers:
+ *  gpio_ext_etm_task_p0_cfg_reg_t ~ gpio_ext_etm_task_p4_cfg_reg_t
+ */
+typedef union {
+    uint32_t val;
+} gpio_ext_etm_task_pn_cfg_reg_t;
+
 /** Type of etm_task_p0_cfg register
  *  GPIO selection register 0 for ETM
  */
@@ -659,6 +668,11 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
+typedef struct gpio_etm_dev_t {
+    volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
+    uint32_t reserved_138[8];
+    volatile gpio_ext_etm_task_pn_cfg_reg_t etm_task_pn_cfg[5];
+} gpio_etm_dev_t;
 
 typedef struct {
     volatile gpio_ext_clock_gate_reg_t clock_gate;
@@ -666,13 +680,7 @@ typedef struct {
     volatile gpio_ext_pad_comp_config_0_reg_t pad_comp_config_0;
     volatile gpio_ext_pad_comp_filter_0_reg_t pad_comp_filter_0;
     uint32_t reserved_060[46];
-    volatile gpio_ext_etm_event_chn_cfg_reg_t etm_event_chn_cfg[8];
-    uint32_t reserved_138[8];
-    volatile gpio_ext_etm_task_p0_cfg_reg_t etm_task_p0_cfg;
-    volatile gpio_ext_etm_task_p1_cfg_reg_t etm_task_p1_cfg;
-    volatile gpio_ext_etm_task_p2_cfg_reg_t etm_task_p2_cfg;
-    volatile gpio_ext_etm_task_p3_cfg_reg_t etm_task_p3_cfg;
-    volatile gpio_ext_etm_task_p4_cfg_reg_t etm_task_p4_cfg;
+    volatile gpio_etm_dev_t etm;
     uint32_t reserved_16c[25];
     volatile gpio_ext_int_raw_reg_t int_raw;
     volatile gpio_ext_int_st_reg_t int_st;
@@ -683,6 +691,8 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
+extern gpio_etm_dev_t GPIO_ETM;
+extern gpio_ext_dev_t GPIO_EXT;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(gpio_ext_dev_t) == 0x200, "Invalid size of gpio_ext_dev_t structure");
