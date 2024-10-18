@@ -140,7 +140,7 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal);
 bool spi_slave_hal_usr_is_done(spi_slave_hal_context_t* hal);
 
 /**
- * Post transaction operations, fetch data from the buffer and recored the length.
+ * Post transaction operations, fetch data from the buffer and recorded the length.
  *
  * @param hal Context of the HAL layer.
  */
@@ -150,7 +150,7 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal);
  * Get the length of last transaction, in bits. Should be called after ``spi_slave_hal_store_result``.
  *
  * Note that if last transaction is longer than configured before, the return
- * value will be truncated to the configured length.
+ * value still the actual length.
  *
  * @param hal Context of the HAL layer.
  *
