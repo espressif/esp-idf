@@ -133,7 +133,7 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     }
 #endif
 
-    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART | ULP_LP_CORE_WAKEUP_SOURCE_LP_IO)) {
+    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART)) {
         ESP_LOGE(TAG, "Wake-up source not yet supported");
         return ESP_ERR_INVALID_ARG;
     }

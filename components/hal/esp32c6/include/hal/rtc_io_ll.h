@@ -309,6 +309,14 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
 {
     LP_IO.pin[rtcio_num].wakeup_enable = 1;
     LP_IO.pin[rtcio_num].int_type = type;
+
+    /* Work around for HW issue,
+       need to also enable this clk, otherwise it will
+       not trigger a wake-up on the ULP. This is not needed
+       for triggering a wakeup on HP CPU, but always setting this
+       has no side-effects.
+    */
+    LP_IO.date.clk_en = 1;
 }
 
 /**
