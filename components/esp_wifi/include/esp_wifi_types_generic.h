@@ -62,7 +62,8 @@ typedef struct {
 } wifi_country_t;
 
 /* Strength of authmodes */
-/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK = DPP */
+/* Personal Networks   : OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK = DPP
+ * Enterprise Networks : WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENTERPRISE = WIFI_AUTH_WPA2_WPA3_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192 */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -79,6 +80,8 @@ typedef enum {
     WIFI_AUTH_WPA3_EXT_PSK,     /**< this authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead. */
     WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE, /**< this authentication mode will yield same result as WIFI_AUTH_WPA3_PSK and not recommended to be used. It will be deprecated in future, please use WIFI_AUTH_WPA3_PSK instead.*/
     WIFI_AUTH_DPP,              /**< authenticate mode : DPP */
+    WIFI_AUTH_WPA3_ENTERPRISE,  /**< authenticate mode : WPA3-Enterprise Only Mode */
+    WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< authenticate mode : WPA3-Enterprise Transition Mode */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
