@@ -152,11 +152,8 @@ def _upload_files(
     try:
         if has_file:
             obj_name = f'{pipeline_id}/{artifact_type.value}/{sanitize_job_name(job_name)}/{job_id}.zip'
-            print(f'Created archive file: {job_id}.zip, uploading as {obj_name}')
-
             client.fput_object(getenv('IDF_S3_BUCKET'), obj_name, f'{job_id}.zip')
-            url = client.get_presigned_url('GET', getenv('IDF_S3_BUCKET'), obj_name)
-            print(f'Please download the archive file which includes {artifact_type.value} from {url}')
+            print(f'Created archive file: {job_id}.zip, uploaded as {obj_name}')
     finally:
         os.remove(f'{job_id}.zip')
 
