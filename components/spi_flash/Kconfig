@@ -108,14 +108,6 @@ menu "Main Flash configuration"
                 Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
                 before enabling this option.
 
-        config SPI_FLASH_SUSPEND_TSUS_VAL_US
-            int "SPI flash tSUS value (refer to chapter AC CHARACTERISTICS)"
-            default 50
-            range 20 100
-            help
-                This config is used for setting Tsus parameter. Tsus means CS# high to next command after
-                suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
-
         config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
             bool "Enable XMC-C series flash chip suspend feature anyway"
             default n
