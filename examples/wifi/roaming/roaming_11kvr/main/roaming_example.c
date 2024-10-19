@@ -366,7 +366,6 @@ static void esp_bss_rssi_low_handler(void* arg, esp_event_base_t event_base,
 
 	ESP_LOGI(TAG, "%s:bss rssi is=%d", __func__, event->rssi);
 	/* Lets check channel conditions */
-	rrm_ctx++;
 	if (esp_rrm_send_neighbor_report_request() < 0) {
 		/* failed to send neighbor report request */
 		ESP_LOGI(TAG, "failed to send neighbor report request");
