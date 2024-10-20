@@ -538,9 +538,14 @@ void bta_gattc_deinit(void)
 uint8_t bta_gattc_cl_rcb_active_count(void)
 {
     uint8_t count = 0;
+    uint8_t dm_gattc_uuid[16];
+
+    // When SDP is included, Bluedroid stack will register the DM GATTC application
+    memset(dm_gattc_uuid, 0x87, 16);
 
     for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i ++) {
-        if (bta_gattc_cb.cl_rcb[i].in_use) {
+        if (bta_gattc_cb.cl_rcb[i].in_use &&
+            memcmp(bta_gattc_cb.cl_rcb[i].app_uuid.uu.uuid128, dm_gattc_uuid, 16)) {
             count++;
         }
     }
