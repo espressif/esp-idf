@@ -27,7 +27,7 @@
 //  \#define SOC_IEEE802154_SUPPORTED        1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
-//  \#define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32C61] IDF-9322
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -469,9 +469,11 @@
 #define SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE         (1)     /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
-// #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION        (1)
+#define SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN            (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
