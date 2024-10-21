@@ -108,6 +108,22 @@ esp_err_t esp_deep_sleep_register_phy_hook(esp_deep_sleep_cb_t new_dslp_cb);
 void esp_deep_sleep_deregister_phy_hook(esp_deep_sleep_cb_t old_dslp_cb);
 #endif
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+/**
+ * @brief Backup or restore the MMU when the top domain is powered down.
+ * @param backup_or_restore decide to backup mmu or restore mmu
+ */
+void esp_sleep_mmu_retention(bool backup_or_restore);
+
+/**
+ * @brief Whether to allow the top domain to be powered off due to mmu domain requiring retention.
+ *
+ * In light sleep mode, only when the system can provide enough memory
+ * for mmu retention, the top power domain can be powered off.
+ */
+bool mmu_domain_pd_allowed(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
