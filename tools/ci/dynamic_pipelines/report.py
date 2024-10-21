@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import abc
 import html
 import os
@@ -9,13 +8,16 @@ import typing as t
 
 import yaml
 from artifacts_handler import ArtifactType
+from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
 from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
 from idf_ci.uploader import AppUploader
 from prettytable import PrettyTable
 
-from .constants import COMMENT_START_MARKER, REPORT_TEMPLATE_FILEPATH, TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+from .constants import COMMENT_START_MARKER
+from .constants import REPORT_TEMPLATE_FILEPATH
+from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from .models import TestCase
 
 
@@ -77,6 +79,7 @@ Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (
             print('No MR found, skip posting comment')
             return
 
+        new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
         for note in self.mr.notes.list(iterator=True):
             if note.body.startswith(COMMENT_START_MARKER):
                 updated_str = re.sub(self.REGEX_PATTERN.format(self.title), comment, note.body)
@@ -84,12 +87,13 @@ Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (
                     updated_str = f'{note.body.strip()}\n\n{comment}'
 
                 note.body = updated_str
-                note.save()
+                try:
+                    note.save()
+                except GitlabUpdateError:
+                    print('Failed to update MR comment, Creating a new comment')
+                    self.mr.notes.create({'body': new_comment})
                 break
         else:
-            new_comment = f'''{COMMENT_START_MARKER}
-
-{comment}'''
             self.mr.notes.create({'body': new_comment})
 
 
