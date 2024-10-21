@@ -28,6 +28,9 @@
 #include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
 #include "esp_rom_gpio.h"
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
@@ -64,6 +67,8 @@
 #define TWAI_PERI_ATOMIC()
 #endif
 
+#define TWAI_USE_RETENTION_LINK  (SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 /* ------------------ Typedefs, structures, and variables ------------------- */
 
 //Control structure for TWAI driver
@@ -95,6 +100,11 @@ typedef struct twai_obj_t {
 
 static twai_handle_t g_twai_objs[SOC_TWAI_CONTROLLER_NUM];
 static portMUX_TYPE g_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+/* -------------------- Sleep Retention ------------------------ */
+#if TWAI_USE_RETENTION_LINK
+static esp_err_t s_twai_create_sleep_retention_link_cb(void *obj);
+#endif
 
 /* -------------------- Interrupt and Alert Handlers ------------------------ */
 
@@ -334,6 +344,19 @@ static void twai_free_driver_obj(twai_obj_t *p_obj)
     if (p_obj->alert_semphr != NULL) {
         vSemaphoreDeleteWithCaps(p_obj->alert_semphr);
     }
+
+#if TWAI_USE_RETENTION_LINK
+    const periph_retention_module_t retention_id = twai_reg_retention_info[p_obj->controller_id].module_id;
+    if (sleep_retention_get_created_modules() & BIT(retention_id)) {
+        assert(sleep_retention_get_inited_modules() & BIT(retention_id));
+        sleep_retention_module_free(retention_id);
+    }
+    if (sleep_retention_get_inited_modules() & BIT(retention_id)) {
+        sleep_retention_module_deinit(retention_id);
+    }
+
+#endif
+
     heap_caps_free(p_obj);
 }
 
@@ -365,6 +388,9 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (ret != ESP_OK) {
         goto err;
     }
+
+    p_obj->controller_id = controller_id;
+
 #if CONFIG_PM_ENABLE
 #if SOC_TWAI_CLK_SUPPORT_APB
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
@@ -383,6 +409,28 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     }
 #endif //SOC_TWAI_CLK_SUPPORT_APB
 #endif //CONFIG_PM_ENABLE
+
+#if TWAI_USE_RETENTION_LINK
+    sleep_retention_module_t module = twai_reg_retention_info[controller_id].module_id;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = s_twai_create_sleep_retention_link_cb,
+                .arg = p_obj,
+            },
+        },
+        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        ESP_LOGW(TWAI_TAG, "init sleep retention failed for TWAI%d, power domain may be turned off during sleep", controller_id);
+    }
+
+    if (g_config->general_flags.sleep_allow_pd) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            ESP_LOGW(TWAI_TAG, "create retention module failed, power domain can't turn off");
+        }
+    }
+#endif
 
     *p_twai_obj_ret = p_obj;
     return ESP_OK;
@@ -408,6 +456,9 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
 #endif
     int controller_id = g_config->controller_id;
     TWAI_CHECK(g_twai_objs[controller_id] == NULL, ESP_ERR_INVALID_STATE);
+#if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    TWAI_CHECK(!g_config->general_flags.sleep_allow_pd, ESP_ERR_INVALID_ARG);
+#endif
 
     //Get clock source resolution
     uint32_t clock_source_hz = 0;
@@ -437,7 +488,6 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
 
     //Initialize flags and variables. All other members are already set to zero by twai_alloc_driver_obj()
     portMUX_INITIALIZE(&p_twai_obj->spinlock);
-    p_twai_obj->controller_id = controller_id;
     p_twai_obj->state = TWAI_STATE_STOPPED;
     p_twai_obj->mode = g_config->mode;
     p_twai_obj->alerts_enabled = g_config->alerts_enabled;
@@ -874,3 +924,14 @@ esp_err_t twai_clear_receive_queue(void)
     // the handle-less driver API only support one TWAI controller, i.e. the g_twai_objs[0]
     return twai_clear_receive_queue_v2(g_twai_objs[0]);
 }
+
+#if TWAI_USE_RETENTION_LINK
+static esp_err_t s_twai_create_sleep_retention_link_cb(void *obj)
+{
+    twai_obj_t *host = (twai_obj_t *)obj;
+    return sleep_retention_entries_create(twai_reg_retention_info[host->controller_id].entry_array,
+                                          twai_reg_retention_info[host->controller_id].array_size,
+                                          REGDMA_LINK_PRI_TWAI,
+                                          twai_reg_retention_info[host->controller_id].module_id);
+}
+#endif

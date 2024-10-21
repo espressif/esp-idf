@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#if SOC_PAU_SUPPORTED
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +33,16 @@ typedef struct {
 } twai_controller_signal_conn_t;
 
 extern const twai_controller_signal_conn_t twai_controller_periph_signals;
+
+#if SOC_PAU_SUPPORTED
+typedef struct {
+    const periph_retention_module_t module_id;
+    const regdma_entries_config_t *entry_array;
+    uint32_t array_size;
+} twai_reg_retention_info_t;
+
+extern const twai_reg_retention_info_t twai_reg_retention_info[SOC_TWAI_CONTROLLER_NUM];
+#endif  // SOC_PAU_SUPPORTED
 
 #endif // SOC_TWAI_SUPPORTED
 

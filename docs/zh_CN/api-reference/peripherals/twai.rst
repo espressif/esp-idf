@@ -599,6 +599,14 @@ TWAI 驱动程序通过 :cpp:type:`twai_message_t` 结构体的不同位字段�
 
 **自测示例：** :example:`peripherals/twai/twai_self_test` 演示了节点如何使用 TWAI 驱动程序的无应答模式和自接收请求，向自身传输 TWAI 消息。此示例可用于测试目标芯片与外部收发器之间的连接是否正常。
 
+.. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
+
+    睡眠保留
+    ^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持在进入 **Light Sleep** 之前保留 TWAI 寄存器中的内容，并在唤醒后恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 TWAI
+
+    该特性可以通过置位配置中的 :cpp:member:`twai_general_config_t::sleep_allow_pd` 标志位启用。启用后驱动允许系统在 Light Sleep 时对 TWAI 掉电，同时保存寄存器配置。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 .. ---------------------------- API Reference ----------------------------------
 
