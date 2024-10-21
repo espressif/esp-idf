@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,7 @@ static const char *TAG = "esp-x509-crt-bundle";
 
 /* a dummy certificate so that
  * cacert_ptr passes non-NULL check during handshake */
-static mbedtls_x509_crt s_dummy_crt;
-
+static const mbedtls_x509_crt s_dummy_crt;
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
@@ -218,8 +217,7 @@ esp_err_t esp_crt_bundle_attach(void *conf)
          * cacert_ptr passes non-NULL check during handshake
          */
         mbedtls_ssl_config *ssl_conf = (mbedtls_ssl_config *)conf;
-        mbedtls_x509_crt_init(&s_dummy_crt);
-        mbedtls_ssl_conf_ca_chain(ssl_conf, &s_dummy_crt, NULL);
+        mbedtls_ssl_conf_ca_chain(ssl_conf, (mbedtls_x509_crt*)&s_dummy_crt, NULL);
         mbedtls_ssl_conf_verify(ssl_conf, esp_crt_verify_callback, NULL);
     }
 
@@ -238,4 +236,9 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf)
 esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size)
 {
     return esp_crt_bundle_init(x509_bundle, bundle_size);
+}
+
+bool esp_crt_bundle_in_use(const mbedtls_x509_crt* ca_chain)
+{
+    return ((ca_chain == &s_dummy_crt) ? true : false);
 }
