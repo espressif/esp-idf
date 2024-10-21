@@ -1226,7 +1226,7 @@ sta_send_sa_query_req = 0x40002138;
 sta_send_sa_query_resp = 0x4000213c;
 sta_recv_sa_query_req = 0x40002140;
 sta_recv_sa_query_resp = 0x40002144;
-ieee80211_parse_beacon = 0x40002148;
+//ieee80211_parse_beacon = 0x40002148;
 ieee80211_match_security = 0x40002154;
 //ieee80211_parse_rsn = 0x4000215c;
 /* Data (.data, .bss, .rodata) */
