@@ -165,8 +165,8 @@ The provided flash image must meet the following requirements for proper emulati
 - The flash file size matches the value specified by :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 - The flash file includes all required binaries, such as the bootloader, partition table, and application firmware, placed at their respective memory offsets.
 
+
 Emulating Secure Boot
 ~~~~~~~~~~~~~~~~~~~~~
 
 QEMU supports emulation of secure boot v2 scheme. Please keep :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` enabled to include signed bootloader image into the QEMU image artifact.
-
