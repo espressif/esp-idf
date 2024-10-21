@@ -61,9 +61,6 @@ variables:
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
   PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
 
-  # target test repo parameters
-  TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
-
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
