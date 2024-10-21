@@ -133,7 +133,19 @@ menu "USB-OTG"
 
                     The default value is 1.
 
-            config USB_HOST_EXT_PORT_CUSTOM_RESET_ENABLE
+            config USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS
+                int "Reset recovery delay in ms"
+                default 30
+                help
+                    After a port stops driving the reset signal, the USB 2.0 specification requires that
+                    the "USB System Software guarantees a minimum of 10 ms for reset recovery" before the
+                    attached device is expected to respond to data transfers (see USB 2.0 chapter 7.1.7.3 for
+                    more details).
+                    The device may ignore any data transfers during the recovery interval.
+
+                    The default value is set to 30 ms to be safe.
+
+            config USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE
                 bool "Custom bPwrOn2PwrGood value"
                 default n
                 help
@@ -143,8 +155,8 @@ menu "USB-OTG"
                     When enabled, applies the custom PwrOn2PwrGood delay.
                     When disabled, applies the PwrOn2PwrGood value from the Hub Descriptor.
 
-            config USB_HOST_EXT_PORT_CUSTOM_RESET_MS
-                depends on USB_HOST_EXT_PORT_CUSTOM_RESET_ENABLE
+            config USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS
+                depends on USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE
                 int "PwrOn2PwrGood delay in ms"
                 default 100
                 range 0 5000
