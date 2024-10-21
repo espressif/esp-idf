@@ -89,10 +89,13 @@ typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,
     WIFI_REASON_AUTH_EXPIRE                        = 2,
     WIFI_REASON_AUTH_LEAVE                         = 3,
-    WIFI_REASON_ASSOC_EXPIRE                       = 4,
+    WIFI_REASON_ASSOC_EXPIRE                       = 4, /* Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY         = 4,
     WIFI_REASON_ASSOC_TOOMANY                      = 5,
-    WIFI_REASON_NOT_AUTHED                         = 6,
-    WIFI_REASON_NOT_ASSOCED                        = 7,
+    WIFI_REASON_NOT_AUTHED                         = 6, /* Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA      = 6,
+    WIFI_REASON_NOT_ASSOCED                        = 7, /* Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA     = 7,
     WIFI_REASON_ASSOC_LEAVE                        = 8,
     WIFI_REASON_ASSOC_NOT_AUTHED                   = 9,
     WIFI_REASON_DISASSOC_PWRCAP_BAD                = 10,

@@ -13,7 +13,6 @@
 #include "common/ieee802_11_defs.h"
 #include "common/sae.h"
 #include "ap/sta_info.h"
-#include "ap/ieee802_11.h"
 #include "ap/wpa_auth.h"
 #include "ap/wpa_auth_i.h"
 #include "ap/wpa_auth_ie.h"
@@ -36,7 +35,6 @@
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_wpas_glue.h"
-#include "esp_wps_i.h"
 #include "esp_hostap.h"
 
 #define STATE_MACHINE_DATA struct wpa_state_machine
@@ -2556,97 +2554,6 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
     os_free(wpa_auth);
 
 }
-
-#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
-bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
-                uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
-                bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
-{
-    struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
-    enum wpa_validate_result status_code = WPA_IE_OK;
-    int resp = WLAN_STATUS_SUCCESS;
-    bool omit_rsnxe = false;
-
-    if (!sta || !bssid || !wpa_ie) {
-        return false;
-    }
-
-    if (hapd) {
-        if (hapd->wpa_auth->conf.wpa) {
-            if (sta->wpa_sm){
-                wpa_auth_sta_deinit(sta->wpa_sm);
-            }
-
-            sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
-            wpa_printf( MSG_DEBUG, "init wpa sm=%p", sta->wpa_sm);
-
-            if (sta->wpa_sm == NULL) {
-                resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
-                goto send_resp;
-            }
-
-            status_code = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
-
-#ifdef CONFIG_SAE
-            if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
-                sta->sae->state == SAE_ACCEPTED) {
-                wpa_auth_add_sae_pmkid(sta->wpa_sm, sta->sae->pmkid);
-            }
-#endif /* CONFIG_SAE */
-
-            resp = wpa_res_to_status_code(status_code);
-
-send_resp:
-            if (!rsnxe) {
-                omit_rsnxe = true;
-            }
-
-            if (esp_send_assoc_resp(hapd, bssid, resp, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
-                resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
-            }
-
-            if (resp != WLAN_STATUS_SUCCESS) {
-                return false;
-            }
-
-            //Check whether AP uses Management Frame Protection for this connection
-            *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
-            *pairwise_cipher = GET_BIT_POSITION(sta->wpa_sm->pairwise);
-        }
-
-        wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
-    }
-
-    return true;
-}
-
-bool wpa_ap_remove(u8* bssid)
-{
-    struct hostapd_data *hapd = hostapd_get_hapd_data();
-
-    if (!hapd) {
-        return false;
-    }
-    struct sta_info *sta = ap_get_sta(hapd, bssid);
-    if (!sta) {
-        return false;
-    }
-
-#ifdef CONFIG_SAE
-    if (sta->lock) {
-        if (os_semphr_take(sta->lock, 0)) {
-            ap_free_sta(hapd, sta);
-        } else {
-            sta->remove_pending = true;
-        }
-        return true;
-    }
-#endif /* CONFIG_SAE */
-    ap_free_sta(hapd, sta);
-
-    return true;
-}
-#endif /* CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
                const u8 *sta_addr)
