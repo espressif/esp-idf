@@ -105,3 +105,6 @@ get-started/macos-setup-scratch                 get-started/linux-macos-setup
 get-started/toolchain-setup-scratch             get-started/index
 get-started/eclipse-setup                       get-started/index
 get-started/vscode-setup                        get-started/index
+
+# Kconfig documentation got pretty serious file structure changes
+api-reference/kconfig                          api-reference/kconfig-reference

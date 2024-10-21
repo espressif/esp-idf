@@ -10,7 +10,7 @@ ESP-IDF provides several kinds of programming interfaces:
 
 * C functions, structures, enums, type definitions, and preprocessor macros declared in public header files of ESP-IDF components. Various pages in the API Reference section of the programming guide contain descriptions of these functions, structures, and types.
 * Build system functions, predefined variables, and options. These are documented in the :ref:`ESP-IDF CMake Build System API <cmake_buildsystem_api>`.
-* :doc:`Kconfig <kconfig>` options can be used in code and in the build system (``CMakeLists.txt``) files.
+* :ref:`Kconfig options <configs-in-C-Cmake>` can be used in code and in the build system (``CMakeLists.txt``) files.
 * :doc:`Host tools <../api-guides/tools/index>` and their command line parameters are also part of the ESP-IDF interfaces.
 
 ESP-IDF is made up of multiple components where these components either contain code specifically written for ESP chips, or contain a third-party library (i.e., a third-party component). In some cases, third-party components contain an "ESP-IDF specific" wrapper in order to provide an interface that is either simpler or better integrated with the rest of ESP-IDF's features. In other cases, third-party components present the original API of the underlying library directly.
@@ -145,7 +145,7 @@ While we try to make upgrading to a new ESP-IDF version easy, there are parts of
 * Changes made to mitigate security issues or to replace insecure default behaviors with secure ones.
 * Features that were never functional. For example, if it was never possible to use a certain function or an enumeration value, it may get renamed (as part of fixing it) or removed. This includes software features that depend on non-functional chip hardware features.
 * Unexpected or undefined behavior that is not documented explicitly may be fixed/changed, such as due to missing validation of argument ranges.
-* Location of :doc:`Kconfig <kconfig>` options in menuconfig.
+* Location of :ref:`Kconfig <project-configuration-guide>` options in menuconfig.
 * Location and names of example projects.
 
 .. _designated initializers: https://en.cppreference.com/w/c/language/struct_initialization

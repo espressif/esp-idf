@@ -362,7 +362,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
-- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :doc:`Kconfig </api-reference/kconfig>`。
+- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :ref:`Project Configuration Guide <project-configuration-guide>`。
 - ``ESP_PLATFORM``：ESP-IDF 构建系统处理 CMake 文件时，其值设为 1。
 
 
