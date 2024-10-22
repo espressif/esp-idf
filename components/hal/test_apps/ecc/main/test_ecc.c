@@ -59,6 +59,7 @@ static void ecc_point_mul(const uint8_t *k_le, const uint8_t *x_le, const uint8_
     } else {
         ecc_hal_set_mode(ECC_MODE_POINT_MUL);
     }
+    ecc_hal_enable_constant_time_point_mul(true);
     ecc_hal_start_calc();
 
     while (!ecc_hal_is_calc_finished()) {
@@ -132,6 +133,74 @@ TEST_CASE("ECC point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
 {
     test_ecc_point_mul_inner(false);
 }
+
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
+
+#define CONST_TIME_DEVIATION_PERCENT 0.002
+
+static void test_ecc_point_mul_inner_constant_time(void)
+{
+    uint8_t scalar_le[32];
+    uint8_t x_le[32];
+    uint8_t y_le[32];
+
+    /* P256 */
+    ecc_be_to_le(ecc_p256_scalar, scalar_le, 32);
+    ecc_be_to_le(ecc_p256_point_x, x_le, 32);
+    ecc_be_to_le(ecc_p256_point_y, y_le, 32);
+
+    uint8_t x_res_le[32];
+    uint8_t y_res_le[32];
+
+    double deviation = 0;
+    uint32_t elapsed_time, mean_elapsed_time, total_elapsed_time = 0;
+    uint32_t max_time = 0, min_time = UINT32_MAX;
+    int loop_count = 10;
+
+    for (int i = 0; i < loop_count; i++) {
+        ccomp_timer_start();
+        ecc_point_mul(scalar_le, x_le, y_le, 32, 0, x_res_le, y_res_le);
+        elapsed_time = ccomp_timer_stop();
+
+        max_time = MAX(elapsed_time, max_time);
+        min_time = MIN(elapsed_time, min_time);
+        total_elapsed_time += elapsed_time;
+    }
+    mean_elapsed_time = total_elapsed_time / loop_count;
+    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+
+    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+
+    /* P192 */
+    ecc_be_to_le(ecc_p192_scalar, scalar_le, 24);
+    ecc_be_to_le(ecc_p192_point_x, x_le, 24);
+    ecc_be_to_le(ecc_p192_point_y, y_le, 24);
+
+    max_time = 0;
+    min_time = UINT32_MAX;
+    total_elapsed_time = 0;
+
+    for (int i = 0; i < loop_count; i++) {
+        ccomp_timer_start();
+        ecc_point_mul(scalar_le, x_le, y_le, 24, 0, x_res_le, y_res_le);
+        elapsed_time = ccomp_timer_stop();
+
+        max_time = MAX(elapsed_time, max_time);
+        min_time = MIN(elapsed_time, min_time);
+        total_elapsed_time += elapsed_time;
+    }
+    mean_elapsed_time = total_elapsed_time / loop_count;
+    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+
+    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+}
+
+TEST(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1)
+{
+    test_ecc_point_mul_inner_constant_time();
+}
+#endif
+
 #endif
 
 #if SOC_ECC_SUPPORT_POINT_VERIFY

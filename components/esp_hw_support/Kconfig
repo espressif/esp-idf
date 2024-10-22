@@ -331,4 +331,33 @@ menu "Hardware Settings"
             default 3 if ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
 
     endmenu
+
+    config ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
+        bool "Forcefully enable ECC constant time point multiplication operations"
+        depends on SOC_ECC_CONSTANT_TIME_POINT_MUL
+        default N
+        help
+            If enabled, the app startup code will burn the ECC_FORCE_CONST_TIME efuse bit to force the
+            ECC peripheral to always perform constant time point multiplication operations,
+            irrespective of the ECC_MULT_SECURITY_MODE status bit that is present in the ECC_MULT_CONF_REG
+            register. By default, ESP-IDF configures the ECC peripheral to perform constant time point
+            multiplication operations, so enabling this config would provide security enhancement only in
+            the cases when trusted boot is not enabled and the attacker tries carrying out non-constant
+            time point multiplication operations by changing the default ESP-IDF configurations.
+            Performing constant time operations protect the ECC multiplication operations from timing attacks.
+
+    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
+
+    orsource "./port/$IDF_TARGET/Kconfig.ldo"
+
+    # Invisible bringup bypass options for esp_hw_support component
+    config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
+        bool
+        default y if !SOC_CLK_TREE_SUPPORTED
+        default n
+        help
+            This option is only used for new chip bringup, when
+            clock support isn't done yet. So with this option,
+            we use xtal on FPGA as the clock source.
+
 endmenu
