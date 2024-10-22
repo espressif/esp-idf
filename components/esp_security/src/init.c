@@ -40,7 +40,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
     esp_crypto_dpa_protection_startup();
 #endif
 
-#ifdef CONFIG_ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
+#if CONFIG_ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
     if (!esp_efuse_read_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME)) {
         ESP_EARLY_LOGD(TAG, "Forcefully enabling ECC constant time operations");
         esp_err_t err = esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME);
