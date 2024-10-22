@@ -620,6 +620,10 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     esp_err_t ret = ESP_OK;
     parlio_rx_unit_handle_t unit = NULL;
 
+#if !SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+
     /* Allocate unit memory */
     unit = heap_caps_calloc(1, sizeof(parlio_rx_unit_t), PARLIO_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no memory for rx unit");
@@ -675,6 +679,12 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
         ESP_LOGW(TAG, "The current target does not support clock gating");
     }
 #endif  // SOC_PARLIO_RX_CLK_SUPPORT_GATING
+
+#if PARLIO_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        parlio_create_retention_module(group);
+    }
+#endif // PARLIO_USE_RETENTION_LINK
 
     /* return RX unit handle */
     *ret_unit = unit;

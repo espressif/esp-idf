@@ -57,6 +57,7 @@ extern "C" {
 #define REGDMA_ETM_LINK(_pri)               ((0x1F << 8) | _pri)
 #define REGDMA_TSENS_LINK(_pri)             ((0x20 << 8) | _pri)
 #define REGDMA_TWAI_LINK(_pri)              ((0x21 << 8) | _pri)
+#define REGDMA_PARLIO_LINK(_pri)            ((0x22 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -75,6 +76,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_PARLIO                  REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TEMPERATURE_SENSOR      REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH

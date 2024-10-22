@@ -158,6 +158,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
+            :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
 
         以下外设尚未支持：
 
@@ -173,7 +174,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - MCPWM
             - SARADC
             - SDIO
-            - PARL_IO
 
         对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
 
