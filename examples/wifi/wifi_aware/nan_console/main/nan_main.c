@@ -103,7 +103,7 @@ static struct {
 } ping_args;
 
 static const char *TAG = "nan_console";
-static esp_netif_t *g_nan_netif;
+static esp_netif_t *g_nan_netif = NULL;
 
 #define NAN_EXAMPLE_SERVICE_NAME    "ESP_NAN-Service"
 
@@ -235,6 +235,11 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             nan_cfg.warm_up_sec = nan_args.warmup_time->ival[0];
         }
 
+        if(!g_nan_netif)
+        {
+            g_nan_netif = esp_netif_create_default_wifi_nan();    
+        }
+
         g_nan_netif = esp_netif_create_default_wifi_nan();
         if ((esp_wifi_nan_start(&nan_cfg)) != ESP_OK) {
             ESP_LOGI(TAG, "Failed to start NAN");
@@ -252,6 +257,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             return 1;
         }
         esp_netif_destroy_default_wifi(g_nan_netif);
+        g_nan_netif = NULL;
     }
 
     return 0;
