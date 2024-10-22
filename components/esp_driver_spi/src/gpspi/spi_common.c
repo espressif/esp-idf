@@ -979,6 +979,7 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
         sleep_retention_module_deinit(retention_id);
     }
     _lock_release(&ctx->mutex);
+    _lock_close(&ctx->mutex);
 #endif
 
 #ifdef CONFIG_PM_ENABLE
