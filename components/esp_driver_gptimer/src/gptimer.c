@@ -337,12 +337,12 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
+        atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not enabled yet");
     }
 
-    atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
     return ESP_OK;
 }
 
