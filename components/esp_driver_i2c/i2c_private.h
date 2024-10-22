@@ -259,6 +259,17 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
 
 /**
+ * @brief Deinit I2C SCL/SDA pins
+ *
+ * @param handle I2C bus handle
+ * @return
+ *      - ESP_OK: I2C set SCL/SDA pins successfully.
+ *      - ESP_ERR_INVALID_ARG: Argument error.
+ *      - Otherwise: Set SCL/SDA IOs error.
+ */
+esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle);
+
+/**
  * @brief Check whether bus is acquired
  *
  * @param port_num number of port

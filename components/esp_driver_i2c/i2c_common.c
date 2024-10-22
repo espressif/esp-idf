@@ -312,29 +312,27 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     int port_id = handle->port_num;
 
     // SDA pin configurations
-    gpio_config_t sda_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_down_en = false,
-        .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
-        .pin_bit_mask = 1ULL << handle->sda_num,
-    };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
-    ESP_RETURN_ON_ERROR(gpio_config(&sda_conf), TAG, "config GPIO failed");
+    gpio_input_enable(handle->sda_num);
+    gpio_od_enable(handle->sda_num);
+    if (handle->pull_up_enable) {
+        gpio_pullup_en(handle->sda_num);
+    } else {
+        gpio_pullup_dis(handle->sda_num);
+    }
     gpio_func_sel(handle->sda_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
 
     // SCL pin configurations
-    gpio_config_t scl_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_down_en = false,
-        .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
-        .pin_bit_mask = 1ULL << handle->scl_num,
-    };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->scl_num, 1), TAG, "i2c scl pin set level failed");
-    ESP_RETURN_ON_ERROR(gpio_config(&scl_conf), TAG, "config GPIO failed");
+    gpio_input_enable(handle->scl_num);
+    gpio_od_enable(handle->scl_num);
+    if (handle->pull_up_enable) {
+        gpio_pullup_en(handle->scl_num);
+    } else {
+        gpio_pullup_dis(handle->scl_num);
+    }
     gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
@@ -405,4 +403,29 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
 #endif
 
     return ret;
+}
+
+esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
+{
+    int port_id = handle->port_num;
+
+    if (handle->is_lp_i2c == false) {
+        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->sda_num), TAG, "disable i2c pins failed");
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+
+        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->scl_num), TAG, "disable i2c pins failed");
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+    }
+#if SOC_LP_I2C_SUPPORTED
+    else {
+        ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
+        ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+#endif
+    }
+#endif
+
+    return ESP_OK;
 }

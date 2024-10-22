@@ -166,7 +166,6 @@ When the I2C master handle has been initialized in one module (e.g. the audio mo
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
     // Source File 2
-    #include "esp_private/i2c_platform.h"
     #include "driver/i2c_master.h"
     i2c_master_bus_handle_t handle;
     ESP_ERROR_CHECK(i2c_master_get_bus_handle(0, &handle));
