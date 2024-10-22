@@ -82,6 +82,7 @@ esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width);
 esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status);
 esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 esp_err_t sdmmc_send_cmd_voltage_switch(sdmmc_card_t* card);
+esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks);
 
 /* Higher level functions */
 esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card);
@@ -164,6 +165,11 @@ static inline uint32_t get_host_ocr(float voltage)
     // For now tell that the host has 2.8-3.6V voltage range
     (void) voltage;
     return SD_OCR_VOL_MASK;
+}
+
+static inline bool sdmmc_ready_for_data(uint32_t status)
+{
+    return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
 }
 
 void sdmmc_flip_byte_order(uint32_t* response, size_t size);

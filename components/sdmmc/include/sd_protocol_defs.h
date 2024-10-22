@@ -69,6 +69,7 @@ extern "C" {
 /* SD application commands */                   /* response type */
 #define SD_APP_SET_BUS_WIDTH            6       /* R1 */
 #define SD_APP_SD_STATUS                13      /* R2 */
+#define SD_APP_SEND_NUM_WR_BLOCKS       22      /* R1 */
 #define SD_APP_OP_COND                  41      /* R3 */
 #define SD_APP_SEND_SCR                 51      /* R1 */
 
@@ -261,6 +262,7 @@ extern "C" {
 #define MMC_CSD_CAPACITY(resp)          ((MMC_CSD_C_SIZE((resp))+1) << \
                                          (MMC_CSD_C_SIZE_MULT((resp))+2))
 #define MMC_CSD_C_SIZE_MULT(resp)       MMC_RSP_BITS((resp), 47, 3)
+#define MMC_CSD_WRITE_BL_PARTIAL(resp)  MMC_RSP_BITS((resp), 21, 1)
 
 /* MMC v1 R2 response (CID) */
 #define MMC_CID_MID_V1(resp)            MMC_RSP_BITS((resp), 104, 24)
