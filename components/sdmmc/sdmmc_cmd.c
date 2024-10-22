@@ -409,6 +409,32 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks)
+{
+    esp_err_t err = ESP_OK;
+    uint32_t buf = 0;
+    sdmmc_command_t cmd = {
+        .data = &buf,
+        .datalen = sizeof(buf),
+        .buflen = sizeof(buf),
+        .blklen = sizeof(buf),
+        .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ,
+        .opcode = SD_APP_SEND_NUM_WR_BLOCKS
+    };
+
+    err = sdmmc_send_app_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_send_app_cmd returned 0x%x, failed to get number of written write blocks", __func__, err);
+        return err;
+    }
+
+    size_t result = __builtin_bswap32(buf);
+    if (out_num_blocks) {
+        *out_num_blocks = result;
+    }
+    return err;
+}
+
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
@@ -459,11 +485,6 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
     return err;
 }
 
-static bool sdmmc_ready_for_data(uint32_t status)
-{
-    return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
-}
-
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count, size_t buffer_len)
 {
@@ -495,6 +516,17 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
 
     if (err != ESP_OK) {
+        if (cmd.opcode == MMC_WRITE_BLOCK_MULTIPLE) {
+            if (!sdmmc_ready_for_data(status)) {
+                vTaskDelay(1);
+            }
+            size_t successfully_written_blocks = 0;
+            if (sdmmc_send_cmd_num_of_written_blocks(card, &successfully_written_blocks) == ESP_OK) {
+                ESP_LOGD(TAG, "%s: successfully wrote %zu blocks out of %zu", __func__, successfully_written_blocks, block_count);
+            } else {
+                ESP_LOGE(TAG, "%s: sdmmc_send_cmd_num_of_written_blocks returned 0x%x", __func__, err);
+            }
+        }
         if (err_cmd13 == ESP_OK) {
             ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, status 0x%" PRIx32, __func__, err, status);
         } else {
