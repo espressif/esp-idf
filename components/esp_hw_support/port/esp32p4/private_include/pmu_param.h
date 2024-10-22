@@ -173,7 +173,7 @@ typedef struct {
         uint32_t slp_mem_xpd    : 1;
         uint32_t slp_logic_xpd  : 1;
         uint32_t xpd            : 1;
-        uint32_t slp_mem_dbias  : 4;
+        uint32_t xpd_0p1a       : 1; // Should map to slp_mem_dbias bit[3] on hardware.
         uint32_t slp_logic_dbias: 4;
         uint32_t dbias          : 5;
     };
@@ -325,7 +325,7 @@ typedef struct {
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(pd_flags) {               \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 0,                                           \
-        .lp_pad_hold_all = (pd_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
+        .lp_pad_hold_all = 0,                                           \
     }                                                                   \
 }
 
