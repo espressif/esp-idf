@@ -12,6 +12,8 @@
 #include "soc/ecc_mult_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,6 +211,18 @@ static inline ecc_curve_t ecc_ll_get_curve(void)
 static inline ecc_mod_base_t ecc_ll_get_mod_base(void)
 {
     return (ecc_mod_base_t)(REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_MOD_BASE));
+}
+
+static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
+{
+    // ECC constant time point multiplication is supported only on rev 1.2 and above
+    if ((efuse_ll_get_chip_wafer_version_major() >= 1) && (efuse_ll_get_chip_wafer_version_minor() >= 2)) {
+        if (enable) {
+            REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+        } else {
+            REG_CLR_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
+        }
+    }
 }
 
 static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_t len)
