@@ -154,6 +154,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.hp_sys.analog.xpd_0p1a = 0;
         config->analog = analog_default;
     } else {
         // Get light sleep digital_default
@@ -163,6 +164,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         // Get light sleep analog default
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
 #if CONFIG_SPIRAM
+        // Adjust analog parameters to keep EXT_LDO PSRAM channel volt outputting during light-sleep.
         analog_default.hp_sys.analog.pd_cur = 0;
         analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 0;
 #endif
@@ -189,6 +191,11 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         analog_default.hp_sys.analog.dcm_vset = CONFIG_ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP;
         analog_default.hp_sys.analog.dcm_mode = 1;
 #endif
+        if (pd_flags & PMU_SLEEP_PD_VDDSDIO) {
+            analog_default.hp_sys.analog.xpd_0p1a = 0;
+        } else {
+            analog_default.hp_sys.analog.xpd_0p1a = 1;
+        }
         config->analog = analog_default;
     }
 
@@ -229,7 +236,9 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_xpd);
     pmu_ll_hp_set_regulator_xpd               (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
-    pmu_ll_hp_set_regulator_sleep_memory_dbias(ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_dbias);
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+        pmu_ll_hp_enable_sleep_flash_ldo_channel(ctx->hal->dev, analog->hp_sys.analog.xpd_0p1a);
+    }
     pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_dbias);
     pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbg_atten);
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);

@@ -69,8 +69,9 @@ menu "Hardware Settings"
         # This is here since this option affect behavior of esp_light_sleep_start
         # regardless of power management configuration.
         config ESP_SLEEP_POWER_DOWN_FLASH
-            bool "Power down flash in light sleep when there is no SPIRAM"
-            depends on !SPIRAM
+            bool "Power down flash in light sleep when there is no SPIRAM or SPIRAM has independent power supply"
+            depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM
+            depends on !(IDF_TARGET_ESP32P4 && (ESP32P4_REV_MIN_FULL >= 100))
             default n
             help
                 If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
