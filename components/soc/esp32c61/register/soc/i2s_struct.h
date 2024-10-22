@@ -263,16 +263,7 @@ typedef union {
          *  I2S PDM RX bypass hp filter or not.
          */
         uint32_t rx_pdm_hp_bypass:1;
-        /** rx_iir_hp_mult12_5 : R/W; bitpos: [28:26]; default: 6;
-         *  The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 +
-         *  LP_I2S_RX_IIR_HP_MULT12_5[2:0])
-         */
-        uint32_t rx_iir_hp_mult12_5:3;
-        /** rx_iir_hp_mult12_0 : R/W; bitpos: [31:29]; default: 7;
-         *  The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 +
-         *  LP_I2S_RX_IIR_HP_MULT12_0[2:0])
-         */
-        uint32_t rx_iir_hp_mult12_0:3;
+        uint32_t reserved_26:6;
     };
     uint32_t val;
 } i2s_rx_pdm2pcm_conf_reg_t;
@@ -859,7 +850,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */
@@ -989,8 +980,8 @@ typedef struct {
     volatile i2s_rx_timing_reg_t rx_timing;
     volatile i2s_tx_timing_reg_t tx_timing;
     volatile i2s_lc_hung_conf_reg_t lc_hung_conf;
-    volatile i2s_rxeof_num_reg_t rxeof_num;
-    volatile i2s_conf_sigle_data_reg_t conf_sigle_data;
+    volatile i2s_rxeof_num_reg_t rx_eof_num;
+    volatile i2s_conf_single_data_reg_t conf_single_data;
     volatile i2s_state_reg_t state;
     volatile i2s_etm_conf_reg_t etm_conf;
     volatile i2s_fifo_cnt_reg_t fifo_cnt;
@@ -999,7 +990,7 @@ typedef struct {
     volatile i2s_date_reg_t date;
 } i2s_dev_t;
 
-extern i2s_dev_t I2S;
+extern i2s_dev_t I2S0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2s_dev_t) == 0x84, "Invalid size of i2s_dev_t structure");

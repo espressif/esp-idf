@@ -13,13 +13,11 @@
 
 #pragma once
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "soc/pcr_struct.h"
-#include "soc/soc_etm_struct.h"
 #include "soc/soc_etm_source.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
@@ -30,16 +28,16 @@ extern "C" {
 #endif
 
 #define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : NULL)
-#define I2S_LL_GET_ID(hw)              (((hw) == &I2S0)? 0 : -1)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
 
-#define I2S_LL_CLK_FRAC_DIV_N_MAX      256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
-#define I2S_LL_CLK_FRAC_DIV_AB_MAX     512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
+#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+#define I2S_LL_CLK_FRAC_DIV_AB_MAX 512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
 
+#define I2S_LL_PLL_F120M_CLK_FREQ      (120 * 1000000) // PLL_F160M_CLK: 120MHz
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 #define I2S_LL_ETM_EVENT_TABLE(i2s_port, chan_dir, event)  \
     (uint32_t[SOC_I2S_NUM][2][I2S_ETM_EVENT_MAX]){{  \
@@ -63,10 +61,9 @@ extern "C" {
                                              [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
                                              [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_TX, \
                                          }}}[i2s_port][(chan_dir) - 1][task]
-#define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFFUL)
+#define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFUL)
 
 /**
- * @brief Enable the bus clock for I2S module
  *
  * @param i2s_id The port id of I2S
  * @param enable Set true to enable the buf clock
@@ -154,7 +151,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;  // TODO: need check
+    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
 }
 
 /**
@@ -248,7 +245,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
         break;
-    case I2S_CLK_SRC_PLL_240M:
+    case I2S_CLK_SRC_PLL_120M:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 1;
         break;
     case I2S_CLK_SRC_PLL_160M:
@@ -277,7 +274,7 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
         break;
-    case I2S_CLK_SRC_PLL_240M:
+    case I2S_CLK_SRC_PLL_120M:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 1;
         break;
     case I2S_CLK_SRC_PLL_160M:
@@ -316,21 +313,13 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
     (void)hw;
-    /* Workaround for the double division issue.
-     * The division coefficients must be set in particular sequence.
-     * And it has to switch to a small division first before setting the target division. */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_tx_clkm_conf, i2s_tx_clkm_div_num, 2);
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_yn1 = 0;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = 1;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = 0;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = 0;
-
-    /* Set the target mclk division coefficients */
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_yn1 = yn1;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = z;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = y;
-    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = x;
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_tx_clkm_conf, i2s_tx_clkm_div_num, div_int);
+    typeof(PCR.i2s_tx_clkm_div_conf) div = {};
+    div.i2s_tx_clkm_div_x = x;
+    div.i2s_tx_clkm_div_y = y;
+    div.i2s_tx_clkm_div_z = z;
+    div.i2s_tx_clkm_div_yn1 = yn1;
+    PCR.i2s_tx_clkm_div_conf.val = div.val;
 }
 
 /**
@@ -346,21 +335,13 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
     (void)hw;
-    /* Workaround for the double division issue.
-     * The division coefficients must be set in particular sequence.
-     * And it has to switch to a small division first before setting the target division. */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_rx_clkm_conf, i2s_rx_clkm_div_num, 2);
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_yn1 = 0;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = 1;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = 0;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = 0;
-
-    /* Set the target mclk division coefficients */
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_yn1 = yn1;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = z;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = y;
-    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = x;
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_rx_clkm_conf, i2s_rx_clkm_div_num, div_int);
+    typeof(PCR.i2s_rx_clkm_div_conf) div = {};
+    div.i2s_rx_clkm_div_x = x;
+    div.i2s_rx_clkm_div_y = y;
+    div.i2s_rx_clkm_div_z = z;
+    div.i2s_rx_clkm_div_yn1 = yn1;
+    PCR.i2s_rx_clkm_div_conf.val = div.val;
 }
 
 /**
@@ -371,6 +352,12 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
+    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
+     * Set to particular coefficients first then update to the target coefficients,
+     * otherwise the clock division might be inaccurate.
+     * the general idea is to set a value that impossible to calculate from the regular decimal */
+    i2s_ll_tx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
+
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
@@ -398,13 +385,19 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 
 /**
  * @brief Configure I2S RX module clock divider
- * @note mclk on ESP32C5 is shared by both TX and RX channel
+ * @note mclk on ESP32C61 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
 static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
+    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
+     * Set to particular coefficients first then update to the target coefficients,
+     * otherwise the clock division might be inaccurate.
+     * the general idea is to set a value that impossible to calculate from the regular decimal */
+    i2s_ll_rx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
+
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
@@ -532,7 +525,7 @@ static inline void i2s_ll_rx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
  */
 static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_conf1, tx_half_sample_bits,  half_sample_bits - 1);
+    hw->tx_conf1.tx_half_sample_bits = half_sample_bits - 1;
 }
 
 /**
@@ -543,7 +536,7 @@ static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_
  */
 static inline void i2s_ll_rx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_conf1, rx_half_sample_bits,  half_sample_bits - 1);
+    hw->rx_conf1.rx_half_sample_bits = half_sample_bits - 1;
 }
 
 /**
@@ -742,7 +735,6 @@ static inline void i2s_ll_rx_enable_tdm(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_pdm_en = false;
     hw->rx_conf.rx_tdm_en = true;
-    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = false;
 }
 
 /**
@@ -938,14 +930,14 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 
 /**
  * @brief Enable RX PDM mode.
- * @note  ESP32-C5 doesn't support pdm in rx mode, disable anyway
+ * @note  ESP32-C61 doesn't support pdm in rx mode, disable anyway
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param pdm_enable Set true to RX enable PDM mode (ignored)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
-    // Due to the lack of `PDM to PCM` module on ESP32-C5, PDM RX is not available
+    // Due to the lack of `PDM to PCM` module on ESP32-C61, PDM RX is not available
     HAL_ASSERT(!pdm_enable);
     hw->rx_conf.rx_pdm_en = 0;
     hw->rx_conf.rx_tdm_en = 1;
@@ -1226,7 +1218,7 @@ static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
  * @brief Set the TX ETM threshold of REACH_THRESH event
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param thresh The threshold that send, in words (4 bytes)
+ * @param thresh The threshold that send
  */
 static inline void i2s_ll_tx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
 {
@@ -1237,87 +1229,11 @@ static inline void i2s_ll_tx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
  * @brief Set the RX ETM threshold of REACH_THRESH event
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param thresh The threshold that received, in words (4 bytes)
+ * @param thresh The threshold that received
  */
 static inline void i2s_ll_rx_set_etm_threshold(i2s_dev_t *hw, uint32_t thresh)
 {
     hw->etm_conf.etm_rx_receive_word_num = thresh;
-}
-
-/**
- * @brief Get I2S ETM TX done event status
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *      - true  TX done event triggered
- *      - false TX done event not triggered
- */
-static inline bool i2s_ll_get_etm_tx_done_event_status(i2s_dev_t *hw)
-{
-    uint32_t i2s_id = I2S_LL_GET_ID(hw);
-    switch (i2s_id) {
-        case 0:
-            return SOC_ETM.evt_st3.i2s0_evt_tx_done_st;
-        default:
-            HAL_ASSERT(false);
-    }
-}
-
-/**
- * @brief Get I2S ETM TX done event status
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *      - true  TX done event triggered
- *      - false TX done event not triggered
- */
-static inline bool i2s_ll_get_etm_rx_done_event_status(i2s_dev_t *hw)
-{
-    uint32_t i2s_id = I2S_LL_GET_ID(hw);
-    switch (i2s_id) {
-        case 0:
-            return SOC_ETM.evt_st3.i2s0_evt_rx_done_st;
-        default:
-            HAL_ASSERT(false);
-    }
-}
-
-/**
- * @brief Get I2S ETM TX done event status
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *      - true  TX done event triggered
- *      - false TX done event not triggered
- */
-static inline bool i2s_ll_get_etm_tx_threshold_event_status(i2s_dev_t *hw)
-{
-    uint32_t i2s_id = I2S_LL_GET_ID(hw);
-    switch (i2s_id) {
-        case 0:
-            return SOC_ETM.evt_st3.i2s0_evt_x_words_sent_st;
-        default:
-            HAL_ASSERT(false);
-    }
-}
-
-/**
- * @brief Get I2S ETM TX done event status
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *      - true  TX done event triggered
- *      - false TX done event not triggered
- */
-static inline bool i2s_ll_get_etm_rx_threshold_event_status(i2s_dev_t *hw)
-{
-    uint32_t i2s_id = I2S_LL_GET_ID(hw);
-    switch (i2s_id) {
-        case 0:
-            return SOC_ETM.evt_st3.i2s0_evt_x_words_received_st;
-        default:
-            HAL_ASSERT(false);
-    }
 }
 
 #ifdef __cplusplus
