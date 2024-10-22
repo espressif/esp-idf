@@ -389,13 +389,22 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         return args
 
     def _get_gdbgui_version(ctx: Context) -> Tuple[int, ...]:
-        completed_process = subprocess.run(['gdbgui', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        captured_output = completed_process.stdout.decode('utf-8', 'ignore')
+        try:
+            completed_process = subprocess.run(['gdbgui', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            subprocess_success = True
+            captured_output = completed_process.stdout.decode('utf-8', 'ignore')
+        except FileNotFoundError:
+            # This is happening at least with Python 3.12 when gdbgui is not installed
+            subprocess_success = False
 
-        if completed_process.returncode != 0:
+        if not subprocess_success or completed_process.returncode != 0:
             if sys.version_info[:2] >= (3, 11) and sys.platform == 'win32':
                 raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
                                  'See: https://github.com/espressif/esp-idf/issues/10116. '
+                                 'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
+            if sys.version_info[:2] >= (3, 13) and sys.platform != 'win32':
+                raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.12 or older. '
+                                 'See: https://github.com/cs01/gdbgui/issues/494. '
                                  'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
             raise FatalError('Error starting gdbgui. Please make sure gdbgui has been installed with '
                              '"install.{sh,bat,ps1,fish} --enable-gdbgui" and can be started. '
