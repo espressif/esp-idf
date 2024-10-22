@@ -95,6 +95,19 @@ static esp_err_t init_efuse_secure(void)
     }
 #endif
 
+#if CONFIG_ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
+    bool force_constant_time = true;
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        force_constant_time = false;
+    }
+#endif
+    if (!esp_efuse_read_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME) && force_constant_time) {
+        ESP_EARLY_LOGD(TAG, "Forcefully enabling ECC constant time operations");
+        ESP_RETURN_ON_ERROR(esp_efuse_write_field_bit(ESP_EFUSE_ECC_FORCE_CONST_TIME), TAG, "Failed to enable ECC constant time operations");
+    }
+#endif
+
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     // Permanently disable ROM download mode
     ESP_RETURN_ON_ERROR(esp_efuse_disable_rom_download_mode(), TAG, "Failed to disable ROM download mode");
