@@ -87,9 +87,7 @@ static void ecc_point_mul(const uint8_t *k_le, const uint8_t *x_le, const uint8_
     } else {
         ecc_hal_set_mode(ECC_MODE_POINT_MUL);
     }
-#ifdef SOC_ECC_CONSTANT_TIME_POINT_MUL
     ecc_hal_enable_constant_time_point_mul(true);
-#endif /* SOC_ECC_CONSTANT_TIME_POINT_MUL */
     ecc_hal_start_calc();
 
     while (!ecc_hal_is_calc_finished()) {
@@ -161,7 +159,7 @@ TEST(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1)
     test_ecc_point_mul_inner(false);
 }
 
-#if SOC_ECC_CONSTANT_TIME_POINT_MUL
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
 
 #define CONST_TIME_DEVIATION_PERCENT 0.002
 
@@ -561,7 +559,7 @@ TEST_GROUP_RUNNER(ecc)
 {
 #if SOC_ECC_SUPPORT_POINT_MULT
     RUN_TEST_CASE(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1);
-#if SOC_ECC_CONSTANT_TIME_POINT_MUL
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
     RUN_TEST_CASE(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1);
 #endif
 #endif

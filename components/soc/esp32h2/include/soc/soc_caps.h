@@ -521,6 +521,9 @@
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
+/*--------------------------- ECC CAPS ---------------------------------------*/
+#define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
+
 /*------------------------- ECDSA CAPS -------------------------*/
 #define SOC_ECDSA_USES_MPI                  (1)
 
