@@ -4,6 +4,7 @@ entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
         gdma: gdma_reset (noflash)
         gdma: gdma_start (noflash)
+        gdma_link: gdma_link_get_head_addr (noflash)
 
 [mapping:esp_lcd_hal]
 archive: libhal.a

@@ -78,29 +78,3 @@ void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id)
     }
 }
 #endif // SOC_LCDCAM_SUPPORTED
-
-void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, size_t len)
-{
-    size_t prepared_length = 0;
-    uint8_t *data = (uint8_t *)buffer;
-    dma_descriptor_t *desc = desc_head;
-    while (len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE) {
-        desc->dw0.suc_eof = 0; // not the end of the transaction
-        desc->dw0.size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
-        desc->dw0.length = DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
-        desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc->buffer = &data[prepared_length];
-        desc = desc->next; // move to next descriptor
-        prepared_length += DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
-        len -= DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
-    }
-    if (len) {
-        desc->dw0.suc_eof = 1; // end of the transaction
-        desc->dw0.size = len;
-        desc->dw0.length = len;
-        desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc->buffer = &data[prepared_length];
-        desc = desc->next; // move to next descriptor
-        prepared_length += len;
-    }
-}
