@@ -159,7 +159,7 @@ bounce buffer 与 PSRAM frame buffer
 
 .. note::
 
-    强烈建议在此模式下启用 Kconfig 选项：:ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA`，开启“PSRAM XIP（就地执行）”功能，使 CPU 能从 PSRAM 里而不是主 flash 中提取指令和只读数据。此外，即使想通过 SPI 1 写入主 flash，外部存储器 cache 也不会被禁用，应用程序便能正常显示 OTA 进度条。
+    强烈建议在此模式下启用 Kconfig 选项：:ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`，开启“PSRAM XIP（就地执行）”功能，使 CPU 能从 PSRAM 里而不是主 flash 中提取指令和只读数据。此外，即使想通过 SPI 1 写入主 flash，外部存储器 cache 也不会被禁用，应用程序便能正常显示 OTA 进度条。
 
 .. note::
 
@@ -200,8 +200,6 @@ bounce buffer 与 PSRAM frame buffer
         .flags.fb_in_psram = true, // 从 PSRAM 中分配 frame buffer
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
-
-请注意，此模式下还可以设置 :cpp:member:`esp_lcd_rgb_panel_config_t::bb_invalidate_cache` 标志。启用此功能，从 PSRAM 中读取 frame buffer 数据后可以释放 cache 行。但如果在 cache 行被释放时，另一个内核恰好将数据写入 frame buffer 中，则可能导致轻微的损坏（从技术上讲，在 cache 写回和调用失效之间的时间窗口内，对 frame buffer 的写入操作会被忽略）。
 
 .. _bounce_buffer_only:
 

@@ -3,17 +3,17 @@ RGB Interfaced LCD
 
 :link_to_translation:`zh_CN:[中文]`
 
-RGB LCD panel is allocated in one step: :cpp:func:`esp_lcd_new_rgb_panel`, with various configurations specified by :cpp:type:`esp_lcd_rgb_panel_config_t`.
+RGB LCD panel is created by :cpp:func:`esp_lcd_new_rgb_panel`, with various configurations specified in :cpp:type:`esp_lcd_rgb_panel_config_t`.
 
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::clk_src` selects the clock source for the RGB LCD controller. The available clock sources are listed in :cpp:type:`lcd_clock_source_t`.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` sets number of data lines used by the RGB interface. Currently, the supported value can be 8 or 16.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::bits_per_pixel` sets the number of bits per pixel. This is different from :cpp:member:`esp_lcd_rgb_panel_config_t::data_width`. By default, if you set this field to 0, the driver will automatically adjust the bpp to the value set in :cpp:member:`esp_lcd_rgb_panel_config_t::data_width`. But in some cases, these two values must be different. For example, a serial RGB interfaced LCD only needs ``8`` data lines, but the color width can reach to ``RGB888``, i.e., the :cpp:member:`esp_lcd_rgb_panel_config_t::bits_per_pixel` should be set to ``24``.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::hsync_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::vsync_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::de_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::pclk_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::disp_gpio_num` and :cpp:member:`esp_lcd_rgb_panel_config_t::data_gpio_nums` are GPIO pins used by the RGB LCD controller. If any of them are not used, please set them to `-1`.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::dma_burst_size` sets the DMA transfer burst size. The value must be a power of 2.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px` sets the size of bounce buffer. This is only necessary for a so-called "bounce buffer" mode. Please refer to :ref:`bounce_buffer_with_single_psram_frame_buffer` for more information.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::timings` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_rgb_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` sets whether to allocate the frame buffer from PSRAM or not. Please refer to :ref:`single_frame_buffer_in_psram` for more information.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` sets the number of frame buffers allocated by the driver. For backward compatibility, ``0`` means to allocate ``one`` frame buffer. Please use :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` if you do not want to allocate any frame buffer.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::clk_src` selects the clock source of the RGB LCD controller. The available clock sources are listed in :cpp:type:`lcd_clock_source_t`.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` sets number of data lines consumed by the RGB interface. It can be 8/16/24.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::bits_per_pixel` specifies the number of bits per pixel. This differs from :cpp:member:`esp_lcd_rgb_panel_config_t::data_width`. By default, if this field is set to 0, the driver will automatically match the bpp to the value set in :cpp:member:`esp_lcd_rgb_panel_config_t::data_width`. However, in some scenarios, these values need to be different. For instance, a serial RGB interfaced LCD might only require ``8`` data lines, but the color depth could be ``RGB888``, meaning :cpp:member:`esp_lcd_rgb_panel_config_t::bits_per_pixel` should be set to ``24``.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::hsync_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::vsync_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::de_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::pclk_gpio_num`, :cpp:member:`esp_lcd_rgb_panel_config_t::disp_gpio_num` and :cpp:member:`esp_lcd_rgb_panel_config_t::data_gpio_nums` are GPIO pins consumed by the RGB LCD controller. If any of them are not used, please set them to ``-1``.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::dma_burst_size` specifies the size of the DMA transfer burst. Ensure this value is a power of 2.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px` specifies the size of the bounce buffer. This is required only for the "bounce buffer" mode. For more details, see :ref:`bounce_buffer_with_single_psram_frame_buffer`.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::timings` specifies the timing parameters unique to the LCD panel. These parameters, detailed in :cpp:type:`esp_lcd_rgb_timing_t`, include the LCD resolution and blanking porches. Ensure they are set according to your LCD's datasheet.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` determines if the frame buffer should be allocated from PSRAM. For further details, see :ref:`single_frame_buffer_in_psram`.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` specifies how many frame buffers the driver should allocate. For backward compatibility, setting this to ``0`` will allocate a single frame buffer. If you don't want to allocate any frame buffer, use :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` instead.
     - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` determines whether frame buffer will be allocated. When it is set, no frame buffer will be allocated. This is also called the :ref:`bounce_buffer_only` mode.
 
 RGB LCD Frame Buffer Operation Modes
@@ -65,7 +65,7 @@ This is the default and simplest and you do not have to specify flags or bounce 
 Single Frame Buffer in PSRAM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have PSRAM and want to store the frame buffer there rather than in the limited internal memory, the LCD peripheral will use EDMA to fetch frame data directly from the PSRAM, bypassing the internal cache. You can enable this feature by setting the :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` to ``true``. The downside of this is that when both the CPU as well as EDMA need access to the PSRAM, the bandwidth will be **shared** between them, that is, EDMA gets half and the CPU gets the other half. If there are other peripherals using EDMA as well, with a high enough pixel clock, they may cause starvation of the LCD peripheral, resulting in display corruption. However, if the pixel clock is low enough to avoid this issue, it provides a solution with minimal CPU intervention.
+If you have PSRAM and prefer to store the frame buffer there instead of using the limited internal memory, the LCD peripheral can utilize EDMA to fetch frame data directly from PSRAM, bypassing the internal cache. This can be enabled by setting :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` to ``true``. The trade-off is that when both the CPU and EDMA need access to PSRAM, the bandwidth is **shared** between them, meaning EDMA and the CPU each get half. If other peripherals are also using EDMA, a high pixel clock might cause LCD peripheral starvation, leading to display corruption. However, with a sufficiently low pixel clock, this approach minimizes CPU intervention.
 
 .. only:: esp32s3
 
@@ -112,7 +112,7 @@ If you have PSRAM and want to store the frame buffer there rather than in the li
 Double Frame Buffer in PSRAM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To avoid tearing effect, using two screen sized frame buffers is the easiest approach. In this mode, the frame buffer can only be allocated from PSRAM, because of the limited internal memory. The frame buffer that the CPU write to and the frame buffer that the EDMA read from are guaranteed to be different and independent. The EDMA will only switch between the two frame buffers when the previous write operation is finished and the current frame has been sent to the LCD. The downside of this mode is that, you have to maintain the synchronization between the two frame buffers.
+To prevent tearing effects, the simplest method is to use two screen-sized frame buffers. Given the limited internal memory, these buffers must be allocated from PSRAM. This ensures that the frame buffer being written to by the CPU and the one being read by the EDMA are always distinct and independent. The EDMA will only switch between the two buffers once the current write operation is complete and the frame has been fully transmitted to the LCD. The main drawback of this approach is the need to maintain synchronization between the two frame buffers.
 
 .. code:: c
 
@@ -155,15 +155,15 @@ To avoid tearing effect, using two screen sized frame buffers is the easiest app
 Bounce Buffer with Single PSRAM Frame Buffer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This mode allocates two so-called ``bounce buffers`` from the internal memory, and a main frame buffer that is still in PSRAM. This mode is selected by setting the :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` flag and additionally specifying a non-zero :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px` value. The bounce buffers only need to be large enough to hold a few lines of display data, which is significantly less than the main frame buffer. The LCD peripheral uses DMA to read data from one of the bounce buffers, and meanwhile an interrupt routine uses the CPU DCache to copy data from the main PSRAM frame buffer into the other bounce buffer. Once the LCD peripheral has finished reading the bounce buffer, the two buffers change place and the CPU can fill the others. The advantage of this mode is that, you can achieve higher pixel clock frequency. As the bounce buffers are larger than the FIFOs in the EDMA path, this method is also more robust against short bandwidth spikes. The downside is a major increase in CPU use and that the LCD **CAN NOT** work if we disable the cache of the external memory, via e.g., OTA or NVS write to the main flash.
+This mode allocates two "bounce buffers" from internal memory and a main frame buffer in PSRAM. To enable this mode, set the :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` flag and specify a non-zero value for :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px`. The bounce buffers only need to hold a few lines of display data, which is much smaller than the main frame buffer. The LCD peripheral uses DMA to read data from one bounce buffer while an interrupt routine uses the CPU DCache to copy data from the main PSRAM frame buffer into the other bounce buffer. Once the LCD peripheral finishes reading from the bounce buffer, the buffers swap roles, allowing the CPU to fill the other one. The advantage of this mode is achieving a higher pixel clock frequency. Since the bounce buffers are larger than the FIFOs in the EDMA path, this method is also more robust against short bandwidth spikes. The downside is a significant increase in CPU usage, and the LCD **CANNOT** function if the external memory cache is disabled, such as during OTA or NVS writes to the main flash.
 
 .. note::
 
-    It is highly recommended to turn on the "PSRAM XIP (Execute In Place)" feature in this mode by enabling the Kconfig options: :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA`, which allows the CPU to fetch instructions and readonly data from the PSRAM instead of the main flash. What is more, the external memory cache will not be disabled even if you attempt to write to the main flash through SPI 1. This makes it possible to display an OTA progress bar for your application.
+    For optimal performance in this mode, it is highly recommended to enable the "PSRAM XIP (Execute In Place)" feature by turning on the Kconfig option: :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`. This allows the CPU to fetch instructions and read-only data directly from PSRAM instead of the main flash. Additionally, the external memory cache remains active even when writing to the main flash via SPI 1, making it feasible to display an OTA progress bar during your application updates.
 
 .. note::
 
-    This mode still has another problem which is also caused by insufficient PSRAM bandwidth. For example, when your draw buffers are allocated from PSRAM, and their contents are copied into the internal frame buffer on CPU Core 1, on CPU Core 0, there is another memory copy happening in the DMA EOF ISR. In this situation, both CPUs are accessing the PSRAM by cache and sharing the bandwidth of the PSRAM. This increases the memory copy time that spent in the DMA EOF ISR significantly. The driver can not switch the bounce buffer in time, thus leading to a shift on the LCD screen. Although the driver can detect such a condition and perform a restart in the LCD's VSYNC interrupt handler, you still can see a flickering on the screen.
+    This mode also faces issues due to limited PSRAM bandwidth. For instance, if your draw buffers are in PSRAM and their contents are copied to the internal frame buffer by CPU Core 1, while CPU Core 0 is performing another memory copy in the DMA EOF ISR, both CPUs will be accessing PSRAM via cache, sharing its bandwidth. This significantly increases the memory copy time in the DMA EOF ISR, causing the driver to fail in switching the bounce buffer promptly, resulting in a screen shift. Although the driver can detect this condition and restart in the LCD's VSYNC interrupt handler, you may still notice flickering on the screen.
 
 .. code:: c
 
@@ -201,8 +201,6 @@ This mode allocates two so-called ``bounce buffers`` from the internal memory, a
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
-Note that this mode also allows for a :cpp:member:`esp_lcd_rgb_panel_config_t::bb_invalidate_cache` flag to be set. Enabling this frees up the cache lines after they are used to read out the frame buffer data from PSRAM, but it may lead to slight corruption if the other core writes data to the frame buffer at the exact time the cache lines are freed up. (Technically, a write to the frame buffer can be ignored if it falls between the cache writeback and the cache invalidate calls.)
-
 .. _bounce_buffer_only:
 
 Bounce Buffer Only
@@ -212,8 +210,8 @@ This mode is similar to :ref:`bounce_buffer_with_single_psram_frame_buffer`, but
 
 .. note::
 
-    In a well-designed embedded application, situations where the DMA can not deliver data as fast as the LCD consumes it should be avoided. However, such scenarios can happen in theory. In the {IDF_TARGET_NAME} hardware, this leads to the LCD simply outputting dummy bytes while DMA waits for data. If we were to run DMA in a stream fashion, a desynchronization between the LCD address for which the DMA reads the data and the LCD address for which the LCD peripheral outputs data would occur, leading to a **permanently** shifted image.
-    In order to stop this from happening, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, so the driver can restart the DMA in the VBlank interrupt automatically, or call :cpp:func:`esp_lcd_rgb_panel_restart` to restart the DMA manually. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted in the next VSYNC event.
+    In a well-designed embedded application, situations where the DMA cannot deliver data as fast as the LCD consumes it should be avoided. However, such scenarios can theoretically occur. In the {IDF_TARGET_NAME} hardware, this results in the LCD outputting dummy bytes while the DMA waits for data. If the DMA were to run in a continuous stream, it could cause a desynchronization between the LCD address from which the DMA reads data and the address from which the LCD peripheral outputs data, leading to a **permanently** shifted image.
+    To prevent this, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, allowing the driver to automatically restart the DMA during the VBlank interrupt, or call :cpp:func:`esp_lcd_rgb_panel_restart` to manually restart the DMA. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted at the next VSYNC event.
 
 API Reference
 -------------

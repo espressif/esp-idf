@@ -59,6 +59,10 @@ config SOC_LCDCAM_I80_LCD_SUPPORTED
     bool
     default y
 
+config SOC_LCDCAM_RGB_LCD_SUPPORTED
+    bool
+    default y
+
 config SOC_MIPI_CSI_SUPPORTED
     bool
     default y
@@ -1175,6 +1179,10 @@ config SOC_LCD_I80_SUPPORTED
     bool
     default y
 
+config SOC_LCD_RGB_SUPPORTED
+    bool
+    default y
+
 config SOC_LCDCAM_I80_NUM_BUSES
     int
     default 1
@@ -1186,6 +1194,14 @@ config SOC_LCDCAM_I80_BUS_WIDTH
 config SOC_LCDCAM_RGB_NUM_PANELS
     int
     default 1
+
+config SOC_LCDCAM_RGB_DATA_WIDTH
+    int
+    default 24
+
+config SOC_LCD_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
 
 config SOC_MCPWM_GROUPS
     int

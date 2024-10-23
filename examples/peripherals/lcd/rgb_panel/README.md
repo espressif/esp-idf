@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-S3 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # RGB LCD Panel Example
 
@@ -19,8 +19,8 @@ This example uses 3 kinds of **buffering mode**:
 
 ### Hardware Required
 
-* An ESP development board, which has RGB LCD peripheral supported and **Octal PSRAM** onboard
-* A general RGB panel, 16 bit-width, with HSYNC, VSYNC and DE signal
+* An ESP development board, which supports the RGB LCD peripheral
+* A general RGB panel, 16/24 bit-width, with HSYNC, VSYNC and DE signal
 * An USB cable for power supply and programming
 
 ### Hardware Connection
@@ -36,7 +36,7 @@ The connection between ESP Board and the LCD is as follows:
 |                       |              |                   |
 |                   PCLK+--------------+PCLK               |
 |                       |              |                   |
-|             DATA[15:0]+--------------+DATA[15:0]         |
+|              DATA[N:0]+--------------+DATA[N:0]          |
 |                       |              |                   |
 |                  HSYNC+--------------+HSYNC              |
 |                       |              |                   |
@@ -55,9 +55,9 @@ The connection between ESP Board and the LCD is as follows:
 
 Run `idf.py menuconfig` and go to `Example Configuration`:
 
-1. Choose whether to `Use double Frame Buffer`
-2. Choose whether to `Avoid tearing effect` (available only when step `1` was chosen to false)
-3. Choose whether to `Use bounce buffer` (available only when step `1` was chosen to false)
+1. `Use single frame buffer`: The RGB LCD driver allocates one frame buffer and mount it to the DMA. The example also allocates one draw buffer for the LVGL library. The draw buffer contents are copied to the frame buffer by the CPU.
+2. `Use double frame buffer`: The RGB LCD driver allocates two frame buffers and mount them to the DMA. The LVGL library draws directly to the offline frame buffer while the online frame buffer is displayed by the RGB LCD controller.
+3. `Use bounce buffer`: The RGB LCD driver allocates one frame buffer and two bounce buffers. The bounce buffers are mounted to the DMA. The frame buffer contents are copied to the bounce buffers by the CPU. The example also allocates one draw buffer for the LVGL library. The draw buffer contents are copied to the frame buffer by the CPU.
 4. Choose the number of LCD data lines in `RGB LCD Data Lines`
 5. Set the GPIOs used by RGB LCD peripheral in `GPIO assignment`, e.g. the synchronization signals (HSYNC, VSYNC, DE) and the data lines
 
@@ -97,16 +97,13 @@ I (1102) main_task: Returned from app_main()
 
 * Why the LCD doesn't light up?
   * Please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/rgb_lcd_example_main.c).
-* No memory for frame buffer
+* Where to allocate the frame buffer?
   * The frame buffer of RGB panel is located in ESP side (unlike other controller based LCDs, where the frame buffer is located in external chip). As the frame buffer usually consumes much RAM (depends on the LCD resolution and color depth), we recommend to put the frame buffer into PSRAM (like what we do in this example). However, putting frame buffer in PSRAM will limit the maximum PCLK due to the bandwidth of **SPI0**.
-* LCD screen drift
+* Why LCD screen drifts?
   * Slow down the PCLK frequency
   * Adjust other timing parameters like PCLK clock edge (by `pclk_active_neg`), sync porches like VBP (by `vsync_back_porch`) according to your LCD spec
-  * Enable `CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and `CONFIG_SPIRAM_RODATA`, which can saves some bandwidth of SPI0 from being consumed by ICache.
-* LCD screen tear effect
-  * Using double frame buffers
-  * Or adding an extra synchronization mechanism between writing (by Cache) and reading (by EDMA) the frame buffer.
-* Low PCLK frequency
+  * Enable `CONFIG_SPIRAM_XIP_FROM_PSRAM`, which can saves some bandwidth of SPI0 from being consumed by ICache.
+* How to further increase the PCLK frequency?
   * Enable `CONFIG_EXAMPLE_USE_BOUNCE_BUFFER`, which will make the LCD controller fetch data from internal SRAM (instead of the PSRAM), but at the cost of increasing CPU usage.
   * Enable `CONFIG_SPIRAM_XIP_FROM_PSRAM` can also help if the you're not using the bounce buffer mode. These two configurations can save some **SPI0** bandwidth from being consumed by ICache.
 * Why the RGB timing is correct but the LCD doesn't show anything?

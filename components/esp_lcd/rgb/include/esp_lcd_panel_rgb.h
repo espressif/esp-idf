@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,14 +77,32 @@ typedef struct {
 } esp_lcd_rgb_panel_event_data_t;
 
 /**
- * @brief RGB LCD VSYNC event callback prototype
+ * @brief A general function callback prototype for RGB panel driver
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
- * @param[in] edata Panel event data, fed by driver
+ * @param[in] panel LCD panel handle, which is created by factory API like `esp_lcd_new_rgb_panel`
+ * @param[in] edata RGB panel event data, provided by driver
  * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
+typedef bool (*esp_lcd_rgb_panel_general_cb_t)(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when the user draw buffer is complete.
+ *        The draw buffer can be recycled after this event.
+ */
+typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_draw_buf_complete_cb_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when a whole frame buffer is sent to the LCD DMA.
+ *        The LCD hardware may still need some blank time to finish the refresh.
+ */
+typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_frame_buf_complete_cb_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when the LCD controller sends the VSYNC signal.
+ *        It means, the LCD hardware should be ready, and after some blank time, the next frame will be flushed to the LCD controller.
+ */
+typedef esp_lcd_rgb_panel_general_cb_t esp_lcd_rgb_panel_vsync_cb_t;
 
 /**
  * @brief Prototype for function to re-fill a bounce buffer, rather than copying from the frame buffer
@@ -99,15 +117,10 @@ typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const
  */
 typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
-/**
- * @brief Prototype for the function to be called when the bounce buffer finish copying the entire frame.
- *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
- * @param[in] edata Panel event data, fed by driver
- * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_register_event_callbacks()`
- * @return Whether a high priority task has been waken up by this function
- */
-typedef bool (*esp_lcd_rgb_panel_bounce_buf_finish_cb_t)(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
+/** @cond */
+/// for backward compatible
+typedef esp_lcd_rgb_panel_frame_buf_complete_cb_t esp_lcd_rgb_panel_bounce_buf_finish_cb_t __attribute__((deprecated("esp_lcd_rgb_panel_bounce_buf_finish_cb_t is deprecated, use esp_lcd_rgb_panel_frame_buf_complete_cb_t instead")));
+/** @endcond */
 
 /**
  * @brief Group of supported RGB LCD panel callbacks
@@ -115,9 +128,15 @@ typedef bool (*esp_lcd_rgb_panel_bounce_buf_finish_cb_t)(esp_lcd_panel_handle_t 
  * @note When CONFIG_LCD_RGB_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
 typedef struct {
-    esp_lcd_rgb_panel_vsync_cb_t on_vsync;                      /*!< VSYNC event callback */
-    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;     /*!< Bounce buffer empty callback. */
-    esp_lcd_rgb_panel_bounce_buf_finish_cb_t on_bounce_frame_finish;  /*!< Bounce buffer finish callback. */
+    esp_lcd_rgb_panel_draw_buf_complete_cb_t on_color_trans_done;  /*!< Invoked when user's color buffer copied to the internal frame buffer.
+                                                                      This is an indicator that the draw buffer can be recycled safely.
+                                                                      But doesn't mean the draw buffer finishes the refreshing to the screen. */
+    esp_lcd_rgb_panel_vsync_cb_t on_vsync;                         /*!< VSYNC event callback */
+    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty;        /*!< Bounce buffer empty callback. */
+    union {
+        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_bounce_frame_finish __attribute__((deprecated)); /*!< Bounce buffer finish callback. */
+        esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete;  /*!< A whole frame buffer was just sent to the LCD DMA */
+    };
 } esp_lcd_rgb_panel_event_callbacks_t;
 
 /**
@@ -134,7 +153,7 @@ typedef struct {
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
     size_t sram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
     union {
-        size_t psram_trans_align; /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
+        size_t psram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
         size_t dma_burst_size;    /*!< DMA burst size, in bytes */
     };
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
@@ -142,11 +161,10 @@ typedef struct {
     int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */
     int pclk_gpio_num;            /*!< GPIO used for PCLK signal, set to -1 if it's not used */
     int disp_gpio_num;            /*!< GPIO used for display control signal, set to -1 if it's not used */
-    int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
+    int data_gpio_nums[SOC_LCDCAM_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
     struct {
         uint32_t disp_active_low: 1;     /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
-        uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer when `esp_lcd_panel_draw_bitmap` is called.
-                                              This is useful when the LCD screen has a GRAM and can refresh the LCD by itself. */
+        uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer in `esp_lcd_panel_draw_bitmap` and `esp_lcd_rgb_panel_refresh`. */
         uint32_t fb_in_psram: 1;         /*!< If this flag is enabled, the frame buffer will be allocated from PSRAM, preferentially */
         uint32_t double_fb: 1;           /*!< If this flag is enabled, the driver will allocate two screen sized frame buffer, same as num_fbs=2 */
         uint32_t no_fb: 1;               /*!< If this flag is enabled, the driver won't allocate frame buffer.
