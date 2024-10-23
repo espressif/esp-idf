@@ -555,7 +555,7 @@ flash 加密测试
 
 flash 加密是一项硬件功能，需要物理烧录 eFuse ``key`` 和 ``FLASH_CRYPT_CNT``。如果 flash 加密实际未启用，那么启用 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项只是提供了测试的可能性，而不会加密 flash 中的任何内容，即使日志中显示了加密操作。
 
-为此，可使用 :cpp:func:`bootloader_flash_write` 函数。但是，如果运行应用程序时芯片已启用 flash 加密，或者以 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项创建了启动加载程序，则 flash 加密/解密操作会正常进行。这意味着数据写入加密 flash 分区时被加密，从加密分区读取时被解密。
+为此，可使用 :cpp:func:`bootloader_flash_write` 函数。但是，如果运行应用程序时芯片已启用 flash 加密，或者以 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项创建了引导加载程序，则 flash 加密/解密操作会正常进行。这意味着数据写入加密 flash 分区时被加密，从加密分区读取时被解密。
 
 ``espefuse.py``
 ^^^^^^^^^^^^^^^

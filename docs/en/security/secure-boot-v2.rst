@@ -31,7 +31,7 @@ Secure Boot v2
 
         For ESP32 before chip revision v3.0, refer to :doc:`secure-boot-v1`. It is recommended to use Secure Boot v2 if you have a chip revision that supports it. Secure Boot v2 is safer and more flexible than Secure Boot V1.
 
-    Secure Boot v2 uses {IDF_TARGET_SBV2_SCHEME} based app and bootloader :ref:`second-stage-bootloader` verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
+    Secure Boot v2 uses {IDF_TARGET_SBV2_SCHEME} based app and :ref:`second-stage-bootloader` verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
 
 .. only:: esp32
 
@@ -49,7 +49,7 @@ Secure Boot v2
 Background
 ----------
 
-Secure Boot protects a device from running any unauthorized (i.e., unsigned) code by checking that each piece of software that is being booted is signed. On an {IDF_TARGET_NAME}, these pieces of software include the second stage bootloader and each application binary. Note that the first stage bootloader does not require signing as it is ROM code and thus cannot be changed.
+Secure Boot protects a device from running any unauthorized (i.e., unsigned) code by checking that each piece of software that is being booted is signed. On an {IDF_TARGET_NAME}, these pieces of software include the second stage bootloader and each application binary. Note that the first stage (ROM) bootloader does not require signing as it is ROM code and thus cannot be changed.
 
 .. only:: esp32 or (SOC_SECURE_BOOT_V2_RSA and not SOC_SECURE_BOOT_V2_ECC)
 
@@ -65,7 +65,7 @@ Secure Boot protects a device from running any unauthorized (i.e., unsigned) cod
 
 The Secure Boot process on {IDF_TARGET_NAME} involves the following steps:
 
-1. The first stage bootloader (i.e. ROM boot), which is residing in ROM, loads the second stage bootloader, and the second stage bootloader's {IDF_TARGET_SBV2_SCHEME} signature is verified. Only if the verification is successful, the second stage bootloader is executed.
+1. The first stage (ROM) bootloader loads the second stage bootloader, and the second stage bootloader's {IDF_TARGET_SBV2_SCHEME} signature is verified. Only if the verification is successful, the second stage bootloader is executed.
 
 2. When the second stage bootloader loads a particular application image, the application's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the application image is executed.
 
@@ -88,7 +88,7 @@ Advantages
       - Conservatively: The old key is revoked after the bootloader and application have successfully migrated to a new key.
       - Aggressively: The key is revoked as soon as verification with this key fails.
 
-- The same image format and signature verification method is applied for applications and the software bootloader.
+- The same image format and signature verification method is applied for applications and the second stage bootloader.
 
 - No secrets are stored on the device. Therefore, it is immune to passive side-channel attacks, e.g., timing or power analysis.
 
@@ -415,7 +415,7 @@ How To Enable Secure Boot v2
 
   ``idf.py flash`` does not flash the bootloader if Secure Boot is enabled.
 
-10. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable Secure Boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that Secure Boot is enabled and no errors have occurred due to the build configuration.
+10. Reset the {IDF_TARGET_NAME} and it will boot the second stage bootloader you flashed. The second stage bootloader will enable Secure Boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that Secure Boot is enabled and no errors have occurred due to the build configuration.
 
 .. note::
 
@@ -425,7 +425,7 @@ How To Enable Secure Boot v2
 
   If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
-11. On subsequent boots, the Secure Boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image using the validated public key portion of its appended signature block.
+11. On subsequent boots, the Secure Boot hardware will verify that the second stage bootloader has not changed, and the second stage bootloader will verify the signed app image using the validated public key portion of its appended signature block.
 
 
 Restrictions After Secure Boot Is Enabled
@@ -589,9 +589,9 @@ Secure Boot Best Practices
     * Between 1 and 3 {IDF_TARGET_SBV2_KEY} public key pairs (Keys #0, #1, #2) should be computed independently and stored separately.
     * The KEY_DIGEST eFuses should be write-protected after being programmed.
     * The unused KEY_DIGEST slots must have their corresponding KEY_REVOKE eFuse burned to permanently disable them. This must happen before the device leaves the factory.
-    * The eFuses can either be written by the software bootloader during first boot after enabling ``Secure Boot v2`` from menuconfig or can be done using ``espefuse.py`` which communicates with the serial bootloader program in ROM.
+    * The eFuses can either be written by the second stage bootloader during first boot after enabling ``Secure Boot v2`` from menuconfig or can be done using ``espefuse.py`` which communicates with the serial bootloader program in ROM.
     * The KEY_DIGESTs should be numbered sequentially beginning at key digest #0. If key digest #1 is used, key digest #0 should be used. If key digest #2 is used, key digest #0 & #1 must be used.
-    * The software bootloader is non-OTA upgradeable, and is signed using at least one, possibly all three, private keys and flashed in the factory.
+    * The second stage bootloader is non-OTA upgradeable, and is signed using at least one, possibly all three, private keys and flashed in the factory.
     * Apps should only be signed with a single private key, with the others being stored securely elsewhere. However, they may be signed with multiple private keys if some are being revoked, see :ref:`secure-boot-v2-key-revocation` below.
 
 
@@ -672,8 +672,7 @@ The following sections contain low-level reference descriptions of various Secur
 
 Secure Boot is integrated into the ESP-IDF build system, so ``idf.py build`` will sign an app image, and ``idf.py bootloader`` will produce a signed bootloader if :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is enabled.
 
-However, it is possible to use the ``idf.py`` or the ``openssl`` tool to generate standalone signatures and verify them. Using ``idf.py`` is recommended, but in case you need to generate or verify signatures in non-ESP-IDF environments,
-you could also use the ``openssl`` commands as the Secure Boot V2 signature generation is compliant with the standard signing algorithms.
+However, it is possible to use the ``idf.py`` or the ``openssl`` tool to generate standalone signatures and verify them. Using ``idf.py`` is recommended, but in case you need to generate or verify signatures in non-ESP-IDF environments, you could also use the ``openssl`` commands as the Secure Boot v2 signature generation is compliant with the standard signing algorithms.
 
 Generating and Verifying signatures using ``idf.py``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

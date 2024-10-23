@@ -13,7 +13,7 @@
 分区表 API
 -------------------
 
-ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序、各种应用程序二进制文件、数据及文件系统等。请参阅 :doc:`/api-guides/partition-tables`，查看详细信息。
+ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导加载程序、各种应用程序二进制文件、数据及文件系统等。请参阅 :doc:`/api-guides/partition-tables`，查看详细信息。
 
 该组件在 ``esp_partition.h`` 中声明了一些 API 函数，用以枚举在分区表中找到的分区，并对这些分区执行操作：
 

@@ -260,7 +260,7 @@ MbedTLS 功能
 
 本文档仅涉及 ESP-IDF 应用程序的二进制文件大小，而不涉及 ESP-IDF :ref:`second-stage-bootloader`。
 
-关于 ESP-IDF 引导加载程序二进制文件大小的讨论，参阅 :ref:`bootloader-size`。
+关于 ESP-IDF 引导加载程序二进制文件大小的讨论，请参阅 :ref:`bootloader-size`。
 
 IRAM 二进制文件大小
 ------------------------------------

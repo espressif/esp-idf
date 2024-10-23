@@ -30,7 +30,7 @@ Here is the summary printed for the "Single factory app, no OTA" configuration::
   phy_init, data, phy,     0xf000,  0x1000,
   factory,  app,  factory, 0x10000, 1M,
 
-* At a 0x10000 (64 KB) offset in the flash is the app labelled "factory". The bootloader will run this app by default.
+* At a 0x10000 (64 KB) offset in the flash is the app labelled "factory". The bootloader runs this app by default.
 * There are also two data regions defined in the partition table for storing NVS library partition and PHY init data.
 
 Here is the summary printed for the "Factory app, two OTA definitions" configuration::
@@ -89,7 +89,7 @@ If writing in C++ then specifying a application-defined partition type requires 
 
     static const esp_partition_type_t APP_PARTITION_TYPE_A = (esp_partition_type_t)0x40;
 
-The ESP-IDF bootloader ignores any partition types other than ``app`` (0x00) and ``data`` (0x01).
+The bootloader ignores any partition types other than ``app`` (0x00) and ``data`` (0x01).
 
 SubType
 ~~~~~~~

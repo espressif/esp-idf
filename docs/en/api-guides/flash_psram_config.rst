@@ -73,7 +73,7 @@ To enable PSRAM, please enable the :ref:`CONFIG_SPIRAM` under ``Component config
 
 .. note::
 
-    If a board with Octal flash resets before the second-stage bootloader, please refer to :ref:`Error Handling Chapter <flash-psram-error>`.
+    If a board with Octal flash resets before the second stage bootloader, please refer to :ref:`Error Handling Chapter <flash-psram-error>`.
 
 
 .. _flash-psram-combination:
@@ -228,7 +228,7 @@ F4R4 Hardware
 Error Handling
 --------------
 
-1. If a board with Octal flash resets before the second-stage bootloader:
+1. If a board with Octal flash resets before the second stage bootloader:
 
     .. code-block:: c
 
@@ -243,7 +243,7 @@ Error Handling
 
    this may mean that the necessary eFuses are not correctly burnt. Please check the eFuse bits of the chip using ``idf.py efuse-summary``.
 
-   The ROM bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, ROM bootloader may not be able to read from the flash and load the following images.
+   The first stage (ROM) bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, the first stage (ROM) bootloader may not be able to read from the flash and load the following images.
 
 2. If you enabled :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`, and there's an error log saying:
 

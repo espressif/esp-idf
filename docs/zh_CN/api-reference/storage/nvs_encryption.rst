@@ -98,7 +98,7 @@ NVS 密钥分区
             # "Active security features detected, erasing flash is disabled as a safety measure.  Use --force to override ..."
             parttool.py --esptool-erase-args=force --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
-由于密钥分区被标记为 ``encrypted``，且 :doc:`../../security/flash-encryption` 已启用，引导程序会在首次启动时使用 flash 加密密钥对此分区进行加密。
+由于密钥分区被标记为 ``encrypted``，且 :doc:`../../security/flash-encryption` 已启用，引导加载程序会在首次启动时使用 flash 加密密钥对此分区进行加密。
 
 一个应用程序可以使用不同的密钥对不同的 NVS 分区进行加密，从而拥有多个密钥分区。应用程序应为加密或解密操作提供正确的密钥分区和密钥信息。
 

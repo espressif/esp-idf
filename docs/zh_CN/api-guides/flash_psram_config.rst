@@ -73,7 +73,7 @@ SPI Flash 和片外 SPI RAM 配置
 
 .. note::
 
-    如果配有八线 flash 的开发板在第二阶段引导加载程序之前复位，请参考 :ref:`错误处理章节 <flash-psram-error>`。
+    如果配有八线 flash 的开发板在二级引导加载程序之前复位，请参考 :ref:`错误处理章节 <flash-psram-error>`。
 
 
 .. _flash-psram-combination:
@@ -228,7 +228,7 @@ F4R4 硬件
 错误处理
 --------
 
-1. 如果配有八线 flash 的开发板在第二阶段引导加载程序之前复位:
+1. 如果配有八线 flash 的开发板在二级引导加载程序之前复位:
 
     .. code-block:: c
 
@@ -243,7 +243,7 @@ F4R4 硬件
 
    这可能意味着必要的 efuse 未得到正确烧录。请使用命令 ``espefuse.py summary``，检查芯片的 eFuse 位。
 
-   ROM 引导加载程序可通过 eFuse 位 ``FLASH_TYPE`` 将 flash 复位为默认模式（SPI 模式）。如果未烧录此位，且 flash 处于 OPI 模式，则 ROM 引导加载程序可能无法从 flash 中读取并加载以下图像。
+   一级 (ROM) 引导加载程序可通过 eFuse 位 ``FLASH_TYPE`` 将 flash 复位为默认模式（SPI 模式）。如果未烧录此位，且 flash 处于 OPI 模式，则一级 (ROM) 引导加载程序可能无法从 flash 中读取并加载以下图像。
 
 2. 如果启用 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH` 后出现如下错误日志：
 

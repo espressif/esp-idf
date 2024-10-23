@@ -30,7 +30,7 @@
    phy_init, data, phy,     0xf000,  0x1000,
    factory,  app,  factory, 0x10000, 1M,
 
--  flash 的 0x10000 (64 KB) 偏移地址处存放一个标记为 "factory" 的二进制应用程序，且启动加载器将默认加载这个应用程序。
+-  flash 的 0x10000 (64 KB) 偏移地址处存放一个标记为 "factory" 的二进制应用程序。引导加载程序默认加载这个应用程序。
 -  分区表中还定义了两个数据区域，分别用于存储 NVS 库专用分区和 PHY 初始化数据。
 
 以下是 "Factory app, two OTA definitions" 选项的分区表信息摘要::
@@ -45,7 +45,7 @@
   ota_1,    app,  ota_1,   0x210000, 1M,
 
 -  分区表中定义了三个应用程序分区，这三个分区的类型都被设置为 “app”，但具体 app 类型不同。其中，位于 0x10000 偏移地址处的为出厂应用程序 (factory)，其余两个为 OTA 应用程序（ota_0，ota_1）。
--  新增了一个名为 “otadata” 的数据分区，用于保存 OTA 升级时需要的数据。启动加载器会查询该分区的数据，以判断该从哪个 OTA 应用程序分区加载程序。如果 “otadata” 分区为空，则会执行出厂程序。
+-  新增了一个名为 “otadata” 的数据分区，用于保存 OTA 升级时需要的数据。引导加载程序会查询该分区的数据，以判断该从哪个 OTA 应用程序分区加载程序。如果 “otadata” 分区为空，则会执行出厂程序。
 
 创建自定义分区表
 ----------------
@@ -85,7 +85,7 @@ Type 字段可以指定为 app (0x00) 或者 data (0x01)，也可以直接使用
 
     static const esp_partition_type_t APP_PARTITION_TYPE_A = (esp_partition_type_t)0x40;
 
-注意，启动加载器将忽略 ``app`` (0x00) 和 ``data`` (0x01) 以外的其他分区类型。
+注意，引导加载程序会忽略 ``app`` (0x00) 和 ``data`` (0x01) 以外的其他分区类型。
 
 SubType 字段
 ~~~~~~~~~~~~
@@ -97,13 +97,13 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 
 * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或者 ``test`` (0x20)。
 
-   -  ``factory`` (0x00) 是默认的 app 分区。启动加载器将默认加载该应用程序。但如果存在类型为 data/ota 分区，则启动加载器将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
+   -  ``factory`` (0x00) 是默认的 app 分区。引导加载程序默认加载该应用程序。但如果存在类型为 data/ota 的分区，则引导加载程序将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
 
       -  OTA 升级永远都不会更新 factory 分区中的内容。
       -  如果你希望在 OTA 项目中预留更多 flash，可以删除 factory 分区，转而使用 ota_0 分区。
 
-   -  ota_0 (0x10) … ota_15 (0x1F) 为 OTA 应用程序分区，启动加载器将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（``ota_0`` 和 ``ota_1``）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
-   -  ``test`` (0x20) 为预留的子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以配置启动加载器在每次启动时读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
+   -  ota_0 (0x10) … ota_15 (0x1F) 为 OTA 应用程序分区，引导加载程序将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（``ota_0`` 和 ``ota_1``）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
+   -  ``test`` (0x20) 为预留的子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以配置引导加载程序在每次启动时读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
 
 * 当 Type 定义为 ``data`` 时，SubType 字段可以指定为 ``ota`` (0x00)、``phy`` (0x01)、``nvs`` (0x02)、``nvs_keys`` (0x04) 或者其他组件特定的子类型（请参考 :cpp:type:`子类型枚举 <esp_partition_subtype_t>`).
 
