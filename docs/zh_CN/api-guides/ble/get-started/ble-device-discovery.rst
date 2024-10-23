@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其二，旨在对 Bluetooth LE 设备发现过程进行简要介绍，包括广播与扫描相关的基本概念。随后，本教程会结合 NimBLE_Beacon 例程，基于 NimBLE 主机层协议栈，对 Bluetooth LE 广播的代码实现进行介绍。
+本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其二，旨在对 Bluetooth LE 设备发现过程进行简要介绍，包括广播与扫描相关的基本概念。随后，本教程会结合 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程，基于 NimBLE 主机层协议栈，对 Bluetooth LE 广播的代码实现进行介绍。
 
 
 学习目标
@@ -11,7 +11,7 @@
 
 - 学习广播的基本概念
 - 学习扫描的基本概念
-- 学习 NimBLE_Beacon 例程的代码结构
+- 学习 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程的代码结构
 
 
 广播 (Advertising) 与扫描 (Scanning) 是 Bluetooth LE 设备在进入连接前在设备发现 (Device Discovery) 阶段的工作状态。下面，我们先了解与广播有关的基本概念。
@@ -33,7 +33,7 @@
 蓝牙的无线电频段
 ################################
 
-第一个问题指向的是，广播数据包应发送到哪一无线电频段。这个回答由蓝牙核心规范给出，答案是 2.4 GHz ISM 频段。选择该频段的理由是， 2.4 GHz ISM 频段是一个全球可用的免费无线电频段，不被任何国家以军事用途等理由管控，也无需向任何组织支付许可费用，因此该频段的可用性极高，且没有任何使用成本。不过，这也意味着 2.4 GHz ISM 频段非常拥挤，可能会与其他无线通信协议发生数据冲突，如 2.4 GHz WiFi。
+第一个问题指向的是，广播数据包应发送到哪一无线电频段。这个回答由蓝牙核心规范给出，答案是 2.4 GHz ISM 频段。2.4 GHz ISM 频段是一个全球可用的免费无线电频段，不被任何国家以军事用途等理由管控，也无需向任何组织支付许可费用，因此该频段的可用性极高，且没有任何使用成本。不过，这也意味着 2.4 GHz ISM 频段非常拥挤，可能会与其他无线通信协议发生数据冲突，如 2.4 GHz WiFi。
 
 
 蓝牙信道
@@ -87,7 +87,7 @@ Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播�
         -   254
         -   1650
 
-扩展广播数据包由 ADV_EXT_IND 和 AUX_ADV_IND 组成，分别在主广播信道 (Primary Advertising Channel) 和次广播信道 (Secondary Advertising Channel) 上传输。其中，主广播信道对应于信道 37-39 ，次广播信道对应于信道 0-36 。由于接收方总是在主广播信道中接收广播数据，因此发送方在发送扩展广播数据包时，应在主广播信道中发送 ADV_EXT_IND ，在次广播信道中发送 AUX_ADV_IND ，并在 ADV_EXT_IND 中指示 AUX_ADV_IND 所在的次广播信道；通过这种机制，接收方能够在接收到主广播信道的 ADV_EXT_IND 以后，根据指示到指定的次广播信道去接收 AUX_ADV_IND ，从而得到完整的扩展广播数据包。
+扩展广播数据包由 `ADV_EXT_IND` 和 `AUX_ADV_IND` 组成，分别在主广播信道 (Primary Advertising Channel) 和次广播信道 (Secondary Advertising Channel) 上传输。其中，主广播信道对应于信道 37-39 ，次广播信道对应于信道 0-36 。由于接收方总是在主广播信道中接收广播数据，因此发送方在发送扩展广播数据包时，应在主广播信道中发送 `ADV_EXT_IND` ，在次广播信道中发送 `AUX_ADV_IND` ，并在 `ADV_EXT_IND` 中指示 `AUX_ADV_IND` 所在的次广播信道；通过这种机制，接收方能够在接收到主广播信道的 `ADV_EXT_IND` 以后，根据指示到指定的次广播信道去接收 `AUX_ADV_IND` ，从而得到完整的扩展广播数据包。
 
 .. list-table::
     :align: center
@@ -99,10 +99,10 @@ Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播�
         -   作用
     *   -   主广播信道 (Primary Advertising Channel)
         -   37-39
-        -   用于传输扩展广播数据包的 ADV_EXT_IND
+        -   用于传输扩展广播数据包的 `ADV_EXT_IND`
     *   -   次广播信道 (Secondary Advertising Channel)
         -   0-36
-        -   用于传输扩展广播数据包的 AUX_ADV_IND
+        -   用于传输扩展广播数据包的 `AUX_ADV_IND`
 
 
 发送广播数据包的周期取多久？
@@ -111,11 +111,11 @@ Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播�
 广播间隔
 ##################
 
-对于第二个问题，即发送广播数据包的周期怎么取，蓝牙标准中也给出了一个明确的参数定义，即广播间隔 (Advertising Interval)。广播间隔可取的范围为 20 ms 到 10.24 s ，取值步长为 0.625 ms。
+对于第二个问题，即发送广播数据包的周期怎么取，蓝牙标准中也给出了一个明确的参数定义，即广播间隔 （Advertising Interval）。广播间隔可取的范围为 20 ms 到 10.24 s ，取值步长为 0.625 ms。
 
-广播间隔的取值决定了广播者的可发现性 (Discoverability)以及设备功耗。当广播间隔取得太长时，广播数据包被接收方接收到的概率就会变得很低，此时广播者的可发现性就会变差。同时，广播间隔也不宜取得太短，因此频繁发送广播数据需要消耗更多的电量。所以，广播者需要在可发现性和能耗之间进行取舍，根据应用场景的需求选择最合适的广播间隔。
+广播间隔的取值决定了广播者的可发现性 （Discoverability） 以及设备功耗。当广播间隔取得太长时，广播数据包被接收方接收到的概率就会变得很低，此时广播者的可发现性就会变差。同时，广播间隔也不宜取得太短，因此频繁发送广播数据需要消耗更多的电量。所以，广播者需要在可发现性和能耗之间进行取舍，根据应用场景的需求选择最合适的广播间隔。
 
-值得一提的是，如果在同一空间中存在两个广播间隔相同的广播者，那么有概率出现重复性的撞包 (Packet Collision) 现象，即两个广播者总是在同一时刻向同一信道发送广播数据。由于广播是一个只发不收的过程，广播者无法得知是否发生了广播撞包。为了降低上述问题的发生概率，广播者应在每一次广播事件后添加 0-10 ms 的随机时延。
+值得一提的是，如果在同一空间中存在两个广播间隔相同的广播者，那么有概率出现重复性的撞包 （Packet Collision） 现象，即两个广播者总是在同一时刻向同一信道发送广播数据。由于广播是一个只发不收的过程，广播者无法得知是否发生了广播撞包。为了降低上述问题的发生概率，广播者应在每一次广播事件后添加 0-10 ms 的随机时延。
 
 
 广播数据包里包含哪些信息？
@@ -201,7 +201,7 @@ PDU 头中含有较多信息，可以分为以下六个部分
 
     *   -   序号
         -   名称
-        -   位数
+        -   比特位数
         -   备注
     *   -   1
         -   PDU 类型 (PDU Type)
@@ -222,7 +222,7 @@ PDU 头中含有较多信息，可以分为以下六个部分
     *   -   5
         -   接收地址类型 (Rx Address, **RxAdd**)
         -   1
-        -   同上
+        -   0/1 分别表示公共地址/随机地址
     *   -   6
         -   有效负载长度 (Payload Length)
         -   8
@@ -336,7 +336,7 @@ PDU 有效负载也分为两部分
     *   -   不可解析随机私有地址 (Non-resolvable Random Private Address)
         -   完全随机的地址，仅用于防止设备被追踪，非常少用
 
-然后看广播数据。一个广播数据结构的格式定义如下
+然后看**广播数据**。一个广播数据结构的格式定义如下
 
 .. list-table::
     :align: center
@@ -370,7 +370,8 @@ PDU 有效负载也分为两部分
 2. 多久扫描一次？一次扫描多久？ (When?)
 3. 扫描的过程中需要做什么？ (What?)
 
-第一个问题已经在广播的介绍中说明了。对于 Bluetooth LE 4.2 设备来说，广播者只会在广播信道，即编号为 37-39 的三个信道发送广播数据；对于 Bluetooth LE 5.0 设备来说，如果广播者启用了扩展广播特性，则会在主广播信道发送 ADV_EXT_IND ，在次广播信道发送 AUX_ADV_IND ，并在 ADV_EXT_IND 指示 AUX_ADV_IND 所在的次广播信道。所以相应的，对于 Bluetooth LE 4.2 设备来说，扫描者只需在广播信道接收广播数据包即可。对于 Bluetooth LE 5.0 设备来说，扫描者应在主广播信道接收主广播数据包和扩展广播数据包的 ADV_EXT_IND ； 若扫描者接收到了 ADV_EXT_IND ，且 ADV_EXT_IND 指示了一个次广播信道，那么还需要到对应的次广播信道去接收 AUX_ADV_IND ，以获取完整的扩展广播数据包。
+第一个问题已经在广播的介绍中说明了。对于 Bluetooth LE 4.2 设备来说，广播者只会在广播信道，即编号为 37-39 的三个信道发送广播数据；对于 Bluetooth LE 5.0 设备来说，如果广播者启用了扩展广播特性，则会在主广播信道发送 `ADV_EXT_IND` ，在次广播信道发送 `AUX_ADV_IND` ，并在 `ADV_EXT_IND` 指示 `AUX_ADV_IND` 所在的次广播信道。
+所以相应的，对于 Bluetooth LE 4.2 设备来说，扫描者只需在广播信道接收广播数据包即可。对于 Bluetooth LE 5.0 设备来说，扫描者应在主广播信道接收主广播数据包和扩展广播数据包的 `ADV_EXT_IND` ； 若扫描者接收到了 `ADV_EXT_IND` ，且 `ADV_EXT_IND` 指示了一个次广播信道，那么还需要到对应的次广播信道去接收 `AUX_ADV_IND` ，以获取完整的扩展广播数据包。
 
 
 扫描窗口与扫描间隔
@@ -378,9 +379,9 @@ PDU 有效负载也分为两部分
 
 第二个问题分别指向扫描窗口 (Scan Window) 和 扫描间隔 (Scan Interval) 概念。
 
-首先对扫描窗口进行说明。扫描窗口指的是扫描者在同一个 RF 信道持续接收蓝牙数据包的持续时间，例如扫描窗口参数设定为 50 ms 时，扫描者在每个 RF 信道都会不间断地扫描 50 ms。
+- **扫描窗口**：扫描者在同一个 RF 信道持续接收蓝牙数据包的持续时间，例如扫描窗口参数设定为 50 ms 时，扫描者在每个 RF 信道都会不间断地扫描 50 ms。
 
-扫描间隔则指的是相邻两个扫描窗口开始时刻之间的时间间隔，所以扫描间隔必然大于等于扫描窗口。
+- **扫描间隔**：相邻两个扫描窗口开始时刻之间的时间间隔，所以扫描间隔必然大于等于扫描窗口。
 
 下图在时间轴上展示了扫描者的广播数据包接收过程，其中扫描者的扫描间隔为 100 ms ，扫描窗口为 50 ms ；广播者的广播间隔为 50 ms ，广播数据包的发送时长仅起到示意作用。可以看到，第一个扫描窗口对应 37 信道，此时扫描者恰好接收到了广播者第一次在 37 信道发送的广播数据包，以此类推。
 
@@ -419,17 +420,17 @@ PDU 有效负载也分为两部分
 例程实践
 -------------------------------------------
 
-在掌握了广播与扫描的相关知识以后，接下来让我们结合 NimBLE_Beacon 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的 Beacon 设备，对学到的知识进行实践。
+在掌握了广播与扫描的相关知识以后，接下来让我们结合 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的 Beacon 设备，对学到的知识进行实践。
 
 
 前提条件
 ^^^^^^^^^^^^^^^
 
-1. 一块支持 Bluetooth LE 的 {IDF_TARGET_NAME} 开发板
+1. 一块 {IDF_TARGET_NAME} 开发板
 2. ESP-IDF 开发环境
-3. 在手机上安装 nRF Connect for Mobile 应用程序
+3. 在手机上安装 **nRF Connect for Mobile** 应用程序
 
-若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`API 参考 <../../../get-started/index>`。
+若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`IDF 快速入门 <../../../get-started/index>`。
 
 
 动手试试
@@ -460,7 +461,7 @@ PDU 有效负载也分为两部分
 
     $ idf.py set-target <chip-name>
 
-你应该能看到命令行以
+你应该能看到以下命令行
 
 .. code-block:: shell
 
@@ -475,7 +476,7 @@ PDU 有效负载也分为两部分
 
     $ idf.py flash monitor
 
-你应该能看到命令行以
+你应该能看到以下命令行
 
 .. code-block:: shell
 
@@ -490,7 +491,7 @@ PDU 有效负载也分为两部分
 
 .. _nimble_beacon_details:
 
-打开手机上的 nRF Connect for Mobile 程序，在 SCANNER 标签页中下拉刷新，找到 NimBLE_Beacon 设备，如下图所示
+打开手机上的 **nRF Connect for Mobile** 程序，在 SCANNER 标签页中下拉刷新，找到 NimBLE_Beacon 设备，如下图所示
 
 .. figure:: ../../../../_static/ble/ble-scan-list-nimble-beacon.jpg
     :align: center
@@ -501,7 +502,7 @@ PDU 有效负载也分为两部分
 
 若设备列表较长，建议以 NimBLE 为关键字进行设备名过滤，快速找到 NimBLE_Beacon 设备。
 
-观察到 NimBLE Beacon 设备下带有丰富的设备信息，甚至还带有乐鑫的网址（这就是信标广告功能的体现）。点击右下角的 `RAW` 按钮，可以看到广播数据包的原始信息，如下
+观察到 NimBLE Beacon 设备下带有丰富的设备信息，甚至还带有乐鑫的网址（这就是信标广告功能的体现）。点击右下角的 **RAW** 按钮，可以看到广播数据包的原始信息，如下
 
 .. figure:: ../../../../_static/ble/ble-adv-packet-raw-data.jpg
     :align: center
@@ -510,7 +511,7 @@ PDU 有效负载也分为两部分
 
     广播数据包原始信息
 
-Details 表格即广播数据包和扫描响应数据包中的所有广播数据结构，可以整理如下
+**Details** 表格即广播数据包和扫描响应数据包中的所有广播数据结构，可以整理如下
 
 .. list-table::
     :align: center
@@ -523,37 +524,37 @@ Details 表格即广播数据包和扫描响应数据包中的所有广播数据
         -   原始数据
         -   解析值
     *   -   标志位
-        -   2
+        -   2 Bytes
         -   `0x01`
         -   `0x06`
         -   General Discoverable, BR/EDR Not Supported
     *   -   完整设备名称
-        -   14
+        -   14 Bytes
         -   `0x09`
         -   `0x4E696D424C455F426561636F6E`
         -   NimBLE_Beacon
     *   -   发送功率等级
-        -   2
+        -   2 Bytes
         -   `0x0A`
         -   `0x09`
         -   9 dBm
     *   -   设备外观
-        -   3
+        -   3 Bytes
         -   `0x19`
         -   `0x0002`
         -   通用标签
     *   -   LE 角色
-        -   2
+        -   2 Bytes
         -   `0x1C`
         -   `0x00`
         -   仅支持外设设备
     *   -   设备地址
-        -   8
+        -   8 Bytes
         -   `0x1B`
         -   `0x46F506BDF5F000`
         -   `F0:F5:BD:06:F5:46`
     *   -   URI
-        -   17
+        -   17 Bytes
         -   `0x24`
         -   `0x172F2F6573707265737369662E636F6D`
         -   `https://espressif.com`
@@ -562,7 +563,7 @@ Details 表格即广播数据包和扫描响应数据包中的所有广播数据
 
 你可能还注意到，对应于设备外观的 Raw Data 为 `0x0002`，而代码中对 Generic Tag 的定义是 `0x0200`；还有，设备地址的 Raw Data 除了最后一个字节 `0x00` 以外，似乎与实际地址完全颠倒。这是因为， Bluetooth LE 的空中数据包遵循小端 (Little Endian) 传输的顺序，所以低字节的数据反而会在靠前的位置。
 
-另外，注意到 nRF Connect for Mobile 程序并没有为我们提供 `CONNECT` 按钮以连接至此设备。这符合我们的预期，因为 Beacon 设备本来就应该是不可连接的。下面，让我们深入代码细节，看看这样的一个 Beacon 设备是怎样实现的。
+另外，注意到 **nRF Connect for Mobile** 程序并没有为我们提供 **CONNECT** 按钮以连接至此设备。这符合我们的预期，因为 Beacon 设备本来就应该是不可连接的。下面，让我们深入代码细节，看看这样的一个 Beacon 设备是怎样实现的。
 
 
 代码详解
@@ -574,7 +575,7 @@ Details 表格即广播数据包和扫描响应数据包中的所有广播数据
 
 .. _nimble_beacon_project_structure:
 
-NimBLE_Beacon 的根目录大致分为以下几部分
+:example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 的根目录大致分为以下几部分
 
 - `README*.md`
     - 工程的说明文档
@@ -611,7 +612,7 @@ NimBLE_Beacon 的根目录大致分为以下几部分
 2. 初始化 GAP 服务
 3. 启动 NimBLE 主机层的 FreeRTOS 线程
 
-ESP32 的蓝牙协议栈使用 NVS Flash 存储相关配置，所以在初始化蓝牙协议栈之前，必须调用 `nvs_flash_init` API 以初始化 NVS Flash ，某些情况下需要调用 `nvs_flash_erase` API 对 NVS Flash 进行擦除后再初始化。
+{IDF_TARGET_NAME} 的蓝牙协议栈使用 NVS Flash 存储相关配置，所以在初始化蓝牙协议栈之前，必须调用 `nvs_flash_init` API 以初始化 NVS Flash ，某些情况下需要调用 `nvs_flash_erase` API 对 NVS Flash 进行擦除后再初始化。
 
 .. code-block:: C
 
@@ -879,6 +880,6 @@ ESP32 的蓝牙协议栈使用 NVS Flash 存储相关配置，所以在初始化
 总结
 ---------
 
-通过本教程，你了解了广播和扫描的基本概念，并通过 NimBLE_Beacon 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE Beacon 设备的方法。
+通过本教程，你了解了广播和扫描的基本概念，并通过 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE Beacon 设备的方法。
 
 你可以尝试对例程中的数据进行修改，并在 nRF Connect for Mobile 调试工具中查看修改结果。例如，你可以尝试修改 `adv_fields` 或 `rsp_fields` 结构体，以修改被填充的广播数据结构，或者交换广播数据包和扫描响应数据包中的广播数据结构。但需要注意的一点是，广播数据包和扫描响应数据包的广播数据上限为 31 字节，若设定的广播数据结构大小超过该限值，调用 `ble_gap_adv_start` API 将会失败。
