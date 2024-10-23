@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,12 +134,12 @@ extern "C" {
 #define SYSTEM_SPI2_DMA_CLK_EN_M  (BIT(22))
 #define SYSTEM_SPI2_DMA_CLK_EN_V  0x1
 #define SYSTEM_SPI2_DMA_CLK_EN_S  22
-/* SYSTEM_I2S1_CLK_EN : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/* SYSTEM_I2S0_CLK_EN : R/W ;bitpos:[21] ;default: 1'b0 ; */
 /*description: */
-#define SYSTEM_I2S1_CLK_EN  (BIT(21))
-#define SYSTEM_I2S1_CLK_EN_M  (BIT(21))
-#define SYSTEM_I2S1_CLK_EN_V  0x1
-#define SYSTEM_I2S1_CLK_EN_S  21
+#define SYSTEM_I2S0_CLK_EN  (BIT(21))
+#define SYSTEM_I2S0_CLK_EN_M  (BIT(21))
+#define SYSTEM_I2S0_CLK_EN_V  0x1
+#define SYSTEM_I2S0_CLK_EN_S  21
 /* SYSTEM_PWM1_CLK_EN : R/W ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_PWM1_CLK_EN  (BIT(20))
@@ -236,12 +236,6 @@ extern "C" {
 #define SYSTEM_UART1_CLK_EN_M  (BIT(5))
 #define SYSTEM_UART1_CLK_EN_V  0x1
 #define SYSTEM_UART1_CLK_EN_S  5
-/* SYSTEM_I2S0_CLK_EN : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: */
-#define SYSTEM_I2S0_CLK_EN  (BIT(4))
-#define SYSTEM_I2S0_CLK_EN_M  (BIT(4))
-#define SYSTEM_I2S0_CLK_EN_V  0x1
-#define SYSTEM_I2S0_CLK_EN_S  4
 /* SYSTEM_WDG_CLK_EN : R/W ;bitpos:[3] ;default: 1'b1 ; */
 /*description: */
 #define SYSTEM_WDG_CLK_EN  (BIT(3))
@@ -384,12 +378,12 @@ extern "C" {
 #define SYSTEM_SPI2_DMA_RST_M  (BIT(22))
 #define SYSTEM_SPI2_DMA_RST_V  0x1
 #define SYSTEM_SPI2_DMA_RST_S  22
-/* SYSTEM_I2S1_RST : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/* SYSTEM_I2S0_RST : R/W ;bitpos:[21] ;default: 1'b0 ; */
 /*description: */
-#define SYSTEM_I2S1_RST  (BIT(21))
-#define SYSTEM_I2S1_RST_M  (BIT(21))
-#define SYSTEM_I2S1_RST_V  0x1
-#define SYSTEM_I2S1_RST_S  21
+#define SYSTEM_I2S0_RST  (BIT(21))
+#define SYSTEM_I2S0_RST_M  (BIT(21))
+#define SYSTEM_I2S0_RST_V  0x1
+#define SYSTEM_I2S0_RST_S  21
 /* SYSTEM_PWM1_RST : R/W ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_PWM1_RST  (BIT(20))
@@ -486,12 +480,6 @@ extern "C" {
 #define SYSTEM_UART1_RST_M  (BIT(5))
 #define SYSTEM_UART1_RST_V  0x1
 #define SYSTEM_UART1_RST_S  5
-/* SYSTEM_I2S0_RST : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: */
-#define SYSTEM_I2S0_RST  (BIT(4))
-#define SYSTEM_I2S0_RST_M  (BIT(4))
-#define SYSTEM_I2S0_RST_V  0x1
-#define SYSTEM_I2S0_RST_S  4
 /* SYSTEM_WDG_RST : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_WDG_RST  (BIT(3))

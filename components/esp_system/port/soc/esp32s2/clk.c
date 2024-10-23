@@ -240,7 +240,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                            DPORT_PWM0_CLK_EN |
                            DPORT_TWAI_CLK_EN |
                            DPORT_PWM1_CLK_EN |
-                           DPORT_I2S1_CLK_EN |
                            DPORT_SPI2_DMA_CLK_EN |
                            DPORT_SPI3_DMA_CLK_EN |
                            DPORT_PWM2_CLK_EN |
@@ -276,7 +275,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                         DPORT_UHCI1_CLK_EN |
                         DPORT_SPI3_CLK_EN |
                         DPORT_I2C_EXT1_CLK_EN |
-                        DPORT_I2S1_CLK_EN |
                         DPORT_SPI2_DMA_CLK_EN |
                         DPORT_SPI3_DMA_CLK_EN;
     common_perip_clk1 = 0;

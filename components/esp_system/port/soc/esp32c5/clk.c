@@ -242,7 +242,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                            SYSTEM_SPI3_CLK_EN |
                            SYSTEM_SPI4_CLK_EN |
                            SYSTEM_TWAI_CLK_EN |
-                           SYSTEM_I2S1_CLK_EN |
+                           SYSTEM_I2S0_CLK_EN |
                            SYSTEM_SPI2_DMA_CLK_EN |
                            SYSTEM_SPI3_DMA_CLK_EN;
 
@@ -272,7 +272,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                         SYSTEM_SPI3_CLK_EN |
                         SYSTEM_SPI4_CLK_EN |
                         SYSTEM_I2C_EXT1_CLK_EN |
-                        SYSTEM_I2S1_CLK_EN |
+                        SYSTEM_I2S0_CLK_EN |
                         SYSTEM_SPI2_DMA_CLK_EN |
                         SYSTEM_SPI3_DMA_CLK_EN;
     common_perip_clk1 = 0;

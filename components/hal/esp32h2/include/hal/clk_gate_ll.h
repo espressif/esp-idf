@@ -38,7 +38,7 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_I2C0_CLK_EN;
         case PERIPH_I2C1_MODULE:
             return PCR_I2C1_CLK_EN;
-        case PERIPH_I2S1_MODULE:
+        case PERIPH_I2S0_MODULE:
             return PCR_I2S_CLK_EN;
         case PERIPH_TIMG0_MODULE:
             return PCR_TG0_CLK_EN;
@@ -119,7 +119,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_I2C0_RST_EN;
         case PERIPH_I2C1_MODULE:
             return PCR_I2C1_RST_EN;
-        case PERIPH_I2S1_MODULE:
+        case PERIPH_I2S0_MODULE:
             return PCR_I2S_RST_EN;
         case PERIPH_TIMG0_MODULE:
             return PCR_TG0_RST_EN;
@@ -224,7 +224,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_I2C0_CONF_REG;
         case PERIPH_I2C1_MODULE:
             return PCR_I2C1_CONF_REG;
-        case PERIPH_I2S1_MODULE:
+        case PERIPH_I2S0_MODULE:
             return PCR_I2S_CONF_REG;
         case PERIPH_TIMG0_MODULE:
             return PCR_TIMERGROUP0_CONF_REG;
@@ -291,7 +291,7 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_I2C0_CONF_REG;
         case PERIPH_I2C1_MODULE:
             return PCR_I2C1_CONF_REG;
-        case PERIPH_I2S1_MODULE:
+        case PERIPH_I2S0_MODULE:
             return PCR_I2S_CONF_REG;
         case PERIPH_TIMG0_MODULE:
             return PCR_TIMERGROUP0_CONF_REG;
