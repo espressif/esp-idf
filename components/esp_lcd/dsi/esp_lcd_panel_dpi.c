@@ -256,13 +256,22 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     mipi_dsi_hal_host_dpi_set_color_coding(hal, panel_config->pixel_format, 0);
     // these signals define how the DPI interface interacts with the controller
     mipi_dsi_host_ll_dpi_set_timing_polarity(hal->host, false, false, false, false, false);
-    // configure the low-power transitions: defines the video periods which are permitted to goto low-power if the time available to do so
-    mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
-    mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+
+    if (panel_config->flags.disable_lp) {
+        // configure the low-power transitions: defines the video periods which are NOT permitted to goto low-power
+        mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, false, false);
+        mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, false, false, false, false);
+        // commands are NOT transmitted in low-power mode
+        mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, false);
+    } else {
+        // configure the low-power transitions: defines the video periods which are permitted to goto low-power if the time available to do so
+        mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
+        mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+        // commands are transmitted in low-power mode
+        mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, true);
+    }
     // after sending a frame, the DSI device should return an ack
     mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, true);
-    // commands are transmitted in low-power mode
-    mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, true);
     // using the burst mode because it's energy-efficient
     mipi_dsi_host_ll_dpi_set_video_burst_type(hal->host, MIPI_DSI_LL_VIDEO_BURST_WITH_SYNC_PULSES);
     // configure the size of the active lin period, measured in pixels
