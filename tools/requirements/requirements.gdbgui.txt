@@ -3,5 +3,6 @@
 
 # gdbgui Python 3.11 issue https://github.com/cs01/gdbgui/issues/447 was fixed in 0.15.2.0. Windows users need an
 # older Python to use since new gdbgui versions don't support Windows anymore.
-gdbgui; sys_platform != 'win32'
+# Python 3.13 is not supported: https://github.com/cs01/gdbgui/issues/494
+gdbgui; sys_platform != 'win32' and python_version < "3.13"
 gdbgui; sys_platform == 'win32' and python_version < "3.11"
