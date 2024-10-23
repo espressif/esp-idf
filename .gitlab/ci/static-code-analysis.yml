@@ -5,23 +5,16 @@ clang_tidy_check:
     - .rules:patterns:clang_tidy
   artifacts:
     paths:
-      - $OUTPUT_DIR
+      - clang_tidy_reports/
     when: always
     expire_in: 1 day
   variables:
-    CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
-    RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
-    OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
     IDF_TOOLCHAIN: clang
   script:
-    - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
-    - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
-    - dirs=$(cat ${CLANG_TIDY_DIRS_TXT} | while read line; do echo ${CI_PROJECT_DIR}/${line}; done | xargs)
-    - run_cmd idf_clang ${dirs}
-      --output-path ${OUTPUT_DIR}
-      --limit-file ${RULES_FILE}
+    - run_cmd idf_clang_tidy $(cat tools/ci/clang_tidy_dirs.txt | xargs)
+      --output-path clang_tidy_reports
+      --limit-file tools/ci/static-analysis-rules.yml
       --xtensa-include-dir
-      --run-clang-tidy-py run-clang-tidy
 
 check_pylint:
   extends:
