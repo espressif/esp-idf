@@ -4,8 +4,9 @@ set(PARTITION_TABLE_CHECK_SIZES_TOOL_PATH "${CMAKE_CURRENT_LIST_DIR}/check_sizes
 
 idf_build_get_property(build_dir BUILD_DIR)
 idf_build_set_property(PARTITION_TABLE_BIN_PATH "${build_dir}/partition_table/partition-table.bin")
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     # Set PARTITION_CSV_PATH to the configured partition CSV file
     # absolute path
     if(CONFIG_PARTITION_TABLE_CUSTOM)

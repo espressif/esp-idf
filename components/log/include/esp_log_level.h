@@ -37,12 +37,12 @@ typedef enum {
 #endif // !BOOTLOADER_BUILD
 #endif // LOG_LOCAL_LEVEL
 
-#if BOOTLOADER_BUILD
+#ifdef NON_OS_BUILD
 
 #define _ESP_LOG_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level))
 #define _ESP_LOG_EARLY_ENABLED(log_level) _ESP_LOG_ENABLED(log_level)
 
-#else // !BOOTLOADER_BUILD
+#else // !NON_OS_BUILD
 
 #if CONFIG_LOG_MASTER_LEVEL
 #define _ESP_LOG_ENABLED(log_level) (esp_log_get_level_master() >= (log_level) && LOG_LOCAL_LEVEL >= (log_level))
@@ -54,7 +54,7 @@ typedef enum {
 currently configured min log level are higher than the log level */
 #define _ESP_LOG_EARLY_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level) && esp_log_get_default_level() >= (log_level))
 
-#endif // !BOOTLOADER_BUILD
+#endif // !NON_OS_BUILD
 
 /** @endcond */
 

@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
@@ -22,7 +23,7 @@ if(CONFIG_RTC_CLK_SRC_INT_RC32K)
 endif()
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
                      "hw_random.c"
@@ -167,7 +168,7 @@ if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")
 endif()
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()

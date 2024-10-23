@@ -5,6 +5,7 @@ idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
 set(chip_model ${target})
 
@@ -151,7 +152,7 @@ elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V
     set(secure_boot_version "2")
 endif()
 
-if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
+if(NOT non_os_build AND CONFIG_SECURE_SIGNED_APPS)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
         get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
@@ -526,7 +527,7 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
     endif()
 endfunction()
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     set(flash_deps "")
 
     if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)

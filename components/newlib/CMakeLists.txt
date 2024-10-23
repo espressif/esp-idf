@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
@@ -6,7 +7,7 @@ endif()
 
 set(include_dirs "platform_include")
 
-if(BOOTLOADER_BUILD)
+if(non_os_build)
     # Bootloader builds need the platform_include directory (for assert.h), but nothing else
     idf_component_register(INCLUDE_DIRS platform_include)
     return()

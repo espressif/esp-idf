@@ -12,7 +12,7 @@
 #include "esp_private/log_timestamp.h"
 #include "sdkconfig.h"
 
-#if !BOOTLOADER_BUILD
+#ifndef NON_OS_BUILD
 #include <sys/lock.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -60,7 +60,7 @@ char *esp_log_system_timestamp(void)
     }
     return buffer;
 }
-#endif // !BOOTLOADER_BUILD
+#endif // !NON_OS_BUILD
 
 uint64_t esp_log_timestamp64(bool critical)
 {
