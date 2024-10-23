@@ -1,3 +1,6 @@
+# This is the file that contains the known warnings for the generate_test_child_pipeline.py script.
+# no_env_marker_test_cases: List of test cases that do not have environment markers.
+#   each item shall be the test node id, you may check the error message to get the node id.
 no_env_marker_test_cases:
   - components/nvs_flash/test_apps/pytest_nvs_flash.py::test_nvs_flash[default]
   - components/vfs/test_apps/pytest_vfs.py::test_vfs_ccomp[ccomp]
@@ -7,6 +10,12 @@ no_env_marker_test_cases:
   - examples/storage/nvs_rw_value/pytest_nvs_rw_value.py::test_examples_nvs_rw_value
   - examples/storage/nvs_rw_value_cxx/pytest_nvs_rw_value_cxx.py::test_examples_nvs_rw_value_cxx
   - examples/storage/wear_levelling/pytest_wear_levelling_example.py::test_wear_levelling_example
+
+# no_runner_tags: List of runner tags that has no test runner set.
+#   each item shall be a comma separated list of runner tags.
+# NOTE:
+#   1. for multi dut tests, the runner tag shall be <target>_<count>, e.g. esp32_2 instead of esp32,esp32
+#   2. don't have spaces in the comma separated list.
 no_runner_tags:
   - esp32,ip101
   - esp32c2,jtag,xtal_40mhz
