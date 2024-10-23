@@ -266,7 +266,7 @@ static int log_level(int argc, char **argv)
 static void register_log_level(void)
 {
     log_level_args.tag = arg_str1(NULL, NULL, "<tag|*>", "Log tag to set the level for, or * to set for all tags");
-    log_level_args.level = arg_str1(NULL, NULL, "<none|error|warn|debug|verbose>", "Log level to set. Abbreviated words are accepted.");
+    log_level_args.level = arg_str1(NULL, NULL, "<none|error|warn|info|debug|verbose>", "Log level to set. Abbreviated words are accepted.");
     log_level_args.end = arg_end(2);
 
     const esp_console_cmd_t cmd = {
