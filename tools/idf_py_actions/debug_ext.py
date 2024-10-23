@@ -374,6 +374,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
                                  'See: https://github.com/espressif/esp-idf/issues/10116. '
                                  'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
+            if sys.version_info[:2] >= (3, 13) and sys.platform != 'win32':
+                raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.12 or older. '
+                                 'See: https://github.com/cs01/gdbgui/issues/494. '
+                                 'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
             raise FatalError('Error starting gdbgui. Please make sure gdbgui has been installed with '
                              '"install.{sh,bat,ps1,fish} --enable-gdbgui" and can be started.', ctx)
 
