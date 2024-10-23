@@ -870,7 +870,13 @@
  *
  * Enable functions that use the filesystem.
  */
+#if CONFIG_MBEDTLS_FS_IO
 #define MBEDTLS_FS_IO
+#else
+#undef MBEDTLS_FS_IO
+#undef MBEDTLS_PSA_ITS_FILE_C
+#undef MBEDTLS_PSA_CRYPTO_STORAGE_C
+#endif
 
 /**
  * \def MBEDTLS_NO_PLATFORM_ENTROPY
