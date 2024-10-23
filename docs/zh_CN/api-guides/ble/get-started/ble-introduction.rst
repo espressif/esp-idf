@@ -47,7 +47,7 @@ Bluetooth LE 协议定义了三层软件结构，自上而下分别是
 
     Bluetooth LE 分层结构
 
-作为应用开发者，在开发过程中我们主要与主机层提供的 API 接口打交道，这要求我们对主机层中的蓝牙协议有一定的了解。接下来，我们会从连接和数据交互两个角度，对 GAP 和 GATT/ATT 层的基本概念进行介绍。
+作为应用开发者，在开发过程中我们主要与主机层提供的 API 接口打交道，这要求我们对主机层中的蓝牙协议有一定的了解。接下来，我们会从连接和数据交换两个角度，对 GAP 和 GATT/ATT 层的基本概念进行介绍。
 
 
 GAP 层 - 定义设备的连接
@@ -71,7 +71,7 @@ GAP 中共定义了三种设备的连接状态以及五种不同的设备角色�
     - 外围设备 (Peripheral)
     - 中央设备 (Central)
 
-广播者向外广播的数据中包含设备地址等信息，用于向外界设备表明广播者的存在，并告知其他设备是否可以连接。扫描者则持续接收环境中的广播数据包。若某一个扫描者发现了一个可连接的广播者，并希望与之建立连接，可以将角色切换为连接发起者。当连接发起者再次收到该广播者的广播数据，会立即发起连接请求 (Connection Request)；在广播者未开启白名单 (White List, 又称 Accept List) 或连接发起者在广播者的白名单之中时，连接将被成功建立。
+广播者向外广播的数据中包含设备地址等信息，用于向外界设备表明广播者的存在，并告知其他设备是否可以连接。扫描者则持续接收环境中的广播数据包。若某一个扫描者发现了一个可连接的广播者，并希望与之建立连接，可以将角色切换为连接发起者。当连接发起者再次收到该广播者的广播数据，会立即发起连接请求 (Connection Request)；在广播者未开启白名单 (Filter Accept List, 又称 White List) 或连接发起者在广播者的白名单之中时，连接将被成功建立。
 
 进入连接以后，原广播者转变为外围设备（旧称从设备 Slave ），原扫描者或连接初始化者转变为中央设备（旧称主设备 Master ）。
 
@@ -112,7 +112,7 @@ GATT/ATT 层定义了进入连接状态后，设备之间的数据交换方式�
 ATT 层
 #############
 
-ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为属性 (Attribute) 的基本数据结构，以及基于服务器/客户端架构的数据访问方式。
+ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为**属性 (Attribute)** 的基本数据结构，以及基于服务器/客户端架构的数据访问方式。
 
 简单来说，数据以属性的形式存储在服务器上，等待客户端的访问。以智能开关为例，开关量作为数据，以属性的形式存储在智能开关内的蓝牙芯片（服务器）中，此时用户可以通过手机（客户端）访问智能开关蓝牙芯片（服务器）上存放的开关量属性，获取当前的开关状态（读访问），或控制开关的闭合与断开（写访问）。
 
@@ -123,7 +123,7 @@ ATT 的全称是属性协议 (Attribute Protocol, ATT)，定义了一种称为�
 - 值 (Value)
 - 访问权限 (Permissions)
 
-在协议栈实现中，属性一般被放在称为属性表 (Attribute Table) 的结构体数组中管理。一个属性在这张表中的索引，就是属性的句柄，常为一无符号整型。
+在协议栈实现中，属性一般被放在称为**属性表 (Attribute Table)** 的结构体数组中管理。一个属性在这张表中的索引，就是属性的句柄，常为一无符号整型。
 
 属性的类型由 UUID 表示，可以分为 16 位、32 位与 128 位 UUID 三类。 16 位 UUID 由蓝牙技术联盟 (Bluetooth Special Interest Group, Bluetooth SIG) 统一定义，可以在其公开发布的 `Assigned Numbers <https://www.bluetooth.com/specifications/assigned-numbers/>`__ 文件中查询；其他两种长度的 UUID 用于表示厂商自定义的属性类型，其中 128 位 UUID 较为常用。
 
@@ -155,7 +155,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
 除此以外，特征数据中还可能包含若干可选的描述符属性 (Characteristic Descriptor Attribute)。
 
-一个服务本身也由一个属性进行描述，称为服务声明属性 (Service Declaration Attribute)。一个服务中可以存在一个或多个特征数据，它们之间体现为从属关系。另外，一个服务可以通过 Include 机制引用另一个服务，复用其特性定义，避免如设备名称、制造商信息等相同特性的重复定义。
+一个服务本身也由一个属性进行描述，称为服务声明属性 (Service Declaration Attribute)。一个服务中可以存在一个或多个特征数据，它们之间体现为从属关系。另外，一个服务可以通过 `Include` 机制引用另一个服务，复用其特性定义，避免如设备名称、制造商信息等相同特性的重复定义。
 
 规范是一个预定义的服务集合，实现了某规范中所定义的所有服务的设备即满足该规范。例如 Heart Rate Profile 规范由 Heart Rate Service 和 Device Information Service 两个服务组成，那么可以称实现了 Heart Rate Service 和 Device Information Service 服务的设备符合 Heart Rate Profile 规范。
 
@@ -178,11 +178,11 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 前提条件
 ^^^^^^^^^^^^^^^
 
-1. 一块支持 Bluetooth LE 的 {IDF_TARGET_NAME} 开发板
+1. 一块 {IDF_TARGET_NAME} 开发板
 2. ESP-IDF 开发环境
-3. 在手机上安装 nRF Connect for Mobile 应用程序
+3. 在手机上安装 **nRF Connect for Mobile** 应用程序
 
-若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`API 参考 <../../../get-started/index>`。
+若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`IDF 快速入门 <../../../get-started/index>`。
 
 
 动手试试
@@ -214,7 +214,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     $ idf.py set-target <chip-name>
 
-你应该能看到命令行以
+你应该能看到以下命令行
 
 .. code-block:: shell
 
@@ -229,7 +229,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     $ idf.py flash monitor
 
-你应该能看到命令行以
+你应该能看到以下命令行
 
 .. code-block:: shell
 
@@ -243,7 +243,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 连接到开发板
 #######################
 
-现在开发板已准备就绪。接下来，打开手机上的 nRF Connect for Mobile 程序，在 SCANNER 标签页中下拉刷新，找到 NimBLE_GATT 设备，如下图所示
+现在开发板已准备就绪。接下来，打开手机上的 **nRF Connect for Mobile** 程序，在 **SCANNER** 标签页中下拉刷新，找到 NimBLE_GATT 设备，如下图所示
 
 .. figure:: ../../../../_static/ble/ble-get-started-connect-brief.jpg
     :align: center
@@ -254,7 +254,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
 若设备列表较长，建议以 NimBLE 为关键字进行设备名过滤，快速找到 NimBLE_GATT 设备。
 
-点击 NimBLE_GATT 设备条目，可以展开看到广播数据的详细信息。
+点击 **NimBLE_GATT** 设备条目，可以展开看到广播数据的详细信息。
 
 .. figure:: ../../../../_static/ble/ble-get-started-connect-details.jpg
     :align: center
@@ -263,7 +263,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     广播数据详情
 
-点击右侧的 CONNECT 按钮，在手机连接的同时，可以在开发板的串口输出中观察到许多与连接相关的日志信息。随后，手机上会显示 NimBLE_GATT 标签页，左上角应有 CONNECTED 状态，说明手机已成功通过 Bluetooth LE 协议连接至开发板。在 CLIENT 子页中，你应该能够看到四个 GATT 服务，如图所示
+点击右侧的 **CONNECT** 按钮，在手机连接的同时，可以在开发板的串口输出中观察到许多与连接相关的日志信息。随后，手机上会显示 NimBLE_GATT 标签页，左上角应有 **CONNECTED** 状态，说明手机已成功通过 Bluetooth LE 协议连接至开发板。在 CLIENT 子页中，你应该能够看到四个 GATT 服务，如图所示
 
 .. figure:: ../../../../_static/ble/ble-get-started-gatt-services-list.jpg
     :align: center
@@ -274,13 +274,13 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
 前两个服务是 GAP 服务和 GATT 服务，这两个服务是 Bluetooth LE 应用中的基础服务。后两个服务是 Bluetooth SIG 定义的 Heart Rate Service 服务和 Automation IO Service 服务，分别提供心率数据读取和 LED 控制功能。
 
-在服务名的下方，对应有各个服务的 UUID 以及服务主次标识。如 Heart Rate Service 服务的 UUID 为 `0x180D`，是一个主服务 (Primary Service)。需要注意的是，服务的名称是通过 UUID 解析得到的。以 nRF Connect for Mobile 为例，在实现 GATT 客户端时，开发者会将 Bluetooth SIG 定义的服务，以及开发商 Nordic Semiconductor 自定义的服务预先写入数据库中，然后根据 GATT 服务的 UUID 进行服务信息解析。所以，假如某一服务的 UUID 不在数据库中，那么该服务的服务信息就无法被解析，服务名称将会显示为未知服务 (Unknown Service)。
+在服务名的下方，对应有各个服务的 UUID 以及服务主次标识。如 Heart Rate Service 服务的 UUID 为 `0x180D`，是一个主服务 (Primary Service)。需要注意的是，服务的名称是通过 UUID 解析得到的。以 nRF Connect for Mobile 为例，在实现 GATT 客户端时，开发者会将 Bluetooth SIG 定义的服务，以及例程自定义的服务预先写入数据库中，然后根据 GATT 服务的 UUID 进行服务信息解析。所以，假如某一服务的 UUID 不在数据库中，那么该服务的服务信息就无法被解析，服务名称将会显示为未知服务 (Unknown Service)。
 
 
 把灯点亮！
 ##################
 
-下面体验一下本例程的功能。首先，点击 Automation IO Service 服务，可以看到该服务下有一个 LED 特征数据。
+下面体验一下本例程的功能。首先，点击 **Automation IO Service** 服务，可以看到该服务下有一个 LED 特征数据。
 
 .. figure:: ../../../../_static/ble/ble-get-started-automation-io-service-details.jpg
     :align: center
@@ -289,7 +289,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     Automation IO Service
 
-如图，该 LED 特征数据的 UUID 为 128 位的厂商自定义 UUID 。实际上，这是 Nordic Semiconductor 自定义的 LED 特征数据，在 nRF Connect for Mobile 上有专门的控制页面适配。点击右侧的上传按钮，可以对该特征数据进行写访问，如下图所示。
+如图，该 LED 特征数据的 UUID 为 128 位的厂商自定义 UUID 。 点击右侧的**UPLOAD**按钮，可以对该特征数据进行写访问，如下图所示。
 
 .. figure:: ../../../../_static/ble/ble-get-started-led-write.jpg
     :align: center
@@ -298,7 +298,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 
     对 LED 特征数据进行写访问
 
-选择 ON 选项，然后发送，你应该能看到开发板上的 LED 被点亮了。选择 OFF 选项，然后发送，你应该能观察到开发板上的 LED 又熄灭了。
+选择 **ON** 选项，然后发送，你应该能看到开发板上的 LED 被点亮了。选择 **OFF** 选项，然后发送，你应该能观察到开发板上的 LED 又熄灭了。
 
 若你的开发板上没有电源指示灯以外的 LED ，你应该能在日志输出中观察到对应的状态指示。
 
@@ -306,7 +306,7 @@ GATT 的全称是通用属性规范 (Generic Attribute Profile)，在 ATT 的基
 接收心率数据
 #######################
 
-接下来，点击 Heart Rate Service 服务，可以看到该服务下有一个 Heart Rate Measurement 特征数据。
+接下来，点击 **Heart Rate Service** 服务，可以看到该服务下有一个 Heart Rate Measurement 特征数据。
 
 .. figure:: ../../../../_static/ble/ble-get-started-heart-rate-service-details.jpg
     :align: center
@@ -339,4 +339,4 @@ Heart Rate Measurement 特征数据的 UUID 是 `0x2A37`，这是一个 Bluetoot
 总结
 ---------
 
-通过本教程，你了解了 Bluetooth LE 的分层架构、Bluetooth LE 协议栈中主机层和控制器层的基本功能以及 GAP 层与 GATT/ATT 层的作用。随后，通过 NimBLE_GATT_Server 例程，你掌握了如何使用 ESP-IDF 开发框架进行 Bluetooth LE 应用的构建与烧录，能够在手机上使用 nRF Connect for Mobile 调试程序，远程控制开发板上 LED 的点亮与熄灭，以及接收随机生成的心率数据。你已经迈出了走向 Bluetooth LE 开发者的第一步，恭喜！
+通过本教程，你了解了 Bluetooth LE 的分层架构、Bluetooth LE 协议栈中主机层和控制器层的基本功能以及 GAP 层与 GATT/ATT 层的作用。随后，通过 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，你掌握了如何使用 ESP-IDF 开发框架进行 Bluetooth LE 应用的构建与烧录，能够在手机上使用 **nRF Connect for Mobile** 调试程序，远程控制开发板上 LED 的点亮与熄灭，以及接收随机生成的心率数据。你已经迈出了走向 Bluetooth LE 开发者的第一步，恭喜！
