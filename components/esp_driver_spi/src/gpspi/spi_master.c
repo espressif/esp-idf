@@ -1403,7 +1403,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
     const spi_bus_attr_t *bus_attr = host->bus_attr;
-    if (host->cur_trans_buf.buffer_to_rcv) {
+    if (bus_attr->dma_enabled && host->cur_trans_buf.buffer_to_rcv) {
         uint16_t alignment = bus_attr->internal_mem_align_size;
         uint32_t buffer_byte_len = (host->cur_trans_buf.trans->rxlength + 7) / 8;
         buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));
