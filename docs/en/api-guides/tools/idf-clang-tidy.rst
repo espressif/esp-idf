@@ -11,7 +11,7 @@ The IDF Clang Tidy is a tool that uses `clang-tidy <https://clang.llvm.org/extra
 .. only:: esp32c3 or esp32h2
 
    .. warning::
-    
+
       This tool does not support RISC-V based chips yet. For now, we don't provide clang based toolchain for RISC-V.
 
 Prerequisites
@@ -32,7 +32,7 @@ If you have never run this tool before, take the following steps to get this too
    .. note::
 
       This file would be bundled in future toolchain releases. This is a temporary workaround.
-   
+
 #. Run the export scripts (``export.sh`` / ``export.bat`` / ... ) again to refresh the environment variables.
 
 Extra Commands
