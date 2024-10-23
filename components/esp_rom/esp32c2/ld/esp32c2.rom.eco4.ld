@@ -1201,7 +1201,7 @@ ieee80211_send_mgmt = 0x40002038;
 //ieee80211_auth_construct = 0x4000203c;
 ieee80211_deauth_construct = 0x40002040;
 ieee80211_disassoc_construct = 0x40002044;
-ieee80211_add_xrates = 0x40002058;
+//ieee80211_add_xrates = 0x40002058;
 //ieee80211_assoc_req_construct = 0x40002060;
 ieee80211_assoc_resp_construct = 0x40002064;
 ieee80211_timer_process = 0x4000208c;
@@ -1226,7 +1226,7 @@ sta_send_sa_query_req = 0x40002138;
 sta_send_sa_query_resp = 0x4000213c;
 sta_recv_sa_query_req = 0x40002140;
 sta_recv_sa_query_resp = 0x40002144;
-ieee80211_parse_beacon = 0x40002148;
+//ieee80211_parse_beacon = 0x40002148;
 ieee80211_match_security = 0x40002154;
 //ieee80211_parse_rsn = 0x4000215c;
 /* Data (.data, .bss, .rodata) */
