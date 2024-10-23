@@ -92,8 +92,6 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
 #define _esp_tls_net_init                   esp_wolfssl_net_init
 #define _esp_tls_server_session_create      esp_wolfssl_server_session_create
-#define _esp_tls_server_session_init        esp_wolfssl_server_session_init
-#define _esp_tls_server_session_continue_async     esp_wolfssl_server_session_continue_async
 #define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
 #define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
@@ -656,6 +654,17 @@ const int *esp_tls_get_ciphersuites_list(void)
 {
     return _esp_tls_get_ciphersuites_list();
 }
+
+esp_err_t esp_tls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+{
+    return _esp_tls_server_session_init(cfg, sockfd, tls);
+}
+
+int esp_tls_server_session_continue_async(esp_tls_t *tls)
+{
+    return _esp_tls_server_session_continue_async(tls);
+}
+
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
@@ -707,22 +716,7 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
 {
     return _esp_tls_server_session_create(cfg, sockfd, tls);
 }
-/**
- * @brief      Initialization part of esp_tls_server_session_create
- */
-int esp_tls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
-{
-    return _esp_tls_server_session_init(cfg, sockfd, tls);
-}
-/**
- * @brief      Asynchronous continue of esp_tls_server_session_create, to be
- *             called in a loop by the user until it returns 0,
- *             ESP_TLS_ERR_SSL_WANT_READ or ESP_TLS_ERR_SSL_WANT_WRITE
- */
-int esp_tls_server_session_continue_async(esp_tls_t *tls)
-{
-    return _esp_tls_server_session_continue_async(tls);
-}
+
 /**
  * @brief      Close the server side TLS/SSL connection and free any allocated resources.
  */

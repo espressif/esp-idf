@@ -937,12 +937,12 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
 }
 
 /**
- * @brief      Initialization part of esp_mbedtls_server_session_create
+ * @brief      ESP-TLS server session initialization (initialization part of esp_mbedtls_server_session_create)
  */
-int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+esp_err_t esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
     if (tls == NULL || cfg == NULL) {
-        return -1;
+        return ESP_ERR_INVALID_ARG;
     }
     tls->role = ESP_TLS_SERVER;
     tls->sockfd = sockfd;
@@ -953,18 +953,18 @@ int esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_t
         ESP_LOGE(TAG, "create_ssl_handle failed, returned [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
         tls->conn_state = ESP_TLS_FAIL;
-        return -1;
+        return ESP_FAIL;
     }
 
     tls->read = esp_mbedtls_read;
     tls->write = esp_mbedtls_write;
-    return 0;
+    return ESP_OK;
 }
 
 /**
- * @brief      Asynchronous continue of esp_mbedtls_server_session_create, to be
+ * @brief      Asynchronous continue of server session initialized with esp_mbedtls_server_session_init, to be
  *             called in a loop by the user until it returns 0, ESP_TLS_ERR_SSL_WANT_READ
- *             or ESP_TLS_ERR_SSL_WANT_WRITE
+ *             or ESP_TLS_ERR_SSL_WANT_WRITE.
  */
 int esp_mbedtls_server_session_continue_async(esp_tls_t *tls)
 {

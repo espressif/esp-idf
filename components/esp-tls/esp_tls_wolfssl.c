@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -505,26 +505,9 @@ void esp_wolfssl_cleanup(esp_tls_t *tls)
 }
 
 /**
- * @brief      Create TLS/SSL server session
+ * @brief       Create TLS/SSL server session
  */
 int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
-{
-    int ret = 0;
-    if ((ret = esp_wolfssl_server_session_init(cfg, sockfd, tls)) != 0) {
-        return ret;
-    }
-    while ((ret = esp_mbedtls_server_session_continue_async(tls)) != 0) {
-        if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-/**
- * @brief      Initialization part of esp_wolfssl_server_session_create
- */
-int esp_wolfssl_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
 {
     if (tls == NULL || cfg == NULL) {
         return -1;
@@ -542,30 +525,15 @@ int esp_wolfssl_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_t
     }
     tls->read = esp_wolfssl_read;
     tls->write = esp_wolfssl_write;
-    return 0;
-}
-
-/**
- * @brief      Asynchronous continue of esp_wolfssl_server_session_create, to be
- *             called in a loop by the user until it returns 0, ESP_TLS_ERR_SSL_WANT_READ
- *             or ESP_TLS_ERR_SSL_WANT_WRITE
- */
-int esp_wolfssl_server_session_continue_async(esp_tls_t *tls)
-{
-    int ret = wolfSSL_accept((WOLFSSL *)tls->priv_ssl);
-    if (ret != WOLFSSL_SUCCESS) {
+    int ret;
+    while ((ret = wolfSSL_accept((WOLFSSL *)tls->priv_ssl)) != WOLFSSL_SUCCESS) {
         int err = wolfSSL_get_error((WOLFSSL *)tls->priv_ssl, ret);
-        switch (err) {
-            case WOLFSSL_ERROR_WANT_READ:
-                return ESP_TLS_SSL_ERR_WANT_READ;
-            case WOLFSSL_ERROR_WANT_WRITE:
-                return ESP_TLS_SSL_ERR_WANT_WRITE;
-            default:
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
-                ESP_LOGE(TAG, "wolfSSL_accept returned %d, error code: %d", ret, err);
-                wolfssl_print_error_msg(err);
-                tls->conn_state = ESP_TLS_FAIL;
-                return err;
+        if (err != WOLFSSL_ERROR_WANT_READ && ret != WOLFSSL_ERROR_WANT_WRITE) {
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
+            ESP_LOGE(TAG, "wolfSSL_accept returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
+            tls->conn_state = ESP_TLS_FAIL;
+            return -1;
         }
     }
     return 0;
