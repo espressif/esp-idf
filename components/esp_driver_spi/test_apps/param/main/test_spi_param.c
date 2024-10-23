@@ -1438,7 +1438,7 @@ static void test_master_fd_no_dma(void)
                         .length = test_trans_len * 8,
                     };
                     unity_wait_for_signal("Slave ready");
-                    TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+                    TEST_ESP_OK(spi_device_polling_transmit(dev0, &trans_cfg));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
                     ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_receive, test_trans_len, ESP_LOG_DEBUG);
