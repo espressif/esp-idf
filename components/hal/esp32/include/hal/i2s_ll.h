@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@ static inline void i2s_ll_dma_enable_auto_write_back(i2s_dev_t *hw, bool en)
 }
 
 /**
- * @brief I2S DMA generate EOF event on data in FIFO poped out
+ * @brief I2S DMA generate EOF event on data in FIFO popped out
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param en True to enable, False to disable
@@ -350,11 +350,6 @@ static inline void i2s_ll_set_raw_mclk_div(i2s_dev_t *hw, uint32_t mclk_div, uin
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that unlike to calculate from the regular decimal */
-    i2s_ll_set_raw_mclk_div(hw, 7, 47, 3);
     i2s_ll_set_raw_mclk_div(hw, mclk_div->integer, mclk_div->denominator, mclk_div->numerator);
 }
 
@@ -659,7 +654,7 @@ static inline void i2s_ll_tx_set_bits_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Congfigure TX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Configure TX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -672,7 +667,7 @@ static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
 }
 
 /**
- * @brief Congfigure RX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Configure RX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -932,7 +927,7 @@ static inline void i2s_ll_share_bck_ws(i2s_dev_t *hw, bool loopback_en)
  * @brief Configure RX PDM downsample
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param dsr PDM downsample configuration paramater
+ * @param dsr PDM downsample configuration parameter
  */
 static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
 {
@@ -1080,11 +1075,11 @@ static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t f
 }
 
 /**
- * @brief Get I2S TX PDM fp configuration paramater
+ * @brief Get I2S TX PDM fp configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fp configuration paramater
+ *        - fp configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
@@ -1092,11 +1087,11 @@ static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 }
 
 /**
- * @brief Get I2S TX PDM fs configuration paramater
+ * @brief Get I2S TX PDM fs configuration parameter
  *
  * @param hw Peripheral I2S hardware instance address.
  * @return
- *        - fs configuration paramater
+ *        - fs configuration parameter
  */
 static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 {
