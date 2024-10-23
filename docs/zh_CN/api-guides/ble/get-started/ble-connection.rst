@@ -11,7 +11,7 @@
 
 - 学习连接的基本概念
 - 学习连接相关的参数
-- 学习 NimBLE_Connection 例程的代码结构
+- 学习 :example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 例程的代码结构
 
 
 连接的基本概念
@@ -23,7 +23,7 @@
 
 *在 Bluetooth LE 5.0 引入扩展广播特性以后， Legacy ADV 和 Extended ADV 对应的连接建立过程略有差异，下以 Legacy ADV 对应的连接建立过程为例。*
 
-当扫描者在某一个广播信道接收到一个广播数据包时，若该广播者是可连接的，那么扫描者可以在同一广播信道发送连接请求 (Connection Request)。对于广播者来说，它可以设置 *接受列表 (Accept List)* 以过滤不受信任的设备，或接受任一扫描者的连接请求。随后，广播者转变为外围设备，扫描者转变为中央设备，两者之间可以在数据信道进行双向通信。
+当扫描者在某一个广播信道接收到一个广播数据包时，若该广播者是可连接的，那么扫描者可以在同一广播信道发送连接请求 (Connection Request)。对于广播者来说，它可以设置 *接受列表 (Filter Accept List)* 以过滤不受信任的设备，或接受任一扫描者的连接请求。随后，广播者转变为外围设备，扫描者转变为中央设备，两者之间可以在数据信道进行双向通信。
 
 如 :ref:`扫描请求与扫描响应 <scan_request_and_scan_response>` 所述，广播者在每一个信道的广播结束以后，都会短暂进入 RX 模式，以接收可能的扫描请求。实际上，这个 RX 过程中还可以接受连接请求。所以对于扫描者来说，发送连接请求的时间窗口和发送扫描请求的时间窗口是类似的。
 
@@ -73,7 +73,7 @@
 
 外围设备延迟 (Peripheral Latency) 规定了外围设备在无需发送数据的前提下，最多可忽略的连接事件数量。
 
-为了理解这个连接参数的作用，让我们以蓝牙鼠标为例，分析其应用场景。用户在使用键盘的过程中，鼠标并没有需要发送的有效数据，此时最好降低数据包发送的频率以节省电量；在使用鼠标的过程中，我们希望鼠标能够尽可能快地发送数据，以降低使用延迟。也就是说，蓝牙鼠标的数据发送是间歇性高频率的。此时，如果仅靠连接间隔参数进行连接调节，则那么较低的连接间隔会导致高能耗，较高的连接间隔会导致高延迟。
+为了理解这个连接参数的作用，让我们以蓝牙鼠标为例。用户在使用键盘的过程中，鼠标并没有需要发送的有效数据，此时最好降低数据包发送的频率以节省电量；在使用鼠标的过程中，我们希望鼠标能够尽可能快地发送数据，以降低使用延迟。也就是说，蓝牙鼠标的数据发送是间歇性高频率的。此时，如果仅靠连接间隔参数进行连接调节，则那么较低的连接间隔会导致高能耗，较高的连接间隔会导致高延迟。
 
 在这种场景下，外围设备延迟机制将是一个完美的解决方案。为了降低蓝牙鼠标的延迟，我们可以将连接间隔设为一个较小的值，例如 10 ms ，那么在密集使用时数据交换频率可达 100 Hz ；随后，我们将外围设备延迟设定为 100 ，那么蓝牙鼠标在不使用的状态下，实际的数据交换频率可降低至 1 Hz 。通过这种设计，我们在不调整连接参数的前提下，实现了可变的数据交换频率，在最大程度上提升了用户体验。
 
@@ -132,17 +132,17 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 例程实践
 -------------------------------------------
 
-在掌握了连接的相关知识以后，接下来让我们结合 NimBLE_Connection 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的外围设备，对学到的知识进行实践。
+在掌握了连接的相关知识以后，接下来让我们结合 :example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的外围设备，对学到的知识进行实践。
 
 
 前提条件
 ^^^^^^^^^^^^^^^
 
-1. 一块支持 Bluetooth LE 的 {IDF_TARGET_NAME} 开发板
+1. 一块 {IDF_TARGET_NAME} 开发板
 2. ESP-IDF 开发环境
-3. 在手机上安装 nRF Connect for Mobile 应用程序
+3. 在手机上安装 **nRF Connect for Mobile** 应用程序
 
-若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`API 参考 <../../../get-started/index>`。
+若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`IDF 快速入门 <../../../get-started/index>`。
 
 
 动手试试
@@ -173,7 +173,7 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 
     $ idf.py set-target <chip-name>
 
-你应该能看到命令行以
+你应该能看到以下命令行
 
 .. code-block:: shell
 
@@ -188,7 +188,7 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 
     $ idf.py flash monitor
 
-你应该能看到命令行以
+你应该能看到以下命令行以
 
 .. code-block:: shell
 
@@ -201,7 +201,7 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 连接，然后断开
 ##############################
 
-打开手机上的 nRF Connect for Mobile 程序，在 SCANNER 标签页中下拉刷新，找到 NimBLE_CONN 设备，如下图所示
+打开手机上的 **nRF Connect for Mobile** 程序，在 **SCANNER** 标签页中下拉刷新，找到 NimBLE_CONN 设备，如下图所示
 
 .. figure:: ../../../../_static/ble/ble-connection-device-list.jpg
     :align: center
@@ -211,9 +211,9 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 
 若设备列表较长，建议以 NimBLE 为关键字进行设备名过滤，快速找到 NimBLE_CONN 设备。
 
-与 :ref:`NimBLE_Beacon <nimble_beacon_details>` 相比，可以观察到大部分广播数据是一致的，但多了一项 `Advertising Interval` 数据，其值为 500 ms ；在 `CONNECT` 按钮下方，确实也可以观察到广播间隔为 510 ms 左右。
+与 :ref:`NimBLE_Beacon <nimble_beacon_details>` 相比，可以观察到大部分广播数据是一致的，但多了一项 `Advertising Interval` 数据，其值为 500 ms ；在 **CONNECT** 按钮下方，确实也可以观察到广播间隔为 510 ms 左右。
 
-点击 `CONNECT` 按钮连接到设备，在手机上应能够看到 GAP 服务，如下
+点击 **CONNECT** 按钮连接到设备，在手机上应能够看到 GAP 服务，如下
 
 .. figure:: ../../../../_static/ble/ble-connection-connected.jpg
     :align: center
@@ -221,7 +221,7 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 
     连接到 NimBLE_CONN 设备
 
-此时应该还能观察到开发板上的 LED 亮起。点击 `DISCONNECT`，断开与设备的连接，此时应能观察到开发板上的 LED 熄灭。
+此时应该还能观察到开发板上的 LED 亮起。点击 **DISCONNECT**，断开与设备的连接，此时应能观察到开发板上的 LED 熄灭。
 
 若你的开发板上没有电源指示灯以外的 LED ，你应该能在日志输出中观察到对应的状态指示。
 
@@ -279,7 +279,7 @@ MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以�
 
 .. _nimble_connection_project_structure:
 
-NimBLE_Connection 的根目录结构与 :ref:`NimBLE_Beacon <nimble_beacon_project_structure>` 完全一致，不过在完成了固件的构建以后，你可能会观察到根目录下多了一个 `managed_components` 目录，里面含有固件构建时自动引入的依赖；本例中为 `led_strip` 组件，用于控制开发板的 LED。该依赖项在 `main/idf_component.yml` 文件中被引入。
+:example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 的根目录结构与 :ref:`NimBLE_Beacon <nimble_beacon_project_structure>` 完全一致，不过在完成了固件的构建以后，你可能会观察到根目录下多了一个 `managed_components` 目录，里面含有固件构建时自动引入的依赖；本例中为 `led_strip` 组件，用于控制开发板的 LED。该依赖项在 `main/idf_component.yml` 文件中被引入。
 
 另外，在 `main` 文件夹中引入了 LED 控制相关的源代码。
 
@@ -472,6 +472,6 @@ GAP 事件处理
 总结
 ----------------
 
-通过本教程，你了解了连接的基本概念，并通过 NimBLE_Connection 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE 外围设备的方法。
+通过本教程，你了解了连接的基本概念，并通过 :example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE 外围设备的方法。
 
 你可以尝试对例程中的参数进行修改，并在日志输出中观察修改结果。例如，你可以修改外围设备延迟或连接超时参数，观察连接参数的修改是否能够触发连接更新事件。
