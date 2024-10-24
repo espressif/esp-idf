@@ -3,6 +3,7 @@ menu "Newlib"
     choice NEWLIB_STDOUT_LINE_ENDING
         prompt "Line ending for UART output"
         default NEWLIB_STDOUT_LINE_ENDING_CRLF
+        depends on VFS_SUPPORT_IO
         help
             This option allows configuring the desired line endings sent to UART
             when a newline ('\n', LF) appears on stdout.
@@ -27,6 +28,7 @@ menu "Newlib"
     choice NEWLIB_STDIN_LINE_ENDING
         prompt "Line ending for UART input"
         default NEWLIB_STDIN_LINE_ENDING_CR
+        depends on VFS_SUPPORT_IO
         help
             This option allows configuring which input sequence on UART produces
             a newline ('\n', LF) on stdin.
