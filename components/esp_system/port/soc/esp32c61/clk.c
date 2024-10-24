@@ -148,6 +148,12 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
 
+        // Disable unused clock sources after clock source switching is complete.
+        // Regardless of the clock source selection, the internal 136K clock source will always keep on.
+        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K && rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+            rtc_clk_32k_enable(false);
+        }
+
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
              * Improve calibration routine to wait until the frequency is stable.
