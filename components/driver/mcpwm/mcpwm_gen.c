@@ -389,6 +389,10 @@ esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_g
         mcpwm_ll_deadtime_set_falling_delay(hal->dev, oper_id, config->negedge_delay_ticks);
     }
 
+    if (delay_on_both_edge && in_generator->gen_id == 0 && oper->generators[1]) {
+        ESP_LOGW(TAG, "generator B will not function correctly. To set deadtime on both edges for one generator while bypassing the deadtime for the other, please set the deadtime for generator B only.");
+    }
+
     ESP_LOGD(TAG, "operator (%d,%d) dead time (R:%"PRIu32",F:%"PRIu32"), topology code:%"PRIx32, group->group_id, oper_id,
              config->posedge_delay_ticks, config->negedge_delay_ticks, mcpwm_ll_deadtime_get_switch_topology(hal->dev, oper_id));
     return ESP_OK;
