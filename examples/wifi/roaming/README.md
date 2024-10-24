@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrate a roaming example using 11k and 11v APIs.
+This example demonstrates a roaming example using 802.11k and 802.11v APIs. 802.11r(FT-PSK) is enabled by default in this example.
 
 ## How to use example
 
