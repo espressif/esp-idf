@@ -69,7 +69,7 @@ static esp_err_t wifi_transmit(void *h, void *buffer, size_t len)
 static esp_err_t wifi_transmit_wrap(void *h, void *buffer, size_t len, void *netstack_buf)
 {
     wifi_netif_driver_t driver = h;
-#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !CONFIG_SPIRAM_IGNORE_NOTFOUND
     return esp_wifi_internal_tx_by_ref(driver->wifi_if, buffer, len, netstack_buf);
 #else
     return esp_wifi_internal_tx(driver->wifi_if, buffer, len);
