@@ -194,14 +194,17 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
                             config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
     }
+    ESP_RETURN_ON_FALSE(config->in.block_w <= (config->in.pic_w - config->in.block_offset_x) &&
+                        config->in.block_h <= (config->in.pic_h - config->in.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in.block_w/h + in.block_offset_x/y does not fit in the in pic");
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.srm_cm,
     };
     uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
     uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
-    ESP_RETURN_ON_FALSE(config->scale_x < (PPA_LL_SRM_SCALING_INT_MAX + 1) && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
-                        config->scale_y < (PPA_LL_SRM_SCALING_INT_MAX + 1) && config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
+    ESP_RETURN_ON_FALSE(config->scale_x < PPA_LL_SRM_SCALING_INT_MAX && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
+                        config->scale_y < PPA_LL_SRM_SCALING_INT_MAX && config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
                         ESP_ERR_INVALID_ARG, TAG, "invalid scale");
     uint32_t new_block_w = 0;
     uint32_t new_block_h = 0;
@@ -242,8 +245,10 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     esp_cache_msync((void *)in_ext_window, in_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     // Invalidate out_buffer extended window (alignment strict on M2C direction)
     uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
-    uint32_t out_ext_window_len = config->out.pic_w * config->in.block_h * out_pixel_depth / 8;
-    esp_cache_msync((void *)PPA_ALIGN_DOWN(out_ext_window, buf_alignment_size), PPA_ALIGN_UP(out_ext_window_len, buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    uint32_t out_ext_window_aligned = PPA_ALIGN_DOWN(out_ext_window, buf_alignment_size);
+    uint32_t out_ext_window_len = config->out.pic_w * new_block_h * out_pixel_depth / 8; // actual ext_window_len must be less than or equal to this, since actual block_h <= new_block_h (may round down)
+    assert(out_ext_window + out_ext_window_len <= (uint32_t)config->out.buffer + config->out.buffer_size);
+    esp_cache_msync((void *)out_ext_window_aligned, PPA_ALIGN_UP(out_ext_window_len + (out_ext_window - out_ext_window_aligned), buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
@@ -255,9 +260,9 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         ppa_srm_oper_t *srm_trans_desc = (ppa_srm_oper_t *)trans_on_picked_desc->srm_desc;
         memcpy(srm_trans_desc, config, sizeof(ppa_srm_oper_config_t));
         srm_trans_desc->scale_x_int = (uint32_t)srm_trans_desc->scale_x;
-        srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
+        srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
         srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
-        srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
+        srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
         srm_trans_desc->alpha_value = new_alpha_value;
         srm_trans_desc->data_burst_length = ppa_client->data_burst_length;
 
