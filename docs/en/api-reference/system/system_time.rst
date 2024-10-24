@@ -46,8 +46,6 @@ The RTC timer has the following clock sources:
 
     :not esp32c6 and not esp32h2 and not esp32p4: - ``Internal {IDF_TARGET_INT_OSC_FRE} oscillator, divided by 256 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``: Provides better frequency stability than the ``Internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` at the expense of a higher (by 5 μA) Deep-sleep current consumption. It also does not require external components.
 
-    :esp32c6 or esp32h2 or esp32p4: - ``Internal 32 kHz RC oscillator``
-
 The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_RTC_CLK_SRC` in project configuration.
 
 More details about the wiring requirements for the external crystal or external oscillator, please refer to the `Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/{IDF_TARGET_PATH_NAME}>`_.
