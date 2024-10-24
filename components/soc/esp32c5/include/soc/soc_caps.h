@@ -322,6 +322,7 @@
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 #define SOC_PCNT_SUPPORT_CLEAR_SIGNAL         1
 #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
+#define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  /*!< The sleep retention feature can help back up PCNT registers before sleep */
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */

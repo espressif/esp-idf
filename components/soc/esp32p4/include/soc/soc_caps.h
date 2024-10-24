@@ -408,6 +408,7 @@
 #define SOC_PCNT_THRES_POINT_PER_UNIT         2
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 #define SOC_PCNT_SUPPORT_CLEAR_SIGNAL         1  /*!< Support clear signal input */
+// #define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  // TODO: IDF-9907 Waiting for expansion of module ID /*!< The sleep retention feature can help back up PCNT registers before sleep */
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */
