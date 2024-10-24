@@ -182,6 +182,14 @@ The FATFS component supports FAT12, FAT16, and FAT32 file system types. The file
 
 Please refer :doc:`File System Considerations <../../api-guides/file-system-considerations>` for further details.
 
+Application Examples
+--------------------
+
+- :example:`storage/fatfs/getting_started` demonstrates the minimal setup required to store persistent data on SPI flash using the FatFS, including mounting the file system, opening a file, performing basic read and write operations, and unmounting the file system.
+
+- :example:`storage/fatfs/fs_operations` demonstrates more advanced FatFS operations, including reading and writing files, creating, moving, and deleting files and directories, and inspecting file details.
+
+- :example:`storage/fatfs/ext_flash` demonstrates how to operate an external SPI flash formatted with FatFS, including initializing the SPI bus, configuring the flash chip, registering it as a partition, and performing read and write operations.
 
 High-level API Reference
 ------------------------
