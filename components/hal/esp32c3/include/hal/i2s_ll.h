@@ -47,7 +47,7 @@ extern "C" {
 static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 {
     (void)i2s_id;
-    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = enable;
+    SYSTEM.perip_clk_en0.reg_i2s0_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -63,8 +63,8 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 static inline void i2s_ll_reset_register(int i2s_id)
 {
     (void)i2s_id;
-    SYSTEM.perip_rst_en0.reg_i2s1_rst = 1;
-    SYSTEM.perip_rst_en0.reg_i2s1_rst = 0;
+    SYSTEM.perip_rst_en0.reg_i2s0_rst = 1;
+    SYSTEM.perip_rst_en0.reg_i2s0_rst = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

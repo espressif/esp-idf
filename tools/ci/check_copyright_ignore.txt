@@ -524,7 +524,6 @@ components/soc/esp32/include/soc/touch_sensor_channel.h
 components/soc/esp32/include/soc/uart_pins.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
-components/soc/esp32c3/interrupts.c
 components/soc/esp32c3/ledc_periph.c
 components/soc/esp32s2/adc_periph.c
 components/soc/esp32s2/include/soc/bb_reg.h

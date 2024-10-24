@@ -58,7 +58,7 @@ typedef enum {
     ETS_HP_APM_M4_INTR_SOURCE,
     ETS_LP_APM0_INTR_SOURCE,
     ETS_MSPI_INTR_SOURCE,
-    ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
+    ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
     ETS_UHCI0_INTR_SOURCE,                      /**< interrupt of UHCI0, level*/
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/

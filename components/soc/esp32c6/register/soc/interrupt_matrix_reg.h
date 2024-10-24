@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -502,17 +502,17 @@ extern "C" {
 #define INTMTX_CORE0_MSPI_INTR_MAP_V  0x0000001FU
 #define INTMTX_CORE0_MSPI_INTR_MAP_S  0
 
-/** INTMTX_CORE0_I2S1_INTR_MAP_REG register
+/** INTMTX_CORE0_I2S_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_I2S1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xa4)
-/** INTMTX_CORE0_I2S1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
+#define INTMTX_CORE0_I2S_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xa4)
+/** INTMTX_CORE0_I2S_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  Need add description
  */
-#define INTMTX_CORE0_I2S1_INTR_MAP    0x0000001FU
-#define INTMTX_CORE0_I2S1_INTR_MAP_M  (INTMTX_CORE0_I2S1_INTR_MAP_V << INTMTX_CORE0_I2S1_INTR_MAP_S)
-#define INTMTX_CORE0_I2S1_INTR_MAP_V  0x0000001FU
-#define INTMTX_CORE0_I2S1_INTR_MAP_S  0
+#define INTMTX_CORE0_I2S_INTR_MAP    0x0000001FU
+#define INTMTX_CORE0_I2S_INTR_MAP_M  (INTMTX_CORE0_I2S_INTR_MAP_V << INTMTX_CORE0_I2S_INTR_MAP_S)
+#define INTMTX_CORE0_I2S_INTR_MAP_V  0x0000001FU
+#define INTMTX_CORE0_I2S_INTR_MAP_S  0
 
 /** INTMTX_CORE0_UHCI0_INTR_MAP_REG register
  *  register description

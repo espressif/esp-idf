@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -585,19 +585,19 @@ typedef union {
     uint32_t val;
 } interrupt_matrix_mspi_intr_map_reg_t;
 
-/** Type of i2s1_intr_map register
+/** Type of i2s_intr_map register
  *  register description
  */
 typedef union {
     struct {
-        /** i2s1_intr_map : R/W; bitpos: [4:0]; default: 0;
+        /** i2s_intr_map : R/W; bitpos: [4:0]; default: 0;
          *  Need add description
          */
-        uint32_t i2s1_intr_map:5;
+        uint32_t i2s_intr_map:5;
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} interrupt_matrix_i2s1_intr_map_reg_t;
+} interrupt_matrix_i2s_intr_map_reg_t;
 
 /** Type of uhci0_intr_map register
  *  register description
@@ -1199,7 +1199,7 @@ typedef struct interrupt_matrix_dev_t {
     volatile interrupt_matrix_hp_apm_m3_intr_map_reg_t hp_apm_m3_intr_map;
     volatile interrupt_matrix_lp_apm0_intr_map_reg_t lp_apm0_intr_map;
     volatile interrupt_matrix_mspi_intr_map_reg_t mspi_intr_map;
-    volatile interrupt_matrix_i2s1_intr_map_reg_t i2s1_intr_map;
+    volatile interrupt_matrix_i2s_intr_map_reg_t i2s_intr_map;
     volatile interrupt_matrix_uhci0_intr_map_reg_t uhci0_intr_map;
     volatile interrupt_matrix_uart0_intr_map_reg_t uart0_intr_map;
     volatile interrupt_matrix_uart1_intr_map_reg_t uart1_intr_map;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ typedef volatile struct system_dev_s {
             uint32_t reg_spi01_clk_en              :    1;  /*reg_spi01_clk_en*/
             uint32_t reg_uart_clk_en               :    1;  /*reg_uart_clk_en*/
             uint32_t reg_wdg_clk_en                :    1;  /*reg_wdg_clk_en*/
-            uint32_t reg_i2s0_clk_en               :    1;  /*reg_i2s0_clk_en*/
+            uint32_t reserved_04                   :    1;  /*reserved*/
             uint32_t reg_uart1_clk_en              :    1;  /*reg_uart1_clk_en*/
             uint32_t reg_spi2_clk_en               :    1;  /*reg_spi2_clk_en*/
             uint32_t reg_i2c_ext0_clk_en           :    1;  /*reg_i2c_ext0_clk_en*/
@@ -71,7 +71,7 @@ typedef volatile struct system_dev_s {
             uint32_t reg_i2c_ext1_clk_en           :    1;  /*reg_i2c_ext1_clk_en*/
             uint32_t reg_can_clk_en                :    1;  /*reg_can_clk_en*/
             uint32_t reg_pwm1_clk_en               :    1;  /*reg_pwm1_clk_en*/
-            uint32_t reg_i2s1_clk_en               :    1;  /*reg_i2s1_clk_en*/
+            uint32_t reg_i2s0_clk_en               :    1;  /*reg_i2s0_clk_en*/
             uint32_t reg_spi2_dma_clk_en           :    1;  /*reg_spi2_dma_clk_en*/
             uint32_t reg_usb_device_clk_en         :    1;  /*reg_usb_device_clk_en*/
             uint32_t reg_uart_mem_clk_en           :    1;  /*reg_uart_mem_clk_en*/
@@ -108,7 +108,7 @@ typedef volatile struct system_dev_s {
             uint32_t reg_spi01_rst                 :    1;  /*reg_spi01_rst*/
             uint32_t reg_uart_rst                  :    1;  /*reg_uart_rst*/
             uint32_t reg_wdg_rst                   :    1;  /*reg_wdg_rst*/
-            uint32_t reg_i2s0_rst                  :    1;  /*reg_i2s0_rst*/
+            uint32_t reserved_04                   :    1;  /*reserved*/
             uint32_t reg_uart1_rst                 :    1;  /*reg_uart1_rst*/
             uint32_t reg_spi2_rst                  :    1;  /*reg_spi2_rst*/
             uint32_t reg_i2c_ext0_rst              :    1;  /*reg_i2c_ext0_rst*/
@@ -125,7 +125,7 @@ typedef volatile struct system_dev_s {
             uint32_t reg_i2c_ext1_rst              :    1;  /*reg_i2c_ext1_rst*/
             uint32_t reg_can_rst                   :    1;  /*reg_can_rst*/
             uint32_t reg_pwm1_rst                  :    1;  /*reg_pwm1_rst*/
-            uint32_t reg_i2s1_rst                  :    1;  /*reg_i2s1_rst*/
+            uint32_t reg_i2s0_rst                  :    1;  /*reg_i2s0_rst*/
             uint32_t reg_spi2_dma_rst              :    1;  /*reg_spi2_dma_rst*/
             uint32_t reg_usb_device_rst            :    1;  /*reg_usb_device_rst*/
             uint32_t reg_uart_mem_rst              :    1;  /*reg_uart_mem_rst*/

@@ -583,7 +583,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved6                     :    4;
             uint32_t reg_core_0_pif_pms_constrain_world_0_can:    2;  /*core_0_pif_pms_constrain_world_0_can*/
             uint32_t reserved12                    :    2;
-            uint32_t reg_core_0_pif_pms_constrain_world_0_i2s1:    2;  /*core_0_pif_pms_constrain_world_0_i2s1*/
+            uint32_t reg_core_0_pif_pms_constrain_world_0_i2s0:    2;  /*core_0_pif_pms_constrain_world_0_i2s0*/
             uint32_t reserved16                    :    6;
             uint32_t reg_core_0_pif_pms_constrain_world_0_rwbt:    2;  /*core_0_pif_pms_constrain_world_0_rwbt*/
             uint32_t reserved24                    :    2;
@@ -661,7 +661,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved6                     :    4;
             uint32_t reg_core_0_pif_pms_constrain_world_1_can:    2;  /*core_0_pif_pms_constrain_world_1_can*/
             uint32_t reserved12                    :    2;
-            uint32_t reg_core_0_pif_pms_constrain_world_1_i2s1:    2;  /*core_0_pif_pms_constrain_world_1_i2s1*/
+            uint32_t reg_core_0_pif_pms_constrain_world_1_i2s0:    2;  /*core_0_pif_pms_constrain_world_1_i2s0*/
             uint32_t reserved16                    :    6;
             uint32_t reg_core_0_pif_pms_constrain_world_1_rwbt:    2;  /*core_0_pif_pms_constrain_world_1_rwbt*/
             uint32_t reserved24                    :    2;
@@ -898,7 +898,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved6                     :    4;
             uint32_t reg_backup_bus_pms_constrain_can:    2;  /*backup_bus_pms_constrain_can*/
             uint32_t reserved12                    :    2;
-            uint32_t reg_backup_bus_pms_constrain_i2s1:    2;  /*backup_bus_pms_constrain_i2s1*/
+            uint32_t reg_backup_bus_pms_constrain_i2s0:    2;  /*backup_bus_pms_constrain_i2s0*/
             uint32_t reserved16                    :    6;
             uint32_t reg_backup_bus_pms_constrain_rwbt:    2;  /*backup_bus_pms_constrain_rwbt*/
             uint32_t reserved24                    :    2;
