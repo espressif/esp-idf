@@ -79,12 +79,6 @@
 
                 将外部电路生成的时钟信号连接到 {IDF_TARGET_OSC_SLOW_PIN}，可作为 ``RTC_SLOW_CLK`` 的时钟源。通过校准，可以计算该时钟信号的实际频率。
 
-        .. only:: SOC_CLK_RC32K_SUPPORTED
-
-            - 内部 32 kHz RC 振荡器 (RC32K)
-
-                在运行时，通过校准，可以计算该时钟信号的实际频率。
-
 与晶振产生的信号相比，从 RC 振荡器电路产生的信号通常精度较低，且容易受环境影响。因此，{IDF_TARGET_NAME} 为 ``RTC_SLOW_CLK`` 提供了几种时钟源选项，可以根据对系统时间精度和对功耗的要求选择。更多详情，请参阅 :ref:`rtc-clock-source-choice`。
 
 模块时钟
