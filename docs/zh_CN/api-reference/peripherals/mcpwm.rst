@@ -529,7 +529,7 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
         // NOTE: 下面的操作是无效的，不能将同一种 delay 应用于不同的 generator 上
         mcpwm_generator_set_dead_time(mcpwm_gen_b, mcpwm_gen_b, &dt_config);
 
-    然而，你可以为生成器 A 设置 ``posedge delay``，为生成器 B 设置 ``negedge delay``。另外，也可以为生成器 A 同时设置 ``posedge delay`` 和 ``negedge delay``，而让生成器 B 绕过死区模块。
+    然而，你可以为生成器 A 设置 ``posedge delay``，为生成器 B 设置 ``negedge delay``。另外，也可以为生成器 B 同时设置 ``posedge delay`` 和 ``negedge delay``，而让生成器 A 绕过死区模块。注意，如果对生成器 A 同时设置 ``negedge delay`` 和 ``posedge delay``，生成器 B 将无法正常工作。其中，生成器 A 为通过操作器句柄申请的第一个生成器，生成器 B 为通过操作器句柄申请的第二个生成器。
 
 .. note::
 
