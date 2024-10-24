@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,7 +116,7 @@ const char *esp_coex_version_get(void);
  * @deprecated Use esp_coex_status_bit_set() and esp_coex_status_bit_clear() instead.
  *  Set coexist preference of performance
  *  For example, if prefer to bluetooth, then it will make A2DP(play audio via classic bt)
- *  more smooth while wifi is runnning something.
+ *  more smooth while wifi is running something.
  *  If prefer to wifi, it will do similar things as prefer to bluetooth.
  *  Default, it prefer to balance.
  *
@@ -217,6 +217,15 @@ esp_err_t esp_external_coex_set_validate_high(bool is_high_valid);
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_coex_wifi_i154_enable(void);
+#endif
+
+#if CONFIG_ESP_COEX_GPIO_DEBUG
+/**
+ * @brief Enable coexist GPIO debug.
+ *        To fully enable this feature, make sure functions in rom_funcs are out of ROM.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_coexist_debug_init(void);
 #endif
 
 #ifdef __cplusplus
