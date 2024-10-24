@@ -271,6 +271,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "usb_serial_jtag_hal.c")
     endif()
 
+    if(CONFIG_SOC_USB_UTMI_PHY_NUM GREATER 0)
+        list(APPEND srcs "usb_utmi_hal.c")
+    endif()
+
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs
                     "usb_dwc_hal.c"

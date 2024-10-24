@@ -4,47 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO: Refactor during the IDF-9198
-#include "sdkconfig.h"
-#include "soc/soc_caps.h"
-#include "soc/usb_dwc_cfg.h"
-#include "hal/usb_utmi_ll.h" // We don't have usb_utmi_hal yet
-#include "esp_private/periph_ctrl.h"
-// TODO: Remove this file when proper support of P4 PHYs is implemented IDF-7323
+// TODO: Remove this file when proper support of P4 PHYs is implemented IDF-11144
+#include "hal/usb_utmi_hal.h"
 #include "esp_private/usb_phy.h"
-#include "esp_private/periph_ctrl.h"
 
+#include "soc/soc_caps.h"
 #if SOC_RCC_IS_INDEPENDENT
 #define USB_UTMI_BUS_CLK_ATOMIC()
 #else
+#include "esp_private/periph_ctrl.h"
 #define USB_UTMI_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
 #endif
 
+static usb_utmi_hal_context_t s_utmi_hal_context;
+
 esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_ret)
 {
-#if (OTG_HSPHY_INTERFACE != 0)
-#if CONFIG_IDF_TARGET_ESP32P4
     USB_UTMI_BUS_CLK_ATOMIC() {
-        usb_utmi_ll_enable_bus_clock(true);
-        usb_utmi_ll_reset_register();
+        usb_utmi_hal_init(&s_utmi_hal_context);
     }
-    /*
-    Additional setting to solve missing DCONN event on ESP32P4 (IDF-9953).
-
-    Note: On ESP32P4, the HP_SYSTEM_OTG_SUSPENDM is not connected to 1 by hardware.
-    For correct detection of the device detaching, internal signal should be set to 1 by the software.
-    */
-    usb_utmi_ll_enable_precise_detection(true);
-    usb_utmi_ll_configure_ls(&USB_UTMI, true);
-#endif // CONFIG_IDF_TARGET_ESP32P4
-#endif // (OTG_HSPHY_INTERFACE != 0)
     return ESP_OK;
 }
 
 esp_err_t usb_del_phy(usb_phy_handle_t handle)
 {
+    // Note: handle argument is not checked, because we don't have phy_handle for P4 yet
     USB_UTMI_BUS_CLK_ATOMIC() {
-        usb_utmi_ll_enable_bus_clock(false);
+        usb_utmi_hal_disable();
     }
     return ESP_OK;
 }

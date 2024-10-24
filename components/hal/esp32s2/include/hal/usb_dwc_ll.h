@@ -6,25 +6,21 @@
 
 #pragma once
 
-#include "soc/soc_caps.h"
-/*
-This header is shared across all targets. Resolve to an empty header for targets
-that don't support USB OTG.
-*/
-#if SOC_USB_OTG_SUPPORTED
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/usb_dwc_struct.h"
 #include "soc/usb_dwc_cfg.h"
 #include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
-#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_USB_OTG_SUPPORTED
+/* ----------------------------- Helper Macros ------------------------------ */
+
+// Get USB hardware instance
+#define USB_DWC_LL_GET_HW(num) (&USB_DWC)
 
 /* -----------------------------------------------------------------------------
 --------------------------------- DWC Constants --------------------------------
@@ -222,14 +218,14 @@ static inline void usb_dwc_ll_gusbcfg_set_timeout_cal(usb_dwc_dev_t *hw, uint8_t
     hw->gusbcfg_reg.toutcal = tout_cal;
 }
 
-#if (OTG_HSPHY_INTERFACE != 0)
 static inline void usb_dwc_ll_gusbcfg_set_utmi_phy(usb_dwc_dev_t *hw)
 {
+#if (OTG_HSPHY_INTERFACE != 0)
     hw->gusbcfg_reg.phyif = 1;       // 16 bits interface
     hw->gusbcfg_reg.ulpiutmisel = 0; // UTMI+
     hw->gusbcfg_reg.physel = 0;      // HS PHY
-}
 #endif // (OTG_HSPHY_INTERFACE != 0)
+}
 
 // --------------------------- GRSTCTL Register --------------------------------
 
@@ -356,9 +352,9 @@ static inline uint32_t usb_dwc_ll_gsnpsid_get_id(usb_dwc_dev_t *hw)
 // --------------------------- GHWCFGx Register --------------------------------
 
 /**
- * @brief Get the hardware configuration regiters of the DWC_OTG controller
+ * @brief Get the hardware configuration registers of the DWC_OTG controller
  *
- * The hardware configuraiton regitsers are read only and indicate the various
+ * The hardware configuration regitsers are read only and indicate the various
  * features of the DWC_OTG core.
  *
  * @param hw Start address of the DWC_OTG registers
@@ -405,7 +401,7 @@ static inline void usb_dwc_ll_hcfg_dis_perio_sched(usb_dwc_dev_t *hw)
 /**
  * Sets the length of the frame list
  *
- * @param num_entires Number of entires in the frame list
+ * @param num_entires Number of entries in the frame list
  */
 static inline void usb_dwc_ll_hcfg_set_num_frame_list_entries(usb_dwc_dev_t *hw, usb_hal_frame_list_len_t num_entries)
 {
@@ -903,7 +899,7 @@ static inline usb_dwc_host_chan_regs_t *usb_dwc_ll_chan_get_regs(usb_dwc_dev_t *
 // ------------------------------ QTD related ----------------------------------
 
 #define USB_DWC_LL_QTD_STATUS_SUCCESS      0x0     //If QTD was processed, it indicates the data was transmitted/received successfully
-#define USB_DWC_LL_QTD_STATUS_PKTERR       0x1     //Data trasnmitted/received with errors (CRC/Timeout/Stuff/False EOP/Excessive NAK).
+#define USB_DWC_LL_QTD_STATUS_PKTERR       0x1     //Data transmitted/received with errors (CRC/Timeout/Stuff/False EOP/Excessive NAK).
 //Note: 0x2 is reserved
 #define USB_DWC_LL_QTD_STATUS_BUFFER       0x3     //AHB error occurred.
 #define USB_DWC_LL_QTD_STATUS_NOT_EXECUTED 0x4     //QTD as never processed
@@ -914,7 +910,7 @@ static inline usb_dwc_host_chan_regs_t *usb_dwc_ll_chan_get_regs(usb_dwc_dev_t *
  * @param qtd Pointer to the QTD
  * @param data_buff Pointer to buffer containing the data to transfer
  * @param xfer_len Number of bytes in transfer. Setting 0 will do a zero length IN transfer.
- *                 Non zero length must be mulitple of the endpoint's MPS.
+ *                 Non zero length must be multiple of the endpoint's MPS.
  * @param hoc Halt on complete (will generate an interrupt and halt the channel)
  */
 static inline void usb_dwc_ll_qtd_set_in(usb_dwc_ll_dma_qtd_t *qtd, uint8_t *data_buff, int xfer_len, bool hoc)
@@ -932,7 +928,7 @@ static inline void usb_dwc_ll_qtd_set_in(usb_dwc_ll_dma_qtd_t *qtd, uint8_t *dat
 /**
  * @brief Set a QTD for a non isochronous OUT transfer
  *
- * @param qtd Poitner to the QTD
+ * @param qtd Pointer to the QTD
  * @param data_buff Pointer to buffer containing the data to transfer
  * @param xfer_len Number of bytes to transfer. Setting 0 will do a zero length transfer.
  *                 For ctrl setup packets, this should be set to 8.
@@ -972,9 +968,9 @@ static inline void usb_dwc_ll_qtd_set_null(usb_dwc_ll_dma_qtd_t *qtd)
 /**
  * @brief Get the status of a QTD
  *
- * When a channel get's halted, call this to check whether each QTD was executed successfully
+ * When a channel gets halted, call this to check whether each QTD was executed successfully
  *
- * @param qtd Poitner to the QTD
+ * @param qtd Pointer to the QTD
  * @param[out] rem_len Number of bytes ramining in the QTD
  * @param[out] status Status of the QTD
  */
@@ -991,8 +987,6 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
 }
-
-#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 }
