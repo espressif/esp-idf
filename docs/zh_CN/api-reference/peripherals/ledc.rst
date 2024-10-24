@@ -337,6 +337,18 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 要注册处理程序来处理中断，可调用函数 :cpp:func:`ledc_isr_register`。
 
 
+电源管理
+--------
+
+LEDC 驱动不使用电源管理锁来防止系统进入 Light-sleep 。相反，可以通过配置 :cpp:member:`ledc_channel_config_t::sleep_mode` 来选择 LEDC 外设电源域状态和 PWM 信号在睡眠期间的输出行为。默认模式是 :cpp:enumerator:`LEDC_SLEEP_MODE_NO_ALIVE_NO_PD`，它表示没有信号输出，并且 LEDC 电源域在睡眠期间不会下电。
+
+如果需要在 Light-sleep 中保持信号输出，则可以选择 :cpp:enumerator:`LEDC_SLEEP_MODE_KEEP_ALIVE` 模式。只要绑定的 LEDC 定时器时钟源兼容 Light-sleep ， PWM 信号就可以在系统进入 Light-sleep 期间继续输出。其代价是睡眠期间的功耗会更高，这是由于时钟源和 LEDC 所属的电源域无法被下电。值得注意的是，在入睡前未完成的渐变也可以在睡眠期间继续，只是有可能没法准确停在目标占空比上。系统被唤醒后，驱动会调整 PWM 占空比到原来设定的目标占空比上。
+
+.. only:: SOC_LEDC_SUPPORT_SLEEP_RETENTION
+
+    此外还有另一种睡眠模式，:cpp:enumerator:`LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD` 。选择此模式可以在睡眠中节省一些功耗，但会消耗更多内存。在进入 Light-sleep 之前，系统会保存 LEDC 寄存器上下文，并在唤醒后恢复它们，从而使 LEDC 电源域可以在睡眠期间被下电。任何未完成的渐变在从睡眠状态唤醒后都不会继续进行，而是输出一个固定占空比的 PWM 信号，该占空比与进入睡眠前的当下占空比相匹配。
+
+
 .. only:: esp32
 
     .. _ledc-api-high_low_speed_mode:

@@ -17,7 +17,7 @@
 
 static const uart_port_t uart_num = UART_NUM_1;
 
-static void uart_init(bool backup_before_sleep)
+static void uart_init(bool allow_pd)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -26,7 +26,7 @@ static void uart_init(bool backup_before_sleep)
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT,
-        .flags.backup_before_sleep = backup_before_sleep,
+        .flags.allow_pd = allow_pd,
     };
 
     TEST_ESP_OK(uart_driver_install(uart_num, 256, 0, 20, NULL, 0));
@@ -120,7 +120,7 @@ TEST_CASE("uart won't be powered down in light sleep if retention not created", 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     sleep_cpu_configure(true);
 
-    uart_init(false); // backup_before_sleep set to false, sleep retention module will be inited, but not created
+    uart_init(false); // allow_pd set to false, sleep retention module will be inited, but not created
 
     // Ensure UART is fully idle before starting loopback RX/TX test
     TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));

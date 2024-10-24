@@ -58,6 +58,8 @@ extern "C" {
 #define REGDMA_TSENS_LINK(_pri)             ((0x20 << 8) | _pri)
 #define REGDMA_TWAI_LINK(_pri)              ((0x21 << 8) | _pri)
 #define REGDMA_PARLIO_LINK(_pri)            ((0x22 << 8) | _pri)
+#define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
+#define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -80,6 +82,8 @@ extern "C" {
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TEMPERATURE_SENSOR      REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

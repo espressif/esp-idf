@@ -34,6 +34,8 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_UART0        = 14,
     SLEEP_RETENTION_MODULE_UART1        = 15,
     SLEEP_RETENTION_MODULE_ETM0         = 16,
+    SLEEP_RETENTION_MODULE_GPSPI2       = 17,
+    SLEEP_RETENTION_MODULE_LEDC         = 18,
 
     /* Modem module, which includes WiFi, BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_WIFI_MAC     = 26,
@@ -64,6 +66,8 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
     SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
     SLEEP_RETENTION_MODULE_BM_ETM0         = BIT(SLEEP_RETENTION_MODULE_ETM0),
+    SLEEP_RETENTION_MODULE_BM_GPSPI2       = BIT(SLEEP_RETENTION_MODULE_GPSPI2),
+    SLEEP_RETENTION_MODULE_BM_LEDC         = BIT(SLEEP_RETENTION_MODULE_LEDC),
     /* modem module, which includes WiFi, BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_BM_WIFI_MAC     = BIT(SLEEP_RETENTION_MODULE_WIFI_MAC),
     SLEEP_RETENTION_MODULE_BM_WIFI_BB      = BIT(SLEEP_RETENTION_MODULE_WIFI_BB),
@@ -84,6 +88,8 @@ typedef enum periph_retention_module_bitmap {
                                   | SLEEP_RETENTION_MODULE_BM_UART0       \
                                   | SLEEP_RETENTION_MODULE_BM_UART1       \
                                   | SLEEP_RETENTION_MODULE_BM_ETM0        \
+                                  | SLEEP_RETENTION_MODULE_BM_GPSPI2      \
+                                  | SLEEP_RETENTION_MODULE_BM_LEDC        \
                                   )
 
 #ifdef __cplusplus

@@ -695,6 +695,10 @@ config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
 
+config SOC_LEDC_TIMER_NUM
+    int
+    default 4
+
 config SOC_LEDC_CHANNEL_NUM
     int
     default 6
@@ -718,6 +722,10 @@ config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
 config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     int
     default 10
+
+config SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_MMU_PERIPH_NUM
     int

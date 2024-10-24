@@ -88,7 +88,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
        * - RC_FAST_CLK
          - ~ 8 MHz
          - Low
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
 
 .. only:: esp32s2
 
@@ -107,7 +107,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - Dynamic Frequency Scaling compatible
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 40 MHz
          - Dynamic Frequency Scaling compatible
@@ -126,7 +126,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 40 MHz
          - Dynamic Frequency Scaling compatible
@@ -145,7 +145,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 40/26 MHz
          - Dynamic Frequency Scaling compatible
@@ -164,7 +164,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 17.5 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 48 MHz
          - Dynamic Frequency Scaling compatible
@@ -183,7 +183,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 17.5 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 40 MHz
          - Dynamic Frequency Scaling compatible
@@ -202,7 +202,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - Dynamic Frequency Scaling compatible, Light sleep compatible
+         - Dynamic Frequency Scaling compatible, Light-sleep compatible
        * - XTAL_CLK
          - 32 MHz
          - Dynamic Frequency Scaling compatible
@@ -335,6 +335,18 @@ Use Interrupts
 When configuring an LEDC channel, one of the parameters selected within :cpp:type:`ledc_channel_config_t` is :cpp:type:`ledc_intr_type_t` which triggers an interrupt on fade completion.
 
 For registration of a handler to address this interrupt, call :cpp:func:`ledc_isr_register`.
+
+
+Power Management
+----------------
+
+LEDC driver does not utilize power management lock to prevent the system from going into Light-sleep. Instead, the LEDC peripheral power domain state and the PWM signal output behavior during sleep can be chosen by configuring :cpp:member:`ledc_channel_config_t::sleep_mode`. The default mode is :cpp:enumerator:`LEDC_SLEEP_MODE_NO_ALIVE_NO_PD`, which stands for no signal output and LEDC power domain will not be powered down during sleep.
+
+If signal output needs to be maintained in Light-sleep, then select :cpp:enumerator:`LEDC_SLEEP_MODE_KEEP_ALIVE`. As long as the binded LEDC timer clock source is Light-sleep compatible, the PWM signal can continue its output even the system enters Light-sleep. The cost is a higher power consumption in sleep, since the clock source and the power domain where LEDC belongs to cannot be powered down. Note that, if there is an unfinished fade before entering sleep, the fade can also continue during sleep, but the target duty might not be reached exactly. It will adjust to the target duty after wake-up.
+
+.. only:: SOC_LEDC_SUPPORT_SLEEP_RETENTION
+
+    There is another sleep mode, :cpp:enumerator:`LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD`, can save some power consumption in sleep, but at the expense of more memory being consumed. The system retains LEDC register context before entering Light-sleep and restores them after waking up, so that the LEDC power domain can be powered down during sleep. Any unfinished fade will not resume upon waking up from sleep, instead, it will output a PWM signal with a fixed duty cycle that matches the duty cycle just before entering sleep.
 
 
 .. only:: esp32

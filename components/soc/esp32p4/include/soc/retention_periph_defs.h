@@ -50,6 +50,9 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_TWAI1        = 26,
     SLEEP_RETENTION_MODULE_TWAI2        = 27,
     SLEEP_RETENTION_MODULE_PARLIO0      = 28,
+    SLEEP_RETENTION_MODULE_GPSPI2       = 29,
+    SLEEP_RETENTION_MODULE_GPSPI3       = 30,
+    SLEEP_RETENTION_MODULE_LEDC         = 31,
 
     SLEEP_RETENTION_MODULE_MAX          = 31
 } periph_retention_module_t;
@@ -90,6 +93,9 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_TWAI1        = BIT(SLEEP_RETENTION_MODULE_TWAI1),
     SLEEP_RETENTION_MODULE_BM_TWAI2        = BIT(SLEEP_RETENTION_MODULE_TWAI2),
     SLEEP_RETENTION_MODULE_BM_PARLIO0      = BIT(SLEEP_RETENTION_MODULE_PARLIO0),
+    SLEEP_RETENTION_MODULE_BM_GPSPI2       = BIT(SLEEP_RETENTION_MODULE_GPSPI2),
+    SLEEP_RETENTION_MODULE_BM_GPSPI3       = BIT(SLEEP_RETENTION_MODULE_GPSPI3),
+    SLEEP_RETENTION_MODULE_BM_LEDC         = BIT(SLEEP_RETENTION_MODULE_LEDC),
 
     SLEEP_RETENTION_MODULE_BM_ALL = (uint32_t)-1
 } periph_retention_module_bitmap_t;
@@ -121,6 +127,9 @@ typedef enum periph_retention_module_bitmap {
                                   | SLEEP_RETENTION_MODULE_BM_TWAI1      \
                                   | SLEEP_RETENTION_MODULE_BM_TWAI2      \
                                   | SLEEP_RETENTION_MODULE_BM_PARLIO0    \
+                                  | SLEEP_RETENTION_MODULE_BM_GPSPI2     \
+                                  | SLEEP_RETENTION_MODULE_BM_GPSPI3     \
+                                  | SLEEP_RETENTION_MODULE_BM_LEDC       \
                                   )
 
 #ifdef __cplusplus
