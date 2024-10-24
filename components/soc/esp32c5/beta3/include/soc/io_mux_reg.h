@@ -147,7 +147,7 @@ extern "C" {
 
 #define EXT_OSC_SLOW_GPIO_NUM        0
 
-#define MAX_RTC_GPIO_NUM              8
+#define MAX_RTC_GPIO_NUM              7
 #define MAX_PAD_GPIO_NUM             26
 #define MAX_GPIO_NUM                 30
 #define DIG_IO_HOLD_BIT_SHIFT        32
