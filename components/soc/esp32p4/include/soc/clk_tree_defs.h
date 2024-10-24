@@ -26,7 +26,7 @@ extern "C" {
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
  *
- * 4) Internal 32kHz RC Oscillator: RC32K
+ * 4) Internal 32kHz RC Oscillator: RC32K [NOT RECOMMENDED TO USE]
  *
  *    The exact frequency of this clock can be computed in runtime through calibration.
  *
