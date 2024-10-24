@@ -47,3 +47,12 @@ def test_lp_core_shared_mem(dut: Dut) -> None:
 
     dut.expect_exact('ULP shared memory test passed')
     dut.expect_exact('HP shared memory test passed')
+
+
+@pytest.mark.esp32p4
+@pytest.mark.generic
+def test_lp_core_lp_rom(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"LP-Core LP-ROM"')
+    dut.expect_exact('ULP: all tests passed')
+    dut.expect_exact('LP ROM test passed')
