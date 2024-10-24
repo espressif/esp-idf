@@ -21,7 +21,7 @@
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C5
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERG0_BASE + (i) * 0x1000)     // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)     // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (DR_REG_GPSPI2_BASE)                     // only one GPSPI on C5
+#define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE)                       // only one GPSPI on C5
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_BASE)                        // only one I2C on C5
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE)                      // only one MCPWM on C5
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)       // TWAI0 and TWAI1

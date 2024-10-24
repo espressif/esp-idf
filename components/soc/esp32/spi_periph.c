@@ -31,7 +31,6 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spics0_iomux_pin = MSPI_IOMUX_PIN_NUM_CS0,
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
-        .module = PERIPH_SPI_MODULE,
         .func = MSPI_FUNC_NUM,
         .hw = &SPI1
     }, {
@@ -55,7 +54,6 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spics0_iomux_pin = HSPI_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
-        .module = PERIPH_HSPI_MODULE,
         .func = HSPI_FUNC_NUM,
         .hw = &SPI2
     }, {
@@ -79,7 +77,6 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spics0_iomux_pin = VSPI_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
-        .module = PERIPH_VSPI_MODULE,
         .func = VSPI_FUNC_NUM,
         .hw = &SPI3
     }

@@ -19,6 +19,9 @@
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "esp_timer.h"
@@ -1788,3 +1791,135 @@ TEST_CASE("test_bus_free_safty_to_remain_devices", "[spi]")
     TEST_ESP_OK(spi_bus_remove_device(dev1));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
+
+TEST_CASE("test_spi_master_sleep_retention", "[spi]")
+{
+    // Prepare a TOP PD sleep
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+    spi_device_handle_t dev_handle;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    buscfg.flags |= SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
+    uint8_t send[16] = "hello spi x\n";
+    uint8_t recv[16];
+    spi_transaction_t trans_cfg = {
+        .length = 8 * sizeof(send),
+        .tx_buffer = send,
+        .rx_buffer = recv,
+    };
+
+    for (int periph = SPI2_HOST; periph < SPI_HOST_MAX; periph ++) {
+        for (int test_dma = 0; test_dma <= 1; test_dma ++) {
+            int use_dma = SPI_DMA_DISABLED;
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION    // TODO: IDF-11317 test dma on esp32 and s2
+            use_dma = test_dma ? SPI_DMA_CH_AUTO : SPI_DMA_DISABLED;
+#endif
+            printf("Retention on GPSPI%d with dma: %d\n", periph + 1, use_dma);
+            TEST_ESP_OK(spi_bus_initialize(periph, &buscfg, use_dma));
+            // set spi "self-loop" after bus initialized
+            spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[periph].spid_out);
+            TEST_ESP_OK(spi_bus_add_device(periph, &devcfg, &dev_handle));
+
+            for (uint8_t cnt = 0; cnt < 3; cnt ++) {
+                printf("Going into sleep...\n");
+                TEST_ESP_OK(esp_light_sleep_start());
+                printf("Waked up!\n");
+
+                // check if the sleep happened as expected
+                TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+                // check if the power domain also is powered down
+                TEST_ASSERT_EQUAL((buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+                memset(recv, 0, sizeof(recv));
+                send[10] = cnt + 'A';
+                TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+                printf("%s", recv);
+                spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, sizeof(send));
+            }
+
+            TEST_ESP_OK(spi_bus_remove_device(dev_handle));
+            TEST_ESP_OK(spi_bus_free(periph));
+        }
+    }
+
+    esp_sleep_set_sleep_context(NULL);
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+}
+
+#if 0   /* Temp disable, TODO: IDFCI-2455*/
+#if CONFIG_PM_ENABLE
+TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
+{
+    // Configure dynamic frequency scaling:
+    // maximum and minimum frequencies are set in sdkconfig,
+    // automatic light sleep is enabled if tickless idle support is enabled.
+    uint32_t xtal_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_hz);
+    esp_pm_config_t pm_config = {
+        .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = xtal_hz / 1000000,
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+        .light_sleep_enable = true,
+#endif
+    };
+    TEST_ESP_OK(esp_pm_configure(&pm_config));
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+    for (uint8_t allow_pd = 0; allow_pd < 2; allow_pd ++) {
+        spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+        buscfg.flags = (allow_pd) ? SPICOMMON_BUSFLAG_SLP_ALLOW_PD : 0;
+        buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
+        // set spi "self-loop" after bus initialized
+        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
+
+        spi_device_handle_t dev_handle;
+        spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
+
+        uint8_t send[13] = "hello spi 0\n";
+        uint8_t recv[13];
+        spi_transaction_t trans_cfg = {
+            .length = 8 * sizeof(send),
+            .tx_buffer = send,
+            .rx_buffer = recv,
+        };
+
+        for (uint8_t cnt = 0; cnt < 3; cnt ++) {
+            printf("Going into Auto sleep with power %s ...\n", (buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");
+            vTaskDelay(1000);   //auto light sleep here
+            printf("Waked up!\n");
+
+            // check if the sleep happened as expected
+            TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            // check if the power domain also is powered down
+            TEST_ASSERT_EQUAL((buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+            memset(recv, 0, sizeof(recv));
+            send[10] = cnt + '0';
+            TEST_ESP_OK(spi_device_polling_transmit(dev_handle, &trans_cfg));
+            printf("%s", recv);
+            spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, sizeof(send));
+        }
+
+        TEST_ESP_OK(spi_bus_remove_device(dev_handle));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+    esp_sleep_set_sleep_context(NULL);
+    pm_config.light_sleep_enable = false;
+    TEST_ESP_OK(esp_pm_configure(&pm_config));
+}
+#endif  //CONFIG_PM_ENABLE
+#endif // 0
