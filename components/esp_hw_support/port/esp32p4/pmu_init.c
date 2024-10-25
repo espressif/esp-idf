@@ -9,8 +9,10 @@
 #include <esp_types.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "soc/chip_revision.h"
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
+#include "hal/efuse_hal.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
@@ -84,7 +86,9 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, mode, anlg->bias.bias_sleep);
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, mode, anlg->regulator0.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, mode, anlg->regulator0.slp_logic_xpd);
-    pmu_ll_hp_set_regulator_sleep_memory_dbias(ctx->hal->dev, mode, anlg->regulator0.slp_mem_dbias);
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100) && (mode == PMU_MODE_HP_SLEEP)) {
+        pmu_ll_hp_enable_sleep_flash_ldo_channel(ctx->hal->dev, anlg->regulator0.xpd_0p1a);
+    }
     pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, mode, anlg->regulator0.slp_logic_dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, mode, anlg->regulator1.drv_b);
 
