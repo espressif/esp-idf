@@ -90,6 +90,7 @@ typedef struct {
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_dpi_panel_flags {
         uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */
+        uint32_t disable_lp: 1;/*!< Disable low-power for DPI */
     } flags;                   /*!< Extra configuration flags */
 } esp_lcd_dpi_panel_config_t;
 
