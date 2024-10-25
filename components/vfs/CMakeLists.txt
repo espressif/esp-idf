@@ -7,7 +7,7 @@ if(${target} STREQUAL "linux")
     if(CONFIG_VFS_SUPPORT_IO)
         list(APPEND inc linux_include)
         list(APPEND priv_inc private_include)
-        list(APPEND srcs "vfs_linux.c" "vfs.c")
+        list(APPEND srcs "vfs_linux.c" "vfs.c" "vfs_calls.c")
     endif()
 
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
@@ -36,6 +36,7 @@ if(IDF_BUILD_V2)
 endif()
 
 list(APPEND sources "vfs.c"
+                    "vfs_calls.c"
                     "vfs_eventfd.c"
                     "vfs_semihost.c"
                     "nullfs.c"
