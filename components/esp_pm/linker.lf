@@ -34,6 +34,8 @@ entries:
         if SOC_PM_SUPPORT_TOP_PD = y:
             sleep_clock:clock_domain_pd_allowed (noflash)
             sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
+        if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y:
+            sleep_mmu:mmu_domain_pd_allowed (noflash)
         sleep_modem:modem_domain_pd_allowed (noflash)
         sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
         if IDF_TARGET_ESP32P4 = n && IDF_TARGET_ESP32C61 = n : # TODO: IDF-6496, IDF-9304
