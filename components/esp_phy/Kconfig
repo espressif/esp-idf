@@ -124,7 +124,6 @@ menu "PHY"
     config ESP_PHY_ENABLE_CERT_TEST
         bool "Enable RF certification test functions"
         default n
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             If enabled, you can use RF certification test APIs.
 

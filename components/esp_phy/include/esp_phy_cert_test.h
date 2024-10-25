@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ typedef struct {
     uint32_t phy_rx_correct_count; /*!< The number of desired packets received */
     int phy_rx_rssi;               /*!< Average RSSI of desired packets */
     uint32_t phy_rx_total_count;   /*!< The number of total packets received */
-    uint32_t phy_rx_result_flag;   /*!< 0 means no RX info; 1 means the lastest Wi-Fi RX info; 2 means the lastest BLE RX info. */
+    uint32_t phy_rx_result_flag;   /*!< 0 means no RX info; 1 means the latest Wi-Fi RX info; 2 means the latest BLE RX info. */
 } esp_phy_rx_result_t;
 
 /**
@@ -120,7 +120,7 @@ void esp_phy_cbw40m_en(bool en);
 void esp_phy_wifi_tx(uint32_t chan, esp_phy_wifi_rate_t rate, int8_t backoff, uint32_t length_byte, uint32_t packet_delay, uint32_t packet_num);
 
 /**
- * @brief Test start/stop command, used to stop transmitting or reciving state.
+ * @brief Test start/stop command, used to stop transmitting or receiving state.
  *
  * @param value:
  *     Value should be set to 3 before TX/RX.
