@@ -114,6 +114,9 @@ wifi_netif_driver_t esp_wifi_create_if_driver(wifi_interface_t wifi_if)
 
 esp_err_t esp_wifi_get_if_mac(wifi_netif_driver_t ifx, uint8_t mac[6])
 {
+    if (ifx == NULL || mac == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     wifi_interface_t wifi_interface = ifx->wifi_if;
 
     return esp_wifi_get_mac(wifi_interface, mac);
@@ -123,7 +126,7 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
 {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     // WiFi rxcb to be register wifi rxcb on start for AP only, station gets it registered on connect event
-    return (ifx->wifi_if == WIFI_IF_AP);
+    return (ifx && ifx->wifi_if == WIFI_IF_AP);
 #else
     return false;
 #endif
@@ -131,6 +134,9 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
 
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg)
 {
+    if (ifx == NULL || fn == NULL || arg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (ifx->base.netif != arg) {
         ESP_LOGE(TAG, "Invalid argument: supplied netif=%p does not equal to interface netif=%p", arg, ifx->base.netif);
         return ESP_ERR_INVALID_ARG;
