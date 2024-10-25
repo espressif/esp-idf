@@ -11,6 +11,7 @@ from textwrap import dedent
 
 import yaml
 from artifacts_handler import ArtifactType
+from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
 from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
@@ -254,6 +255,10 @@ class ReportGenerator:
         )
         del_retry_job_pic_pattern = re.escape(RETRY_JOB_TITLE) + r'.*?' + re.escape(f'{RETRY_JOB_PICTURE_PATH})')
 
+        new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
+        if print_retry_jobs_message:
+            new_comment += retry_job_picture_comment
+
         for note in self.mr.notes.list(iterator=True):
             if note.body.startswith(COMMENT_START_MARKER):
                 updated_str = self._get_updated_comment(note.body, comment)
@@ -264,14 +269,13 @@ class ReportGenerator:
                     updated_str += retry_job_picture_comment
 
                 note.body = updated_str
-                note.save()
+                try:
+                    note.save()
+                except GitlabUpdateError:
+                    print('Failed to update MR comment, Creating a new comment')
+                    self.mr.notes.create({'body': new_comment})
                 break
         else:
-            # Create a new comment if no existing comment is found
-            new_comment = f'{COMMENT_START_MARKER}\n\n{comment}'
-            if print_retry_jobs_message:
-                new_comment += retry_job_picture_comment
-
             self.mr.notes.create({'body': new_comment})
 
     def _get_updated_comment(self, existing_comment: str, new_comment: str) -> str:
