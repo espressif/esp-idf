@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -685,7 +685,7 @@ void bootloader_spi_flash_reset(void)
  ******************************************************************************/
 
 #define XMC_SUPPORT CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT
-#define XMC_VENDOR_ID 0x20
+#define XMC_VENDOR_ID_1 0x20
 
 #if BOOTLOADER_BUILD
 #define BOOTLOADER_FLASH_LOG(level, ...)    ESP_EARLY_LOG##level(TAG, ##__VA_ARGS__)
@@ -702,7 +702,7 @@ static IRAM_ATTR bool is_xmc_chip_strict(uint32_t rdid)
     uint32_t mfid = BYTESHIFT(rdid, 1);
     uint32_t cpid = BYTESHIFT(rdid, 0);
 
-    if (vendor_id != XMC_VENDOR_ID) {
+    if (vendor_id != XMC_VENDOR_ID_1) {
         return false;
     }
 
@@ -735,7 +735,7 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
     // Check the Manufacturer ID in SFDP registers (JEDEC standard). If not XMC chip, no need to run the flow
     const int sfdp_mfid_addr = 0x10;
     uint8_t mf_id = (bootloader_flash_read_sfdp(sfdp_mfid_addr, 1) & 0xff);
-    if (mf_id != XMC_VENDOR_ID) {
+    if (mf_id != XMC_VENDOR_ID_1) {
         BOOTLOADER_FLASH_LOG(D, "non-XMC chip detected by SFDP Read (%02X), skip.", mf_id);
         return ESP_OK;
     }
@@ -767,7 +767,7 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
 static IRAM_ATTR bool is_xmc_chip(uint32_t rdid)
 {
     uint32_t vendor_id = (rdid >> 16) & 0xFF;
-    return (vendor_id == XMC_VENDOR_ID);
+    return (vendor_id == XMC_VENDOR_ID_1);
 }
 
 esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
