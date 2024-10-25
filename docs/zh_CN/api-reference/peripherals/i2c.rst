@@ -167,7 +167,6 @@ I2C 主机设备需要 :cpp:type:`i2c_device_config_t` 指定的配置：
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
     // 源文件 2
-    #include "esp_private/i2c_platform.h"
     #include "driver/i2c_master.h"
     i2c_master_bus_handle_t handle;
     ESP_ERROR_CHECK(i2c_master_get_bus_handle(0, &handle));

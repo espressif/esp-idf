@@ -784,6 +784,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
     i2c_master_bus_handle_t i2c_master = bus_handle;
+    i2c_common_deinit_pins(i2c_master->base);
     if (i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
         if (i2c_master) {
             if (i2c_master->bus_lock_mux) {
