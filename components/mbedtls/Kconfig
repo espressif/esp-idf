@@ -667,6 +667,14 @@ menu "mbedTLS"
         help
             Enable MBEDTLS_SHA512_C adds support for SHA-384 and SHA-512.
 
+    config MBEDTLS_SHA3_C
+        bool "Enable the SHA3 cryptographic hash algorithm"
+        default n
+        help
+            Enabling MBEDTLS_SHA3_C adds support for SHA3.
+            Enabling this configuration option increases the flash footprint
+            by almost 4KB.
+
     choice MBEDTLS_TLS_MODE
         bool "TLS Protocol Role"
         default MBEDTLS_TLS_SERVER_AND_CLIENT
@@ -1103,12 +1111,12 @@ menu "mbedTLS"
     config MBEDTLS_ECP_FIXED_POINT_OPTIM
         bool "Enable fixed-point multiplication optimisations"
         depends on MBEDTLS_ECP_C
-        default y
+        default n
         help
             This configuration option enables optimizations to speedup (about 3 ~ 4 times) the ECP
             fixed point multiplication using pre-computed tables in the flash memory.
-            Disabling this configuration option saves flash footprint (about 29KB if all Elliptic Curve selected)
-            in the application binary.
+            Enabling this configuration option increases the flash footprint
+            (about 29KB if all Elliptic Curve selected) in the application binary.
 
             # end of Elliptic Curve options
 
