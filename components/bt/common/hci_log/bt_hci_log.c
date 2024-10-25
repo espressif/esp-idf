@@ -305,19 +305,27 @@ void bt_hci_log_data_show(bt_hci_log_t *p_hci_log_ctl)
 
     osi_mutex_unlock(&mutex_lock);
 }
+static bool enable_hci_log_flag = true;
+void bt_hci_log_record_hci_enable(bool enable)
+{
+    enable_hci_log_flag = enable;
+}
 
 esp_err_t IRAM_ATTR bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint8_t data_len)
 {
+    if (!enable_hci_log_flag) return ESP_OK;
     return bt_hci_log_record_data(&g_bt_hci_log_data_ctl, NULL, data_type, data, data_len);
 }
 
 esp_err_t IRAM_ATTR bt_hci_log_record_custom_data(char *string, uint8_t *data, uint8_t data_len)
 {
+    if (!enable_hci_log_flag) return ESP_OK;
     return bt_hci_log_record_data(&g_bt_hci_log_data_ctl, string, HCI_LOG_DATA_TYPE_SELF_DEFINE, data, data_len);
 }
 
 esp_err_t IRAM_ATTR bt_hci_log_record_hci_adv(uint8_t data_type, uint8_t *data, uint8_t data_len)
 {
+    if (!enable_hci_log_flag) return ESP_OK;
     return bt_hci_log_record_data(&g_bt_hci_log_adv_ctl, NULL, data_type, data, data_len);
 }
 
