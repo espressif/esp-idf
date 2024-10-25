@@ -216,9 +216,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_sleep_logic_dbias(pmu_dev_t *hw, 
     hw->hp_sys[mode].regulator0.slp_logic_dbias = slp_dbias;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_sleep_memory_dbias(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t slp_dbias)
+FORCE_INLINE_ATTR void pmu_ll_hp_enable_sleep_flash_ldo_channel(pmu_dev_t *hw, bool enable)
 {
-    hw->hp_sys[mode].regulator0.slp_mem_dbias = slp_dbias;
+    // slp_mem_dbias[3] is used to control the volt output of VO1 for chip_revision >= 100,
+    // and this field is not used for chip_revision < 100.
+    hw->hp_sys[PMU_MODE_HP_SLEEP].regulator0.xpd_0p1a = (enable ? 8 : 0);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t dbias)

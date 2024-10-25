@@ -121,6 +121,7 @@ typedef union {
 } pmu_hp_sysclk_reg_t;
 
 typedef union {
+    // For chip_revsion < 1.0
     struct {
         uint32_t reserved0      : 4;    /* Only HP_ACTIVE modem under hp system is valid */
         uint32_t lp_dbias_vol   : 5;    /* Only HP_ACTIVE modem under hp system is valid */
@@ -130,9 +131,15 @@ typedef union {
         uint32_t slp_mem_xpd    : 1;
         uint32_t slp_logic_xpd  : 1;
         uint32_t xpd            : 1;
-        uint32_t slp_mem_dbias  : 4;
+        uint32_t slp_mem_dbias  : 4;    /* slp_mem_dbias is not used on chip_revision < 100 */
         uint32_t slp_logic_dbias: 4;
         uint32_t dbias          : 5;
+    };
+    // For chip revision >= 100
+    struct {
+        uint32_t reserved1      : 19;
+        uint32_t xpd_0p1a       : 4;    /* slp_mem_dbias[3] is used to control the volt output of VO1 on chip_revision >= 1.0 */
+        uint32_t reserved2      : 9;
     };
     uint32_t val;
 } pmu_hp_regulator0_reg_t;
