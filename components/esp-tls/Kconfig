@@ -15,7 +15,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_USE_SECURE_ELEMENT
         bool "Use Secure Element (ATECC608A) with ESP-TLS"
-        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS
         select ATCA_MBEDTLS_ECDSA
         select ATCA_MBEDTLS_ECDSA_SIGN
         select ATCA_MBEDTLS_ECDSA_VERIFY
