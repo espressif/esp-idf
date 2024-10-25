@@ -213,6 +213,10 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``verify`` - Optional. Verify flash contents after writing.
  - ``reset`` - Optional. Reset target after programing.
  - ``exit`` - Optional. Finally exit OpenOCD.
+ - ``compress`` - Optional. Compress image file before programming.
+ - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
+ - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
+ - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
 
 You are now ready to start application debugging. Follow the steps described in the section below.
 
