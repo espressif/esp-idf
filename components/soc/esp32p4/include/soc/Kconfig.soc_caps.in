@@ -1717,7 +1717,7 @@ config SOC_CPU_IN_TOP_DOMAIN
 
 config SOC_PM_RETENTION_MODULE_NUM
     int
-    default 32
+    default 64
 
 config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
