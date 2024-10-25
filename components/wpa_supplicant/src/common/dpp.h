@@ -18,6 +18,7 @@
 #include "utils/common.h"
 #include "esp_err.h"
 #include "esp_dpp.h"
+#include "crypto/crypto.h"
 
 struct crypto_ecdh;
 struct hostapd_ip_addr;
@@ -159,11 +160,13 @@ struct dpp_bootstrap_info {
 	enum dpp_bootstrap_type type;
 	char *uri;
 	u8 mac_addr[ETH_ALEN];
+	char *chan;
 	char *info;
+	char *pk;
 	unsigned int freq[DPP_BOOTSTRAP_MAX_FREQ];
 	unsigned int num_freq;
 	int own;
-	struct crypto_key *pubkey;
+	struct crypto_ec_key *pubkey;
 	u8 pubkey_hash[SHA256_MAC_LEN];
 	const struct dpp_curve_params *curve;
 	unsigned int pkex_t; /* number of failures before dpp_pkex
@@ -182,12 +185,12 @@ struct dpp_pkex {
 	u8 peer_mac[ETH_ALEN];
 	char *identifier;
 	char *code;
-	struct crypto_key *x;
-	struct crypto_key *y;
+	struct crypto_ec_key *x;
+	struct crypto_ec_key *y;
 	u8 Mx[DPP_MAX_SHARED_SECRET_LEN];
 	u8 Nx[DPP_MAX_SHARED_SECRET_LEN];
 	u8 z[DPP_MAX_HASH_LEN];
-	struct crypto_key *peer_bootstrap_key;
+	struct crypto_ec_key *peer_bootstrap_key;
 	struct wpabuf *exchange_req;
 	struct wpabuf *exchange_resp;
 	unsigned int t; /* number of failures on code use */
@@ -250,8 +253,8 @@ struct dpp_authentication {
 	u8 e_nonce[DPP_MAX_NONCE_LEN];
 	u8 i_capab;
 	u8 r_capab;
-	struct crypto_key *own_protocol_key;
-	struct crypto_key *peer_protocol_key;
+	struct crypto_ec_key *own_protocol_key;
+	struct crypto_ec_key *peer_protocol_key;
 	struct wpabuf *req_msg;
 	struct wpabuf *resp_msg;
 	/* Intersection of possible frequencies for initiating DPP
@@ -320,7 +323,7 @@ struct dpp_configurator {
 	struct dl_list list;
 	unsigned int id;
 	int own;
-	struct crypto_key *csign;
+	struct crypto_ec_key *csign;
 	char *kid;
 	const struct dpp_curve_params *curve;
 };
@@ -440,13 +443,10 @@ extern size_t dpp_nonce_override_len;
 
 void dpp_bootstrap_info_free(struct dpp_bootstrap_info *info);
 const char * dpp_bootstrap_type_txt(enum dpp_bootstrap_type type);
-int dpp_bootstrap_key_hash(struct dpp_bootstrap_info *bi);
 int dpp_parse_uri_chan_list(struct dpp_bootstrap_info *bi,
 			    const char *chan_list);
 int dpp_parse_uri_mac(struct dpp_bootstrap_info *bi, const char *mac);
 int dpp_parse_uri_info(struct dpp_bootstrap_info *bi, const char *info);
-char * dpp_keygen(struct dpp_bootstrap_info *bi, const char *curve,
-		  u8 *privkey, size_t privkey_len);
 struct hostapd_hw_modes;
 struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 					  struct dpp_bootstrap_info *peer_bi,

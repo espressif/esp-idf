@@ -202,6 +202,7 @@ endif()
 
 if(CONFIG_ESP_WIFI_DPP_SUPPORT)
     set(dpp_src "src/common/dpp.c"
+    "src/common/dpp_crypto.c"
     "esp_supplicant/src/esp_dpp.c")
 else()
     set(dpp_src "")
