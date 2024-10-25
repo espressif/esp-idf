@@ -261,14 +261,14 @@
     - <<: *if-dev-push
       changes: *patterns-python-files
 
-.rules:patterns:static-code-analysis-preview:
-  rules:
-    - <<: *if-dev-push
-      changes: *patterns-c-files
-    - <<: *if-dev-push
-      changes: *patterns-python-files
-    - <<: *if-dev-push
-      changes: *patterns-sonarqube-files
+#.rules:patterns:static-code-analysis-preview:
+#  rules:
+#    - <<: *if-dev-push
+#      changes: *patterns-c-files
+#    - <<: *if-dev-push
+#      changes: *patterns-python-files
+#    - <<: *if-dev-push
+#      changes: *patterns-sonarqube-files
 
 .rules:patterns:idf-pytest-plugin:
   rules:
