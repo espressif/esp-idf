@@ -151,9 +151,15 @@ class PanicTestDut(IdfDut):
         logging.info('espcoredump output is written to %s', self.coredump_output.name)
 
         self.serial.close()
-        subprocess.check_call(espcoredump_args, stdout=self.coredump_output)
-        self.coredump_output.flush()
-        self.coredump_output.seek(0)
+        try:
+            subprocess.check_call(espcoredump_args, stdout=self.coredump_output, stderr=self.coredump_output)
+        except subprocess.CalledProcessError:
+            self.coredump_output.flush()
+            with open(output_file_name, 'r') as file:
+                logging.error('espcoredump failed with output: %s', file.read())
+            raise
+        finally:
+            self.coredump_output.seek(0)
 
     def process_coredump_uart(
         self, expected: Optional[List[Union[str, re.Pattern]]] = None, wait_reboot: bool = True
