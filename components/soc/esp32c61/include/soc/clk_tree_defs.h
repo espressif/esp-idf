@@ -120,6 +120,7 @@ typedef enum {
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or OSC_SLOW by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
+    SOC_MOD_CLK_PLL_F120M,                     /*!< PLL_F120M_CLK is derived from PLL (clock gating + fixed divider of 4), it has a fixed frequency of 120MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
     SOC_MOD_CLK_SPLL,                          /*!< SPLL is from the main XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
@@ -213,13 +214,14 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of I2S
  */
-#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL, I2S_CLK_SRC_EXTERNAL}
+#define SOC_I2S_CLKS {I2S_CLK_SRC_PLL_120M, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL, I2S_CLK_SRC_EXTERNAL}
 
 /**
  * @brief I2S clock source enum
  */
 typedef enum {
     I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,                /*!< Select PLL_F160M as the default source clock  */
+    I2S_CLK_SRC_PLL_120M = SOC_MOD_CLK_PLL_F120M,               /*!< Select PLL_F120M as the source clock */
     I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,               /*!< Select PLL_F160M as the source clock */
     I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
     I2S_CLK_SRC_EXTERNAL = -1,                                  /*!< Select external clock as source clock */

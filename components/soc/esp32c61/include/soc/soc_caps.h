@@ -33,7 +33,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1
-//  \#define SOC_I2S_SUPPORTED               1    //TODO: [ESP32C61] IDF-9312, IDF-9313
+#define SOC_I2S_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_LEDC_SUPPORTED              1
@@ -232,15 +232,18 @@
 #define SOC_I2C_SUPPORT_SLEEP_RETENTION        (1)
 
 // /*-------------------------- I2S CAPS ----------------------------------------*/
-// #define SOC_I2S_NUM                 (1U)
-// #define SOC_I2S_HW_VERSION_2        (1)
-// #define SOC_I2S_SUPPORTS_XTAL       (1)
-// #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
-// #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-// #define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_NUM                     (1U)
+#define SOC_I2S_HW_VERSION_2            (1)
+#define SOC_I2S_SUPPORTS_ETM            (1)
+#define SOC_I2S_SUPPORTS_TX_SYNC_CNT    (1)
+#define SOC_I2S_SUPPORTS_XTAL           (1)
+#define SOC_I2S_SUPPORTS_PLL_F160M      (1)
+#define SOC_I2S_SUPPORTS_PLL_F120M      (1)
+#define SOC_I2S_SUPPORTS_PCM            (1)
+#define SOC_I2S_SUPPORTS_PDM            (1)
+#define SOC_I2S_SUPPORTS_PDM_TX         (1)
+#define SOC_I2S_PDM_MAX_TX_LINES        (2)
+#define SOC_I2S_SUPPORTS_TDM            (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

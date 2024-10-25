@@ -78,6 +78,10 @@ Clock Source
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
 
+.. only:: SOC_I2S_SUPPORTS_PLL_F120M
+
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`: 120 MHz PLL clock.
+
 .. only:: SOC_I2S_SUPPORTS_PLL_F96M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.

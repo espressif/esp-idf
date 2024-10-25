@@ -694,22 +694,6 @@ extern "C" {
 #define I2S_RX_PDM_HP_BYPASS_M  (I2S_RX_PDM_HP_BYPASS_V << I2S_RX_PDM_HP_BYPASS_S)
 #define I2S_RX_PDM_HP_BYPASS_V  0x00000001U
 #define I2S_RX_PDM_HP_BYPASS_S  25
-/** I2S_RX_IIR_HP_MULT12_5 : R/W; bitpos: [28:26]; default: 6;
- *  The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_5[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_5    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_M  (I2S_RX_IIR_HP_MULT12_5_V << I2S_RX_IIR_HP_MULT12_5_S)
-#define I2S_RX_IIR_HP_MULT12_5_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_5_S  26
-/** I2S_RX_IIR_HP_MULT12_0 : R/W; bitpos: [31:29]; default: 7;
- *  The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 +
- *  LP_I2S_RX_IIR_HP_MULT12_0[2:0])
- */
-#define I2S_RX_IIR_HP_MULT12_0    0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_M  (I2S_RX_IIR_HP_MULT12_0_V << I2S_RX_IIR_HP_MULT12_0_S)
-#define I2S_RX_IIR_HP_MULT12_0_V  0x00000007U
-#define I2S_RX_IIR_HP_MULT12_0_S  29
 
 /** I2S_RX_TDM_CTRL_REG register
  *  I2S TX TDM mode control register
