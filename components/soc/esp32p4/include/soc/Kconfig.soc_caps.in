@@ -1937,7 +1937,7 @@ config SOC_SLEEP_TGWDT_STOP_WORKAROUND
 
 config SOC_PM_RETENTION_MODULE_NUM
     int
-    default 32
+    default 64
 
 config SOC_PSRAM_VDD_POWER_MPLL
     bool
