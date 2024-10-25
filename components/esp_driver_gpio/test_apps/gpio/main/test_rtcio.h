@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,7 +122,7 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
 #elif CONFIG_IDF_TARGET_ESP32P4
 // Has no input-only rtcio pins, all pins support pull-up/down
 #define RTCIO_SUPPORT_PU_PD(num)    1
-#define TEST_GPIO_PIN_COUNT 16
+#define TEST_GPIO_PIN_COUNT 14
 const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_0,    //GPIO0
     GPIO_NUM_1,    //GPIO1
@@ -131,8 +131,8 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_4,    //GPIO4
     GPIO_NUM_5,    //GPIO5
     GPIO_NUM_6,    //GPIO6
-    GPIO_NUM_7,    //GPIO7
-    GPIO_NUM_8,    //GPIO8
+    // GPIO_NUM_7,    //GPIO7  // Workaround: IO7 is pullup outside on ESP32P4 Core Board Runner
+    // GPIO_NUM_8,    //GPIO8  // Workaround: IO8 is pullup outside on ESP32P4 Core Board Runner
     GPIO_NUM_9,    //GPIO9
     GPIO_NUM_10,   //GPIO10
     GPIO_NUM_11,   //GPIO11
