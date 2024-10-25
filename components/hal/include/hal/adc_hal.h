@@ -139,7 +139,7 @@ void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *
  * Setting the digital controller.
  *
  * @param hal    Context of the HAL
- * @param cfg    Pointer to digital controller paramter.
+ * @param cfg    Pointer to digital controller parameter.
  */
 void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg);
 
@@ -213,6 +213,17 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
  */
 void adc_hal_digi_clr_eof(void);
 #endif
+
+/**
+ * @brief Set ADC monitor with high and low thresholds, and will enable the interrupts accordingly
+ *
+ * @param monitor_id Monitor to configure
+ * @param adc_n Which ADC unit will be monitored
+ * @param adc_ch Which ADC channel will be monitored
+ * @param h_thres High threshold (disable if < 0)
+ * @param l_thres Low threshold (disable if < 0)
+ */
+void adc_hal_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t adc_ch, int32_t h_thres, int32_t l_thres);
 
 #ifdef __cplusplus
 }
