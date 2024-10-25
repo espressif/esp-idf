@@ -108,13 +108,13 @@
         :maxdepth: 1
 
         ESP32-DevKitC <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-devkitc/index.html>
+        ESP32-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-devkitm-1/index.html>
         ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp-wrover-kit/index.html>
         ESP32-PICO-KIT <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-kit/index.html>
         ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-ethernet-kit/index.html>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
         ESP32-PICO-KIT-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-kit-1/index.html>
         ESP32-PICO-DevKitM-2 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32/esp32-pico-devkitm-2/index.html>
-        ESP32-DevKitM-1 <../hw-reference/esp32/user-guide-devkitm-1>
 
 .. only:: esp32s2
 
