@@ -143,6 +143,15 @@ esp_err_t esp_wifi_enable_rx_statistics(bool rx_stats, bool rx_mu_stats);
   */
 esp_err_t esp_wifi_enable_tx_statistics(esp_wifi_aci_t aci, bool tx_stats);
 
+/**
+  * @brief     Set WiFi TWT config
+  *
+  * @param[in]    config pointer to the WiFi TWT configure structure.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_sta_twt_config(wifi_twt_config_t *config);
 
 #ifdef __cplusplus
 }

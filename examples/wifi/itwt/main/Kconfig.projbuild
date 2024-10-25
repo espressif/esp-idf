@@ -38,6 +38,12 @@ menu "Example Configuration"
         help
             Set static gateway address.
 
+    config EXAMPLE_TWT_ENABLE_KEEP_ALIVE_QOS_NULL
+        bool "enable keep alive qos null"
+        default n
+        help
+            Enable send QOS NULL to keep alive during TWT.
+
     menu "iTWT Configuration"
         config EXAMPLE_ITWT_TRIGGER_ENABLE
             bool "trigger-enabled"
