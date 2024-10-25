@@ -2,4 +2,6 @@
 archive: libvfs.a
 entries:
   if VFS_SELECT_IN_RAM = y:
-    vfs:esp_vfs_select_triggered_isr (noflash)
+    vfs_calls:esp_vfs_select_triggered_isr (noflash)
+    vfs:get_vfs_count (noflash)
+    vfs:start_select (noflash)
