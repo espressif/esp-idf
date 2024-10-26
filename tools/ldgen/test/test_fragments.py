@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import os
 import sys
 import tempfile
@@ -706,6 +705,7 @@ entries:
 archive: libmain.a
 entries:
     obj1 (default);
+        text->flash_text SORT(),
         text->flash_text SORT(name),
         rodata->flash_rodata SORT(alignment),
         data->dram0_data SORT(init_priority),
@@ -718,7 +718,8 @@ entries:
         fragment_file = parse_fragment_file(test_fragment, self.sdkconfig)
         fragment = fragment_file.fragments[0]
 
-        expected = [Flag('text', 'flash_text', [Sort('name')]),
+        expected = [Flag('text', 'flash_text', [Sort()]),
+                    Flag('text', 'flash_text', [Sort('name')]),
                     Flag('rodata', 'flash_rodata', [Sort('alignment')]),
                     Flag('data', 'dram0_data', [Sort('init_priority')]),
                     Flag('bss', 'dram0_bss', [Sort('name', 'alignment')]),
