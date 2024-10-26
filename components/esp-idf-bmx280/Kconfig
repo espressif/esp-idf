@@ -1,0 +1,137 @@
+menu "BMX280 Options"
+    choice BMX280_EXPECT_DEVICE
+        prompt "Installed Sensor Model"
+        help
+            Set to the model of the sensor you are using (if you know it).
+        default BMX280_EXPECT_DETECT
+        config BMX280_EXPECT_DETECT
+            bool "Auto"
+        config BMX280_EXPECT_BME280
+            bool "BME280"
+        config BMX280_EXPECT_BMP280
+            bool "BMP280"
+    endchoice
+
+    choice BMX280_ADDRESS
+        prompt "I2C Slave Address"
+        help
+            Set the slave address of the sensor if you know it. The driver can
+            automatically detect it if you don't know.
+        default BMX280_ADDRESS_DETECT
+        config BMX280_ADDRESS_DETECT
+            bool "Auto"
+        config BMX280_ADDERSS_LO
+            bool "0x76 (SDO LOW)"
+        config BMX280_ADDERSS_HI
+            bool "0x77 (SDO HIGH)"
+    endchoice
+
+    config BMX280_TIMEOUT
+        int "Read/Write Timeout"
+        default 5
+        help
+            Number of ticks to wait for I2C read/write operations.
+
+    menu "Default Configuration"
+        choice BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING
+            prompt "Temperature Oversampling"
+            default BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X2
+            help
+                Refer to BMP280/BME280 Datasheet for more information.
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_NONE
+                bool "None"
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X1
+                bool "x1"
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X2
+                bool "x2"
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X4
+                bool "x4"
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X8
+                bool "x8"
+            config BMX280_DEFAULT_TEMPERATURE_OVERSAMPLING_X16
+                bool "x16"
+        endchoice
+
+        choice BMX280_DEFAULT_PRESSURE_OVERSAMPLING
+            prompt "Pressure Oversampling"
+            default BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X16
+            help
+                Refer to BMP280/BME280 Datasheet for more information.
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_NONE
+                bool "None"
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X1
+                bool "x1"
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X2
+                bool "x2"
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X4
+                bool "x4"
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X8
+                bool "x8"
+            config BMX280_DEFAULT_PRESSURE_OVERSAMPLING_X16
+                bool "x16"
+        endchoice
+
+        choice BMX280_DEFAULT_STANDBY
+            prompt "Cyclic Measurement Standby Time"
+            default BMX280_DEFAULT_STANDBY_0M5
+            help
+                Refer to BMP280/BME280 Datasheet for more information.
+            config BMX280_DEFAULT_STANDBY_0M5
+                bool "0.5ms"
+            config BMX280_DEFAULT_STANDBY_62M5
+                bool "62.5ms"
+            config BMX280_DEFAULT_STANDBY_125M
+                bool "125ms"
+            config BMX280_DEFAULT_STANDBY_250M
+                bool "250ms"
+            config BMX280_DEFAULT_STANDBY_500M
+                bool "500ms"
+            config BMX280_DEFAULT_STANDBY_1000M
+                bool "1000ms"
+            config BMX280_DEFAULT_STANDBY_10M
+                bool "BMP280: 2000ms // BME280: 10ms"
+            config BMX280_DEFAULT_STANDBY_20M
+                bool "BMP280: 4000ms // BME280: 20ms"
+        endchoice
+
+        choice BMX280_DEFAULT_IIR
+            prompt "IIR Filter Sensitivity"
+            default BMX280_DEFAULT_IIR_X16
+            help
+                Refer to BMP280/BME280 Datasheet for more information.
+            config BMX280_DEFAULT_IIR_NONE
+                bool "Filter Off"
+            config BMX280_DEFAULT_IIR_X2
+                bool "x2"
+            config BMX280_DEFAULT_IIR_X4
+                bool "x4"
+            config BMX280_DEFAULT_IIR_X8
+                bool "x8"
+            config BMX280_DEFAULT_IIR_X16
+                bool "x16"
+        endchoice
+
+        menu "BME280 Specific Options"
+            depends on !(BMX280_EXPECT_BMP280)
+
+            choice BMX280_DEFAULT_HUMIDITY_OVERSAMPLING
+                prompt "Humidity Oversampling"
+                default BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X1
+                help
+                    Refer to BME280 Datasheet for more information.
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_NONE
+                    bool "None"
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X1
+                    bool "x1"
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X2
+                    bool "x2"
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X4
+                    bool "x4"
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X8
+                    bool "x8"
+                config BMX280_DEFAULT_HUMIDITY_OVERSAMPLING_X16
+                    bool "x16"
+            endchoice
+        endmenu
+    endmenu
+endmenu
