@@ -58,7 +58,7 @@ static esp_err_t i2s_lcd_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
-static void lcd_default_isr_handler(void *args);
+static void i2s_lcd_default_isr_handler(void *args);
 static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 struct esp_lcd_i80_bus_t {
@@ -175,7 +175,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
-                                    I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);
+                                    I2S_LL_EVENT_TX_EOF, i2s_lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     i2s_ll_enable_intr(bus->hal.dev, I2S_LL_EVENT_TX_EOF, false); // disable interrupt temporarily
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);  // clear pending interrupt
@@ -604,7 +604,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     xQueueSend(next_device->trans_queue, &trans_desc, portMAX_DELAY);
     next_device->num_trans_inflight++;
     // enable interrupt and go into isr handler, where we fetch the transactions from trans_queue and start it
-    // we will go into `lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
+    // we will go into `i2s_lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
     esp_intr_enable(bus->intr);
     return ESP_OK;
 }
@@ -709,7 +709,7 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
     bus->cur_device = next_device;
 }
 
-static IRAM_ATTR void lcd_default_isr_handler(void *args)
+static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
 {
     esp_lcd_i80_bus_t *bus = (esp_lcd_i80_bus_t *)args;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
