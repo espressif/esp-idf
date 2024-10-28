@@ -385,7 +385,6 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
 static bool s_ble_active = false;
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
-#define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif // CONFIG_PM_ENABLE
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
 
@@ -604,7 +603,7 @@ static void sleep_modem_ble_mac_modem_state_deinit(void)
     }
 }
 
-void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
+void IRAM_ATTR sleep_modem_light_sleep_overhead_set(uint32_t overhead)
 {
     r_esp_ble_set_wakeup_overhead(overhead);
 }
@@ -631,13 +630,17 @@ esp_err_t controller_sleep_init(void)
     if (rc != ESP_OK) {
         goto error;
     }
-
     rc = esp_deep_sleep_register_hook(&r_esp_ble_stop_wakeup_timing);
-    assert(rc == 0);
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    if (rc != ESP_OK) {
+        goto error;
+    }
+#endif //CONFIG_PM_ENABLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     /* Create a new regdma link for BLE related register restoration */
     rc = sleep_modem_ble_mac_modem_state_init(0);
-    assert(rc == 0);
+    if (rc != ESP_OK) {
+        goto error;
+    }
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
 
@@ -645,15 +648,17 @@ esp_err_t controller_sleep_init(void)
     if (rc != ESP_OK) {
         goto error;
     }
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#endif /* CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     return rc;
 
+#ifdef CONFIG_PM_ENABLE
 error:
-
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // CONFIG_PM_ENABLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     esp_sleep_disable_bt_wakeup();
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#endif /* CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#ifdef CONFIG_PM_ENABLE
     esp_deep_sleep_deregister_hook(&r_esp_ble_stop_wakeup_timing);
     /*lock should release first and then delete*/
     if (s_pm_lock != NULL) {
@@ -667,12 +672,12 @@ error:
 
 void controller_sleep_deinit(void)
 {
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
     sleep_modem_ble_mac_modem_state_deinit();
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#endif /* CONFIG_BT_LE_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #ifdef CONFIG_PM_ENABLE
     esp_deep_sleep_deregister_hook(&r_esp_ble_stop_wakeup_timing);
     /* lock should be released first */
