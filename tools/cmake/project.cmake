@@ -825,7 +825,7 @@ macro(project project_name)
             # Do not print RWX segment warnings
             target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
         endif()
-        if(CONFIG_ESP_ORPHAN_SECTION_WARNING)
+        if(CONFIG_COMPILER_ORPHAN_SECTIONS_WARNING)
             # Print warnings if orphan sections are found
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
         endif()
