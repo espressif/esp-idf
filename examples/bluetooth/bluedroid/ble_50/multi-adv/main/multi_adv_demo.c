@@ -160,27 +160,33 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, status %d", param->ext_adv_set_rand_addr.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising random address set, status %d, instance %u",
+                 param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT, status %d", param->ext_adv_set_params.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising params set, status %d, instance %u",
+                 param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT, status %d", param->ext_adv_data_set.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising data set, status %d, instance %u",
+                 param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT, status %d", param->scan_rsp_set.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising scan response data set, status %d, instance %u",
+                 param->scan_rsp_set.status, param->scan_rsp_set.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT, status %d", param->ext_adv_start.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance_num %u",
+                 param->ext_adv_start.status, param->ext_adv_start.instance_num);
         break;
     case ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT, status %d", param->ext_adv_stop.status);
+        ESP_LOGI(LOG_TAG, "Extended advertising stop, status %d, instance_num %u",
+                 param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
         break;
     default:
         break;
