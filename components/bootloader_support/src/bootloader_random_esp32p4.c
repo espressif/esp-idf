@@ -100,7 +100,15 @@ void bootloader_random_disable(void)
     // disable analog i2c master clock
     ANALOG_CLOCK_DISABLE();
 
-    // No-op for now TODO IDF-6497
-    // ADC should be set to defaults here, once ADC API is implemented
-    // OR just keep this empty and let application continue to use RNG initialized by the bootloader
+    //TODO IDF-4714
+    // disable timer
+    REG_CLR_BIT(ADC_CTRL2_REG, ADC_TIMER_EN);
+    // Write reset value of this register
+    REG_WRITE(ADC_SAR1_PATT_TAB1_REG, 0xFFFFFF);
+    // Revert ADC I2C configuration and initial voltage source setting
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_MSB, 0);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_LSB, 0);
+
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, 0);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, 0);
 }
