@@ -80,7 +80,7 @@ static esp_err_t s_i2c_bus_handle_aquire(i2c_port_num_t port_num, i2c_bus_handle
     return ret;
 }
 
-static bool i2c_bus_occupied(i2c_port_num_t port_num)
+bool i2c_bus_occupied(i2c_port_num_t port_num)
 {
     return s_i2c_platform.buses[port_num] != NULL;
 }

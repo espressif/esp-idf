@@ -41,6 +41,14 @@ static const char *TAG = "i2c.master";
 #define I2C_ADDRESS_TRANS_READ(device_address)    (((device_address) << 1) | 1)
 
 #define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
+// Use the platform to same master bus handle
+typedef struct i2c_master_bus_platform_t i2c_master_bus_platform_t;
+
+struct i2c_master_bus_platform_t {
+    i2c_master_bus_handle_t handle[SOC_I2C_NUM];
+};
+
+static i2c_master_bus_platform_t s_platform;
 
 static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
 {
@@ -806,7 +814,7 @@ static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev,
             // Clear unused memory
             uint8_t unused_dim = I2C_STATIC_OPERATION_ARRAY_MAX - ops_dim;
             if (unused_dim != 0) {
-                memset(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx] + sizeof(i2c_operation_t) * ops_dim, 0, sizeof(i2c_operation_t) * unused_dim);
+                memset(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx][ops_dim], 0, sizeof(i2c_operation_t) * unused_dim);
             }
             // Record current operation and feed to transaction queue.
             ops_current = &i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx][0];
@@ -978,6 +986,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     xSemaphoreGive(i2c_master->cmd_semphr);
 
     *ret_bus_handle = i2c_master;
+    s_platform.handle[i2c_port_num] = i2c_master;
     return ESP_OK;
 
 err:
@@ -1064,6 +1073,17 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle)
     return ESP_OK;
 }
 
+esp_err_t i2c_master_get_bus_handle(i2c_port_num_t port_num, i2c_master_bus_handle_t *ret_handle)
+{
+    ESP_RETURN_ON_FALSE((port_num < SOC_I2C_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid i2c port number");
+    if (i2c_bus_occupied(port_num) == false) {
+        ESP_LOGE(TAG, "this port has not been initialized, please initialize it first");
+        return ESP_ERR_INVALID_STATE;
+    } else {
+        *ret_handle = s_platform.handle[port_num];
+    }
+    return ESP_OK;
+}
 
 esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, int xfer_timeout_ms)
 {
