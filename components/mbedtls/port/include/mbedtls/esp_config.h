@@ -2528,6 +2528,21 @@
 #endif
 
 /**
+ * \def MBEDTLS_SHA3_C
+ *
+ *  Enable the SHA3 cryptographic hash algorithm.
+ *
+ * Module:  library/sha3.c
+ *
+ * This module adds support for SHA3.
+ */
+#ifdef CONFIG_MBEDTLS_SHA3_C
+#define MBEDTLS_SHA3_C
+#else
+#undef MBEDTLS_SHA3_C
+#endif
+
+/**
  * \def MBEDTLS_SSL_CACHE_C
  *
  * Enable simple SSL cache implementation.
