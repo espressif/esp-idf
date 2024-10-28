@@ -246,11 +246,6 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
 #endif
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL
-    if (tdm_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        pm_type = ESP_PM_NO_LIGHT_SLEEP;
-    }
-#endif // SOC_I2S_SUPPORTS_APLL
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
 #endif
 
