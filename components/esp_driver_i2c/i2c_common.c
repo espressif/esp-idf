@@ -127,7 +127,7 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
     return ret;
 }
 
-static bool i2c_bus_occupied(i2c_port_num_t port_num)
+bool i2c_bus_occupied(i2c_port_num_t port_num)
 {
     return s_i2c_platform.buses[port_num] != NULL;
 }
@@ -351,8 +351,8 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     rtc_gpio_iomux_func_sel(handle->sda_num, i2c_periph_signal[port_id].iomux_func);
 #else
-    lp_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
-    lp_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].scl_in_sig, 0);
+    lp_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
+    lp_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
 #endif
 
     rtc_gpio_init(handle->scl_num);
@@ -366,8 +366,8 @@ static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     rtc_gpio_iomux_func_sel(handle->scl_num, i2c_periph_signal[port_id].iomux_func);
 #else
-    lp_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
-    lp_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].sda_in_sig, 0);
+    lp_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
+    lp_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
 #endif
 
     return ESP_OK;
