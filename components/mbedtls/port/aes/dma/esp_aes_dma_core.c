@@ -322,7 +322,7 @@ static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *
 
 static inline void *aes_dma_calloc(size_t num, size_t size, uint32_t caps, size_t *actual_size)
 {
-    return heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, num, size, caps | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    return heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, num, size, caps);
 }
 
 static inline esp_err_t dma_desc_link(crypto_dma_desc_t *dmadesc, size_t crypto_dma_desc_num)
@@ -766,14 +766,14 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     out_desc_tail = &output_desc[output_dma_desc_num - 1];
 
-    len_desc = aes_dma_calloc(1, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA, NULL);
+    len_desc = aes_dma_calloc(1, sizeof(crypto_dma_desc_t), AES_DMA_ALLOC_CAPS, NULL);
     if (len_desc == NULL) {
         mbedtls_platform_zeroize(output, len);
         ESP_LOGE(TAG, "Failed to allocate memory for len descriptor");
         return -1;
     }
 
-    uint32_t *len_buf = aes_dma_calloc(4, sizeof(uint32_t), MALLOC_CAP_DMA, NULL);
+    uint32_t *len_buf = aes_dma_calloc(4, sizeof(uint32_t), AES_DMA_ALLOC_CAPS, NULL);
     if (len_buf == NULL) {
         mbedtls_platform_zeroize(output, len);
         ESP_LOGE(TAG, "Failed to allocate memory for len buffer");
