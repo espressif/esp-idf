@@ -395,25 +395,52 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
             return;
         case 1:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
             return;
         case 2:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
             return;
     }
 }
@@ -433,25 +460,52 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
             return;
         case 1:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
             return;
         case 2:
-            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
-            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
-            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            /* Workaround for the double division issue.
+             * The division coefficients must be set in particular sequence.
+             * And it has to switch to a small division first before setting the target division. */
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, 2);
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = 0;
+            /* Set the target mclk division coefficients */
             HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = yn1;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
             return;
     }
 }
@@ -464,12 +518,6 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_tx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
-
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
@@ -504,12 +552,6 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_rx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
-
     uint32_t div_x = 0;
     uint32_t div_y = 0;
     uint32_t div_z = 0;
