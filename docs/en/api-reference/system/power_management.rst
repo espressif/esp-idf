@@ -110,17 +110,20 @@ The following drivers will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the drive
     - **Ethernet**: between calls to :cpp:func:`esp_eth_driver_install` and :cpp:func:`esp_eth_driver_uninstall`.
     - **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
     :SOC_TWAI_SUPPORTED: - **TWAI**: between calls to :cpp:func:`twai_driver_install` and :cpp:func:`twai_driver_uninstall` (only when the clock source is set to :cpp:enumerator:`TWAI_CLK_SRC_APB`).
-    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held, unless :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` option is set to "External 32kHz crystal".
-    :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held.
+    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth Modem-sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held, unless :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` option is set to "External 32kHz crystal".
+    :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth Modem-sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held.
+    :SOC_PCNT_SUPPORTED: - **PCNT**: between calls to :cpp:func:`pcnt_unit_enable` and :cpp:func:`pcnt_unit_disable`.
+    :SOC_SDM_SUPPORTED: - **Sigma-delta**: between calls to :cpp:func:`sdm_channel_enable` and :cpp:func:`sdm_channel_disable`.
+    :SOC_MCPWM_SUPPORTED: - **MCPWM**: between calls to :cpp:func:`mcpwm_timer_enable` and :cpp:func:`mcpwm_timer_disable`, as well as :cpp:func:`mcpwm_capture_timer_enable` and :cpp:func:`mcpwm_capture_timer_disable`.
 
 The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks themselves, when necessary:
 
 .. list::
 
-    - PCNT
-    - Sigma-delta
+    :SOC_PCNT_SUPPORTED: - The legacy PCNT driver
+    :SOC_SDM_SUPPORTED: - The legacy Sigma-delta driver
     - The legacy timer group driver
-    :SOC_MCPWM_SUPPORTED: - MCPWM
+    :SOC_MCPWM_SUPPORTED: - The legacy MCPWM driver
 
 
 Light-sleep Peripheral Power Down
