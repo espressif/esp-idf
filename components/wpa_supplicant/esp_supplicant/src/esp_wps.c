@@ -1744,6 +1744,11 @@ int wps_task_deinit(void)
         wps_rxq_deinit();
     }
 
+    if (s_wps_data_lock) {
+        os_mutex_delete(s_wps_data_lock);
+        s_wps_data_lock = NULL;
+    }
+
     return ESP_OK;
 }
 
@@ -1776,7 +1781,7 @@ int wps_task_init(void)
     }
 
     os_bzero(s_wps_sig_cnt, SIG_WPS_NUM);
-    s_wps_queue = os_queue_create(SIG_WPS_NUM, sizeof(s_wps_queue));
+    s_wps_queue = os_queue_create(SIG_WPS_NUM, sizeof(ETSEvent));
     if (!s_wps_queue) {
         wpa_printf(MSG_ERROR, "wps task init: failed to alloc queue");
         goto _wps_no_mem;
