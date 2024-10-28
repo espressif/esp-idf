@@ -47,6 +47,12 @@
 
 #define EXT_ADV_HANDLE      0
 #define NUM_EXT_ADV         1
+#define EXT_ADV_NAME_LEN_OFFSET 6
+#define EXT_ADV_NAME_OFFSET 8
+
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
 static SemaphoreHandle_t test_sem = NULL;
 
@@ -99,39 +105,39 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, status %d, instance %d", param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
+        ESP_LOGI(LOG_TAG, "Extended advertising random address set, status %d, instance %d", param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT, status %d, instance %d", param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
+        ESP_LOGI(LOG_TAG, "Extended advertising params set, status %d, instance %d", param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT, status %d, instance %d", param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
+        ESP_LOGI(LOG_TAG, "Extended advertising data set, status %d, instance %d", param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT, status %d, instance %d", param->scan_rsp_set.status, param->scan_rsp_set.instance);
+        ESP_LOGI(LOG_TAG, "Extended advertising scan response data set, status %d, instance %d", param->scan_rsp_set.status, param->scan_rsp_set.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT, status %d, instance numble %d", param->ext_adv_start.status, param->ext_adv_start.instance_num);
+        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance numble %d", param->ext_adv_start.status, param->ext_adv_start.instance_num);
         break;
     case ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT, status %d, instance numble %d", param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
+        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance numble %d", param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT, status %d, instance %d", param->peroid_adv_set_params.status, param->peroid_adv_set_params.instance);
+        ESP_LOGI(LOG_TAG, "Periodic advertising params set, status %d, instance %d", param->peroid_adv_set_params.status, param->peroid_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, status %d, instance %d", param->period_adv_data_set.status, param->period_adv_data_set.instance);
+        ESP_LOGI(LOG_TAG, "Periodic advertising data set, status %d, instance %d", param->period_adv_data_set.status, param->period_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT, status %d, instance %d", param->period_adv_start.status, param->period_adv_start.instance);
+        ESP_LOGI(LOG_TAG, "Periodic advertising start, status %d, instance %d", param->period_adv_start.status, param->period_adv_start.instance);
         break;
     default:
         break;
@@ -149,6 +155,14 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
+    uint8_t adv_name_len = raw_ext_adv_data_2m[EXT_ADV_NAME_LEN_OFFSET] - 1;
+    char *adv_name = esp_bluedroid_get_example_name();
+    adv_name_len = MIN(adv_name_len, strlen(adv_name));
+    memcpy(&raw_ext_adv_data_2m[EXT_ADV_NAME_OFFSET], adv_name, adv_name_len);
+    raw_ext_adv_data_2m[EXT_ADV_NAME_LEN_OFFSET] = (adv_name_len + 1);
+    #endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
