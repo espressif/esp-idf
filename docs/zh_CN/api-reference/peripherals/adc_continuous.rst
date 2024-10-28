@@ -117,7 +117,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
     - :cpp:func:`adc_continuous_monitor_enable`：启用监视器。
     - :cpp:func:`adc_continuous_monitor_disable`：禁用监视器.
-    - :cpp:func:`adc_monitor_register_callbacks`：注册用户回调函数，在 ADC 转换结果超出阈值时，执行相应操作。
+    - :cpp:func:`adc_continuous_monitor_register_event_callbacks`：注册用户回调函数，在 ADC 转换结果超出阈值时，执行相应操作。
     - :cpp:func:`adc_del_continuous_monitor`：删除监视器，释放资源。
 
     .. only:: esp32s2
@@ -128,6 +128,41 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
             1. 每个监视器仅支持一个阈值。
             2. 每个 ADC 单元仅支持一个监视器。
             3. ADC 连续转换模式驱动中，如果启用了监视器，无需使用参数 :cpp:member:`adc_monitor_config_t::channel` 指定，某个 ADC 单元中所有已启用的通道都会受监视。
+
+    特别地，监视器功能可用于实现过零检测。由于 ADC 无法直接处理负输入信号，可以通过 **直流偏置（DC bias）** 来实现过零检测。
+
+    首先，通过电路将直流偏置添加到输入信号中，以将负信号“移位”到 ADC 的测量范围内。关于 ADC 的测量范围，请参考 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}#sensor>`__ 中的片上传感器与模拟信号处理章节。例如，添加一个 1 V 的偏置可以将 -1 V 至 +1 V 的信号变换到 0 V 至 2 V 的范围。然后，通过设置合适的高阈值与低阈值，ADC 可以检测输入信号是否接近零，从而识别信号的相位变化。详情请参考下面的示例代码。
+
+    .. code:: c
+
+        // 初始化 ADC 监视器句柄
+        adc_monitor_handle_t adc_monitor_handle = NULL;
+
+        // 配置 ADC 监视器
+        adc_monitor_config_t zero_crossing_config = {
+            .adc_unit = EXAMPLE_ADC_UNIT_1,      // 指定要监视的 ADC 单元
+            .channel = EXAMPLE_ADC_CHANNEL_0,    // 指定要监视的 ADC 通道
+            .h_threshold = 1100,                 // 设置监视的高阈值为接近偏置值，请根据实际情况进行调整
+            .l_threshold = 900,                 // 设置监视的低阈值为接近偏置值，请根据实际情况进行调整
+        };
+
+        // 创建 ADC 监视器
+        ESP_ERROR_CHECK(adc_new_continuous_monitor(&zero_crossing_config, &adc_monitor_handle));
+
+        // 注册回调函数
+        adc_monitor_evt_cbs_t zero_crossing_cbs = {
+            .on_over_high_thresh = example_on_exceed_high_thresh,
+            .on_below_low_thresh = example_on_below_low_thresh,
+        };
+
+        ESP_ERROR_CHECK(adc_continuous_monitor_register_event_callbacks(adc_monitor_handle, &zero_crossing_cbs, NULL));
+
+        // 启用 ADC 监视器
+        ESP_ERROR_CHECK(adc_continuous_monitor_enable(adc_monitor_handle));
+
+        // 禁用并删除 ADC 监视器
+        ESP_ERROR_CHECK(adc_continuous_monitor_disable(adc_monitor_handle));
+        ESP_ERROR_CHECK(adc_del_continuous_monitor(adc_monitor_handle));
 
 初始化 ADC 连续转换模式驱动
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,7 +200,7 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 按照以下步骤设置 :cpp:type:`adc_digi_pattern_config_t`：
 
-- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}#sensor>`__ 中的 ``ADC 特性`` 章节。
+- :cpp:member:`adc_digi_pattern_config_t::atten`：ADC 衰减。请参阅 `技术参考手册 <{IDF_TARGET_TRM_CN_URL}#sensor>`__ 中的 ``ADC 特性`` 章节。
 - :cpp:member:`adc_digi_pattern_config_t::channel`：IO 对应的 ADC 通道号，请参阅下文注意事项。
 - :cpp:member:`adc_digi_pattern_config_t::unit`：IO 所属的 ADC 单元。
 - :cpp:member:`adc_digi_pattern_config_t::bit_width`：原始转换结果的位宽。
