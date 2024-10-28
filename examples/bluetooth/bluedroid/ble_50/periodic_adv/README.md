@@ -6,7 +6,7 @@
 This example support for the periodic advertisement which allow the scanner to sync with the advertiser so that scanner and advertiser wake up same time. It support extended adv with 2M phy in connectable mode.
 
 
-To test this demo, we can run the [periodic_sync_demo](../peroidic_sync), which can do periodic scan and try to sync with periodic adv.
+To test this demo, we can run the [periodic_sync_demo](../periodic_sync), which can do periodic scan and try to sync with periodic adv.
 
 
 Please, check this [tutorial](tutorial/Periodic_adv_Example_Walkthrough.md) for more information about this example.
