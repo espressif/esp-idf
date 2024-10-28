@@ -6,7 +6,7 @@
 
 #include "esp_spi_spinel_interface.hpp"
 
-#include "error.h"
+#include "openthread/error.h"
 #include "esp_check.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_rom_sys.h"

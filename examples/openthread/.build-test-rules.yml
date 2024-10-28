@@ -40,9 +40,8 @@ examples/openthread/ot_rcp:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: only test on esp32c6
+    - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
+      reason: only test on esp32h2 and esp32c6
   <<: *openthread_dependencies
 
 examples/openthread/ot_sleepy_device/deep_sleep:
@@ -57,3 +56,11 @@ examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
+
+examples/openthread/ot_trel:
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c6", "esp32s3"]
+      reason: only test on esp32c6 and esp32s3
+  <<: *openthread_dependencies
