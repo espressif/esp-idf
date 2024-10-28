@@ -43,10 +43,17 @@ esp_err_t bootloader_read_bootloader_header(void)
 
 esp_err_t bootloader_check_bootloader_validity(void)
 {
-    unsigned int revision = efuse_hal_chip_revision();
-    unsigned int major = revision / 100;
-    unsigned int minor = revision % 100;
-    ESP_EARLY_LOGI(TAG, "chip revision: v%d.%d", major, minor);
+    unsigned int chip_revision = efuse_hal_chip_revision();
+    unsigned int chip_major_rev = chip_revision / 100;
+    unsigned int chip_minor_rev = chip_revision % 100;
+    ESP_EARLY_LOGI(TAG, "chip revision: v%d.%d", chip_major_rev, chip_minor_rev);
+/* ESP32 doesn't have more memory and more efuse bits for block major version. */
+#if !CONFIG_IDF_TARGET_ESP32
+    unsigned int efuse_revision = efuse_hal_blk_version();
+    unsigned int efuse_major_rev = efuse_revision / 100;
+    unsigned int efuse_minor_rev = efuse_revision % 100;
+    ESP_EARLY_LOGI(TAG, "efuse block revision: v%d.%d", efuse_major_rev, efuse_minor_rev);
+#endif  // !CONFIG_IDF_TARGET_ESP32
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;

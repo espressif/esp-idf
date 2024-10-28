@@ -47,12 +47,20 @@ Chips have several eFuse version fields:
 
 - Major wafer version (``WAFER_VERSION_MAJOR`` eFuse)
 - Minor wafer version (``WAFER_VERSION_MINOR`` eFuse)
-- Ignore maximum revision (``DISABLE_WAFER_VERSION_MAJOR`` eFuse). See :ref:`revision_limitation` on how this is used.
+- Ignore maximum wafer revision (``DISABLE_WAFER_VERSION_MAJOR`` eFuse). See :ref:`revision_limitation` on how this is used.
 
 .. note::
 
     The previous versioning logic was based on a single eFuse version field (``WAFER_VERSION``). This approach makes it impossible to mark chips as breaking or non-breaking changes, and the versioning logic becomes linear.
 
+EFuse Bits for eFuse Block Revisions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+EFuse block has version fields:
+
+- Major efuse block version (``BLK_VERSION_MAJOR`` eFuse)
+- Minor efuse block version (``BLK_VERSION_MINOR`` eFuse)
+- Ignore maximum efuse block revision (``DISABLE_BLK_VERSION_MAJOR`` eFuse). See :ref:`revision_limitation` on how this is used.
 
 Chip Revision APIs
 ^^^^^^^^^^^^^^^^^^
@@ -60,8 +68,8 @@ Chip Revision APIs
 These APIs helps to get chip revision from eFuses:
 
 - :cpp:func:`efuse_hal_chip_revision`. It returns revision in the ``major * 100 + minor`` format.
-- :cpp:func:`efuse_hal_get_major_chip_version`. It returns Major revision.
-- :cpp:func:`efuse_hal_get_minor_chip_version`. It returns Minor revision.
+- :cpp:func:`efuse_hal_get_major_chip_version`. It returns Major revision of wafer.
+- :cpp:func:`efuse_hal_get_minor_chip_version`. It returns Minor revision of wafer.
 
 The following Kconfig definitions (in ``major * 100 + minor`` format) that can help add the chip revision dependency to the code:
 
@@ -70,6 +78,19 @@ The following Kconfig definitions (in ``major * 100 + minor`` format) that can h
 - ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``
 - ``CONFIG_ESP_REV_MAX_FULL``
 
+EFuse Block Revision APIs
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These APIs helps to get eFuse block revision from eFuses:
+
+- :cpp:func:`efuse_hal_blk_version`. It returns revision in the ``major * 100 + minor`` format.
+- :cpp:func:`efuse_ll_get_blk_version_major`. It returns Major revision of eFuse block.
+- :cpp:func:`efuse_ll_get_blk_version_minor`. It returns Minor revision of eFuse block.
+
+The following Kconfig definitions (in ``major * 100 + minor`` format) that can help add the eFuse block revision dependency to the code:
+
+- ``CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL``
+- ``CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL``
 
 .. _revision_limitation:
 
@@ -81,6 +102,8 @@ When building an application that needs to support multiple revisions of a parti
 The minimum chip revision can be configured via the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` option. Specifying the minimum chip revision will limit the software to only run on a chip revisions that are high enough to support some features or bugfixes.
 
 The maximum chip revision cannot be configured and is automatically determined by the current ESP-IDF version being used. ESP-IDF will refuse to boot any chip revision exceeding the maximum chip revision. Given that it is impossible for a particular ESP-IDF version to foresee all future chip revisions, the maximum chip revision is usually set to ``maximum supported MAJOR version + 99``. The "Ignore Maximum Revision" eFuse can be set to bypass the maximum revision limitation. However, the software is not guaranteed to work if the maximum revision is ignored.
+
+The eFuse block revision is similar to the chip revision, but it mainly affects the coefficients that are specified in the eFuse (e.g. ADC calibration coefficients).
 
 Below is the information about troubleshooting when the chip revision fails the compatibility check. Then there are technical details of the checking and software behavior on earlier version of ESP-IDF.
 
@@ -109,11 +132,16 @@ To resolve this issue, update ESP-IDF to a newer version that supports the chip'
 Representing Revision Requirements of a Binary Image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The 2nd stage bootloader and the application binary images contain the :cpp:type:`esp_image_header_t` header, which stores information specifying the chip revisions that the image is permitted to run on. This header has 3 fields related to revisions:
+For the chip revision, the 2nd stage bootloader and the application binary images contain the :cpp:type:`esp_image_header_t` header, which stores information specifying the chip revisions that the image is permitted to run on. This header has 3 fields related to the chip revisions:
 
 - ``min_chip_rev`` - Minimum chip MAJOR revision required by image (but for ESP32-C3 it is MINOR revision). Its value is determined by :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
 - ``min_chip_rev_full`` - Minimum chip MINOR revision required by image in format: ``major * 100 + minor``. Its value is determined by :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN`.
 - ``max_chip_rev_full`` - Maximum chip revision required by image in format: ``major * 100 + minor``. Its value is determined by ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``. It can not be changed by user. Only Espressif can change it when a new version will be supported in ESP-IDF.
+
+For the eFuse revision, the requirements are stored in :cpp:type:`esp_app_desc_t`, which is contained in the application binary image. We only check the application image because the eFuse block revision mostly affects the ADC calibration, which does not really matter in the bootloader. There are 2 fields related to eFuse block revisions:
+
+- ``min_efuse_blk_rev_full`` - Minimum eFuse block MINOR revision required by image in format: ``major * 100 + minor``. Its value is determined by ``CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL``.
+- ``max_efuse_blk_rev_full`` - Maximum eFuse block MINOR revision required by image in format: ``major * 100 + minor``. Its value is determined by ``CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL``. It reflects whether the current IDF version supports this efuse block format or not, and should not be changed by the user.
 
 Maximum And Minimum Revision Restrictions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -124,9 +152,9 @@ The order for checking the minimum and maximum revisions during application boot
 
 2. The initialization phase of the  2nd stage bootloader checks that the 2nd stage bootloader itself can be launched on the chip of this revision. It extracts the minimum revision from the header of the bootloader image and checks against the chip revision from eFuses. If the chip revision is less than the minimum revision, the bootloader refuses to boot up and aborts. The maximum revision is not checked at this phase.
 
-3. Then the 2nd stage bootloader checks the revision requirements of the application. It extracts the minimum and maximum revisions from the header of the application image and checks against the chip revision from eFuses. If the chip revision is less than the minimum revision or higher than the maximum revision, the bootloader refuses to boot up and aborts. However, if the Ignore maximum revision bit is set, the maximum revision constraint can be ignored. The ignore bit is set by the customer themselves when there is confirmation that the software is able to work with this chip revision.
+3. Then the 2nd stage bootloader checks the revision requirements of the application. It extracts the minimum and maximum revisions of the chip from the application image header, and the eFuse block from the segment header. Then the bootloader checks these versions against the chip and eFuse block revision from eFuses. If the these revisions are less than their minimum revision or higher than the maximum revision, the bootloader refuses to boot up and aborts. However, if the ignore maximum revision bit is set, the maximum revision constraint can be ignored. The ignore bits are set by the customer themselves when there is confirmation that the software is able to work with this chip revision or eFuse block revision.
 
-4. Furthermore, at the OTA update stage, the running application checks if the new software matches the chip revision. It extracts the minimum and maximum revisions from the header of the new application image and checks against the chip revision from eFuses. It checks for revision matching in the same way that the bootloader does, so that the chip revision is between the min and max revisions (logic of ignoring max revision also applies).
+4. Furthermore, at the OTA update stage, the running application checks if the new software matches the chip revision and eFuse block revision. It extracts the minimum and maximum chip revisions from the header of the new application image and the eFuse block constraints from the application description to check against the these revisions from eFuses. It checks for revisions matching in the same way that the bootloader does, so that the chip and eFuse block revisions are between their min and max revisions (logic of ignoring max revision also applies).
 
 Backward Compatibility with Bootloaders Built by Older ESP-IDF Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
