@@ -88,7 +88,7 @@ The I2C driver offers following services:
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-Both I2C master bus and I2C slave bus, when supported, are represented by :cpp:type:`i2c_bus_handle_t` in the driver. The available ports are managed in a resource pool that allocates a free port on request.
+The I2C master bus is represented by :cpp:type:`i2c_master_bus_handle_t` in the driver. The available ports are managed in a resource pool that allocates a free port on request.
 
 Install I2C master bus and device
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -451,20 +451,20 @@ Simple example for writing data to FIFO:
     i2c_slave_config_t i2c_slv_config = {
         .addr_bit_len = I2C_ADDR_BIT_LEN_7,   // 7-bit address
         .clk_source = I2C_CLK_SRC_DEFAULT,    // set the clock source
-        .i2c_port = 0,                        // set I2C port number
+        .i2c_port = TEST_I2C_PORT,            // set I2C port number
         .send_buf_depth = 256,                // set TX buffer length
-        .scl_io_num = 2,                      // SCL GPIO number
-        .sda_io_num = 1,                      // SDA GPIO number
+        .scl_io_num = I2C_SLAVE_SCL_IO,       // SCL GPIO number
+        .sda_io_num = I2C_SLAVE_SDA_IO,       // SDA GPIO number
         .slave_addr = 0x58,                   // slave address
     };
 
-    i2c_bus_handle_t i2c_bus_handle;
-    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &i2c_bus_handle));
+    i2c_slave_dev_handle_t slave_handle;
+    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
 
-    ESP_ERROR_CHECK(i2c_slave_transmit(i2c_bus_handle, data_wr, DATA_LENGTH, 10000));
+    ESP_ERROR_CHECK(i2c_slave_transmit(slave_handle, data_wr, DATA_LENGTH, 10000));
 
 I2C Slave Read
 ~~~~~~~~~~~~~~
