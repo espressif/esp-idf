@@ -773,7 +773,18 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
 
             traceBLOCKING_ON_STREAM_BUFFER_SEND( xStreamBuffer );
             ( void ) xTaskNotifyWait( ( uint32_t ) 0, ( uint32_t ) 0, NULL, xTicksToWait );
-            pxStreamBuffer->xTaskWaitingToSend = NULL;
+            /* In SMP mode, the task may have been woken and scheduled on
+             * another core. Hence, we must clear the xTaskWaitingToSend
+             * handle in a critical section. */
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
+            {
+                pxStreamBuffer->xTaskWaitingToSend = NULL;
+            }
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
         } while( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE );
     }
     else
