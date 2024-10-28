@@ -121,7 +121,7 @@ void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if !ADC_LL_RTC_GPIO_SUPPORTED
     TEST_ESP_OK(gpio_set_pull_mode(io_num, GPIO_PULLUP_PULLDOWN));
 #else
     TEST_ESP_OK(rtc_gpio_init(io_num));

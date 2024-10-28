@@ -11,6 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32c5
+@pytest.mark.esp32p4
 @pytest.mark.adc
 @pytest.mark.parametrize('config', [
     'iram_safe',
@@ -42,6 +43,7 @@ def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.esp32c5
+@pytest.mark.esp32p4
 @pytest.mark.adc
 @pytest.mark.parametrize('config', [
     'gdma_iram_safe',

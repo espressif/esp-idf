@@ -124,6 +124,7 @@ typedef enum {
     ADC_DIGI_IIR_FILTER_COEFF_4,     ///< The filter coefficient is 4
     ADC_DIGI_IIR_FILTER_COEFF_8,     ///< The filter coefficient is 8
     ADC_DIGI_IIR_FILTER_COEFF_16,    ///< The filter coefficient is 16
+    ADC_DIGI_IIR_FILTER_COEFF_32,    ///< The filter coefficient is 32
     ADC_DIGI_IIR_FILTER_COEFF_64,    ///< The filter coefficient is 64
 } adc_digi_iir_filter_coeff_t;
 
