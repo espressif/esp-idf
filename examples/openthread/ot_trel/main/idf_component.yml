@@ -1,0 +1,11 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_ot_cli_extension:
+    version: "~1.2.0"
+  espressif/mdns: "^1.0.3"
+  idf:
+    version: ">=4.1.0"
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common
+  ot_led:
+    path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_led
