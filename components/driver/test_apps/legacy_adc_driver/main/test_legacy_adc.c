@@ -11,6 +11,7 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "soc/adc_periph.h"
+#include "hal/adc_ll.h"
 
 #define ADC_GET_IO_NUM(unit, channel) (adc_channel_io_map[unit][channel])
 
@@ -68,7 +69,7 @@
 #define ADC_TEST_HIGH_THRESH     200
 
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define ADC_TEST_LOW_VAL         3100
+#define ADC_TEST_LOW_VAL         2152
 #define ADC_TEST_LOW_THRESH      200
 
 #define ADC_TEST_HIGH_VAL        4095
@@ -110,7 +111,7 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 {
     TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if !ADC_LL_RTC_GPIO_SUPPORTED
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
 #else

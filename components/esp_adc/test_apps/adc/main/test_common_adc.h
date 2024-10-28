@@ -88,7 +88,7 @@ extern "C" {
 #define ADC_TEST_HIGH_THRESH     200
 
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define ADC_TEST_LOW_VAL         3100
+#define ADC_TEST_LOW_VAL         2152
 #define ADC_TEST_LOW_THRESH      200
 
 #define ADC_TEST_HIGH_VAL        4095
