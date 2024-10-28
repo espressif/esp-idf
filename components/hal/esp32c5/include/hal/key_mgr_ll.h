@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +18,21 @@
 #include "hal/assert.h"
 #include "hal/key_mgr_types.h"
 #include "soc/keymng_reg.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Read state of Key Manager
+ *
+ * @return esp_key_mgr_state_t
+ */
+static inline esp_key_mgr_state_t key_mgr_ll_get_state(void)
+{
+    return (esp_key_mgr_state_t) REG_GET_FIELD(KEYMNG_STATE_REG, KEYMNG_STATE);
+}
 
 /**
  * @brief Enable the bus clock for Key Manager peripheral
@@ -32,7 +42,10 @@ extern "C" {
  */
 static inline void _key_mgr_ll_enable_bus_clock(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl1.reg_key_manager_sys_clk_en = enable;
+    // Set the force power down bit to 0 to enable key manager
+    PCR.km_pd_ctrl.km_mem_force_pd = 0;
+    // Enable key manager clock
+    PCR.km_conf.km_clk_en = 1;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -48,20 +61,10 @@ static inline void _key_mgr_ll_enable_bus_clock(bool enable)
  */
 static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = enable;
+    ;    /* Nothing to do here, Kept for compatibility with other SoC */
 }
 
 #define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__)
-
-/**
- * @brief Read state of Key Manager
- *
- * @return esp_key_mgr_state_t
- */
-static inline esp_key_mgr_state_t key_mgr_ll_get_state(void)
-{
-    return (esp_key_mgr_state_t) REG_GET_FIELD(KEYMNG_STATE_REG, KEYMNG_STATE);
-}
 
 /**
  * @brief Reset the Key Manager peripheral
@@ -70,14 +73,15 @@ static inline esp_key_mgr_state_t key_mgr_ll_get_state(void)
  */
 static inline void _key_mgr_ll_reset_register(void)
 {
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_km = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_km = 0;
-
-    // Clear reset on parent crypto, otherwise Key Manager is held in reset
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
+    PCR.km_conf.km_rst_en = 1;
+    PCR.km_conf.km_rst_en = 0;
+    // Wait for key manager to be ready
+    while (!PCR.km_conf.km_ready) {
+    };
 
     while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
     };
+
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -95,7 +99,6 @@ static inline void key_mgr_ll_continue(void)
 {
     REG_SET_BIT(KEYMNG_START_REG, KEYMNG_CONTINUE);
 }
-
 
 /* @brief Enable or Disable the KEY_MGR interrupts */
 static inline void key_mgr_ll_configure_interrupt(const esp_key_mgr_interrupt_type_t intr, bool en)
@@ -133,7 +136,6 @@ static inline void key_mgr_ll_clear_int(const esp_key_mgr_interrupt_type_t intr)
     }
 }
 
-
 /**
  * @brief Set the key manager to use the software provided init key
  */
@@ -159,11 +161,12 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
             if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
-                REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS);
+                REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
             } else {
-                REG_CLR_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS);
+                REG_CLR_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
             }
             break;
+
         default:
             HAL_ASSERT(false && "Unsupported mode");
             return;
@@ -179,7 +182,7 @@ static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_t
 
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
-            return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS));
+            return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH));
             break;
 
         default:
@@ -212,8 +215,11 @@ static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_
             break;
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
-            REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_XTS);
+            REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_FLASH);
             break;
+        default:
+            HAL_ASSERT(false && "Unsupported mode");
+            return;
     }
 }
 
@@ -256,7 +262,7 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
 
         case ESP_KEY_MGR_XTS_AES_128_KEY:
         case ESP_KEY_MGR_XTS_AES_256_KEY:
-            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_XTS_VLD);
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_FLASH_VLD);
             break;
 
         default:
@@ -327,16 +333,16 @@ static inline bool key_mgr_ll_is_huk_valid(void)
     return REG_GET_FIELD(KEYMNG_HUK_VLD_REG, KEYMNG_HUK_VALID);
 }
 
-/* @brief Set the AES-XTS key length for the Key Manager */
+/* @brief Set the XTS-AES (Flash Encryption) key length for the Key Manager */
 static inline void key_mgr_ll_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
 {
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_XTS_AES_KEY_LEN, key_len);
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN, key_len);
 }
 
-/* @brief Get the AES-XTS key length for the Key Manager */
+/* @brief Get the XTS-AES (Flash Encryption) key length for the Key Manager */
 static inline esp_key_mgr_xts_aes_key_len_t key_mgr_ll_get_xts_aes_key_len(void)
 {
-    return (esp_key_mgr_xts_aes_key_len_t) REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_XTS_AES_KEY_LEN);
+    return (esp_key_mgr_xts_aes_key_len_t) REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN);
 }
 
 /**
@@ -344,7 +350,7 @@ static inline esp_key_mgr_xts_aes_key_len_t key_mgr_ll_get_xts_aes_key_len(void)
  */
 static inline uint32_t key_mgr_ll_get_date_info(void)
 {
-    // Only the lest siginificantt 28 bits have desired information
+    // Only the least significant 28 bits have desired information
     return (uint32_t)(0x0FFFFFFF & REG_READ(KEYMNG_DATE_REG));
 }
 

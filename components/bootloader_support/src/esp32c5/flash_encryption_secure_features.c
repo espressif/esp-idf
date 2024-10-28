@@ -11,9 +11,8 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "soc/keymng_reg.h"
-#include "soc/pcr_reg.h"
-#include "soc/pcr_struct.h"
+#include "hal/key_mgr_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
 
 static __attribute__((unused)) const char *TAG = "flash_encrypt";
 
@@ -62,30 +61,21 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     return ESP_OK;
 }
 
-// TODO: Update to use LL APIs once key manager support added in IDF-8621
 esp_err_t esp_flash_encryption_enable_key_mgr(void)
 {
-    // Set the force power down bit to 0 to enable key manager
-    PCR.km_pd_ctrl.km_mem_force_pd = 0;
-    // Reset the key manager
-    PCR.km_conf.km_clk_en = 1;
-    PCR.km_conf.km_rst_en = 1;
-    PCR.km_conf.km_rst_en = 0;
+    // Enable and reset key manager
+    // To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
+    key_mgr_ll_enable_bus_clock(true);
+    key_mgr_ll_enable_peripheral_clock(true);
+    key_mgr_ll_reset_register();
 
-    // Wait for key manager to be ready
-    while (!PCR.km_conf.km_ready) {
+    while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
     };
 
-    // Wait for key manager state machine to be idle
-    while (REG_READ(KEYMNG_STATE_REG) != 0) {
-    };
-
-    // Set the key manager to use efuse key
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
-
-    // Reset MSPI to re-load the flash encryption key
-    REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
-    REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+    // Force Key Manager to use eFuse key for XTS-AES operation
+    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    _mspi_timing_ll_reset_mspi();
 
     return ESP_OK;
 }

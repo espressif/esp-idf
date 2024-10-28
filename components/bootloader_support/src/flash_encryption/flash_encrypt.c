@@ -258,8 +258,7 @@ esp_err_t esp_flash_encrypt_contents(void)
     REG_WRITE(SENSITIVE_XTS_AES_KEY_UPDATE_REG, 1);
 #endif
 
-// TODO: Remove C5 target config after key manager LL support- see IDF-8621
-#if CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY
     esp_flash_encryption_enable_key_mgr();
 #endif
 

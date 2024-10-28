@@ -20,23 +20,15 @@ __attribute__((unused)) static const char *TAG = "esp_security";
 
 static void esp_key_mgr_init(void)
 {
-    // The following operation makes the Key Manager to use eFuse key for ECDSA and XTS-AES operation by default
-    // This is to keep the default behavior same as the other chips
-    // If the Key Manager configuration is already locked then following operation does not have any effect
+    // The following code initializes the key manager.
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY
     // Enable key manager clock
     // Using ll APIs which do not require critical section
     _key_mgr_ll_enable_bus_clock(true);
     _key_mgr_ll_enable_peripheral_clock(true);
-
+    _key_mgr_ll_reset_register();
     while (key_mgr_ll_get_state() != ESP_KEY_MGR_STATE_IDLE) {
     };
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-#endif
-#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
-    key_mgr_ll_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
-#endif
 #endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY || SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 }
 

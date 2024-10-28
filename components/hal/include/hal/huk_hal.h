@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-// The HAL layer for Hardware Unique Key (HUK) Genarator
+// The HAL layer for Hardware Unique Key (HUK) Generator
 
 #pragma once
 

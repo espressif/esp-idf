@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,11 +37,11 @@ void key_mgr_hal_set_key_usage(const esp_key_mgr_key_type_t key_type, const esp_
  */
 esp_key_mgr_key_usage_t key_mgr_hal_get_key_usage(const esp_key_mgr_key_type_t key_type);
 
-/* @brief Configure the key purpose to be used by the Key Manager for key generator opearation */
+/* @brief Configure the key purpose to be used by the Key Manager for key generator operation */
 void key_mgr_hal_set_key_purpose(const esp_key_mgr_key_purpose_t key_purpose);
 
 /**
- * @bfief Configure the mode which is used by the Key Manager for the generator key deployement process
+ * @bfief Configure the mode which is used by the Key Manager for the generator key deployment process
  */
 void key_mgr_hal_set_key_generator_mode(const esp_key_mgr_key_generator_mode_t mode);
 
@@ -131,11 +131,11 @@ uint32_t key_mgr_hal_get_date_info(void);
 
 /**
  * @brief Set the Key Manager date information
- *        Only the least siginificant 28 bits shall be considered
+ *        Only the least significant 28 bits shall be considered
  */
 void key_mgr_hal_set_date_info(const uint32_t date_info);
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* SOC_KEY_MANAGER_SUPPORTED */

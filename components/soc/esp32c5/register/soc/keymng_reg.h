@@ -147,6 +147,22 @@ extern "C" {
 #define KEYMNG_USE_EFUSE_KEY_M  (KEYMNG_USE_EFUSE_KEY_V << KEYMNG_USE_EFUSE_KEY_S)
 #define KEYMNG_USE_EFUSE_KEY_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_S  0
+
+/* KEYMNG_USE_EFUSE_KEY_ECDSA : R/W ;bitpos:[0] ;default: 1'd0 ; */
+/*description: Set this bit to choose efuse key instead of key manager deployed key for ecdsa.*/
+#define KEYMNG_USE_EFUSE_KEY_ECDSA    (BIT(0))
+#define KEYMNG_USE_EFUSE_KEY_ECDSA_M  ((KEYMNG_USE_EFUSE_KEY_ECDSA_V)<<(KEYMNG_USE_EFUSE_KEY_ECDSA_S))
+#define KEYMNG_USE_EFUSE_KEY_ECDSA_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_ECDSA_S  0
+
+/* KEYMNG_USE_EFUSE_KEY_FLASH : R/W ;bitpos:[1] ;default: 1'd0 ; */
+/*description: Set this bit to choose efuse key instead of key manager deployed key for flash.*/
+#define KEYMNG_USE_EFUSE_KEY_FLASH    (BIT(1))
+#define KEYMNG_USE_EFUSE_KEY_FLASH_M  ((KEYMNG_USE_EFUSE_KEY_FLASH_V)<<(KEYMNG_USE_EFUSE_KEY_FLASH_S))
+#define KEYMNG_USE_EFUSE_KEY_FLASH_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_FLASH_S  1
+
+
 /** KEYMNG_RND_SWITCH_CYCLE : R/W; bitpos: [9:5]; default: 15;
  *  The core clock cycle number to sample one rng input data. Please set it bigger than
  *  the clock cycle ratio: T_rng/T_km
@@ -191,6 +207,23 @@ extern "C" {
 #define KEYMNG_USE_EFUSE_KEY_LOCK_M  (KEYMNG_USE_EFUSE_KEY_LOCK_V << KEYMNG_USE_EFUSE_KEY_LOCK_S)
 #define KEYMNG_USE_EFUSE_KEY_LOCK_V  0x0000001FU
 #define KEYMNG_USE_EFUSE_KEY_LOCK_S  0
+
+/* KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA : R/W1 ;bitpos:[0] ;default: 1'd0 ; */
+/*description: Write 1 to lock reg_use_efuse_key for esdsa*/
+
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA    (BIT(0))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_M  ((KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V)<<(KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_S))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA_S  0
+
+/* KEYMNG_USE_EFUSE_KEY_LOCK_FLASH : R/W1 ;bitpos:[1] ;default: 1'd0 ; */
+/*description: Write 1 to lock reg_use_efuse_key for FLASH*/
+
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH    (BIT(1))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_M  ((KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V)<<(KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_S))
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_V  0x1
+#define KEYMNG_USE_EFUSE_KEY_LOCK_FLASH_S  1
+
 /** KEYMNG_RND_SWITCH_CYCLE_LOCK : R/W1; bitpos: [5]; default: 0;
  *  Write 1 to lock reg_rnd_switch_cycle.
  */
