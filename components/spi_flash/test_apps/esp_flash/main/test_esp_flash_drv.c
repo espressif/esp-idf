@@ -595,7 +595,11 @@ TEST_CASE_MULTI_FLASH_IGNORE("Test esp_flash_write can toggle QE bit", test_togg
 #endif //CONFIG_ESPTOOLPY_OCT_FLASH
 
 // This table could be chip specific in the future.
+#if CONFIG_IDF_TARGET_ESP32C2
+uint8_t flash_frequency_table[5] = {5, 10, 20, 40};
+#else
 uint8_t flash_frequency_table[6] = {5, 10, 20, 26, 40, 80};
+#endif
 #define TEST_FLASH_SPEED_MIN 5
 void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
