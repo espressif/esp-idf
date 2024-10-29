@@ -4,7 +4,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_WIFI_CONFIGURATION
         prompt "WiFi configuration"
-        default EXAMPLE_WIFI_CONFIGURATION_MANUAL
+        default EXAMPLE_WIFI_CONFIGURATION_PROVISIONING
         help
             Choose how the WiFi settings should be configured.
 
