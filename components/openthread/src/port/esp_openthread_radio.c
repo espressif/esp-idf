@@ -412,7 +412,8 @@ void otPlatRadioClearSrcMatchExtEntries(otInstance *aInstance)
 
 otError otPlatRadioEnergyScan(otInstance *aInstance, uint8_t aScanChannel, uint16_t aScanDuration)
 {
-    esp_ieee802154_energy_detect(aScanDuration);
+    esp_ieee802154_set_channel(aScanChannel);
+    esp_ieee802154_energy_detect(aScanDuration * US_PER_MS / US_PER_SYMBLE);
 
     return OT_ERROR_NONE;
 }
