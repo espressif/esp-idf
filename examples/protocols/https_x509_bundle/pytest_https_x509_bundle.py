@@ -44,8 +44,9 @@ def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
     dut.expect('Completed {} connections'.format(num_URLS), timeout=60)
 
 
+@pytest.mark.qemu
 @pytest.mark.esp32
-@pytest.mark.ethernet
+@pytest.mark.host_test
 @pytest.mark.parametrize('config', ['default_crt_bundle',], indirect=True)
 def test_examples_protocol_https_x509_bundle_default_crt_bundle_stress_test(dut: Dut) -> None:
     # check and log bin size
