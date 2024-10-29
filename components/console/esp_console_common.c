@@ -154,7 +154,7 @@ void esp_console_repl_task(void *args)
         printf("\r\n"
                "Your terminal application does not support escape sequences.\n\n"
                "Line editing and history features are disabled.\n\n"
-               "On Windows, try using Putty instead.\r\n");
+               "On Windows, try using Windows Terminal or Putty instead.\r\n");
     }
 
     linenoiseSetMaxLineLen(repl_com->max_cmdline_length);
