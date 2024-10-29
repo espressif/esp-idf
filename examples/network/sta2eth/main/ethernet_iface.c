@@ -20,13 +20,13 @@
  *  - this results in better throughput
  *  - might cause ARP conflicts if the PC is also connected to the same AP with another NIC
  */
-#define ETH_BRIDGE_PROMISCUOUS  0
+#define ETH_BRIDGE_PROMISCUOUS  CONFIG_EXAMPLE_ETHERNET_USE_PROMISCUOUS
 
 /**
  * Set this to 1 to runtime update HW addresses in DHCP messages
  * (this is needed if the client uses 61 option and the DHCP server applies strict rules on assigning addresses)
  */
-#define MODIFY_DHCP_MSGS        0
+#define MODIFY_DHCP_MSGS        CONFIG_EXAMPLE_MODIFY_DHCP_MESSAGES
 
 static const char *TAG = "example_wired_ethernet";
 static esp_eth_handle_t s_eth_handle = NULL;
