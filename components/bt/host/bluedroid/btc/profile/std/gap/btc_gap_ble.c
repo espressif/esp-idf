@@ -1356,6 +1356,25 @@ static void btc_ble_set_privacy_mode_callback(UINT8 status)
     }
 }
 
+static void btc_ble_set_csa_support_callback(UINT8 status)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT;
+
+    param.set_csa_support_cmpl.status = btc_btm_status_to_esp_status(status);
+
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 void btc_get_whitelist_size(uint16_t *length)
 {
     BTM_BleGetWhiteListSize(length);
@@ -2374,6 +2393,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_SET_PRIVACY_MODE:
         btc_ble_set_privacy_mode(arg->set_privacy_mode.addr_type, arg->set_privacy_mode.addr,
             arg->set_privacy_mode.privacy_mode, btc_ble_set_privacy_mode_callback);
+        break;
+    case BTC_GAP_BLE_SET_CSA_SUPPORT:
+        BTA_DmBleGapSetCsaSupport(arg->set_csa_support.csa_select, btc_ble_set_csa_support_callback);
         break;
     default:
         break;
