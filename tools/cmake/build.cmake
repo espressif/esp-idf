@@ -712,6 +712,9 @@ endmacro()
 # files used for linking, targets which should execute before creating the specified executable,
 # generating additional binary files, generating files related to flashing, etc.)
 function(idf_build_executable elf)
+    # Create a target for linker script generation for this executable
+    __ldgen_create_target(${elf})
+
     # Set additional link flags for the executable
     idf_build_get_property(link_options LINK_OPTIONS)
     set_property(TARGET ${elf} APPEND PROPERTY LINK_OPTIONS "${link_options}")
