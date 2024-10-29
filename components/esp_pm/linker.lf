@@ -16,6 +16,7 @@ entries:
         sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
         sleep_modes:timer_wakeup_prepare (noflash)
         sleep_modes:get_power_down_flags (noflash)
+        sleep_modes:get_sleep_flags (noflash)
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
