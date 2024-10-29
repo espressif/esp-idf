@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define US_PER_SYMBLE 16
+
 #ifdef __cplusplus
 extern "C" {
 #endif
