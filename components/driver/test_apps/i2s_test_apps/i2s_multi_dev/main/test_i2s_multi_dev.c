@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -268,7 +268,7 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
+                           test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
 #endif  // !CONFIG_IDF_TARGET_ESP32H2
 
 static void test_i2s_external_clk_src(bool is_master, bool is_external)
@@ -282,22 +282,15 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
         .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(16, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = TEST_I2S_DEFAULT_GPIO(TEST_I2S_MCK_IO, is_master),
     };
+    std_cfg.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
     if (is_external) {
         std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_EXTERNAL;
-        std_cfg.clk_cfg.ext_clk_freq_hz = 11289600;
+        std_cfg.clk_cfg.ext_clk_freq_hz = 22579200;
     }
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
-    if (is_master && !is_external) {
-        i2s_std_slot_config_t slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(16, I2S_SLOT_MODE_STEREO);
-        memcpy(&std_cfg.slot_cfg, &slot_cfg, sizeof(i2s_std_slot_config_t));
-    }
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
     if (is_master) {
-        if (!is_external) {
-            // Delay bclk to get compensate the data delay
-            I2S0.rx_timing.rx_bck_out_dm = 1;
-        }
         uint8_t mst_tx_data[4] = {0x12, 0x34, 0x56, 0x78};
         size_t w_bytes = 4;
         while (w_bytes == 4) {
