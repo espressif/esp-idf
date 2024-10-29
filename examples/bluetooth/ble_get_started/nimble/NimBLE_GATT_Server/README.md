@@ -12,9 +12,10 @@ This example is extended from NimBLE Connection Example, and further introduces
     1. Write access demonstrated by LED control
     2. Read and indicate access demonstrated by heart rate measurement(mocked)
 
-It uses ESP32's Bluetooth controller and NimBLE host stack.
+To test this demo, install *nRF Connect for Mobile* on your phone. 
 
-To test this demo, any BLE scanner application can be used.
+Please refer to [BLE Introduction](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-introduction.html#:~:text=%E4%BE%8B%E7%A8%8B%E5%AE%9E%E8%B7%B5)
+for detailed example introduction and code explanation.
 
 ## Try It Yourself
 

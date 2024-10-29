@@ -11,9 +11,11 @@ This example is extended from NimBLE Beacon Example, and further introduces
 2. How to capture GAP events and handle them
 3. How to update connection parameters
 
-It uses ESP32's Bluetooth controller and NimBLE host stack.
 
-To test this demo, any BLE scanner application can be used.
+To test this demo, install *nRF Connect for Mobile* on your phone. 
+
+Please refer to [BLE Connection](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html#:~:text=%E4%BE%8B%E7%A8%8B%E5%AE%9E%E8%B7%B5)
+for detailed example introduction and code explanation.
 
 ## Try It Yourself
 
@@ -266,4 +268,3 @@ If everything goes well, except for what we have seen in NimBLE Beacon example, 
 ## Troubleshooting
 
 For any technical queries, please file an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
-
