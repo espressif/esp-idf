@@ -249,7 +249,10 @@ menu "Wi-Fi"
         range 6 32
         default 32
         help
-            Set the number of WiFi management short buffer.
+            Set the maximum number of Wi-Fi management short buffers. These buffers are dynamically allocated,
+            with their size determined by the length of the management packet to be sent. When a management
+            packet is less than 64 bytes, the Wi-Fi driver classifies it as a short management packet and
+            assigns it to one of these buffers.
 
     config ESP_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
