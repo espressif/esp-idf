@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
-
 import re
 import socket
 import struct
@@ -145,7 +144,7 @@ def changeDeviceRole(dut:IdfDut, role:str) -> None:
 def getDataset(dut:IdfDut) -> str:
     clean_buffer(dut)
     execute_command(dut, 'dataset active -x')
-    dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
+    dut_data = dut.expect(r'\n(\w+)\r', timeout=5)[1].decode()
     return str(dut_data)
 
 
