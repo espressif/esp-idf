@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1199,7 +1199,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     slot->alarm_arg = (void *)p_arg;
                     if ((slot->close_alarm =
                              osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
-                        free(p_arg);
+                        osi_free(p_arg);
                         slot->alarm_arg = NULL;
                         param.close.status = ESP_SPP_NO_RESOURCE;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
@@ -1207,7 +1207,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                         break;
                     }
                     if (osi_alarm_set(slot->close_alarm, VFS_CLOSE_TIMEOUT) != OSI_ALARM_ERR_PASS) {
-                        free(p_arg);
+                        osi_free(p_arg);
                         slot->alarm_arg = NULL;
                         osi_alarm_free(slot->close_alarm);
                         param.close.status = ESP_SPP_BUSY;
@@ -1488,7 +1488,7 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
             BTC_TRACE_DEBUG("%s items_waiting:%d, fd:%d\n", __func__, items_waiting, fd);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
 
-            // block untill under water level, be closed or time out
+            // block until under water level, be closed or time out
             tx_event_group_val =
                 xEventGroupWaitBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(serial) | SLOT_CLOSE_BIT(serial), pdTRUE,
                                     pdFALSE, VFS_WRITE_TIMEOUT / portTICK_PERIOD_MS);
