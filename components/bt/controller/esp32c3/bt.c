@@ -1436,7 +1436,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
 
-    if (btdm_controller_init(cfg) != 0) {
+    err = btdm_controller_init(cfg);
+
+    if (err != 0) {
+        ESP_LOGE(BT_LOG_TAG, "%s %d\n",__func__,err);
         err = ESP_ERR_NO_MEM;
         goto error;
     }
