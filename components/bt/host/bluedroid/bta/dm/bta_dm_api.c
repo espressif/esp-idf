@@ -3000,6 +3000,19 @@ void BTA_DmClearRandAddress(void)
     }
 }
 
+void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTA_SET_CSA_SUPPORT_CMPL_CBACK *p_callback)
+{
+    tBTA_DM_API_BLE_SET_CSA_SUPPORT *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_CSA_SUPPORT *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CSA_SUPPORT)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT;
+        p_msg->csa_select = csa_select;
+        p_msg->p_cback = p_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

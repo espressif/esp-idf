@@ -230,6 +230,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_rpa_timeout, /* BTA_DM_API_SET_RPA_TIMEOUT_EVT */
     bta_dm_ble_gap_add_dev_to_resolving_list, /* BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT */
     bta_dm_ble_gap_set_privacy_mode, /* BTA_DM_API_SET_PRIVACY_MODE_EVT */
+    bta_dm_ble_gap_set_csa_support, /* BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT */
 #endif
 };
 
