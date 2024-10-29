@@ -377,6 +377,7 @@ typedef struct {
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
     UINT8 link_count[2]; /* total link count master and slave*/
     tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
+    tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus
