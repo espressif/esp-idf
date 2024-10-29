@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,12 +46,24 @@ extern "C" {
 #define MAX_CANDIDATE_COUNT CONFIG_ESP_WIFI_ROAMING_MAX_CANDIDATES
 
 /* Legacy roaming configuration */
+#ifdef CONFIG_ESP_WIFI_ROAMING_LEGACY_ROAMING
 #define LEGACY_ROAM_ENABLED CONFIG_ESP_WIFI_ROAMING_LEGACY_ROAMING
+#else
+#define LEGACY_ROAM_ENABLED 0
+#endif
 
+#ifdef CONFIG_ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
 #define BSS_TM_RETRY_COUNT CONFIG_ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
+#else
+#define BSS_TM_RETRY_COUNT 0
+#endif
 
 /* Network Assisted Roaming */
+#ifdef CONFIG_ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
 #define NETWORK_ASSISTED_ROAMING_ENABLED CONFIG_ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
+#else
+#define NETWORK_ASSISTED_ROAMING_ENABLED 0
+#endif
 
 /* Periodic RRM configuration */
 #define PERIODIC_RRM_MONITORING CONFIG_ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
@@ -85,8 +97,26 @@ struct cand_bss {
     uint8_t bssid[ETH_ALEN];
 };
 
+struct roam_config {
+    uint8_t backoff_time;
+    bool low_rssi_roam_trigger;
+    uint8_t low_rssi_threshold;
+    uint8_t rssi_threshold_reduction_offset;
+    bool scan_monitor;
+    uint8_t scan_interval;
+    uint8_t scan_rssi_threshold;
+    uint8_t scan_rssi_diff;
+    bool legacy_roam_enabled;
+    uint8_t btm_retry_cnt;
+    bool btm_roaming_enabled;
+    bool rrm_monitor;
+    uint8_t rrm_monitor_time;
+    uint8_t rrm_monitor_rssi_threshold;
+};
+
 struct roaming_app {
     wifi_scan_config_t scan_params;
+    struct roam_config config;
     bool scan_ongoing;
     int8_t current_rssi_threshold;
     char *btm_neighbor_list;
