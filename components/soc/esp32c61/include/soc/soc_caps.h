@@ -244,6 +244,7 @@
 #define SOC_I2S_SUPPORTS_PDM_TX         (1)
 #define SOC_I2S_PDM_MAX_TX_LINES        (2)
 #define SOC_I2S_SUPPORTS_TDM            (1)
+#define SOC_I2S_SUPPORT_SLEEP_RETENTION (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
