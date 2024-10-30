@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其四，旨在对 Bluetooth LE 连接中的数据交换过程进行简要介绍。随后，本教程会结合 NimBLE_GATT_Server 例程，基于 NimBLE 主机层协议栈，对 GATT 服务器的代码实现进行介绍。
+本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其四，旨在对 Bluetooth LE 连接中的数据交换过程进行简要介绍。随后，本教程会结合 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，基于 NimBLE 主机层协议栈，对 GATT 服务器的代码实现进行介绍。
 
 
 学习目标
@@ -11,7 +11,7 @@
 
 - 学习特征数据和服务的数据结构细节
 - 学习 GATT 的不同数据访问操作
-- 学习 NimBLE_GATT_Server 例程的代码结构
+- 学习 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程的代码结构
 
 
 GATT 数据特征与服务
@@ -203,7 +203,7 @@ CCCD 的 UUID 是 `0x2902`，属性值中仅含 2 比特信息。第一个比特
 
 .. _attribute_table:
 
-下面以 NimBLE_GATT_Server 为例，展示一个 GATT 服务器可能的属性表形态。例程中含有两个服务，分别是 Heart Rate Service 和 Automation IO Service ；前者含有一个 Heart Rate Measurement 特征数据，后者含有一个 LED 特征数据。整个 GATT 服务器有属性表如下
+下面以 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 为例，展示一个 GATT 服务器可能的属性表形态。例程中含有两个服务，分别是 Heart Rate Service 和 Automation IO Service ；前者含有一个 Heart Rate Measurement 特征数据，后者含有一个 LED 特征数据。整个 GATT 服务器有属性表如下
 
 +-------------+------------------------------------------+-----------------+-------------------------------------------------+----------------------------+
 | Handle      | UUID                                     | Permissions     | Value                                           | Attribute Type             |
@@ -232,7 +232,9 @@ CCCD 的 UUID 是 `0x2902`，属性值中仅含 2 比特信息。第一个比特
 |             |                                          |                 +-------------------------------------------------+                            |
 |             |                                          |                 | UUID = `0x00001525-1212-EFDE-1523-785FEABCD123` |                            |
 +-------------+------------------------------------------+-----------------+-------------------------------------------------+----------------------------+
-| 6           | `0x00001525-1212-EFDE-1523-785FEABCD123` | Write-only      | LED status                                      | Characteristic Value       |
+| 6           | `0x00001525-1212-EFDE-`                  |Write-only       | LED status                                      |Characteristic Value        |
+|             | `1523-785FE`                             |                 |                                                 |                            |
+|             | `ABCD123`                                |                 |                                                 |                            |
 +-------------+------------------------------------------+-----------------+-------------------------------------------------+----------------------------+
 
 GATT 客户端在与 GATT 服务器初次建立通信时，会从 GATT 服务器拉取属性表中的元信息，从而获取 GATT 服务器上可用的服务以及数据特征。这一过程被称为 *服务发现 (Service Discovery)*。
@@ -243,12 +245,10 @@ GATT 数据操作
 
 .. _gatt_data_operation:
 
-数据操作指的是对 GATT 服务器上的特征数据进行访问的操作，主要可以分为
+数据操作指的是对 GATT 服务器上的特征数据进行访问的操作，主要可以分为以下两类：
 
 1. 由客户端发起的操作
 2. 由服务器发起的操作
-
-两类。
 
 
 由客户端发起的操作
@@ -256,13 +256,12 @@ GATT 数据操作
 
 由客户端发起的操作有以下三种
 
-1. 读 (Read)
-2. 写 (Write)
-3. 写（无需响应） (Write without response)
-
-读操作比较简单，单纯是从 GATT 服务器上拉取某一特征数据的当前值。
-
-写操作分两种。普通的写操作要求 GATT 服务器在收到客户端的写请求以及对应数据以后，进行确认响应；快速写操作则不需要服务器进行确认响应。
+- **读 (Read)**
+    - 从 GATT 服务器上拉取某一特征数据的当前值。
+- **写 (Write)**
+    - 普通的写操作要求 GATT 服务器在收到客户端的写请求以及对应数据以后，进行确认响应。
+- **写（无需响应） (Write without response)**
+    - 快速写操作则不需要服务器进行确认响应。
 
 
 由服务器发起的操作
@@ -270,10 +269,10 @@ GATT 数据操作
 
 由服务器发起的操作分两种
 
-1. 通知 (Notify)
-2. 指示 (Indicate)
-
-通知和指示都是 GATT 服务器主动向客户端推送数据的操作，区别在于通知无需客户端回复确认响应，而指示需要。所以，指示的数据推送速度比通知慢。
+- **通知 (Notify)**
+    - 通知是 GATT 服务器主动向客户端推送数据的操作，不需要客户端回复确认响应。
+- **指示 (Indicate)**
+    - 与通知相似，区别在于指示需要客户端回复确认，因此数据推送速度比通知慢。
 
 虽然通知和指示都是由服务器发起的操作，但是服务器发起操作的前提是，客户端启用了通知或指示。所以，本质上 GATT 的数据交换过程总是以客户端请求数据开始。
 
@@ -281,23 +280,23 @@ GATT 数据操作
 例程实践
 -------------------------------------------
 
-在掌握了 GATT 数据交换的相关知识以后，接下来让我们结合 NimBLE_GATT_Server 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的 GATT 服务器，对学到的知识进行实践。
+在掌握了 GATT 数据交换的相关知识以后，接下来让我们结合 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程代码，学习如何使用 NimBLE 协议栈构建一个简单的 GATT 服务器，对学到的知识进行实践。
 
 
 前提条件
 ^^^^^^^^^^^^^^^
 
-1. 一块支持 Bluetooth LE 的 {IDF_TARGET_NAME} 开发板
+1. 一块 {IDF_TARGET_NAME} 开发板
 2. ESP-IDF 开发环境
 3. 在手机上安装 nRF Connect for Mobile 应用程序
 
-若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`API 参考 <../../../get-started/index>`。
+若你尚未完成 ESP-IDF 开发环境的配置，请参考 :doc:`IDF 快速入门 <../../../get-started/index>`。
 
 
 动手试试
 ^^^^^^^^^^^^^^^^^^
 
-请参考 :ref:`动手试试 <nimble_gatt_server_practice>` 。
+请参考 :ref:`BLE 介绍 动手试试 <nimble_gatt_server_practice>` 。
 
 
 代码详解
@@ -307,7 +306,7 @@ GATT 数据操作
 工程结构综述
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NimBLE_GATT_Server 的根目录结构与 :ref:`NimBLE_Connection <nimble_connection_project_structure>` 完全一致。另外，在 `main` 文件夹中引入了与 GATT 服务以及模拟心率生成相关的源代码。
+:example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 的根目录结构与 :ref:`NimBLE_Connection <nimble_connection_project_structure>` 完全一致。另外，在 `main` 文件夹中引入了与 GATT 服务以及模拟心率生成相关的源代码。
 
 
 程序行为综述
@@ -659,6 +658,4 @@ LED 特征数据的访问通过 `led_chr_access` 回调函数管理，相关代�
 总结
 ----------------------------
 
-通过本教程，你了解了如何通过服务表创建 GATT 服务以及相应的特征数据，并掌握了 GATT 特征数据的访问管理方式，包括读、写和订阅操作的实现。你可以在 NimBLE_GATT_Server 例程的基础上，开发更加复杂的 GATT 服务应用。
-
-
+通过本教程，你了解了如何通过服务表创建 GATT 服务以及相应的特征数据，并掌握了 GATT 特征数据的访问管理方式，包括读、写和订阅操作的实现。你可以在 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程的基础上，开发更加复杂的 GATT 服务应用。
