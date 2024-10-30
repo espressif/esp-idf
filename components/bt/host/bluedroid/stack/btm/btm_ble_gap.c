@@ -4617,6 +4617,12 @@ void btm_ble_free (void)
 #endif
 }
 
+static bool enable_topology_check_flag = true;
+void esp_qa_enable_topology_check(bool enable)
+{
+    // This is a workaround: If the topology check is disabled, the 'Supported States' will not be checked.
+    enable_topology_check_flag = enable;
+}
 /*******************************************************************************
 **
 ** Function         btm_ble_topology_check
@@ -4629,6 +4635,7 @@ void btm_ble_free (void)
 *******************************************************************************/
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
 {
+    if(!enable_topology_check_flag) return TRUE;
     BOOLEAN rt = FALSE;
 
     UINT8   state_offset = 0;
