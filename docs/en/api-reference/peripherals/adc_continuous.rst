@@ -117,7 +117,7 @@ If the ADC continuous mode driver is no longer used, you should deinitialize the
 
     - :cpp:func:`adc_continuous_monitor_enable`: Enable a monitor.
     - :cpp:func:`adc_continuous_monitor_disable`: Disable a monitor.
-    - :cpp:func:`adc_monitor_register_callbacks`: register user callbacks to take action when the ADC value exceeds of the threshold.
+    - :cpp:func:`adc_continuous_monitor_register_event_callbacks`: register user callbacks to take action when the ADC value exceeds of the thresholds.
     - :cpp:func:`adc_del_continuous_monitor`: Delete a created monitor and free resources.
 
     .. only:: esp32s2
@@ -128,6 +128,41 @@ If the ADC continuous mode driver is no longer used, you should deinitialize the
             1. Only one threshold is supported for one monitor.
             2. Only one monitor is supported for one ADC unit.
             3. All enabled channel(s) of a certain ADC unit in ADC continuous mode driver will be monitored. The :cpp:member:`adc_monitor_config_t::channel` parameter will not be used.
+
+    Specifically, the monitor function can be used to implement zero-crossing detection. As ADC cannot directly process negative input signals, an extra **DC bias** should be applied to the original signal before measurement.
+
+    First, add a DC bias to the input signal through a circuit to "shift" the negative signal into the ADC's measurement range. For the measurement range, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `TRM <{IDF_TARGET_TRM_EN_URL}>`__. For example, adding a 1 V bias would transform a signal from -1 V to +1 V into 0 V to 2 V range. Then by setting the appropriate high and low thresholds, the ADC can detect if the input signal approaches zero, allowing for the identification of phase changes in the signal. Refer to the example code below for details.
+
+    .. code:: c
+
+        // Initialize the ADC monitor handle
+        adc_monitor_handle_t adc_monitor_handle = NULL;
+
+        // Configure the ADC monitor
+        adc_monitor_config_t zero_crossing_config = {
+            .adc_unit = EXAMPLE_ADC_UNIT_1,      // Specify the ADC unit to monitor
+            .channel = EXAMPLE_ADC_CHANNEL_0,    // Specify the ADC channel to monitor
+            .h_threshold = 1100,                 // Set the high threshold close to the DC bias and adjust it as needed
+            .l_threshold = 900,                 // Set the low threshold close to the DC bias and adjust it as needed
+        };
+
+        // Create the ADC monitor
+        ESP_ERROR_CHECK(adc_new_continuous_monitor(&zero_crossing_config, &adc_monitor_handle));
+
+        // Register the callback function
+        adc_monitor_evt_cbs_t zero_crossing_cbs = {
+            .on_over_high_thresh = example_on_exceed_high_thresh,
+            .on_below_low_thresh = example_on_below_low_thresh,
+        };
+
+        ESP_ERROR_CHECK(adc_continuous_monitor_register_event_callbacks(adc_monitor_handle, &zero_crossing_cbs, NULL));
+
+        // Enable the ADC monitor
+        ESP_ERROR_CHECK(adc_continuous_monitor_enable(adc_monitor_handle));
+
+        // Disable and delete the ADC monitor
+        ESP_ERROR_CHECK(adc_continuous_monitor_disable(adc_monitor_handle));
+        ESP_ERROR_CHECK(adc_del_continuous_monitor(adc_monitor_handle));
 
 Initialize the ADC Continuous Mode Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,7 +312,7 @@ where:
     * - Dout
       - ADC raw digital reading result.
     * - Vmax
-      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `Datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
+      - Maximum measurable input analog voltage, this is related to the ADC attenuation, please refer to the On-Chip Sensor and Analog Signal Processing chapter in `TRM <{IDF_TARGET_TRM_EN_URL}#sensor>`__.
     * - Dmax
       - Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where the bitwidth is the :cpp:member:`adc_digi_pattern_config_t::bit_width` configured before.
 
