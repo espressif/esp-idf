@@ -30,6 +30,10 @@
 #include "soc/soc_caps.h"
 #include "esp_dma_utils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SDMMC_GO_IDLE_DELAY_MS              20
 #define SDMMC_IO_SEND_OP_COND_DELAY_MS      10
 
@@ -176,6 +180,13 @@ void sdmmc_flip_byte_order(uint32_t* response, size_t size);
 
 esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card);
 
+// Use only with SDMMC mode (not SDSPI)
+esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status);
+
 //Currently only SDIO support using this buffer. And only 512 block size is supported.
 #define SDMMC_IO_BLOCK_SIZE     512
 esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);
+
+#ifdef __cplusplus
+}
+#endif
