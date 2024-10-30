@@ -503,8 +503,8 @@ components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
+components/sdmmc/include/esp_private/sdmmc_common.h
 components/sdmmc/sdmmc_common.c
-components/sdmmc/sdmmc_common.h
 components/sdmmc/sdmmc_init.c
 components/sdmmc/sdmmc_io.c
 components/sdmmc/sdmmc_mmc.c
