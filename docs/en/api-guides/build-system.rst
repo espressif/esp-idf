@@ -247,7 +247,7 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: Optional list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
 
-- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components to be compiled as part of the bootloader.
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components to be compiled as part of the bootloader. Please note that this is a build property.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -783,11 +783,11 @@ It is important to note that this can also be used for any other bootloader comp
 
 See :example:`custom_bootloader/bootloader_override` for an example of overriding the default bootloader.
 
-Similarly to regular applications, it is possible to include external components, not placed in `bootloader_component`, as part of the bootloader build thanks to the CMake variable ``BOOTLOADER_EXTRA_COMPONENT_DIRS``. It can either refer to a directory that contains several components, either refer to a single component. For example:
+Similarly to regular applications, it is possible to include external components, not placed in `bootloader_component`, as part of the bootloader build thanks to the build property ``BOOTLOADER_EXTRA_COMPONENT_DIRS``. It can either refer to a directory that contains several components, or refer to a single component. For example:
 
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-    set(BOOTLOADER_EXTRA_COMPONENT_DIRS "/path/to/extra/component/")
+    idf_build_set_property(BOOTLOADER_EXTRA_COMPONENT_DIRS "/path/to/extra/component/" APPEND)
 
     project(main)
 

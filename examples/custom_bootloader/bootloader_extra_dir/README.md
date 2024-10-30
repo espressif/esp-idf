@@ -7,7 +7,7 @@
 
 The purpose of this example is to show how to add a custom directory that contains a component to the bootloader build.
 
-Registering extra components for the bootloader can be done thanks to the CMake variable `BOOTLOADER_EXTRA_COMPONENT_DIRS`. It works the same way as the application's `EXTRA_COMPONENT_DIRS`, it can either refer to a directory that contains several components, either refer to a single component.
+Registering extra components for the bootloader can be done thanks to the IDF property `BOOTLOADER_EXTRA_COMPONENT_DIRS`. It can either refer to a directory that contains several components, either refer to a single component.
 
 ## Usage of this example:
 
@@ -33,14 +33,14 @@ User application is loaded and running.
 
 ## Organization of this example
 
-This project contains an application, in the `main` directory that represents an application. It also contains a `bootloader_components` that contains a component compiled and linked with the bootloader. This `bootloader_components` can contain several components, each of them would be in a different directory.
+This project contains a `main` directory that represents an application. It also has a `bootloader_components` directory that contains a component that will be compiled and linked with the bootloader. This `bootloader_components` can contain several components, each of them would be in a different directory.
 
-The directory `extra_bootloader_components/extra_component/` contains a component that is meant to be included in the bootloader build. To do so, the variable `BOOTLOADER_EXTRA_COMPONENT_DIRS` is set from the `CMakeLists.txt` file.
+The directory `extra_bootloader_components/extra_component/` contains a component that is meant to be included in the bootloader build. To do so, the CMake property `BOOTLOADER_EXTRA_COMPONENT_DIRS` is set from the `CMakeLists.txt` file.
 
 Below is a short explanation of files in the project folder.
 
 ```
-├── CMakeLists.txt             Defines the `BOOTLOADER_EXTRA_COMPONENT_DIRS` variable
+├── CMakeLists.txt             Defines the `BOOTLOADER_EXTRA_COMPONENT_DIRS` property
 ├── main
 │   ├── CMakeLists.txt
 │   └── main.c                 User application
