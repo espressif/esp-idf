@@ -4,8 +4,9 @@ import pytest
 from pytest_embedded import Dut
 
 
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
 @pytest.mark.esp32p4
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 runners do not support touch pins')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

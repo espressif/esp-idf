@@ -152,4 +152,15 @@ menu "Driver Configurations"
                 and don't want to see related deprecation warnings, you can enable this option.
     endmenu # Legacy Temperature Sensor Driver Configurationss
 
+    menu "Legacy Touch Sensor Driver Configurations"
+        depends on SOC_TOUCH_SENSOR_SUPPORTED
+        config TOUCH_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy touch sensor driver
+                (driver/touch_sensor.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+    endmenu # Legacy Touch Sensor Driver Configurationss
+
 endmenu  # Driver configurations

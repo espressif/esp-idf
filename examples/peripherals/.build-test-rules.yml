@@ -420,23 +420,18 @@ examples/peripherals/touch_sensor/touch_element:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       reason: only supports esp32s2 and esp32s3
 
+examples/peripherals/touch_sensor/touch_sens_basic:
+  disable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
+    - if: SOC_TOUCH_SENSOR_VERSION == 1
+      temporary: true
+      reason: not supported yet
+  depends_components:
+    - esp_driver_touch_sens
+
 examples/peripherals/touch_sensor/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
-
-examples/peripherals/touch_sensor/touch_sensor_v2:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 2
-
-examples/peripherals/touch_sensor/touch_sensor_v3:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 3
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: the runners do not support the pins for touch sensor
-  depends_components:
-    - esp_driver_touch_sens
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

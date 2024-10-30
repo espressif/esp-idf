@@ -62,6 +62,7 @@
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
+#include "hal/touch_sens_hal.h"
 #endif
 
 #if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
@@ -301,7 +302,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
@@ -881,11 +882,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-#if SOC_TOUCH_SENSOR_VERSION == 3
         bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
-#else
-        bool keep_rtc_power_on = touch_ll_get_fsm_state();
-#endif
         if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
@@ -1712,26 +1709,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if SOC_TOUCH_SENSOR_VERSION == 2
-/* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
-static void touch_wakeup_prepare(void)
-{
-    uint16_t sleep_cycle = 0;
-    uint16_t meas_times = 0;
-    touch_pad_t touch_num = TOUCH_PAD_NUM0;
-    touch_ll_sleep_get_channel_num(&touch_num); // Check if the sleep pad is enabled.
-    if ((touch_num > TOUCH_PAD_NUM0) && (touch_num < TOUCH_PAD_MAX) && touch_ll_get_fsm_state()) {
-        touch_ll_stop_fsm();
-        touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
-        touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
-        touch_hal_sleep_channel_get_work_time(&sleep_cycle, &meas_times);
-        touch_ll_set_meas_times(meas_times);
-        touch_ll_set_sleep_time(sleep_cycle);
-        touch_ll_set_channel_mask(BIT(touch_num));
-        touch_ll_start_fsm();
-    }
-}
-#elif SOC_TOUCH_SENSOR_VERSION == 3
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void)
 {
     touch_hal_prepare_deep_sleep();

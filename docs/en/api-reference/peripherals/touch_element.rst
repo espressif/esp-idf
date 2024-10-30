@@ -6,7 +6,11 @@ Touch Element
 Overview
 --------
 
-The Touch Element Library is a highly abstracted element library designed on the basis of the touch sensor driver. The library provides a unified and user-friendly software interface to quickly build capacitive touch sensor applications. For more information about the touch sensor driver API, see :doc:`../peripherals/touch_pad`.
+The Touch Element Library is a highly abstracted element library designed on the basis of the touch sensor driver. The library provides a unified and user-friendly software interface to quickly build capacitive touch sensor applications.
+
+.. warning::
+
+    The Touch Element Library currently is still based on the legacy touch driver. Please refer to the :doc:`new driver of Capacitive Touch Sensor </api-reference/peripherals/cap_touch_sens>` if you don't need the Touch Element Library.
 
 Architecture
 ^^^^^^^^^^^^

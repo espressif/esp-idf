@@ -61,6 +61,8 @@ esp_err_t touch_sensor_new_channel(touch_sensor_handle_t sens_handle, int chan_i
 /**
  * @brief Delete the touch channel
  * @note  This function can be called when the touch sensor controller is NOT enabled (i.e. INIT state).
+ * @note  If the channel has been enabled other sub-features like proximity sensing, sleep wakeup, waterproof, denoise.
+ *        The attached sub-features will be disabled while deleting the channel.
  *
  * @param[in]  chan_handle      Touch channel handle
  * @return
@@ -287,6 +289,24 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
  *      - ESP_ERR_INVALID_STATE:    The touch sensor is enabled
  */
 esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, const touch_sleep_config_t *sleep_cfg);
+#endif
+
+#if SOC_TOUCH_SUPPORT_DENOISE_CHAN
+/**
+ * @brief Configure the touch denoise channel
+ * @note  The denoise channel is used to suppress the internal background noise.
+ *        Once the denoise channel enabled, the measured data of the other touch channels
+ *        will minus the data of the denoise channel automatically.
+ *        So the channel data will be attenuated after enabling the denoise channel.
+ *
+ * @param[in]  sens_handle      Touch sensor controller handle
+ * @param[in]  denoise_cfg      Denoise channel configurations, set NULL to disable the touch channel
+ * @return
+ *      - ESP_OK:                   Configure the denoise channel success
+ *      - ESP_ERR_INVALID_ARG:      The sensor handle is NULL or invalid denoise configuration
+ *      - ESP_ERR_INVALID_STATE:    The touch sensor is enabled
+ */
+esp_err_t touch_sensor_config_denoise_channel(touch_sensor_handle_t sens_handle, const touch_denoise_chan_config_t *denoise_cfg);
 #endif
 
 #ifdef __cplusplus

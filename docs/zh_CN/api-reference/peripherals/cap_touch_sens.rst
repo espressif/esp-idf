@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32p4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
 
 概述
 ------
@@ -35,59 +35,9 @@
 触摸通道概览
 ----------------------
 
-.. only:: esp32p4
-
-    .. list-table::
-      :header-rows: 1
-      :widths: 20  20
-
-      * - 通道
-        - GPIO
-
-      * - CH0
-        - IO2
-
-      * - CH1
-        - IO3
-
-      * - CH2
-        - IO4
-
-      * - CH3
-        - IO5
-
-      * - CH4
-        - IO6
-
-      * - CH5
-        - IO7
-
-      * - CH6
-        - IO8
-
-      * - CH7
-        - IO9
-
-      * - CH8
-        - IO10
-
-      * - CH9
-        - IO11
-
-      * - CH10
-        - IO12
-
-      * - CH11
-        - IO13
-
-      * - CH12
-        - IO14
-
-      * - CH13
-        - IO15
-
-      * - CH14
-        - 未引出
+.. include:: cap_touch_sens/{IDF_TARGET_PATH_NAME}.inc
+    :start-after: touch-chan-mapping
+    :end-before: ---
 
 驱动中的术语介绍
 -------------------------
@@ -148,6 +98,7 @@
   :SOC_TOUCH_SUPPORT_WATERPROOF: - `防水防潮配置 <#touch-waterproof>`__
   :SOC_TOUCH_SUPPORT_PROX_SENSING: - `接近感应配置 <#touch-prox-sensing>`__
   :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - `睡眠唤醒配置 <#touch-sleep-wakeup>`__
+  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - `去噪通道配置 <#touch-denoise-chan>`__
 
 .. _touch-ctrl:
 
@@ -385,7 +336,13 @@
 
     {IDF_TARGET_NAME} 支持接近感应功能。可通过调用 :cpp:func:`touch_sensor_config_proximity_sensing` 并配置 :cpp:type:`touch_proximity_config_t` 来注册接近感应功能。
 
-    由于接近感应引起的电容变化远小于物理触摸，PCB 上常用较大面积的铺铜来增大触摸通道的感应面积，另外需要在硬件上对接近感应通道进行多轮扫描并在驱动中进行累加来提高测量灵敏度。接近感应的灵敏度由测量轮数 :cpp:member:`touch_proximity_config_t::scan_times` 以及单次测量的充放电次数 :cpp:member:`touch_proximity_config_t::charge_times` 决定。测量轮数以及充放电次数越高，灵敏度越高，但是过高的灵敏度容易导致误触发，请选择适当的灵敏度来保证触发的稳定性。
+    .. only:: esp32p4
+
+        由于接近感应引起的电容变化远小于物理触摸，PCB 上常用较大面积的铺铜来增大触摸通道的感应面积，另外需要在硬件上对接近感应通道进行多轮扫描并在驱动中进行累加来提高测量灵敏度。接近感应的灵敏度由测量轮数 :cpp:member:`touch_proximity_config_t::scan_times` 以及单次测量的充放电次数 :cpp:member:`touch_proximity_config_t::charge_times` 决定。测量轮数以及充放电次数越高，灵敏度越高，但是过高的灵敏度容易导致误触发，请选择适当的灵敏度来保证触发的稳定性。
+
+    .. only:: not esp32p4
+
+        由于接近感应引起的电容变化远小于物理触摸，PCB 上常用较大面积的铺铜来增大触摸通道的感应面积，另外需要在硬件上对接近感应通道进行多轮扫描并在驱动中进行累加来提高测量灵敏度。接近感应的灵敏度由测量轮数 :cpp:member:`touch_proximity_config_t::scan_times` 决定。测量轮数以及充放电次数越高，灵敏度越高，但是过高的灵敏度容易导致误触发，请选择适当的灵敏度来保证触发的稳定性。
 
     接近感应通道多次测量的累加值也可通过 :cpp:func:`touch_channel_read_data` 获取，数据类型 :cpp:type:`touch_chan_data_type_t` 为 :cpp:enumerator:`TOUCH_CHAN_DATA_TYPE_PROXIMITY`。
 
@@ -410,7 +367,7 @@
     睡眠唤醒配置
     ^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} 支持触摸传感器将芯片从浅睡眠或深睡眠状态中唤醒。可通过调用 :cpp:func:`touch_sensor_config_sleep_wakeup` 并配置 :cpp:type:`touch_sleep_config_t` 来注册接近感应功能。
+    {IDF_TARGET_NAME} 支持触摸传感器将芯片从 Light-sleep 或 Deep-sleep 状态中唤醒。可通过调用 :cpp:func:`touch_sensor_config_sleep_wakeup` 并配置 :cpp:type:`touch_sleep_config_t` 来注册接近感应功能。
 
     注册触摸传感器的睡眠唤醒功能后，处于睡眠状态下的芯片仍将继续保持对触摸传感器的采样，这将会导致芯片睡眠后的功耗增加，可通过减少充放电次数、增加采样间隔等方式来降低功耗。
 
@@ -420,8 +377,8 @@
 
         若需要在睡眠过程中进行读数、配置等操作，可通过运行在 :doc:`超低功耗协处理器 ULP <../system/ulp>` 上的触摸传感器驱动 ``components/ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h`` 实现。
 
-    - 浅睡眠状态唤醒：通过指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` 即可启用触摸传感器浅睡眠唤醒功能。注意任何已注册的触摸传感器通道都会在浅睡眠状态下保持采样并支持唤醒浅睡眠。
-    - 深睡眠状态唤醒：启用触摸传感器深睡眠唤醒功能除了指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 外，还需要指定深睡眠唤醒通道 :cpp:member:`deep_slp_chan`，注意只有该指定的通道才会在深睡眠状态下保持采样以及唤醒，以此降低在深睡眠状态下的功耗。此外，若需要在深度睡眠下使用另一套低功耗的配置来进一步降低功耗，可以通过 :cpp:member:`deep_slp_sens_cfg` 额外指定一套低功耗配置，在进入深睡眠前，驱动会应用这套配置，从深睡眠状态唤醒后，则会重新配置到之前的配置。请注意当 :cpp:member:`slp_wakeup_lvl` 配置为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 后，触摸传感器不仅能唤醒深睡眠状态，还能唤醒浅睡眠状态。
+    - Light-sleep 状态唤醒：通过指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` 即可启用触摸传感器 Light-sleep 唤醒功能。注意任何已注册的触摸传感器通道都会在 Light-sleep 状态下保持采样并支持唤醒 Light-sleep。
+    - Deep-sleep 状态唤醒：启用触摸传感器 Deep-sleep 唤醒功能除了指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 外，还需要指定 Deep-sleep 唤醒通道 :cpp:member:`deep_slp_chan`，注意只有该指定的通道才会在 Deep-sleep 状态下保持采样以及唤醒，以此降低在 Deep-sleep 状态下的功耗。此外，若需要在深度睡眠下使用另一套低功耗的配置来进一步降低功耗，可以通过 :cpp:member:`deep_slp_sens_cfg` 额外指定一套低功耗配置，在进入 Deep-sleep 前，驱动会应用这套配置，从 Deep-sleep 状态唤醒后，则会重新配置到之前的配置。请注意当 :cpp:member:`slp_wakeup_lvl` 配置为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 后，触摸传感器不仅能唤醒 Deep-sleep 状态，还能唤醒 Light-sleep 状态。
 
     若需要注销睡眠唤醒功能，可再次调用 :cpp:func:`touch_sensor_config_sleep_wakeup` 并将第二个参数（即 :cpp:type:`touch_sleep_config_t` 的配置结构体指针）设为 ``NULL`` 来注销睡眠唤醒功能。
 
@@ -430,7 +387,7 @@
         touch_sleep_config_t light_slp_cfg = {
             .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,
         };
-        // 注册浅睡眠唤醒功能
+        // 注册 Light-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
         // ...
         // 注销睡眠唤醒功能
@@ -438,21 +395,50 @@
         touch_sleep_config_t deep_slp_cfg = {
             .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,
             .deep_slp_chan = dslp_chan_handle,
-            // 其他深睡眠唤醒配置
+            // 其他 Deep-sleep 唤醒配置
             // ...
         };
-        // 注册深睡眠唤醒功能
+        // 注册 Deep-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
+
+.. _touch-denoise-chan:
+
+.. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
+
+    去噪通道配置
+    ^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持通过去噪通道抑制内部背景噪声。可通过调用 :cpp:func:`touch_sensor_config_denoise_channel` 并配置 :cpp:type:`touch_denoise_chan_config_t` 来注册去噪通道。
+
+    去噪通道是一个没有引出的内部触摸通道。去噪通道使能之后，其他触摸通道的采样值会自动减去去噪通道的采样值，从而实现去噪。因此最终测量结果相比去噪前会有一定衰减。
+
+    除了常规的触摸通道配置，去噪通道还可以配置 :cpp:member:`touch_denoise_chan_config_t::ref_cap` 来指定连接到该通道上的参考电容大小，以及 :cpp:member:`touch_denoise_chan_config_t::resolution` 来指定噪声抑制的分辨率。分辨率越高，去噪通道采样值越大越精确，抑制效果越好，但同时其他触摸通道在自动扣除去噪通道采样值后的测量值衰减也越大。
+
+    例如，去噪通道分辨率为 :cpp:enumerator:`touch_denoise_chan_resolution_t::TOUCH_DENOISE_CHAN_RESOLUTION_BIT8`，即去噪通道采样值最大为 ``255``。假设此时一个常规通道实际采样值为 ``10000``，去噪通道采样值假设为 ``100``，则该常规通道扣除去噪通道采样值后的读数为 ``10000 - 100 = 9900``；若分辨率改为 :cpp:enumerator:`touch_denoise_chan_resolution_t::TOUCH_DENOISE_CHAN_RESOLUTION_BIT12`，即去噪通道采样值最大为 ``4095``，去噪通道分辨率提升 ``16`` 倍，去噪通道采样值大概为 ``100 * 16 = 1600``。此时该常规通道扣除去噪通道采样值后的读数为 ``10000 - 1600 = 8400``。
+
+    若需要注销去噪通道功能，可再次调用 :cpp:func:`touch_sensor_config_denoise_channel` 并将第二个参数（即 :cpp:type:`touch_denoise_chan_config_t` 的配置结构体指针）设为 ``NULL`` 来注销去噪通道功能。
+
+    .. code-block:: c
+
+        touch_denoise_chan_config_t denoise_cfg = {
+            // 去噪通道配置
+            // ...
+        }
+        // 注册去噪通道
+        ESP_ERROR_CHECK(touch_sensor_config_denoise_channel(sens_handle, &denoise_cfg));
+        // ...
+        // 注销去噪通道
+        ESP_ERROR_CHECK(touch_sensor_config_denoise_channel(sens_handle, NULL));
 
 应用示例
 --------
 
-    - :example:`peripherals/touch_sensor/touch_sensor_v3` 演示了如何注册触摸通道并读取数据，并说明了硬件要求及项目配置。
+    - :example:`peripherals/touch_sensor/touch_sens_basic` 演示了如何注册触摸通道并读取数据，并说明了硬件要求及项目配置。
 
 API 参考
 ----------
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32s2 or esp32s3
 
     .. include-build-file:: inc/touch_sens.inc
     .. include-build-file:: inc/touch_sens_types.inc

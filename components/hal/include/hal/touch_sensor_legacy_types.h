@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,23 +274,6 @@ typedef enum {
     TOUCH_PAD_SMOOTH_IIR_8 = 3, /*!<Filter the raw data. The coefficient is 8. */
     TOUCH_PAD_SMOOTH_MAX,
 } touch_smooth_mode_t;
-
-#if SOC_TOUCH_SENSOR_VERSION == 3
-/**
- * @brief Touch channel counting mode of the binarized touch output
- *
- */
-typedef enum {
-    TOUCH_PAD_OUT_AS_DATA,      /*!< Counting the output of touch channel as data.
-                                 *   The value will be smaller than actual value but more sensitive when the frequency of touch_out is close to the source clock
-                                 *   Normally we treat the output as data when it is lower than the sample clock
-                                 */
-    TOUCH_PAD_OUT_AS_CLOCK,     /*!< Counting the output of touch channel as clock.
-                                 *   The value is accurate but less sensitive when the frequency of touch_out is close to the source clock
-                                 *   Normally we treat the output as clock when it is higher than the sample clock
-                                 */
-} touch_out_mode_t;
-#endif
 
 /** Touch sensor filter configuration */
 typedef struct touch_filter_config {

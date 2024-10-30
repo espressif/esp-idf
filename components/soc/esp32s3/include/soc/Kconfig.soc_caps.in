@@ -1003,6 +1003,10 @@ config SOC_TOUCH_SUPPORT_PROX_SENSING
     bool
     default y
 
+config SOC_TOUCH_SUPPORT_DENOISE_CHAN
+    bool
+    default y
+
 config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
     int
     default 3
