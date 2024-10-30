@@ -490,8 +490,7 @@ esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, con
 
         if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_RGB) { // YUV->RGB
             lcd_ll_set_convert_mode_yuv_to_rgb(hal->dev, config->src.yuv_sample);
-            // Note, the RGB->YUV conversion only support RGB565
-            rgb_panel->output_bits_per_pixel = 16;
+            rgb_panel->output_bits_per_pixel = rgb_panel->fb_bits_per_pixel;
         } else if (config->src.color_space == LCD_COLOR_SPACE_RGB && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // RGB->YUV
             lcd_ll_set_convert_mode_rgb_to_yuv(hal->dev, config->dst.yuv_sample);
             rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];

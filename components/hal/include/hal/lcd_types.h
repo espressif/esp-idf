@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,16 @@ typedef enum {
 } lcd_color_rgb_pixel_format_t;
 
 /**
+ * @brief LCD color format
+ */
+typedef enum {
+    LCD_COLOR_FMT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565), ///< RGB565
+    LCD_COLOR_FMT_RGB666 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB666), ///< RGB666
+    LCD_COLOR_FMT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888), ///< RGB888
+    LCD_COLOR_FMT_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422), ///< YUV422
+} lcd_color_format_t;
+
+/**
  * @brief LCD color range
  */
 typedef enum {
@@ -72,6 +82,17 @@ typedef enum {
     LCD_YUV_CONV_STD_BT601 = COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
     LCD_YUV_CONV_STD_BT709 = COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
 } lcd_yuv_conv_std_t;
+
+
+/**
+ * @brief YUV422 packing order
+ */
+typedef enum {
+    LCD_YUV422_PACK_ORDER_YUYV = COLOR_YUV422_PACK_ORDER_YUYV, /*!< YUYV */
+    LCD_YUV422_PACK_ORDER_YVYU = COLOR_YUV422_PACK_ORDER_YVYU, /*!< YVYU */
+    LCD_YUV422_PACK_ORDER_UYVY = COLOR_YUV422_PACK_ORDER_UYVY, /*!< UYVY */
+    LCD_YUV422_PACK_ORDER_VYUY = COLOR_YUV422_PACK_ORDER_VYUY, /*!< VYUY */
+} lcd_yuv422_pack_order_t;
 
 #ifdef __cplusplus
 }

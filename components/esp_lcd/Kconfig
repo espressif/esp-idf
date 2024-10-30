@@ -30,10 +30,7 @@ menu "ESP-Driver:LCD Controller Configurations"
         config LCD_DSI_ISR_IRAM_SAFE
             bool "DSI LCD ISR IRAM-Safe"
             default n
-            select DW_GDMA_ISR_IRAM_SAFE
-            select DW_GDMA_CTRL_FUNC_IN_IRAM
-            select DW_GDMA_SETTER_FUNC_IN_IRAM
-            select DW_GDMA_GETTER_FUNC_IN_IRAM
+            select DW_GDMA_ISR_IRAM_SAFE # relies on DW_GDMA Full trans done interrupt
             help
                 Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
                 executable when the cache is disabled (e.g. SPI Flash write).
