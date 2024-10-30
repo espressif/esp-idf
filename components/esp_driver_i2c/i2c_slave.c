@@ -72,11 +72,12 @@ static IRAM_ATTR void s_i2c_handle_complete(i2c_slave_dev_handle_t i2c_slave, i2
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
     uint32_t rx_fifo_cnt;
     i2c_ll_get_rxfifo_cnt(hal->dev, &rx_fifo_cnt);
+    uint32_t fifo_cnt_rd = MIN(t->rcv_fifo_cnt, rx_fifo_cnt);
     if (rx_fifo_cnt != 0) {
-        i2c_ll_read_rxfifo(hal->dev, i2c_slave->data_buf, t->rcv_fifo_cnt);
-        memcpy(t->buffer + i2c_slave->already_receive_len, i2c_slave->data_buf, t->rcv_fifo_cnt);
-        i2c_slave->already_receive_len += t->rcv_fifo_cnt;
-        t->rcv_fifo_cnt -= t->rcv_fifo_cnt;
+        i2c_ll_read_rxfifo(hal->dev, i2c_slave->data_buf, fifo_cnt_rd);
+        memcpy(t->buffer + i2c_slave->already_receive_len, i2c_slave->data_buf, fifo_cnt_rd);
+        i2c_slave->already_receive_len += fifo_cnt_rd;
+        t->rcv_fifo_cnt -= fifo_cnt_rd;
     }
     if (i2c_slave->callbacks.on_recv_done) {
 
