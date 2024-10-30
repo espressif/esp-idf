@@ -385,7 +385,7 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
 
     int poll_write;
     if ((poll_write = esp_transport_poll_write(ws->parent, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error transport_poll_write");
+        ESP_LOGE(TAG, "Error transport_poll_write(%i)", poll_write);
         return poll_write;
     }
     ws_header[header_len++] = opcode;
@@ -484,7 +484,7 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
 
     // Receive and process payload
     if (bytes_to_read != 0 && (rlen = esp_transport_read_internal(ws, buffer, bytes_to_read, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
+        ESP_LOGE(TAG, "Error read data(%i)", rlen);
         return rlen;
     }
     ws->frame_state.bytes_remaining -= rlen;
@@ -515,7 +515,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     int header = 2;
     int mask_len = 4;
     if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
+        ESP_LOGE(TAG, "Error read data(%i)", rlen);
         return rlen;
     }
     ws->frame_state.header_received = true;
@@ -529,7 +529,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+            ESP_LOGE(TAG, "Error read data(%i)", rlen);
             return rlen;
         }
         payload_len = (uint8_t)data_ptr[0] << 8 | (uint8_t)data_ptr[1];
@@ -537,7 +537,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         // headerLen += 8;
         header = 8;
         if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+            ESP_LOGE(TAG, "Error read data(%i)", rlen);
             return rlen;
         }
 
@@ -552,7 +552,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     if (mask) {
         // Read and store mask
         if (payload_len != 0 && (rlen = esp_transport_read_exact_size(ws, buffer, mask_len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+            ESP_LOGE(TAG, "Error read data(%i)", rlen);
             return rlen;
         }
         memcpy(ws->frame_state.mask_key, buffer, mask_len);
@@ -647,7 +647,7 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     if (ws->frame_state.payload_len) {
         if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error reading payload data");
+            ESP_LOGE(TAG, "Error reading payload data(%i)", rlen);
             ws->frame_state.bytes_remaining = 0;
             return rlen;
         }
