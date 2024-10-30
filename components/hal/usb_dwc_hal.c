@@ -10,7 +10,6 @@
 #include <stdlib.h> // For abort()
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
-#include "soc/usb_dwc_cfg.h"
 #include "soc/usb_dwc_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
@@ -112,10 +111,8 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_dwc_ll_gusbcfg_dis_srp_cap(hal->dev);       //Disable SRP
 
-    // Check if this USB-DWC supports HS PHY, if yes, use it
-    uint32_t ghwcfg[4];
-    usb_dwc_ll_ghwcfg_get_hw_config(hal->dev, &ghwcfg[0], &ghwcfg[1], &ghwcfg[2], &ghwcfg[3]);
-    if (((usb_dwc_ghwcfg2_reg_t)ghwcfg[1]).hsphytype != 0) {
+    // If this USB-DWC supports HS PHY, use it
+    if (hal->constant_config.hsphy_type != 0) {
         usb_dwc_ll_gusbcfg_set_timeout_cal(hal->dev, 5); // 5 PHY clocks for our HS PHY
         usb_dwc_ll_gusbcfg_set_utmi_phy(hal->dev);
     }
@@ -128,16 +125,29 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     usb_dwc_ll_gusbcfg_force_host_mode(hal->dev);
 }
 
-void usb_dwc_hal_init(usb_dwc_hal_context_t *hal)
+void usb_dwc_hal_init(usb_dwc_hal_context_t *hal, int port_id)
 {
-    //Check if a peripheral is alive by reading the core ID registers
-    usb_dwc_dev_t *dev = USB_DWC_LL_GET_HW(0);
+    // Check if a peripheral is alive by reading the core ID registers
+    HAL_ASSERT(port_id < SOC_USB_OTG_PERIPH_NUM);
+    usb_dwc_dev_t *dev = USB_DWC_LL_GET_HW(port_id);
     uint32_t core_id = usb_dwc_ll_gsnpsid_get_id(dev);
     HAL_ASSERT(core_id == CORE_REG_GSNPSID);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
-    //Initialize HAL context
+
+    // Initialize HAL context
     memset(hal, 0, sizeof(usb_dwc_hal_context_t));
     hal->dev = dev;
+
+    // Save constant configuration of this USB-DWC instance
+    /*
+    * EPINFO_CTL is located at the end of FIFO, its size is fixed in HW.
+    * The reserved size is always the worst-case, which is device mode that requires 4 locations per EP direction (including EP0).
+    * Here we just read the FIFO size from HW register, to avoid any ambivalence
+    */
+    hal->constant_config.fifo_size = usb_dwc_ll_ghwcfg_get_fifo_depth(dev);
+    hal->constant_config.hsphy_type = usb_dwc_ll_ghwcfg_get_hsphy_type(dev);
+    hal->constant_config.chan_num_total = usb_dwc_ll_ghwcfg_get_channel_num(dev);
+
     set_defaults(hal);
 }
 
@@ -154,32 +164,31 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
 {
     usb_dwc_ll_grstctl_core_soft_reset(hal->dev);
     while (usb_dwc_ll_grstctl_is_core_soft_reset_in_progress(hal->dev)) {
-        ;   //Wait until core reset is done
+        ;   // Wait until core reset is done
     }
     while (!usb_dwc_ll_grstctl_is_ahb_idle(hal->dev)) {
-        ;   //Wait until AHB Master bus is idle before doing any other operations
+        ;   // Wait until AHB Master bus is idle before doing any other operations
     }
-    //Set the default bits
+
+    // Set the default bits in USB-DWC registers
     set_defaults(hal);
-    //Clear all the flags and channels
+
+    // Clear all the flags and channels
     hal->periodic_frame_list = NULL;
     hal->flags.val = 0;
-    hal->channels.num_allocd = 0;
+    hal->channels.num_allocated = 0;
     hal->channels.chan_pend_intrs_msk = 0;
-    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * OTG_NUM_HOST_CHAN);
+    if (hal->channels.hdls) {
+        for (int i = 0; i < hal->constant_config.chan_num_total; i++) {
+            hal->channels.hdls[i] = NULL;
+        }
+    }
 }
 
 void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
 {
-    /*
-    * EPINFO_CTL is located at the end of FIFO, its size is fixed in HW.
-    * The reserved size is always the worst-case, which is device mode that requires 4 locations per EP direction (including EP0).
-    * Here we just read the FIFO size from HW register, to avoid any ambivalence
-    */
-    uint32_t ghwcfg1, ghwcfg2, ghwcfg3, ghwcfg4;
-    usb_dwc_ll_ghwcfg_get_hw_config(hal->dev, &ghwcfg1, &ghwcfg2, &ghwcfg3, &ghwcfg4);
-    const uint16_t fifo_size_lines = ((usb_dwc_ghwcfg3_reg_t)ghwcfg3).dfifodepth;
-
+    HAL_ASSERT(hal->channels.hdls);
+    const uint16_t fifo_size_lines = hal->constant_config.fifo_size;
     /*
     * Recommended FIFO sizes (see 2.1.2.4 for programming guide)
     *
@@ -190,23 +199,28 @@ void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bi
     * Recommended sizes fit 2 packets of each type. For S2 and S3 we can't fit even one MPS ISOC packet (1023 FS and 1024 HS).
     * So the calculations below are compromises between the available FIFO size and optimal performance.
     */
+
+    // Information for maintainers: this calculation is here for backward compatibility
+    // It should be removed when we allow HAL users to configure the FIFO sizes IDF-9042
+    const int otg_dfifo_depth = hal->constant_config.hsphy_type ? 1024 : 256;
+
     usb_dwc_hal_fifo_config_t fifo_config;
     switch (fifo_bias) {
         // Define minimum viable (fits at least 1 MPS) FIFO sizes for non-biased FIFO types
         // Allocate the remaining size to the biased FIFO type
         case USB_HAL_FIFO_BIAS_DEFAULT:
-            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 4;
-            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 4;
+            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
             fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
             break;
         case USB_HAL_FIFO_BIAS_RX:
-            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
-            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
+            fifo_config.ptx_fifo_lines  = otg_dfifo_depth / 8;
             fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
             break;
         case USB_HAL_FIFO_BIAS_PTX:
-            fifo_config.rx_fifo_lines   = OTG_DFIFO_DEPTH / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
-            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
+            fifo_config.rx_fifo_lines   = otg_dfifo_depth / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
+            fifo_config.nptx_fifo_lines = otg_dfifo_depth / 16;
             fifo_config.ptx_fifo_lines  = fifo_size_lines - fifo_config.nptx_fifo_lines - fifo_config.rx_fifo_lines;
             break;
         default:
@@ -215,7 +229,7 @@ void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bi
 
     HAL_ASSERT((fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines + fifo_config.ptx_fifo_lines) <= fifo_size_lines);
     //Check that none of the channels are active
-    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < hal->constant_config.chan_num_total; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
@@ -254,11 +268,15 @@ static inline void debounce_lock_enable(usb_dwc_hal_context_t *hal)
 
 void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
 {
-    usb_dwc_speed_t speed = usb_dwc_ll_hprt_get_speed(hal->dev);
-    //Host Configuration
-    usb_dwc_ll_hcfg_set_defaults(hal->dev, speed);
-    //Configure HFIR
-    usb_dwc_ll_hfir_set_defaults(hal->dev, speed);
+    // Host Configuration
+    usb_dwc_ll_hcfg_en_scatt_gatt_dma(hal->dev); // Enable Scatther-Gather DMA mode
+    usb_dwc_ll_hcfg_dis_perio_sched(hal->dev);   // Disable Periodic Scheduler (for now)
+
+    // Configure PHY clock: Only for USB-DWC with FSLS PHY
+    if (hal->constant_config.hsphy_type == 0) {
+        usb_dwc_ll_hcfg_set_fsls_phy_clock(hal->dev);
+        usb_dwc_ll_hfir_set_frame_interval(hal->dev);
+    }
 }
 
 // ----------------------------------------------------- Channel -------------------------------------------------------
@@ -267,17 +285,18 @@ void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
 
 bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj, void *chan_ctx)
 {
+    HAL_ASSERT(hal->channels.hdls);
     HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set before attempting to allocate a channel
     //Attempt to allocate channel
-    if (hal->channels.num_allocd == OTG_NUM_HOST_CHAN) {
+    if (hal->channels.num_allocated == hal->constant_config.chan_num_total) {
         return false;    //Out of free channels
     }
     int chan_idx = -1;
-    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < hal->constant_config.chan_num_total; i++) {
         if (hal->channels.hdls[i] == NULL) {
             hal->channels.hdls[i] = chan_obj;
             chan_idx = i;
-            hal->channels.num_allocd++;
+            hal->channels.num_allocated++;
             break;
         }
     }
@@ -299,6 +318,7 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 
 void usb_dwc_hal_chan_free(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj)
 {
+    HAL_ASSERT(hal->channels.hdls);
     if (chan_obj->type == USB_DWC_XFER_TYPE_INTR || chan_obj->type == USB_DWC_XFER_TYPE_ISOCHRONOUS) {
         //Unschedule this channel
         for (int i = 0; i < hal->frame_list_len; i++) {
@@ -311,8 +331,8 @@ void usb_dwc_hal_chan_free(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_
     usb_dwc_ll_haintmsk_dis_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     //Deallocate channel
     hal->channels.hdls[chan_obj->flags.chan_idx] = NULL;
-    hal->channels.num_allocd--;
-    HAL_ASSERT(hal->channels.num_allocd >= 0);
+    hal->channels.num_allocated--;
+    HAL_ASSERT(hal->channels.num_allocated >= 0);
 }
 
 // ---------------- Channel Configuration ------------------
@@ -464,6 +484,7 @@ usb_dwc_hal_port_event_t usb_dwc_hal_decode_intr(usb_dwc_hal_context_t *hal)
 
 usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal)
 {
+    HAL_ASSERT(hal->channels.hdls);
     int chan_num = __builtin_ffs(hal->channels.chan_pend_intrs_msk);
     if (chan_num) {
         hal->channels.chan_pend_intrs_msk &= ~(1 << (chan_num - 1));      //Clear the pending bit for that channel

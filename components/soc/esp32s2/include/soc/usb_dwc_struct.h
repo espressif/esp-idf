@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,7 +88,7 @@ typedef union {
     struct {
         uint32_t toutcal: 3;
         uint32_t phyif: 1;
-        uint32_t reserved_4: 1;
+        uint32_t ulpiutmisel: 1;
         uint32_t fsintf: 1;
         uint32_t physel: 1;
         uint32_t reserved_7: 1;
