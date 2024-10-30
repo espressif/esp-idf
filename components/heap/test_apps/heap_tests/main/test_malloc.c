@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -210,8 +210,14 @@ TEST_CASE("test get allocated size", "[heap]")
         // since the heap component aligns to 4 bytes)
         const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
         const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
-        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
         TEST_ASSERT(aligned_size <= real_size);
+
+        // test the heap_caps_get_containing_block_size() returns the right number of bytes
+        // when the pointer to the first, last (calculated from the requested size) and to a byte
+        // in the middle of the chunk is passed as parameter
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i]));
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + alloc_sizes[i]));
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + (alloc_sizes[i] / 2)));
 
         heap_caps_free(ptr_array[i]);
     }

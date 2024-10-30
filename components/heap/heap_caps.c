@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -468,6 +468,15 @@ size_t heap_caps_get_allocated_size( void *ptr )
     return MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(size);
 }
 
+size_t heap_caps_get_containing_block_size(void *ptr)
+{
+    heap_t *heap = find_containing_heap(ptr);
+    assert(heap);
+
+    void *block_ptr = multi_heap_find_containing_block(heap->heap, ptr);
+    return multi_heap_get_allocated_size(heap->heap, block_ptr);
+}
+
 static HEAP_IRAM_ATTR esp_err_t heap_caps_aligned_check_args(size_t alignment, size_t size, uint32_t caps, const char *funcname)
 {
     if (!alignment) {
@@ -567,7 +576,7 @@ typedef struct walker_data {
         heap_t *heap;
 } walker_data_t;
 
-__attribute__((noinline)) static bool heap_caps_walker(void* block_ptr, size_t block_size, int block_used, void *user_data)
+__attribute__((noinline)) static bool heap_caps_walker(void *block_ptr, size_t block_size, int block_used, void *user_data)
 {
     walker_data_t *walker_data = (walker_data_t*)user_data;
 

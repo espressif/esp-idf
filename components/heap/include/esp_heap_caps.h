@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -446,7 +446,20 @@ void heap_caps_dump_all(void);
  * @return Size of the memory allocated at this block.
  *
  */
-size_t heap_caps_get_allocated_size( void *ptr );
+size_t heap_caps_get_allocated_size(void *ptr);
+
+/**
+ * @brief Return the size of the block containing the pointer passed as parameter.
+ *
+ * @param ptr Pointer to currently allocated heap memory. The pointer value
+ * must be within the allocated memory and the memory must not be freed.
+ *
+ * @note The app will crash with an assertion failure if the pointer is invalid.
+ *
+ * @return Size of the containing block allocated.
+ *
+ */
+size_t heap_caps_get_containing_block_size(void *ptr);
 
 /**
  * @brief Structure used to store heap related data passed to
