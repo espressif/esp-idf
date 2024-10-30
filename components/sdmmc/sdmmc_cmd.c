@@ -5,7 +5,7 @@
  */
 
 #include <inttypes.h>
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_cmd";
 
