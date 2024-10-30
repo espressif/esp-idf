@@ -7,6 +7,9 @@ set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(mipi_dsi_lcd_panel_test)
 
+target_add_binary_data(mipi_dsi_lcd_panel_test.elf "resources/pictures/hello.yuv" BINARY)
+target_add_binary_data(mipi_dsi_lcd_panel_test.elf "resources/pictures/world.yuv" BINARY)
+
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py

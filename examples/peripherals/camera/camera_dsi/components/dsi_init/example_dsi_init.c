@@ -36,7 +36,7 @@ void example_dsi_resource_alloc(esp_lcd_dsi_bus_handle_t *mipi_dsi_bus, esp_lcd_
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = EXAMPLE_MIPI_DSI_DPI_CLK_MHZ,
         .virtual_channel = 0,
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
+        .in_color_format = LCD_COLOR_FMT_RGB565,
         .video_timing = {
             .h_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES,
             .v_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES,
