@@ -114,7 +114,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
         if (i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, buf_size, &bytes_read, 1000) != ESP_OK) {
             continue;
         }
-        for (int i = 0; i < buf_size && count < TEST_I2S_MAX_DATA; i++) {
+        for (int i = 0; i < buf_size / sizeof(uint32_t) && count < TEST_I2S_MAX_DATA; i++) {
             if (rx_buffer[i] == count) {
                 count++;
             } else if (count != 1) {

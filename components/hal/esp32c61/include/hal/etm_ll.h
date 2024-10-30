@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define ETM_LL_SUPPORT_STATUS          1   // Support to get and clear the status of the ETM event and task
+
 /**
  * @brief Enable the clock for ETM register
  *
