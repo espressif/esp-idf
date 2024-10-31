@@ -689,3 +689,11 @@ config BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF
     default 18 if BT_LE_DFT_TX_POWER_LEVEL_P18
     default 20 if BT_LE_DFT_TX_POWER_LEVEL_P20
     default 0
+
+config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
