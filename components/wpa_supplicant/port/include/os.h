@@ -346,6 +346,7 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 #define os_mutex_lock(a) wifi_funcs->_mutex_lock((a))
 #define os_mutex_unlock(a) wifi_funcs->_mutex_unlock((a))
 #define os_recursive_mutex_create() wifi_funcs->_recursive_mutex_create()
+#define os_mutex_delete(a) wifi_funcs->_mutex_delete(a)
 
 #define os_queue_create(a, b) wifi_funcs->_queue_create((a), (b))
 #define os_queue_delete(a) wifi_funcs->_queue_delete(a)
