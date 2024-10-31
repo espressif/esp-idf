@@ -33,6 +33,9 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
+            if (cdata[i] == '\n') {
+                esp_rom_output_tx_one_char('\r');
+            }
             esp_rom_output_tx_one_char(cdata[i]);
         }
         return size;
@@ -52,6 +55,9 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
             int status = esp_rom_output_rx_one_char((uint8_t*) &cdata[received]);
             if (status != 0) {
                 break;
+            }
+            if (cdata[received] == '\r') {
+                cdata[received] = '\n';
             }
         }
         if (received == 0) {
