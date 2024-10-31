@@ -6,24 +6,13 @@ This example implements a basic USB Host HID Class Driver, and demonstrates how 
 
 
 ### Hardware Required
-* Development board with USB capable ESP SoC (ESP32-S2/ESP32-S3)
+* Development board with USB-OTG support
 * A USB cable for Power supply and programming
 * USB OTG Cable
 
 ### Common Pin Assignments
 
-If your board doesn't have a USB A connector connected to the dedicated GPIOs, 
-you may have to DIY a cable and connect **D+** and **D-** to the pins listed below.
-
-```
-ESP BOARD    USB CONNECTOR (type A)
-                   --
-                  | || VCC
-[GPIO19]  ------> | || D-
-[GPIO20]  ------> | || D+
-                  | || GND
-                   --
-```
+Follow instructions in [examples/usb/README.md](../../README.md) for specific hardware setup.
 
 ### Build and Flash
 

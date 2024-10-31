@@ -12,6 +12,7 @@ This example demonstrates usage of the MSC (Mass Storage Class) to access storag
 3. Create `ESP` subdirectory (if not present already), as well as a `text.txt` file
 4. Run read/write benchmarks by transferring 1 MB of data to a `dummy` file
 
+> Note: This example currently supports only FAT-formatted drives. Other file systems, such as exFAT or NTFS, are not compatible with this example. Please ensure that your USB drive is formatted as FAT to avoid compatibility issues.
 
 ### USB Reconnections
 
@@ -20,24 +21,13 @@ The example is run in a loop so that it can demonstrate USB connection and recon
 
 ### Hardware Required
 
-* Development board with USB capable ESP SoC (ESP32-S2/ESP32-S3)
+* Development board with USB-OTG support
 * A USB cable for Power supply and programming
 * A USB flash drive
 
 ### Common Pin Assignments
 
-If your board doesn't have a USB A connector connected to the dedicated GPIOs, 
-you may have to DIY a cable and connect **D+** and **D-** to the pins listed below.
-
-```
-ESP BOARD    USB CONNECTOR (type A)
-                   --
-                  | || VCC
-[GPIO19]  ------> | || D-
-[GPIO20]  ------> | || D+
-                  | || GND
-                   --
-```
+Follow instructions in [examples/usb/README.md](../../README.md) for specific hardware setup.
 
 Additionally, GPIO0 can be shorted to ground in order to deinitialize USB stack. 
 
