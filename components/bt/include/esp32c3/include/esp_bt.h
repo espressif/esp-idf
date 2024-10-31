@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02404010
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02409260
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -217,6 +217,26 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BLE_HW_TARGET_CODE_CHIP_ECO0                      (0x02010000)
 #endif
 
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_CONN_UPDATE
+#define BT_CTRL_BLE_LLCP_CONN_UPDATE (1<<0)
+#else
+#define BT_CTRL_BLE_LLCP_CONN_UPDATE (0<<0)
+#endif
+
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE
+#define BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE (1<<1)
+#else
+#define BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE (0<<1)
+#endif
+
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_PHY_UPDATE
+#define BT_CTRL_BLE_LLCP_PHY_UPDATE (1<<2)
+#else
+#define BT_CTRL_BLE_LLCP_PHY_UPDATE (0<<2)
+#endif
+
+#define BT_CTRL_BLE_LLCP_DISC_FLAG (BT_CTRL_BLE_LLCP_CONN_UPDATE | BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE | BT_CTRL_BLE_LLCP_PHY_UPDATE)
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
     .version = ESP_BT_CTRL_CONFIG_VERSION,                                 \
@@ -255,6 +275,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .ble_data_lenth_zero_aux = BT_BLE_ADV_DATA_LENGTH_ZERO_AUX,            \
     .ble_chan_ass_en = BT_CTRL_CHAN_ASS_EN,                                \
     .ble_ping_en = BT_CTRL_LE_PING_EN,                                     \
+    .ble_llcp_disc_flag = BT_CTRL_BLE_LLCP_DISC_FLAG,                      \
 }
 
 #else
@@ -329,6 +350,7 @@ typedef struct {
     uint8_t ble_data_lenth_zero_aux;        /*!< Config ext adv aux option */
     uint8_t ble_chan_ass_en;                /*!< BLE channel assessment enable */
     uint8_t ble_ping_en;                    /*!< BLE ping procedure enable */
+    uint8_t ble_llcp_disc_flag;             /*!< BLE disconnect flag when instant passed */
 } esp_bt_controller_config_t;
 
 /**
