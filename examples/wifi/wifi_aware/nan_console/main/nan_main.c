@@ -242,6 +242,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
         if ((esp_wifi_nan_start(&nan_cfg)) != ESP_OK) {
             ESP_LOGI(TAG, "Failed to start NAN");
             esp_netif_destroy_default_wifi(g_nan_netif);
+            g_nan_netif = NULL;
             return 1;
         }
         return 0;
