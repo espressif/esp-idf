@@ -140,6 +140,42 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
     return esp_vfs_fat_register_cfg(&conf, out_fs);
 }
 
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_fat_dir = {
+    .stat_p = &vfs_fat_stat,
+    .link_p = &vfs_fat_link,
+    .unlink_p = &vfs_fat_unlink,
+    .rename_p = &vfs_fat_rename,
+    .opendir_p = &vfs_fat_opendir,
+    .closedir_p = &vfs_fat_closedir,
+    .readdir_p = &vfs_fat_readdir,
+    .readdir_r_p = &vfs_fat_readdir_r,
+    .seekdir_p = &vfs_fat_seekdir,
+    .telldir_p = &vfs_fat_telldir,
+    .mkdir_p = &vfs_fat_mkdir,
+    .rmdir_p = &vfs_fat_rmdir,
+    .access_p = &vfs_fat_access,
+    .truncate_p = &vfs_fat_truncate,
+    .ftruncate_p = &vfs_fat_ftruncate,
+    .utime_p = &vfs_fat_utime,
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+static const esp_vfs_fs_ops_t s_vfs_fat = {
+    .write_p = &vfs_fat_write,
+    .lseek_p = &vfs_fat_lseek,
+    .read_p = &vfs_fat_read,
+    .pread_p = &vfs_fat_pread,
+    .pwrite_p = &vfs_fat_pwrite,
+    .open_p = &vfs_fat_open,
+    .close_p = &vfs_fat_close,
+    .fstat_p = &vfs_fat_fstat,
+    .fsync_p = &vfs_fat_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_fat_dir,
+#endif // CONFIG_VFS_SUPPORT_DIR
+};
+
 esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(conf->base_path);
@@ -151,37 +187,6 @@ esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_f
     if (ctx == FF_VOLUMES) {
         return ESP_ERR_NO_MEM;
     }
-
-    const esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
-        .write_p = &vfs_fat_write,
-        .lseek_p = &vfs_fat_lseek,
-        .read_p = &vfs_fat_read,
-        .pread_p = &vfs_fat_pread,
-        .pwrite_p = &vfs_fat_pwrite,
-        .open_p = &vfs_fat_open,
-        .close_p = &vfs_fat_close,
-        .fstat_p = &vfs_fat_fstat,
-        .fsync_p = &vfs_fat_fsync,
-#ifdef CONFIG_VFS_SUPPORT_DIR
-        .stat_p = &vfs_fat_stat,
-        .link_p = &vfs_fat_link,
-        .unlink_p = &vfs_fat_unlink,
-        .rename_p = &vfs_fat_rename,
-        .opendir_p = &vfs_fat_opendir,
-        .closedir_p = &vfs_fat_closedir,
-        .readdir_p = &vfs_fat_readdir,
-        .readdir_r_p = &vfs_fat_readdir_r,
-        .seekdir_p = &vfs_fat_seekdir,
-        .telldir_p = &vfs_fat_telldir,
-        .mkdir_p = &vfs_fat_mkdir,
-        .rmdir_p = &vfs_fat_rmdir,
-        .access_p = &vfs_fat_access,
-        .truncate_p = &vfs_fat_truncate,
-        .ftruncate_p = &vfs_fat_ftruncate,
-        .utime_p = &vfs_fat_utime,
-#endif // CONFIG_VFS_SUPPORT_DIR
-    };
 
     size_t max_files = conf->max_files;
     if (max_files < 1) {
@@ -204,7 +209,7 @@ esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_f
     strlcpy(fat_ctx->fat_drive, conf->fat_drive, sizeof(fat_ctx->fat_drive) - 1);
     strlcpy(fat_ctx->base_path, conf->base_path, sizeof(fat_ctx->base_path) - 1);
 
-    esp_err_t err = esp_vfs_register(conf->base_path, &vfs, fat_ctx);
+    esp_err_t err = esp_vfs_register_fs(conf->base_path, &s_vfs_fat, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, fat_ctx);
     if (err != ESP_OK) {
         free(fat_ctx->o_append);
         free(fat_ctx);
