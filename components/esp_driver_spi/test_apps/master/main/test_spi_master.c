@@ -1856,7 +1856,6 @@ TEST_CASE("test_spi_master_sleep_retention", "[spi]")
 #endif
 }
 
-#if 0   /* Temp disable, TODO: IDFCI-2455*/
 #if CONFIG_PM_ENABLE
 TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
 {
@@ -1922,4 +1921,3 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
     TEST_ESP_OK(esp_pm_configure(&pm_config));
 }
 #endif  //CONFIG_PM_ENABLE
-#endif // 0
