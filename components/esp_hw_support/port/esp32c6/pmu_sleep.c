@@ -124,7 +124,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
     const int hp_regdma_wait_time_us = MAX(mc->hp.regdma_s2m_work_time_us + mc->hp.regdma_m2a_work_time_us, mc->hp.regdma_s2a_work_time_us);
     const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
 
-    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_digital_power_up_wait_time_us + hp_regdma_wait_time_us, hp_clock_wait_time_us);
+    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_digital_power_up_wait_time_us + mc->hp.pll_wait_stable_time_us + hp_regdma_wait_time_us, hp_clock_wait_time_us);
 
     /* When the SOC wakeup (lp timer or GPIO wakeup) and Modem wakeup (Beacon wakeup) complete, the soc
      * wakeup will be delayed until the RF is turned on in Modem state.
