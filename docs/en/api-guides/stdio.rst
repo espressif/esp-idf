@@ -137,7 +137,7 @@ To send application output to a custom channel (for example, a WebSocket connect
     - ``fstat()`` — recommended, to provide correct buffering behavior for the I/O streams
     - ``fcntl()`` — only if non-blocking I/O has to be supported
 
-Once you have created a custom VFS driver, use ``esp_vfs_register()`` to register it with VFS. Then, use ``fopen()`` to redirect ``stdout`` and ``stderr`` to the custom channel. For example:
+Once you have created a custom VFS driver, use :cpp:func:`esp_vfs_register_fs()` to register it with VFS. Then, use ``fopen()`` to redirect ``stdout`` and ``stderr`` to the custom channel. For example:
 
 .. code-block:: c
 
