@@ -521,7 +521,7 @@ bool ieee802_11_rsnx_capab_len(const u8 *rsnxe, size_t rsnxe_len,
        if (flen > 4)
                flen = 4;
        for (i = 0; i < flen; i++)
-               capabs |= rsnxe[i] << (8 * i);
+           capabs |= (u32) rsnxe[i] << (8 * i);
 
        return capabs & BIT(capab);
 }
