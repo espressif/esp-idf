@@ -86,16 +86,17 @@ static ssize_t esp_get_free_index(void) {
 }
 
 static void esp_vfs_free_fs_ops(esp_vfs_fs_ops_t *vfs) {
+// We can afford to cast away the const qualifier here, because we know that we allocated the struct and therefore its safe
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    free(vfs->termios);
+    free((void*)vfs->termios);
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    free(vfs->dir);
+    free((void*)vfs->dir);
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    free(vfs->select);
+    free((void*)vfs->select);
 #endif
 
     free(vfs);
@@ -113,36 +114,37 @@ static void esp_vfs_free_entry(vfs_entry_t *entry) {
     free(entry);
 }
 
-static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
-    assert(vfs != NULL);
-    assert(min != NULL);
-    *min = (esp_vfs_fs_ops_t) {
-        .write = vfs->write,
-        .lseek = vfs->lseek,
-        .read = vfs->read,
-        .pread = vfs->pread,
-        .pwrite = vfs->pwrite,
-        .open = vfs->open,
-        .close = vfs->close,
-        .fstat = vfs->fstat,
-        .fcntl = vfs->fcntl,
-        .ioctl = vfs->ioctl,
-        .fsync = vfs->fsync,
+typedef struct {
 #ifdef CONFIG_VFS_SUPPORT_DIR
-        .dir = min->dir,
+    esp_vfs_dir_ops_t *dir;
 #endif
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-        .termios = min->termios,
+    esp_vfs_termios_ops_t *termios;
 #endif
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-        .select = min->select,
+    esp_vfs_select_ops_t *select;
 #endif
-    };
+} vfs_component_proxy_t;
+
+static void free_proxy_members(vfs_component_proxy_t *proxy) {
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    free(proxy->dir);
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    free(proxy->termios);
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    free(proxy->select);
+#endif
+}
+
+static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_component_proxy_t proxy) {
+    assert(vfs != NULL);
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     // If the dir functions are not implemented, we don't need to convert them
-    if (min->dir != NULL) {
-        *(min->dir) = (esp_vfs_dir_ops_t) {
+    if (proxy.dir != NULL) {
+        *(proxy.dir) = (esp_vfs_dir_ops_t) {
             .stat = vfs->stat,
             .link = vfs->link,
             .unlink = vfs->unlink,
@@ -165,8 +167,8 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     // If the termios functions are not implemented, we don't need to convert them
-    if (min->termios != NULL) {
-        *(min->termios) = (esp_vfs_termios_ops_t) {
+    if (proxy.termios != NULL) {
+        *(proxy.termios) = (esp_vfs_termios_ops_t) {
             .tcsetattr = vfs->tcsetattr,
             .tcgetattr = vfs->tcgetattr,
             .tcdrain = vfs->tcdrain,
@@ -180,8 +182,8 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     // If the select functions are not implemented, we don't need to convert them
-    if (min->select != NULL) {
-        *(min->select) = (esp_vfs_select_ops_t) {
+    if (proxy.select != NULL) {
+        *(proxy.select) = (esp_vfs_select_ops_t) {
             .start_select = vfs->start_select,
             .socket_select = vfs->socket_select,
             .stop_socket_select = vfs->stop_socket_select,
@@ -192,63 +194,109 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
     }
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-}
+    esp_vfs_fs_ops_t tmp = {
+        .write = vfs->write,
+        .lseek = vfs->lseek,
+        .read = vfs->read,
+        .pread = vfs->pread,
+        .pwrite = vfs->pwrite,
+        .open = vfs->open,
+        .close = vfs->close,
+        .fstat = vfs->fstat,
+        .fcntl = vfs->fcntl,
+        .ioctl = vfs->ioctl,
+        .fsync = vfs->fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .dir = proxy.dir,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+        .termios = proxy.termios,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = proxy.select,
+#endif
+    };
 
-static esp_vfs_fs_ops_t* esp_vfs_duplicate_fs_ops(const esp_vfs_fs_ops_t *vfs) {
-    esp_vfs_fs_ops_t *min = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
-    if (min == NULL) {
+    esp_vfs_fs_ops_t *out = heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
+    if (out == NULL) {
         return NULL;
     }
 
-    memcpy(min, vfs, sizeof(esp_vfs_fs_ops_t));
+    // Doing this is the only way to correctly initialize const members of a struct according to C standard
+    memcpy(out, &tmp, sizeof(esp_vfs_fs_ops_t));
 
-    // remove references to the original components
-#ifdef CONFIG_VFS_SUPPORT_DIR
-    min->dir = NULL;
-#endif
-#ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    min->termios = NULL;
-#endif
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-    min->select = NULL;
-#endif
+    return out;
+}
+
+
+static esp_vfs_fs_ops_t* esp_vfs_duplicate_fs_ops(const esp_vfs_fs_ops_t *orig) {
+    vfs_component_proxy_t proxy = {};
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    if (vfs->dir != NULL) {
-        min->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
-        if (min->dir == NULL) {
+    if (orig->dir != NULL) {
+        proxy.dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.dir == NULL) {
             goto fail;
         }
-        memcpy(min->dir, vfs->dir, sizeof(esp_vfs_dir_ops_t));
+        memcpy(proxy.dir, orig->dir, sizeof(esp_vfs_dir_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    if (vfs->termios != NULL) {
-        min->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
-        if (min->termios == NULL) {
+    if (orig->termios != NULL) {
+        proxy.termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.termios == NULL) {
             goto fail;
         }
-        memcpy(min->termios, vfs->termios, sizeof(esp_vfs_termios_ops_t));
+        memcpy(proxy.termios, orig->termios, sizeof(esp_vfs_termios_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    if (vfs->select != NULL) {
-        min->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
-        if (min->select == NULL) {
+    if (orig->select != NULL) {
+        proxy.select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.select == NULL) {
             goto fail;
         }
-        memcpy(min->select, vfs->select, sizeof(esp_vfs_select_ops_t));
+        memcpy(proxy.select, orig->select, sizeof(esp_vfs_select_ops_t));
     }
 #endif
 
-    return min;
+    // This tediousness is required because of const members
+    esp_vfs_fs_ops_t tmp = {
+        .write = orig->write,
+        .lseek = orig->lseek,
+        .read = orig->read,
+        .pread = orig->pread,
+        .pwrite = orig->pwrite,
+        .open = orig->open,
+        .close = orig->close,
+        .fstat = orig->fstat,
+        .fcntl = orig->fcntl,
+        .ioctl = orig->ioctl,
+        .fsync = orig->fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .dir = proxy.dir,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+        .termios = proxy.termios,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = proxy.select,
+#endif
+    };
 
-#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
+    esp_vfs_fs_ops_t *out = heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
+    if (out == NULL) {
+        goto fail;
+    }
+
+    memcpy(out, &tmp, sizeof(esp_vfs_fs_ops_t));
+
+    return out;
+
 fail:
-#endif
-    esp_vfs_free_fs_ops(min);
+    free_proxy_members(&proxy);
     return NULL;
 }
 
@@ -263,16 +311,10 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_vfs_fs_ops_t *main = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
-    if (main == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    // Initialize all fields to NULL
-    memset(main, 0, sizeof(esp_vfs_fs_ops_t));
+    vfs_component_proxy_t proxy = {};
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    bool skip_dir =
+    const bool skip_dir =
         vfs->stat == NULL &&
         vfs->link == NULL &&
         vfs->unlink == NULL &&
@@ -291,15 +333,15 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->utime == NULL;
 
     if (!skip_dir) {
-        main->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
-        if (main->dir == NULL) {
+        proxy.dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.dir == NULL) {
             goto fail;
         }
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    bool skip_termios =
+    const bool skip_termios =
         vfs->tcsetattr == NULL &&
         vfs->tcgetattr == NULL &&
         vfs->tcdrain == NULL &&
@@ -309,15 +351,15 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->tcsendbreak == NULL;
 
     if (!skip_termios) {
-        main->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
-        if (main->termios == NULL) {
+        proxy.termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.termios == NULL) {
             goto fail;
         }
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    bool skip_select =
+    const bool skip_select =
         vfs->start_select == NULL &&
         vfs->socket_select == NULL &&
         vfs->stop_socket_select == NULL &&
@@ -326,24 +368,25 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->end_select == NULL;
 
     if (!skip_select) {
-        main->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
-        if (main->select == NULL) {
+        proxy.select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.select == NULL) {
             goto fail;
         }
     }
 #endif
 
-    esp_minify_vfs(vfs, main);
+    esp_vfs_fs_ops_t *main = esp_minify_vfs(vfs, proxy);
+    if (main == NULL) {
+        goto fail;
+    }
 
     *min = main;
     return ESP_OK;
 
-#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
 fail:
 
-    esp_vfs_free_fs_ops(main);
+    free_proxy_members(&proxy);
     return ESP_ERR_NO_MEM;
-#endif
 }
 
 static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, int *vfs_index)
