@@ -1539,7 +1539,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
          * eventually be freed up and we'll be able to process
          * this one.
          */
-        BT_WARN("No free slots for new incoming segmented messages addr: %04x", net_rx->ctx.addr);
+        BT_WARN("No free slots for new incoming segmented messages, src: %04x", net_rx->ctx.addr);
         return -ENOMEM;
     }
 

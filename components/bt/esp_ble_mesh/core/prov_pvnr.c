@@ -50,6 +50,7 @@ static struct bt_mesh_prov_link prov_links[BLE_MESH_PROV_SAME_TIME];
 #if CONFIG_BLE_MESH_RPR_CLI
 extern struct bt_mesh_prov_link rpr_links[CONFIG_BLE_MESH_RPR_CLI_PROV_SAME_TIME];
 #endif
+
 struct bt_mesh_prov_ctx {
     /* Primary element address of Provisioner */
     uint16_t primary_addr;
@@ -247,7 +248,7 @@ void bt_mesh_provisioner_restore_prov_info(uint16_t primary_addr, uint16_t alloc
 }
 #endif /* CONFIG_BLE_MESH_SETTINGS */
 
-bool is_unprov_dev_being_provision(const uint8_t uuid[16])
+bool bt_mesh_is_unprov_dev_being_prov(const uint8_t uuid[16])
 {
     int i;
 
@@ -272,6 +273,7 @@ bool is_unprov_dev_being_provision(const uint8_t uuid[16])
         }
     }
 #endif
+
     for (i = 0; i < BLE_MESH_PROV_SAME_TIME; i++) {
         if (bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE)
 #if CONFIG_BLE_MESH_PB_GATT
@@ -322,7 +324,7 @@ static int provisioner_check_unprov_dev_info(const uint8_t uuid[16], bt_mesh_pro
      * receive the connectable prov adv pkt from this device.
      * Here we check both PB-GATT and PB-ADV link status.
      */
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         return -EALREADY;
     }
 
@@ -377,7 +379,7 @@ static int provisioner_start_prov_pb_adv(const uint8_t uuid[16], const bt_mesh_a
         return -EIO;
     }
 
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         bt_mesh_pb_adv_unlock();
         return 0;
     }
@@ -439,7 +441,7 @@ static int provisioner_start_prov_pb_gatt(const uint8_t uuid[16], const bt_mesh_
         return -EIO;
     }
 
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         bt_mesh_pb_gatt_unlock();
         return 0;
     }

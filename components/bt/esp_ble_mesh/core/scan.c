@@ -151,7 +151,7 @@ int bt_mesh_unprov_dev_fifo_enqueue(uint8_t uuid[16], const uint8_t addr[6], uin
         return -EINVAL;
     }
 
-    if (!bt_mesh_unprov_dev_info_query(uuid, addr, NULL, BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_UUID|
+    if (!bt_mesh_unprov_dev_info_query(uuid, NULL, NULL, BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_ADDR |
                                                          BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS)) {
         return 0;
     }
@@ -288,6 +288,7 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
             bt_mesh_provisioner_prov_adv_recv(buf, addr, rssi);
         }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
+
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_is_provisioned()) {
             const bt_mesh_addr_t *addr = bt_mesh_get_unprov_dev_addr();

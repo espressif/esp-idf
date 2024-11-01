@@ -88,7 +88,6 @@ static void reset_state(void)
     (void)memset(&prov_link, 0, offsetof(struct bt_mesh_prov_link, tx.retransmit));
 
 #if CONFIG_BLE_MESH_PB_ADV
-
     prov_link.pending_ack = PROV_XACT_NVAL;
 
     prov_link.rx.prev_id = PROV_XACT_NVAL;
@@ -122,8 +121,6 @@ static void reset_state(void)
 static void reset_adv_link(struct bt_mesh_prov_link *link, uint8_t reason)
 {
     ARG_UNUSED(link);
-
-    bt_mesh_prov_bearer_ctl_send(&prov_link, LINK_CLOSE, &reason, sizeof(reason));
 
     bt_mesh_prov_clear_tx(&prov_link, true);
 
@@ -1083,10 +1080,11 @@ static void link_ack(struct prov_rx *rx, struct net_buf_simple *buf)
         }
     }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
+
     if (!k_delayed_work_remaining_get(&prov_link.prot_timer)) {
         /**
-         * When the link is opened, the Provisioner and the unprovisioned device
-         * shall start the link timer from the initial value set 60 seconds.
+         * When the link is opened, the provisioner and the unprovisioned device
+         * shall start the link timer with the timeout value set to 60 seconds.
         */
         k_delayed_work_submit(&prov_link.prot_timer, PROTOCOL_TIMEOUT);
     }
@@ -1539,7 +1537,6 @@ static void protocol_timeout(struct k_work *work)
     uint8_t reason = CLOSE_REASON_TIMEOUT;
     prov_link.rx.seg = 0U;
     bt_mesh_prov_bearer_ctl_send(&prov_link, LINK_CLOSE, &reason, sizeof(reason));
-    close_link(reason);
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 }
 
