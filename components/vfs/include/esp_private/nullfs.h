@@ -17,7 +17,7 @@ extern "C" {
  *
  * @return VFS structure for /dev/null
  */
-const esp_vfs_t *esp_vfs_null_get_vfs(void);
+const esp_vfs_fs_ops_t *esp_vfs_null_get_vfs(void);
 
 #ifdef __cplusplus
 }

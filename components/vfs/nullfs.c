@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "esp_vfs.h"
+#include "esp_vfs_ops.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_private/startup_internal.h"
@@ -68,8 +69,13 @@ static int vfs_null_fcntl(int fd, int cmd, int arg);
 static int vfs_null_ioctl(int fd, int cmd, va_list args);
 static int vfs_null_fsync(int fd);
 
-static const esp_vfs_t s_vfs_null = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+#if CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_null_dir = {
+    .stat = &vfs_null_stat,
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+static const esp_vfs_fs_ops_t s_vfs_null = {
     .write = &vfs_null_write,
     .lseek = &vfs_null_lseek,
     .read = &vfs_null_read,
@@ -78,22 +84,22 @@ static const esp_vfs_t s_vfs_null = {
     .open = &vfs_null_open,
     .close = &vfs_null_close,
     .fstat = &vfs_null_fstat,
-#if CONFIG_VFS_SUPPORT_DIR
-    .stat = &vfs_null_stat,
-#endif // CONFIG_VFS_SUPPORT_DIR
     .fcntl = &vfs_null_fcntl,
     .ioctl = &vfs_null_ioctl,
     .fsync = &vfs_null_fsync,
+#if CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_null_dir,
+#endif // CONFIG_VFS_SUPPORT_DIR
 };
 
-const esp_vfs_t *esp_vfs_null_get_vfs(void)
+const esp_vfs_fs_ops_t *esp_vfs_null_get_vfs(void)
 {
     return &s_vfs_null;
 }
 
 esp_err_t esp_vfs_null_register(void)
 {
-    return esp_vfs_register("/dev/null", &s_vfs_null, NULL);
+    return esp_vfs_register_fs("/dev/null", &s_vfs_null, ESP_VFS_FLAG_STATIC, NULL);
 }
 
 static ssize_t vfs_null_write(int fd, const void *data, size_t size)
