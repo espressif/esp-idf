@@ -311,7 +311,7 @@ esp_err_t IRAM_ATTR esp_mspi_32bit_address_flash_feature_check(void)
     // IDF-10019
     unsigned chip_version = efuse_hal_chip_revision();
     if (unlikely(!ESP_CHIP_REV_ABOVE(chip_version, 1))) {
-        ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on ESP32P4 ECO0");
+        ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on ESP32P4 v0.0");
         return ESP_ERR_NOT_SUPPORTED;
     }
 #endif
