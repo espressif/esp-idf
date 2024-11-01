@@ -245,7 +245,9 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
 
-- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：引导加载程序编译时应忽略的组件列表，位于 ``bootloader_components/`` 目录中。使用这一变量可以将一个组件有条件地包含在项目中。
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：可选组件列表，位于 ``bootloader_components/`` 目录中，引导加载程序编译时会忽略该列表中的组件。使用这一变量可以将一个组件有条件地包含在项目中。
+
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``：可选的附加路径列表，引导加载程序编译时将从这些路径中搜索要编译的组件。注意，这是一个构建属性。
 
 以上变量中的路径可以是绝对路径，或者是相对于项目目录的相对路径。
 
@@ -781,6 +783,15 @@ KConfig.projbuild
 
 请参考 :example:`custom_bootloader/bootloader_override` 查看覆盖默认引导加载程序的示例。
 
+与常规应用程序类似，通过构建属性 ``BOOTLOADER_EXTRA_COMPONENT_DIRS`` 可以将不在 `bootloader_component` 中的外部组件作为引导加载程序的一部分进行构建。可以只引用一个组件，也可以引用包含多个组件的路径。例如：
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    idf_build_set_property(BOOTLOADER_EXTRA_COMPONENT_DIRS "/path/to/extra/component/" APPEND)
+
+    project(main)
+
+请参考示例 :example:`custom_bootloader/bootloader_extra_dir`，查看如何向引导加载程序构建过程添加额外的组件。
 
 .. _config_only_component:
 

@@ -245,7 +245,9 @@ These variables all have default values that can be overridden for custom behavi
 
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via the REQUIRES or PRIV_REQUIRES arguments on component registration will automatically have it added to this list, so the ``COMPONENTS`` list can be very short.
 
-- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: A list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``: Optional list of components, placed in ``bootloader_components/``, that should be ignored by the bootloader compilation. Use this variable if a bootloader component needs to be included conditionally inside the project.
+
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components to be compiled as part of the bootloader. Please note that this is a build property.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -751,7 +753,7 @@ This mechanism is shown in the example :example:`build_system/wrappers`. Check :
 Override the Default Bootloader
 -------------------------------
 
-Thanks to the optional ``bootloader_components`` directory present in your ESP-IDf project, it is possible to override the default ESP-IDF bootloader. To do so, a new ``bootloader_components/main`` component should be defined, which will make the project directory tree look like the following:
+Thanks to the optional ``bootloader_components`` directory present in your ESP-IDF project, it is possible to override the default ESP-IDF bootloader. To do so, a new ``bootloader_components/main`` component should be defined, which will make the project directory tree look like the following:
 
     - myProject/
                  - CMakeLists.txt
@@ -765,7 +767,7 @@ Thanks to the optional ``bootloader_components`` directory present in your ESP-I
                  - build/
 
 
-Here the ``my_bootloader.c`` file becomes source code for the new bootloader, which means that it will need to perform all the required operations to set up and load the ``main`` application from flash.
+Here, the ``my_bootloader.c`` file becomes source code for the new bootloader, which means that it will need to perform all the required operations to set up and load the ``main`` application from flash.
 
 It is also possible to conditionally replace the bootloader depending on a certain condition, such as the target for example. This can be achieved thanks to the ``BOOTLOADER_IGNORE_EXTRA_COMPONENT`` CMake variable. This list can be used to tell the ESP-IDF bootloader project to ignore and not compile the given components present in ``bootloader_components``. For example, if one wants to use the default bootloader for ESP32 target, then ``myProject/CMakeLists.txt`` should look like the following::
 
@@ -781,6 +783,15 @@ It is important to note that this can also be used for any other bootloader comp
 
 See :example:`custom_bootloader/bootloader_override` for an example of overriding the default bootloader.
 
+Similarly to regular applications, it is possible to include external components, not placed in `bootloader_component`, as part of the bootloader build thanks to the build property ``BOOTLOADER_EXTRA_COMPONENT_DIRS``. It can either refer to a directory that contains several components, or refer to a single component. For example:
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    idf_build_set_property(BOOTLOADER_EXTRA_COMPONENT_DIRS "/path/to/extra/component/" APPEND)
+
+    project(main)
+
+See :example:`custom_bootloader/bootloader_extra_dir` for an example of adding extra components to the bootloader build.
 
 .. _config_only_component:
 
