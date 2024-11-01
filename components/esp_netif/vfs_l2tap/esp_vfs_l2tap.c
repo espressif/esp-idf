@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -580,7 +580,24 @@ static esp_err_t l2tap_end_select(void *end_select_args)
 
     return ret;
 }
+
+static const esp_vfs_select_ops_t s_vfs_l2tap_select = {
+    .start_select = &l2tap_start_select,
+    .end_select = &l2tap_end_select,
+};
 #endif //CONFIG_VFS_SUPPORT_SELECT
+
+static const esp_vfs_fs_ops_t s_vfs_l2tap = {
+    .write = &l2tap_write,
+    .open = &l2tap_open,
+    .close = &l2tap_close,
+    .read = &l2tap_read,
+    .fcntl = &l2tap_fcntl,
+    .ioctl = &l2tap_ioctl,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .select = &s_vfs_l2tap_select,
+#endif // CONFIG_VFS_SUPPORT_SELECT
+};
 
 esp_err_t esp_vfs_l2tap_intf_register(l2tap_vfs_config_t *config)
 {
@@ -593,20 +610,7 @@ esp_err_t esp_vfs_l2tap_intf_register(l2tap_vfs_config_t *config)
 
     ESP_RETURN_ON_FALSE(!s_is_registered, ESP_ERR_INVALID_STATE, TAG, "vfs is already registered");
     s_is_registered = true;
-    esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &l2tap_write,
-        .open = &l2tap_open,
-        .close = &l2tap_close,
-        .read = &l2tap_read,
-        .fcntl = &l2tap_fcntl,
-        .ioctl = &l2tap_ioctl,
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-        .start_select = &l2tap_start_select,
-        .end_select = &l2tap_end_select,
-#endif // CONFIG_VFS_SUPPORT_SELECT
-    };
-    ESP_RETURN_ON_ERROR(esp_vfs_register(config->base_path, &vfs, NULL), TAG, "vfs register error");
+    ESP_RETURN_ON_ERROR(esp_vfs_register_fs(config->base_path, &s_vfs_l2tap, ESP_VFS_FLAG_STATIC, NULL), TAG, "vfs register error");
 
     return ESP_OK;
 }
