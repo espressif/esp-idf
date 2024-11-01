@@ -26,7 +26,8 @@
 #endif
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+     CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
+     (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
 
 static struct bt_mesh_proxy_server {
     struct bt_mesh_conn *conn;
@@ -85,6 +86,22 @@ static void proxy_sar_timeout(struct k_work *work)
     bt_mesh_gattc_disconnect(server->conn);
 }
 
+#if (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
+int bt_mesh_rpr_srv_set_waiting_prov_link(struct bt_mesh_prov_link *link,
+                                          bt_mesh_addr_t *addr)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(waiting_conn_link);i++) {
+        if (waiting_conn_link[i].link == NULL) {
+            waiting_conn_link[i].link = link;
+            memcpy(&waiting_conn_link[i].addr, addr, sizeof(bt_mesh_addr_t));
+            return 0;
+        }
+    }
+
+    return -ENOBUFS;
+}
+#endif /* CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT */
+
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
 /**
  * The following callbacks are used to notify proper information
@@ -114,22 +131,6 @@ void bt_mesh_proxy_client_set_filter_status_cb(proxy_client_recv_filter_status_c
 {
     proxy_client_filter_status_recv_cb = cb;
 }
-
-#if (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
-int bt_mesh_rpr_srv_set_waiting_prov_link(struct bt_mesh_prov_link *link,
-                                          bt_mesh_addr_t *addr)
-{
-    for (size_t i = 0; i < ARRAY_SIZE(waiting_conn_link);i++) {
-        if (waiting_conn_link[i].link == NULL) {
-            waiting_conn_link[i].link = link;
-            memcpy(&waiting_conn_link[i].addr, addr, sizeof(bt_mesh_addr_t));
-            return 0;
-        }
-    }
-
-    return -ENOBUFS;
-}
-#endif /* CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT */
 
 static void filter_status(struct bt_mesh_proxy_server *server,
                           struct bt_mesh_net_rx *rx,
@@ -266,7 +267,9 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_server *server)
         } else
 #endif
         {
+#if CONFIG_BLE_MESH_PROVISIONER
             bt_mesh_provisioner_pb_gatt_recv(server->conn, &server->buf);
+#endif
         }
         break;
 #endif
@@ -494,6 +497,7 @@ static void proxy_disconnected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, 
         if (bt_mesh_prov_node_get_link()->conn == conn) {
             for (size_t i = 0; i < ARRAY_SIZE(waiting_conn_link); i++) {
                 if (waiting_conn_link[i].link->conn == conn) {
+                    waiting_conn_link[i].link = NULL;
                     memset(&waiting_conn_link[i].addr, 0, sizeof(bt_mesh_addr_t));
                     break;
                 }
@@ -503,7 +507,9 @@ static void proxy_disconnected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, 
         } else
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
         {
+#if CONFIG_BLE_MESH_PROVISIONER
             bt_mesh_provisioner_pb_gatt_close(conn, reason);
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
         }
     }
 #endif /* CONFIG_BLE_MESH_PB_GATT && (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) */
@@ -550,7 +556,9 @@ static ssize_t prov_write_ccc(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn)
         }
 #endif
 
+#if CONFIG_BLE_MESH_PROVISIONER
         return bt_mesh_provisioner_pb_gatt_open(conn, addr->val);
+#endif
     }
 
     return -ENOMEM;
@@ -694,10 +702,12 @@ int bt_mesh_proxy_client_gatt_disable(void)
 static struct bt_mesh_prov_conn_cb conn_callbacks = {
     .connected = proxy_connected,
     .disconnected = proxy_disconnected,
-#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
+#if (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) && \
+     CONFIG_BLE_MESH_PB_GATT
     .prov_write_descr = prov_write_ccc,
     .prov_notify = prov_recv_ntf,
-#endif /* CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT */
+#endif /* (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) && \
+           CONFIG_BLE_MESH_PB_GATT */
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     .proxy_write_descr = proxy_write_ccc,
     .proxy_notify = proxy_recv_ntf,
@@ -1142,4 +1152,5 @@ int bt_mesh_proxy_client_deinit(void)
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
 #endif /* (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-           CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+           CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
+           (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT) */

@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,11 +82,12 @@ static void reset_state(void)
     }
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
-#if CONFIG_BLE_MESH_PB_ADV
     /* Clear everything except the retransmit and protocol timer
      * delayed work objects.
      */
     (void)memset(&prov_link, 0, offsetof(struct bt_mesh_prov_link, tx.retransmit));
+
+#if CONFIG_BLE_MESH_PB_ADV
 
     prov_link.pending_ack = PROV_XACT_NVAL;
 
@@ -122,6 +123,8 @@ static void reset_adv_link(struct bt_mesh_prov_link *link, uint8_t reason)
 {
     ARG_UNUSED(link);
 
+    bt_mesh_prov_bearer_ctl_send(&prov_link, LINK_CLOSE, &reason, sizeof(reason));
+
     bt_mesh_prov_clear_tx(&prov_link, true);
 
     if (bt_mesh_prov_get()->link_close) {
@@ -154,7 +157,7 @@ static int prov_send_gatt(struct bt_mesh_prov_link *link, struct net_buf_simple 
     /* Changed by Espressif, add provisioning timeout timer operations.
      * When sending a provisioning PDU successfully, restart the 60s timer.
      */
-#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT && CONFIG_BLE_MESH_RPR_SRV
+#if CONFIG_BLE_MESH_RPR_SRV
     if (bt_mesh_atomic_test_bit(link->flags, PB_REMOTE)) {
         err = bt_mesh_proxy_client_send(link->conn, BLE_MESH_PROXY_PROV, msg);
 
@@ -1075,10 +1078,18 @@ static void link_ack(struct prov_rx *rx, struct net_buf_simple *buf)
             bt_mesh_prov_clear_tx(&prov_link, true);
             bt_mesh_rpr_srv_recv_link_ack(prov_link.pb_remote_uuid, true);
         } else {
-            BT_INFO("Link ACK for PB-Remote already received");
+            BT_DBG("Link ACK for PB-Remote already received");
+            return;
         }
     }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
+    if (!k_delayed_work_remaining_get(&prov_link.prot_timer)) {
+        /**
+         * When the link is opened, the Provisioner and the unprovisioned device
+         * shall start the link timer from the initial value set 60 seconds.
+        */
+        k_delayed_work_submit(&prov_link.prot_timer, PROTOCOL_TIMEOUT);
+    }
 }
 
 static void link_close(struct prov_rx *rx, struct net_buf_simple *buf)
@@ -1434,6 +1445,11 @@ int bt_mesh_pb_gatt_open(struct bt_mesh_conn *conn)
 {
     BT_DBG("conn %p", conn);
 
+    /**
+     * It's necessary to determine if it is PB_REMOTE because when the
+     * node acts as an RPR server, LINK_ACTIVE has already been set upon
+     * receiving the link open from the RPR client.
+    */
     if (!bt_mesh_atomic_test_bit(prov_link.flags, PB_REMOTE) &&
         bt_mesh_atomic_test_and_set_bit(prov_link.flags, LINK_ACTIVE)) {
         BT_ERR("Link is busy");
@@ -1450,6 +1466,14 @@ int bt_mesh_pb_gatt_open(struct bt_mesh_conn *conn)
     {
         prov_link.expect = PROV_INVITE;
     }
+
+    /**
+     * Just like ADV Link, start provision timeout timer after
+     * establishing the link to prevent the RPR server from
+     * being unable to recover to a configurable network state
+     * during remote provisioning.
+     */
+    k_delayed_work_submit(&prov_link.prot_timer, PROTOCOL_TIMEOUT);
 
     if (bt_mesh_prov_get()->link_open) {
         bt_mesh_prov_get()->link_open(BLE_MESH_PROV_GATT);
@@ -1499,7 +1523,7 @@ static void protocol_timeout(struct k_work *work)
 
 #if CONFIG_BLE_MESH_PB_GATT
     if (prov_link.conn) {
-#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT && CONFIG_BLE_MESH_RPR_SRV
+#if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_atomic_test_bit(prov_link.flags, PB_REMOTE)) {
             prov_link.pb_remote_reset = true;
             bt_mesh_gattc_disconnect(prov_link.conn);
@@ -1515,6 +1539,7 @@ static void protocol_timeout(struct k_work *work)
     uint8_t reason = CLOSE_REASON_TIMEOUT;
     prov_link.rx.seg = 0U;
     bt_mesh_prov_bearer_ctl_send(&prov_link, LINK_CLOSE, &reason, sizeof(reason));
+    close_link(reason);
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 }
 

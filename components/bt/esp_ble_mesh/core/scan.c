@@ -135,7 +135,6 @@ int bt_mesh_unprov_dev_info_query(uint8_t uuid[16], uint8_t addr[6],
     }
 
     if (cnt == unprov_dev_info_fifo.pair_num) {
-        BT_WARN("Didn't find info for %d", query_type);
         return -1;
     }
 
@@ -150,6 +149,11 @@ int bt_mesh_unprov_dev_fifo_enqueue(uint8_t uuid[16], const uint8_t addr[6], uin
     if (uuid == NULL || addr == NULL) {
         BT_ERR("Invalid argument %s", __func__);
         return -EINVAL;
+    }
+
+    if (!bt_mesh_unprov_dev_info_query(uuid, addr, NULL, BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_UUID|
+                                                         BLE_MESH_STORE_UNPROV_INFO_QUERY_TYPE_EXISTS)) {
+        return 0;
     }
 
     if (unprov_dev_info_fifo.pair_num == BLE_MESH_STORE_UNPROV_INFO_MAX_NUM) {
@@ -182,7 +186,8 @@ uint8_t bt_mesh_get_adv_type(void)
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
-     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
+     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX || \
+     (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
 static bool adv_flags_valid(struct net_buf_simple *buf)
 {
     uint8_t flags = 0U;
@@ -269,8 +274,10 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
     }
 
     switch (type) {
-#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
+#if (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) && \
+     CONFIG_BLE_MESH_PB_GATT
     case BLE_MESH_UUID_MESH_PROV_VAL:
+#if CONFIG_BLE_MESH_PROVISIONER
         if (bt_mesh_is_provisioner_en()) {
             if (buf->len != PROV_SVC_DATA_LEN) {
                 BT_WARN("Invalid Mesh Prov Service Data length %d", buf->len);
@@ -280,16 +287,18 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
             BT_DBG("Start to handle Mesh Prov Service Data");
             bt_mesh_provisioner_prov_adv_recv(buf, addr, rssi);
         }
-
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_RPR_SRV
         if (bt_mesh_is_provisioned()) {
             const bt_mesh_addr_t *addr = bt_mesh_get_unprov_dev_addr();
             bt_mesh_unprov_dev_fifo_enqueue(buf->data, addr->val, bt_mesh_get_adv_type());
             bt_mesh_rpr_srv_unprov_beacon_recv(buf, bt_mesh_get_adv_type(), addr, rssi);
         }
-#endif
+#endif /* CONFIG_BLE_MESH_RPR_SRV */
+#endif /* (CONFIG_BLE_MESH_PROVISIONER || CONFIG_BLE_MESH_RPR_SRV) &&
+           CONFIG_BLE_MESH_PB_GATT */
         break;
-#endif
+
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     case BLE_MESH_UUID_MESH_PROXY_VAL:
         if (buf->len != PROXY_SVC_DATA_LEN_NET_ID &&
@@ -322,8 +331,9 @@ static void handle_adv_service_data(struct net_buf_simple *buf,
     }
 }
 #endif /* (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-           CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
-           CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX */
+           CONFIG_BLE_MESH_GATT_PROXY_CLIENT  || \
+           CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX || \
+           (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT) */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
 static bool ble_scan_en;
@@ -400,8 +410,9 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
     struct net_buf_simple *buf = &adv_rpt->adv_data;
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-     CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
-     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
+     CONFIG_BLE_MESH_GATT_PROXY_CLIENT  || \
+     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX || \
+     (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
     uint16_t uuid = 0U;
 #endif
 #if (CONFIG_BLE_MESH_RPR_SRV || CONFIG_BLE_MESH_SUPPORT_BLE_SCAN)
@@ -504,7 +515,8 @@ static void bt_mesh_scan_cb(struct bt_mesh_adv_report *adv_rpt)
             break;
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
      CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
-     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
+     CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX || \
+     (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
         case BLE_MESH_DATA_FLAGS:
             if (!adv_flags_valid(buf)) {
                 BT_DBG("Adv Flags mismatch, ignore this adv pkt");

@@ -846,6 +846,13 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
 
     conn_count++;
 
+    if (gatt_svc == MESH_GATT_PROV &&
+        conn_count > 1) {
+       BT_WARN("Only one prov connection could exists");
+       bt_mesh_gatts_disconnect(conn, 0x13);
+       return;
+    }
+
     /* Since we use ADV_OPT_ONE_TIME */
     proxy_adv_enabled = false;
 
