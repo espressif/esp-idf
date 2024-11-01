@@ -118,7 +118,7 @@ void app_main(void)
         printf("\n"
                "Your terminal application does not support escape sequences.\n"
                "Line editing and history features are disabled.\n"
-               "On Windows, try using Putty instead.\n");
+               "On Windows, try using Windows Terminal or Putty instead.\n");
     }
 
     /* Main loop */
