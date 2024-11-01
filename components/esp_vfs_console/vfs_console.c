@@ -16,6 +16,7 @@
 #include "sdkconfig.h"
 #include "esp_private/startup_internal.h"
 #include "esp_vfs_null.h"
+#include "esp_private/nullfs.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
