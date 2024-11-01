@@ -73,6 +73,20 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 * Each non-comment line in the CSV file is a partition definition.
 * The ``Offset`` field for each partition is empty. The ``gen_esp32part.py`` tool fills in each blank offset, starting after the partition table and making sure each partition is aligned correctly.
 
+Here is an example of a CSV partition table that includes bootloader and partition table partitions:
+
+.. code-block:: none
+
+    # ESP-IDF Partition Table
+    # Name,           Type,            SubType,  Offset,  Size,     Flags
+    bootloader,       bootloader,      primary,  N/A,     N/A,
+    partition_table,  partition_table, primary,  N/A,     N/A,
+    nvs,              data,            nvs,      ,        0x6000,
+    phy_init,         data,            phy,      ,        0x1000,
+    factory,          app,             factory,  ,        1M,
+
+The ``gen_esp32part.py`` tool will replace each ``N/A`` with appropriate values based on the selected Kconfig options: {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} for the bootloader offset and :ref:`CONFIG_PARTITION_TABLE_OFFSET` for the partition table offset.
+
 Name Field
 ~~~~~~~~~~
 
@@ -83,10 +97,10 @@ Type Field
 
 Partition type field can be specified as a name or a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for ESP-IDF core functions.
 
-- ``app`` (0x00).
-- ``data`` (0x01).
-- ``bootloader`` (0x02). By default, this partition is not included in any CSV partition table files because it is not required and does not impact the system's functionality. It is only useful for the bootloader OTA update. Even if this partition is not present in the CSV file, it is still possible to perform the OTA. Please note that if you specify this partition in the CSV file, its address and size must match Kconfigs.
-- ``partition_table`` (0x03).
+- ``app`` (0x00),
+- ``data`` (0x01),
+- ``bootloader`` (0x02). By default, this partition is not included in any CSV partition table files in ESP-IDF because it is not required and does not impact the system's functionality. It is only useful for the bootloader OTA updates and flash partitioning. Even if this partition is not present in the CSV file, it is still possible to perform the OTA.
+- ``partition_table`` (0x03). By default, this partition also is not included in any CSV partition table files in ESP-IDF.
 - 0x40-0xFE are reserved for **custom partition types**. If your app needs to store data in a format not already supported by ESP-IDF, then use a value from this range.
 
 See :cpp:type:`esp_partition_type_t` for the enum definitions for ``app`` and ``data`` partitions.
@@ -120,13 +134,17 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
 * When type is ``bootloader``, the SubType field can be specified as:
 
-    - ``primary`` (0x00). It is the so-called second stage bootloader, which is placed at the {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} address in the flash. The ``gen_esp32part.py`` does not allow to have this partition in the CSV file for now.
-    - ``ota`` (0x01). It is a temporary bootloader partition used by the bootloader OTA update functionality for downloading a new image.
+  - ``primary`` (0x00). This is the 2nd stage bootloader, located at the {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
+  - ``ota`` (0x01). This is a temporary bootloader partition used by the bootloader OTA update functionality to download a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can only specify an offset, or leave it blank to have the tool calculate it based on the offsets of previously used partitions.
+
+  The size of the bootloader type is calculated by the ``gen_esp32part.py`` tool  based on the specified ``--offset`` (the partition table offset) and ``--primary-partition-offset`` arguments. Specifically, the bootloader size is defined as (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}). This calculated size applies to all subtypes of the bootloader.
 
 * When type is ``partition_table``, the SubType field can be specified as:
 
-    - ``primary`` (0x00). It is the primary partition table, which is placed at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in the flash. The ``gen_esp32part.py`` does not allow to have this partition in the CSV file for now.
-    - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image.
+  - ``primary`` (0x00). This is the primary partition table, located at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
+  - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can specify an offset, or leave it blank, in which case the tool will calculate it based on the offsets of previously allocated partitions.
+
+  The size for the ``partition_table`` type is fixed at ``0x1000`` and applies uniformly across all subtypes of ``partition_table``.
 
 * When type is ``data``, the subtype field can be specified as ``ota`` (0x00), ``phy`` (0x01), ``nvs`` (0x02), nvs_keys (0x04), or a range of other component-specific subtypes (see :cpp:type:`subtype enum <esp_partition_subtype_t>`).
 
@@ -185,7 +203,9 @@ Offset & Size
     - Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64 KB). If you leave the offset field blank, ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an ``app`` partition, the tool will return an error.
     - Partitions of type ``app`` should have the size aligned to the flash sector size (4 KB). If you specify an unaligned size for an ``app`` partition, the tool will return an error.
     :SOC_SECURE_BOOT_V1: - If Secure Boot V1 is enabled, then the partition of type ``app`` needs to have size aligned to 0x10000 (64 KB) boundary.
+    :SOC_SECURE_BOOT_V1: - The ``bootloader`` offset and size are not affected by the Secure Boot V1 option. Whether Secure Boot V1 is enabled or not, the bootloader remains the same size and does not include the secure digest, which is flashed at offset 0x0 in the flash and occupies one sector (4096 bytes).
     - Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
+    - For ``bootloader`` and ``partition_table`` types, specifying ``N/A`` for size and offset in the CSV file means that these values are automatically determined by the tool and cannot be manually defined. This requires setting the ``--offset`` and ``--primary-partition-offset`` arguments of ``gen_esp32part.py``.
 
 If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
@@ -198,7 +218,15 @@ Two flags are currently supported, ``encrypted`` and ``readonly``:
 
     .. note::
 
-        ``app`` type partitions will always be encrypted, regardless of whether this flag is set or not.
+      The following type partitions will always be encrypted, regardless of whether this flag is set or not:
+
+      .. list::
+
+          - ``app``,
+          - ``bootloader``,
+          - ``partition_table``,
+          - type ``data`` and subtype ``ota``,
+          - type ``data`` and subtype ``nvs_keys``.
 
     - If ``readonly`` flag is set, the partition will be read-only. This flag is only supported for ``data`` type partitions except ``ota``` and ``coredump``` subtypes. This flag can help to protect against accidental writes to a partition that contains critical device-specific configuration data, e.g., factory data partition.
 

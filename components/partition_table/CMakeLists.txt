@@ -6,6 +6,14 @@ if(NOT ${target} STREQUAL "linux")
     list(APPEND priv_req esptool_py)
 endif()
 
+if(NOT DEFINED BOOTLOADER_OFFSET)  # For Linux target
+    if(DEFINED CONFIG_BOOTLOADER_OFFSET_IN_FLASH)
+        set(BOOTLOADER_OFFSET ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH})
+    else()
+        set(BOOTLOADER_OFFSET 0)
+    endif()
+endif()
+
 idf_component_register(PRIV_REQUIRES ${priv_req})
 
 if(non_os_build)
@@ -55,8 +63,12 @@ idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(extra_subtypes EXTRA_PARTITION_SUBTYPES)
 
-set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" "-q"
-                        "--offset" "${PARTITION_TABLE_OFFSET}" "${md5_opt}" "${flashsize_opt}"
+set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
+                        "-q"
+                        "--offset" "${PARTITION_TABLE_OFFSET}"
+                        "--primary-bootloader-offset" "${BOOTLOADER_OFFSET}"
+                        "${md5_opt}"
+                        "${flashsize_opt}"
                         "${partition_secure_opt}" ${extra_partition_subtypes} "--")
 
 set(partition_table_display
