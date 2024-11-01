@@ -243,15 +243,15 @@ typedef struct {
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    esp_vfs_dir_ops_t *dir;                                                                             /*!< pointer to the dir subcomponent */
+    const esp_vfs_dir_ops_t *dir;                                                                   /*!< pointer to the dir subcomponent */
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    esp_vfs_termios_ops_t *termios;                                                                     /*!< pointer to the termios subcomponent */
+    const esp_vfs_termios_ops_t *termios;                                                           /*!< pointer to the termios subcomponent */
 #endif
 
 #if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
-    esp_vfs_select_ops_t *select;                                                                       /*!< pointer to the select subcomponent */
+    const esp_vfs_select_ops_t *select;                                                             /*!< pointer to the select subcomponent */
 #endif
 
 } esp_vfs_fs_ops_t;
