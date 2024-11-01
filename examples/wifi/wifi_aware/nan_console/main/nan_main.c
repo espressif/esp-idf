@@ -103,7 +103,7 @@ static struct {
 } ping_args;
 
 static const char *TAG = "nan_console";
-static esp_netif_t *g_nan_netif = NULL;
+static esp_netif_t *g_nan_netif;
 
 #define NAN_EXAMPLE_SERVICE_NAME    "ESP_NAN-Service"
 
