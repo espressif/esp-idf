@@ -21,7 +21,7 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_dma(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
 
 
 @pytest.mark.esp32s3
@@ -34,4 +34,4 @@ def test_dma(dut: Dut) -> None:
     indirect=True,
 )
 def test_dma_psram(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
