@@ -2067,12 +2067,13 @@ int bt_mesh_ext_rpr_cli_pdu_recv(void *link, uint8_t type, struct net_buf_simple
 struct bt_mesh_prov_link rpr_links[CONFIG_BLE_MESH_RPR_CLI_PROV_SAME_TIME];
 #endif /* CONFIG_BLE_MESH_RPR_CLI */
 
-bool bt_mesh_ext_is_unprov_dev_being_provision(void *uuid)
+bool bt_mesh_ext_bt_mesh_is_unprov_dev_being_prov(void *uuid)
 {
 #if CONFIG_BLE_MESH_RPR_CLI
-    return is_unprov_dev_being_provision(uuid);
+    return bt_mesh_is_unprov_dev_being_prov(uuid);
 #else
     assert(0);
+    return 0;
 #endif
 }
 
@@ -2107,14 +2108,12 @@ int bt_mesh_ext_rpr_srv_nppi_pdu_recv(uint8_t type, const uint8_t *data)
 
 int bt_mesh_ext_rpr_srv_set_waiting_prov_link(void* link, bt_mesh_addr_t *addr)
 {
-#if (CONFIG_BLE_MESH_PB_GATT && \
-     CONFIG_BLE_MESH_RPR_SRV)
+#if (CONFIG_BLE_MESH_PB_GATT && CONFIG_BLE_MESH_RPR_SRV)
     return bt_mesh_rpr_srv_set_waiting_prov_link(link, addr);
 #else
     assert(0);
     return 0;
-#endif /*  CONFIG_BLE_MESH_PB_GATT && \
-           CONFIG_BLE_MESH_RPR_SRV) */
+#endif /*  CONFIG_BLE_MESH_PB_GATT && CONFIG_BLE_MESH_RPR_SRV) */
 }
 
 /* Friend */
@@ -4200,6 +4199,7 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .config_ble_mesh_srpl_cli                       = IS_ENABLED(CONFIG_BLE_MESH_SRPL_CLI),
     .config_ble_mesh_srpl_srv                       = IS_ENABLED(CONFIG_BLE_MESH_SRPL_SRV),
     .config_ble_mesh_prov_protocol_timeout          = PROTOCOL_TIMEOUT,
+
 #if CONFIG_BLE_MESH_CERT_BASED_PROV
     .config_ble_mesh_record_frag_max_size           = CONFIG_BLE_MESH_RECORD_FRAG_MAX_SIZE,
 #endif /* CONFIG_BLE_MESH_CERT_BASED_PROV */
@@ -4534,7 +4534,7 @@ typedef struct {
     int (*_bt_mesh_ext_rpr_cli_pdu_send)(void *link, uint8_t type);
     int (*_bt_mesh_ext_rpr_cli_recv_pub_key_outbound_report)(void *link);
     int (*_bt_mesh_ext_rpr_cli_pdu_recv)(void *link, uint8_t type, struct net_buf_simple *buf);
-    bool (*_bt_mesh_ext_is_unprov_dev_being_provision)(void *uuid);
+    bool (*_bt_mesh_ext_bt_mesh_is_unprov_dev_being_prov)(void *uuid);
     void *(*_bt_mesh_ext_rpr_cli_get_rpr_link)(uint8_t index);
 /* CONFIG_BLE_MESH_RPR_CLI */
 
@@ -4856,7 +4856,7 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
     ._bt_mesh_ext_rpr_cli_pdu_send                      = bt_mesh_ext_rpr_cli_pdu_send,
     ._bt_mesh_ext_rpr_cli_recv_pub_key_outbound_report  = bt_mesh_ext_rpr_cli_recv_pub_key_outbound_report,
     ._bt_mesh_ext_rpr_cli_pdu_recv                      = bt_mesh_ext_rpr_cli_pdu_recv,
-    ._bt_mesh_ext_is_unprov_dev_being_provision         = bt_mesh_ext_is_unprov_dev_being_provision,
+    ._bt_mesh_ext_bt_mesh_is_unprov_dev_being_prov      = bt_mesh_ext_bt_mesh_is_unprov_dev_being_prov,
     ._bt_mesh_ext_rpr_cli_get_rpr_link                  = bt_mesh_ext_rpr_cli_get_rpr_link,
 /* CONFIG_BLE_MESH_RPR_CLI */
 
