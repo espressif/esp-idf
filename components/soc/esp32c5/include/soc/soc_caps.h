@@ -577,7 +577,6 @@
 
 #define SOC_PM_CPU_RETENTION_BY_SW                 (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
-#define SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD     (1)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN        (1)
 
 #define SOC_PM_PAU_LINK_NUM                 (5)

@@ -10,6 +10,8 @@
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
 #include "soc/i2c_ana_mst_reg.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "sleep_clock";
 
@@ -35,7 +37,6 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && CONFIG_XTAL_FREQ_AUTO
     uint32_t xtal_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
     if (xtal_freq_mhz == SOC_XTAL_FREQ_48M) {
-
         /* For the 48 MHz main XTAL, we need regdma to configured BBPLL by exec
          * the PHY_I2C_MST_CMD_TYPE_BBPLL_CFG command from PHY i2c master
          * command memory */
@@ -49,6 +50,21 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
         bbpll_config[1].config.write_wait.value = phy_ana_i2c_master_burst_bbpll_config();
         err = sleep_retention_entries_create(bbpll_config, ARRAY_SIZE(bbpll_config), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
         ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for bbpll configure, 0 level priority");
+    }
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        /* On ESP32-C5 ECO1, clearing BIT(31) of PCR_FPGA_DEBUG_REG (it's
+         * located in TOP domain) is used to fix the issue where the modem
+         * module fails to transmit and receive packets due to the loss of The
+         * modem root clock caused by automatic clock gating during soc root
+         * clock source switching. For detailed information, refer to IDF-11064 */
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        const static sleep_retention_entries_config_t rootclk_workaround[] = {
+            [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(9), PCR_FPGA_DEBUG_REG, PCR_FPGA_DEBUG_REG, 1, 0, 0), .owner = ENTRY(0) | ENTRY(1) }
+        };
+        err = sleep_retention_entries_create(rootclk_workaround, ARRAY_SIZE(rootclk_workaround), 1, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
+        ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem root clock workaround, 1 level priority");
     }
 #endif
 
