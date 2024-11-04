@@ -675,6 +675,10 @@ void nan_de_tx_status(struct nan_de *de, unsigned int freq, const u8 *dst)
 
 void nan_de_tx_wait_ended(struct nan_de *de)
 {
+	if (de->tx_wait_end_freq)
+		wpa_printf(MSG_DEBUG,
+			   "NAN: TX wait for response ended (freq=%u)",
+			   de->tx_wait_end_freq);
 	de->tx_wait_end_freq = 0;
 	nan_de_run_timer(de);
 }
