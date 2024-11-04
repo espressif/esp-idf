@@ -64,6 +64,7 @@ struct nan_de {
 	u8 nmi[ETH_ALEN];
 	bool offload;
 	bool ap;
+	unsigned int max_listen;
 	struct nan_callbacks cb;
 
 	struct nan_de_service *service[NAN_DE_MAX_SERVICE];
@@ -85,6 +86,7 @@ bool nan_de_is_nan_network_id(const u8 *addr)
 
 
 struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
+			    unsigned int max_listen,
 			    const struct nan_callbacks *cb)
 {
 	struct nan_de *de;
@@ -96,6 +98,7 @@ struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
 	os_memcpy(de->nmi, nmi, ETH_ALEN);
 	de->offload = offload;
 	de->ap = ap;
+	de->max_listen = max_listen ? max_listen : 1000;
 	os_memcpy(&de->cb, cb, sizeof(*cb));
 
 	return de;
