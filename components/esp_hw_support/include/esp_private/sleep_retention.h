@@ -60,6 +60,11 @@ typedef enum {
 esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 
 /**
+ * @brief Dump the initialization status of all modules.
+*/
+void sleep_retention_dump_modules(FILE *out);
+
+/**
  * @brief Dump all runtime sleep retention linked lists
  */
 void sleep_retention_dump_entries(FILE *out);
@@ -138,6 +143,23 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module);
  *      - ESP_ERR_NOT_ALLOWED if the attribute of module is set to SLEEP_RETENTION_MODULE_ATTR_PASSIVE
  */
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
+
+/**
+ * @brief Force take the power lock so that during sleep the power domain won't be powered off.
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - other value when the internal `sleep_retention_module_init` fails.
+*/
+esp_err_t sleep_retention_power_lock_acquire(void);
+
+/**
+ * @brief Release the power lock so that the peripherals' power domain can be powered off.
+ *        Please note that there is an internal reference counter and the power domain will be kept on until same number
+ *        of `sleep_retention_power_lock_release` is called as `sleep_retention_power_lock_acquire`.
+ * @return always ESP_OK
+*/
+esp_err_t sleep_retention_power_lock_release(void);
 
 /**
  * @brief Get all initialized modules that require sleep retention
