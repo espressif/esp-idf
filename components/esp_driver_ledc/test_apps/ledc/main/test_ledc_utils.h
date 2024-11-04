@@ -9,7 +9,8 @@
 
 #define PULSE_IO      5
 
-#define TEST_PWM_FREQ 2000
+#define TEST_PWM_FREQ       2000
+#define TEST_PWM_LOW_FREQ   200
 
 #if SOC_LEDC_SUPPORT_HS_MODE
 #define TEST_SPEED_MODE LEDC_HIGH_SPEED_MODE
