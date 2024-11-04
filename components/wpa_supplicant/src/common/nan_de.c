@@ -160,6 +160,9 @@ static void nan_de_pause_state(struct nan_de_service *srv, const u8 *peer_addr,
 	wpa_printf(MSG_DEBUG, "NAN: Start pauseState");
 	os_get_reltime(&srv->pause_state_end);
 	srv->pause_state_end.sec += 60;
+	if (os_reltime_initialized(&srv->end_time) &&
+	    os_reltime_before(&srv->end_time, &srv->pause_state_end))
+		srv->pause_state_end = srv->end_time;
 	os_memcpy(srv->sel_peer_addr, peer_addr, ETH_ALEN);
 	srv->sel_peer_id = peer_id;
 }
