@@ -312,6 +312,19 @@ class TestUsage(TestUsageBase):
 
         self.assertNotIn(tool_to_test, output)
 
+    def test_export_with_required_tools_check_skipped(self):
+        self.run_idf_tools_with_error(['export'], assertError=True)
+
+        new_os_environ = os.environ.copy()
+        new_os_environ['IDF_SKIP_TOOLS_CHECK'] = '1'
+        with patch('os.environ', new_os_environ):
+            self.run_idf_tools_with_action(['export'])
+
+            self.run_idf_tools_with_action(['install', OPENOCD])
+            output = self.run_idf_tools_with_action(['export'])
+            self.assertIn('%s/tools/openocd-esp32/%s/openocd-esp32/bin' %
+                          (self.temp_tools_dir, OPENOCD_VERSION), output)
+
 
 # TestUsageUnix tests installed tools on UNIX platforms
 @unittest.skipIf(sys.platform == 'win32', reason='Tools for UNIX differ')
