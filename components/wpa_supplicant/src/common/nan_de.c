@@ -38,7 +38,6 @@ struct nan_de_service {
 	struct os_reltime end_time;
 	struct os_reltime last_multicast;
 	struct os_reltime first_discovered;
-	struct os_reltime last_followup;
 	bool needs_fsd;
 	unsigned int freq;
 	unsigned int default_freq;
@@ -401,9 +400,6 @@ static bool nan_de_srv_expired(struct nan_de_service *srv,
 			return false;
 		if (!srv->publish.fsd)
 			return true;
-		if (os_reltime_initialized(&srv->last_followup) &&
-		    !os_reltime_expired(now, &srv->last_followup, 1))
-			return false;
 		if (os_reltime_expired(now, &srv->last_multicast, 1))
 			return true;
 	}
@@ -415,9 +411,6 @@ static bool nan_de_srv_expired(struct nan_de_service *srv,
 			return false;
 		if (!srv->needs_fsd)
 			return true;
-		if (os_reltime_initialized(&srv->last_followup) &&
-		    !os_reltime_expired(now, &srv->last_followup, 1))
-			return false;
 		if (os_reltime_expired(now, &srv->first_discovered, 1))
 			return true;
 	}
@@ -586,10 +579,7 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 
 		if (srv->type == NAN_DE_PUBLISH &&
 		    os_reltime_initialized(&srv->pause_state_end) &&
-		    (os_reltime_before(&srv->pause_state_end, &now) ||
-		     (srv->publish.fsd &&
-		      os_reltime_initialized(&srv->last_followup) &&
-		      os_reltime_expired(&now, &srv->last_followup, 1))))
+		    (os_reltime_before(&srv->pause_state_end, &now)))
 			nan_de_unpause_state(srv);
 
 		srv_next = nan_de_srv_time_to_next(de, srv, &now);
@@ -975,8 +965,6 @@ static void nan_de_rx_follow_up(struct nan_de *de, struct nan_de_service *srv,
 			   "NAN: In pauseState - ignore Follow-up message from another subscriber or without ssi");
 		return;
 	}
-
-	os_get_reltime(&srv->last_followup);
 
 	if (srv->type == NAN_DE_PUBLISH && !ssi)
 		nan_de_pause_state(srv, peer_addr, instance_id);
@@ -1438,6 +1426,5 @@ int nan_de_transmit(struct nan_de *de, int handle,
 	nan_de_tx_sdf(de, srv, 100, NAN_SRV_CTRL_FOLLOW_UP,
 		      peer_addr, a3, req_instance_id, ssi);
 
-	os_get_reltime(&srv->last_followup);
 	return 0;
 }
