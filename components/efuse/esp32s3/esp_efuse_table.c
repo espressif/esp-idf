@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table e0674ff40a1e124670c6eecf33410e76
+// md5_digest_table f8f32987a955792b4fe4534ea428268f
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -769,7 +769,8 @@ static const esp_efuse_desc_t FLASH_VENDOR[] = {
 };
 
 static const esp_efuse_desc_t PSRAM_CAP[] = {
-    {EFUSE_BLK1, 131, 2}, 	 // [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"},
+    {EFUSE_BLK1, 131, 2}, 	 // [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"; 3: "16M"; 4: "4M"},
+    {EFUSE_BLK1, 179, 1}, 	 // [] PSRAM capacity bit 3,
 };
 
 static const esp_efuse_desc_t PSRAM_TEMP[] = {
@@ -1869,7 +1870,8 @@ const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[] = {
-    &PSRAM_CAP[0],    		// [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"}
+    &PSRAM_CAP[0],    		// [] PSRAM capacity {0: "None"; 1: "8M"; 2: "2M"; 3: "16M"; 4: "4M"}
+    &PSRAM_CAP[1],    		// [] PSRAM capacity bit 3
     NULL
 };
 
