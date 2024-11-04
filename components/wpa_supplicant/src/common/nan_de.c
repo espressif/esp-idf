@@ -406,8 +406,6 @@ static bool nan_de_srv_expired(struct nan_de_service *srv,
 			return false;
 		if (!srv->publish.fsd)
 			return true;
-		if (os_reltime_expired(now, &srv->last_multicast, 1))
-			return true;
 	}
 
 	if (srv->type == NAN_DE_SUBSCRIBE) {
@@ -416,8 +414,6 @@ static bool nan_de_srv_expired(struct nan_de_service *srv,
 		if (!os_reltime_initialized(&srv->first_discovered))
 			return false;
 		if (!srv->needs_fsd)
-			return true;
-		if (os_reltime_expired(now, &srv->first_discovered, 1))
 			return true;
 	}
 
