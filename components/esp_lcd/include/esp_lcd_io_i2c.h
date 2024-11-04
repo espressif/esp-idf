@@ -83,9 +83,9 @@ esp_err_t esp_lcd_new_panel_io_i2c_v2(i2c_master_bus_handle_t bus, const esp_lcd
  *          - ESP_ERR_NO_MEM        if out of memory
  *          - ESP_OK                on success
  */
-static inline void esp_lcd_new_panel_io_i2c(uint32_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
+static inline esp_err_t esp_lcd_new_panel_io_i2c(uint32_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
 {
-    esp_lcd_new_panel_io_i2c_v1(bus, io_config, ret_io);
+    return esp_lcd_new_panel_io_i2c_v1(bus, io_config, ret_io);
 }
 
 /**
@@ -99,9 +99,9 @@ static inline void esp_lcd_new_panel_io_i2c(uint32_t bus, const esp_lcd_panel_io
  *          - ESP_ERR_NO_MEM        if out of memory
  *          - ESP_OK                on success
  */
-static inline void esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
+static inline esp_err_t esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
 {
-    esp_lcd_new_panel_io_i2c_v2(bus, io_config, ret_io);
+    return esp_lcd_new_panel_io_i2c_v2(bus, io_config, ret_io);
 }
 #else
 /**
