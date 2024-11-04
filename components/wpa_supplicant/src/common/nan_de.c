@@ -483,6 +483,16 @@ static int nan_de_srv_time_to_next(struct nan_de *de,
 			next = tmp;
 	}
 
+	if (srv->type == NAN_DE_PUBLISH &&
+	    srv->publish.fsd &&
+	    os_reltime_initialized(&srv->pause_state_end)) {
+		os_reltime_sub(&srv->pause_state_end, now, &diff);
+		tmp = os_reltime_in_ms(&diff);
+		if (next == -1 || tmp < next)
+			next = tmp;
+		return next;
+	}
+
 	tmp = nan_de_next_multicast(de, srv, now);
 	if (tmp >= 0 && (next == -1 || tmp < next))
 		next = tmp;
@@ -591,6 +601,30 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 		srv_next = nan_de_srv_time_to_next(de, srv, &now);
 		if (srv_next >= 0 && (next == -1 || srv_next < next))
 			next = srv_next;
+
+		if (srv->type == NAN_DE_PUBLISH &&
+		    srv->publish.fsd &&
+		    os_reltime_initialized(&srv->pause_state_end) &&
+		    de->tx_wait_end_freq == 0 &&
+		    de->listen_freq == 0 && de->ext_listen_freq == 0) {
+			struct os_reltime diff;
+			int duration;
+
+			os_reltime_sub(&srv->pause_state_end, &now, &diff);
+			duration = os_reltime_in_ms(&diff);
+			if (duration < 0)
+				continue;
+			if ((unsigned int) duration > de->max_listen)
+				duration = de->max_listen;
+			if (de->cb.listen(de->cb.ctx, srv->freq, duration) ==
+			    0) {
+				wpa_printf(MSG_DEBUG,
+					   "NAN: Publisher in pauseState - started listen on %u MHz",
+					   srv->freq);
+				de->listen_freq = srv->freq;
+				return;
+			}
+		}
 
 		if (srv_next == 0 && !started && !de->offload &&
 		    de->listen_freq == 0 && de->ext_listen_freq == 0 &&
